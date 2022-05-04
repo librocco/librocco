@@ -1,0 +1,8 @@
+# Testing temp
+/coverage
+/.nyc_output
+/instrumented
+
+# Test result files
+junit.xml
+coverage
