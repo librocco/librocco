@@ -1,0 +1,18 @@
+{
+  "extends": "../scaffold/tsconfig.ui.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "rootDir": "src",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "dist",
+    "scripts",
+    ".eslintrc.js",
+    "vite.config.ts"
+  ],
+  "include": ["src"]
+}
