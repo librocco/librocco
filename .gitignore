@@ -37,6 +37,9 @@
 **/dist
 **/build
 
+# Misc tools people might use
+.envrc
+
 # -------Ignored contents of the root of the repo------- #
 
 # Rush temporary files
