@@ -4,6 +4,8 @@ import environmentPlugin from "vite-plugin-environment";
 import svgr from "vite-plugin-svgr";
 import path from "path";
 
+const svgrOptions = require("../scaffold/svgrOptions");
+
 export default defineConfig({
   resolve: {
     alias: {
@@ -18,6 +20,9 @@ export default defineConfig({
     environmentPlugin({
       /** Your whitelisted .env variables here */
     }),
-    svgr(),
+    svgr({
+      exportAsDefault: true,
+      svgrOptions,
+    }),
   ],
 });
