@@ -1,6 +1,7 @@
 import React from "react";
 
 import { Button } from "@librocco/ui";
+import Search from "./Search";
 
 const App: React.FC = () => (
   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
@@ -11,6 +12,7 @@ const App: React.FC = () => (
     <Button className="relative left-1/2 -translate-x-1/2 mt-2">
       Click me
     </Button>
+    <Search />
   </div>
 );
 

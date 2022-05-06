@@ -5,7 +5,9 @@
   "dependencies": {
     "@librocco/ui": "workspace:*",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "pouchdb": "~7.3.0",
+    "js-search": "workspace:*"
   },
   "scripts": {
     "build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
