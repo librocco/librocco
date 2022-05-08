@@ -6,24 +6,14 @@ interface SideNavButtonProps extends HTMLAttributes<HTMLButtonElement> {
    */
   selected?: boolean;
   /**
-   * A custom component used to render the `SideNavButton`. All the extra props (other than `Icon`, `selected` and `component`)
-   * of `SideNavButton` are passed to that component on render.
-   */
-  component?: React.FC;
-  /**
    * A custom html tag we want to render the element as (defaults to "button")
    */
   as?: keyof JSX.IntrinsicElements;
 }
 
-/**
- * The default component used to render the 'SideNavButton' if no custom
- * 'component' prop was passed.
- */
-const DefaultComponent: React.FC<
-  HTMLAttributes<HTMLButtonElement> & { as?: keyof JSX.IntrinsicElements }
-> = ({ as = "button", children, ...props }) =>
-  React.createElement(as, props, [children]);
+const onClickFallback = (e: React.SyntheticEvent) => {
+  e.preventDefault();
+};
 
 /**
  * A button used for side navigation as specified in the mockup
@@ -32,7 +22,8 @@ const SideNavButton: React.FC<SideNavButtonProps> = ({
   children,
   className: classes,
   selected,
-  component,
+  as: htmlTag = "button", // 'as' used to be reserved for TS, better to be safe
+  onClick = onClickFallback,
   ...props
 }) => {
   const baseClasses = [
@@ -53,13 +44,12 @@ const SideNavButton: React.FC<SideNavButtonProps> = ({
     .trim()
     .replace(/%s%s/g, " ");
 
-  const Component = component || DefaultComponent;
+  // Icon box container with icon component passed as 'children'
+  const iconBox = <div className="center-absolute w-4 h-4">{children}</div>;
 
-  return (
-    <Component {...{ ...props, className }}>
-      <div className="center-absolute w-4 h-4">{children}</div>
-    </Component>
-  );
+  return React.createElement(htmlTag, { ...props, className, onClick }, [
+    iconBox,
+  ]);
 };
 
 export default SideNavButton;
