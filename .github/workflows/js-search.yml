@@ -24,4 +24,11 @@ jobs:
       - name: Install packages
         run: node common/scripts/install-run-rush.js update
       - name: Run tests
-        run: cd pkg/js-search/ && ./node_modules/.bin/jest
+        run: cd pkg/js-search/ && ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: JS-Search Tests
+          path: pkg/js-search/junit.xml
+          reporter: jest-junit
