@@ -4,7 +4,7 @@ import { CouchClient } from "https://denopkg.com/keroxp/deno-couchdb/couch.ts";
 import Denomander from "https://deno.land/x/denomander@0.9.1/mod.ts";
 import { readCSV } from "https://deno.land/x/csv/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.4/mod.ts";
-import { BufReader } from "https://deno.land/std/io/bufio.ts";
+import { BufReader } from "https://deno.land/std/io/buffer.ts";
 
 
 const howManyLines = async function (fileName: string) {
@@ -32,39 +32,6 @@ function downloading(progress: ProgressBar) {
 }
 //#endregion progress bar
 
-
-
-//#region program
-const program = new Denomander({
-    app_name: "CSV to CouchDB",
-});
-
-
-program.command("parse", "parses csv file into the db")
-    .requiredOption("-f --filePath", "csv file path")
-    .requiredOption("-c --columns", "names of headers of each column")
-    .option("-n --name", "couch database name")
-    .option("-s --separator", "column separator of csv file")
-    .option("-u -couchdbURL", "url of couchdb, defaults to local couchdb")
-    .action(async () => {
-        const title = 'downloading:';
-        const progress = new ProgressBar({
-            title,
-            total: await howManyLines(program.filePath)
-        });
-
-
-        await CSVToCouch({
-            filePath: program.filePath, columns: program.columns,
-            couchdbName: program.name, couchdbURL: program.couchdbURL,
-            columnSeparator: program.separator, progress: progress
-        })
-    })
-    .parse(Deno.args)
-
-
-
-//#endregion program
 
 //#region parsing funciton
 
@@ -110,7 +77,7 @@ async function CSVToCouch({ filePath, columns, couchdbName = "books",
                 book[fieldName] = cell;
                 i++;
             }
-            // await db.insert(book)
+            await db.insert(book)
             downloading(progress);
 
         }
@@ -125,6 +92,40 @@ async function CSVToCouch({ filePath, columns, couchdbName = "books",
 }
 
 //#endregion parsing function
+
+
+
+//#region program
+const program = new Denomander({
+    app_name: "CSV to CouchDB",
+});
+
+
+program.command("parse", "parses csv file into the db")
+    .requiredOption("-f --filePath", "csv file path")
+    .requiredOption("-c --columns", "names of headers of each column")
+    .option("-n --name", "couch database name")
+    .option("-s --separator", "column separator of csv file")
+    .option("-u -couchdbURL", "url of couchdb, defaults to local couchdb")
+    .action(async () => {
+        const title = 'downloading:';
+        const progress = new ProgressBar({
+            title,
+            total: await howManyLines(program.filePath)
+        });
+
+
+        await CSVToCouch({
+            filePath: program.filePath, columns: program.columns,
+            couchdbName: program.name, couchdbURL: program.couchdbURL,
+            columnSeparator: program.separator, progress: progress
+        })
+    })
+    .parse(Deno.args)
+
+
+
+//#endregion program
 
 
 
