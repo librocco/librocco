@@ -73,3 +73,28 @@ This package isn't built with the bulk `build` command (for `build` command effi
 This package contains the presentation layer components, developed as atomic React components. The development is done using Storybook (for previews) and JEST (for unit tests). To run storybook, run `rushx storybook` and to run all the unit tests, simply run `rushx test`.
 
 **Important note: As UI package's CSS file is built by tailwind, to be able to use the styles, one needs to also import a built css file from `@librocco/ui/dist/style.css`**
+
+## Additional information
+
+### Working with SVG
+
+We feature multiple svg loading options for different stages:
+
+- Storybook, with webpack uses babel and `@svgr/webpack`
+- Vite (lib build) uses `vite-plugin-svgr`
+
+Both are configured to produce the named exports, so the SVGs are loaded like so:
+
+```typescript
+import { ReactComponent as Icon } from "@/assets/Icon.svg";
+```
+
+_Note: The standard config, we use across packages is defined in [svgrOptions.js](./pkg/scaffold/svgrOptions.js)_
+
+#### Using width and height
+
+Also, both are configured to remove the `width` and `height` attributes. Because of this, the SVGs should be rendered within a `<div>` container with specifically set `width` and `height`.
+
+#### Setting the color of an SVG
+
+The color property is not transformed automatically, as this is tedious to implement and might cause undesirable behaviour. Therefre, SVG files should be updated manually, with each explicitly defined color changed to `currentColor` like so: `fill="#0000"` -> `fill="currentColor"`, so that the given color can be maniplated using a css `color` property on a parent component.
