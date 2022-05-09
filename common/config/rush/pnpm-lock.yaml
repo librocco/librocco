@@ -11,6 +11,7 @@ importers:
       '@babel/preset-env': ^7.8.7
       babel-jest: ^25.1.0
       jest: ^27.5.1
+      jest-junit: ~13.2.0
       prettier: ^1.19.1
       rimraf: ^2.5.4
       rollup: ^2.0.5
@@ -22,6 +23,7 @@ importers:
       '@babel/preset-env': 7.17.10_@babel+core@7.17.9
       babel-jest: 25.5.1_@babel+core@7.17.9
       jest: 27.5.1
+      jest-junit: 13.2.0
       prettier: 1.19.1
       rimraf: 2.7.1
       rollup: 2.70.2
@@ -9074,6 +9076,16 @@ packages:
       - supports-color
     dev: true
 
+  /jest-junit/13.2.0:
+    resolution: {integrity: sha512-B0XNlotl1rdsvFZkFfoa19mc634+rrd8E4Sskb92Bb8MmSXeWV9XJGUyctunZS1W410uAxcyYuPUGVnbcOH8cg==}
+    engines: {node: '>=10.12.0'}
+    dependencies:
+      mkdirp: 1.0.4
+      strip-ansi: 6.0.1
+      uuid: 8.3.2
+      xml: 1.0.1
+    dev: true
+
   /jest-leak-detector/27.5.1:
     resolution: {integrity: sha512-POXfWAMvfU6WMUXftV4HolnJfnPOGEu10fscNCA76KBpRRhcMN2c8d3iT2pxQS3HLbA+5X4sOUPzYO2NUyIlHQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
@@ -13056,6 +13068,11 @@ packages:
     hasBin: true
     dev: true
 
+  /uuid/8.3.2:
+    resolution: {integrity: sha512-+NYs2QeMWy+GWFOEm9xnn6HCDp0l7QBD7ml8zLUmJ+93Q5NF0NocErnwkTkXVFNiX3/fpC6afS8Dhb/gz7R7eg==}
+    hasBin: true
+    dev: true
+
   /v8-compile-cache/2.3.0:
     resolution: {integrity: sha512-l8lCEmLcLYZh4nbunNZvQCJc5pv7+RCwa8q/LdUx8u7lsWvPDKmpodJAJNwkAhJC//dFY48KuIEmjtd4RViDrA==}
     dev: true
@@ -13464,6 +13481,10 @@ packages:
 
   /xml-name-validator/3.0.0:
     resolution: {integrity: sha512-A5CUptxDsvxKJEU3yO6DuWBSJz/qizqzJKOMIfUJHETbBw/sFaDxgd6fxm1ewUaM0jZ444Fc5vC5ROYurg/4Pw==}
+    dev: true
+
+  /xml/1.0.1:
+    resolution: {integrity: sha1-eLpyAgApxbyHuKgaPPzXS0ovweU=}
     dev: true
 
   /xmlchars/2.2.0:
