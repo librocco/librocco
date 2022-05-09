@@ -9,9 +9,7 @@ importers:
     specifiers:
       '@babel/core': 7.x
       '@babel/preset-env': ^7.8.7
-      '@babel/preset-flow': ^7.8.3
       babel-jest: ^25.1.0
-      flow-bin: ^0.120.1
       jest: ^27.5.1
       prettier: ^1.19.1
       rimraf: ^2.5.4
@@ -22,9 +20,7 @@ importers:
     devDependencies:
       '@babel/core': 7.17.9
       '@babel/preset-env': 7.17.10_@babel+core@7.17.9
-      '@babel/preset-flow': 7.16.7_@babel+core@7.17.9
       babel-jest: 25.5.1_@babel+core@7.17.9
-      flow-bin: 0.120.1
       jest: 27.5.1
       prettier: 1.19.1
       rimraf: 2.7.1
@@ -7487,12 +7483,6 @@ packages:
 
   /flatted/3.2.5:
     resolution: {integrity: sha512-WIWGi2L3DyTUvUrwRKgGi9TwxQMUEqPOPQBVi71R96jZXJdFskXEmf54BoZaS1kknGODoIGASGEzBUYdyMCBJg==}
-    dev: true
-
-  /flow-bin/0.120.1:
-    resolution: {integrity: sha512-KgE+d+rKzdXzhweYVJty1QIOOZTTbtnXZf+4SLnmArLvmdfeLreQOZpeLbtq5h79m7HhDzX/HkUkoyu/fmSC2A==}
-    engines: {node: '>=0.10.0'}
-    hasBin: true
     dev: true
 
   /flush-write-stream/1.1.1:

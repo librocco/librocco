@@ -1,4 +1,6 @@
+import { jest } from '@jest/globals';
 import { Search } from "./Search";
+
 describe('Search', function () {
   var documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
 
@@ -48,13 +50,13 @@ describe('Search', function () {
   });
   it('should index a new document on all searchable fields', function () {
     search.addIndex('title');
-    spyOn(search._indexStrategy, 'expandToken').and.returnValue([]);
+    jest.spyOn(search._indexStrategy, 'expandToken').mockReturnValue([]);
     search.addDocument(documentBar);
     expect(search._indexStrategy.expandToken).toHaveBeenCalledWith('bar');
   });
   it('should re-index existing documents if a new searchable field is added', function () {
     search.addDocument(documentBar);
-    spyOn(search._indexStrategy, 'expandToken').and.returnValue([]);
+    jest.spyOn(search._indexStrategy, 'expandToken').mockReturnValue([]);
     search.addIndex('title');
     expect(search._indexStrategy.expandToken).toHaveBeenCalledWith('bar');
   });
