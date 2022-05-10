@@ -37,10 +37,11 @@ function downloading(progress: ProgressBar) {
 
 
 async function CSVToCouch({ filePath, columns, couchdbName = "books",
-    couchdbURL = "http://admin:admin@localhost:5984", columnSeparator = ",", progress }: {
+    couchdbURL = "http://admin:admin@localhost:5984", columnSeparator = ",", individual, progress }: {
         filePath: string,
         columns: string, couchdbName: string,
         couchdbURL: string, columnSeparator: string,
+        individual: string
         progress: ProgressBar
 
     }) {
@@ -48,13 +49,11 @@ async function CSVToCouch({ filePath, columns, couchdbName = "books",
     // create couch client with endpoint
     const columnsArr = columns.split(',')
 
-
-
     // csv file options
     const options = { columnSeparator: columnSeparator }
 
-    // await parseCSVToDocs(filePath, columnsArr, couchdbURL, couchdbName, progress, options)
-    await parseCSVToArray(filePath, columnsArr, couchdbURL, couchdbName, progress, options)
+    individual ? await CSVToDocs(filePath, columnsArr, couchdbURL, couchdbName, progress, options) :
+        await CSVToBulkDocs(filePath, columnsArr, couchdbURL, couchdbName, progress, options)
 
 
 }
@@ -75,6 +74,7 @@ program.command("parse", "parses csv file into the db")
     .option("-n --name", "couch database name")
     .option("-s --separator", "column separator of csv file")
     .option("-u -couchdbURL", "url of couchdb, defaults to local couchdb")
+    .option("-i -individual", "insert docs into couchdb one by one, default is bulk")
     .action(async () => {
         const title = 'parsing csv files:';
         const progress = new ProgressBar({
@@ -86,7 +86,9 @@ program.command("parse", "parses csv file into the db")
         await CSVToCouch({
             filePath: program.filePath, columns: program.columns,
             couchdbName: program.name, couchdbURL: program.couchdbURL,
-            columnSeparator: program.separator, progress: progress
+            columnSeparator: program.separator, individual: program.individual,
+            progress: progress,
+
         })
     })
     .parse(Deno.args)
@@ -97,14 +99,17 @@ program.command("parse", "parses csv file into the db")
 
 
 //#region bulk parse fn
-const parseCSVToArray = async (filePath: string, columnsArr: string[], couchdbURL: string, couchdbName: string, progress: ProgressBar, options?: Partial<CommonCSVReaderOptions> | undefined) => {
+const CSVToBulkDocs = async (filePath: string, columnsArr: string[], couchdbURL: string, couchdbName: string,
+    progress: ProgressBar, options?: Partial<CommonCSVReaderOptions> | undefined) => {
+
     try {
         await createDatabase(couchdbName, couchdbURL)
         const f = await Deno.open(filePath);
+        console.log("Saving docs bulk...")
 
         let books = [];
-        // null?
         for await (const row of readCSV(f, options)) {
+
             let book: { [key: string]: string } = {};
             let i = 0;
             for await (const cell of row) {
@@ -115,14 +120,16 @@ const parseCSVToArray = async (filePath: string, columnsArr: string[], couchdbUR
             }
             downloading(progress);
 
-            // write into a file .json
-            await Deno.writeTextFile("./jsonBulkDocs.txt", "Hello World!");
             books.push((book))
+
+            if (books.length === 1000) {
+                await bulkDocs(books, couchdbName, couchdbURL)
+                books = []
+
+            }
         }
 
         f.close();
-        await bulkDocs(books, couchdbName, couchdbURL)
-
 
     }
     catch (error) {
@@ -132,7 +139,7 @@ const parseCSVToArray = async (filePath: string, columnsArr: string[], couchdbUR
 //#endregion bulk parse fn
 
 //#region individual doc parse fn
-const parseCSVToDocs = async (filePath: string, columnsArr: string[], couchdbURL: string, couchdbName: string, progress: ProgressBar, options?: Partial<CommonCSVReaderOptions> | undefined) => {
+const CSVToDocs = async (filePath: string, columnsArr: string[], couchdbURL: string, couchdbName: string, progress: ProgressBar, options?: Partial<CommonCSVReaderOptions> | undefined) => {
 
     const couch = new CouchClient(couchdbURL);
 
@@ -149,6 +156,8 @@ const parseCSVToDocs = async (filePath: string, columnsArr: string[], couchdbURL
     }
     try {
         const f = await Deno.open(filePath);
+
+        console.log("Saving docs one by one...")
 
         for await (const row of readCSV(f, options)) {
             let book: { [key: string]: string } = {};
