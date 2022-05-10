@@ -8,15 +8,6 @@ console.log(textData);
 /** 
  * @TODO handle all error cases 
  * 1 - database already exists
- * 
-
-    201 Created – Document(s) have been created or updated
-
-    400 Bad Request – The request provided invalid JSON data
-
-    404 Not Found – Requested database not found
-
-
 */
 export const createDatabase = async (dbName: string,
     couchdbURL: string) => {
@@ -37,19 +28,7 @@ export const createDatabase = async (dbName: string,
  * 400 Bad Request – The request provided invalid JSON data
  * 404 Not Found – Requested database not found
  */
-// const docs =
-// {
-//     "docs": [
-//         {
-//             "_id": "FishStew"
-//         },
-//         {
-//             "_id": "LambStew",
-//             "_rev": "2-0786321986194c92dd3b57dfbfc741ce",
-//             "_deleted": true
-//         }
-//     ]
-// }
+
 /** @TODO type docs array according to input docs columns */
 export const bulkDocs = async (
     docs: {
@@ -58,14 +37,12 @@ export const bulkDocs = async (
     dbName: string,
     couchdbURL: string
 ) => {
-    const insertDocs = await fetch(
+    await fetch(
         `${couchdbURL}/${dbName}/_bulk_docs`,
         {
             method: "POST",
             headers: { "content-type": "application/json" },
-            body: JSON.stringify(docs),
+            body: JSON.stringify({ docs: docs }),
         }
     );
-    const insertDocsRes = await insertDocs.text();
-    console.log({ insertDocsRes });
 };
