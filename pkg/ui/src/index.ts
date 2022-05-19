@@ -1,9 +1,7 @@
-import Button from "./Button";
-import SideNavButton from "./SideNavButton";
+import SideNavButton from "@/components/SideNavButton";
 
 import "./main.css";
 
-export { Button, SideNavButton };
+export { SideNavButton };
 
-export * from "./Button";
-export * from "./SideNavButton";
+export * from "@/components/SideNavButton";
