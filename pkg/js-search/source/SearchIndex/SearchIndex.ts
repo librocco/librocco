@@ -10,7 +10,11 @@ export interface ISearchIndex {
    * @param document
    * @return Sanitized text
    */
-  indexDocument(token: string, uid: string, document: Record<string, any>): void;
+  indexDocument(
+    token: string,
+    uid: string,
+    document: Record<string, any>
+  ): void;
 
   /**
    * Return all documents that match the specified tokens.
@@ -19,6 +23,8 @@ export interface ISearchIndex {
    * @param corpus All document in search corpus
    * @return Array of matching documents
    */
-  search(tokens: Array<string>, corpus: Array<Record<string, any>>): Array<Record<string, any>>;
+  search(
+    tokens: Array<string>,
+    corpus: Array<Record<string, any>>
+  ): Array<Record<string, any>>;
 }
-;

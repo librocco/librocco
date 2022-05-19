@@ -9,7 +9,7 @@ export class PrefixIndexStrategy implements IIndexStrategy {
    */
   expandToken(token: string): Array<string> {
     const expandedTokens = [];
-    let string = '';
+    let string = "";
 
     for (let i = 0, length = token.length; i < length; ++i) {
       string += token.charAt(i);
@@ -18,6 +18,4 @@ export class PrefixIndexStrategy implements IIndexStrategy {
 
     return expandedTokens;
   }
-
 }
-;

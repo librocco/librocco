@@ -34,7 +34,7 @@ export class Search {
    */
   constructor(uidFieldName: string | Array<string>) {
     if (!uidFieldName) {
-      throw Error('js-search requires a uid field name constructor parameter');
+      throw Error("js-search requires a uid field name constructor parameter");
     }
 
     this._uidFieldName = uidFieldName;
@@ -54,7 +54,7 @@ export class Search {
    */
   set indexStrategy(value: IIndexStrategy) {
     if (this._initialized) {
-      throw Error('IIndexStrategy cannot be set after initialization');
+      throw Error("IIndexStrategy cannot be set after initialization");
     }
 
     this._indexStrategy = value;
@@ -71,7 +71,7 @@ export class Search {
    */
   set sanitizer(value: ISanitizer) {
     if (this._initialized) {
-      throw Error('ISanitizer cannot be set after initialization');
+      throw Error("ISanitizer cannot be set after initialization");
     }
 
     this._sanitizer = value;
@@ -88,7 +88,7 @@ export class Search {
    */
   set searchIndex(value: ISearchIndex) {
     if (this._initialized) {
-      throw Error('ISearchIndex cannot be set after initialization');
+      throw Error("ISearchIndex cannot be set after initialization");
     }
 
     this._searchIndex = value;
@@ -105,7 +105,7 @@ export class Search {
    */
   set tokenizer(value: ITokenizer) {
     if (this._initialized) {
-      throw Error('ITokenizer cannot be set after initialization');
+      throw Error("ITokenizer cannot be set after initialization");
     }
 
     this._tokenizer = value;
@@ -149,7 +149,9 @@ export class Search {
    * @returns {Array<Object>}
    */
   search(query: string): Array<Record<string, any>> {
-    const tokens: Array<string> = this._tokenizer.tokenize(this._sanitizer.sanitize(query));
+    const tokens: Array<string> = this._tokenizer.tokenize(
+      this._sanitizer.sanitize(query)
+    );
 
     return this._searchIndex.search(tokens, this._documents);
   }
@@ -159,7 +161,10 @@ export class Search {
    * @param _searchableFields Array containing property names and paths (lists of property names) to nested values
    * @private
    */
-  indexDocuments_(documents: Array<Record<string, any>>, _searchableFields: Array<string | Array<string>>): void {
+  indexDocuments_(
+    documents: Array<Record<string, any>>,
+    _searchableFields: Array<string | Array<string>>
+  ): void {
     this._initialized = true;
     const indexStrategy = this._indexStrategy;
     const sanitizer = this._sanitizer;
@@ -177,7 +182,11 @@ export class Search {
         uid = doc[uidFieldName];
       }
 
-      for (let sfi = 0, numSearchableFields = _searchableFields.length; sfi < numSearchableFields; sfi++) {
+      for (
+        let sfi = 0, numSearchableFields = _searchableFields.length;
+        sfi < numSearchableFields;
+        sfi++
+      ) {
         let fieldValue;
         const searchableField = _searchableFields[sfi];
 
@@ -187,18 +196,32 @@ export class Search {
           fieldValue = doc[searchableField];
         }
 
-        if (fieldValue != null && typeof fieldValue !== 'string' && fieldValue.toString) {
+        if (
+          fieldValue != null &&
+          typeof fieldValue !== "string" &&
+          fieldValue.toString
+        ) {
           fieldValue = fieldValue.toString();
         }
 
-        if (typeof fieldValue === 'string') {
-          const fieldTokens = tokenizer.tokenize(sanitizer.sanitize(fieldValue));
+        if (typeof fieldValue === "string") {
+          const fieldTokens = tokenizer.tokenize(
+            sanitizer.sanitize(fieldValue)
+          );
 
-          for (let fti = 0, numFieldValues = fieldTokens.length; fti < numFieldValues; fti++) {
+          for (
+            let fti = 0, numFieldValues = fieldTokens.length;
+            fti < numFieldValues;
+            fti++
+          ) {
             const fieldToken = fieldTokens[fti];
             const expandedTokens = indexStrategy.expandToken(fieldToken);
 
-            for (let eti = 0, nummExpandedTokens = expandedTokens.length; eti < nummExpandedTokens; eti++) {
+            for (
+              let eti = 0, nummExpandedTokens = expandedTokens.length;
+              eti < nummExpandedTokens;
+              eti++
+            ) {
               const expandedToken = expandedTokens[eti];
               searchIndex.indexDocument(expandedToken, uid, doc);
             }
@@ -207,5 +230,4 @@ export class Search {
       }
     }
   }
-
 }
