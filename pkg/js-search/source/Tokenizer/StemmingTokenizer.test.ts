@@ -1,9 +1,9 @@
 import { SimpleTokenizer } from "./SimpleTokenizer";
 import { StemmingTokenizer } from "./StemmingTokenizer";
 describe('StemmingTokenizer', function () {
-  var tokenizer;
+  const tokenizer;
   beforeEach(function () {
-    var stemmingFunction = function (text) {
+    const stemmingFunction = function (text) {
       if (text === 'cats') {
         return 'cat';
       } else {

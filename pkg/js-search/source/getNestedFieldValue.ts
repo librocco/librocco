@@ -8,10 +8,10 @@
 export default function getNestedFieldValue(object: Record<string, any>, path: Array<string>): any {
   path = path || [];
   object = object || {};
-  var value = object;
+  let value = object;
 
   // walk down the property path
-  for (var i = 0; i < path.length; i++) {
+  for (let i = 0; i < path.length; i++) {
     value = value[path[i]];
 
     if (value == null) {

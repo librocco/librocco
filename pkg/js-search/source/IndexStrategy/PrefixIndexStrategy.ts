@@ -8,10 +8,10 @@ export class PrefixIndexStrategy implements IIndexStrategy {
    * @inheritDocs
    */
   expandToken(token: string): Array<string> {
-    var expandedTokens = [];
-    var string = '';
+    const expandedTokens = [];
+    let string = '';
 
-    for (var i = 0, length = token.length; i < length; ++i) {
+    for (let i = 0, length = token.length; i < length; ++i) {
       string += token.charAt(i);
       expandedTokens.push(string);
     }
