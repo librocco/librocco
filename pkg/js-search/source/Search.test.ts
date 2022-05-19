@@ -1,7 +1,7 @@
 import { jest } from '@jest/globals';
 import { Search } from "./Search";
 
-describe('Search', function () {
+describe('Search', () => {
   let documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
 
   const validateSearchResults = function (results, expectedDocuments) {
@@ -11,7 +11,7 @@ describe('Search', function () {
     });
   };
 
-  beforeEach(function () {
+  beforeEach(() => {
     search = new Search('uid');
     documentBar = {
       uid: 'bar',
@@ -43,24 +43,24 @@ describe('Search', function () {
       }
     };
   });
-  it('should throw an error if instantiated without the :uidFieldName parameter', function () {
-    expect(function () {
+  it('should throw an error if instantiated without the :uidFieldName parameter', () => {
+    expect(() => {
       new Search();
     }).toThrow();
   });
-  it('should index a new document on all searchable fields', function () {
+  it('should index a new document on all searchable fields', () => {
     search.addIndex('title');
     jest.spyOn(search._indexStrategy, 'expandToken').mockReturnValue([]);
     search.addDocument(documentBar);
     expect(search._indexStrategy.expandToken).toHaveBeenCalledWith('bar');
   });
-  it('should re-index existing documents if a new searchable field is added', function () {
+  it('should re-index existing documents if a new searchable field is added', () => {
     search.addDocument(documentBar);
     jest.spyOn(search._indexStrategy, 'expandToken').mockReturnValue([]);
     search.addIndex('title');
     expect(search._indexStrategy.expandToken).toHaveBeenCalledWith('bar');
   });
-  it('should find matches for all searchable fields', function () {
+  it('should find matches for all searchable fields', () => {
     search.addIndex('title');
     search.addIndex('description');
     search.addDocument(documentFoo);
@@ -69,17 +69,17 @@ describe('Search', function () {
     // Search description text
     validateSearchResults(search.search('kung'), [documentFoo]);
   });
-  it('should find no matches if none exist', function () {
+  it('should find no matches if none exist', () => {
     search.addIndex('title');
     search.addDocument(documentFoo);
     validateSearchResults(search.search('xyz'), []);
   });
-  it('should find no matches if one token is empty', function () {
+  it('should find no matches if one token is empty', () => {
     search.addIndex('title');
     search.addDocument(documentFoo);
     validateSearchResults(search.search('foo xyz'), []);
   });
-  it('should index and find non-string values if they can be converted to strings', function () {
+  it('should index and find non-string values if they can be converted to strings', () => {
     search.addIndex('aBoolean');
     search.addIndex('aNumber');
     search.addDocument(documentBar);
@@ -89,24 +89,24 @@ describe('Search', function () {
     validateSearchResults(search.search('0'), [documentBar]);
     validateSearchResults(search.search('false'), [documentBar]);
   });
-  it('should stringified arrays', function () {
+  it('should stringified arrays', () => {
     search.addIndex('array');
     search.addDocuments([documentFoo, documentBaz]);
     validateSearchResults(search.search('test'), [documentFoo, documentBaz]);
     validateSearchResults(search.search('true'), [documentBaz]);
     validateSearchResults(search.search('456'), [documentBaz]);
   });
-  it('should index nested document properties', function () {
+  it('should index nested document properties', () => {
     search.addIndex(['nested', 'title']);
     search.addDocument(nestedDocumentFoo);
     validateSearchResults(search.search('nested foo'), [nestedDocumentFoo]);
   });
-  it('should gracefully handle broken property path', function () {
+  it('should gracefully handle broken property path', () => {
     search.addIndex(['nested', 'title', 'not', 'existing']);
     search.addDocument(nestedDocumentFoo);
     validateSearchResults(search.search('nested foo'), []);
   });
-  it('should support nested uid paths', function () {
+  it('should support nested uid paths', () => {
     const melissaSmith = {
       name: 'Melissa Smith',
       email: 'melissa.allen@example.com',

@@ -1,17 +1,17 @@
 import { PrefixIndexStrategy } from "./PrefixIndexStrategy";
-describe('PrefixIndexStrategy', function () {
-  it('should not expand empty tokens', function () {
+describe('PrefixIndexStrategy', () => {
+  it('should not expand empty tokens', () => {
     const indexStrategy = new PrefixIndexStrategy();
     const expandedTokens = indexStrategy.expandToken('');
     expect(expandedTokens.length).toEqual(0);
   });
-  it('should not expand single character tokens', function () {
+  it('should not expand single character tokens', () => {
     const indexStrategy = new PrefixIndexStrategy();
     const expandedTokens = indexStrategy.expandToken('a');
     expect(expandedTokens.length).toEqual(1);
     expect(expandedTokens).toContain('a');
   });
-  it('should expand multi-character tokens', function () {
+  it('should expand multi-character tokens', () => {
     const indexStrategy = new PrefixIndexStrategy();
     const expandedTokens = indexStrategy.expandToken('cat');
     expect(expandedTokens.length).toEqual(3);
