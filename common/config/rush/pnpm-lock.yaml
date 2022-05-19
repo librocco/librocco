@@ -18,6 +18,7 @@ importers:
       rollup-plugin-babel: ^4.4.0
       rollup-plugin-terser: ^5.3.0
       typescript: 4.6.3
+      vite: ~2.9.9
     devDependencies:
       '@babel/core': 7.17.9
       '@babel/preset-env': 7.17.10_@babel+core@7.17.9
@@ -30,6 +31,7 @@ importers:
       rollup-plugin-babel: 4.4.0_@babel+core@7.17.9+rollup@2.70.2
       rollup-plugin-terser: 5.3.1_rollup@2.70.2
       typescript: 4.6.3
+      vite: 2.9.9
 
   ../../pkg/scaffold:
     specifiers: {}
@@ -13148,6 +13150,30 @@ packages:
 
   /vite/2.9.5:
     resolution: {integrity: sha512-dvMN64X2YEQgSXF1lYabKXw3BbN6e+BL67+P3Vy4MacnY+UzT1AfkHiioFSi9+uiDUiaDy7Ax/LQqivk6orilg==}
+    engines: {node: '>=12.2.0'}
+    hasBin: true
+    peerDependencies:
+      less: '*'
+      sass: '*'
+      stylus: '*'
+    peerDependenciesMeta:
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+    dependencies:
+      esbuild: 0.14.36
+      postcss: 8.4.13
+      resolve: 1.22.0
+      rollup: 2.70.2
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
+  /vite/2.9.9:
+    resolution: {integrity: sha512-ffaam+NgHfbEmfw/Vuh6BHKKlI/XIAhxE5QSS7gFLIngxg171mg1P3a4LSRME0z2ZU1ScxoKzphkipcYwSD5Ew==}
     engines: {node: '>=12.2.0'}
     hasBin: true
     peerDependencies:
