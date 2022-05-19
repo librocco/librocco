@@ -11,12 +11,12 @@ export default {
 } as ComponentMeta<typeof SideNavButton>;
 
 export const Variants = (): JSX.Element => (
-  <div>
-    <h1 className="text-md bold block mb-2">Inactive:</h1>
+  <div className="bg-gray-700 w-20 flex items-center flex-col py-2">
+    <h1 className="text-md text-white bold block mb-2">Inactive:</h1>
     <SideNavButton className="block mb-4">
       <TestIcon />
     </SideNavButton>
-    <h1 className="text-md bold block mb-2">Selected:</h1>
+    <h1 className="text-md text-white bold block mb-2">Selected:</h1>
     <SideNavButton selected>
       <TestIcon />
     </SideNavButton>
