@@ -36,7 +36,7 @@ const SideNavButton: React.FC<SideNavButtonProps> = ({
   ];
 
   // Colors dependant on the 'selected' state
-  const bgColor = selected ? "bg-gray-900" : "bg-gray-700";
+  const bgColor = selected ? "bg-gray-900" : "bg-none";
   const iconColor = selected ? "text-white" : "text-gray-400 hover:text-white";
 
   const className = [...baseClasses, bgColor, iconColor, classes]
