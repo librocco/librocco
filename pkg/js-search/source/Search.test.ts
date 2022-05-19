@@ -4,9 +4,9 @@ import { Search } from "./Search";
 describe('Search', () => {
   let documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
 
-  const validateSearchResults = function (results, expectedDocuments) {
+  const validateSearchResults = (results, expectedDocuments) => {
     expect(results.length).toBe(expectedDocuments.length);
-    expectedDocuments.forEach(function (document) {
+    expectedDocuments.forEach((document) => {
       expect(results).toContain(document);
     });
   };
