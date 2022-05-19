@@ -1,6 +1,6 @@
 import { AllSubstringsIndexStrategy } from "./AllSubstringsIndexStrategy";
 describe('AllSubstringsIndexStrategy', function () {
-  const indexStrategy;
+  let indexStrategy;
   beforeEach(function () {
     indexStrategy = new AllSubstringsIndexStrategy();
   });

@@ -2,7 +2,7 @@ import { jest } from '@jest/globals';
 import { Search } from "./Search";
 
 describe('Search', function () {
-  const documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
+  let documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
 
   const validateSearchResults = function (results, expectedDocuments) {
     expect(results.length).toBe(expectedDocuments.length);

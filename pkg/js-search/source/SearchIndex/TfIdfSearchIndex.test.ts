@@ -1,7 +1,7 @@
 import { Search } from "../Search";
 import { TfIdfSearchIndex } from "./TfIdfSearchIndex";
 describe('Search', function () {
-  const documents, search, uid;
+  let documents, search, uid;
 
   const addDocument = function (title) {
     const document = {
@@ -21,7 +21,7 @@ describe('Search', function () {
     search.addIndex('title');
     const titles = ['this document is about node.', 'this document is about ruby.', 'this document is about ruby and node.', 'this document is about node. it has node examples'];
 
-    for (const i = 0, length = titles.length; i < length; ++i) {
+    for (let i = 0, length = titles.length; i < length; ++i) {
       addDocument(titles[i]);
     }
   });
@@ -100,7 +100,7 @@ describe('Search', function () {
       const documentB = addDocument('foo bar foo foo baz baz baz baz');
       const documentC = addDocument('foo bar baz bar baz baz baz baz');
 
-      for (const i = 0; i < 10; i++) {
+      for (let i = 0; i < 10; i++) {
         addDocument('foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo');
       }
 
