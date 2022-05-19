@@ -1,19 +1,19 @@
 import { AllSubstringsIndexStrategy } from "./AllSubstringsIndexStrategy";
-describe('AllSubstringsIndexStrategy', function () {
+describe('AllSubstringsIndexStrategy', () => {
   let indexStrategy;
-  beforeEach(function () {
+  beforeEach(() => {
     indexStrategy = new AllSubstringsIndexStrategy();
   });
-  it('should not expand empty tokens', function () {
+  it('should not expand empty tokens', () => {
     const expandedTokens = indexStrategy.expandToken('');
     expect(expandedTokens.length).toEqual(0);
   });
-  it('should not expand single character tokens', function () {
+  it('should not expand single character tokens', () => {
     const expandedTokens = indexStrategy.expandToken('a');
     expect(expandedTokens.length).toEqual(1);
     expect(expandedTokens).toContain('a');
   });
-  it('should expand multi-character tokens', function () {
+  it('should expand multi-character tokens', () => {
     const expandedTokens = indexStrategy.expandToken('cat');
     expect(expandedTokens.length).toEqual(6);
     expect(expandedTokens).toContain('c');
