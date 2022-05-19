@@ -21,10 +21,12 @@ jobs:
             common/temp
             **/node_modules
           key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
       - name: Install packages
-        run: node common/scripts/install-run-rush.js update
+        run: rush update
       - name: Run tests
-        run: cd pkg/js-search/ && ./node_modules/.bin/jest --ci --reporters=default --reporters=jest-junit
+        run: cd pkg/js-search/ && rushx test:ci
       - name: Test Report
         uses: dorny/test-reporter@v1
         if: success() || failure()
