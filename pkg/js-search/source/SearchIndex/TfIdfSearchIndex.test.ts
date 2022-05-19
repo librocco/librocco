@@ -1,6 +1,6 @@
 import { Search } from "../Search";
 import { TfIdfSearchIndex } from "./TfIdfSearchIndex";
-describe('Search', function () {
+describe('Search', () => {
   let documents, search, uid;
 
   const addDocument = function (title) {
@@ -13,7 +13,7 @@ describe('Search', function () {
     return document;
   };
 
-  beforeEach(function () {
+  beforeEach(() => {
     documents = [];
     uid = 0;
     search = new Search('uid');
@@ -36,23 +36,23 @@ describe('Search', function () {
     expect(_calculateIdf(term, search._documents)).toEqual(calculateIdf(numDocumentsWithToken));
   };
 
-  it('should handle special words like "constructor"', function () {
+  it('should handle special words like "constructor"', () => {
     addDocument('constructor');
   });
-  describe('IDF', function () {
-    it('should compute for tokens appearing only once', function () {
+  describe('IDF', () => {
+    it('should compute for tokens appearing only once', () => {
       assertIdf('and', 1);
     });
-    it('should compute for tokens appearing once in each document', function () {
+    it('should compute for tokens appearing once in each document', () => {
       assertIdf('document', 4);
     });
-    it('should compute for tokens appearing multiple times in a document', function () {
+    it('should compute for tokens appearing multiple times in a document', () => {
       assertIdf('node', 3);
     });
-    it('should compute for tokens that are not within the corpus', function () {
+    it('should compute for tokens that are not within the corpus', () => {
       assertIdf('foobar', 0);
     });
-    it('should clear IFD cache if new documents are indexed', function () {
+    it('should clear IFD cache if new documents are indexed', () => {
       assertIdf('ruby', 2);
       addDocument('this document is not about ruby.');
       assertIdf('ruby', 3);
@@ -69,33 +69,33 @@ describe('Search', function () {
     expect(_calculateTfIdf(terms, document, search._documents)).toEqual(expectedTfIdf);
   };
 
-  describe('TF-IDF', function () {
-    it('should compute for single tokens within the corpus', function () {
+  describe('TF-IDF', () => {
+    it('should compute for single tokens within the corpus', () => {
       assertTfIdf(['node'], documents[0], calculateTfIdf(3, 1));
       assertTfIdf(['node'], documents[3], calculateTfIdf(3, 2));
     });
-    it('should compute for tokens not within the document', function () {
+    it('should compute for tokens not within the document', () => {
       assertTfIdf(['node'], documents[1], calculateTfIdf(3, 0));
       assertTfIdf(['has node'], documents[1], calculateTfIdf(3, 0));
     });
-    it('should compute for multiple tokens within the corpus', function () {
+    it('should compute for multiple tokens within the corpus', () => {
       assertTfIdf(['document', 'node'], documents[3], calculateTfIdf(4, 1) + calculateTfIdf(3, 2));
       assertTfIdf(['ruby', 'and'], documents[2], calculateTfIdf(2, 1) + calculateTfIdf(1, 1));
     });
-    it('should compute for tokens that are not within the corpus', function () {
+    it('should compute for tokens that are not within the corpus', () => {
       assertTfIdf(['foobar'], [], 0);
       assertTfIdf(['foo', 'bar'], [], 0);
     });
   });
-  describe('search', function () {
-    it('should order search results by TF-IDF descending', function () {
+  describe('search', () => {
+    it('should order search results by TF-IDF descending', () => {
       const results = search.search('node');
       expect(results.length).toEqual(3);
       // The 4th document has "node" twice so it should be first of the 3
       // The order of the other results isn't important for this test.
       expect(results[0]).toEqual(documents[3]);
     });
-    it('should give documents containing words with a lower IDF a higher relative ranking', function () {
+    it('should give documents containing words with a lower IDF a higher relative ranking', () => {
       const documentA = addDocument('foo bar foo bar baz baz baz baz');
       const documentB = addDocument('foo bar foo foo baz baz baz baz');
       const documentC = addDocument('foo bar baz bar baz baz baz baz');
@@ -114,7 +114,7 @@ describe('Search', function () {
       expect(results[2]).toEqual(documentB);
     });
   });
-  it('should support nested uid paths', function () {
+  it('should support nested uid paths', () => {
     const melissaSmith = {
       name: 'Melissa Smith',
       login: {

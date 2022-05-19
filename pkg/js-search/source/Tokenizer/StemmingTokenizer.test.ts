@@ -1,6 +1,6 @@
 import { SimpleTokenizer } from "./SimpleTokenizer";
 import { StemmingTokenizer } from "./StemmingTokenizer";
-describe('StemmingTokenizer', function () {
+describe('StemmingTokenizer', () => {
   const stemmingFunction = function (text) {
     if (text === 'cats') {
       return 'cat';
@@ -8,12 +8,12 @@ describe('StemmingTokenizer', function () {
       return text;
     }
   };
-  it('should handle empty values', function () {
+  it('should handle empty values', () => {
     const tokenizer = new StemmingTokenizer(stemmingFunction, new SimpleTokenizer());
     expect(tokenizer.tokenize('')).toEqual([]);
     expect(tokenizer.tokenize(' ')).toEqual([]);
   });
-  it('should convert words to stems', function () {
+  it('should convert words to stems', () => {
     const tokenizer = new StemmingTokenizer(stemmingFunction, new SimpleTokenizer());
     expect(tokenizer.tokenize('the cats')).toEqual(['the', 'cat']);
   });

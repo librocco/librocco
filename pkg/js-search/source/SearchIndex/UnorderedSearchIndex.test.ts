@@ -1,6 +1,6 @@
 import { Search } from "../Search";
 import { UnorderedSearchIndex } from "./UnorderedSearchIndex";
-describe('Search', function () {
+describe('Search', () => {
   const validateSearchResults = function (results, expectedDocuments) {
     expect(results.length).toBe(expectedDocuments.length);
     expectedDocuments.forEach(function (document) {
@@ -8,7 +8,7 @@ describe('Search', function () {
     });
   };
 
-  it('should return documents matching search tokens', function () {
+  it('should return documents matching search tokens', () => {
     const search = new Search('uid');
     search.searchIndex = new UnorderedSearchIndex();
     search.addIndex('title');
