@@ -2,7 +2,7 @@ import { SimpleTokenizer } from "./SimpleTokenizer";
 import { StopWordsTokenizer } from "./StopWordsTokenizer";
 import { StopWordsMap } from "../StopWordsMap";
 describe('StopWordsTokenizer', function () {
-  var tokenizer;
+  const tokenizer;
   beforeEach(function () {
     tokenizer = new StopWordsTokenizer(new SimpleTokenizer());
   });

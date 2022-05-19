@@ -35,18 +35,18 @@ export class TokenHighlighter {
    * @returns {string} e.g. "john <mark>wa</mark>yne"
    */
   highlight(text: string, tokens: Array<string>) {
-    var tagsLength: number = this._wrapText('').length;
+    const tagsLength: number = this._wrapText('').length;
 
-    var tokenDictionary = ((Object.create(null) as any) as Record<string, any>);
+    const tokenDictionary = ((Object.create(null) as any) as Record<string, any>);
 
     // Create a token map for easier lookup below.
-    for (var i = 0, numTokens = tokens.length; i < numTokens; i++) {
-      var token: string = this._sanitizer.sanitize(tokens[i]);
+    for (let i = 0, numTokens = tokens.length; i < numTokens; i++) {
+      const token: string = this._sanitizer.sanitize(tokens[i]);
 
-      var expandedTokens: Array<string> = this._indexStrategy.expandToken(token);
+      const expandedTokens: Array<string> = this._indexStrategy.expandToken(token);
 
-      for (var j = 0, numExpandedTokens = expandedTokens.length; j < numExpandedTokens; j++) {
-        var expandedToken: string = expandedTokens[j];
+      for (let j = 0, numExpandedTokens = expandedTokens.length; j < numExpandedTokens; j++) {
+        const expandedToken: string = expandedTokens[j];
 
         if (!tokenDictionary[expandedToken]) {
           tokenDictionary[expandedToken] = [token];
@@ -57,13 +57,13 @@ export class TokenHighlighter {
     }
 
     // Track actualCurrentWord and sanitizedCurrentWord separately in case we encounter nested tags.
-    var actualCurrentWord: string = '';
-    var sanitizedCurrentWord: string = '';
-    var currentWordStartIndex: number = 0;
+    let actualCurrentWord: string = '';
+    let sanitizedCurrentWord: string = '';
+    let currentWordStartIndex: number = 0;
 
     // Note this assumes either prefix or full word matching.
-    for (var i = 0, textLength = text.length; i < textLength; i++) {
-      var character: string = text.charAt(i);
+    for (let i = 0, textLength = text.length; i < textLength; i++) {
+      const character: string = text.charAt(i);
 
       if (character === ' ') {
         actualCurrentWord = '';

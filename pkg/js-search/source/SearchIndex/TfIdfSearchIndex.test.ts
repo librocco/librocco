@@ -1,10 +1,10 @@
 import { Search } from "../Search";
 import { TfIdfSearchIndex } from "./TfIdfSearchIndex";
 describe('Search', function () {
-  var documents, search, uid;
+  const documents, search, uid;
 
-  var addDocument = function (title) {
-    var document = {
+  const addDocument = function (title) {
+    const document = {
       uid: ++uid,
       title: title
     };
@@ -19,19 +19,19 @@ describe('Search', function () {
     search = new Search('uid');
     search.searchIndex = new TfIdfSearchIndex('uid');
     search.addIndex('title');
-    var titles = ['this document is about node.', 'this document is about ruby.', 'this document is about ruby and node.', 'this document is about node. it has node examples'];
+    const titles = ['this document is about node.', 'this document is about ruby.', 'this document is about ruby and node.', 'this document is about node. it has node examples'];
 
-    for (var i = 0, length = titles.length; i < length; ++i) {
+    for (const i = 0, length = titles.length; i < length; ++i) {
       addDocument(titles[i]);
     }
   });
 
-  var calculateIdf = function (numDocumentsWithToken) {
+  const calculateIdf = function (numDocumentsWithToken) {
     return 1 + Math.log(search._documents.length / (1 + numDocumentsWithToken));
   };
 
-  var assertIdf = function (term, numDocumentsWithToken) {
-    var _calculateIdf = search.searchIndex._createCalculateIdf();
+  const assertIdf = function (term, numDocumentsWithToken) {
+    const _calculateIdf = search.searchIndex._createCalculateIdf();
 
     expect(_calculateIdf(term, search._documents)).toEqual(calculateIdf(numDocumentsWithToken));
   };
@@ -59,12 +59,12 @@ describe('Search', function () {
     });
   });
 
-  var calculateTfIdf = function (numDocumentsWithToken, tokenCountInDocument) {
+  const calculateTfIdf = function (numDocumentsWithToken, tokenCountInDocument) {
     return calculateIdf(numDocumentsWithToken) * tokenCountInDocument;
   };
 
-  var assertTfIdf = function (terms, document, expectedTfIdf) {
-    var _calculateTfIdf = search.searchIndex._createCalculateTfIdf();
+  const assertTfIdf = function (terms, document, expectedTfIdf) {
+    const _calculateTfIdf = search.searchIndex._createCalculateTfIdf();
 
     expect(_calculateTfIdf(terms, document, search._documents)).toEqual(expectedTfIdf);
   };
@@ -89,22 +89,22 @@ describe('Search', function () {
   });
   describe('search', function () {
     it('should order search results by TF-IDF descending', function () {
-      var results = search.search('node');
+      const results = search.search('node');
       expect(results.length).toEqual(3);
       // The 4th document has "node" twice so it should be first of the 3
       // The order of the other results isn't important for this test.
       expect(results[0]).toEqual(documents[3]);
     });
     it('should give documents containing words with a lower IDF a higher relative ranking', function () {
-      var documentA = addDocument('foo bar foo bar baz baz baz baz');
-      var documentB = addDocument('foo bar foo foo baz baz baz baz');
-      var documentC = addDocument('foo bar baz bar baz baz baz baz');
+      const documentA = addDocument('foo bar foo bar baz baz baz baz');
+      const documentB = addDocument('foo bar foo foo baz baz baz baz');
+      const documentC = addDocument('foo bar baz bar baz baz baz baz');
 
-      for (var i = 0; i < 10; i++) {
+      for (const i = 0; i < 10; i++) {
         addDocument('foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo baz foo foo');
       }
 
-      var results = search.search('foo bar');
+      const results = search.search('foo bar');
       expect(results.length).toEqual(3);
       // Document A should come first because it has 2 "bar" (which have a lower total count) and 2 "foo"
       // Document C should come first because it has 2 "bar" (which have a lower total count) but only 1 "foo"
@@ -127,7 +127,7 @@ describe('Search', function () {
         userId: 54213
       }
     };
-    var searchIndex = new TfIdfSearchIndex(['login', 'userId']);
+    const searchIndex = new TfIdfSearchIndex(['login', 'userId']);
     searchIndex.indexDocument(['Melissa'], 2562, melissaSmith);
     searchIndex.indexDocument(['Smith'], 2562, melissaSmith);
     searchIndex.indexDocument(['John'], 54213, johnSmith);

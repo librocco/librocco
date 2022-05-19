@@ -1,6 +1,6 @@
 import { SimpleTokenizer } from "./SimpleTokenizer";
 describe('SimpleTokenizer', function () {
-  var tokenizer;
+  const tokenizer;
   beforeEach(function () {
     tokenizer = new SimpleTokenizer();
   });

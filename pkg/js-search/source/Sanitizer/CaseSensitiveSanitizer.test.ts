@@ -1,6 +1,6 @@
 import { CaseSensitiveSanitizer } from "./CaseSensitiveSanitizer";
 describe('CaseSensitiveSanitizer', function () {
-  var sanitizer;
+  const sanitizer;
   beforeEach(function () {
     sanitizer = new CaseSensitiveSanitizer();
   });
