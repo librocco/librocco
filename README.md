@@ -11,7 +11,7 @@ An offline first book store inventory management tool.
    - [Packages](#23-packages)
 3. [CI](#3-ci):
    - [Rush in CI](#31-rush-in-ci)
-4. [](#4-additional-information):
+4. [Additional information](#4-additional-information):
    - [Working with SVGs](#41-working-with-svg)
 
 ## 1) Tech stack
@@ -74,7 +74,7 @@ For example, `@librocco/web` depends on `@librocco/ui`, so `pkg/web/package.json
 
 This makes rush link the package depended upon (`@librocco/ui` in this case) in the the depending package's (`@librocco/web` in this case) `node_modules`.
 
-After adding a new local dependency `rush update` needs to be ran to apply the canges.
+After adding a new local dependency `rush update` needs to be ran to apply the changes.
 
 #### Web
 
@@ -84,7 +84,7 @@ This package isn't built with the bulk `build` command (for `build` command effi
 
 #### UI
 
-This package contains the presentation layer components, developed as atomic React components. The development is done using Storybook (for previews) and JEST (for unit tests). To run storybook, run `rushx storybook` and to run all the unit tests, simply run `rushx test`.
+This package contains the presentation layer components, developed as atomic React components. The development is done using Storybook (for previews) and JEST (for unit tests). To run storybook, run `rushx storybook` and to run all unit tests, simply run `rushx test`.
 
 **Important note: As UI package's CSS file is built by tailwind, to be able to use the styles, one needs to also import a built css file from `@librocco/ui/dist/style.css`**
 
@@ -94,9 +94,9 @@ We're using [GitHub actions](https://docs.github.com/en/actions) for CI automati
 
 ### 3.1) Rush in CI
 
-We don't install Rush in the CI to avoid having root `node_modules` and `package.json` instead we're utilizing Rush's `install-run-rush.js`, [read more](https://rushjs.io/pages/maintainer/enabling_ci_builds/).
+We don't install Rush in the CI to avoid having root `node_modules` and `package.json` instead we're utilising Rush's `install-run-rush.js`, [read more](https://rushjs.io/pages/maintainer/enabling_ci_builds/).
 
-Using rush this way is convenient as it will be installed and cached the first time it has been run. However, this type of usage produces annoying overhead:
+Using rush this way is convenient as it will be installed and cached the first time it's ran. However, this type of usage produces annoying overhead:
 
 - we would need to write `node common/scripts/install-run-rush.js <command>` (and rushx variant respectively), instead of running `rush <command>` each time we want to run it in CI
 - our `package.json` specified scripts would not be used the same way locally and CI: locally, our scripts could run `rushx <command>`, while in the CI we would need to specify the full path (like the one above). This would require us to use different scripts for local usage and respective CI versions
@@ -121,18 +121,18 @@ We feature multiple svg loading options for different stages:
 - Storybook, with webpack uses babel and `@svgr/webpack`
 - Vite (lib build) uses `vite-plugin-svgr`
 
-Both are configured to produce the named exports, so the SVGs are loaded like so:
+Both are configured to produce default exports, so the SVGs are loaded like so:
 
 ```typescript
-import { ReactComponent as Icon } from "@/assets/Icon.svg";
+import Icon from "@/assets/Icon.svg";
 ```
 
-_Note: The standard config, we use across packages is defined in [svgrOptions.js](./pkg/scaffold/svgrOptions.js)_
+_Note: The standard config, we use across all packages, is defined in [svgrOptions.js](./pkg/scaffold/svgrOptions.js)_
 
 #### Using width and height
 
-Also, both are configured to remove the `width` and `height` attributes. Because of this, the SVGs should be rendered within a `<div>` container with specifically set `width` and `height`.
+Also, both are configured to remove the `width` and `height` attributes. Because of this, the SVGs should be rendered within a `<div>` container with explicitly set `width` and `height`.
 
-#### Setting the color of an SVG
+#### Setting the colour of an SVG
 
-The color property is not transformed automatically, as this is tedious to implement and might cause undesirable behaviour. Therefre, SVG files should be updated manually, with each explicitly defined color changed to `currentColor` like so: `fill="#0000"` -> `fill="currentColor"`, so that the given color can be maniplated using a css `color` property on a parent component.
+The colour property is not transformed automatically, as this is tedious to implement and might cause undesirable behaviour. Therefore, SVG files should be updated manually, with each explicitly defined colour changed to `currentColor` like so: `fill="#0000"` -> `fill="currentColor"`, so that the given colour can be maniplated using a css `color` property on a parent component.
