@@ -12,7 +12,7 @@ export class AllSubstringsIndexStrategy implements IIndexStrategy {
     let string;
 
     for (let i = 0, length = token.length; i < length; ++i) {
-      string = '';
+      string = "";
 
       for (let j = i; j < length; ++j) {
         string += token.charAt(j);
@@ -22,6 +22,4 @@ export class AllSubstringsIndexStrategy implements IIndexStrategy {
 
     return expandedTokens;
   }
-
 }
-;

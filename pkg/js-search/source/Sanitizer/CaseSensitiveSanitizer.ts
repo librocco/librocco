@@ -8,8 +8,6 @@ export class CaseSensitiveSanitizer implements ISanitizer {
    * @inheritDocs
    */
   sanitize(text: string): string {
-    return text ? text.trim() : '';
+    return text ? text.trim() : "";
   }
-
 }
-;

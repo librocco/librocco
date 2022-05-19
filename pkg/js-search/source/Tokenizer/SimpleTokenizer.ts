@@ -9,9 +9,8 @@ export class SimpleTokenizer implements ITokenizer {
    * @inheritDocs
    */
   tokenize(text: string): Array<string> {
-    return text.split(REGEX).filter(text => text // Filter empty tokens
+    return text.split(REGEX).filter(
+      (text) => text // Filter empty tokens
     );
   }
-
 }
-;

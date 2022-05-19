@@ -21,10 +21,14 @@ export class TokenHighlighter {
    * @param opt_sanitizer Sanitizer used by Search
    * @param opt_wrapperTagName Optional wrapper tag name; defaults to 'mark' (e.g. <mark>)
    */
-  constructor(opt_indexStrategy: IIndexStrategy, opt_sanitizer: ISanitizer, opt_wrapperTagName: string) {
+  constructor(
+    opt_indexStrategy: IIndexStrategy,
+    opt_sanitizer: ISanitizer,
+    opt_wrapperTagName: string
+  ) {
     this._indexStrategy = opt_indexStrategy || new PrefixIndexStrategy();
     this._sanitizer = opt_sanitizer || new LowerCaseSanitizer();
-    this._wrapperTagName = opt_wrapperTagName || 'mark';
+    this._wrapperTagName = opt_wrapperTagName || "mark";
   }
 
   /**
@@ -35,17 +39,22 @@ export class TokenHighlighter {
    * @returns {string} e.g. "john <mark>wa</mark>yne"
    */
   highlight(text: string, tokens: Array<string>) {
-    const tagsLength: number = this._wrapText('').length;
+    const tagsLength: number = this._wrapText("").length;
 
-    const tokenDictionary = ((Object.create(null) as any) as Record<string, any>);
+    const tokenDictionary = Object.create(null) as any as Record<string, any>;
 
     // Create a token map for easier lookup below.
     for (let i = 0, numTokens = tokens.length; i < numTokens; i++) {
       const token: string = this._sanitizer.sanitize(tokens[i]);
 
-      const expandedTokens: Array<string> = this._indexStrategy.expandToken(token);
+      const expandedTokens: Array<string> =
+        this._indexStrategy.expandToken(token);
 
-      for (let j = 0, numExpandedTokens = expandedTokens.length; j < numExpandedTokens; j++) {
+      for (
+        let j = 0, numExpandedTokens = expandedTokens.length;
+        j < numExpandedTokens;
+        j++
+      ) {
         const expandedToken: string = expandedTokens[j];
 
         if (!tokenDictionary[expandedToken]) {
@@ -57,26 +66,32 @@ export class TokenHighlighter {
     }
 
     // Track actualCurrentWord and sanitizedCurrentWord separately in case we encounter nested tags.
-    let actualCurrentWord: string = '';
-    let sanitizedCurrentWord: string = '';
+    let actualCurrentWord: string = "";
+    let sanitizedCurrentWord: string = "";
     let currentWordStartIndex: number = 0;
 
     // Note this assumes either prefix or full word matching.
     for (let i = 0, textLength = text.length; i < textLength; i++) {
       const character: string = text.charAt(i);
 
-      if (character === ' ') {
-        actualCurrentWord = '';
-        sanitizedCurrentWord = '';
+      if (character === " ") {
+        actualCurrentWord = "";
+        sanitizedCurrentWord = "";
         currentWordStartIndex = i + 1;
       } else {
         actualCurrentWord += character;
         sanitizedCurrentWord += this._sanitizer.sanitize(character);
       }
 
-      if (tokenDictionary[sanitizedCurrentWord] && tokenDictionary[sanitizedCurrentWord].indexOf(sanitizedCurrentWord) >= 0) {
+      if (
+        tokenDictionary[sanitizedCurrentWord] &&
+        tokenDictionary[sanitizedCurrentWord].indexOf(sanitizedCurrentWord) >= 0
+      ) {
         actualCurrentWord = this._wrapText(actualCurrentWord);
-        text = text.substring(0, currentWordStartIndex) + actualCurrentWord + text.substring(i + 1);
+        text =
+          text.substring(0, currentWordStartIndex) +
+          actualCurrentWord +
+          text.substring(i + 1);
         i += tagsLength;
         textLength += tagsLength;
       }
@@ -94,6 +109,4 @@ export class TokenHighlighter {
     const tagName = this._wrapperTagName;
     return `<${tagName}>${text}</${tagName}>`;
   }
-
 }
-;

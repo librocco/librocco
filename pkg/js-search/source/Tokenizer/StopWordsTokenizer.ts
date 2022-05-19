@@ -22,8 +22,8 @@ export class StopWordsTokenizer implements ITokenizer {
    * @inheritDocs
    */
   tokenize(text: string): Array<string> {
-    return this._tokenizer.tokenize(text).filter(token => !StopWordsMap[token]);
+    return this._tokenizer
+      .tokenize(text)
+      .filter((token) => !StopWordsMap[token]);
   }
-
 }
-;

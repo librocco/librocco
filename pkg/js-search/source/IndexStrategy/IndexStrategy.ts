@@ -13,4 +13,3 @@ export interface IIndexStrategy {
    */
   expandToken(token: string): Array<string>;
 }
-;

@@ -10,6 +10,4 @@ export class ExactWordIndexStrategy implements IIndexStrategy {
   expandToken(token: string): Array<string> {
     return token ? [token] : [];
   }
-
 }
-;

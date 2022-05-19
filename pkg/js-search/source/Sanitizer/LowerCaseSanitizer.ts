@@ -8,8 +8,6 @@ export class LowerCaseSanitizer implements ISanitizer {
    * @inheritDocs
    */
   sanitize(text: string): string {
-    return text ? text.toLocaleLowerCase().trim() : '';
+    return text ? text.toLocaleLowerCase().trim() : "";
   }
-
 }
-;
