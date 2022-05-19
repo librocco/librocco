@@ -98,3 +98,27 @@ Also, both are configured to remove the `width` and `height` attributes. Because
 #### Setting the color of an SVG
 
 The color property is not transformed automatically, as this is tedious to implement and might cause undesirable behaviour. Therefre, SVG files should be updated manually, with each explicitly defined color changed to `currentColor` like so: `fill="#0000"` -> `fill="currentColor"`, so that the given color can be maniplated using a css `color` property on a parent component.
+
+## CI
+
+We're using [GitHub actions](https://docs.github.com/en/actions) for CI automation.
+
+### Rush in CI
+
+We don't install Rush in the CI to avoid having root `node_modules` and `package.json` instead we're utilizing Rush's `install-run-rush.js`, [read more](https://rushjs.io/pages/maintainer/enabling_ci_builds/).
+
+Using rush this way is convenient as it will be installed and cached the first time it has been run. However, this type of usage produces annoying overhead:
+
+- we would need to write `node common/scripts/install-run-rush.js <command>` (and rushx variant respectively), instead of running `rush <command>` each time we want to run it in CI
+- our `package.json` specified scripts would not be used the same way locally and CI: locally, our scripts could run `rushx <command>`, while in the CI we would need to specify the full path (like the one above). This would require us to use different scripts for local usage and respective CI versions
+
+To remedy this (and make our lives easier) we've created the "command proxies" for [rush](./common/scripts/rush) and [rushx](./common/scripts/rush). Both are ran using simple `rush` (and `rushx` respectively) commands, and in turn they run the corresponding `install-run-rush(x).js` passing on the arguments. We don't use this locally, but run globally installed `rush` (and `rushx`) commands. For CI, we simply need to enable the provided "command proxies" by adding them to the `PATH` variable of CI process. That is done by adding something like this in the workflow setup:
+
+```yaml
+# ...rest of the workflow setup (installing node, caching modules, etc.)
+- name: Add rush directory to PATH
+  run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+# ...rest of the workflow code
+```
+
+This way, we don't need to worry about our scripts (or some other process' pre-deploy scripts and such) calling `rushx <command>` in the CI and are confident everything will work similarly to the way it works locally.
