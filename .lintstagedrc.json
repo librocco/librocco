@@ -1,0 +1,8 @@
+{
+  "!(.eslintrc*).js": ["eslint --fix --max-warnings=0", "prettier --write"],
+  "!(vite.config).{ts,tsx}": [
+    "eslint --fix --max-warnings=0",
+    "prettier --write"
+  ],
+  "*.{json,md,mdx}": ["prettier --write"]
+}
