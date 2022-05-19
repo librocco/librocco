@@ -35,7 +35,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
     const tokenMap = this._tokenMap;
     let tokenDatum;
 
-    if (typeof tokenMap[token] !== 'object') {
+    if (typeof tokenMap[token] !== "object") {
       tokenMap[token] = tokenDatum = {
         $numDocumentOccurrences: 0,
         $totalNumOccurrences: 1,
@@ -48,7 +48,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
 
     const uidMap = tokenDatum.$uidMap;
 
-    if (typeof uidMap[uid] !== 'object') {
+    if (typeof uidMap[uid] !== "object") {
       tokenDatum.$numDocumentOccurrences++;
       uidMap[uid] = {
         $document: doc,
@@ -62,7 +62,10 @@ export class TfIdfSearchIndex implements ISearchIndex {
   /**
    * @inheritDocs
    */
-  search(tokens: Array<string>, corpus: Array<Record<string, any>>): Array<Record<string, any>> {
+  search(
+    tokens: Array<string>,
+    corpus: Array<Record<string, any>>
+  ): Array<Record<string, any>> {
     const uidToDocumentMap: Record<string, Record<string, any>> = {};
 
     for (let i = 0, numTokens = tokens.length; i < numTokens; i++) {
@@ -87,7 +90,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
         for (let j = 0, numKeys = keys.length; j < numKeys; j++) {
           const uid = keys[j];
 
-          if (typeof tokenMetadata.$uidMap[uid] !== 'object') {
+          if (typeof tokenMetadata.$uidMap[uid] !== "object") {
             delete uidToDocumentMap[uid];
           }
         }
@@ -103,16 +106,27 @@ export class TfIdfSearchIndex implements ISearchIndex {
     const calculateTfIdf = this._createCalculateTfIdf();
 
     // Return documents sorted by TF-IDF
-    return documents.sort((documentA, documentB) => calculateTfIdf(tokens, documentB, corpus) - calculateTfIdf(tokens, documentA, corpus));
+    return documents.sort(
+      (documentA, documentB) =>
+        calculateTfIdf(tokens, documentB, corpus) -
+        calculateTfIdf(tokens, documentA, corpus)
+    );
   }
 
   _createCalculateIdf(): (...args: Array<any>) => any {
     const tokenMap = this._tokenMap;
     const tokenToIdfCache = this._tokenToIdfCache;
-    return function calculateIdf(token: string, documents: Array<Record<string, any>>): number {
+    return function calculateIdf(
+      token: string,
+      documents: Array<Record<string, any>>
+    ): number {
       if (!tokenToIdfCache[token]) {
-        const numDocumentsWithToken: number = typeof tokenMap[token] !== 'undefined' ? tokenMap[token].$numDocumentOccurrences : 0;
-        tokenToIdfCache[token] = 1 + Math.log(documents.length / (1 + numDocumentsWithToken));
+        const numDocumentsWithToken: number =
+          typeof tokenMap[token] !== "undefined"
+            ? tokenMap[token].$numDocumentOccurrences
+            : 0;
+        tokenToIdfCache[token] =
+          1 + Math.log(documents.length / (1 + numDocumentsWithToken));
       }
 
       return tokenToIdfCache[token];
@@ -125,7 +139,11 @@ export class TfIdfSearchIndex implements ISearchIndex {
 
     const calculateIdf = this._createCalculateIdf();
 
-    return function calculateTfIdf(tokens: Array<string>, document: Record<string, any>, documents: Array<Record<string, any>>): number {
+    return function calculateTfIdf(
+      tokens: Array<string>,
+      document: Record<string, any>,
+      documents: Array<Record<string, any>>
+    ): number {
       let score: number = 0;
 
       for (let i = 0, numTokens = tokens.length; i < numTokens; ++i) {
@@ -144,13 +162,15 @@ export class TfIdfSearchIndex implements ISearchIndex {
           uid = document && document[uidFieldName];
         }
 
-        const termFrequency: number = typeof tokenMap[token] !== 'undefined' && typeof tokenMap[token].$uidMap[uid] !== 'undefined' ? tokenMap[token].$uidMap[uid].$numTokenOccurrences : 0;
+        const termFrequency: number =
+          typeof tokenMap[token] !== "undefined" &&
+          typeof tokenMap[token].$uidMap[uid] !== "undefined"
+            ? tokenMap[token].$uidMap[uid].$numTokenOccurrences
+            : 0;
         score += termFrequency * inverseDocumentFrequency;
       }
 
       return score;
     };
   }
-
 }
-;

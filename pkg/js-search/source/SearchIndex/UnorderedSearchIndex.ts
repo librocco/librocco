@@ -14,7 +14,7 @@ export class UnorderedSearchIndex implements ISearchIndex {
    * @inheritDocs
    */
   indexDocument(token: string, uid: string, doc: Record<string, any>): void {
-    if (typeof this._tokenToUidToDocumentMap[token] !== 'object') {
+    if (typeof this._tokenToUidToDocumentMap[token] !== "object") {
       this._tokenToUidToDocumentMap[token] = {};
     }
 
@@ -24,7 +24,10 @@ export class UnorderedSearchIndex implements ISearchIndex {
   /**
    * @inheritDocs
    */
-  search(tokens: Array<string>, corpus: Array<Record<string, any>>): Array<Record<string, any>> {
+  search(
+    tokens: Array<string>,
+    corpus: Array<Record<string, any>>
+  ): Array<Record<string, any>> {
     const intersectingDocumentMap = {};
     const tokenToUidToDocumentMap = this._tokenToUidToDocumentMap;
 
@@ -50,7 +53,7 @@ export class UnorderedSearchIndex implements ISearchIndex {
         for (let j = 0, numKeys = keys.length; j < numKeys; j++) {
           const uid = keys[j];
 
-          if (typeof documentMap[uid] !== 'object') {
+          if (typeof documentMap[uid] !== "object") {
             delete intersectingDocumentMap[uid];
           }
         }
@@ -67,6 +70,4 @@ export class UnorderedSearchIndex implements ISearchIndex {
 
     return documents;
   }
-
 }
-;

@@ -20,7 +20,10 @@ export class StemmingTokenizer implements ITokenizer {
    * @param stemmingFunction Function capable of accepting a word and returning its stem.
    * @param decoratedIndexStrategy Index strategy to be run after all stop words have been removed.
    */
-  constructor(stemmingFunction: StemmingFunction, decoratedTokenizer: ITokenizer) {
+  constructor(
+    stemmingFunction: StemmingFunction,
+    decoratedTokenizer: ITokenizer
+  ) {
     this._stemmingFunction = stemmingFunction;
     this._tokenizer = decoratedTokenizer;
   }
@@ -31,6 +34,4 @@ export class StemmingTokenizer implements ITokenizer {
   tokenize(text: string): Array<string> {
     return this._tokenizer.tokenize(text).map(this._stemmingFunction);
   }
-
 }
-;

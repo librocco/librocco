@@ -5,7 +5,10 @@
  * @param path Property path
  * @returns {any}
  */
-export default function getNestedFieldValue(object: Record<string, any>, path: Array<string>): any {
+export default function getNestedFieldValue(
+  object: Record<string, any>,
+  path: Array<string>
+): any {
   path = path || [];
   object = object || {};
   let value = object;
