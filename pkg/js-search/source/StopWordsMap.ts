@@ -1,7 +1,7 @@
 /**
  * Stop words list copied from Lunr JS.
  */
-export var StopWordsMap: Record<string, any> = {
+export const StopWordsMap: Record<string, any> = {
   a: true,
   able: true,
   about: true,

@@ -25,12 +25,12 @@ export class UnorderedSearchIndex implements ISearchIndex {
    * @inheritDocs
    */
   search(tokens: Array<string>, corpus: Array<Record<string, any>>): Array<Record<string, any>> {
-    var intersectingDocumentMap = {};
-    var tokenToUidToDocumentMap = this._tokenToUidToDocumentMap;
+    const intersectingDocumentMap = {};
+    const tokenToUidToDocumentMap = this._tokenToUidToDocumentMap;
 
-    for (var i = 0, numTokens = tokens.length; i < numTokens; i++) {
-      var token = tokens[i];
-      var documentMap = tokenToUidToDocumentMap[token];
+    for (let i = 0, numTokens = tokens.length; i < numTokens; i++) {
+      const token = tokens[i];
+      const documentMap = tokenToUidToDocumentMap[token];
 
       // Short circuit if no matches were found for any given token.
       if (!documentMap) {
@@ -38,17 +38,17 @@ export class UnorderedSearchIndex implements ISearchIndex {
       }
 
       if (i === 0) {
-        var keys = Object.keys(documentMap);
+        const keys = Object.keys(documentMap);
 
-        for (var j = 0, numKeys = keys.length; j < numKeys; j++) {
-          var uid = keys[j];
+        for (let j = 0, numKeys = keys.length; j < numKeys; j++) {
+          const uid = keys[j];
           intersectingDocumentMap[uid] = documentMap[uid];
         }
       } else {
-        var keys = Object.keys(intersectingDocumentMap);
+        const keys = Object.keys(intersectingDocumentMap);
 
-        for (var j = 0, numKeys = keys.length; j < numKeys; j++) {
-          var uid = keys[j];
+        for (let j = 0, numKeys = keys.length; j < numKeys; j++) {
+          const uid = keys[j];
 
           if (typeof documentMap[uid] !== 'object') {
             delete intersectingDocumentMap[uid];
@@ -57,11 +57,11 @@ export class UnorderedSearchIndex implements ISearchIndex {
       }
     }
 
-    var keys = Object.keys(intersectingDocumentMap);
-    var documents = [];
+    const keys = Object.keys(intersectingDocumentMap);
+    const documents = [];
 
-    for (var i = 0, numKeys = keys.length; i < numKeys; i++) {
-      var uid = keys[i];
+    for (let i = 0, numKeys = keys.length; i < numKeys; i++) {
+      const uid = keys[i];
       documents.push(intersectingDocumentMap[uid]);
     }
 

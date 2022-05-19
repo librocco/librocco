@@ -8,13 +8,13 @@ export class AllSubstringsIndexStrategy implements IIndexStrategy {
    * @inheritDocs
    */
   expandToken(token: string): Array<string> {
-    var expandedTokens = [];
-    var string;
+    const expandedTokens = [];
+    let string;
 
-    for (var i = 0, length = token.length; i < length; ++i) {
+    for (let i = 0, length = token.length; i < length; ++i) {
       string = '';
 
-      for (var j = i; j < length; ++j) {
+      for (let j = i; j < length; ++j) {
         string += token.charAt(j);
         expandedTokens.push(string);
       }

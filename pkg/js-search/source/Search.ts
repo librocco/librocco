@@ -149,7 +149,7 @@ export class Search {
    * @returns {Array<Object>}
    */
   search(query: string): Array<Record<string, any>> {
-    var tokens: Array<string> = this._tokenizer.tokenize(this._sanitizer.sanitize(query));
+    const tokens: Array<string> = this._tokenizer.tokenize(this._sanitizer.sanitize(query));
 
     return this._searchIndex.search(tokens, this._documents);
   }
@@ -161,15 +161,15 @@ export class Search {
    */
   indexDocuments_(documents: Array<Record<string, any>>, _searchableFields: Array<string | Array<string>>): void {
     this._initialized = true;
-    var indexStrategy = this._indexStrategy;
-    var sanitizer = this._sanitizer;
-    var searchIndex = this._searchIndex;
-    var tokenizer = this._tokenizer;
-    var uidFieldName = this._uidFieldName;
+    const indexStrategy = this._indexStrategy;
+    const sanitizer = this._sanitizer;
+    const searchIndex = this._searchIndex;
+    const tokenizer = this._tokenizer;
+    const uidFieldName = this._uidFieldName;
 
-    for (var di = 0, numDocuments = documents.length; di < numDocuments; di++) {
-      var doc = documents[di];
-      var uid;
+    for (let di = 0, numDocuments = documents.length; di < numDocuments; di++) {
+      const doc = documents[di];
+      let uid;
 
       if (uidFieldName instanceof Array) {
         uid = getNestedFieldValue(doc, uidFieldName);
@@ -177,9 +177,9 @@ export class Search {
         uid = doc[uidFieldName];
       }
 
-      for (var sfi = 0, numSearchableFields = _searchableFields.length; sfi < numSearchableFields; sfi++) {
-        var fieldValue;
-        var searchableField = _searchableFields[sfi];
+      for (let sfi = 0, numSearchableFields = _searchableFields.length; sfi < numSearchableFields; sfi++) {
+        let fieldValue;
+        const searchableField = _searchableFields[sfi];
 
         if (searchableField instanceof Array) {
           fieldValue = getNestedFieldValue(doc, searchableField);
@@ -192,14 +192,14 @@ export class Search {
         }
 
         if (typeof fieldValue === 'string') {
-          var fieldTokens = tokenizer.tokenize(sanitizer.sanitize(fieldValue));
+          const fieldTokens = tokenizer.tokenize(sanitizer.sanitize(fieldValue));
 
-          for (var fti = 0, numFieldValues = fieldTokens.length; fti < numFieldValues; fti++) {
-            var fieldToken = fieldTokens[fti];
-            var expandedTokens = indexStrategy.expandToken(fieldToken);
+          for (let fti = 0, numFieldValues = fieldTokens.length; fti < numFieldValues; fti++) {
+            const fieldToken = fieldTokens[fti];
+            const expandedTokens = indexStrategy.expandToken(fieldToken);
 
-            for (var eti = 0, nummExpandedTokens = expandedTokens.length; eti < nummExpandedTokens; eti++) {
-              var expandedToken = expandedTokens[eti];
+            for (let eti = 0, nummExpandedTokens = expandedTokens.length; eti < nummExpandedTokens; eti++) {
+              const expandedToken = expandedTokens[eti];
               searchIndex.indexDocument(expandedToken, uid, doc);
             }
           }

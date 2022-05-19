@@ -2,9 +2,9 @@ import { jest } from '@jest/globals';
 import { Search } from "./Search";
 
 describe('Search', function () {
-  var documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
+  const documentBar, documentBaz, documentFoo, nestedDocumentFoo, search;
 
-  var validateSearchResults = function (results, expectedDocuments) {
+  const validateSearchResults = function (results, expectedDocuments) {
     expect(results.length).toBe(expectedDocuments.length);
     expectedDocuments.forEach(function (document) {
       expect(results).toContain(document);
@@ -123,7 +123,7 @@ describe('Search', function () {
         username: 'jhon123'
       }
     };
-    var search = new Search(['login', 'userId']);
+    const search = new Search(['login', 'userId']);
     search.addIndex('title');
     search.addIndex(['login', 'username']);
     search.addIndex('name');

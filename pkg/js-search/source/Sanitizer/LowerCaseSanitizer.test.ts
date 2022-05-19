@@ -1,6 +1,6 @@
 import { LowerCaseSanitizer } from "./LowerCaseSanitizer";
 describe('LowerCaseSanitizer', function () {
-  var sanitizer;
+  const sanitizer;
   beforeEach(function () {
     sanitizer = new LowerCaseSanitizer();
   });
