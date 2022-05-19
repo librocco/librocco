@@ -116,10 +116,9 @@ To remedy this (and make our lives easier) we've created the "command proxies" f
 
 ```yaml
 # ...rest of the workflow setup (installing node, caching modules, etc.)
-    - name: Add rush directory to PATH
-        # Enable command proxies by adding their directory (command/scripts) to the PATH variable
-        run: echo PATH=$PWD/common/scripts/:$PATH >> $GITHUB_ENV
+- name: Add rush directory to PATH
+  run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
 # ...rest of the workflow code
 ```
 
-This way, we don't need to worry about our scripts (or some other process' pre-deploy scripts and such) calling `rushx <command>` in the CI and are confident everything will work similarly to the way it works instance.
+This way, we don't need to worry about our scripts (or some other process' pre-deploy scripts and such) calling `rushx <command>` in the CI and are confident everything will work similarly to the way it works locally.
