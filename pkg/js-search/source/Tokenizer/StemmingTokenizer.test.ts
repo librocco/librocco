@@ -1,7 +1,7 @@
 import { SimpleTokenizer } from "./SimpleTokenizer";
 import { StemmingTokenizer } from "./StemmingTokenizer";
 describe('StemmingTokenizer', () => {
-  const stemmingFunction = function (text) {
+  const stemmingFunction = (text) => {
     if (text === 'cats') {
       return 'cat';
     } else {

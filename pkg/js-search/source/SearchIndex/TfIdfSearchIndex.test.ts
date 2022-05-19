@@ -3,7 +3,7 @@ import { TfIdfSearchIndex } from "./TfIdfSearchIndex";
 describe('Search', () => {
   let documents, search, uid;
 
-  const addDocument = function (title) {
+  const addDocument = (title) => {
     const document = {
       uid: ++uid,
       title: title
@@ -26,11 +26,11 @@ describe('Search', () => {
     }
   });
 
-  const calculateIdf = function (numDocumentsWithToken) {
+  const calculateIdf = (numDocumentsWithToken) => {
     return 1 + Math.log(search._documents.length / (1 + numDocumentsWithToken));
   };
 
-  const assertIdf = function (term, numDocumentsWithToken) {
+  const assertIdf = (term, numDocumentsWithToken) => {
     const _calculateIdf = search.searchIndex._createCalculateIdf();
 
     expect(_calculateIdf(term, search._documents)).toEqual(calculateIdf(numDocumentsWithToken));
@@ -59,11 +59,11 @@ describe('Search', () => {
     });
   });
 
-  const calculateTfIdf = function (numDocumentsWithToken, tokenCountInDocument) {
+  const calculateTfIdf = (numDocumentsWithToken, tokenCountInDocument) => {
     return calculateIdf(numDocumentsWithToken) * tokenCountInDocument;
   };
 
-  const assertTfIdf = function (terms, document, expectedTfIdf) {
+  const assertTfIdf = (terms, document, expectedTfIdf) => {
     const _calculateTfIdf = search.searchIndex._createCalculateTfIdf();
 
     expect(_calculateTfIdf(terms, document, search._documents)).toEqual(expectedTfIdf);

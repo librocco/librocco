@@ -1,9 +1,9 @@
 import { Search } from "../Search";
 import { UnorderedSearchIndex } from "./UnorderedSearchIndex";
 describe('Search', () => {
-  const validateSearchResults = function (results, expectedDocuments) {
+  const validateSearchResults = (results, expectedDocuments) => {
     expect(results.length).toBe(expectedDocuments.length);
-    expectedDocuments.forEach(function (document) {
+    expectedDocuments.forEach((document) => {
       expect(results).toContain(document);
     });
   };
