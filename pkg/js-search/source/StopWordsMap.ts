@@ -120,13 +120,13 @@ export const StopWordsMap: Record<string, any> = {
   would: true,
   yet: true,
   you: true,
-  your: true
+  your: true,
+  // Prevent false positives for inherited properties
+  constructor: false,
+  hasOwnProperty: false,
+  isPrototypeOf: false,
+  propertyIsEnumerable: false,
+  toLocaleString: false,
+  toString: false,
+  valueOf: false,
 };
-// Prevent false positives for inherited properties
-StopWordsMap.constructor = false;
-StopWordsMap.hasOwnProperty = false;
-StopWordsMap.isPrototypeOf = false;
-StopWordsMap.propertyIsEnumerable = false;
-StopWordsMap.toLocaleString = false;
-StopWordsMap.toString = false;
-StopWordsMap.valueOf = false;

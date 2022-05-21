@@ -22,13 +22,13 @@ export class TokenHighlighter {
    * @param opt_wrapperTagName Optional wrapper tag name; defaults to 'mark' (e.g. <mark>)
    */
   constructor(
-    opt_indexStrategy: IIndexStrategy,
-    opt_sanitizer: ISanitizer,
-    opt_wrapperTagName: string
+    optIndexStrategy?: IIndexStrategy,
+    optSanitizer?: ISanitizer,
+    optWrapperTagName?: string
   ) {
-    this._indexStrategy = opt_indexStrategy || new PrefixIndexStrategy();
-    this._sanitizer = opt_sanitizer || new LowerCaseSanitizer();
-    this._wrapperTagName = opt_wrapperTagName || "mark";
+    this._indexStrategy = optIndexStrategy || new PrefixIndexStrategy();
+    this._sanitizer = optSanitizer || new LowerCaseSanitizer();
+    this._wrapperTagName = optWrapperTagName || "mark";
   }
 
   /**
@@ -66,9 +66,9 @@ export class TokenHighlighter {
     }
 
     // Track actualCurrentWord and sanitizedCurrentWord separately in case we encounter nested tags.
-    let actualCurrentWord: string = "";
-    let sanitizedCurrentWord: string = "";
-    let currentWordStartIndex: number = 0;
+    let actualCurrentWord = "";
+    let sanitizedCurrentWord = "";
+    let currentWordStartIndex = 0;
 
     // Note this assumes either prefix or full word matching.
     for (let i = 0, textLength = text.length; i < textLength; i++) {
