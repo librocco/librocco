@@ -7,7 +7,7 @@
 import React from "react";
 import { render } from "@testing-library/react";
 
-import { SVGTest } from "ui";
+import { SVGTest } from "@librocco/ui";
 
 describe("This is an example for testing of the UI components, requireing the DOM environment", () => {
   test("should render without breaking", () => {
