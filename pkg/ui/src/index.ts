@@ -7,6 +7,3 @@ import SVGTest from "./SVGTest";
 import "./main.css";
 
 export { Button, SideNavButton, SVGTest };
-
-export * from "./Button";
-export * from "./SideNavButton";
