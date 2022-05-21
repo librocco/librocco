@@ -168,6 +168,26 @@
     // }
 
     /**
+     * Bulk commands
+     */
+    {
+      "commandKind": "bulk",
+      "name": "lint:strict",
+      "summary": "Run lint all of the packages.",
+      "description": "Runs 'lint:strict' on all of the packages. If the package doesn't contain 'lint:strict' script, it's silently ignored.",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
+    {
+      "commandKind": "bulk",
+      "name": "typecheck",
+      "summary": "Run 'tsc' on all of the packages.",
+      "description": "Runs 'typecheck' ('tsc' with '--no-emit') on all of the packages. If the package doesn't contain the 'typecheck' script, it's silently ignored.",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
+
+    /**
      * Pre-commit commands
      */
     {
