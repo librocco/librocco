@@ -20,6 +20,7 @@ module.exports = useTSConfig(
       // Warn against nested then() or catch() statements
       "promise/no-nesting": 1,
     },
+    ignorePatterns: [...scaffold.ignorePatterns, "benchmarks/"],
   },
   tsPaths
 );
