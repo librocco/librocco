@@ -1,12 +1,7 @@
 import React from "react";
 import { ComponentMeta } from "@storybook/react";
 
-import Button, {
-  ButtonColor,
-  ButtonShape,
-  ButtonSize,
-  ButtonVariant,
-} from "./Button";
+import Button, { ButtonColor, ButtonShape, ButtonSize } from "./Button";
 
 import TestIcon from "@/assets/TestIcon.svg";
 
@@ -19,28 +14,7 @@ export default {
 
 const buttonText = "Click me";
 
-export const Variants = (): JSX.Element => (
-  <>
-    <h1 className="text-lg font-bold mb-4">Text:</h1>
-    <StorybookGrid className="mb-16">
-      {Object.values(ButtonSize).map((size) => (
-        <StorybookItem label={`Size: ${size}`}>
-          <Button {...{ size }}>{buttonText}</Button>
-        </StorybookItem>
-      ))}
-    </StorybookGrid>
-    <h1 className="text-lg font-bold mb-4">Circular:</h1>
-    <StorybookGrid>
-      {Object.values(ButtonSize).map((size) => (
-        <StorybookItem label={`Size: ${size}`}>
-          <Button variant={ButtonVariant.Circular} {...{ size }} />
-        </StorybookItem>
-      ))}
-    </StorybookGrid>
-  </>
-);
-
-export const Shapes = (): JSX.Element => (
+export const ShapesAndSizes = (): JSX.Element => (
   <>
     <h1 className="text-lg font-bold mb-4">Square:</h1>
     <StorybookGrid className="mb-16">
@@ -50,13 +24,21 @@ export const Shapes = (): JSX.Element => (
         </StorybookItem>
       ))}
     </StorybookGrid>
-    <h1 className="text-lg font-bold mb-4">Round:</h1>
-    <StorybookGrid>
+    <h1 className="text-lg font-bold mb-4">Rounded:</h1>
+    <StorybookGrid className="mb-16">
       {Object.values(ButtonSize).map((size) => (
         <StorybookItem label={`Size: ${size}`}>
           <Button shape={ButtonShape.Rounded} {...{ size }}>
             {buttonText}
           </Button>
+        </StorybookItem>
+      ))}
+    </StorybookGrid>
+    <h1 className="text-lg font-bold mb-4">Circular:</h1>
+    <StorybookGrid>
+      {Object.values(ButtonSize).map((size) => (
+        <StorybookItem label={`Size: ${size}`}>
+          <Button shape={ButtonShape.Circular} {...{ size }} />
         </StorybookItem>
       ))}
     </StorybookGrid>
@@ -87,7 +69,7 @@ const ColorsStory = (): JSX.Element => (
         <Button shape={ButtonShape.Rounded}>{buttonText}</Button>
       </StorybookItem>
       <StorybookItem>
-        <Button variant={ButtonVariant.Circular}>{buttonText}</Button>
+        <Button shape={ButtonShape.Circular} />
       </StorybookItem>
     </StorybookGrid>
     <h1 className="text-lg font-bold mb-4">Secondary:</h1>
@@ -101,9 +83,7 @@ const ColorsStory = (): JSX.Element => (
         </Button>
       </StorybookItem>
       <StorybookItem>
-        <Button color={ButtonColor.Secondary} variant={ButtonVariant.Circular}>
-          {buttonText}
-        </Button>
+        <Button color={ButtonColor.Secondary} shape={ButtonShape.Circular} />
       </StorybookItem>
     </StorybookGrid>
     <h1 className="text-lg font-bold mb-4">White:</h1>
@@ -117,9 +97,7 @@ const ColorsStory = (): JSX.Element => (
         </Button>
       </StorybookItem>
       <StorybookItem>
-        <Button color={ButtonColor.White} variant={ButtonVariant.Circular}>
-          {buttonText}
-        </Button>
+        <Button color={ButtonColor.White} shape={ButtonShape.Circular} />
       </StorybookItem>
     </StorybookGrid>
   </>
