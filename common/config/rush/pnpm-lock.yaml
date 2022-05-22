@@ -90,6 +90,7 @@ importers:
       postcss: ~8.4.13
       react: ^18.0.0
       react-dom: ^18.0.0
+      storybook-addon-pseudo-states: ~1.9.0
       tailwindcss: ~3.0.24
       typescript: 4.6.3
       vite: ^2.9.9
@@ -131,6 +132,7 @@ importers:
       postcss: 8.4.13
       react: 18.0.0
       react-dom: 18.0.0_react@18.0.0
+      storybook-addon-pseudo-states: 1.9.0_react-dom@18.0.0+react@18.0.0
       tailwindcss: 3.0.24
       typescript: 4.6.3
       vite: 2.9.9
@@ -12179,6 +12181,26 @@ packages:
 
   /store2/2.13.2:
     resolution: {integrity: sha512-CMtO2Uneg3SAz/d6fZ/6qbqqQHi2ynq6/KzMD/26gTkiEShCcpqFfTHgOxsE0egAq6SX3FmN4CeSqn8BzXQkJg==}
+    dev: true
+
+  /storybook-addon-pseudo-states/1.9.0_react-dom@18.0.0+react@18.0.0:
+    resolution: {integrity: sha512-2zhpAsmXUv1P8z9z+WOp4er9IxM0RCQZDu18lwkXf3yafrf5aLv1fzqK8EAPNNdYOeNHQPfjJZpMlDigUjDuOg==}
+    peerDependencies:
+      '@storybook/addons': ^6.4.19
+      '@storybook/api': ^6.4.19
+      '@storybook/components': ^6.4.19
+      '@storybook/core-events': ^6.4.19
+      '@storybook/theming': ^6.4.19
+      react: ^16.8.0 || ^17.0.0
+      react-dom: ^16.8.0 || ^17.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+    dependencies:
+      react: 18.0.0
+      react-dom: 18.0.0_react@18.0.0
     dev: true
 
   /stream-browserify/2.0.2:
