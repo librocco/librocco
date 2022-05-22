@@ -1,0 +1,42 @@
+name: JS-Search tests
+
+on:
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            **/node_modules
+          key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+      - name: Install packages
+        run: rush update
+      - name: Run tests
+        run: cd pkg/js-search/ && rushx test:ci
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: JS-Search Tests
+          path: pkg/js-search/junit.xml
+          reporter: jest-junit
+      - name: Build js-search
+        run: cd pkg/js-search/ && rushx build
