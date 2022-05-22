@@ -1,0 +1,11 @@
+#!/bin/sh
+# Called by "git commit" with no arguments.  The hook should
+# exit with non-zero status after issuing an appropriate message if
+# it wants to stop the commit.
+
+# Invoke the "lint-staged" configured in <repoRoot>/.linststagedrc.json.
+# .ts(x), .js(x) files are passed to `eslint` with no warnings allowed, and on success passed to `prettier write`.
+# .json, .yml, .yaml files are passed directly to `prettier write`
+# The command itself is defined in common/config/rush/command-line.json
+# and uses the "lint-staged" autoinstaller.
+node common/scripts/install-run-rush.js lint-staged || exit $?
