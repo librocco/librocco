@@ -1,9 +1,14 @@
 import React from "react";
 import { ComponentMeta } from "@storybook/react";
 
-import Button, { ButtonColor, ButtonShape, ButtonSize } from "./Button";
+import Button, {
+  ButtonColor,
+  ButtonShape,
+  ButtonSize,
+  IconPosition,
+} from "./Button";
 
-import TestIcon from "@/assets/TestIcon.svg";
+import MailIcon from "@/assets/Mail.svg";
 
 import { StorybookGrid, StorybookItem } from "@/utils/storybook";
 
@@ -12,7 +17,7 @@ export default {
   component: Button,
 } as ComponentMeta<typeof Button>;
 
-const buttonText = "Click me";
+const buttonText = "Button Text";
 
 export const ShapesAndSizes = (): JSX.Element => (
   <>
@@ -48,13 +53,30 @@ export const ShapesAndSizes = (): JSX.Element => (
 export const Icons = (): JSX.Element => (
   <>
     <h1 className="text-lg font-bold mb-4">Start:</h1>
-    <Button className="mb-16" StartIcon={TestIcon}>
-      {buttonText}
-    </Button>
+    <StorybookGrid className="mb-16">
+      {Object.values(ButtonSize).map((size) => (
+        <StorybookItem label={`Size: ${size}`}>
+          <Button className="mb-16" Icon={MailIcon} {...{ size }}>
+            {buttonText}
+          </Button>
+        </StorybookItem>
+      ))}
+    </StorybookGrid>
     <h1 className="text-lg font-bold mb-4">End:</h1>
-    <Button className="mb-16" EndIcon={TestIcon}>
-      {buttonText}
-    </Button>
+    <StorybookGrid className="mb-16">
+      {Object.values(ButtonSize).map((size) => (
+        <StorybookItem label={`Size: ${size}`}>
+          <Button
+            {...{ size }}
+            className="mb-16"
+            Icon={MailIcon}
+            iconPosition={IconPosition.End}
+          >
+            {buttonText}
+          </Button>
+        </StorybookItem>
+      ))}
+    </StorybookGrid>
   </>
 );
 
