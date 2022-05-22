@@ -1,13 +1,12 @@
 import React from "react";
 
-export enum ButtonVariant {
-  Text = "text",
-  Circular = "circular",
-}
+import PlusIcon from "@/assets/Plus.svg";
 
+// #region types
 export enum ButtonShape {
   Square = "square",
   Rounded = "rounded",
+  Circular = "circular",
 }
 
 export enum ButtonColor {
@@ -25,7 +24,6 @@ export enum ButtonSize {
 }
 
 export interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
   size?: ButtonSize;
   shape?: ButtonShape;
   color?: ButtonColor;
@@ -35,14 +33,16 @@ export interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
   EndIcon?: React.FC;
   as?: keyof JSX.IntrinsicElements;
 }
+// #endregion types
 
 /**
  * A `React.FC` returning `null` used as icon fallback
  */
 const IconFallback: React.FC = () => null;
 
+// #region Component
+
 const Button: React.FC<ButtonProps> = ({
-  variant = ButtonVariant.Text,
   size = ButtonSize.Base,
   shape = ButtonShape.Square,
   color = ButtonColor.Primary,
@@ -53,9 +53,9 @@ const Button: React.FC<ButtonProps> = ({
   children,
   ...props
 }) => {
-  const sizeClasses = getSizeClasses(variant, shape, size);
+  const sizeClasses = getSizeClasses(shape, size);
 
-  const shapeClass = getRadiusClass(variant, shape, size);
+  const shapeClass = getRadiusClass(shape, size);
 
   const colorClasses = colorClassesLookup[color];
 
@@ -63,23 +63,28 @@ const Button: React.FC<ButtonProps> = ({
     " "
   );
 
-  return React.createElement(as, { ...props, className }, [
-    <StartIcon />,
-    children,
-    <EndIcon />,
-  ]);
+  const content =
+    shape === ButtonShape.Circular ? (
+      <CircularContent {...{ children, size }} />
+    ) : (
+      <>
+        <StartIcon />
+        {children}
+        <EndIcon />
+      </>
+    );
+
+  return React.createElement(as, { ...props, className }, [content]);
 };
+// #endregion Component
 
-const getRadiusClass = (
-  variant: ButtonVariant,
-  shape: ButtonShape,
-  size: ButtonSize
-) =>
-  variant === ButtonVariant.Circular
+// #region borderRadius
+const getRadiusClass = (shape: ButtonShape, size: ButtonSize): string =>
+  shape === ButtonShape.Circular
     ? "rounded-full"
-    : shapeClassLookup[shape][size];
+    : shapeRadiusLookup[shape][size];
 
-const shapeClassLookup = {
+const shapeRadiusLookup = {
   [ButtonShape.Square]: {
     [ButtonSize.XS]: "rounded-[15px]",
     [ButtonSize.SM]: "rounded-[17px]",
@@ -95,17 +100,12 @@ const shapeClassLookup = {
     [ButtonSize.XL]: "rounded-md",
   },
 };
+// #endregion borderRadius
 
-const getSizeClasses = (
-  variant: ButtonVariant,
-  shape: ButtonShape,
-  size: ButtonSize
-): string[] => {
+// #region size
+const getSizeClasses = (shape: ButtonShape, size: ButtonSize): string[] => {
   const textClasses = textSizeLookup[size];
-  const spacingClasses =
-    variant === ButtonVariant.Circular
-      ? circularPaddingLookup[size]
-      : shapeSpacingLookup[shape][size];
+  const spacingClasses = shapeSpacingLookup[shape][size];
 
   return [...textClasses, ...spacingClasses, ...focusClasses];
 };
@@ -116,14 +116,6 @@ const textSizeLookup = {
   [ButtonSize.Base]: ["text-sm", "leading-5"],
   [ButtonSize.LG]: ["text-base", "leading-6"],
   [ButtonSize.XL]: ["text-base", "leading-6"],
-};
-
-const circularPaddingLookup = {
-  [ButtonSize.XS]: ["p-[10px]"],
-  [ButtonSize.SM]: ["p-[12px]"],
-  [ButtonSize.Base]: ["p-[14px]"],
-  [ButtonSize.LG]: ["p-[15px]"],
-  [ButtonSize.XL]: ["p-[19px]"],
 };
 
 const shapeSpacingLookup = {
@@ -141,8 +133,17 @@ const shapeSpacingLookup = {
     [ButtonSize.LG]: ["px-[21px]", "py-[9px]"],
     [ButtonSize.XL]: ["px-[25px]", "py-[13px]"],
   },
+  [ButtonShape.Circular]: {
+    [ButtonSize.XS]: ["p-[5px]"],
+    [ButtonSize.SM]: ["p-[7px]"],
+    [ButtonSize.Base]: ["p-[9px]"],
+    [ButtonSize.LG]: ["p-[9px]"],
+    [ButtonSize.XL]: ["p-[13px]"],
+  },
 };
+// #endregion size
 
+// #region color
 const colorClassesLookup = {
   [ButtonColor.Primary]: ["text-white", "bg-indigo-600", "hover:bg-indigo-700"],
   [ButtonColor.Secondary]: [
@@ -166,5 +167,32 @@ const focusClasses = [
   "focus:ring-offset-2",
   "focus:ring-offset-white",
 ];
+// #endregion color
+
+// #region buttonContent
+/**
+ * A component to be rendered as content in circular button.
+ * This would normally be only the Icon SVG.
+ * @param {Object} props
+ * @param {JSX.Element | JSX.Element[]} props.children should be SVG Icon, if not provided falls back to `PlusIcon`
+ * @param {ButtonSize} props.size
+ */
+const CircularContent: React.FC<Pick<ButtonProps, "children" | "size">> = ({
+  children,
+  size = ButtonSize.Base,
+}) => (
+  <div className={circularContentSizeLookup[size].join(" ")}>
+    {children || <PlusIcon />}
+  </div>
+);
+
+const circularContentSizeLookup = {
+  [ButtonSize.XS]: ["w-4", "h-4"],
+  [ButtonSize.SM]: ["w-4", "h-4"],
+  [ButtonSize.Base]: ["w-4", "h-4"],
+  [ButtonSize.LG]: ["w-5", "h-5"],
+  [ButtonSize.XL]: ["w-5", "h-5"],
+};
+// #endregion buttonContent
 
 export default Button;
