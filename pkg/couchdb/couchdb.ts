@@ -1,10 +1,3 @@
-// connect to database
-const res = await fetch("http://127.0.0.1:5984/");
-const textData = await res.text();
-console.log(textData);
-
-// create a database
-
 /** 
  * @TODO handle all error cases 
  * 1 - database already exists
@@ -30,7 +23,7 @@ export const createDatabase = async (dbName: string,
  */
 
 /** @TODO type docs array according to input docs columns */
-export const bulkDocs = async (
+export const postBulkDocs = async (
     docs: {
         [key: string]: string;
     }[],
