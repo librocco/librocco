@@ -1,7 +1,14 @@
 /** 
  * @TODO handle all error cases 
- * 1 - database already exists
+ * 1. database already exists
 */
+
+/**
+ * Creates a couchdb database
+ * Only import with deno and node >= v18
+ * @param {string} dbName - couchdb database name
+ * @param {string} couchdbURL - URL of remote database
+ */
 export const createDatabase = async (dbName: string,
     couchdbURL: string) => {
         const database = await fetch(
@@ -13,16 +20,21 @@ export const createDatabase = async (dbName: string,
     console.log(databaseRes);
 }
 
-// insert bulk docs
 /**
- * @TODO handle all cases
- *
+ * @TODO handle all cases:
  * 201 Created – Document(s) have been created or updated
  * 400 Bad Request – The request provided invalid JSON data
  * 404 Not Found – Requested database not found
  */
 
-/** @TODO type docs array according to input docs columns */
+/**
+ * Inserts batch of docs into a couchdb database
+ * Only import with deno and node >= v18
+ * @param {sting[]} docs - array of docs to be inserted in db
+ * @param {string} dbName - name of database
+ * @param {string} couchdbURL - URL of remote database
+ */
+
 export const postBulkDocs = async (
     docs: {
         [key: string]: string;
