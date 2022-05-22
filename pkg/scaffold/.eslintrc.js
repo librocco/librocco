@@ -158,5 +158,8 @@ module.exports = {
 
     // no-case-declarations
     "no-case-declarations": "off",
+
+    // This is just weird
+    "guard-for-in": "off",
   },
 };
