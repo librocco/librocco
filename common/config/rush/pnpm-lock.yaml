@@ -9,7 +9,7 @@ importers:
     specifiers:
       '@babel/core': 7.x
       '@babel/preset-env': ^7.8.7
-      '@types/jest': ~27.5.1
+      '@types/jest': ^27.5.1
       '@typescript-eslint/eslint-plugin': ^5.20.0
       '@typescript-eslint/parser': ^5.20.0
       babel-jest: ^25.1.0
@@ -69,7 +69,7 @@ importers:
       '@testing-library/jest-dom': ^5.16.4
       '@testing-library/react': ^13.1.1
       '@testing-library/user-event': ^14.1.1
-      '@types/jest': ^27.4.1
+      '@types/jest': ^27.5.1
       '@types/react': ^18.0.0
       '@types/react-dom': ^18.0.0
       '@types/testing-library__jest-dom': ^5.14.3
@@ -111,7 +111,7 @@ importers:
       '@testing-library/jest-dom': 5.16.4
       '@testing-library/react': 13.1.1_react-dom@18.0.0+react@18.0.0
       '@testing-library/user-event': 14.1.1_@testing-library+dom@8.13.0
-      '@types/jest': 27.4.1
+      '@types/jest': 27.5.1
       '@types/react': 18.0.5
       '@types/react-dom': 18.0.1
       '@types/testing-library__jest-dom': 5.14.3
@@ -145,7 +145,7 @@ importers:
       '@testing-library/jest-dom': ^5.16.4
       '@testing-library/react': ^13.1.1
       '@testing-library/user-event': ^14.1.1
-      '@types/jest': ^27.4.1
+      '@types/jest': ^27.5.1
       '@types/react': ^18.0.0
       '@types/react-dom': ^18.0.0
       '@types/testing-library__jest-dom': ^5.14.3
@@ -179,7 +179,7 @@ importers:
       '@testing-library/jest-dom': 5.16.4
       '@testing-library/react': 13.1.1_react-dom@18.0.0+react@18.0.0
       '@testing-library/user-event': 14.1.1_@testing-library+dom@8.13.0
-      '@types/jest': 27.4.1
+      '@types/jest': 27.5.1
       '@types/react': 18.0.5
       '@types/react-dom': 18.0.1
       '@types/testing-library__jest-dom': 5.14.3
@@ -202,6 +202,12 @@ importers:
       vite: 2.9.9
       vite-plugin-environment: 1.1.1_vite@2.9.9
       vite-plugin-svgr: 2.1.0_vite@2.9.9
+
+  ../../scripts:
+    specifiers:
+      jest: ^27.5.1
+    devDependencies:
+      jest: 27.5.1
 
 packages:
 
@@ -280,7 +286,7 @@ packages:
     resolution: {integrity: sha512-rAdDousTwxbIxbz5I7GEQ3lUip+xVCXooZNbsydCWs3xA7ZsYOv+CFRdzGxRX78BmQHu9B1Eso59AOZQOJDEdQ==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
       jsesc: 2.5.2
       source-map: 0.5.7
     dev: true
@@ -395,7 +401,7 @@ packages:
     resolution: {integrity: sha512-SLLb0AAn6PkUeAfKJCCOl9e1R53pQlGAfc4y4XuMRZfqeMYLE0dM1LMhqbGAlGQY0lfw5/ohoYWAe9V1yibRag==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@babel/helper-explode-assignable-expression/7.16.7:
@@ -410,14 +416,14 @@ packages:
     engines: {node: '>=6.9.0'}
     dependencies:
       '@babel/template': 7.16.7
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@babel/helper-hoist-variables/7.16.7:
     resolution: {integrity: sha512-m04d/0Op34H5v7pbZw6pSKP7weA6lsMvfiIAMeIvkY/R4xQtBSMFEigu9QTZ2qB/9l22vsxtM8a+Q8CzD255fg==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@babel/helper-member-expression-to-functions/7.17.7:
@@ -508,7 +514,7 @@ packages:
     resolution: {integrity: sha512-xbWoy/PFoxSWazIToT9Sif+jJTlrMcndIsaOKvTA6u7QEo7ilkRZpjew18/W3c7nm8fXdUDXh02VXTbZ0pGDNw==}
     engines: {node: '>=6.9.0'}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@babel/helper-validator-identifier/7.16.7:
@@ -1671,7 +1677,7 @@ packages:
     dependencies:
       '@babel/code-frame': 7.16.7
       '@babel/parser': 7.17.9
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@babel/traverse/7.17.9:
@@ -1685,7 +1691,7 @@ packages:
       '@babel/helper-hoist-variables': 7.16.7
       '@babel/helper-split-export-declaration': 7.16.7
       '@babel/parser': 7.17.9
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
       debug: 4.3.4
       globals: 11.12.0
     transitivePeerDependencies:
@@ -4018,7 +4024,7 @@ packages:
   /@types/babel__traverse/7.17.0:
     resolution: {integrity: sha512-r8aveDbd+rzGP+ykSdF3oPuTVRWRfbBiHl0rVDM2yNEmSMXfkObQLV46b4RnCv3Lra51OlfnZhkkFaDl2MIRaA==}
     dependencies:
-      '@babel/types': 7.17.0
+      '@babel/types': 7.17.10
     dev: true
 
   /@types/color-convert/2.0.0:
@@ -4079,13 +4085,6 @@ packages:
     resolution: {integrity: sha512-c3mAZEuK0lvBp8tmuL74XRKn1+y2dcwOUpH7x4WrF6gk1GIgiluDRgMYQtw2OFcBvAJWlt6ASU3tSqxp0Uu0Aw==}
     dependencies:
       '@types/istanbul-lib-report': 3.0.0
-    dev: true
-
-  /@types/jest/27.4.1:
-    resolution: {integrity: sha512-23iPJADSmicDVrWk+HT58LMJtzLAnB2AgIzplQuq/bSrGaxCrlvRFjGbXmamnnk/mAmCdLStiGqggu28ocUyiw==}
-    dependencies:
-      jest-matcher-utils: 27.5.1
-      pretty-format: 27.5.1
     dev: true
 
   /@types/jest/27.5.1:
@@ -4207,7 +4206,7 @@ packages:
   /@types/testing-library__jest-dom/5.14.3:
     resolution: {integrity: sha512-oKZe+Mf4ioWlMuzVBaXQ9WDnEm1+umLx0InILg+yvZVBBDmzV5KfZyLrCvadtWcx8+916jLmHafcmqqffl+iIw==}
     dependencies:
-      '@types/jest': 27.4.1
+      '@types/jest': 27.5.1
     dev: true
 
   /@types/uglify-js/3.13.2:
