@@ -71,7 +71,7 @@ const Button: React.FC<ButtonProps> = ({
       <ButtonContent {...{ size, color, children, Icon, iconPosition }} />
     );
 
-  return React.createElement(as, { ...props, className }, [content]);
+  return React.createElement(as, { ...props, className }, content);
 };
 // #endregion Component
 
