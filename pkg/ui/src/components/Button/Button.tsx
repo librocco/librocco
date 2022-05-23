@@ -42,7 +42,18 @@ export interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
 // #region Component
 
 // #region Component
-
+/**
+ * A base button component implementing styles from the mockup.
+ * @param {Object} props
+ * @param {ButtonSize} props.size
+ * @param {ButtonShape} props.shape
+ * @param {ButtonColor} props.color
+ * @param {SVGComponent} props.Icon
+ * @param {IconPosition} props.iconPosition
+ * @param {string} props.as
+ * @param {string} props.classes
+ * @param {JSX.Element | JSX.Element[]} props.children
+ */
 const Button: React.FC<ButtonProps> = ({
   size = ButtonSize.Base,
   shape = ButtonShape.Square,
@@ -252,6 +263,11 @@ const iconSizeLookup = {
 
 const iconSpacingLookup = {
   [IconPosition.Start]: {
+    // According to mockup, margin right here should be 8px
+    // however, in order to not mess with the original padding of the button (container of this element)
+    // we're offsetting to the left by 2px (hence the '-left-0.5'). This, however
+    // leaves the margin in place (from original position), therefore, all margins are offset by 2px
+    // 8px - 2px = 6px --> hence 'mr-1.5'
     [ButtonSize.XS]: ["mr-1.5", "-left-0.5"],
     [ButtonSize.SM]: ["mr-1.5", "-left-0.5"],
     [ButtonSize.Base]: ["mr-1.5", "-left-0.5"],
