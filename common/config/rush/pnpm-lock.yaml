@@ -206,6 +206,7 @@ importers:
   ../../scripts:
     specifiers:
       '@babel/preset-typescript': ^7.14.5
+      '@jest/types': ~28.1.0
       '@typescript-eslint/eslint-plugin': ^5.20.0
       '@typescript-eslint/parser': ^5.20.0
       axios: ~0.27.2
@@ -214,6 +215,7 @@ importers:
       ts-node: ~10.8.0
     devDependencies:
       '@babel/preset-typescript': 7.17.12
+      '@jest/types': 28.1.0
       '@typescript-eslint/eslint-plugin': 5.25.0_@typescript-eslint+parser@5.25.0
       '@typescript-eslint/parser': 5.25.0
       axios: 0.27.2
