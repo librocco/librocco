@@ -4,7 +4,7 @@ import Denomander from "https://deno.land/x/denomander@0.9.1/mod.ts";
 import { readCSV } from "https://deno.land/x/csv/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.4/mod.ts";
 import { BufReader } from "https://deno.land/std/io/buffer.ts";
-import { createDatabase, postBulkDocs } from "../couchdb/couchdb.ts";
+import { createDatabase, postBulkDocs } from "../pkg/couchdb/couchdb.ts";
 
 /**
  * Counts lines in a csv file for progress bar calculations

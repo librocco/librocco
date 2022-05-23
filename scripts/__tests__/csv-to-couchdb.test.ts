@@ -1,8 +1,33 @@
 import axios from "axios";
+import ChildProcess from "child_process";
 
 const COUCHDB_URL = process.env.COUCHDB_URL || "http://localhost:5984";
 
-test("dummy", () => {
+/**
+ *
+ * @param scriptPath The path of the script to execute
+ * @param scriptArgs Parameters to pass to the script
+ */
+function invokeScript(scriptPath: string, scriptArgs: string[]) {
+  const child = ChildProcess.spawnSync(scriptPath, scriptArgs, {
+    timeout: 10000,
+    shell: true,
+  });
+  if (child.status !== 0) {
+    throw new Error(
+      `Error executing ${scriptPath}.\nOutput: ${child.output}\nError: ${child.error}`
+    );
+  }
+}
+
+test("Import small CSV file", () => {
+  invokeScript("./csv-to-couchdb.ts", [
+    "parse",
+    "-f",
+    "__tests__/fixtures/small.csv",
+    "-c",
+    "title,author",
+  ]);
   expect(true).toBe(true);
 });
 
