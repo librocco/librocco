@@ -1,0 +1,38 @@
+name: Tests for scripts
+
+on:
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - name: Cache node modules
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.rush
+            ~/.pnpm-store
+            common/temp
+            **/node_modules
+          key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+      - name: Install packages
+        run: rush update
+      - name: Start couchdb container
+        run: docker run --rm -v ${PWD}/scripts/__tests__/fixtures/local.ini:/opt/couchdb/etc/local.ini couchdb -p 5984:5984 -d couchdb
+      - name: Run tests
+        run: cd scripts && rushx test:ci
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: Scripts Tests
+          path: scripts/junit.xml
+          reporter: jest-junit
