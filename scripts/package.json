@@ -2,7 +2,8 @@
   "name": "@librocco/scripts",
   "version": "0.0.1",
   "devDependencies": {
-    "jest": "^27.5.1"
+    "jest": "^27.5.1",
+    "ts-node": "~10.8.0"
   },
   "scripts": {
     "test": "jest"
