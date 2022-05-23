@@ -1,11 +1,11 @@
 /** 
- * @TODO handle all error cases 
+ * This file uses the `fetch` API: only import it with deno or node >= v18
+ * @TODO handle all error cases
  * 1. database already exists
 */
 
 /**
  * Creates a couchdb database
- * Only import with deno and node >= v18
  * @param {string} dbName - couchdb database name
  * @param {string} couchdbURL - URL of remote database
  */
@@ -15,9 +15,21 @@ export const createDatabase = async (dbName: string,
             `${couchdbURL}/${dbName}`,
             { method: "PUT" }
         );
-
     const databaseRes = await database.text();
-    console.log(databaseRes);
+}
+
+
+/**
+ * Deletes a couchdb database
+ * @param {string} couchdbURL - URL of remote database
+ * @param {string} dbName - couchdb database name
+ */
+ export const removeDatabase = async (couchdbURL: string, dbName: string) => {
+    const database = await fetch(
+        `${couchdbURL}/${dbName}`,
+        { method: "DELETE" }
+    );
+    const databaseRes = await database.text();
 }
 
 /**

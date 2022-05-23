@@ -1,5 +1,7 @@
 #!/usr/bin/env -S deno test --allow-env --allow-read --allow-run
-import { assertEquals } from "https://deno.land/std@0.140.0/testing/asserts.ts";
+import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.140.0/testing/asserts.ts";
+import { removeDatabase } from "../../pkg/couchdb/couchdb.ts";
+import { v4 as uuid4 } from "https://deno.land/std@0.139.0/uuid/mod.ts";
 
 
 const COUCHDB_URL = Deno.env.get("COUCHDB_URL") || "http://localhost:5984";
@@ -30,18 +32,25 @@ async function invokeScript(scriptPath: string, scriptArgs: string[]) {
 }
 
 Deno.test("Import small CSV file", async () => {
-  await invokeScript("csv-to-couchdb.ts", [
+  const dbName = uuid4.generate()
+  const result = await invokeScript("csv-to-couchdb.ts", [
     "parse",
-    "-f",
+    "--filePath",
     "__tests__/fixtures/small.csv",
-    "-c",
+    "--columns",
     "title,author",
+    "--chunkSize",
+    "2",
+    "--dbName",
+    dbName,
   ]);
-  assertEquals(true, true);
+  assertStringIncludes(result.output, "Successfully imported 5 documents", result.output);
+  await removeDatabase(COUCHDB_URL, dbName);
 });
 
 Deno.test("Make sure couchdb is running", async () => {
   const response = await fetch(COUCHDB_URL + "/_up");
   const responseBody = await response.text();
+  assertEquals(JSON.parse(responseBody).status, "ok");
   assertEquals(response.status, 200, "CouchDB is not running");
 });

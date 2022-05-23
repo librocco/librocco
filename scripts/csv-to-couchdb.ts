@@ -79,7 +79,7 @@ async function CSVToCouch(
   try {
     await createDatabase(couchdbName, couchdbURL);
     const f = await Deno.open(filePath);
-    console.log("Saving docs bulk...");
+    console.log(`Importing ${progress.total} documents`);
 
     /** @TODO handle file reading errors or create timeout per chunk */
     let completed = 0;
@@ -96,6 +96,7 @@ async function CSVToCouch(
   } catch (error) {
     console.error(error);
   }
+  console.log(`Successfully imported ${progress.total} documents`);
 }
 
 //#endregion csv to couch
@@ -109,10 +110,10 @@ const program = new Denomander({
 program.command("parse", "parses csv file into the db")
   .requiredOption("-f --filePath", "csv file path")
   .requiredOption("-c --columns", "names of headers of each column")
-  .option("-n --name", "couch database name")
+  .option("-n --dbName", "CouchDB database name")
   .option("-s --separator", "column separator of csv file")
-  .option("-u -couchdbURL", "url of couchdb, defaults to local couchdb")
-  .option("-k -chunkSize", "size of chunk the csv file will be divided into")
+  .option("-u --couchdbURL", "url of couchdb, defaults to local couchdb")
+  .option("-k --chunkSize", "size of chunk the csv file will be divided into")
   .action(async () => {
     const title = "parsing csv files:";
     const progress = new ProgressBar({
@@ -123,7 +124,7 @@ program.command("parse", "parses csv file into the db")
     await CSVToCouch({
       filePath: program.filePath,
       columns: program.columns,
-      couchdbName: program.name,
+      couchdbName: program.dbName,
       couchdbURL: program.couchdbURL,
       columnSeparator: program.separator,
       chunkSize: program.chunkSize,
@@ -137,9 +138,8 @@ program.command("parse", "parses csv file into the db")
 //#region chunk generator
 
 /**
- * Iterate over a csv file returning chunks of a given size
- * parsed into json docs
- * @param {Iterator} csv file - The iterator to split
+ * Aggregate in chinks values from an Iterable
+ * @param {Iterator} csv The iterator to take values from
  * @param {Number} chunkSize - The size of the chunks
  * @return {Iterator} - An iterator over the chunks
  */
