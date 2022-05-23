@@ -117,25 +117,25 @@ const textSizeLookup = {
 
 const shapeSpacingLookup = {
   [ButtonShape.Square]: {
-    [ButtonSize.XS]: ["px-[11px]", "py-[7px]"],
-    [ButtonSize.SM]: ["px-[13px]", "py-[9px]"],
-    [ButtonSize.Base]: ["px-[17px]", "py-[9px]"],
-    [ButtonSize.LG]: ["px-[17px]", "py-[9px]"],
-    [ButtonSize.XL]: ["px-[25px]", "py-[13px]"],
+    [ButtonSize.XS]: ["px-[11px]", "py-1.75"],
+    [ButtonSize.SM]: ["px-3.25", "py-2.25"],
+    [ButtonSize.Base]: ["px-4.25", "py-2.25"],
+    [ButtonSize.LG]: ["px-4.25", "py-2.25"],
+    [ButtonSize.XL]: ["px-6.25", "py-3.25"],
   },
   [ButtonShape.Rounded]: {
-    [ButtonSize.XS]: ["px-[13px]", "py-[7px]"],
-    [ButtonSize.SM]: ["px-[15px]", "py-[9px]"],
-    [ButtonSize.Base]: ["px-[17px]", "py-[9px]"],
-    [ButtonSize.LG]: ["px-[21px]", "py-[9px]"],
-    [ButtonSize.XL]: ["px-[25px]", "py-[13px]"],
+    [ButtonSize.XS]: ["px-3.25", "py-1.75"],
+    [ButtonSize.SM]: ["px-[15px]", "py-2.25"],
+    [ButtonSize.Base]: ["px-4.25", "py-2.25"],
+    [ButtonSize.LG]: ["px-[21px]", "py-2.25"],
+    [ButtonSize.XL]: ["px-6.25", "py-3.25"],
   },
   [ButtonShape.Circular]: {
     [ButtonSize.XS]: ["p-[5px]"],
-    [ButtonSize.SM]: ["p-[7px]"],
-    [ButtonSize.Base]: ["p-[9px]"],
-    [ButtonSize.LG]: ["p-[9px]"],
-    [ButtonSize.XL]: ["p-[13px]"],
+    [ButtonSize.SM]: ["p-1.75"],
+    [ButtonSize.Base]: ["p-2.25"],
+    [ButtonSize.LG]: ["p-2.25"],
+    [ButtonSize.XL]: ["p-3.25"],
   },
 };
 // #endregion size
@@ -252,18 +252,18 @@ const iconSizeLookup = {
 
 const iconSpacingLookup = {
   [IconPosition.Start]: {
-    [ButtonSize.XS]: ["mr-[6px]", "-left-[2px]"],
-    [ButtonSize.SM]: ["mr-[6px]", "-left-[2px]"],
-    [ButtonSize.Base]: ["mr-[6px]", "-left-[2px]"],
-    [ButtonSize.LG]: ["mr-[10px]", "-left-[2px]"],
-    [ButtonSize.XL]: ["mr-[10px]", "-left-[2px]"],
+    [ButtonSize.XS]: ["mr-1.5", "-left-0.5"],
+    [ButtonSize.SM]: ["mr-1.5", "-left-0.5"],
+    [ButtonSize.Base]: ["mr-1.5", "-left-0.5"],
+    [ButtonSize.LG]: ["mr-2.5", "-left-0.5"],
+    [ButtonSize.XL]: ["mr-2.5", "-left-0.5"],
   },
   [IconPosition.End]: {
-    [ButtonSize.XS]: ["ml-[6px]", "left-[2px]"],
-    [ButtonSize.SM]: ["ml-[6px]", "left-[2px]"],
-    [ButtonSize.Base]: ["ml-[6px]", "left-[2px]"],
-    [ButtonSize.LG]: ["ml-[10px]", "left-[2px]"],
-    [ButtonSize.XL]: ["ml-[10px]", "left-[2px]"],
+    [ButtonSize.XS]: ["ml-1.5", "left-0.5"],
+    [ButtonSize.SM]: ["ml-1.5", "left-0.5"],
+    [ButtonSize.Base]: ["ml-1.5", "left-0.5"],
+    [ButtonSize.LG]: ["ml-2.5", "left-0.5"],
+    [ButtonSize.XL]: ["ml-2.5", "left-0.5"],
   },
 };
 
