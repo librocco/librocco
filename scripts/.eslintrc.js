@@ -9,6 +9,7 @@ module.exports = useTSConfig(
     ignorePatterns: [
       ...scaffold.ignorePatterns,
       "csv-to-couchdb.ts",
+      "__tests__",
       "jest.config.ts",
     ],
   },

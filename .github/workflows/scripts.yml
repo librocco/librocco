@@ -16,19 +16,6 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "16"
-      - name: Cache node modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.rush
-            ~/.pnpm-store
-            common/temp
-            **/node_modules
-          key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
-      - name: Add local rush scripts to PATH
-        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
-      - name: Install packages
-        run: rush update
       - name: Pull couchdb docker image
         run: docker pull couchdb
       - name: Start couchdb container
@@ -38,11 +25,6 @@ jobs:
         with:
           deno-version: canary
       - name: Run tests
-        run: cd scripts && rushx test:ci
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: Scripts Tests
-          path: scripts/junit.xml
-          reporter: jest-junit
+        run: cd scripts && deno test --allow-env --allow-run --allow-net --coverage=coverage __tests__/
+      - name: Show coverage report
+        run: cd scripts && deno coverage coverage
