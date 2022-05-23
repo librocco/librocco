@@ -1,0 +1,10 @@
+{
+  "name": "@librocco/scripts",
+  "version": "0.0.1",
+  "devDependencies": {
+    "jest": "^28.1.0"
+  },
+  "scripts": {
+    "test": "jest"
+  }
+}
