@@ -62,7 +62,6 @@ async function CSVToCouch(
   try {
     await createDatabase(couchdbURL, couchdbName);
     const f = await Deno.open(filePath);
-    console.log(`Importing ${progress.total} documents`);
 
     /** @TODO handle file reading errors or create timeout per chunk */
     let completed = 0;
@@ -70,7 +69,6 @@ async function CSVToCouch(
       const chunk of inChunks(readCSV(f, options), chunkSize)
     ) {
       const books = await Promise.all(chunk.map(rowToObjectMaker(columns)));
-      console.log(`Importing chunk with ${books.length} documents:\n${JSON.stringify(books)}`);
       await postBulkDocs(books, couchdbName, couchdbURL);
       if (completed <= progress.total!) {
         completed += books.length;
