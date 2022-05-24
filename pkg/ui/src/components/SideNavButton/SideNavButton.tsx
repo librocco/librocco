@@ -1,5 +1,7 @@
 import React, { HTMLAttributes } from "react";
 
+import { filterPositionClass } from "../../utils/styles";
+
 interface SideNavButtonProps extends HTMLAttributes<HTMLButtonElement> {
   /**
    * A boolean flag used to switch styles for a selected button.
@@ -20,7 +22,7 @@ const onClickFallback = (e: React.SyntheticEvent) => {
  */
 const SideNavButton: React.FC<SideNavButtonProps> = ({
   children,
-  className: classes,
+  className: classes = "",
   selected,
   as: htmlTag = "button", // 'as' used to be reserved for TS, better to be safe
   onClick = onClickFallback,
@@ -39,10 +41,13 @@ const SideNavButton: React.FC<SideNavButtonProps> = ({
   const bgColor = selected ? "bg-gray-900" : "bg-none";
   const iconColor = selected ? "text-white" : "text-gray-400 hover:text-white";
 
-  const className = [...baseClasses, bgColor, iconColor, classes]
-    .join(" ")
-    .trim()
-    .replace(/%s%s/g, " ");
+  const filteredBaseClasses = filterPositionClass(classes, [
+    ...baseClasses,
+    bgColor,
+    iconColor,
+  ]);
+
+  const className = [...filteredBaseClasses, classes].join(" ").trim();
 
   // Icon box container with icon component passed as 'children'
   const iconBox = <div className="center-absolute w-4 h-4">{children}</div>;
