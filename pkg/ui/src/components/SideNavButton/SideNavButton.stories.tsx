@@ -3,7 +3,7 @@ import { ComponentMeta } from "@storybook/react";
 
 import SideNavButton from "./SideNavButton";
 
-import TestIcon from "@/assets/TestIcon.svg";
+import TestIcon from "@assets/TestIcon.svg";
 
 export default {
   title: "Side Navigation: Button",
