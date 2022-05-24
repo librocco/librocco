@@ -8,9 +8,9 @@ import Button, {
   IconPosition,
 } from "./Button";
 
-import MailIcon from "@/assets/Mail.svg";
+import MailIcon from "@assets/Mail.svg";
 
-import { StorybookGrid, StorybookItem } from "@/utils/storybook";
+import { StorybookGrid, StorybookItem } from "../../utils/storybook";
 
 export default {
   title: "Button",

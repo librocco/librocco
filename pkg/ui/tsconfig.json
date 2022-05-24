@@ -4,15 +4,9 @@
     "baseUrl": ".",
     "rootDir": "src",
     "paths": {
-      "@/*": ["src/*"]
+      "@assets/*": ["src/assets/*"]
     }
   },
-  "exclude": [
-    "node_modules",
-    "dist",
-    "scripts",
-    ".eslintrc.js",
-    "vite.config.ts"
-  ],
+  "exclude": ["node_modules", "dist", ".eslintrc.js", "vite.config.ts"],
   "include": ["src"]
 }

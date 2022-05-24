@@ -1,6 +1,6 @@
 import React from "react";
 
-import TestIcon from "@/assets/TestIcon.svg";
+import TestIcon from "@assets/TestIcon.svg";
 
 const SVGTest: React.FC = () => {
   return (
