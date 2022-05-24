@@ -63,3 +63,22 @@ export const postBulkDocs = async (
         }
     );
 };
+
+
+/**
+ * 
+ * @param couchdbURL The base URL of the Couchdb server 
+ * @param dbName The name of the Couchdb database
+ * @returns The json decoded response from the server
+ */
+export const getAllDocs = async (couchdbURL: string, dbName: string) => {
+    const response = await fetch(
+        `${couchdbURL}/${dbName}/_all_docs?include_docs=true`,
+        {
+            method: "GET",
+            headers: { "content-type": "application/json" },
+        }
+    );
+    const responseBody = await response.json();
+    return responseBody;
+}
