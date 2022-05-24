@@ -7,12 +7,8 @@ const svgrOptions = require("../scaffold/svgrOptions");
 
 export default defineConfig({
   resolve: {
-    /**
-     * Created so that all src imports can be aliased as so: @/Button rathen than writing relative paths.
-     * Remove if unnecessary.
-     */
     alias: {
-      "@": path.resolve(__dirname, "src"),
+      "@assets": path.resolve(__dirname, "src", "assets"),
     },
   },
   build: {

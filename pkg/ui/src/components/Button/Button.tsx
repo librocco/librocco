@@ -1,6 +1,8 @@
 import React from "react";
 
-import PlusIcon from "@/assets/Plus.svg";
+import { SVGComponent } from "@librocco/shared";
+
+import PlusIcon from "@assets/Plus.svg";
 
 // #region types
 export enum ButtonShape {
@@ -32,8 +34,7 @@ export interface ButtonProps extends React.HTMLAttributes<HTMLButtonElement> {
   size?: ButtonSize;
   shape?: ButtonShape;
   color?: ButtonColor;
-  /** @TODO This should be `SVGComponent` type alias */
-  Icon?: React.FC;
+  Icon?: SVGComponent;
   iconPosition?: IconPosition;
   as?: keyof JSX.IntrinsicElements;
 }
