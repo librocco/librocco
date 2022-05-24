@@ -32,9 +32,11 @@ async function invokeScript(scriptPath: string, scriptArgs: string[]) {
 }
 
 Deno.test("Import small CSV file", async () => {
-  const dbName = uuid4.generate()
+  const dbName = 'db-' + uuid4.generate()
   const result = await invokeScript("csv-to-couchdb.ts", [
     "parse",
+    "--couchdbURL",
+    COUCHDB_URL,
     "--filePath",
     "__tests__/fixtures/small.csv",
     "--columns",
