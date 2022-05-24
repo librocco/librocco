@@ -53,14 +53,14 @@ function printProgress(progress: ProgressBar, completed: number) {
 async function CSVToCouch(
   {
     filePath,
-    columns,
+    columnsString,
     couchdbName = "books",
     couchdbURL = "http://admin:admin@localhost:5984",
     columnSeparator = ",",
     chunkSize = 1000,
   }: {
     filePath: string;
-    columns: string;
+    columnsString: string;
     couchdbName: string;
     couchdbURL: string;
     columnSeparator: string;
@@ -74,7 +74,7 @@ async function CSVToCouch(
   });
 
   // create couch client with endpoint
-  const columnsArr = columns.split(",");
+  const columns = columnsString.split(",");
 
   // csv file options
   const options = { columnSeparator: columnSeparator };
@@ -87,11 +87,13 @@ async function CSVToCouch(
     /** @TODO handle file reading errors or create timeout per chunk */
     let completed = 0;
     for await (
-      const chunk of inChunks(readCSV(f, options), chunkSize, columnsArr)
+      const chunk of inChunks(readCSV(f, options), chunkSize)
     ) {
-      await postBulkDocs(chunk, couchdbName, couchdbURL);
+      const books = await Promise.all(chunk.map(rowToObjectMaker(columns)));
+      console.log(`Importing chunk with ${books.length} documents:\n${JSON.stringify(books)}`);
+      await postBulkDocs(books, couchdbName, couchdbURL);
       if (completed <= progress.total!) {
-        completed += chunkSize;
+        completed += books.length;
         printProgress(progress, completed);
       }
     }
@@ -120,7 +122,7 @@ program.command("parse", "parses csv file into the db")
   .action(async () => {
     await CSVToCouch({
       filePath: program.filePath,
-      columns: program.columns,
+      columnsString: program.columns,
       couchdbName: program.dbName,
       couchdbURL: program.couchdbURL,
       columnSeparator: program.separator,
@@ -134,26 +136,18 @@ program.command("parse", "parses csv file into the db")
 //#region chunk generator
 
 /**
- * Aggregate in chinks values from an Iterable
- * @param {Iterator} csv The iterator to take values from
+ * Aggregate values from an Iterable in chunks of a given maximum size
+ * @param {Iterator} sequence The iterator to take values from
  * @param {Number} chunkSize - The size of the chunks
  * @return {Iterator} - An iterator over the chunks
  */
 const inChunks = async function* <T>(
   sequence: AsyncIterable<AsyncIterable<string>>,
   chunkSize: number,
-  columnsArr: string[],
 ) {
   let chunk = [];
   for await (const element of sequence) {
-    let book: { [key: string]: string } = {};
-    let i = 0;
-    for await (const field of element) {
-      const fieldName = columnsArr[i];
-      book[fieldName] = field;
-      i++;
-    }
-    chunk.push(book);
+    chunk.push(element);
     if (chunk.length === chunkSize) {
       yield chunk;
       chunk = [];
@@ -162,4 +156,16 @@ const inChunks = async function* <T>(
   }
 };
 
+
+const rowToObjectMaker = function(columns: string[]) {
+  return async function(row: any) {
+    let obj: { [key: string]: string } = {};
+    let i = 0;
+    for await (const field of row) {
+      obj[columns[i]] = field;
+      i++;
+    }
+    return obj;
+  };
+}
 //#endregion chunk generator
