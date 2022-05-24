@@ -3,7 +3,6 @@ import { assertEquals, assertStringIncludes } from "https://deno.land/std@0.140.
 import { removeDatabase, getAllDocs } from "../../pkg/couchdb/couchdb.ts";
 import { v4 as uuid4 } from "https://deno.land/std@0.139.0/uuid/mod.ts";
 
-
 const COUCHDB_URL = Deno.env.get("COUCHDB_URL") || "http://admin:admin@localhost:5984";
 
 /**
