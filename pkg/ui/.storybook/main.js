@@ -24,7 +24,7 @@ module.exports = {
   webpackFinal: (config) => {
     config.resolve.alias = {
       ...config.resolve.alias,
-      "@": path.join(__dirname, "..", "src"),
+      "@assets": path.join(__dirname, "..", "src", "assets"),
     };
 
     const fileLoaderRule = config.module.rules.find(
