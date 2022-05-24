@@ -47,7 +47,6 @@ function printProgress(progress: ProgressBar, completed: number) {
  * @param {string} couchdbName - name of couchdb database (default: books)
  * @param {string} couchdbURL - url of couchdb database (default: http://admin:admin@localhost:5984)
  * @param {string} columnSeparator - separator used for columns (default: ,)
- * @param {ProgressBar} progress - progress bar instance
  * @return {Iterator} - An iterator over the chunks
  */
 
@@ -59,7 +58,6 @@ async function CSVToCouch(
     couchdbURL = "http://admin:admin@localhost:5984",
     columnSeparator = ",",
     chunkSize = 1000,
-    progress,
   }: {
     filePath: string;
     columns: string;
@@ -67,9 +65,14 @@ async function CSVToCouch(
     couchdbURL: string;
     columnSeparator: string;
     chunkSize: number;
-    progress: ProgressBar;
   },
 ) {
+  const totalLines = await howManyLines(filePath);
+  const progress = new ProgressBar({
+    title: `Importing CSV file ${filePath}`,
+    total: totalLines,
+  });
+
   // create couch client with endpoint
   const columnsArr = columns.split(",");
 
@@ -115,12 +118,6 @@ program.command("parse", "parses csv file into the db")
   .option("-u --couchdbURL", "url of couchdb, defaults to local couchdb")
   .option("-k --chunkSize", "size of chunk the csv file will be divided into")
   .action(async () => {
-    const title = "parsing csv files:";
-    const progress = new ProgressBar({
-      title,
-      total: await howManyLines(program.filePath),
-    });
-
     await CSVToCouch({
       filePath: program.filePath,
       columns: program.columns,
@@ -128,7 +125,6 @@ program.command("parse", "parses csv file into the db")
       couchdbURL: program.couchdbURL,
       columnSeparator: program.separator,
       chunkSize: program.chunkSize,
-      progress: progress,
     });
   })
   .parse(Deno.args);
