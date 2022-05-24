@@ -1,9 +1,7 @@
 declare module "*.svg" {
-  import * as React from "react";
+  import { SVGComponent } from "@librocco/shared";
 
-  const ReactComponent: React.FunctionComponent<
-    React.SVGProps<SVGSVGElement> & { title?: string }
-  >;
+  const Component: SVGComponent;
 
-  export default source;
+  export default Component;
 }
