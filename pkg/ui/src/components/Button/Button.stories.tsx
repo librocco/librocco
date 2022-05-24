@@ -9,6 +9,8 @@ import Button, {
 } from "./Button";
 
 import MailIcon from "@assets/Mail.svg";
+import ArrowCircleLeft from "@assets/ArrowCircleLeft.svg";
+import ArrowCircleRight from "@assets/ArrowCircleRight.svg";
 
 import { StorybookGrid, StorybookItem } from "../../utils/storybook";
 
@@ -124,6 +126,26 @@ const ColorsStory = (): JSX.Element => (
     </StorybookGrid>
   </>
 );
+const NoteButtonsStory = (): JSX.Element => (
+  <>
+    <h1 className="text-lg font-bold mb-4">Note In:</h1>
+    <StorybookGrid className="mb-16">
+      <StorybookItem>
+        <Button color={ButtonColor.Success} Icon={ArrowCircleRight}>
+          {buttonText}
+        </Button>
+      </StorybookItem>
+    </StorybookGrid>
+    <h1 className="text-lg font-bold mb-4">Cancel Note:</h1>
+    <StorybookGrid className="mb-16">
+      <StorybookItem>
+        <Button color={ButtonColor.Error} Icon={ArrowCircleLeft}>
+          {buttonText}
+        </Button>
+      </StorybookItem>
+    </StorybookGrid>
+  </>
+);
 
 export const ColorsNormal = () => <ColorsStory />;
 
@@ -132,3 +154,11 @@ ColorsHover.parameters = { pseudo: { hover: true } };
 
 export const ColorsFocus = () => <ColorsStory />;
 ColorsFocus.parameters = { pseudo: { focus: true } };
+
+export const NoteButtons = () => <NoteButtonsStory />;
+
+export const NoteButtonsHover = () => <NoteButtonsStory />;
+NoteButtonsHover.parameters = { pseudo: { hover: true } };
+
+export const NoteButtonsFocus = () => <NoteButtonsStory />;
+NoteButtonsFocus.parameters = { pseudo: { focus: true } };

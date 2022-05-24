@@ -15,6 +15,8 @@ export enum ButtonColor {
   Primary = "primary",
   White = "white",
   Secondary = "secondary",
+  Error = "error",
+  Success = "success",
 }
 
 export enum ButtonSize {
@@ -167,6 +169,20 @@ const colorClassesLookup = {
     "border-gray-300",
     "hover:bg-gray-50",
   ],
+  [ButtonColor.Success]: [
+    "text-white",
+    "bg-green-400",
+    "border",
+    "border-gray-300",
+    "hover:bg-green-500",
+  ],
+  [ButtonColor.Error]: [
+    "text-white",
+    "bg-red-400",
+    "border",
+    "border-gray-300",
+    "hover:bg-red-500",
+  ],
 };
 
 // Classes for focus pseudo-class are the same regardless of color prop
@@ -288,6 +304,8 @@ const iconColorLookup = {
   [ButtonColor.Primary]: "text-white",
   [ButtonColor.Secondary]: "text-indigo-500",
   [ButtonColor.White]: "text-gray-500",
+  [ButtonColor.Success]: "text-white",
+  [ButtonColor.Error]: "text-white",
 };
 // #endregion buttonContent
 
