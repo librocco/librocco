@@ -9,10 +9,9 @@
  * @param {string} dbName - couchdb database name
  * @param {string} couchdbURL - URL of remote database
  */
-export const createDatabase = async (dbName: string,
-    couchdbURL: string) => {
+export const createDatabase = async (couchdbServerURL: string, dbName: string) => {
         const database = await fetch(
-            `${couchdbURL}/${dbName}`,
+            `${couchdbServerURL}/${dbName}`,
             { method: "PUT" }
         );
     const databaseRes = await database.text();

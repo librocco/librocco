@@ -80,7 +80,7 @@ async function CSVToCouch(
   const options = { columnSeparator: columnSeparator };
 
   try {
-    await createDatabase(couchdbName, couchdbURL);
+    await createDatabase(couchdbURL, couchdbName);
     const f = await Deno.open(filePath);
     console.log(`Importing ${progress.total} documents`);
 
