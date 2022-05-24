@@ -12,7 +12,7 @@ const testIterable = {
 
 Deno.test("inChunks", async () => {
     const chunks = [];
-    for await (const chunk of await inChunks(testIterable, 3)) {
+    for await (const chunk of inChunks(testIterable, 3)) {
         chunks.push(chunk);
     }
     assertEquals(chunks, [

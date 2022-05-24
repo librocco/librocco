@@ -11,15 +11,15 @@ export const inChunks = async function* <T>(
     sequence: AsyncIterable<T>,
     chunkSize: number,
 ) {
-    let chunk = [];
+    let chunk: T[] = [];
     for await (const element of sequence) {
         chunk.push(element);
         if (chunk.length === chunkSize) {
             yield chunk;
             chunk = [];
         }
-        yield chunk;
     }
+    yield chunk;
 };
 
 
