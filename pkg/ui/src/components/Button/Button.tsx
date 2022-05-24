@@ -1,6 +1,6 @@
 import React from "react";
 
-import PlusIcon from "@/assets/Plus.svg";
+import PlusIcon from "@assets/Plus.svg";
 
 // #region types
 export enum ButtonShape {
