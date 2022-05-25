@@ -1,4 +1,5 @@
 import React from "react";
+import { getItemsToRender } from "./getItemsToRender";
 
 export interface WrapperProps extends React.HTMLAttributes<HTMLElement> {
   to: string;
@@ -41,8 +42,36 @@ interface NumberLinksProps
   onChange?: (link: string, i: number) => void;
 }
 
-const NumberLinks: React.FC<NumberLinksProps> = () => {
-  return null;
+const FallbackWrapper: Wrapper = ({ children }) => <>{children}</>;
+
+const NumberLinks: React.FC<NumberLinksProps> = ({
+  links,
+  maxItems = 7,
+  onChange = () => {},
+  Wrapper = FallbackWrapper,
+}) => {
+  const itemsToRender = getItemsToRender(links.length, maxItems, 0);
+
+  return (
+    <>
+      {itemsToRender.map((item, i) => {
+        // Item being 'null' signals rendering of (unclickable) "..." button
+        if (item === null) {
+          return <button key={`elipsis-${i}`}>...</button>;
+        }
+
+        // Links are 0-indexed and we want to display 1-indexed pages
+        const label = item === null ? "..." : item + 1;
+        const link = links[item];
+
+        return (
+          <Wrapper key={link} to={link}>
+            <button onClick={() => onChange(link, i)}>{label}</button>
+          </Wrapper>
+        );
+      })}
+    </>
+  );
 };
 
 export default NumberLinks;

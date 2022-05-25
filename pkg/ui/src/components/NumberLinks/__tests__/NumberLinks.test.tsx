@@ -1,3 +1,8 @@
+import React from "react";
+import { cleanup, render, screen } from "@testing-library/react";
+
+import NumberLinks from "../NumberLinks";
+
 import { getItemsToRender } from "../getItemsToRender";
 
 /**
@@ -20,6 +25,51 @@ const runTableTests = (
 };
 
 describe("NumberLinks", () => {
+  describe("Component tests", () => {
+    afterEach(() => {
+      cleanup();
+      jest.clearAllMocks();
+    });
+
+    test("should not explode if no inputs for 'onChange' nor 'Wrapper' provided", () => {
+      render(<NumberLinks links={["link1"]} />);
+      screen.getByRole("button").click();
+    });
+
+    test("should not render if there are no items to show", () => {
+      render(<NumberLinks links={[]} />);
+      expect(screen.queryByRole("button")).toBeFalsy();
+    });
+
+    test("should call to 'onChange' function, passing link and index of an item on item button click", () => {
+      const mockOnChange = jest.fn();
+      render(<NumberLinks links={["link1"]} onChange={mockOnChange} />);
+      screen.getByText("1").click();
+      expect(mockOnChange).toHaveBeenCalledWith("link1", 0);
+    });
+
+    test('elipsis ("...") should not be clickable', () => {
+      const mockOnChange = jest.fn();
+      // Generate a large enough number of links so that the elipsis has to be shown
+      const dummyLinks = Array(12)
+        .fill(null)
+        .map((_, i) => `link-${i}`);
+      render(<NumberLinks links={dummyLinks} onChange={mockOnChange} />);
+      screen.getByText("...").click();
+      expect(mockOnChange).not.toHaveBeenCalled();
+    });
+
+    test("should wrap buttons in 'Wrapper' component if one provided", () => {
+      const MockWrapper = jest.fn();
+      const dummyLinks = ["link-1", "link-2"];
+      render(<NumberLinks links={dummyLinks} Wrapper={MockWrapper} />);
+      expect(MockWrapper).toHaveBeenCalledTimes(2);
+      const [firstCall, secondCall] = MockWrapper.mock.calls;
+      expect(firstCall[0].to).toEqual("link-1");
+      expect(secondCall[0].to).toEqual("link-2");
+    });
+  });
+
   describe("Test 'getItemsToRender' error handling", () => {
     test("should throw an error if 'maxItems' less than 5", () => {
       let error;
