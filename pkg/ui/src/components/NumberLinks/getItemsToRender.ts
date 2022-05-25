@@ -14,6 +14,9 @@ export const getItemsToRender = (
   maxItems: number,
   currentItem: number
 ): (number | null)[] => {
+  // Avoid exploding if no items provided
+  if (numItems === 0) return [];
+
   // Validate maxItems
   if (maxItems < 5) {
     throw new Error(
@@ -28,33 +31,24 @@ export const getItemsToRender = (
     throw new Error(errorMessage);
   }
 
+  // If provided an even number of items to show (maxItems)
+  // should actually show a preceeding odd number of items
+  // to not mess with the rendering logic
+  const numItemsToShow = maxItems % 2 === 0 ? maxItems - 1 : maxItems;
+
   // Show all items if all fit in range specified by 'maxItems'
-  if (numItems <= maxItems) {
+  if (numItems <= numItemsToShow) {
     return Array(numItems)
       .fill(null)
       .map((_, i) => i);
   }
 
-  // Width of central items shown
-  // In the simplest scenario this would be
-  //
-  // maxItems = 7
-  // currentItem = 4
-  // numItems = 9
-  //
-  // 0, null, 3, 4, 5, null, 8
-  //
-  // Where the width of centralArray [3, 4, 5] is 3
-  // To calculate this we take the number of items shown (7 in this case)
-  // and subtract 4:
-  // - 2 for first and last item (0 and 8 in this case)
-  // - 2 for '...' on both sides
-  const centralWidth = maxItems - 4;
-
-  // Width of items shown on the side if the 'currentItem' in the range
-  const sideWidth = maxItems - 2;
+  // Max width (as number of items shown) of an unbroken sequence of numbers on left or right side if the 'currentItem' in the respective range
+  // Example: numItems = 10, maxItems = 5, currentItem = 1
+  // [0,'1',2,null,9] -> Here the longest, unbroken array (from start) is [0,1,2], length = 3
+  const sideWidth = numItemsToShow - 2;
   const [isStart, isEnd] =
-    maxItems === 5
+    numItemsToShow === 5
       ? [currentItem < sideWidth, currentItem >= numItems - sideWidth]
       : [currentItem < sideWidth - 1, currentItem > numItems - sideWidth];
 
@@ -71,6 +65,10 @@ export const getItemsToRender = (
     });
     return [0, null].concat(endArr);
   }
+
+  // Width (as number of items shown) of central array e.g.
+  // [4,5,6] in [0, null, 4, '5', 6, null, 9]   -->  currentItem being 5
+  const centralWidth = numItemsToShow - 4;
 
   const centralArray = [currentItem];
   for (let i = 0; i < Math.floor(centralWidth / 2); i++) {
