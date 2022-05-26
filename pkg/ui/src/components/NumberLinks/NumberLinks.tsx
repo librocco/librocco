@@ -1,4 +1,8 @@
 import React from "react";
+
+import ChevronLeft from "@assets/ChevronLeft.svg";
+import ChevronRight from "@assets/ChevronRight.svg";
+
 import { getItemsToRender } from "./getItemsToRender";
 
 export interface WrapperProps extends React.HTMLAttributes<HTMLElement> {
@@ -52,26 +56,84 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
 }) => {
   const itemsToRender = getItemsToRender(links.length, maxItems, 0);
 
+  const leftArrow = (
+    <button className={getButtonClassName("inactive", "hover")}>
+      <span className="block w-6 h-6">
+        <ChevronLeft />
+      </span>
+    </button>
+  );
+  const rightArrow = (
+    <button className={getButtonClassName("inactive", "hover")}>
+      <span className="block w-6 h-6">
+        <ChevronRight />
+      </span>
+    </button>
+  );
+
   return (
-    <>
+    <div className="flex">
+      {leftArrow}
       {itemsToRender.map((item, i) => {
         // Item being 'null' signals rendering of (unclickable) "..." button
         if (item === null) {
-          return <button key={`elipsis-${i}`}>...</button>;
+          return (
+            <button
+              className={getButtonClassName("inactive")}
+              key={`elipsis-${i}`}
+            >
+              ...
+            </button>
+          );
         }
 
         // Links are 0-indexed and we want to display 1-indexed pages
-        const label = item === null ? "..." : item + 1;
+        const label = item + 1;
         const link = links[item];
 
         return (
           <Wrapper key={link} to={link}>
-            <button onClick={() => onChange(link, i)}>{label}</button>
+            <button
+              className={getButtonClassName(
+                "hover",
+                i === 0 ? "active" : "inactive"
+              )}
+              onClick={() => onChange(link, i)}
+            >
+              {label}
+            </button>
           </Wrapper>
         );
       })}
-    </>
+      {rightArrow}
+    </div>
   );
+};
+
+type ButtonClassVariant = "inactive" | "active" | "hover";
+
+const getButtonClassName = (...variants: ButtonClassVariant[]): string =>
+  variants.reduce(
+    (acc, curr) => [acc, ...buttonVariantsLookup[curr]].join(" "),
+    buttonBaseClasses.join(" ")
+  );
+
+const buttonBaseClasses = [
+  "w-10",
+  "h-[38px]",
+  "flex",
+  "items-center",
+  "justify-center",
+  "text-sm",
+  "leading-5",
+  "font-medium",
+  "border",
+];
+
+const buttonVariantsLookup: Record<ButtonClassVariant, string[]> = {
+  inactive: ["text-gray-500", "border-gray-300"],
+  active: ["text-indigo-600", "bg-indigo-50", "border-indigo-500"],
+  hover: ["hover:bg-indigo-50"],
 };
 
 export default NumberLinks;

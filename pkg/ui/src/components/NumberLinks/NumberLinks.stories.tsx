@@ -8,4 +8,8 @@ export default {
   component: NumberLinks,
 } as ComponentMeta<typeof NumberLinks>;
 
-export const Default = (): JSX.Element => <NumberLinks links={[]} />;
+const dummyLinks = Array(12)
+  .fill(null)
+  .map((_, i) => `link-${i + 1}`);
+
+export const Default = (): JSX.Element => <NumberLinks links={dummyLinks} />;
