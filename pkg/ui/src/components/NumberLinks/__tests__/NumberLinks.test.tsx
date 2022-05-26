@@ -33,7 +33,7 @@ describe("NumberLinks", () => {
 
     test("should not explode if no inputs for 'onButtonClick' nor 'Wrapper' provided", () => {
       render(<NumberLinks currentItem={0} links={["link1"]} />);
-      screen.getByRole("button").click();
+      screen.getAllByRole("button")[0].click();
     });
 
     test("should not render if there are no items to show", () => {
@@ -54,7 +54,7 @@ describe("NumberLinks", () => {
       expect(mockOnButtonClick).toHaveBeenCalledWith("link1", 0);
     });
 
-    test.only("should call to 'onButtonClick' function, passing previous/next link and index of 'currentItem' left/right arrow click respectively", () => {
+    test("should call to 'onButtonClick' function, passing previous/next link and index of 'currentItem' left/right arrow click respectively", () => {
       const mockOnButtonClick = jest.fn();
       const threeItems = Array(3)
         .fill(null)
@@ -73,7 +73,7 @@ describe("NumberLinks", () => {
       expect(mockOnButtonClick).toHaveBeenCalledWith("link-2", 2);
     });
 
-    test.only("should disable prev/next buttons if no prevoius or next item respectively", () => {
+    test("should disable prev/next buttons if no prevoius or next item respectively", () => {
       render(<NumberLinks currentItem={0} links={["link-1"]} />);
       const [prevButton, , nextButton] = screen.getAllByRole("button");
       expect(prevButton).toHaveProperty("disabled", true);
