@@ -2,7 +2,7 @@
  * Creates an array of items to render for the `NumberLinks` component with respect to number of items, max items to show and
  * currently selected (active) item. Item might be `null` instead of number. In that case, we should render `...` istead.
  *
- * _Note: items returned as indexes (0 indexed) to easier pull data from a array of items. For rendering (1 indexed) we should add 1 to each member of the result_
+ * _Note: items returned as indexes (0 based) to easier pull data from a array of items. For rendering (1 based) we should add 1 to each member of the result_
  *
  * @param numItems total number of items to pick from
  * @param maxItems maximum items to display (length of the return array should be the same)
