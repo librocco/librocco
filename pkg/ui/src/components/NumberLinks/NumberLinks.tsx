@@ -27,6 +27,10 @@ interface NumberLinksProps
    */
   links: string[];
   /**
+   * Currently selected item index (0 - based)
+   */
+  currentItem: number;
+  /**
    * An optional wrapper component to wrap each element (such as React router `Link` component).
    * Should accept the basic props (described below) as those are the props passed from inside of the PaginationNav component for each element.
    * @param {Object} props
@@ -39,37 +43,57 @@ interface NumberLinksProps
    */
   as?: keyof JSX.IntrinsicElements;
   /**
-   * On change function fired when the nav button is clicked.
+   * Function fired when the nav button is clicked.
    * @param {string} link pathname to reroute to
    * @param {number} i index (not the label) of the clicked nav: `label = 2 --> i = 1`
    */
-  onChange?: (link: string, i: number) => void;
+  onButtonClick?: (link: string, i: number) => void;
 }
 
 const FallbackWrapper: Wrapper = ({ children }) => <>{children}</>;
 
 const NumberLinks: React.FC<NumberLinksProps> = ({
-  links,
   maxItems = 7,
-  onChange = () => {},
+  links,
+  currentItem,
+  onButtonClick = () => {},
   Wrapper = FallbackWrapper,
 }) => {
-  const itemsToRender = getItemsToRender(links.length, maxItems, 0);
+  const itemsToRender = getItemsToRender(links.length, maxItems, currentItem);
+
+  // #region arrowButtons
+  const [prevItem, nextItem] = [currentItem - 1, currentItem + 1];
+  const [prevLink, nextLink] = [links[prevItem], links[nextItem]];
 
   const leftArrow = (
-    <button className={getButtonClassName("inactive", "hover")}>
+    <button
+      disabled={!prevLink}
+      onClick={() => onButtonClick(prevLink, prevItem)}
+      className={getButtonClassName(
+        "inactive",
+        prevLink ? "hover" : "disabled"
+      )}
+    >
       <span className="block w-6 h-6">
         <ChevronLeft />
       </span>
     </button>
   );
   const rightArrow = (
-    <button className={getButtonClassName("inactive", "hover")}>
+    <button
+      disabled={!nextLink}
+      onClick={() => onButtonClick(nextLink, nextItem)}
+      className={getButtonClassName(
+        "inactive",
+        nextLink ? "hover" : "disabled"
+      )}
+    >
       <span className="block w-6 h-6">
         <ChevronRight />
       </span>
     </button>
   );
+  // #endregion arrowButtons
 
   return (
     <div className="flex">
@@ -91,14 +115,17 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
         const label = item + 1;
         const link = links[item];
 
+        const isActive = currentItem === i;
+
         return (
           <Wrapper key={link} to={link}>
             <button
+              disabled={isActive}
               className={getButtonClassName(
                 "hover",
-                i === 0 ? "active" : "inactive"
+                isActive ? "active" : "inactive"
               )}
-              onClick={() => onChange(link, i)}
+              onClick={() => onButtonClick(link, i)}
             >
               {label}
             </button>
@@ -110,7 +137,8 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
   );
 };
 
-type ButtonClassVariant = "inactive" | "active" | "hover";
+// #region styles
+type ButtonClassVariant = "inactive" | "active" | "hover" | "disabled";
 
 const getButtonClassName = (...variants: ButtonClassVariant[]): string =>
   variants.reduce(
@@ -134,6 +162,8 @@ const buttonVariantsLookup: Record<ButtonClassVariant, string[]> = {
   inactive: ["text-gray-500", "border-gray-300"],
   active: ["text-indigo-600", "bg-indigo-50", "border-indigo-500"],
   hover: ["hover:bg-indigo-50"],
+  disabled: ["opacity-50"],
 };
+// #endregion styles
 
 export default NumberLinks;

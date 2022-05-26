@@ -31,38 +31,84 @@ describe("NumberLinks", () => {
       jest.clearAllMocks();
     });
 
-    test("should not explode if no inputs for 'onChange' nor 'Wrapper' provided", () => {
-      render(<NumberLinks links={["link1"]} />);
+    test("should not explode if no inputs for 'onButtonClick' nor 'Wrapper' provided", () => {
+      render(<NumberLinks currentItem={0} links={["link1"]} />);
       screen.getByRole("button").click();
     });
 
     test("should not render if there are no items to show", () => {
-      render(<NumberLinks links={[]} />);
+      render(<NumberLinks currentItem={0} links={[]} />);
       expect(screen.queryByRole("button")).toBeFalsy();
     });
 
-    test("should call to 'onChange' function, passing link and index of an item on item button click", () => {
-      const mockOnChange = jest.fn();
-      render(<NumberLinks links={["link1"]} onChange={mockOnChange} />);
+    test("should call to 'onButtonClick' function, passing link and index of an item on item button click", () => {
+      const mockOnButtonClick = jest.fn();
+      render(
+        <NumberLinks
+          currentItem={1}
+          links={["link1", "link2"]}
+          onButtonClick={mockOnButtonClick}
+        />
+      );
       screen.getByText("1").click();
-      expect(mockOnChange).toHaveBeenCalledWith("link1", 0);
+      expect(mockOnButtonClick).toHaveBeenCalledWith("link1", 0);
+    });
+
+    test.only("should call to 'onButtonClick' function, passing previous/next link and index of 'currentItem' left/right arrow click respectively", () => {
+      const mockOnButtonClick = jest.fn();
+      const threeItems = Array(3)
+        .fill(null)
+        .map((_, i) => `link-${i}`);
+      render(
+        <NumberLinks
+          links={threeItems}
+          currentItem={1}
+          onButtonClick={mockOnButtonClick}
+        />
+      );
+      const [prevButton, , , , nextButton] = screen.getAllByRole("button");
+      prevButton.click();
+      expect(mockOnButtonClick).toHaveBeenCalledWith("link-0", 0);
+      nextButton.click();
+      expect(mockOnButtonClick).toHaveBeenCalledWith("link-2", 2);
+    });
+
+    test.only("should disable prev/next buttons if no prevoius or next item respectively", () => {
+      render(<NumberLinks currentItem={0} links={["link-1"]} />);
+      const [prevButton, , nextButton] = screen.getAllByRole("button");
+      expect(prevButton).toHaveProperty("disabled", true);
+      expect(nextButton).toHaveProperty("disabled", true);
+    });
+
+    test("should disable currentItem button for clicking", () => {
+      render(<NumberLinks currentItem={0} links={["link-1"]} />);
+      const currentItemButton = screen.getByText("1");
+      expect(currentItemButton).toHaveProperty("disabled", true);
     });
 
     test('elipsis ("...") should not be clickable', () => {
-      const mockOnChange = jest.fn();
+      const mockOnButtonClick = jest.fn();
       // Generate a large enough number of links so that the elipsis has to be shown
       const dummyLinks = Array(12)
         .fill(null)
         .map((_, i) => `link-${i}`);
-      render(<NumberLinks links={dummyLinks} onChange={mockOnChange} />);
+      render(
+        <NumberLinks
+          currentItem={0}
+          links={dummyLinks}
+          onButtonClick={mockOnButtonClick}
+        />
+      );
       screen.getByText("...").click();
-      expect(mockOnChange).not.toHaveBeenCalled();
+      expect(mockOnButtonClick).not.toHaveBeenCalled();
     });
 
     test("should wrap buttons in 'Wrapper' component if one provided", () => {
       const MockWrapper = jest.fn();
       const dummyLinks = ["link-1", "link-2"];
-      render(<NumberLinks links={dummyLinks} Wrapper={MockWrapper} />);
+      render(
+        <NumberLinks currentItem={0} links={dummyLinks} Wrapper={MockWrapper} />
+      );
       expect(MockWrapper).toHaveBeenCalledTimes(2);
       const [firstCall, secondCall] = MockWrapper.mock.calls;
       expect(firstCall[0].to).toEqual("link-1");
