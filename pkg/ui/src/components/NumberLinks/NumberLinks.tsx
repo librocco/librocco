@@ -61,6 +61,12 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
 }) => {
   const itemsToRender = getItemsToRender(links.length, maxItems, currentItem);
 
+  // Don't render if there are no items to show
+  // No need for pagination
+  if (!itemsToRender.length) {
+    return null;
+  }
+
   // #region arrowButtons
   const [prevItem, nextItem] = [currentItem - 1, currentItem + 1];
   const [prevLink, nextLink] = [links[prevItem], links[nextItem]];
