@@ -121,7 +121,7 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
         const label = item + 1;
         const link = links[item];
 
-        const isActive = currentItem === i;
+        const isActive = currentItem === item;
 
         return (
           <Wrapper key={link} to={link}>
@@ -131,7 +131,7 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
                 "hover",
                 isActive ? "active" : "inactive"
               )}
-              onClick={() => onButtonClick(link, i)}
+              onClick={() => onButtonClick(link, item)}
             >
               {label}
             </button>
