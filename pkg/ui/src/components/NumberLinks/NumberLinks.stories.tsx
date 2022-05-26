@@ -12,4 +12,6 @@ const dummyLinks = Array(12)
   .fill(null)
   .map((_, i) => `link-${i + 1}`);
 
-export const Default = (): JSX.Element => <NumberLinks links={dummyLinks} />;
+export const Default = (): JSX.Element => (
+  <NumberLinks currentItem={0} links={dummyLinks} />
+);
