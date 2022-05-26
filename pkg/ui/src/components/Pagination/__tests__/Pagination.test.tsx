@@ -1,7 +1,7 @@
 import React from "react";
 import { cleanup, render, screen } from "@testing-library/react";
 
-import NumberLinks from "../NumberLinks";
+import Pagination from "../Pagination";
 
 import { getItemsToRender } from "../getItemsToRender";
 
@@ -24,7 +24,7 @@ const runTableTests = (
   });
 };
 
-describe("NumberLinks", () => {
+describe("Pagination", () => {
   describe("Component tests", () => {
     afterEach(() => {
       cleanup();
@@ -32,19 +32,19 @@ describe("NumberLinks", () => {
     });
 
     test("should not explode if no inputs for 'onButtonClick' nor 'Wrapper' provided", () => {
-      render(<NumberLinks currentItem={0} links={["link1"]} />);
+      render(<Pagination currentItem={0} links={["link1"]} />);
       screen.getAllByRole("button")[0].click();
     });
 
     test("should not render if there are no items to show", () => {
-      render(<NumberLinks currentItem={0} links={[]} />);
+      render(<Pagination currentItem={0} links={[]} />);
       expect(screen.queryByRole("button")).toBeFalsy();
     });
 
     test("should call to 'onButtonClick' function, passing link and index of an item on item button click", () => {
       const mockOnButtonClick = jest.fn();
       render(
-        <NumberLinks
+        <Pagination
           currentItem={1}
           links={["link1", "link2"]}
           onButtonClick={mockOnButtonClick}
@@ -60,7 +60,7 @@ describe("NumberLinks", () => {
         .fill(null)
         .map((_, i) => `link-${i}`);
       render(
-        <NumberLinks
+        <Pagination
           links={threeItems}
           currentItem={1}
           onButtonClick={mockOnButtonClick}
@@ -74,14 +74,14 @@ describe("NumberLinks", () => {
     });
 
     test("should disable prev/next buttons if no prevoius or next item respectively", () => {
-      render(<NumberLinks currentItem={0} links={["link-1"]} />);
+      render(<Pagination currentItem={0} links={["link-1"]} />);
       const [prevButton, , nextButton] = screen.getAllByRole("button");
       expect(prevButton).toHaveProperty("disabled", true);
       expect(nextButton).toHaveProperty("disabled", true);
     });
 
     test("should disable currentItem button for clicking", () => {
-      render(<NumberLinks currentItem={0} links={["link-1"]} />);
+      render(<Pagination currentItem={0} links={["link-1"]} />);
       const currentItemButton = screen.getByText("1");
       expect(currentItemButton).toHaveProperty("disabled", true);
     });
@@ -93,7 +93,7 @@ describe("NumberLinks", () => {
         .fill(null)
         .map((_, i) => `link-${i}`);
       render(
-        <NumberLinks
+        <Pagination
           currentItem={0}
           links={dummyLinks}
           onButtonClick={mockOnButtonClick}
@@ -107,7 +107,7 @@ describe("NumberLinks", () => {
       const MockWrapper = jest.fn();
       const dummyLinks = ["link-1", "link-2"];
       render(
-        <NumberLinks currentItem={0} links={dummyLinks} Wrapper={MockWrapper} />
+        <Pagination currentItem={0} links={dummyLinks} Wrapper={MockWrapper} />
       );
       expect(MockWrapper).toHaveBeenCalledTimes(2);
       const [firstCall, secondCall] = MockWrapper.mock.calls;
