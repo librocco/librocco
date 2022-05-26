@@ -39,7 +39,7 @@ export const Interactive = (): JSX.Element => {
 export const MaxItems5 = (): JSX.Element => (
   <>
     <h1 className="mb-8 font-bold">Max Items: 5</h1>
-    <StorybookGrid cells={3}>
+    <StorybookGrid cols={3}>
       <StorybookItem className="mb-4" label="Current item near start">
         <NumberLinks maxItems={5} currentItem={2} links={dummyLinks} />
       </StorybookItem>
@@ -62,7 +62,7 @@ export const MaxItems5 = (): JSX.Element => (
 export const MaxItems7 = (): JSX.Element => (
   <>
     <h1 className="mb-8 font-bold">Max Items: 7</h1>
-    <StorybookGrid cells={2}>
+    <StorybookGrid cols={2}>
       <StorybookItem className="mb-4" label="Current item near start">
         <NumberLinks maxItems={7} currentItem={2} links={dummyLinks} />
       </StorybookItem>
