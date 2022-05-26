@@ -39,10 +39,6 @@ interface PaginationProps
    */
   Wrapper?: Wrapper;
   /**
-   * HTML tag used to render the element
-   */
-  as?: keyof JSX.IntrinsicElements;
-  /**
    * Function fired when the nav button is clicked.
    * @param {string} link pathname to reroute to
    * @param {number} i index (not the label) of the clicked nav: `label = 2 --> i = 1`
@@ -75,6 +71,7 @@ const Pagination: React.FC<PaginationProps> = ({
   currentItem,
   onButtonClick = () => {},
   Wrapper = FallbackWrapper,
+  className = "",
 }) => {
   const itemsToRender = getItemsToRender(links.length, maxItems, currentItem);
 
@@ -87,78 +84,93 @@ const Pagination: React.FC<PaginationProps> = ({
   // #region arrowButtons
   const [prevItem, nextItem] = [currentItem - 1, currentItem + 1];
   const [prevLink, nextLink] = [links[prevItem], links[nextItem]];
-
-  const leftArrow = (
-    <button
-      disabled={!prevLink}
-      onClick={() => onButtonClick(prevLink, prevItem)}
-      className={getButtonClassName(
-        "inactive",
-        prevLink ? "hover" : "disabled"
-      )}
-    >
-      <span className="block w-6 h-6">
-        <ChevronLeft />
-      </span>
-    </button>
-  );
-  const rightArrow = (
-    <button
-      disabled={!nextLink}
-      onClick={() => onButtonClick(nextLink, nextItem)}
-      className={getButtonClassName(
-        "inactive",
-        nextLink ? "hover" : "disabled"
-      )}
-    >
-      <span className="block w-6 h-6">
-        <ChevronRight />
-      </span>
-    </button>
-  );
   // #endregion arrowButtons
 
+  // #region numbersContent
+  const content = itemsToRender.map((item, i) => {
+    // Item being 'null' signals rendering of (unclickable) "..." button
+    if (item === null) {
+      return (
+        <button
+          disabled
+          className={getButtonClassName("inactive")}
+          key={`elipsis-${i}`}
+        >
+          ...
+        </button>
+      );
+    }
+
+    // Links are 0 based and we want to display 1 based pages
+    const label = item + 1;
+    const link = links[item];
+
+    const isActive = currentItem === item;
+
+    return (
+      <Wrapper key={link} to={link}>
+        <button
+          disabled={isActive}
+          className={getButtonClassName(
+            "hover",
+            isActive ? "active" : "inactive"
+          )}
+          onClick={() => onButtonClick(link, item)}
+        >
+          {label}
+        </button>
+      </Wrapper>
+    );
+  });
+  // #endregion numbersContent
+
   return (
-    <div className="flex">
-      {leftArrow}
-      {itemsToRender.map((item, i) => {
-        // Item being 'null' signals rendering of (unclickable) "..." button
-        if (item === null) {
-          return (
-            <button
-              className={getButtonClassName("inactive")}
-              key={`elipsis-${i}`}
-            >
-              ...
-            </button>
-          );
-        }
+    <nav className={["flex", className].join(" ")}>
+      <ArrowButton
+        variant="left"
+        disabled={!prevLink}
+        onClick={() => onButtonClick(prevLink, prevItem)}
+      />
 
-        // Links are 0 based and we want to display 1 based pages
-        const label = item + 1;
-        const link = links[item];
+      {content}
 
-        const isActive = currentItem === item;
-
-        return (
-          <Wrapper key={link} to={link}>
-            <button
-              disabled={isActive}
-              className={getButtonClassName(
-                "hover",
-                isActive ? "active" : "inactive"
-              )}
-              onClick={() => onButtonClick(link, item)}
-            >
-              {label}
-            </button>
-          </Wrapper>
-        );
-      })}
-      {rightArrow}
-    </div>
+      <ArrowButton
+        variant="right"
+        disabled={!nextLink}
+        onClick={() => onButtonClick(nextLink, nextItem)}
+      />
+    </nav>
   );
 };
+
+// #region subComponents
+const ArrowButton: React.FC<{
+  variant: "left" | "right";
+  disabled: boolean;
+  onClick: (e: React.SyntheticEvent) => void;
+}> = ({ disabled, onClick, variant }) => {
+  const Icon = arrowIconLookup[variant];
+
+  return (
+    <button
+      {...{ disabled, onClick }}
+      className={getButtonClassName(
+        "inactive",
+        disabled ? "disabled" : "hover"
+      )}
+    >
+      <span className="block w-6 h-6">
+        <Icon />
+      </span>
+    </button>
+  );
+};
+
+const arrowIconLookup = {
+  left: ChevronLeft,
+  right: ChevronRight,
+};
+// #endregion subComponents
 
 // #region styles
 type ButtonClassVariant = "inactive" | "active" | "hover" | "disabled";

@@ -22,12 +22,11 @@ export const Interactive = (): JSX.Element => {
   return (
     <div>
       <h1 className="mb-2 font-bold">Interactive</h1>
-      <p className="mb-8 italic text-gray-500 w-sm">
+      <p className="mb-8 ml-4 italic text-gray-500 w-sm">
         Pagination is a stateless component (current item is controlled from
         outside and passed as props). Only this story is interactive as it keeps
         state wrapped around the rendered component.
       </p>
-      <h2>Current Item: {currentItem}</h2>
       <Pagination
         {...{ currentItem, onButtonClick, maxItems: 6 }}
         links={dummyLinks}
