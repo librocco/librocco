@@ -13,7 +13,7 @@ export interface WrapperProps extends React.HTMLAttributes<HTMLElement> {
 type Wrapper<Props extends Record<string, unknown> = Record<string, unknown>> =
   React.FC<WrapperProps & Props>;
 
-interface NumberLinksProps
+interface PaginationProps
   extends Omit<React.HTMLAttributes<HTMLElement>, "onChange"> {
   /**
    * Maximum number of items to display, should be at least 5 and an odd number.
@@ -32,7 +32,7 @@ interface NumberLinksProps
   currentItem: number;
   /**
    * An optional wrapper component to wrap each element (such as React router `Link` component).
-   * Should accept the basic props (described below) as those are the props passed from inside of the PaginationNav component for each element.
+   * Should accept the basic props (described below) as those are the props passed from inside of the Pagination component for each element.
    * @param {Object} props
    * @param {string} props.to pathname to link to (without the domain name)
    * @param {boolean} props.disabled
@@ -52,7 +52,24 @@ interface NumberLinksProps
 
 const FallbackWrapper: Wrapper = ({ children }) => <>{children}</>;
 
-const NumberLinks: React.FC<NumberLinksProps> = ({
+/**
+ * A stateless component used to render the numbered navigation bar and display current active.
+ * This is to be used for all sorts of pagination, most notably for search results.
+ *
+ * The component accepts `links` (an array of string links). The links are used to render numbered items (one for each link).
+ * When a button is clicked, the `onButtonClick` function is fired with the corresponding link and (0 based) index of given link in
+ * the `links` array (for stateful updates)
+ *
+ * The component being a stateless one, it accepts `currentItem` to visually mark the currently active link (and disable the button).
+ * Stateful logic should be implemented outside of the component.
+ * @param {Object} props
+ * @param {number} props.maxItems maximum number of items to display, defaults to `7`, throws if `< 5`
+ * @param {string[]} props.links an array of string links
+ * @param {number} props.currentItem 0 based index of currently active item
+ * @param {Function} props.onButtonClick on each button click, this function is called with the corresponding link and item position in `links` array
+ * @param {React.FC} props.Wrapper an optional wrapper component to wrap each item (button) rendered and get `to` and `disabled` passed to it
+ */
+const Pagination: React.FC<PaginationProps> = ({
   maxItems = 7,
   links,
   currentItem,
@@ -117,7 +134,7 @@ const NumberLinks: React.FC<NumberLinksProps> = ({
           );
         }
 
-        // Links are 0-indexed and we want to display 1-indexed pages
+        // Links are 0 based and we want to display 1 based pages
         const label = item + 1;
         const link = links[item];
 
@@ -172,4 +189,4 @@ const buttonVariantsLookup: Record<ButtonClassVariant, string[]> = {
 };
 // #endregion styles
 
-export default NumberLinks;
+export default Pagination;
