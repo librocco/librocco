@@ -33,24 +33,44 @@ export const rowToObjectMaker = function (columns: string[]) {
         }
         return obj;
     };
-}
+};
 
 /**
-* Counts lines in a csv file for progress bar calculations
-* @param {string} filePath - csv file path
-* @return {Number} - Number of lines in file
-*/
+ * Returns a function which converts rows in array of arrays format to objects
+ * @param columns
+ * @returns {function} - function(row)
+ * 0: ['1', 'In Search of Lost Time', 'Marcel Proust']
+ * 1: ['2', 'Ulysses', 'James Joyce']
+ * 2: ['3', 'Don Quixote', 'Miguel de Cervantes']
+ */
+export const rowArraysTObject = (columns: string[]) =>
+    (row: string[]) => {
+        let obj: { [key: string]: string } = {};
+        let i = 0;
+
+        for (const field of row) {
+            obj[columns[i]] = field;
+            i++;
+        }
+        return obj;
+    };
+
+/**
+ * Counts lines in a csv file for progress bar calculations
+ * @param {string} filePath - csv file path
+ * @return {Number} - Number of lines in file
+ */
 export const howManyLines = async function (filePath: string) {
- let lineCount: number = 0;
- var file;
- try {
-   file = await Deno.open(filePath);
-   const bufReader = new BufReader(file);
-   while (await bufReader.readLine()) {
-     lineCount++;
-   }
- } finally {
-   if (file) file.close();
- }
- return lineCount;
+    let lineCount: number = 0;
+    var file;
+    try {
+        file = await Deno.open(filePath);
+        const bufReader = new BufReader(file);
+        while (await bufReader.readLine()) {
+            lineCount++;
+        }
+    } finally {
+        if (file) file.close();
+    }
+    return lineCount;
 };

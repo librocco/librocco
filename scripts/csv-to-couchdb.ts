@@ -1,11 +1,10 @@
 #!/usr/bin/env -S deno run --allow-read --allow-net
 
 import Denomander from "https://deno.land/x/denomander@0.9.1/mod.ts";
-import { readCSV } from "https://deno.land/x/csv/mod.ts";
+import { readCSVRows } from "https://deno.land/x/csv/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.4/mod.ts";
 import { createDatabase, postBulkDocs } from "../pkg/couchdb/couchdb.ts";
-import { inChunks, rowToObjectMaker, howManyLines } from "./utils.ts";
-
+import { howManyLines, inChunks, rowArraysTObject } from "./utils.ts";
 
 //#region progress bar
 /**
@@ -61,14 +60,25 @@ async function CSVToCouch(
 
   try {
     await createDatabase(couchdbURL, couchdbName);
+    /**
+     * @TODO create a function that writes the columns into the csv file so we can use readCSVObjects instead
+     * or reimplement readCSVObjects to accept a columns arg
+     */
     const f = await Deno.open(filePath);
 
     /** @TODO handle file reading errors or create timeout per chunk */
+
     let completed = 0;
     for await (
-      const chunk of inChunks(readCSV(f, options), chunkSize)
+      const chunk of inChunks(readCSVRows(f, options), chunkSize)
     ) {
-      const books = await Promise.all(chunk.map(rowToObjectMaker(columns)));
+      let books: { [key: string]: string }[] = [];
+
+      for (const row of chunk) {
+        const book = rowArraysTObject(columns)(row);
+        books.push(book);
+      }
+
       await postBulkDocs(books, couchdbName, couchdbURL);
       if (completed <= progress.total!) {
         completed += books.length;
