@@ -1,0 +1,31 @@
+name: Storybook
+
+on:
+  - pull_request
+
+jobs:
+  storybook-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - name: Cache node modules and firebase emulators
+        uses: actions/cache@v2
+        with:
+          path: |
+            ~/.pnpm-store
+            common/temp/pnpm-store
+            **/node_modules
+            ~/.cache/firebase/emulators
+          key: ${{ runner.os }}-modules-emulators-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - name: Add local rush scripts to PATH
+        run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+      - name: Install and build packages
+        run: rush update && rush build
+      - name: Build storybook
+        run: cd pkg/ui && rushx build-storybook

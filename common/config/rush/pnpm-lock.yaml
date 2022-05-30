@@ -118,6 +118,7 @@ importers:
       eslint-plugin-react-hooks: ^4.4.0
       eslint-plugin-unused-imports: ^2.0.0
       jest: ^27.5.1
+      jest-junit: ~13.2.0
       postcss: ~8.4.13
       react: ^18.0.0
       react-dom: ^18.0.0
@@ -161,6 +162,7 @@ importers:
       eslint-plugin-react-hooks: 4.4.0_eslint@8.13.0
       eslint-plugin-unused-imports: 2.0.0_9fd6dc3e08a395617ed4a33da76f8d06
       jest: 27.5.1
+      jest-junit: 13.2.0
       postcss: 8.4.13
       react: 18.0.0
       react-dom: 18.0.0_react@18.0.0

@@ -41,9 +41,8 @@
     "lint": "eslint .",
     "lint:strict": "eslint . --max-warnings=0",
     "typecheck": "tsc --noEmit",
-    "test": "jest",
+    "test": "jest --watch",
     "test:ci": "jest --ci --reporters=default --reporters=jest-junit",
-    "tdd": "jest --watch",
     "prepublishOnly": "yarn build"
   },
   "author": "Brian Vaughn <briandavidvaughn@gmail.com> (https://github.com/bvaughn/)",
