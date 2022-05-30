@@ -4,7 +4,7 @@ import Denomander from "https://deno.land/x/denomander@0.9.1/mod.ts";
 import { readCSVRows } from "https://deno.land/x/csv/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.4/mod.ts";
 import { createDatabase, postBulkDocs } from "../pkg/couchdb/couchdb.ts";
-import { howManyLines, inChunks, rowArraysTObject } from "./utils.ts";
+import { howManyLines, inChunks, rowArraysToObjectMaker } from "./utils.ts";
 
 //#region progress bar
 /**
@@ -75,7 +75,7 @@ async function CSVToCouch(
       let books: { [key: string]: string }[] = [];
 
       for (const row of chunk) {
-        const book = rowArraysTObject(columns)(row);
+        const book = rowArraysToObjectMaker(columns)(row);
         books.push(book);
       }
 

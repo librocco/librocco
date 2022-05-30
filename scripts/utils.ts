@@ -1,6 +1,5 @@
 import { BufReader } from "https://deno.land/std/io/buffer.ts";
 
-
 /**
  * Aggregate values from an Iterable in chunks of a given maximum size
  * @param {Iterator} sequence The iterator to take values from
@@ -9,7 +8,7 @@ import { BufReader } from "https://deno.land/std/io/buffer.ts";
  */
 export const inChunks = async function* <T>(
     sequence: AsyncIterable<T>,
-    chunkSize: number,
+    chunkSize: number
 ) {
     let chunk: T[] = [];
     for await (const element of sequence) {
@@ -21,7 +20,6 @@ export const inChunks = async function* <T>(
     }
     yield chunk;
 };
-
 
 export const rowToObjectMaker = function (columns: string[]) {
     return async function (row: AsyncIterable<string>) {
@@ -43,17 +41,16 @@ export const rowToObjectMaker = function (columns: string[]) {
  * 1: ['2', 'Ulysses', 'James Joyce']
  * 2: ['3', 'Don Quixote', 'Miguel de Cervantes']
  */
-export const rowArraysTObject = (columns: string[]) =>
-    (row: string[]) => {
-        let obj: { [key: string]: string } = {};
-        let i = 0;
+export const rowArraysToObjectMaker = (columns: string[]) => (row: string[]) => {
+    let obj: { [key: string]: string } = {};
+    let i = 0;
 
-        for (const field of row) {
-            obj[columns[i]] = field;
-            i++;
-        }
-        return obj;
-    };
+    for (const field of row) {
+        obj[columns[i]] = field;
+        i++;
+    }
+    return obj;
+};
 
 /**
  * Counts lines in a csv file for progress bar calculations
