@@ -1,23 +1,34 @@
 /** 
- * @TODO handle all error cases 
+ * This file uses the `fetch` API: only import it with deno or node >= v18
+ * @TODO handle all error cases
  * 1. database already exists
 */
 
 /**
  * Creates a couchdb database
- * Only import with deno and node >= v18
  * @param {string} dbName - couchdb database name
  * @param {string} couchdbURL - URL of remote database
  */
-export const createDatabase = async (dbName: string,
-    couchdbURL: string) => {
+export const createDatabase = async (couchdbServerURL: string, dbName: string) => {
         const database = await fetch(
-            `${couchdbURL}/${dbName}`,
+            `${couchdbServerURL}/${dbName}`,
             { method: "PUT" }
         );
-
     const databaseRes = await database.text();
-    console.log(databaseRes);
+}
+
+
+/**
+ * Deletes a couchdb database
+ * @param {string} couchdbURL - URL of remote database
+ * @param {string} dbName - couchdb database name
+ */
+ export const removeDatabase = async (couchdbURL: string, dbName: string) => {
+    const database = await fetch(
+        `${couchdbURL}/${dbName}`,
+        { method: "DELETE" }
+    );
+    const databaseRes = await database.text();
 }
 
 /**
@@ -51,3 +62,22 @@ export const postBulkDocs = async (
         }
     );
 };
+
+
+/**
+ * 
+ * @param couchdbURL The base URL of the Couchdb server 
+ * @param dbName The name of the Couchdb database
+ * @returns The json decoded response from the server
+ */
+export const getAllDocs = async (couchdbURL: string, dbName: string) => {
+    const response = await fetch(
+        `${couchdbURL}/${dbName}/_all_docs?include_docs=true`,
+        {
+            method: "GET",
+            headers: { "content-type": "application/json" },
+        }
+    );
+    const responseBody = await response.json();
+    return responseBody;
+}

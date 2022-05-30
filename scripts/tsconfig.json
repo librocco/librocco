@@ -1,0 +1,5 @@
+{
+  "extends": "../pkg/scaffold/tsconfig.ui.json",
+  "exclude": [],
+  "include": ["__tests__"]
+}

@@ -1,0 +1,30 @@
+name: Tests for scripts
+
+on:
+  - push
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      - name: Pull couchdb docker image
+        run: docker pull couchdb
+      - name: Start couchdb container
+        run: docker run -d --rm -v ${PWD}/scripts/__tests__/fixtures/local.ini:/opt/couchdb/etc/local.ini -p 5984:5984 couchdb
+      - name: Setup deno
+        uses: denoland/setup-deno@v1
+        with:
+          deno-version: canary
+      - name: Run tests
+        run: cd scripts && deno test --allow-env --allow-run --allow-net --coverage=coverage __tests__/
+      - name: Show coverage report
+        run: cd scripts && deno coverage coverage

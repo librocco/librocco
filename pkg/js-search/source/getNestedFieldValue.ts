@@ -17,6 +17,7 @@ export default function getNestedFieldValue(
   for (let i = 0; i < path.length; i++) {
     value = value[path[i]];
 
+    // eslint-disable-next-line eqeqeq
     if (value == null) {
       return null;
     }

@@ -1,12 +1,14 @@
 import { Search } from "../Search";
 import { TfIdfSearchIndex } from "./TfIdfSearchIndex";
 describe("Search", () => {
-  let documents, search, uid;
+  let documents: Record<string, any>;
+  let search: Search;
+  let uid: number;
 
-  const addDocument = (title) => {
+  const addDocument = (title: string) => {
     const document = {
       uid: ++uid,
-      title: title
+      title,
     };
     documents.push(document);
     search.addDocument(document);
@@ -23,7 +25,7 @@ describe("Search", () => {
       "this document is about node.",
       "this document is about ruby.",
       "this document is about ruby and node.",
-      "this document is about node. it has node examples"
+      "this document is about node. it has node examples",
     ];
 
     for (let i = 0, length = titles.length; i < length; ++i) {
@@ -31,12 +33,14 @@ describe("Search", () => {
     }
   });
 
-  const calculateIdf = (numDocumentsWithToken) => {
+  const calculateIdf = (numDocumentsWithToken: number) => {
     return 1 + Math.log(search._documents.length / (1 + numDocumentsWithToken));
   };
 
-  const assertIdf = (term, numDocumentsWithToken) => {
-    const _calculateIdf = search.searchIndex._createCalculateIdf();
+  const assertIdf = (term: string, numDocumentsWithToken: number) => {
+    const _calculateIdf = (
+      search.searchIndex as TfIdfSearchIndex
+    )._createCalculateIdf();
 
     expect(_calculateIdf(term, search._documents)).toEqual(
       calculateIdf(numDocumentsWithToken)
@@ -66,12 +70,21 @@ describe("Search", () => {
     });
   });
 
-  const calculateTfIdf = (numDocumentsWithToken, tokenCountInDocument) => {
+  const calculateTfIdf = (
+    numDocumentsWithToken: number,
+    tokenCountInDocument: number
+  ) => {
     return calculateIdf(numDocumentsWithToken) * tokenCountInDocument;
   };
 
-  const assertTfIdf = (terms, document, expectedTfIdf) => {
-    const _calculateTfIdf = search.searchIndex._createCalculateTfIdf();
+  const assertTfIdf = (
+    terms: string[],
+    document: Record<string, any>,
+    expectedTfIdf: number
+  ) => {
+    const _calculateTfIdf = (
+      search.searchIndex as TfIdfSearchIndex
+    )._createCalculateTfIdf();
 
     expect(_calculateTfIdf(terms, document, search._documents)).toEqual(
       expectedTfIdf
@@ -137,29 +150,29 @@ describe("Search", () => {
     const melissaSmith = {
       name: "Melissa Smith",
       login: {
-        userId: 2562
-      }
+        userId: 2562,
+      },
     };
     const johnSmith = {
       name: "John Smith",
       login: {
-        userId: 54213
-      }
+        userId: 54213,
+      },
     };
     const searchIndex = new TfIdfSearchIndex(["login", "userId"]);
-    searchIndex.indexDocument(["Melissa"], 2562, melissaSmith);
-    searchIndex.indexDocument(["Smith"], 2562, melissaSmith);
-    searchIndex.indexDocument(["John"], 54213, johnSmith);
-    searchIndex.indexDocument(["Smith"], 54213, johnSmith);
+    searchIndex.indexDocument("Melissa", 2562, melissaSmith);
+    searchIndex.indexDocument("Smith", 2562, melissaSmith);
+    searchIndex.indexDocument("John", 54213, johnSmith);
+    searchIndex.indexDocument("Smith", 54213, johnSmith);
     expect(searchIndex.search(["Melissa"], [melissaSmith, johnSmith])).toEqual([
-      melissaSmith
+      melissaSmith,
     ]);
     expect(searchIndex.search(["John"], [melissaSmith, johnSmith])).toEqual([
-      johnSmith
+      johnSmith,
     ]);
     expect(searchIndex.search(["Smith"], [melissaSmith, johnSmith])).toEqual([
       melissaSmith,
-      johnSmith
+      johnSmith,
     ]);
   });
 });

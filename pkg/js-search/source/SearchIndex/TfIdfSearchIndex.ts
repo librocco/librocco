@@ -20,6 +20,9 @@ export class TfIdfSearchIndex implements ISearchIndex {
   _tokenToIdfCache: Record<string, number>;
   _tokenMap: ITfIdfTokenMap;
 
+  /**
+   * @inheritdoc
+   */
   constructor(uidFieldName: string | Array<string>) {
     this._uidFieldName = uidFieldName;
     this._tokenToIdfCache = {};
@@ -29,7 +32,11 @@ export class TfIdfSearchIndex implements ISearchIndex {
   /**
    * @inheritDocs
    */
-  indexDocument(token: string, uid: string, doc: Record<string, any>): void {
+  indexDocument(
+    token: string,
+    uid: string | number,
+    doc: Record<string, any>
+  ): void {
     this._tokenToIdfCache = {}; // New index invalidates previous IDF caches
 
     const tokenMap = this._tokenMap;
@@ -39,7 +46,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
       tokenMap[token] = tokenDatum = {
         $numDocumentOccurrences: 0,
         $totalNumOccurrences: 1,
-        $uidMap: {}
+        $uidMap: {},
       };
     } else {
       tokenDatum = tokenMap[token];
@@ -52,7 +59,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
       tokenDatum.$numDocumentOccurrences++;
       uidMap[uid] = {
         $document: doc,
-        $numTokenOccurrences: 1
+        $numTokenOccurrences: 1,
       };
     } else {
       uidMap[uid].$numTokenOccurrences++;
@@ -113,6 +120,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
     );
   }
 
+  /** */
   _createCalculateIdf(): (...args: Array<any>) => any {
     const tokenMap = this._tokenMap;
     const tokenToIdfCache = this._tokenToIdfCache;
@@ -133,6 +141,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
     };
   }
 
+  /** */
   _createCalculateTfIdf(): (...args: Array<any>) => any {
     const tokenMap = this._tokenMap;
     const uidFieldName = this._uidFieldName;
@@ -144,7 +153,7 @@ export class TfIdfSearchIndex implements ISearchIndex {
       document: Record<string, any>,
       documents: Array<Record<string, any>>
     ): number {
-      let score: number = 0;
+      let score = 0;
 
       for (let i = 0, numTokens = tokens.length; i < numTokens; ++i) {
         const token: string = tokens[i];

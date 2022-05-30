@@ -38,6 +38,7 @@ export class Search {
     }
 
     this._uidFieldName = uidFieldName;
+    this._initialized = false;
     // Set default/recommended strategies
     this._indexStrategy = new PrefixIndexStrategy();
     this._searchIndex = new TfIdfSearchIndex(uidFieldName);
@@ -60,6 +61,7 @@ export class Search {
     this._indexStrategy = value;
   }
 
+  /** */
   get indexStrategy(): IIndexStrategy {
     return this._indexStrategy;
   }
@@ -77,6 +79,7 @@ export class Search {
     this._sanitizer = value;
   }
 
+  /** */
   get sanitizer(): ISanitizer {
     return this._sanitizer;
   }
@@ -94,6 +97,7 @@ export class Search {
     this._searchIndex = value;
   }
 
+  /** */
   get searchIndex(): ISearchIndex {
     return this._searchIndex;
   }
@@ -111,6 +115,7 @@ export class Search {
     this._tokenizer = value;
   }
 
+  /** */
   get tokenizer(): ITokenizer {
     return this._tokenizer;
   }
@@ -197,6 +202,7 @@ export class Search {
         }
 
         if (
+          // eslint-disable-next-line eqeqeq
           fieldValue != null &&
           typeof fieldValue !== "string" &&
           fieldValue.toString

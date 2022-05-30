@@ -6,6 +6,9 @@ import type { ISearchIndex } from "./SearchIndex";
 export class UnorderedSearchIndex implements ISearchIndex {
   _tokenToUidToDocumentMap: Record<string, Record<string, any>>;
 
+  /**
+   * @inheritdoc
+   */
   constructor() {
     this._tokenToUidToDocumentMap = {};
   }
@@ -24,10 +27,7 @@ export class UnorderedSearchIndex implements ISearchIndex {
   /**
    * @inheritDocs
    */
-  search(
-    tokens: Array<string>,
-    corpus: Array<Record<string, any>>
-  ): Array<Record<string, any>> {
+  search(tokens: Array<string>): Array<Record<string, any>> {
     const intersectingDocumentMap = {};
     const tokenToUidToDocumentMap = this._tokenToUidToDocumentMap;
 

@@ -14,5 +14,5 @@
     "noEmit": true
   },
   "exclude": ["node_modules", "./.eslintrc.js"],
-  "include": ["./source/**/*.tsx", "./source/**/*.ts"]
+  "include": ["./source/**/*.tsx", "./source/**/*.ts", "vite.config.ts"]
 }
