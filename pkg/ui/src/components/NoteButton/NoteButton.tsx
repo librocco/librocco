@@ -8,7 +8,13 @@ export interface NoteButtonProps
   extends React.HTMLAttributes<HTMLButtonElement> {
   type?: NoteButtonType;
   label?: NoteButtonLabel | Warehouse;
+  shape?: NoteButtonShape;
   onClick?: () => void;
+}
+
+export enum NoteButtonShape {
+  Square = "rounded-md",
+  RoundedRight = "rounded-r-md",
 }
 
 export enum NoteButtonLabel {
@@ -33,13 +39,6 @@ const colorClassesLookup = {
   [NoteButtonType.Out]: ["text-white", "bg-red-400", "hover:bg-red-500"],
 };
 
-// Classes for focus pseudo-class are the same regardless of color prop
-const focusClasses = [
-  "focus:ring-2",
-  "focus:ring-indigo-500",
-  "focus:ring-offset-2",
-  "focus:ring-offset-white",
-];
 // #endregion color
 
 // #region Component
@@ -51,33 +50,28 @@ const focusClasses = [
  * @param {Object} props
  * @param {NoteButtonType} props.type
  * @param {NoteButtonLabel | Warehouse} props.label
+ * @param {NoteButtonShape} props.shape
  * @param {JSX.Element | JSX.Element[]} props.children
  */
 const NoteButton: React.FC<NoteButtonProps> = ({
   children,
   type = NoteButtonType.In,
   label = Warehouse.Varia,
+  shape = NoteButtonShape.Square,
   onClick = () => {},
+  className: classes = "",
   ...props
 }) => {
-  const size = "md";
-  const shape =
-    label === NoteButtonLabel.RemoveBooks ? "rounded-md" : "rounded-r-md";
+  // const shape =
+  //   label === NoteButtonLabel.RemoveBooks ? "rounded-md" : "rounded-r-md";
   const text = ["text-md", "leading-5"];
   const shapeSpacing = ["px-4.25", "py-2.25"];
   const color = colorClassesLookup[type];
 
-  const className = [
-    size,
-    shape,
-    ...text,
-    ...shapeSpacing,
-    ...color,
-    ...focusClasses,
-  ].join(" ");
+  const className = [shape, ...text, ...shapeSpacing, ...color].join(" ");
 
   return (
-    <span className="flex items-center">
+    <span className={[classes, "flex items-center"].join()}>
       <button onClick={onClick} {...props} className={className}>
         <ButtonContent {...{ children, type, label }} />
       </button>
