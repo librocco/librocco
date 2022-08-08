@@ -91,11 +91,13 @@ importers:
       eslint: ^8.16.0
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
+      postcss: ~8.4.13
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
       svelte: ^3.44.0
       svelte-check: ^2.7.1
       svelte-preprocess: ^4.10.6
+      tailwindcss: ~3.0.24
       tslib: ^2.3.1
       typescript: ^4.7.4
       vite: ^3.0.0
@@ -107,11 +109,13 @@ importers:
       eslint: 8.21.0
       eslint-config-prettier: 8.5.0_eslint@8.21.0
       eslint-plugin-svelte3: 4.0.0_eslint@8.21.0+svelte@3.49.0
+      postcss: 8.4.16
       prettier: 2.7.1
       prettier-plugin-svelte: 2.7.0_prettier@2.7.1+svelte@3.49.0
       svelte: 3.49.0
-      svelte-check: 2.8.0_svelte@3.49.0
-      svelte-preprocess: 4.10.7_svelte@3.49.0+typescript@4.7.4
+      svelte-check: 2.8.0_postcss@8.4.16+svelte@3.49.0
+      svelte-preprocess: 4.10.7_2a49ad2a69076ba19fcd0a9129345061
+      tailwindcss: 3.0.24
       tslib: 2.4.0
       typescript: 4.7.4
       vite: 3.0.4
@@ -13274,7 +13278,7 @@ packages:
     engines: {node: '>= 0.4'}
     dev: true
 
-  /svelte-check/2.8.0_svelte@3.49.0:
+  /svelte-check/2.8.0_postcss@8.4.16+svelte@3.49.0:
     resolution: {integrity: sha512-HRL66BxffMAZusqe5I5k26mRWQ+BobGd9Rxm3onh7ZVu0nTk8YTKJ9vu3LVPjUGLU9IX7zS+jmwPVhJYdXJ8vg==}
     hasBin: true
     peerDependencies:
@@ -13287,7 +13291,7 @@ packages:
       picocolors: 1.0.0
       sade: 1.8.1
       svelte: 3.49.0
-      svelte-preprocess: 4.10.7_svelte@3.49.0+typescript@4.7.4
+      svelte-preprocess: 4.10.7_2a49ad2a69076ba19fcd0a9129345061
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@babel/core'
@@ -13311,7 +13315,7 @@ packages:
       svelte: 3.49.0
     dev: true
 
-  /svelte-preprocess/4.10.7_svelte@3.49.0+typescript@4.7.4:
+  /svelte-preprocess/4.10.7_2a49ad2a69076ba19fcd0a9129345061:
     resolution: {integrity: sha512-sNPBnqYD6FnmdBrUmBCaqS00RyCsCpj2BG58A1JBswNF7b0OKviwxqVrOL/CKyJrLSClrSeqQv5BXNg2RUbPOw==}
     engines: {node: '>= 9.11.2'}
     requiresBuild: true
@@ -13356,6 +13360,7 @@ packages:
       '@types/sass': 1.43.1
       detect-indent: 6.1.0
       magic-string: 0.25.9
+      postcss: 8.4.16
       sorcery: 0.10.0
       strip-indent: 3.0.0
       svelte: 3.49.0
