@@ -383,6 +383,7 @@
   "projects": [
     { "packageName": "@librocco/scaffold", "projectFolder": "pkg/scaffold" },
     { "packageName": "@librocco/web", "projectFolder": "pkg/web" },
+    { "packageName": "@librocco/ui", "projectFolder": "pkg/ui" },
     { "packageName": "@librocco/ui-react", "projectFolder": "pkg/ui-react" },
     { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
     { "packageName": "js-search", "projectFolder": "pkg/js-search" }

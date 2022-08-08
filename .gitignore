@@ -36,6 +36,7 @@
 # Production build or library dist files
 **/dist
 **/build
+**/.svelte-kit
 
 # -------Ignored contents of the root of the repo------- #
 
