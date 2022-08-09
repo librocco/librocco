@@ -8,7 +8,16 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter()
+		adapter: adapter(),
+
+		files: {
+			lib: 'src'
+		},
+		package: {
+			dir: 'dist',
+			// Exclude stories files from built package
+			files: (fp) => !/stories/.test(fp)
+		}
 	}
 };
 
