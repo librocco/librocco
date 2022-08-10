@@ -1,10 +1,10 @@
-name: JS-Search tests
+name: Lint and typecheck the packages
 
-on:
+"on":
   - push
 
 jobs:
-  test:
+  lint-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -27,16 +27,11 @@ jobs:
           key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
       - name: Add local rush scripts to PATH
         run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
-      - name: Install packages
-        run: rush update
-      - name: Run tests
-        run: cd pkg/js-search/ && rushx test:ci
-      - name: Test Report
-        uses: dorny/test-reporter@v1
+      - name: Install and build packages
+        run: rush update && rush build
+      - name: Lint all the packages
+        run: rush lint:strict
+      - name: Typecheck all the packages
+        # Run typecheck even if linting fails
         if: success() || failure()
-        with:
-          name: JS-Search Tests
-          path: pkg/js-search/junit.xml
-          reporter: jest-junit
-      - name: Build js-search
-        run: cd pkg/js-search/ && rushx build
+        run: rush typecheck
