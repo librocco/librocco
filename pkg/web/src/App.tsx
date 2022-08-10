@@ -1,6 +1,6 @@
 import React from "react";
 
-import { Button } from "@librocco/ui";
+import { Button } from "@librocco/ui-react";
 
 const App: React.FC = () => (
   <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
