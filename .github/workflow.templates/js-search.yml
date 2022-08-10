@@ -1,3 +1,5 @@
+#@ load("cache.lib.yml", "cache_node")
+
 name: JS-Search tests
 
 "on":
