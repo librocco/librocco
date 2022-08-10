@@ -3,6 +3,6 @@
 	export { className as class };
 </script>
 
-<button class={className}>
+<button class={className} on:click>
 	<slot />
 </button>
