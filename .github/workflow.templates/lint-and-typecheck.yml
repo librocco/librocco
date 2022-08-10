@@ -16,15 +16,7 @@ jobs:
       - uses: actions/setup-node@v2
         with:
           node-version: "16"
-      - name: Cache node modules
-        uses: actions/cache@v2
-        with:
-          path: |
-            ~/.rush
-            ~/.pnpm-store
-            common/temp
-            **/node_modules
-          key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+      - #@ cache_node()
       - name: Add local rush scripts to PATH
         run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
       - name: Install and build packages
