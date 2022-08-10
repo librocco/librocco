@@ -1,0 +1,18 @@
+name: Github Actions templates
+"on":
+  push:
+    paths:
+    - .github/workflow.templates/*
+jobs:
+  check-template-generation:
+    name: Check Github Actions templates
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Run script to generate Github Actions
+      run: ./.github/build-workflows.sh
+    - name: Check if there are any changes
+      run: |-
+        git status
+        git diff
+        git status | grep "working tree clean" || false

@@ -1,3 +1,5 @@
+#@ load("cache.lib.yml", "cache_node")
+
 name: Lint and typecheck the packages
 
 "on":
@@ -24,6 +26,6 @@ jobs:
       - name: Lint all the packages
         run: rush lint:strict
       - name: Typecheck all the packages
-        # Run typecheck even if linting fails
+        #! Run typecheck even if linting fails
         if: success() || failure()
         run: rush typecheck
