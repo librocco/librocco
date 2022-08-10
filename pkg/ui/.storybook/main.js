@@ -1,46 +1,28 @@
-const path = require("path");
-
-const svgrOptions = require("../../scaffold/svgrOptions");
-
 module.exports = {
-  stories: ["../src/**/*.stories.mdx", "../src/**/*.stories.@(js|jsx|ts|tsx)"],
-  addons: [
-    "@storybook/addon-links",
-    "@storybook/addon-essentials",
-    "@storybook/addon-interactions",
-    {
-      name: "@storybook/addon-postcss",
-      options: {
-        postcssLoaderOptions: {
-          // When using postCSS 8
-          implementation: require("postcss"),
-        },
-      },
-    },
-  ],
-  framework: "@storybook/react",
-
-  webpackFinal: (config) => {
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      "@": path.join(__dirname, "..", "src"),
-    };
-
-    const fileLoaderRule = config.module.rules.find(
-      (rule) => rule.test && rule.test.test(".svg")
-    );
-    fileLoaderRule.exclude = /\.svg$/;
-
-    config.module.rules.push({
-      test: /\.svg$/,
-      use: [
-        {
-          loader: "@svgr/webpack",
-          options: svgrOptions,
-        },
-      ],
-    });
-
-    return config;
-  },
+	webpackFinal: async (config) => {
+		const svelteLoader = config.module.rules.find(
+			(r) => r.loader && r.loader.includes('svelte-loader')
+		);
+		svelteLoader.options.preprocess = require('svelte-preprocess')({});
+		return config;
+	},
+	stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.svelte'],
+	addons: [
+		{
+			name: '@storybook/addon-postcss',
+			options: {
+				postcssLoaderOptions: {
+					// When using postCSS 8
+					implementation: require('postcss')
+				}
+			}
+		},
+		'@storybook/addon-links',
+		'@storybook/addon-essentials',
+		'@storybook/addon-svelte-csf'
+	],
+	framework: '@storybook/svelte',
+	svelteOptions: {
+		preprocess: import('../svelte.config.js').then((module) => module.default.preprocess)
+	}
 };
