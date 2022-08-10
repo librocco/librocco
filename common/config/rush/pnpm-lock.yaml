@@ -116,6 +116,7 @@ importers:
 
   ../../pkg/ui:
     specifiers:
+      '@librocco/svg': workspace:*
       '@storybook/addon-actions': ^6.4.22
       '@storybook/addon-essentials': ^6.4.22
       '@storybook/addon-links': ^6.4.22
@@ -145,6 +146,7 @@ importers:
       vite: ^3.0.0
       vitest: ~0.21.1
     devDependencies:
+      '@librocco/svg': link:../svg
       '@storybook/addon-actions': 6.4.22
       '@storybook/addon-essentials': 6.4.22_e54289f66234f332516dcff0a32fdf63
       '@storybook/addon-links': 6.4.22

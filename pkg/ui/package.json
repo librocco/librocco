@@ -16,6 +16,7 @@
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
+		"@librocco/svg": "workspace:*",
 		"@storybook/addon-actions": "^6.4.22",
 		"@storybook/addon-essentials": "^6.4.22",
 		"@storybook/addon-links": "^6.4.22",
