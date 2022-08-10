@@ -26,7 +26,7 @@
 
 	import type { SvelteComponent } from 'svelte';
 
-	import Button from './Button.svelte';
+	import Button from '../Button.svelte';
 
 	export let props = {};
 	export let slot: SvelteComponent | string;
