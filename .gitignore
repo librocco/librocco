@@ -33,9 +33,10 @@
 # OS specific
 **/.DS_Store
 
-# Production build or library dist files
+# Production build or library dist files and svelte meta files
 **/dist
 **/build
+**/.svelte-kit
 
 # -------Ignored contents of the root of the repo------- #
 

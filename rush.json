@@ -311,7 +311,7 @@
     /**
      * The list of shell commands to run after the Rush installation finishes
      */
-    "postRushInstall": [],
+    "postRushInstall": ["rush postinstall"],
 
     /**
      * The list of shell commands to run before the Rush build command starts
@@ -382,8 +382,9 @@
    */
   "projects": [
     { "packageName": "@librocco/scaffold", "projectFolder": "pkg/scaffold" },
-    { "packageName": "@librocco/web", "projectFolder": "pkg/web" },
     { "packageName": "@librocco/ui", "projectFolder": "pkg/ui" },
+    { "packageName": "@librocco/ui-react", "projectFolder": "pkg/ui-react" },
+    { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
     { "packageName": "js-search", "projectFolder": "pkg/js-search" }
   ]
 }
