@@ -186,6 +186,15 @@
       "enableParallelism": true,
       "ignoreMissingScript": true
     },
+    {
+      "commandKind": "bulk",
+      "name": "postinstall",
+      "summary": "Run postinstall from each package (if one exists)",
+      "description": "As rush doesn't run 'postinstall' script (from package.json) on package's installation, we're doing it imperatively.",
+      "enableParallelism": true,
+      "ignoreMissingScript": true,
+      "safeForSimultaneousRushProcesses": true
+    },
 
     /**
      * Pre-commit commands
