@@ -1,0 +1,11 @@
+#@ def cache_node():
+name: Cache node modules
+uses: actions/cache@v2
+with:
+  path: |
+    ~/.rush
+    ~/.pnpm-store
+    common/temp
+    **/node_modules
+  key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+#@ end
