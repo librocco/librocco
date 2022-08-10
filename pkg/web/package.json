@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "dependencies": {
-    "@librocco/ui": "workspace:*",
+    "@librocco/ui-react": "workspace:*",
     "react": "^18.0.0",
     "react-dom": "^18.0.0"
   },
