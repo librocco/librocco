@@ -143,7 +143,6 @@ importers:
       typescript: ^4.7.4
       vite: ^3.0.0
       vitest: ~0.21.1
-      vitest-svelte-kit: 0.0.6
     devDependencies:
       '@storybook/addon-actions': 6.4.22
       '@storybook/addon-essentials': 6.4.22_e54289f66234f332516dcff0a32fdf63
@@ -172,7 +171,6 @@ importers:
       typescript: 4.7.4
       vite: 3.0.4
       vitest: 0.21.1
-      vitest-svelte-kit: 0.0.6
 
   ../../pkg/ui-react:
     specifiers:
@@ -16951,11 +16949,6 @@ packages:
       rollup: 2.77.2
     optionalDependencies:
       fsevents: 2.3.2
-    dev: true
-
-  /vitest-svelte-kit/0.0.6:
-    resolution: {integrity: sha512-bQ1GcCAk600YV1xOiJBhltGE/HO/j6FozNY2BFq2GP1mHh3pj0KrGZlyx0kVlXx+BSKDXQHuYZtwlHwNlvv0fQ==}
-    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     dev: true
 
   /vitest/0.21.1:
