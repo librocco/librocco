@@ -14,8 +14,7 @@ const config = {
 			lib: 'src'
 		},
 		package: {
-			dir: 'dist',
-			exports: (fp) => /\.svelte/.test(fp)
+			dir: 'dist'
 		}
 	}
 };

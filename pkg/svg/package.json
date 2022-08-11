@@ -1,6 +1,7 @@
 {
 	"name": "@librocco/svg",
 	"version": "0.0.1",
+	"main": "./dist/index.js",
 	"scripts": {
 		"build": "svelte-kit package",
 		"check": "svelte-check --tsconfig ./tsconfig.json",
