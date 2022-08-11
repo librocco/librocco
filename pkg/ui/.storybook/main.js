@@ -8,6 +8,7 @@ module.exports = {
 	},
 	stories: ['../src/**/*.stories.mdx', '../src/**/*.stories.svelte'],
 	addons: [
+		'storybook-addon-pseudo-states',
 		{
 			name: '@storybook/addon-postcss',
 			options: {
