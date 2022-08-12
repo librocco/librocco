@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SvelteComponentTyped } from 'svelte';
+	import type { SvelteComponentDev } from 'svelte/internal';
 
 	import { ButtonColor, ButtonShape, ButtonSize, IconPosition } from './enums';
 	import {
@@ -88,8 +88,10 @@
 	 * ```
 	 */
 	export let color: ButtonColor = ButtonColor.Primary;
-	/** This is should be an SVG as svelte component @TODO sort out the typings here */
-	export let Icon: any = null;
+	/**
+	 * Optional icon SVG as svelte component
+	 */
+	export let Icon: typeof SvelteComponentDev | null = null;
 	export let iconPosition: IconPosition = IconPosition.Start;
 	/**
 	 * A custom html tag we want to render the element as (defaults to "button")
