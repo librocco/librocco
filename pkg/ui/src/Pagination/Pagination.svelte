@@ -5,12 +5,34 @@
 	import { getItemsToRender } from './utils';
 	import { getButtonClasses } from './styles';
 
+	// #region
 	let inputClasses = '';
 	export { inputClasses as class };
+	/**
+	 * Maximum number of items to display, should be at least 5 and an odd number.
+	 * - if less then 5 is provided, will throw an error
+	 * - if even number provided, will fall back to preceeding odd number
+	 * Defaults to 7
+	 */
 	export let maxItems = 7;
+	/**
+	 * An array of link strings. This would normally be just a pathname without the domain.
+	 */
 	export let links: string[] = [];
+	/**
+	 * Currently selected item index (0 - based)
+	 */
 	export let currentItem: number = 0;
+	/**
+	 * Function fired when the nav button is clicked.
+	 * @param {string} link pathname to reroute to
+	 * @param {number} i index (not the label) of the clicked nav: `label = 2 --> i = 1`
+	 */
 	export let onPaginate: (link: string, i: number) => void = () => {};
+	/**
+	 * A svelte component to serve as (optional) wrapper around each button, e.g. Link component.
+	 * Gets passed 'to' (as in: link to). If not provided falls back to a component rendering `<slot/>`
+	 */
 	export let Wrapper = FallbackWrapper;
 
 	// #region arrowButtons
