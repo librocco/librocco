@@ -1,4 +1,6 @@
 <script lang="ts">
+	import type { SvelteComponentDev } from 'svelte/internal';
+
 	import ArrowButton from './ArrowButton.svelte';
 	import FallbackWrapper from './FallbackWrapper.svelte';
 
@@ -33,7 +35,7 @@
 	 * A svelte component to serve as (optional) wrapper around each button, e.g. Link component.
 	 * Gets passed 'to' (as in: link to). If not provided falls back to a component rendering `<slot/>`
 	 */
-	export let Wrapper = FallbackWrapper;
+	export let Wrapper: typeof SvelteComponentDev = FallbackWrapper;
 
 	// #region arrowButtons
 	$: [prevItem, nextItem] = [currentItem - 1, currentItem + 1];
