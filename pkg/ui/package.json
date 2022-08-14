@@ -16,6 +16,7 @@
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
+		"@librocco/svg": "workspace:*",
 		"@storybook/addon-actions": "^6.4.22",
 		"@storybook/addon-essentials": "^6.4.22",
 		"@storybook/addon-links": "^6.4.22",
@@ -42,6 +43,7 @@
 		"typescript": "^4.7.4",
 		"vite": "^3.0.0",
 		"vitest": "~0.21.1",
+		"storybook-addon-pseudo-states": "~1.9.0",
 		"svelte2tsx": "~0.5.13"
 	},
 	"type": "module"
