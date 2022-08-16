@@ -1,4 +1,4 @@
-import { NoteButtonType, NoteButtonLabel, NoteButtonShape, Warehouse } from './enums.ts';
+import { NoteButtonType, NoteButtonLabel, NoteButtonShape, Warehouse } from './enums';
 
 export const colorClassesLookup = {
 	[NoteButtonType.In]: ['text-white', 'bg-green-400', 'hover:bg-green-500'],
