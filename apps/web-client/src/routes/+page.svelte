@@ -1,2 +1,12 @@
-<h1>Welcome to Librocco</h1>
-<p>Visit <a href="https://kit.svelte.dev">kit.svelte.dev</a> to read the documentation</p>
+<script>
+	// Import main.css in order to generate tailwind classes used in the app
+	import '../main.css';
+
+	import { Button } from '@librocco/ui';
+</script>
+
+<div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
+	<h1 class="text-[2.5rem]">Hello World</h1>
+	<p class="text-xl text-center text-[rgba(0,0,0,0.5)]">I'm your client web app</p>
+	<Button class="relative left-1/2 -translate-x-1/2 mt-2">Click me</Button>
+</div>
