@@ -72,20 +72,18 @@ jobs:
       -  #@ rush_add_path()
       -  #@ rush_install()
       -  #@ rush_build()
-      - name: Build storybook
-        run: cd pkg/ui && rushx build-storybook
+
       #! We want to push the storybook to chromatic only for PRs (to make sure we stay below the free monthly allowance)
       #! but this job is triggered on push. This action will try to see if the pushed commit is in a PR
       - uses: jwalton/gh-find-current-pr@v1
         id: findPr
         with:
           state: open
-      - name: Publish to Chromatic
-        uses: chromaui/action@v1
-        if: success() #! && steps.findPr.outputs.number
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          projectToken: ${{ secrets.CHROMAUI_PROJECT_TOKEN }}
-          workingDir: pkg/ui
-          exitZeroOnChanges: true
-          exitOnceUploaded: true
+
+      - name: Build and upload storybook
+        if: success() && steps.findPr.outputs.number
+        run: cd pkg/ui && ./node_modules/.bin/chromatic --project-token=${{ secrets.CHROMAUI_PROJECT_TOKEN }}
+
+      - name: Build storybook
+        if: success() && ! steps.findPr.outputs.number
+        run: cd pkg/ui && rushx build-storybook
