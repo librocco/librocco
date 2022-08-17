@@ -44,3 +44,7 @@ export const updateNote = async (
   const note = await db.get(noteId);
   return db.put({ ...newNote, _id: note._id, _rev: note._rev });
 };
+
+export const deleteDatabase = (database: PouchDB.Database) => {
+  return database.destroy();
+};
