@@ -58,3 +58,19 @@ jobs:
         #! Run typecheck even if linting fails
         if: success() || failure()
         run: rush typecheck
+  storybook-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Build storybook
+        run: cd pkg/ui && rushx build-storybook
