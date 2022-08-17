@@ -36,6 +36,20 @@ jobs:
           reporter: jest-junit
       - name: Build js-search
         run: cd pkg/js-search/ && rushx build
+  ui-test:
+    name: UI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Run tests
+        run: cd pkg/ui && rushx test:ci
   lint-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
