@@ -108,6 +108,6 @@ jobs:
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         projectToken: ${{ secrets.CHROMAUI_PROJECT_TOKEN }}
-        storybookBuildDir: pkg/ui/storybook-static
+        workingDir: pkg/ui
         exitZeroOnChanges: true
         exitOnceUploaded: true
