@@ -104,10 +104,10 @@ jobs:
         state: open
     - name: Publish to Chromatic
       uses: chromaui/action@v1
-      if: success() && steps.findPr.outputs.number
+      if: success()
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
         projectToken: ${{ secrets.CHROMAUI_PROJECT_TOKEN }}
-        workingDir: pkg/ui
+        storybookBuildDir: pkg/ui/storybook-static
         exitZeroOnChanges: true
         exitOnceUploaded: true
