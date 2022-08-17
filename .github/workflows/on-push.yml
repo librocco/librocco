@@ -98,3 +98,11 @@ jobs:
       run: rush build
     - name: Build storybook
       run: cd pkg/ui && rushx build-storybook
+    - name: Publish to Chromatic
+      uses: chromaui/action@v1
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        projectToken: ${{ secrets.CHROMAUI_PROJECT_TOKEN }}
+        workingDir: pkg/ui
+        exitZeroOnChanges: true
+        exitOnceUploaded: true
