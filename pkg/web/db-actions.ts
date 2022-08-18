@@ -1,5 +1,6 @@
-import { notes } from "./src/__testData__/dataModel";
-
+let database: Database = {
+  notes: [],
+};
 interface Database {
   notes: Note[];
 }
@@ -18,45 +19,60 @@ export interface BookInterface {
   date?: string;
 }
 
-/** @TODO this is meaningless, write to a file instead or a global var ???? */
-export const newNote = (db: Database, note: Note) => {
-  db.notes.push(note);
+export const newNote = (note: Note) => {
+  const currentDatabase = getDB();
+
+  const newDB = { notes: [...currentDatabase.notes, note] };
+
+  setDB(newDB);
+
   const promise = new Promise<{ id: string; ok: boolean }>((resolve) => {
     resolve({ id: note._id, ok: true });
   });
   return promise;
 };
 
-export const getNote = (db: Database, id: Note["_id"]) => {
+// get note
+export const getNote = (id: Note["_id"]) => {
+  const currentDatabase = getDB();
+
+  const note =
+    currentDatabase.notes.find((note) => note._id === id) || ({} as Note);
+
   const promise = new Promise<Note>((resolve) => {
-    /** @TODO db.find */
-    db.notes.find((note) => note._id === id);
-    const noteFromList = notes.find((note) => note._id === id) || ({} as Note);
-    resolve(noteFromList);
+    resolve(note);
   });
 
   return promise;
 };
-export const updateNote = (db: Database, id: Note["_id"], newNote: Note) => {
-  const index = db.notes.findIndex(({ _id }) => _id === id);
-  db.notes[index] = newNote;
 
-  const noteFromList = notes.find((note) => note._id === id) || ({} as Note);
+// set DB
+export const setDB = (newDB: Database) => {
+  database = newDB;
+};
+
+// get DB
+export const getDB = () => {
+  return database;
+};
+
+export const updateNote = (id: Note["_id"], newNote: Note) => {
+  const newDatabase = getDB();
+  const index = newDatabase.notes.findIndex(({ _id }) => _id === id);
+  newDatabase.notes.splice(index, 1);
+
+  setDB({ notes: [...newDatabase.notes, newNote] });
 
   const promise = new Promise<{ id: string; ok: boolean }>((resolve) => {
-    /** @TODO find a more effective way of testing the update */
-    resolve({ id: noteFromList._id, ok: true });
+    resolve({ id, ok: true });
   });
   return promise;
 };
 
-export const deleteDatabase = (database: Database) => {
-  const promise = new Promise<{ ok: boolean; database: Database }>(
-    (resolve) => {
-      database = { notes: [] };
-      /** @TODO  */
-      resolve({ ok: true, database });
-    }
-  );
+export const deleteDatabase = () => {
+  setDB({ notes: [] });
+  const promise = new Promise<{ ok: boolean }>((resolve) => {
+    resolve({ ok: true });
+  });
   return promise;
 };
