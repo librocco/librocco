@@ -11,6 +11,7 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test": "vitest",
+		"test:ci": "CI=true vitest run",
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
 		"postinstall": "svelte-kit sync"
@@ -44,7 +45,8 @@
 		"vite": "^3.0.0",
 		"vitest": "~0.21.1",
 		"storybook-addon-pseudo-states": "~1.9.0",
-		"svelte2tsx": "~0.5.13"
+		"svelte2tsx": "~0.5.13",
+		"chromatic": "~6.7.4"
 	},
 	"type": "module"
 }
