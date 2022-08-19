@@ -8,15 +8,7 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter(),
-
-		files: {
-			lib: 'src'
-		}
-	},
-
-	package: {
-		dir: 'dist'
+		adapter: adapter()
 	}
 };
 
