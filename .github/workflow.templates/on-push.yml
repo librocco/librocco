@@ -1,0 +1,103 @@
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+
+name: Cheks
+
+"on":
+  - push
+
+jobs:
+  js-search-test:
+    name: JS-Search tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      - name: Run tests
+        run: cd pkg/js-search/ && rushx test:ci
+      - name: Test Report
+        uses: dorny/test-reporter@v1
+        if: success() || failure()
+        with:
+          name: JS-Search Tests
+          path: pkg/js-search/junit.xml
+          reporter: jest-junit
+      - name: Build js-search
+        run: cd pkg/js-search/ && rushx build
+  ui-test:
+    name: UI tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Run tests
+        run: cd pkg/ui && rushx test:ci
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Lint all the packages
+        run: rush lint:strict
+      - name: Typecheck all the packages
+        #! Run typecheck even if linting fails
+        if: success() || failure()
+        run: rush typecheck
+  storybook-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v2
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+
+      #! We want to push the storybook to chromatic only for PRs (to make sure we stay below the free monthly allowance)
+      #! but this job is triggered on push. This action will try to see if the pushed commit is in a PR
+      - uses: jwalton/gh-find-current-pr@v1
+        id: findPr
+        with:
+          state: open
+
+      - name: Build and upload storybook
+        if: success() && steps.findPr.outputs.number
+        run: cd pkg/ui && ./node_modules/.bin/chromatic --project-token=${{ secrets.CHROMAUI_PROJECT_TOKEN }}
+
+      - name: Build storybook
+        if: success() && ! steps.findPr.outputs.number
+        run: cd pkg/ui && rushx build-storybook
