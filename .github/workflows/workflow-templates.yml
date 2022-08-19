@@ -3,6 +3,7 @@ name: Github Actions templates
   push:
     paths:
     - .github/workflow.templates/*
+    - .github/workflows/*
 jobs:
   check-template-generation:
     name: Check Github Actions templates
