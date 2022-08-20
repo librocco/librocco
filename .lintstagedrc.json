@@ -1,5 +1,5 @@
 {
-  "**/{pkg,apps}/**/src/**/*.{ts,js,svelte}": [
+  "**/{pkg,apps}/**/!(vite|svelte|tailwind)*.{ts,js,svelte}": [
     "eslint --fix --max-warnings=0",
     "prettier --write"
   ],
