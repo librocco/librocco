@@ -1,4 +1,4 @@
-import { NoteButtonType, NoteButtonLabel, NoteButtonShape, Warehouse } from './enums';
+import { NoteButtonType, NoteButtonLabel, Warehouse } from './enums';
 
 export const colorClassesLookup = {
 	[NoteButtonType.In]: ['text-white', 'bg-green-400', 'hover:bg-green-500'],
@@ -6,8 +6,10 @@ export const colorClassesLookup = {
 };
 
 export const borderClassesLookup = {
-	[NoteButtonLabel.RemoveBooks]: NoteButtonShape.Square,
-	[Warehouse.Nuovo || Warehouse.Scolastica || Warehouse.Varia]: NoteButtonShape.RoundedRight
+	[NoteButtonLabel.RemoveBooks]: 'rounded-md',
+	[Warehouse.Nuovo || Warehouse.Scolastica || Warehouse.Varia]: 'rounded-r-md',
+	[Warehouse.Scolastica]: 'rounded-r-md',
+	[Warehouse.Varia]: 'rounded-r-md'
 };
 
 // note button
