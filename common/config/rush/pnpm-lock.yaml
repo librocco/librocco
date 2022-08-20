@@ -139,6 +139,7 @@ importers:
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
       svelte: ^3.44.0
+      svelte-check: ^2.7.1
       svelte-loader: ^3.1.2
       svelte-preprocess: ^4.10.6
       typescript: ^4.7.4
@@ -155,6 +156,7 @@ importers:
       prettier: 2.7.1
       prettier-plugin-svelte: 2.7.0_prettier@2.7.1+svelte@3.49.0
       svelte: 3.49.0
+      svelte-check: 2.8.1_svelte@3.49.0
       svelte-loader: 3.1.3_svelte@3.49.0
       svelte-preprocess: 4.10.7_svelte@3.49.0+typescript@4.7.4
       typescript: 4.7.4
@@ -13277,6 +13279,34 @@ packages:
       sade: 1.8.1
       svelte: 3.49.0
       svelte-preprocess: 4.10.7_2a49ad2a69076ba19fcd0a9129345061
+      typescript: 4.7.4
+    transitivePeerDependencies:
+      - '@babel/core'
+      - coffeescript
+      - less
+      - node-sass
+      - postcss
+      - postcss-load-config
+      - pug
+      - sass
+      - stylus
+      - sugarss
+    dev: true
+
+  /svelte-check/2.8.1_svelte@3.49.0:
+    resolution: {integrity: sha512-cibyY1sgt3ONIDnQbSgV2X9AJFhwEslRHNo95lijrYfPzVEvTvbmL2ohsUyqB5L7j1GhLXtQbjCJ4lZZ/fwbeQ==}
+    hasBin: true
+    peerDependencies:
+      svelte: ^3.24.0
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.15
+      chokidar: 3.5.3
+      fast-glob: 3.2.11
+      import-fresh: 3.3.0
+      picocolors: 1.0.0
+      sade: 1.8.1
+      svelte: 3.49.0
+      svelte-preprocess: 4.10.7_svelte@3.49.0+typescript@4.7.4
       typescript: 4.7.4
     transitivePeerDependencies:
       - '@babel/core'
