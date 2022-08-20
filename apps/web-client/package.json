@@ -5,11 +5,10 @@
 		"start": "vite dev",
 		"build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
 		"build:prod": "vite build",
-		"package": "svelte-kit package",
 		"preview": "vite preview",
-		"typecheck": "svelte-check --tsconfig ./tsconfig.json",
-		"check:watch": "svelte-check --tsconfig ./tsconfig.json --watch",
+		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
+		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"postinstall": "svelte-kit sync"
 	},
