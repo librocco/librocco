@@ -205,6 +205,18 @@
     },
 
     /**
+     * Repo commands
+     */
+    {
+      "commandKind": "global",
+      "name": "check-workspace-projects",
+      "shellCommand": "rush list --json | node common/scripts/rush-check-workspace-projects.js",
+      "summary": "Check 'apps' and 'pkg' folders for unlisted packages",
+      "description": "'apps' and 'pkg' folders of the monorepo are reserved for packages registered as 'projects' in 'rush.json'. This check fails if there are unlisted artifacts in those two folders",
+      "safeForSimultaneousRushProcesses": true
+    },
+
+    /**
      * Pre-commit commands
      */
     {
