@@ -10,7 +10,7 @@ name: Cheks
   - push
 
 jobs:
-  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search")
+  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
   ui-test: #@ test_job("UI Tests", "pkg/ui")
 
