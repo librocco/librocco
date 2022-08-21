@@ -4,7 +4,7 @@ import Denomander from "https://deno.land/x/denomander@0.9.1/mod.ts";
 import { readCSV } from "https://deno.land/x/csv/mod.ts";
 import ProgressBar from "https://deno.land/x/progress@v1.2.4/mod.ts";
 import { BufReader } from "https://deno.land/std/io/buffer.ts";
-import { createDatabase, postBulkDocs } from "../couchdb/couchdb.ts";
+import { createDatabase, postBulkDocs } from "./couchdb.ts";
 
 /**
  * Counts lines in a csv file for progress bar calculations
@@ -51,25 +51,23 @@ function printProgress(progress: ProgressBar, completed: number) {
  * @return {Iterator} - An iterator over the chunks
  */
 
-async function CSVToCouch(
-  {
-    filePath,
-    columns,
-    couchdbName = "books",
-    couchdbURL = "http://admin:admin@localhost:5984",
-    columnSeparator = ",",
-    chunkSize = 1000,
-    progress,
-  }: {
-    filePath: string;
-    columns: string;
-    couchdbName: string;
-    couchdbURL: string;
-    columnSeparator: string;
-    chunkSize: number;
-    progress: ProgressBar;
-  },
-) {
+async function CSVToCouch({
+  filePath,
+  columns,
+  couchdbName = "books",
+  couchdbURL = "http://admin:admin@localhost:5984",
+  columnSeparator = ",",
+  chunkSize = 1000,
+  progress,
+}: {
+  filePath: string;
+  columns: string;
+  couchdbName: string;
+  couchdbURL: string;
+  columnSeparator: string;
+  chunkSize: number;
+  progress: ProgressBar;
+}) {
   // create couch client with endpoint
   const columnsArr = columns.split(",");
 
@@ -83,9 +81,11 @@ async function CSVToCouch(
 
     /** @TODO handle file reading errors or create timeout per chunk */
     let completed = 0;
-    for await (
-      const chunk of inChunks(readCSV(f, options), chunkSize, columnsArr)
-    ) {
+    for await (const chunk of inChunks(
+      readCSV(f, options),
+      chunkSize,
+      columnsArr
+    )) {
       await postBulkDocs(chunk, couchdbName, couchdbURL);
       if (completed <= progress.total!) {
         completed += chunkSize;
@@ -106,7 +106,8 @@ const program = new Denomander({
   app_name: "CSV to CouchDB",
 });
 
-program.command("parse", "parses csv file into the db")
+program
+  .command("parse", "parses csv file into the db")
   .requiredOption("-f --filePath", "csv file path")
   .requiredOption("-c --columns", "names of headers of each column")
   .option("-n --name", "couch database name")
@@ -146,7 +147,7 @@ program.command("parse", "parses csv file into the db")
 const inChunks = async function* <T>(
   sequence: AsyncIterable<AsyncIterable<string>>,
   chunkSize: number,
-  columnsArr: string[],
+  columnsArr: string[]
 ) {
   let chunk = [];
   for await (const element of sequence) {
