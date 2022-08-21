@@ -1,29 +1,47 @@
-// import { newNote, updateNote, getNote, deleteDatabase } from "../../db-actions";
-import {
-  newNote,
-  updateNote,
-  getNote,
-  deleteDatabase,
-} from "../../pouchdb-actions";
+import { createDatabaseInterface } from "../../db-actions";
+import { v4 as uuidv4 } from 'uuid';
 
-import { note, updatedNote } from "../__testData__/dataModel";
+// import {
+//   createDatabaseInterface, Note
+// } from "../../pouchdb-actions";
+
+import { note, bookOne, bookTwo } from "../__testData__/dataModel";
+const db = createDatabaseInterface(uuidv4());
 
 describe("Test data model", () => {
-  afterAll(async () => {
-    const deleted = await deleteDatabase();
-    expect(deleted).toHaveProperty("ok");
-  });
-  test("New Note", async () => {
-    const { id, ok } = await newNote(note);
-    expect(ok).toBeTruthy();
-    const { _id } = await getNote(id);
-    expect(_id).toEqual(id);
-  });
 
-  test("Update Note", async () => {
-    const { id, ok } = await updateNote(note._id, updatedNote);
-    expect(ok).toBeTruthy();
-    const updatedNoteFromDB = await getNote(id);
-    expect(updatedNoteFromDB._id).toEqual(note._id);
-  });
+  test("All database funcitonality", async () => {
+
+    const { total_rows } = await db.getNotes()
+    expect(total_rows).toEqual(0)
+    const { id } = await db.newNote(note)
+    const { total_rows: n } = await db.getNotes()
+    expect(n).toEqual(1)
+
+    const noBooksNote = await db.listBooks(id)
+
+    expect(noBooksNote).toHaveLength(0)
+    await db.addBook(id, bookOne)
+
+    const booksNote = await db.listBooks(id)
+    expect(booksNote).toHaveLength(1)
+
+    await db.addBook(id, bookTwo)
+
+    const moreBooksNote = await db.listBooks(id)
+    expect(moreBooksNote).toHaveLength(2)
+
+    await db.removeBook(id, bookOne.isbn)
+    const lessBooksNote = await db.listBooks(id)
+    expect(lessBooksNote).toHaveLength(1)
+    expect(lessBooksNote).toContainEqual(bookTwo)
+
+
+    const removeBookOne = db.removeBook(id, bookOne.isbn)
+    await expect(() => removeBookOne).rejects.toThrow("Book does not exist")
+
+    const addBookTwoAgain = db.addBook(id, bookTwo)
+
+    await expect(() => addBookTwoAgain).rejects.toThrow("Book already exists")  
+  })
 });

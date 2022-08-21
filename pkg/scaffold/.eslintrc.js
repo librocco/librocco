@@ -149,6 +149,9 @@ module.exports = {
     // we're using empty functions as fallback for undefined props
     "@typescript-eslint/no-empty-function": "off",
 
+    // For pouchdb and couchdb snake case conventions
+    "@typescript-eslint/camelcase": "off",
+
     // This just gets in the way
     "import/no-named-as-default-member": "off",
     "import/no-named-as-default": "off",
