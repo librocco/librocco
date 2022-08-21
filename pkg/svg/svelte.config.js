@@ -12,10 +12,11 @@ const config = {
 
 		files: {
 			lib: 'src'
-		},
-		package: {
-			dir: 'dist'
 		}
+	},
+
+	package: {
+		dir: 'dist'
 	}
 };
 
