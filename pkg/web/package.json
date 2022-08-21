@@ -5,7 +5,8 @@
   "dependencies": {
     "@librocco/ui-react": "workspace:*",
     "react": "^18.0.0",
-    "react-dom": "^18.0.0"
+    "react-dom": "^18.0.0",
+    "uuid": "~8.3.2"
   },
   "scripts": {
     "build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
@@ -58,6 +59,7 @@
     "tailwindcss": "~3.0.24",
     "autoprefixer": "~10.4.7",
     "postcss": "~8.4.13",
-    "pouchdb": "~7.3.0"
+    "pouchdb": "~7.3.0",
+    "@types/uuid": "~8.3.4"
   }
 }
