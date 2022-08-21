@@ -7,7 +7,7 @@
 #@  return "cd "+workdir+" && rushx test:ci"
 #@ end
 
-#@ def test_job(name, workdir, node="16", needs_build=True):
+#@ def test_job(name, workdir, reporter=None):
 name: #@ name
 runs-on: ubuntu-latest
 timeout-minutes: 10
@@ -19,18 +19,20 @@ steps:
   - uses: actions/checkout@v2
   - uses: actions/setup-node@v2
     with:
-      node-version: #@ node
+      node-version: "16"
   -  #@ cache_node()
   -  #@ rush_add_path()
   -  #@ rush_install()
   -  #@ rush_build()
   - name: Run tests
     run: #@ test_script(workdir)
+  #@ if reporter!=None:
   - name: Test Report
     uses: dorny/test-reporter@v1
     if: success() || failure()
     with:
       name: #@ name
       path: #@ workdir+"/junit.xml"
-      reporter: jest-junit
+      reporter: #@ reporter
+  #@ end
 #@ end

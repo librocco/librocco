@@ -69,13 +69,6 @@ jobs:
       run: rush build
     - name: Run tests
       run: cd pkg/ui && rushx test:ci
-    - name: Test Report
-      uses: dorny/test-reporter@v1
-      if: success() || failure()
-      with:
-        name: UI Tests
-        path: pkg/ui/junit.xml
-        reporter: jest-junit
   lint-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
