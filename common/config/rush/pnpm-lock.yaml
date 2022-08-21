@@ -100,7 +100,7 @@ importers:
       vite: ^3.0.0
     devDependencies:
       '@sveltejs/adapter-auto': 1.0.0-next.64
-      '@sveltejs/kit': 1.0.0-next.424_svelte@3.49.0+vite@3.0.4
+      '@sveltejs/kit': 1.0.0-next.415_svelte@3.49.0+vite@3.0.4
       '@typescript-eslint/eslint-plugin': 5.33.0_6a5aeee3f1c697a58988a7278b5d566c
       '@typescript-eslint/parser': 5.33.0_eslint@8.21.0+typescript@4.7.4
       eslint: 8.21.0
@@ -116,6 +116,7 @@ importers:
 
   ../../pkg/ui:
     specifiers:
+      '@librocco/svg': workspace:*
       '@storybook/addon-actions': ^6.4.22
       '@storybook/addon-essentials': ^6.4.22
       '@storybook/addon-links': ^6.4.22
@@ -127,12 +128,14 @@ importers:
       '@testing-library/svelte': ~3.1.3
       '@typescript-eslint/eslint-plugin': ^5.27.0
       '@typescript-eslint/parser': ^5.27.0
+      chromatic: ~6.7.4
       eslint: ^8.16.0
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
       postcss: ~8.4.13
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
+      storybook-addon-pseudo-states: ~1.9.0
       svelte: ^3.44.0
       svelte-check: ^2.7.1
       svelte-loader: ^3.1.2
@@ -144,6 +147,7 @@ importers:
       vite: ^3.0.0
       vitest: ~0.21.1
     devDependencies:
+      '@librocco/svg': link:../svg
       '@storybook/addon-actions': 6.4.22
       '@storybook/addon-essentials': 6.4.22_e54289f66234f332516dcff0a32fdf63
       '@storybook/addon-links': 6.4.22
@@ -151,16 +155,18 @@ importers:
       '@storybook/addon-svelte-csf': 2.0.6_e5ed7821d47ec4b26a1af24046537fa0
       '@storybook/svelte': 6.5.10_29984971b20eddd2a6e7713bcb0f33dd
       '@sveltejs/adapter-auto': 1.0.0-next.64
-      '@sveltejs/kit': 1.0.0-next.424_svelte@3.49.0+vite@3.0.4
+      '@sveltejs/kit': 1.0.0-next.415_svelte@3.49.0+vite@3.0.4
       '@testing-library/svelte': 3.1.3_svelte@3.49.0
       '@typescript-eslint/eslint-plugin': 5.33.0_6a5aeee3f1c697a58988a7278b5d566c
       '@typescript-eslint/parser': 5.33.0_eslint@8.21.0+typescript@4.7.4
+      chromatic: 6.7.4
       eslint: 8.21.0
       eslint-config-prettier: 8.5.0_eslint@8.21.0
       eslint-plugin-svelte3: 4.0.0_eslint@8.21.0+svelte@3.49.0
       postcss: 8.4.16
       prettier: 2.7.1
       prettier-plugin-svelte: 2.7.0_prettier@2.7.1+svelte@3.49.0
+      storybook-addon-pseudo-states: 1.9.0
       svelte: 3.49.0
       svelte-check: 2.8.0_postcss@8.4.16+svelte@3.49.0
       svelte-loader: 3.1.3_svelte@3.49.0
@@ -3492,7 +3498,7 @@ packages:
       '@storybook/csf': 0.0.2--canary.4566f4d.1
       '@storybook/router': 6.5.10_react-dom@16.14.0+react@16.14.0
       '@storybook/theming': 6.5.10_react-dom@16.14.0+react@16.14.0
-      '@types/webpack-env': 1.16.4
+      '@types/webpack-env': 1.18.0
       core-js: 3.22.4
       global: 4.4.0
       react: 16.14.0
@@ -3959,7 +3965,7 @@ packages:
       '@storybook/csf': 0.0.2--canary.4566f4d.1
       '@storybook/store': 6.5.10_react-dom@16.14.0+react@16.14.0
       '@types/qs': 6.9.7
-      '@types/webpack-env': 1.16.4
+      '@types/webpack-env': 1.18.0
       core-js: 3.22.4
       fast-deep-equal: 3.1.3
       global: 4.4.0
@@ -5759,8 +5765,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.424_svelte@3.49.0+vite@3.0.4:
-    resolution: {integrity: sha512-e1tNg2FUl9XRDv2qMOFlSlEL46H2/xLOOtxwk0ADUBaZ3PUJoZ515gEgHuDmZkT50at9+oMbqatk+rh2e+CRdw==}
+  /@sveltejs/kit/1.0.0-next.415_svelte@3.49.0+vite@3.0.4:
+    resolution: {integrity: sha512-XtiiEW/LuhYeT0YdyLxNA+lCcu+1NMhLd4xM8ZYJ//x408eM9Oeckfh8qmzcBurksaZEZHd1cwHscSkOnJLOww==}
     engines: {node: '>=16.9'}
     hasBin: true
     requiresBuild: true
@@ -5769,6 +5775,7 @@ packages:
       vite: ^3.0.0
     dependencies:
       '@sveltejs/vite-plugin-svelte': 1.0.1_svelte@3.49.0+vite@3.0.4
+      chokidar: 3.5.3
       cookie: 0.5.0
       devalue: 2.0.1
       kleur: 4.1.5
@@ -6520,6 +6527,10 @@ packages:
 
   /@types/webpack-env/1.16.4:
     resolution: {integrity: sha512-llS8qveOUX3wxHnSykP5hlYFFuMfJ9p5JvIyCiBgp7WTfl6K5ZcyHj8r8JsN/J6QODkAsRRCLIcTuOCu8etkUw==}
+    dev: true
+
+  /@types/webpack-env/1.18.0:
+    resolution: {integrity: sha512-56/MAlX5WMsPVbOg7tAxnYvNYMMWr/QJiIp6BxVSW3JJXUVzzOn64qW8TzQyMSqSUFM2+PVI4aUHcHOzIz/1tg==}
     dev: true
 
   /@types/webpack-sources/3.2.0:
@@ -8428,6 +8439,14 @@ packages:
   /chownr/2.0.0:
     resolution: {integrity: sha512-bIomtDF5KGpdogkLd9VspvFzk9KfpyyGlS8YFVZl7TGPBHL5snIOnxeshwVgPteQ9b4Eydl+pVbIyE1DcvCWgQ==}
     engines: {node: '>=10'}
+    dev: true
+
+  /chromatic/6.7.4:
+    resolution: {integrity: sha512-QW4i8RQsON0JVnFnRf+8y70aIJptvC0Oi/26YJ669Dl03WmJRpobNO5qWFPTiv3KFKMc1Qf6/qFsRVZCtn+bfA==}
+    hasBin: true
+    dependencies:
+      '@discoveryjs/json-ext': 0.5.7
+      '@types/webpack-env': 1.18.0
     dev: true
 
   /chrome-trace-event/1.0.3:
@@ -10876,13 +10895,6 @@ packages:
     dependencies:
       node-domexception: 1.0.0
       web-streams-polyfill: 3.2.1
-    dev: true
-
-  /fetch-cookie/0.11.0:
-    resolution: {integrity: sha512-BQm7iZLFhMWFy5CZ/162sAGjBfdNWb7a8LEqqnzsHFhxT/X/SVj/z2t2nu3aJvjlbQkrAlTUApplPRjWyH4mhA==}
-    engines: {node: '>=8'}
-    dependencies:
-      tough-cookie: 4.0.0
     dev: true
 
   /fetch-retry/5.0.3:
@@ -13959,11 +13971,6 @@ packages:
       formdata-polyfill: 4.0.10
     dev: true
 
-  /node-gyp-build/4.1.1:
-    resolution: {integrity: sha512-dSq1xmcPDKPZ2EED2S6zw/b9NKsqzXRE6dVr8TVQnI3FJOTteUMuqF3Qqs6LZg+mLGYJWqQzMbIjMtJqTv87nQ==}
-    hasBin: true
-    dev: true
-
   /node-gyp-build/4.5.0:
     resolution: {integrity: sha512-2iGbaQBV+ITgCz76ZEjmhUKAKVf7xfY1sRl4UiKQspfZMH2h06SyhNsnSVy50cwkFQDGLyif6m/6uFXHkOZ6rg==}
     hasBin: true
@@ -16376,6 +16383,23 @@ packages:
 
   /store2/2.13.2:
     resolution: {integrity: sha512-CMtO2Uneg3SAz/d6fZ/6qbqqQHi2ynq6/KzMD/26gTkiEShCcpqFfTHgOxsE0egAq6SX3FmN4CeSqn8BzXQkJg==}
+    dev: true
+
+  /storybook-addon-pseudo-states/1.9.0:
+    resolution: {integrity: sha512-2zhpAsmXUv1P8z9z+WOp4er9IxM0RCQZDu18lwkXf3yafrf5aLv1fzqK8EAPNNdYOeNHQPfjJZpMlDigUjDuOg==}
+    peerDependencies:
+      '@storybook/addons': ^6.4.19
+      '@storybook/api': ^6.4.19
+      '@storybook/components': ^6.4.19
+      '@storybook/core-events': ^6.4.19
+      '@storybook/theming': ^6.4.19
+      react: ^16.8.0 || ^17.0.0
+      react-dom: ^16.8.0 || ^17.0.0
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
     dev: true
 
   /storybook-addon-pseudo-states/1.9.0_react-dom@18.0.0+react@18.0.0:

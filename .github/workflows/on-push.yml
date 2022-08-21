@@ -1,0 +1,133 @@
+name: Cheks
+"on":
+- push
+jobs:
+  js-search-test:
+    name: JS-Search tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Run tests
+      run: cd pkg/js-search/ && rushx test:ci
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: JS-Search Tests
+        path: pkg/js-search/junit.xml
+        reporter: jest-junit
+    - name: Build js-search
+      run: cd pkg/js-search/ && rushx build
+  ui-test:
+    name: UI tests
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run tests
+      run: cd pkg/ui && rushx test:ci
+  lint-and-typecheck:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - uses: actions/checkout@v2
+    - uses: actions/setup-node@v2
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Lint all the packages
+      run: rush lint:strict
+    - name: Typecheck all the packages
+      if: success() || failure()
+      run: rush typecheck
+  storybook-ui:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+    - uses: actions/setup-node@v2
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - uses: jwalton/gh-find-current-pr@v1
+      id: findPr
+      with:
+        state: open
+    - name: Build and upload storybook
+      if: success() && steps.findPr.outputs.number
+      run: cd pkg/ui && ./node_modules/.bin/chromatic --project-token=${{ secrets.CHROMAUI_PROJECT_TOKEN }}
+    - name: Build storybook
+      if: success() && ! steps.findPr.outputs.number
+      run: cd pkg/ui && rushx build-storybook
