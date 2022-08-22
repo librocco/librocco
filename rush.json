@@ -388,8 +388,8 @@
     { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
     { "packageName": "js-search", "projectFolder": "pkg/js-search" },
     {
-      "packageName": "@librocco/web",
-      "projectFolder": "pkg/web"
+      "packageName": "@librocco/database",
+      "projectFolder": "pkg/database"
     }
   ]
 }
