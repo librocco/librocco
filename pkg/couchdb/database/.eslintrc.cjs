@@ -1,4 +1,8 @@
-module.exports = {
+const path = require("path");
+const { useTSConfig } = require("../scaffold/.eslint.utils.js");
+
+
+module.exports = useTSConfig({
 	root: true,
 	parser: '@typescript-eslint/parser',
 	extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
@@ -17,4 +21,4 @@ module.exports = {
 		es2017: true,
 		node: true
 	}
-};
+}, [path.join(__dirname, "tsconfig.json")]);
