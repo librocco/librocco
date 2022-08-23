@@ -8,8 +8,8 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"test": "vitest",
-		"test:ci": "CI=true vitest run",
 		"format": "prettier --write --plugin-search-dir=. .",
+		"test:ci": "CI=true vitest run --reporter=junit --outputFile=./junit.xml --reporter=default",
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
 		"postinstall": "svelte-kit sync"
