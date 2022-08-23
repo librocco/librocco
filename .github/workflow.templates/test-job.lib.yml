@@ -1,0 +1,38 @@
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+
+#@ def test_script(workdir):
+#@  return "cd "+workdir+" && rushx test:ci"
+#@ end
+
+#@ def test_job(name, workdir, reporter=None):
+name: #@ name
+runs-on: ubuntu-latest
+timeout-minutes: 10
+permissions:
+  id-token: write
+  contents: read
+  checks: write
+steps:
+  - uses: actions/checkout@v2
+  - uses: actions/setup-node@v2
+    with:
+      node-version: "16"
+  -  #@ cache_node()
+  -  #@ rush_add_path()
+  -  #@ rush_install()
+  -  #@ rush_build()
+  - name: Run tests
+    run: #@ test_script(workdir)
+  #@ if reporter!=None:
+  - name: Test Report
+    uses: dorny/test-reporter@v1
+    if: success() || failure()
+    with:
+      name: #@ name
+      path: #@ workdir+"/junit.xml"
+      reporter: #@ reporter
+  #@ end
+#@ end
