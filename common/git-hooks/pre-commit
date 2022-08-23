@@ -9,3 +9,7 @@
 # The command itself is defined in common/config/rush/command-line.json
 # and uses the "lint-staged" autoinstaller.
 node common/scripts/install-run-rush.js lint-staged || exit $?
+
+# Check that there are no files or folders in 'apps' or 'pkg' folders
+# that haven't been listed as 'projects' in 'rush.json'
+node common/scripts/install-run-rush.js check-workspace-projects || exit $?
