@@ -11,7 +11,7 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test": "vitest",
-		"test:ci": "CI=true vitest run",
+		"test:ci": "CI=true vitest run --reporter=junit --outputFile=./junit.xml",
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
 		"postinstall": "svelte-kit sync"
