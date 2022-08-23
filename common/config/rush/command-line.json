@@ -180,6 +180,14 @@
     },
     {
       "commandKind": "bulk",
+      "name": "format",
+      "summary": "Format all of the packages' source code.",
+      "description": "Runs 'prettier --write' on all of the packages. If the package doesn't contain 'format' script, it's silently ignored.",
+      "enableParallelism": true,
+      "ignoreMissingScript": true
+    },
+    {
+      "commandKind": "bulk",
       "name": "typecheck",
       "summary": "Run 'tsc' on all of the packages.",
       "description": "Runs 'typecheck' ('tsc' with '--no-emit') on all of the packages. If the package doesn't contain the 'typecheck' script, it's silently ignored.",
@@ -193,6 +201,18 @@
       "description": "As rush doesn't run 'postinstall' script (from package.json) on package's installation, we're doing it imperatively.",
       "enableParallelism": true,
       "ignoreMissingScript": true,
+      "safeForSimultaneousRushProcesses": true
+    },
+
+    /**
+     * Repo commands
+     */
+    {
+      "commandKind": "global",
+      "name": "check-workspace-projects",
+      "shellCommand": "rush list --json | node common/scripts/rush-check-workspace-projects.js",
+      "summary": "Check 'apps' and 'pkg' folders for unlisted packages",
+      "description": "'apps' and 'pkg' folders of the monorepo are reserved for packages registered as 'projects' in 'rush.json'. This check fails if there are unlisted artifacts in those two folders",
       "safeForSimultaneousRushProcesses": true
     },
 
