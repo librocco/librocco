@@ -2,6 +2,7 @@
 #@ load("rush.lib.yml", "rush_add_path")
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
+#@ load("test-job.lib.yml", "test_job")
 
 name: Cheks
 
@@ -9,47 +10,10 @@ name: Cheks
   - push
 
 jobs:
-  js-search-test:
-    name: JS-Search tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write
-      contents: read
-      checks: write
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      - name: Run tests
-        run: cd pkg/js-search/ && rushx test:ci
-      - name: Test Report
-        uses: dorny/test-reporter@v1
-        if: success() || failure()
-        with:
-          name: JS-Search Tests
-          path: pkg/js-search/junit.xml
-          reporter: jest-junit
-      - name: Build js-search
-        run: cd pkg/js-search/ && rushx build
-  ui-test:
-    name: UI tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Run tests
-        run: cd pkg/ui && rushx test:ci
+  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
+
+  ui-test: #@ test_job("UI Tests", "pkg/ui")
+
   lint-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
