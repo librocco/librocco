@@ -1,3 +1,5 @@
+import { BookInterface, Note } from './types';
+
 /**
  * Database class
  */
@@ -40,22 +42,6 @@ class Database {
 		this._notes = notes;
 	}
 }
-
-export interface Note {
-	_id: string;
-	books: BookInterface[];
-}
-export interface BookInterface {
-	isbn: string;
-	title: string;
-	author: string;
-	editor: string;
-	price: number;
-	quantity: number;
-	note?: string;
-	date?: string;
-}
-
 const newNote = (database: Database) => (note: Note) => {
 	database.notes = [...database.notes, note];
 
