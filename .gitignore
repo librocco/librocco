@@ -38,6 +38,9 @@
 **/build
 **/.svelte-kit
 
+# Test reports
+**/junit.xml
+
 # -------Ignored contents of the root of the repo------- #
 
 # Rush temporary files

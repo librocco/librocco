@@ -19,11 +19,12 @@ const config = {
 
 		files: {
 			lib: 'src'
-		},
-		package: {
-			dir: 'dist',
-			files: (fp) => ignorePatterns.every((p) => !new RegExp(p).test(fp))
 		}
+	},
+
+	package: {
+		dir: 'dist',
+		files: (fp) => ignorePatterns.every((p) => !new RegExp(p).test(fp))
 	}
 };
 
