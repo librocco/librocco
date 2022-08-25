@@ -1,20 +1,5 @@
 import Pouchdb from 'pouchdb';
-
-export interface Note {
-	_id: string;
-	books: BookInterface[];
-}
-
-export interface BookInterface {
-	isbn: string;
-	title: string;
-	author: string;
-	editor: string;
-	price: number;
-	quantity: number;
-	note?: string;
-	date?: string;
-}
+import { BookInterface, Note } from './types';
 
 /** @TODO database interface type */
 export const createDatabaseInterface = (name: string) => {
