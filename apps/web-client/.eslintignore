@@ -1,7 +1,6 @@
 .DS_Store
 node_modules
 /build
-/dist
 /.svelte-kit
 /package
 .env
@@ -15,5 +14,4 @@ yarn.lock
 
 # Skip linting config files as that produces more headache than benefit
 vite.config.js
-vitest.config.ts
 svelte.config.js

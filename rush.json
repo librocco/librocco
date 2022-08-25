@@ -381,10 +381,13 @@
    * 3. It's useful to have a centralized inventory of all projects and their important metadata.
    */
   "projects": [
+    {
+      "packageName": "@librocco/web-client",
+      "projectFolder": "apps/web-client"
+    },
     { "packageName": "@librocco/scaffold", "projectFolder": "pkg/scaffold" },
     { "packageName": "@librocco/ui", "projectFolder": "pkg/ui" },
     { "packageName": "@librocco/svg", "projectFolder": "pkg/svg" },
-    { "packageName": "@librocco/ui-react", "projectFolder": "pkg/ui-react" },
     { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
     { "packageName": "js-search", "projectFolder": "pkg/js-search" },
     {
