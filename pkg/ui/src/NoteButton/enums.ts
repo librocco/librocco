@@ -1,8 +1,3 @@
-export enum NoteButtonShape {
-	Square = 'rounded-md',
-	RoundedRight = 'rounded-r-md'
-}
-
 export enum NoteButtonLabel {
 	RemoveBooks = 'Remove Books'
 }
