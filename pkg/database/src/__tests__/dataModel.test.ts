@@ -1,10 +1,11 @@
-// import { createDatabaseInterface } from '../db-actions';
 import { v4 as uuidv4 } from 'uuid';
 import { describe, test, expect } from 'vitest';
 
-import { createDatabaseInterface } from '../pouchdb-actions';
+import { createDatabaseInterface } from '../db-actions';
+// import { createDatabaseInterface } from '../pouchdb-actions';
 
 import { note, bookOne, bookTwo } from '../__testData__/dataModel';
+
 const db = createDatabaseInterface(uuidv4());
 
 describe('Test data model', () => {
