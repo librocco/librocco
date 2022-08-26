@@ -1,4 +1,4 @@
-import { BookCopyInterface, Note } from "../types";
+import { Volume, Note } from "../types";
 
 export const database = {
 	notes: []
@@ -95,7 +95,7 @@ export const note: Note = {
 	books: []
 };
 
-export const books: BookCopyInterface[] = [
+export const books: Volume[] = [
 	{
 		isbn: '0520203259',
 		title: 'Hellenistic history and culture',
@@ -138,7 +138,7 @@ export const books: BookCopyInterface[] = [
 	}
 ];
 
-export const bookOne: BookCopyInterface = {
+export const bookOne: Volume = {
 	isbn: '1555406211',
 	title: 'Latin in American schools : teaching the ancient world',
 	author: 'Sally Davis',
@@ -151,7 +151,7 @@ export const bookOne: BookCopyInterface = {
 	date: "23-07-2021"
 
 };
-export const bookTwo: BookCopyInterface = {
+export const bookTwo: Volume = {
 	isbn: '0691055491',
 	title: 'In the shadow of Olympus : the emergence of Macedon',
 	author: 'Eugene N. Borza',
