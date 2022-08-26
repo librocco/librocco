@@ -1,4 +1,4 @@
-import { BookInterface, Note } from './types';
+import { BookCopyInterface, Note } from './types';
 
 /**
  * Database class
@@ -69,7 +69,7 @@ const createDatabase = (name: string): Database => {
 	const database = new Database([], name);
 	return database;
 };
-const addBook = (database: Database) => async (id: Note['_id'], newBook: BookInterface) => {
+const addBook = (database: Database) => async (id: Note['_id'], newBook: BookCopyInterface) => {
 	const note = database.notes.find((note) => note._id === id) || ({} as Note);
 	const bookIndex = note.books.findIndex((book) => book.isbn === newBook.isbn);
 	if (bookIndex !== -1) throw new Error('Book already exists');
@@ -82,7 +82,7 @@ const addBook = (database: Database) => async (id: Note['_id'], newBook: BookInt
 
 	return { id, ok: true };
 };
-const removeBook = (database: Database) => async (id: Note['_id'], isbn: BookInterface['isbn']) => {
+const removeBook = (database: Database) => async (id: Note['_id'], isbn: BookCopyInterface['isbn']) => {
 	const note = database.notes.find((note) => note._id === id) || ({} as Note);
 	const bookIndex = note.books.findIndex((book) => book.isbn === isbn);
 	if (bookIndex === -1) throw new Error('Book does not exist');

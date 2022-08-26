@@ -1,4 +1,4 @@
-import { Note } from '../types';
+import { BookCopyInterface, Note } from "../types";
 
 export const database = {
 	notes: []
@@ -16,8 +16,10 @@ export const notes: Note[] = [
 
 				price: 10,
 
-				note: '',
-				quantity: 3
+				note: '123',
+				quantity: 3,
+				date: "28-08-2022"
+
 			},
 			{
 				isbn: '0300088108',
@@ -28,8 +30,10 @@ export const notes: Note[] = [
 
 				price: 11,
 
-				note: '',
-				quantity: 3
+				note: '123',
+				quantity: 3,
+				date: "28-08-2022"
+
 			}
 		]
 	},
@@ -45,8 +49,10 @@ export const notes: Note[] = [
 
 				price: 10,
 
-				note: '',
-				quantity: 3
+				note: '456',
+				quantity: 3,
+				date: "29-08-2022"
+
 			},
 			{
 				isbn: '0300088108',
@@ -57,8 +63,10 @@ export const notes: Note[] = [
 
 				price: 11,
 
-				note: '',
-				quantity: 3
+				note: '456',
+				quantity: 3,
+				date: "29-08-2022"
+
 			}
 		]
 	},
@@ -73,8 +81,10 @@ export const notes: Note[] = [
 
 				price: 14,
 
-				note: '',
-				quantity: 1
+				note: '789',
+				quantity: 1,
+				date: "30-08-2022"
+
 			}
 		]
 	}
@@ -85,7 +95,7 @@ export const note: Note = {
 	books: []
 };
 
-export const books = [
+export const books: BookCopyInterface[] = [
 	{
 		isbn: '0520203259',
 		title: 'Hellenistic history and culture',
@@ -95,8 +105,9 @@ export const books = [
 
 		price: 10,
 
-		note: '',
-		quantity: 3
+		note: '123',
+		quantity: 3,
+		date: "28-08-2022"
 	},
 	{
 		isbn: '0300088108',
@@ -108,7 +119,9 @@ export const books = [
 		price: 11,
 
 		note: '',
-		quantity: 3
+		quantity: 3,
+		date: "20-08-2022"
+
 	},
 	{
 		isbn: '0520204832',
@@ -118,12 +131,14 @@ export const books = [
 
 		price: 14,
 
-		note: '',
-		quantity: 1
+		note: '123',
+		quantity: 1,
+		date: "28-08-2022"
+
 	}
 ];
 
-export const bookOne = {
+export const bookOne: BookCopyInterface = {
 	isbn: '1555406211',
 	title: 'Latin in American schools : teaching the ancient world',
 	author: 'Sally Davis',
@@ -131,10 +146,12 @@ export const bookOne = {
 
 	price: 14,
 
-	note: '',
-	quantity: 1
+	note: '789',
+	quantity: 1,
+	date: "23-07-2021"
+
 };
-export const bookTwo = {
+export const bookTwo: BookCopyInterface = {
 	isbn: '0691055491',
 	title: 'In the shadow of Olympus : the emergence of Macedon',
 	author: 'Eugene N. Borza',
@@ -143,13 +160,14 @@ export const bookTwo = {
 
 	price: 14,
 
-	note: '',
-	quantity: 1
+	note: '456',
+	quantity: 1,
+	date: "23-08-2020"
 };
 export const databaseWithNote = {
 	notes: [note]
 };
-export const updatedNote = { ...note, books: note.books.concat(bookOne) };
+export const updatedNote: Note = { ...note, books: note.books.concat(bookOne) };
 
 export const databaseWithUpdatedNote = {
 	notes: [updatedNote]
