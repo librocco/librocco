@@ -1,5 +1,5 @@
 import Pouchdb from 'pouchdb';
-import { BookCopyInterface, Note } from './types';
+import { Volume, Note } from './types';
 
 /** @TODO database interface type */
 export const createDatabaseInterface = (name: string) => {
@@ -26,7 +26,7 @@ const updateNote = (database: PouchDB.Database) => async (id: Note['_id'], newNo
 	return database.put({ ...newNote, _id: note._id, _rev: note._rev });
 };
 
-const addBook = (database: PouchDB.Database) => async (id: Note['_id'], newBook: BookCopyInterface) => {
+const addBook = (database: PouchDB.Database) => async (id: Note['_id'], newBook: Volume) => {
 	const note = (await database.get(id)) as Note;
 	// make sure it doesn't already exist
 	const index = note.books.findIndex((book) => book.isbn === newBook.isbn);
@@ -42,7 +42,7 @@ const listBooks = (database: PouchDB.Database) => async (id: Note['_id']) => {
 	return books;
 };
 const removeBook =
-	(database: PouchDB.Database) => async (id: Note['_id'], isbn: BookCopyInterface['isbn']) => {
+	(database: PouchDB.Database) => async (id: Note['_id'], isbn: Volume['isbn']) => {
 		const note = (await database.get(id)) as Note;
 		// make sure its there
 		const index = note.books.findIndex((book) => book.isbn === isbn);

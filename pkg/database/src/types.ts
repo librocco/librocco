@@ -1,15 +1,15 @@
 export interface Note {
 	_id: string;
-    books: BookCopyInterface[];
+    books: Volume[];
 }
 
-export interface BookDataInterface {
+export interface BookData {
 	isbn: string;
 	title: string;
 	author: string;
 	editor: string;
 }
-export interface BookCopyInterface extends BookDataInterface {
+export interface Volume extends BookData {
 	price: number;
 	quantity: number;
     note: string;
