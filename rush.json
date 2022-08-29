@@ -389,6 +389,10 @@
     { "packageName": "@librocco/ui", "projectFolder": "pkg/ui" },
     { "packageName": "@librocco/svg", "projectFolder": "pkg/svg" },
     { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
-    { "packageName": "js-search", "projectFolder": "pkg/js-search" }
+    { "packageName": "js-search", "projectFolder": "pkg/js-search" },
+    {
+      "packageName": "@librocco/database",
+      "projectFolder": "pkg/database"
+    }
   ]
 }
