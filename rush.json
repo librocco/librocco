@@ -391,6 +391,10 @@
     {
       "packageName": "@librocco/database",
       "projectFolder": "pkg/database"
+    },
+    {
+      "packageName": "@librocco/datamodel-tests",
+      "projectFolder": "pkg/datamodel-tests"
     }
   ]
 }
