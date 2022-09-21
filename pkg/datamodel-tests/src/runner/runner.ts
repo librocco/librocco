@@ -2,9 +2,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { test as t } from 'vitest';
 import { RawBook, RawDBSnap, RawNote } from '../types/raw-data';
-import { ingestJSONDir } from './utils';
 
 type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = { _id: string } & Doc;
+
+interface TestDataLoader {
+	getBooks: () => RawBook[];
+	getNotes: () => RawNote[];
+	getSnaps: () => RawDBSnap[];
+}
 
 interface TransformBook {
 	(book: RawBook): CouchDocument;
@@ -35,16 +40,10 @@ export class Runner {
 	private _transformNotes: null | TransformNote = null;
 	private _transformSnap: null | TransformSnap = null;
 
-	async loadData(testDataDir: string) {
-		const [rawBooks, rawNotes, rawDBSnaps] = await Promise.all(
-			['books', 'notes', 'snaps'].map((collection) =>
-				ingestJSONDir([testDataDir, collection].join('/'))
-			)
-		);
-
-		this._rawBooks = rawBooks as RawBook[];
-		this._rawNotes = rawNotes as RawNote[];
-		this._rawSnaps = rawDBSnaps as RawDBSnap[];
+	async loadData(loader: TestDataLoader) {
+		this._rawBooks = loader.getBooks();
+		this._rawNotes = loader.getNotes();
+		this._rawSnaps = loader.getSnaps();
 	}
 
 	/**
