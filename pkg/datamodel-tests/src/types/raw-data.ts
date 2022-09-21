@@ -15,7 +15,7 @@ export interface RawBook {
 	};
 }
 
-interface RawBookStock extends RawBook {
+export interface RawBookStock extends RawBook {
 	warehouse: string;
 	quantity: number;
 }
