@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { test as t } from 'vitest';
-import { RawBook, RawDBSnap, RawNote } from '../types/raw-data';
+import { RawBook, RawBookStock, RawDBSnap, RawNote } from '../types/raw-data';
 
 type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = { _id: string } & Doc;
 
@@ -19,16 +19,24 @@ interface TransformNote {
 	(note: RawNote): CouchDocument;
 }
 
-// interface AddToWarehouse {
-// 	(warehouse: string, book: Record<string, any>): void;
-// }
+interface AddToWarehouse {
+	(wName: string, book: RawBookStock): void;
+}
 
 interface TransformSnap {
 	(db: RawDBSnap): CouchDocument;
 }
 
+interface MapWarehouses {
+	(book: RawBookStock, addToWarehouse: AddToWarehouse): void;
+}
+
 interface GetNotesAndWarehouses {
-	(n: number): { notes: CouchDocument[]; snap: CouchDocument };
+	(n: number): {
+		notes: CouchDocument[];
+		snap: CouchDocument;
+		warehouses: Record<string, CouchDocument>;
+	};
 }
 
 export class Runner {
@@ -39,6 +47,7 @@ export class Runner {
 	private _books: CouchDocument[] = [];
 	private _transformNotes: null | TransformNote = null;
 	private _transformSnap: null | TransformSnap = null;
+	private _mapWarehouses: null | MapWarehouses = null;
 
 	async loadData(loader: TestDataLoader) {
 		this._rawBooks = loader.getBooks();
@@ -89,15 +98,34 @@ export class Runner {
 		this._transformSnap = transform;
 	}
 
+	mapWarehouses(mapper: (book: RawBookStock, addToWarehouse: AddToWarehouse) => void) {
+		this._mapWarehouses = mapper;
+	}
+
 	test(
 		name: string,
 		cb: (books: CouchDocument[], getNotesAndWarehouses: GetNotesAndWarehouses) => Promise<void>
 	) {
 		const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
 			const notes = this._rawNotes.slice(0, n).map(this._transformNotes!);
-			const snap = this._transformSnap!(this._rawSnaps[n - 1]);
+			const rawSnap = this._rawSnaps[n - 1];
 
-			return { notes, snap };
+			const rawWarehouses: Record<string, RawDBSnap> = {};
+			const addToWarehouse = (wName: string, book: RawBookStock) => {
+				const wh = rawWarehouses[wName] || { id: wName, books: [] };
+
+				rawWarehouses[wName] = { ...wh, books: [...wh.books, book] };
+			};
+
+			rawSnap.books.forEach((b) => this._mapWarehouses!(b, addToWarehouse));
+
+			const snap = this._transformSnap!(rawSnap);
+			const warehouses = Object.entries(rawWarehouses).reduce(
+				(acc, [wName, w]) => ({ ...acc, [wName]: this._transformSnap!(w) }),
+				{}
+			);
+
+			return { notes, snap, warehouses };
 		};
 
 		t(name, async () => {
