@@ -1,0 +1,20 @@
+{
+	"volumeInfo": {
+		"title": "Biology Data Books",
+		"authors": ["Philip L. Altman"],
+		"publisher": "",
+		"publishedDate": "1991-06-01",
+		"industryIdentifiers": [
+			{
+				"type": "ISBN_10",
+				"identifier": "0071053646"
+			},
+			{
+				"type": "ISBN_13",
+				"identifier": "9780071053648"
+			}
+		],
+		"categories": ["Science"],
+		"language": "en"
+	}
+}
