@@ -1,0 +1,159 @@
+{
+	"id": "note-006",
+	"books": [
+		{
+			"volumeInfo": {
+				"title": "Saving Darwin",
+				"authors": ["Karl Giberson"],
+				"publisher": "Harper Collins",
+				"publishedDate": "2009-10-06",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780061983412"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0061983411"
+					}
+				],
+				"categories": ["Religion"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 8
+		},
+		{
+			"volumeInfo": {
+				"title": "The Jazz Standards",
+				"authors": ["Ted Gioia"],
+				"publisher": "",
+				"publishedDate": "2012",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780199769155"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "019976915X"
+					}
+				],
+				"categories": ["African Americans"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 0
+		},
+		{
+			"volumeInfo": {
+				"title": "The Swing Era",
+				"authors": ["Gunther Schuller"],
+				"publisher": "History of Jazz",
+				"publishedDate": "1989",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0195071409"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780195071405"
+					}
+				],
+				"categories": ["History"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 13
+		},
+		{
+			"volumeInfo": {
+				"title": "The History of Jazz",
+				"authors": ["Ted Gioia"],
+				"publisher": "Oxford University Press",
+				"publishedDate": "2011-05-09",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780195399707"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0195399706"
+					}
+				],
+				"categories": ["History"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 0
+		},
+		{
+			"volumeInfo": {
+				"title": "Holiday Jazz Chants",
+				"authors": ["Carolyn Graham"],
+				"publisher": "Oxford",
+				"publishedDate": "1999-01-01",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0194349276"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780194349277"
+					}
+				],
+				"categories": ["Foreign Language Study"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 13
+		},
+		{
+			"volumeInfo": {
+				"title": "What Went Wrong?",
+				"authors": ["Trevor Kletz"],
+				"publisher": "Elsevier",
+				"publishedDate": "1998-06-23",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0080524230"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780080524238"
+					}
+				],
+				"categories": ["Technology \u0026 Engineering"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 1
+		},
+		{
+			"volumeInfo": {
+				"title": "The Age of Wonder",
+				"authors": ["Richard Holmes"],
+				"publisher": "HarperCollins UK",
+				"publishedDate": "2008",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780007149520"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0007149522"
+					}
+				],
+				"categories": ["Biographers"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 13
+		}
+	]
+}
