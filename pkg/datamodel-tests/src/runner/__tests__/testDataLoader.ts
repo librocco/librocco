@@ -1,14 +1,15 @@
 import { RawBook, RawNote, RawDBSnap } from 'src/types/raw-data';
 
-import book1 from '../__testData__/books/0007149522.json';
-import book2 from '../__testData__/books/0061983411.json';
-import book3 from '../__testData__/books/0071053646.json';
-import book4 from '../__testData__/books/0080524230.json';
-import book5 from '../__testData__/books/0194349276.json';
-import book6 from '../__testData__/books/0195071409.json';
-import book7 from '../__testData__/books/0195399706.json';
-import book8 from '../__testData__/books/019976915X.json';
-const allBooks = [book1, book2, book3, book4, book5, book6, book7, book8];
+import book1 from '../__testData__/books/science/0007149522.json';
+import book2 from '../__testData__/books/science/0061983411.json';
+import book3 from '../__testData__/books/science/0080524230.json';
+import book4 from '../__testData__/books/jazz/0194349276.json';
+import book5 from '../__testData__/books/jazz/0195071409.json';
+import book6 from '../__testData__/books/jazz/0195399706.json';
+import book7 from '../__testData__/books/jazz/019976915X.json';
+const scienceBooks = [book1, book2, book3];
+const jazzBooks = [book4, book5, book6, book7];
+const allBooks = [...scienceBooks, ...jazzBooks];
 
 import note1 from '../__testData__/notes/note-000.json';
 import note2 from '../__testData__/notes/note-001.json';
@@ -41,3 +42,5 @@ export const getSnaps = () => allSnaps as RawDBSnap[];
 
 // Additional getters for easier unit tests
 export const getSnap = (n: number) => allSnaps[n] as RawDBSnap;
+export const getScienceBooks = () => scienceBooks as RawBook[];
+export const getJazzBooks = () => jazzBooks as RawBook[];
