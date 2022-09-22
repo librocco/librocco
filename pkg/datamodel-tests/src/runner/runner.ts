@@ -5,9 +5,9 @@ import { RawBook, RawBookStock, RawDBSnap, RawNote } from '../types/raw-data';
 type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = { _id: string } & Doc;
 
 interface TestDataLoader {
-	getBooks: () => RawBook[];
-	getNotes: () => RawNote[];
-	getSnaps: () => RawDBSnap[];
+	getBooks: () => Promise<RawBook[]>;
+	getNotes: () => Promise<RawNote[]>;
+	getSnaps: () => Promise<RawDBSnap[]>;
 }
 
 interface TransformBook {
@@ -39,14 +39,20 @@ interface GetNotesAndWarehouses {
 }
 
 export class Runner {
-	private readonly _rawBooks: RawBook[] = [];
-	private readonly _rawNotes: RawNote[] = [];
-	private readonly _rawSnaps: RawDBSnap[] = [];
+	private _rawBooks: RawBook[] = [];
+	private _rawNotes: RawNote[] = [];
+	private _rawSnaps: RawDBSnap[] = [];
 
-	constructor(loader: TestDataLoader) {
-		this._rawBooks = loader.getBooks();
-		this._rawNotes = loader.getNotes();
-		this._rawSnaps = loader.getSnaps();
+	async loadData(loader: TestDataLoader) {
+		const [rawBooks, rawNotes, rawSnaps] = await Promise.all([
+			loader.getBooks(),
+			loader.getNotes(),
+			loader.getSnaps()
+		]);
+
+		this._rawBooks = rawBooks;
+		this._rawNotes = rawNotes;
+		this._rawSnaps = rawSnaps;
 	}
 
 	newCase(config: TestConfig): Case {
