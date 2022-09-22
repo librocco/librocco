@@ -36,9 +36,9 @@ import snap10 from '../__testData__/snaps/note-009.json';
 const allSnaps = [snap1, snap2, snap3, snap4, snap5, snap6, snap7, snap8, snap9, snap10];
 
 // Getters used to pass the module as `TestDataLoader` in runner
-export const getBooks = () => allBooks as RawBook[];
-export const getNotes = () => allNotes as RawNote[];
-export const getSnaps = () => allSnaps as RawDBSnap[];
+export const getBooks = async () => allBooks as RawBook[];
+export const getNotes = async () => allNotes as RawNote[];
+export const getSnaps = async () => allSnaps as RawDBSnap[];
 
 // Additional getters for easier unit tests
 export const getSnap = (n: number) => allSnaps[n] as RawDBSnap;
