@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { test as t } from 'vitest';
 import { RawBook, RawBookStock, RawDBSnap, RawNote } from '../types/raw-data';
@@ -40,66 +39,57 @@ interface GetNotesAndWarehouses {
 }
 
 export class Runner {
-	private _rawBooks: RawBook[] = [];
-	private _rawNotes: RawNote[] = [];
-	private _rawSnaps: RawDBSnap[] = [];
+	private readonly _rawBooks: RawBook[] = [];
+	private readonly _rawNotes: RawNote[] = [];
+	private readonly _rawSnaps: RawDBSnap[] = [];
 
-	private _books: CouchDocument[] = [];
-	private _transformNotes: null | TransformNote = null;
-	private _transformSnap: null | TransformSnap = null;
-	private _mapWarehouses: null | MapWarehouses = null;
-
-	async loadData(loader: TestDataLoader) {
+	constructor(loader: TestDataLoader) {
 		this._rawBooks = loader.getBooks();
 		this._rawNotes = loader.getNotes();
 		this._rawSnaps = loader.getSnaps();
 	}
 
-	/**
-	 * A function applied to each book entry to
-	 * transform it from the raw data to the proposed data model.
-	 *
-	 * The proposed data structure can be passed as a type parameter
-	 * for type safety while writing the transform function, e.g.
-	 *
-	 * ```typescript
-	 * transformBooks<BookInterface>(...)
-	 * ```
-	 */
-	transformBooks(transform: TransformBook) {
-		this._books = this._rawBooks.map(transform);
+	newCase(config: TestConfig): Case {
+		return new Case(
+			{
+				books: this._rawBooks,
+				notes: this._rawNotes,
+				snaps: this._rawSnaps
+			},
+			config
+		);
 	}
+}
 
-	/**
-	 * A function applied to each note entry to
-	 * transform it from the raw data to the proposed data model.
-	 *
-	 * The proposed data structure can be passed as a type parameter
-	 * for type safety while writing the transform function, e.g.
-	 *
-	 * ```typescript
-	 * transformNotes<NoteInterface>(...)
-	 * ```
-	 */
-	transformNotes(transform: TransformNote): void {
-		this._transformNotes = transform;
-	}
+interface RawData {
+	books: RawBook[];
+	notes: RawNote[];
+	snaps: RawDBSnap[];
+}
+interface TestConfig {
+	transformBooks: TransformBook;
+	transformNotes: TransformNote;
+	transformSnaps: TransformSnap;
+	mapWarehouses: MapWarehouses;
+}
 
-	/**
-	 * A function applied to the database snapshot (database being a collection of all books in stock)
-	 * to transform it from the raw data to the proposed data model. Additionally it provides a param
-	 * `addToWarehouse` for warehouse grouping.
-	 * @param {RawDBSnap} db raw snapshot of all the books in stock
-	 * @param {AddToWarehouse} addToWarehouse a function called with warehouse name and a record to store to each warehouse
-	 * if we wish to split the books by warehouses.
-	 * (In that case, the "db", i.e. total book stock will still be stored, but also each warehouse, with its stock will be created as separate documents)
-	 */
-	transformSnap(transform: TransformSnap): void {
-		this._transformSnap = transform;
-	}
+class Case {
+	private readonly _books: CouchDocument[];
+	private readonly _rawNotes: RawNote[];
+	private readonly _rawSnaps: RawDBSnap[];
 
-	mapWarehouses(mapper: (book: RawBookStock, addToWarehouse: AddToWarehouse) => void) {
-		this._mapWarehouses = mapper;
+	_transformNote: TransformNote;
+	_transformSnap: TransformSnap;
+	_mapWarehouses: MapWarehouses;
+
+	constructor(data: RawData, config: TestConfig) {
+		this._books = data.books.map(config.transformBooks);
+		this._rawNotes = data.notes;
+		this._rawSnaps = data.snaps;
+
+		this._transformNote = config.transformNotes;
+		this._transformSnap = config.transformSnaps;
+		this._mapWarehouses = config.mapWarehouses;
 	}
 
 	test(
@@ -107,7 +97,7 @@ export class Runner {
 		cb: (books: CouchDocument[], getNotesAndWarehouses: GetNotesAndWarehouses) => Promise<void>
 	) {
 		const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
-			const notes = this._rawNotes.slice(0, n).map(this._transformNotes!);
+			const notes = this._rawNotes.slice(0, n).map(this._transformNote);
 			const rawSnap = this._rawSnaps[n - 1];
 
 			const rawWarehouses: Record<string, RawDBSnap> = {};
@@ -117,11 +107,11 @@ export class Runner {
 				rawWarehouses[wName] = { ...wh, books: [...wh.books, book] };
 			};
 
-			rawSnap.books.forEach((b) => this._mapWarehouses!(b, addToWarehouse));
+			rawSnap.books.forEach((b) => this._mapWarehouses(b, addToWarehouse));
 
-			const snap = this._transformSnap!(rawSnap);
+			const snap = this._transformSnap(rawSnap);
 			const warehouses = Object.entries(rawWarehouses).reduce(
-				(acc, [wName, w]) => ({ ...acc, [wName]: this._transformSnap!(w) }),
+				(acc, [wName, w]) => ({ ...acc, [wName]: this._transformSnap(w) }),
 				{}
 			);
 
@@ -132,24 +122,4 @@ export class Runner {
 			await cb(this._books, getNotesAndWarehouses);
 		});
 	}
-
-	//	newSetup(config: TestConfig) {}
 }
-
-// interface RawData {
-// 	rawBooks: RawBook[];
-// 	rawNotes: RawNote[];
-// 	rawDBSnaps: RawDBSnap[];
-// }
-
-// class TestSetup {
-// 	private _books: CouchDocument<B>[];
-// 	private _rawNotes: RawNote[];
-// 	private _rawDBSnaps: RawDBSnap[];
-//
-// 	constructor(rawData: RawData, config: TestConfig) {
-// 		this._books = rawData.rawBooks.map(config.transformBooks);
-// 		this._rawNotes = rawData.rawNotes;
-// 		this._rawDBSnaps = rawData.rawDBSnaps;
-// 	}
-// }
