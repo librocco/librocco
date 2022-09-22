@@ -6,13 +6,14 @@ import { Runner } from '../runner';
 
 import * as testDataLoader from './testDataLoader';
 
-const allBooks = testDataLoader.getBooks();
-const allNotes = testDataLoader.getNotes();
-
 describe('Datamodel test runner smoke test', async () => {
+	const allBooks = await testDataLoader.getBooks();
+	const allNotes = await testDataLoader.getNotes();
+
 	// We're instantiating the runner with the data loaded
 	// for efficiency when running multiple tests
-	const runner = new Runner(testDataLoader);
+	const runner = new Runner();
+	await runner.loadData(testDataLoader);
 
 	describe('Transform case 1', () => {
 		// Simple transform functions to test the tranform functionality
