@@ -1,4 +1,4 @@
-import { RawBook, RawNote, RawDBSnap } from 'src/types/raw-data';
+import { RawBook, RawNote, RawSnap } from '../../types';
 
 import book1 from '../__testData__/books/science/0007149522.json';
 import book2 from '../__testData__/books/science/0061983411.json';
@@ -38,9 +38,9 @@ const allSnaps = [snap1, snap2, snap3, snap4, snap5, snap6, snap7, snap8, snap9,
 // Getters used to pass the module as `TestDataLoader` in runner
 export const getBooks = async () => allBooks as RawBook[];
 export const getNotes = async () => allNotes as RawNote[];
-export const getSnaps = async () => allSnaps as RawDBSnap[];
+export const getSnaps = async () => allSnaps as RawSnap[];
 
 // Additional getters for easier unit tests
-export const getSnap = (n: number) => allSnaps[n] as RawDBSnap;
+export const getSnap = (n: number) => allSnaps[n] as RawSnap;
 export const getScienceBooks = () => scienceBooks as RawBook[];
 export const getJazzBooks = () => jazzBooks as RawBook[];
