@@ -1,84 +1,46 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect } from 'vitest';
 
-import { RawBook } from '../../types';
-
 import { Runner } from '../runner';
-import { defaultTransformBook, defaultTransformSnap } from '../testSetup';
 
 import * as testDataLoader from './testDataLoader';
 
-describe('Datamodel test runner smoke test', async () => {
-	const allBooks = await testDataLoader.getBooks();
-	const allNotes = await testDataLoader.getNotes();
+import exampleSetup from './example-pouch';
 
+import { newDB } from '../../utils/pouchdb';
+
+describe('Datamodel test runner smoke test', async () => {
 	// We're instantiating the runner with the data loaded
 	// for efficiency when running multiple tests
 	const runner = new Runner();
 	await runner.loadData(testDataLoader);
 
-	describe('Dry run', () => {
-		const testCase = runner.newSetup();
+	describe('Example test', async () => {
+		const { setupDB, ...transformers } = exampleSetup;
 
-		testCase.test('smoke test', async (books, getNotesAndSnaps) => {
-			const transformedBooks = allBooks.map(defaultTransformBook);
+		const testSetup = runner.newSetup(transformers);
 
-			expect(books).toEqual(transformedBooks);
+		testSetup.test('should work with pouchdb', async (_, getNotesAndWarehouses) => {
+			const { notes, snap, warehouses } = getNotesAndWarehouses(1);
 
-			const transformedNotes = allNotes.map((n) => ({ _id: n.id }));
-			const transformedSnap = defaultTransformSnap(testDataLoader.getSnap(9));
+			// Instantiate a new DB to run tests against
+			const db = await newDB();
+			const { commitNote, getNotes, getStock, getWarehouses } = setupDB(db);
 
-			const { notes, snap } = getNotesAndSnaps(10);
+			// Commit all the notes loaded from test data
+			await Promise.all(notes.map((n) => commitNote(n as any)));
 
-			expect(notes).toEqual(transformedNotes);
-			expect(snap).toEqual(transformedSnap);
+			// Check notes retrieved from DB
+			const resNotes = await getNotes();
+			expect(resNotes).toEqual(notes);
+
+			// Check full stock (all warehouses) retrieved from DB
+			const resStock = await getStock();
+			expect(resStock).toEqual(snap);
+
+			// Check stocks per warehouse retrieved from DB
+			const resWarehouses = await getWarehouses();
+			expect(resWarehouses).toEqual(warehouses);
 		});
 	});
-
-	describe('Transform books to use isbn as id and map to warehouses', () => {
-		const getISBN = (b: RawBook) =>
-			Object.values(b.volumeInfo.industryIdentifiers).find(({ type }) => type === 'ISBN_10')
-				?.identifier || 'isbn_unknown';
-
-		// Try a different transformation then the one above
-		const testCase = runner.newSetup({
-			transformBooks: (b) => ({ _id: getISBN(b) }),
-			mapWarehouses: (b, addToWarehouse) => addToWarehouse(b.warehouse, b)
-		});
-
-		testCase.test(
-			'should use isbn_10 as _id for a book and map books to appropriate warehouses',
-			async (books, getNotesAndSnaps) => {
-				// We're testing the books against the same transform function as the
-				// transformation being applied is enough for this case
-				const transformedBooks = allBooks.map((b) => ({ _id: getISBN(b) }));
-				expect(books).toEqual(transformedBooks);
-
-				const rawTestSnap = testDataLoader.getSnap(9);
-				const scienceWarehouse = {
-					_id: 'science',
-					books: rawTestSnap.books.reduce(
-						(acc, { warehouse, ...b }) =>
-							warehouse === 'science' ? [...acc, defaultTransformBook(b)] : acc,
-						[] as { _id: string }[]
-					)
-				};
-				const jazzWarehouse = {
-					_id: 'jazz',
-					books: rawTestSnap.books.reduce(
-						(acc, { warehouse, ...b }) =>
-							warehouse === 'jazz' ? [...acc, defaultTransformBook(b)] : acc,
-						[] as { _id: string }[]
-					)
-				};
-
-				const {
-					warehouses: { jazz, science }
-				} = getNotesAndSnaps(10);
-				expect(jazz).toEqual(jazzWarehouse);
-				expect(science).toEqual(scienceWarehouse);
-			}
-		);
-	});
-
-	//	describe('A mock test against pouchdb', () => {});
 });
