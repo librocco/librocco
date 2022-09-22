@@ -23,7 +23,7 @@ interface GetNotesAndWarehouses {
 	(n: number): {
 		notes: CouchDocument[];
 		snap: CouchDocument;
-		warehouses: Record<string, CouchDocument>;
+		warehouses: CouchDocument[];
 	};
 }
 
@@ -44,12 +44,14 @@ export class TestSetup {
 	_transformNote: TransformNote;
 	_transformSnap: TransformSnap;
 	_mapWarehouses: MapWarehouses;
+	_transformWarehouse: TransformSnap;
 
 	constructor(data: RawData, config: TestConfig) {
 		const {
 			transformBooks = defaultTransformBook,
 			transformNotes = defaultTransformNote,
 			transformSnaps = defaultTransformSnap,
+			transformWarehouse = defaultTransformSnap,
 			mapWarehouses = () => {}
 		} = config;
 
@@ -60,6 +62,7 @@ export class TestSetup {
 		this._transformNote = transformNotes;
 		this._transformSnap = transformSnaps;
 		this._mapWarehouses = mapWarehouses;
+		this._transformWarehouse = transformWarehouse;
 	}
 
 	test(
@@ -74,16 +77,15 @@ export class TestSetup {
 			const addToWarehouse = (wName: string, book: RawBookStock) => {
 				const wh = rawWarehouses[wName] || { id: wName, books: [] };
 
-				rawWarehouses[wName] = { ...wh, books: [...wh.books, book] };
+				rawWarehouses[wName] = { ...wh, id: wName, books: [...wh.books, book] };
 			};
 
 			rawSnap.books.forEach((b) => this._mapWarehouses(b, addToWarehouse));
 
 			const snap = this._transformSnap(rawSnap);
-			const warehouses = Object.entries(rawWarehouses).reduce(
-				(acc, [wName, w]) => ({ ...acc, [wName]: this._transformSnap(w) }),
-				{}
-			);
+			const warehouses = Object.values(rawWarehouses).map((w) => this._transformWarehouse(w));
+
+			console.log(JSON.stringify(warehouses, null, 2));
 
 			return { notes, snap, warehouses };
 		};
