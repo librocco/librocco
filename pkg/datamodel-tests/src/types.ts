@@ -74,5 +74,6 @@ export interface TestConfig {
 	transformNotes?: TransformNote;
 	transformSnaps?: TransformSnap;
 	mapWarehouses?: MapWarehouses;
+	transformWarehouse?: TransformSnap;
 }
 // #endregion runner
