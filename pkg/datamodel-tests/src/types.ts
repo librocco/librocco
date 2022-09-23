@@ -48,21 +48,23 @@ export interface TestDataLoader {
 	getNotes: () => Promise<RawNote[]>;
 	getSnaps: () => Promise<RawSnap[]>;
 }
+// #endregion runner
 
-export interface TransformBook {
-	(book: RawBook): CouchDocument;
+// #region testSetup
+export interface TransformBook<S extends Record<string, any> = Record<string, any>> {
+	(book: RawBook): CouchDocument<S>;
 }
 
-export interface TransformNote {
-	(note: RawNote): CouchDocument;
+export interface TransformNote<S extends Record<string, any> = Record<string, any>> {
+	(note: RawNote): CouchDocument<S>;
 }
 
 export interface AddToWarehouse {
 	(wName: string, book: RawBookStock): void;
 }
 
-export interface TransformSnap {
-	(db: RawSnap): CouchDocument;
+export interface TransformSnap<S extends Record<string, any> = Record<string, any>> {
+	(db: RawSnap): CouchDocument<S>;
 }
 
 export interface MapWarehouses {
@@ -76,4 +78,26 @@ export interface TransformConfig {
 	mapWarehouses?: MapWarehouses;
 	transformWarehouse?: TransformSnap;
 }
-// #endregion runner
+
+export interface DBInteraction<R = void, P extends any[] = never[]> {
+	(...params: P): Promise<R>;
+}
+export interface DBInteractionHOF<R = void, P extends any[] = never[]> {
+	(db: PouchDB.Database): DBInteraction<R, P>;
+}
+
+export interface DBInterface {
+	commitNote: DBInteraction<void, [CouchDocument]>;
+	getNotes: DBInteraction<CouchDocument[]>;
+	getStock: DBInteraction<CouchDocument>;
+	getWarehouses: DBInteraction<CouchDocument[]>;
+}
+
+export interface CreateDBInterface {
+	(db: PouchDB.Database): DBInterface;
+}
+
+export interface TestSetup extends TransformConfig {
+	createDBInterface: CreateDBInterface;
+}
+// #endregion testSetup
