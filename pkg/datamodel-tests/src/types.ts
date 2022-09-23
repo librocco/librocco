@@ -101,4 +101,25 @@ export interface TestSetup {
 	transform: TransformConfig;
 	createDBInterface: CreateDBInterface;
 }
+
+export interface GetNotesAndWarehouses {
+	(n: number): {
+		notes: CouchDocument[];
+		snap: CouchDocument;
+		warehouses: CouchDocument[];
+	};
+}
+
+interface TestData {
+	books: CouchDocument[];
+	getNotesAndWarehouses: GetNotesAndWarehouses;
+}
+
+export interface TestFunction {
+	(data: TestData, db: DBInterface): Promise<void>;
+}
+
+export interface Test {
+	(name: string, fn: TestFunction): void;
+}
 // #endregion testSetup

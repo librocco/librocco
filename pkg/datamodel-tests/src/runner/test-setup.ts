@@ -5,9 +5,9 @@ import {
 	RawBook,
 	RawSnap,
 	RawNote,
-	CouchDocument,
+	GetNotesAndWarehouses,
 	TestSetup,
-	DBInterface,
+	Test,
 	MapWarehouses
 } from '../types';
 
@@ -20,26 +20,6 @@ interface RawData {
 	snaps: RawSnap[];
 }
 
-interface GetNotesAndWarehouses {
-	(n: number): {
-		notes: CouchDocument[];
-		snap: CouchDocument;
-		warehouses: CouchDocument[];
-	};
-}
-
-interface TestData {
-	books: CouchDocument[];
-	getNotesAndWarehouses: GetNotesAndWarehouses;
-}
-
-interface TestFunction {
-	(data: TestData, db: DBInterface): Promise<void>;
-}
-
-interface Test {
-	(name: string, fn: TestFunction): void;
-}
 // #endregion types
 
 // #region newModal
