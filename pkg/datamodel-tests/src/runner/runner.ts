@@ -1,4 +1,4 @@
-import { TestDataLoader, TransformConfig } from '../types';
+import { TestDataLoader, TestSetup } from '../types';
 
 import { newModel } from './test-setup';
 
@@ -12,6 +12,6 @@ export const newTestRunner = async (loader: TestDataLoader) => {
 	const data = { books, notes, snaps };
 
 	return {
-		newModel: (config: TransformConfig) => newModel(data, config)
+		newModel: (setup: TestSetup) => newModel(data, setup)
 	};
 };

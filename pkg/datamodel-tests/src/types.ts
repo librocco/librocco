@@ -60,7 +60,7 @@ export interface TransformNote<S extends Record<string, any> = Record<string, an
 }
 
 export interface AddToWarehouse {
-	(wName: string, book: RawBookStock): void;
+	(wName: string): void;
 }
 
 export interface TransformSnap<S extends Record<string, any> = Record<string, any>> {
@@ -97,7 +97,8 @@ export interface CreateDBInterface {
 	(db: PouchDB.Database): DBInterface;
 }
 
-export interface TestSetup extends TransformConfig {
+export interface TestSetup {
+	transform: TransformConfig;
 	createDBInterface: CreateDBInterface;
 }
 // #endregion testSetup
