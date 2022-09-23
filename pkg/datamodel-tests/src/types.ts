@@ -69,7 +69,7 @@ export interface MapWarehouses {
 	(book: RawBookStock, addToWarehouse: AddToWarehouse): void;
 }
 
-export interface TestConfig {
+export interface TransformConfig {
 	transformBooks?: TransformBook;
 	transformNotes?: TransformNote;
 	transformSnaps?: TransformSnap;

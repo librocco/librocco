@@ -16,7 +16,7 @@ describe('Datamodel test runner smoke test', async () => {
 	await runner.loadData(testDataLoader);
 
 	describe('Example test', async () => {
-		const { setupDB, ...transformers } = exampleSetup;
+		const { createDBInterface, ...transformers } = exampleSetup;
 
 		const testSetup = runner.newSetup(transformers);
 
@@ -25,7 +25,7 @@ describe('Datamodel test runner smoke test', async () => {
 
 			// Instantiate a new DB to run tests against
 			const db = await newDB();
-			const { commitNote, getNotes, getStock, getWarehouses } = setupDB(db);
+			const { commitNote, getNotes, getStock, getWarehouses } = createDBInterface(db);
 
 			// Commit all the notes loaded from test data
 			await Promise.all(notes.map((n) => commitNote(n as any)));
