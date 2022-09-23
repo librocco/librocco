@@ -1,15 +1,23 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { unwrapDoc, unwrapDocs } from 'src/utils/pouchdb';
+import { unwrapDoc, unwrapDocs } from '../../utils/pouchdb';
 import {
 	CouchDocument,
 	MapWarehouses,
 	RawBookStock,
 	RawSnap,
-	TransformConfig,
 	TransformNote,
-	TransformSnap
+	TransformSnap,
+	TestSetup
 } from '../../types';
 import { defaultTransformBook } from '../testSetup';
+
+import {
+	createCommitNote,
+	createDBInteractions,
+	createGetNotes,
+	createGetStock,
+	createGetWarehouses
+} from '../../utils/test-setup';
 
 // #region types
 type NoteType = 'in-note' | 'out-note';
@@ -26,17 +34,17 @@ const pickBooksWithQuantity = (sn: RawSnap): { books: BookStock[] } => ({
 		.sort(({ _id: id1 }, { _id: id2 }) => (id1 < id2 ? -1 : 1))
 });
 
-const transformSnaps: TransformSnap = (sn) => ({
+const transformSnaps: TransformSnap<Stock> = (sn) => ({
 	_id: 'all-warehouses',
 	...pickBooksWithQuantity(sn)
 });
 
-const transformWarehouse: TransformSnap = (sn) => ({
+const transformWarehouse: TransformSnap<Stock> = (sn) => ({
 	_id: sn.id,
 	...pickBooksWithQuantity(sn)
 });
 
-const transformNotes: TransformNote = (n) => ({
+const transformNotes: TransformNote<Note> = (n) => ({
 	_id: n.id,
 	type: n.type,
 	...pickBooksWithQuantity(n)
@@ -84,7 +92,7 @@ const updateStock = (fullStock: Stock, note: Note): Stock => {
 	return newStock;
 };
 
-const commitNote: DBInteractionHOF<void, [Note]> = (db) => async (note) => {
+const commitNote = createCommitNote<Note>((db) => async (note) => {
 	// Get warehouses to update
 	const wNames = [...note.books.reduce((acc, curr) => acc.add(curr.warehouse), new Set<string>())];
 
@@ -108,9 +116,9 @@ const commitNote: DBInteractionHOF<void, [Note]> = (db) => async (note) => {
 	updates.push(db.put(note));
 
 	await Promise.all(updates);
-};
+});
 
-const getNotes: DBInteractionHOF<CouchDocument[]> = (db) => async () => {
+const getNotes = createGetNotes((db) => async () => {
 	const res = await db.allDocs({
 		startkey: 'note-000',
 		endkey: 'note-009',
@@ -118,40 +126,21 @@ const getNotes: DBInteractionHOF<CouchDocument[]> = (db) => async () => {
 		include_docs: true
 	});
 	return unwrapDocs(res);
-};
+});
 
-const getStock: DBInteractionHOF<CouchDocument> = (db) => async () => {
+const getStock = createGetStock((db) => async () => {
 	const res = await db.get('all-warehouses');
 	return unwrapDoc(res);
-};
+});
 
-const getWarehouses: DBInteractionHOF<CouchDocument[]> = (db) => async () => {
+const getWarehouses = createGetWarehouses((db) => async () => {
 	const res = await db.allDocs({
 		keys: ['science', 'jazz'],
 		include_docs: true
 	});
 	return unwrapDocs(res);
-};
-
-interface DBInteraction<R = void, P extends any[] = never[]> {
-	(...params: P): Promise<R>;
-}
-interface DBInteractionHOF<R = void, P extends any[] = never[]> {
-	(db: PouchDB.Database): DBInteraction<R, P>;
-}
-
-interface CreateDBInterface {
-	(db: PouchDB.Database): {
-		commitNote: DBInteraction<void, [CouchDocument]>;
-		getNotes: DBInteraction<CouchDocument[]>;
-		getStock: DBInteraction<CouchDocument>;
-		getWarehouses: DBInteraction<CouchDocument[]>;
-	};
-}
-
-interface TestCase extends TransformConfig {
-	createDBInterface: CreateDBInterface;
-}
+});
+// #region DBInteractions
 
 export default {
 	transformSnaps,
@@ -159,10 +148,10 @@ export default {
 	mapWarehouses,
 	transformWarehouse,
 
-	createDBInterface: (db) => ({
-		commitNote: commitNote(db),
-		getNotes: getNotes(db),
-		getStock: getStock(db),
-		getWarehouses: getWarehouses(db)
+	createDBInterface: createDBInteractions({
+		commitNote,
+		getNotes,
+		getStock,
+		getWarehouses
 	})
-} as TestCase;
+} as TestSetup;
