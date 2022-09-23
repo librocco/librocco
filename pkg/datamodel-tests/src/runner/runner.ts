@@ -1,4 +1,4 @@
-import { RawBook, RawSnap, RawNote, TestDataLoader, TestConfig } from '../types';
+import { RawBook, RawSnap, RawNote, TestDataLoader, TransformConfig } from '../types';
 
 import { TestSetup } from './testSetup';
 
@@ -19,7 +19,7 @@ export class Runner {
 		this._rawSnaps = rawSnaps;
 	}
 
-	newSetup(config: TestConfig = {}): TestSetup {
+	newSetup(config: TransformConfig = {}): TestSetup {
 		return new TestSetup(
 			{
 				books: this._rawBooks,

@@ -10,7 +10,7 @@ import {
 	MapWarehouses,
 	CouchDocument,
 	RawBookStock,
-	TestConfig
+	TransformConfig
 } from '../types';
 
 interface RawData {
@@ -32,8 +32,12 @@ export const defaultTransformBook = (b: { volumeInfo: Pick<RawBook['volumeInfo']
 });
 export const defaultTransformNote = (el: { id: string }) => ({ _id: el.id });
 export const defaultTransformSnap = (sn: RawSnap) => ({
-	_id: sn.id,
+	_id: 'all-warehouses',
 	books: sn.books.map(defaultTransformBook)
+});
+export const defaultTransformWarehouse = (wh: RawSnap) => ({
+	_id: wh.id,
+	books: wh.books.map(defaultTransformBook)
 });
 
 export class TestSetup {
@@ -46,7 +50,7 @@ export class TestSetup {
 	_mapWarehouses: MapWarehouses;
 	_transformWarehouse: TransformSnap;
 
-	constructor(data: RawData, config: TestConfig) {
+	constructor(data: RawData, config: TransformConfig) {
 		const {
 			transformBooks = defaultTransformBook,
 			transformNotes = defaultTransformNote,

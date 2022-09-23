@@ -1,16 +1,26 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { unwrapDoc, unwrapDocs } from 'src/utils/pouchdb';
 import {
 	CouchDocument,
 	MapWarehouses,
 	RawBookStock,
 	RawSnap,
+	TransformConfig,
 	TransformNote,
 	TransformSnap
 } from '../../types';
 import { defaultTransformBook } from '../testSetup';
 
+// #region types
+type NoteType = 'in-note' | 'out-note';
+
+type BookStock = CouchDocument<Pick<RawBookStock, 'quantity' | 'warehouse'>>;
+type Stock = CouchDocument<{ books: BookStock[] }>;
+type Note = Stock & { type: NoteType };
+// #endregion types
+
 // #region transform_data
-const pickBooksWithQuantity = (sn: RawSnap): { books: BS[] } => ({
+const pickBooksWithQuantity = (sn: RawSnap): { books: BookStock[] } => ({
 	books: sn.books
 		.map((b) => ({ ...defaultTransformBook(b), quantity: b.quantity, warehouse: b.warehouse }))
 		.sort(({ _id: id1 }, { _id: id2 }) => (id1 < id2 ? -1 : 1))
@@ -35,26 +45,28 @@ const transformNotes: TransformNote = (n) => ({
 const mapWarehouses: MapWarehouses = (b, addToWarehouse) => addToWarehouse(b.warehouse, b);
 // end#region transform_data
 
-type BS = CouchDocument<Pick<RawBookStock, 'quantity' | 'warehouse'>>;
-type ST = CouchDocument<{ books: BS[] }>;
-type N = ST & { type: string };
+// #region DBInteractions
+const incrementA = (a = 0, b: number) => a + b;
+const decrementA = (a = 0, b: number) => a - b;
 
-const addBooks = (old: BS | undefined, patch: BS): BS => ({
-	...patch,
-	quantity: old ? old.quantity + patch.quantity : patch.quantity
-});
-const removeBooks = (old: BS, patch: BS): BS => ({
-	...patch,
-	quantity: old.quantity - patch.quantity
-});
+const updateQuantity = (
+	old: BookStock | undefined,
+	patch: BookStock,
+	noteType: NoteType
+): BookStock => {
+	const quantityFunction = {
+		'in-note': incrementA,
+		'out-note': decrementA
+	}[noteType];
 
-const updateQuantity = {
-	'in-note': addBooks,
-	'out-note': removeBooks
+	return {
+		...patch,
+		quantity: quantityFunction(old?.quantity, patch.quantity)
+	};
 };
 
-const updateStock = (fullStock: ST, note: N): ST => {
-	const newStock: ST = { ...fullStock, books: [...fullStock.books] };
+const updateStock = (fullStock: Stock, note: Note): Stock => {
+	const newStock: Stock = { ...fullStock, books: [...fullStock.books] };
 
 	note.books.forEach((b) => {
 		// If in warehouse mode, skip books not belonging to the warehouse
@@ -66,74 +78,80 @@ const updateStock = (fullStock: ST, note: N): ST => {
 		if (i === -1) {
 			i = newStock.books.length;
 		}
-		newStock.books[i] = updateQuantity[note.type](newStock.books[i], b);
+		newStock.books[i] = updateQuantity(newStock.books[i], b, note.type);
 	});
 
 	return newStock;
 };
 
-const commitNote = (db: PouchDB.Database) => async (note: N) => {
-	// Store note in the db
-	db.put(note);
-
+const commitNote: DBInteractionHOF<void, [Note]> = (db) => async (note) => {
 	// Get warehouses to update
 	const wNames = [...note.books.reduce((acc, curr) => acc.add(curr.warehouse), new Set<string>())];
 
-	// Update the full book stock
-	const [fullStock, ...warehouses] = await Promise.all(
+	// Get stock documents to update (all-warehouses + every warehouse found in the note)
+	const stockDocuments = await Promise.all(
 		['all-warehouses', ...wNames].map(
 			(docId) =>
-				new Promise<
-					CouchDocument<{
-						books: BS[];
-					}>
-				>((resolve) => {
+				new Promise<Stock>((resolve) => {
 					db.get(docId)
 						.then((doc) => resolve(doc as any))
 						.catch(() => resolve({ _id: docId, books: [] }));
 				})
 		)
 	);
-	const newStock = updateStock(fullStock, note);
-	const updatedWarehouses = warehouses.map((w) => updateStock(w, note));
-	await Promise.all([newStock, ...updatedWarehouses].map((doc) => db.put(doc)));
+
+	// Update book stock on all-warehouses as well as each respective warehouse
+	const updatedStock = stockDocuments.map((stock) => updateStock(stock, note));
+	const updates = updatedStock.map((doc) => db.put(doc));
+
+	// Add note put to updates to write them all in one Promise.all
+	updates.push(db.put(note));
+
+	await Promise.all(updates);
 };
 
-const getNotes = (db: PouchDB.Database) => async () => {
+const getNotes: DBInteractionHOF<CouchDocument[]> = (db) => async () => {
 	const res = await db.allDocs({
 		startkey: 'note-000',
 		endkey: 'note-009',
 		inclusive_end: true,
 		include_docs: true
 	});
-	return res.rows.map(({ doc }) => {
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { _rev, ...document } = doc || {};
-		return document;
-	});
+	return unwrapDocs(res);
 };
 
-const getStock = (db: PouchDB.Database) => async () => {
+const getStock: DBInteractionHOF<CouchDocument> = (db) => async () => {
 	const res = await db.get('all-warehouses');
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const { _rev, ...document } = res;
-	return document;
+	return unwrapDoc(res);
 };
 
-const getWarehouses = (db: PouchDB.Database) => async () => {
+const getWarehouses: DBInteractionHOF<CouchDocument[]> = (db) => async () => {
 	const res = await db.allDocs({
 		keys: ['science', 'jazz'],
 		include_docs: true
 	});
-	return res.rows.reduce((acc, { doc }) => {
-		if (!doc) {
-			return acc;
-		}
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { _rev, ...document } = doc;
-		return [...acc, document];
-	}, [] as CouchDocument[]);
+	return unwrapDocs(res);
 };
+
+interface DBInteraction<R = void, P extends any[] = never[]> {
+	(...params: P): Promise<R>;
+}
+interface DBInteractionHOF<R = void, P extends any[] = never[]> {
+	(db: PouchDB.Database): DBInteraction<R, P>;
+}
+
+interface CreateDBInterface {
+	(db: PouchDB.Database): {
+		commitNote: DBInteraction<void, [CouchDocument]>;
+		getNotes: DBInteraction<CouchDocument[]>;
+		getStock: DBInteraction<CouchDocument>;
+		getWarehouses: DBInteraction<CouchDocument[]>;
+	};
+}
+
+interface TestCase extends TransformConfig {
+	createDBInterface: CreateDBInterface;
+}
 
 export default {
 	transformSnaps,
@@ -141,10 +159,10 @@ export default {
 	mapWarehouses,
 	transformWarehouse,
 
-	setupDB: (db: PouchDB.Database) => ({
+	createDBInterface: (db) => ({
 		commitNote: commitNote(db),
 		getNotes: getNotes(db),
 		getStock: getStock(db),
 		getWarehouses: getWarehouses(db)
 	})
-};
+} as TestCase;
