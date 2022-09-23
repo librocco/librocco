@@ -9,7 +9,7 @@ import {
 	TransformSnap,
 	TestSetup
 } from '../../types';
-import { defaultTransformBook } from '../testSetup';
+import { defaultTransformBook } from '../test-setup';
 
 import {
 	createCommitNote,
