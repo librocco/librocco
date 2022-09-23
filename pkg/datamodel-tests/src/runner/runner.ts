@@ -1,6 +1,6 @@
 import { TestDataLoader, TransformConfig } from '../types';
 
-import { TestSetup } from './testSetup';
+import { newModel } from './test-setup';
 
 export const newTestRunner = async (loader: TestDataLoader) => {
 	const [books, notes, snaps] = await Promise.all([
@@ -12,6 +12,6 @@ export const newTestRunner = async (loader: TestDataLoader) => {
 	const data = { books, notes, snaps };
 
 	return {
-		newModel: (config: TransformConfig) => new TestSetup(data, config)
+		newModel: (config: TransformConfig) => newModel(data, config)
 	};
 };
