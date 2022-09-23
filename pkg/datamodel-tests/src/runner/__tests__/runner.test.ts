@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, expect } from 'vitest';
 
-import { Runner } from '../runner';
+import { newTestRunner } from '../runner';
 
 import * as testDataLoader from './testDataLoader';
 
@@ -12,13 +12,12 @@ import { newDB } from '../../utils/pouchdb';
 describe('Datamodel test runner smoke test', async () => {
 	// We're instantiating the runner with the data loaded
 	// for efficiency when running multiple tests
-	const runner = new Runner();
-	await runner.loadData(testDataLoader);
+	const runner = await newTestRunner(testDataLoader);
 
 	describe('Example test', async () => {
 		const { createDBInterface, ...transformers } = exampleSetup;
 
-		const testSetup = runner.newSetup(transformers);
+		const testSetup = runner.newModel(transformers);
 
 		testSetup.test('should work with pouchdb', async (_, getNotesAndWarehouses) => {
 			const { notes, snap, warehouses } = getNotesAndWarehouses(1);
