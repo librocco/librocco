@@ -7,38 +7,30 @@ import * as testDataLoader from './testDataLoader';
 
 import exampleSetup from './example-pouch';
 
-import { newDB } from '../../utils/pouchdb';
-
 describe('Datamodel test runner smoke test', async () => {
 	// We're instantiating the runner with the data loaded
 	// for efficiency when running multiple tests
 	const runner = await newTestRunner(testDataLoader);
 
 	describe('Example test', async () => {
-		const { createDBInterface, ...transformers } = exampleSetup;
+		const testSetup = runner.newModel(exampleSetup);
 
-		const testSetup = runner.newModel(transformers);
-
-		testSetup.test('should work with pouchdb', async (_, getNotesAndWarehouses) => {
-			const { notes, snap, warehouses } = getNotesAndWarehouses(1);
-
-			// Instantiate a new DB to run tests against
-			const db = await newDB();
-			const { commitNote, getNotes, getStock, getWarehouses } = createDBInterface(db);
+		testSetup.test('should work with pouchdb', async (data, db) => {
+			const { notes, snap, warehouses } = data.getNotesAndWarehouses(1);
 
 			// Commit all the notes loaded from test data
-			await Promise.all(notes.map((n) => commitNote(n as any)));
+			await Promise.all(notes.map((n) => db.commitNote(n as any)));
 
 			// Check notes retrieved from DB
-			const resNotes = await getNotes();
+			const resNotes = await db.getNotes();
 			expect(resNotes).toEqual(notes);
 
 			// Check full stock (all warehouses) retrieved from DB
-			const resStock = await getStock();
+			const resStock = await db.getStock();
 			expect(resStock).toEqual(snap);
 
 			// Check stocks per warehouse retrieved from DB
-			const resWarehouses = await getWarehouses();
+			const resWarehouses = await db.getWarehouses();
 			expect(resWarehouses).toEqual(warehouses);
 		});
 	});
