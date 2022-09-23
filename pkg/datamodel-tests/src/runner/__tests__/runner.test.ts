@@ -11,10 +11,12 @@ import exampleSetup from './example-pouch';
 
 // This is how tests would be written and then ran with different setups
 const exampleTest: TestFunction = async (data, db) => {
-	const { notes, snap, warehouses } = data.getNotesAndWarehouses(1);
+	const { notes, snap, warehouses } = data.getNotesAndWarehouses(5);
 
 	// Commit all the notes loaded from test data
-	await Promise.all(notes.map((n) => db.commitNote(n as any)));
+	for (const n of notes) {
+		await db.commitNote(n as any);
+	}
 
 	// Check notes retrieved from DB
 	const resNotes = await db.getNotes();

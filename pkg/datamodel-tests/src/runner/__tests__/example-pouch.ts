@@ -28,10 +28,12 @@ type Note = Stock & { type: NoteType };
 // #endregion types
 
 // #region transform_data
+const sortById = ({ _id: id1 }: CouchDocument, { _id: id2 }: CouchDocument) => (id1 < id2 ? -1 : 1);
+
 const pickBooksWithQuantity = (sn: RawSnap): { books: BookStock[] } => ({
 	books: sn.books
 		.map((b) => ({ ...defaultTransformBook(b), quantity: b.quantity, warehouse: b.warehouse }))
-		.sort(({ _id: id1 }, { _id: id2 }) => (id1 < id2 ? -1 : 1))
+		.sort(sortById)
 });
 
 const transformSnaps: TransformSnap<Stock> = (sn) => ({
@@ -130,7 +132,9 @@ const getNotes = createGetNotes((db) => async () => {
 
 const getStock = createGetStock((db) => async () => {
 	const res = await db.get('all-warehouses');
-	return unwrapDoc(res);
+	const unwrappedDoc = unwrapDoc(res) as Stock;
+	unwrappedDoc.books = unwrappedDoc.books.sort(sortById);
+	return unwrappedDoc;
 });
 
 const getWarehouses = createGetWarehouses((db) => async () => {
@@ -138,7 +142,11 @@ const getWarehouses = createGetWarehouses((db) => async () => {
 		keys: ['science', 'jazz'],
 		include_docs: true
 	});
-	return unwrapDocs(res);
+	const warehouses = (unwrapDocs(res) as Stock[]).map((warehouse) => ({
+		...warehouse,
+		books: warehouse.books.sort(sortById)
+	}));
+	return warehouses;
 });
 // #region DBInteractions
 
