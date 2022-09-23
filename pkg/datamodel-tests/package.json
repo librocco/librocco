@@ -1,23 +1,14 @@
 {
 	"name": "@librocco/datamodel-tests",
 	"version": "0.0.1",
-	"main": "./dist/index.js",
 	"dependencies": {
 		"pouchdb": "~7.3.0",
 		"uuid": "~8.3.2",
 		"@types/node": "~18.7.16"
 	},
-	"exports": {
-		".": {
-			"import": "./dist/index.es.js",
-			"require": "./dist/index.js",
-			"default": "./dist.index.es.js"
-		}
-	},
-	"types": "dist/index.d.ts",
 	"scripts": {
 		"dev": "vite dev",
-		"build": "vite build",
+		"build": "echo 'datamodel-tests has no build functionality at this moment'",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
