@@ -1,8 +1,19 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { test as t } from 'vitest';
 
-import { RawBook, RawSnap, RawNote, CouchDocument, RawBookStock, TransformConfig } from '../types';
+import {
+	RawBook,
+	RawSnap,
+	RawNote,
+	CouchDocument,
+	TestSetup,
+	DBInterface,
+	MapWarehouses
+} from '../types';
 
+import { newDB } from './utils';
+
+// #region types
 interface RawData {
 	books: RawBook[];
 	notes: RawNote[];
@@ -17,14 +28,64 @@ interface GetNotesAndWarehouses {
 	};
 }
 
+interface TestData {
+	books: CouchDocument[];
+	getNotesAndWarehouses: GetNotesAndWarehouses;
+}
+
 interface TestFunction {
-	(books: CouchDocument[], getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
+	(data: TestData, db: DBInterface): Promise<void>;
 }
 
 interface Test {
 	(name: string, fn: TestFunction): void;
 }
+// #endregion types
 
+// #region newModal
+export const newModel = (rawData: RawData, setup: TestSetup) => {
+	const {
+		transformBooks = defaultTransformBook,
+		transformNotes = defaultTransformNote,
+		transformSnaps = defaultTransformSnap,
+		transformWarehouse = defaultTransformSnap,
+		mapWarehouses = () => {}
+	} = setup.transform;
+
+	const books = rawData.books.map(transformBooks);
+
+	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
+		const notes = rawData.notes.slice(0, n).map(transformNotes);
+		const rawSnap = rawData.snaps[n - 1];
+		const rawWarehouses = warehousesFromSnap(rawSnap, mapWarehouses);
+
+		const snap = transformSnaps(rawSnap);
+		const warehouses = Object.values(rawWarehouses).map((w) => transformWarehouse(w));
+
+		return { notes, snap, warehouses };
+	};
+
+	const data = { books, getNotesAndWarehouses };
+
+	const test: Test = (name, cb) => {
+		t(name, async () => {
+			// Get new db per test basis
+			const db = await newDB();
+
+			await cb(data, setup.createDBInterface(db));
+
+			// Destroy the db after the test
+			db.destroy();
+		});
+	};
+
+	return {
+		test
+	};
+};
+// #endregion newModal
+
+// #region defaultTransformers
 export const defaultTransformBook = (b: { volumeInfo: Pick<RawBook['volumeInfo'], 'title'> }) => ({
 	_id: b.volumeInfo.title
 });
@@ -37,46 +98,21 @@ export const defaultTransformWarehouse = (wh: RawSnap) => ({
 	_id: wh.id,
 	books: wh.books.map(defaultTransformBook)
 });
+// #endregion defaultTransformers
 
-export const newModel = (data: RawData, config: TransformConfig) => {
-	const {
-		transformBooks = defaultTransformBook,
-		transformNotes = defaultTransformNote,
-		transformSnaps = defaultTransformSnap,
-		transformWarehouse = defaultTransformSnap,
-		mapWarehouses = () => {}
-	} = config;
+// #region helpers
+const warehousesFromSnap = (snap: RawSnap, mapWarehouses: MapWarehouses): RawSnap[] => {
+	const warehouseRecord = snap.books.reduce((acc, b) => {
+		let wName = '';
+		mapWarehouses(b, (w: string) => (wName = w));
 
-	const books = data.books.map(transformBooks);
+		if (!wName) return acc;
 
-	const test: Test = (name, cb) => {
-		const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
-			const notes = data.notes.slice(0, n).map(transformNotes);
-			const rawSnap = data.snaps[n - 1];
+		const warehouse = acc[wName] || { id: wName, books: [] };
 
-			const rawWarehouses: Record<string, RawSnap> = {};
-			const addToWarehouse = (wName: string, book: RawBookStock) => {
-				const wh = rawWarehouses[wName] || { id: wName, books: [] };
+		return { ...acc, [wName]: { ...warehouse, books: [...warehouse.books, b] } };
+	}, {} as Record<string, RawSnap>);
 
-				rawWarehouses[wName] = { ...wh, id: wName, books: [...wh.books, book] };
-			};
-
-			rawSnap.books.forEach((b) => mapWarehouses(b, addToWarehouse));
-
-			const snap = transformSnaps(rawSnap);
-			const warehouses = Object.values(rawWarehouses).map((w) => transformWarehouse(w));
-
-			console.log(JSON.stringify(warehouses, null, 2));
-
-			return { notes, snap, warehouses };
-		};
-
-		t(name, async () => {
-			await cb(books, getNotesAndWarehouses);
-		});
-	};
-
-	return {
-		test
-	};
+	return Object.values(warehouseRecord);
 };
+// #endregion helpers
