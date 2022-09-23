@@ -50,7 +50,7 @@ const transformNotes: TransformNote<Note> = (n) => ({
 	...pickBooksWithQuantity(n)
 });
 
-const mapWarehouses: MapWarehouses = (b, addToWarehouse) => addToWarehouse(b.warehouse, b);
+const mapWarehouses: MapWarehouses = (b, addToWarehouse) => addToWarehouse(b.warehouse);
 // end#region transform_data
 
 // #region DBInteractions
@@ -143,10 +143,12 @@ const getWarehouses = createGetWarehouses((db) => async () => {
 // #region DBInteractions
 
 export default {
-	transformSnaps,
-	transformNotes,
-	mapWarehouses,
-	transformWarehouse,
+	transform: {
+		transformSnaps,
+		transformNotes,
+		mapWarehouses,
+		transformWarehouse
+	},
 
 	createDBInterface: createDBInteractions({
 		commitNote,
