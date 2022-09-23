@@ -21,8 +21,8 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"test": "vitest",
-		"test:ci": "CI=true vitest run",
+		"test": "echo 'Running test runner unit tests' && vitest runner/__tests__",
+		"run-tests": "vitest main.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
