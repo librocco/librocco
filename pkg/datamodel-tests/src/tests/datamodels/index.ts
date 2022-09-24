@@ -4,4 +4,4 @@
  * the runner will pick it up and run tests against it.
  */
 
-export { default as exampleSetup } from '../runner/__tests__/example-pouch';
+export { default as exampleSetup } from '@unit-tests/datamodels/example-pouch';

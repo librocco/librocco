@@ -1,6 +1,6 @@
-import { TestDataLoader, TestSetup } from '../types';
+import { TestDataLoader, TestSetup } from '@/types';
 
-import { newModel } from './test-setup';
+import { newModel } from '@runner/test-setup';
 
 export const newTestRunner = async (loader: TestDataLoader) => {
 	const [books, notes, snaps] = await Promise.all([

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'vitest';
 
-import { TestFunction } from './types';
+import { TestFunction } from '@/types';
 
 const createTest =
 	(numNotes: number): TestFunction =>
