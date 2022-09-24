@@ -12,7 +12,7 @@ import {
 } from '../types';
 
 import { newDB } from './utils';
-import { sortById } from './__tests__/datamodels/utils';
+import { sortById } from '@/utils/pouchdb';
 
 // #region types
 interface RawData {

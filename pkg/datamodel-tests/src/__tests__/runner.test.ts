@@ -1,7 +1,8 @@
 import { describe } from 'vitest';
 
-import { newTestRunner } from '../runner';
-import * as testDataLoader from './testDataLoader';
+import { newTestRunner } from '@runner/runner';
+
+import * as testDataLoader from '@loaders/smoke-test-loader';
 
 import * as datamodels from './datamodels';
 

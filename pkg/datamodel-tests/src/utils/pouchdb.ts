@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CouchDocument } from '../types';
+import { CouchDocument } from '@/types';
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -29,3 +29,10 @@ export const unwrapDoc = (doc: PouchDB.Core.IdMeta & PouchDB.Core.GetMeta): Couc
 	const { _rev, ...document } = doc;
 	return document;
 };
+
+/**
+ * Compare function used as a callback to `.sort` function, sorts couchdb documents by `_id` in
+ * ascending order. CouchDb does this by default, so this is used only to prepare test data for assertions.
+ */
+export const sortById = ({ _id: id1 }: CouchDocument, { _id: id2 }: CouchDocument) =>
+	id1 < id2 ? -1 : 1;
