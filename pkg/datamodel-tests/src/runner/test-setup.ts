@@ -12,6 +12,7 @@ import {
 } from '../types';
 
 import { newDB } from './utils';
+import { sortById } from './__tests__/datamodels/utils';
 
 // #region types
 interface RawData {
@@ -40,7 +41,9 @@ export const newModel = (rawData: RawData, setup: TestSetup) => {
 		const rawWarehouses = warehousesFromSnap(rawSnap, mapWarehouses);
 
 		const snap = transformSnaps(rawSnap);
-		const warehouses = Object.values(rawWarehouses).map((w) => transformWarehouse(w));
+		const warehouses = Object.values(rawWarehouses)
+			.map((w) => transformWarehouse(w))
+			.sort(sortById);
 
 		return { notes, snap, warehouses };
 	};
@@ -51,6 +54,12 @@ export const newModel = (rawData: RawData, setup: TestSetup) => {
 		t(name, async () => {
 			// Get new db per test basis
 			const db = await newDB();
+
+			// Upload design documents (if any)
+			const ddUpdates = setup.designDocuments?.map((dd) => db.put(dd));
+			if (ddUpdates) {
+				await Promise.all(ddUpdates);
+			}
 
 			await cb(data, setup.createDBInterface(db));
 
