@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -5,6 +6,11 @@
 export type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = {
 	_id: string;
 } & Doc;
+
+export type DesignDocument = {
+	_id: `_design/${string}`;
+	views: Record<string, { map: string; reduce?: string }>;
+};
 // #endregion misc
 
 // #region rawData
@@ -99,6 +105,7 @@ export interface CreateDBInterface {
 
 export interface TestSetup {
 	transform: TransformConfig;
+	designDocuments?: DesignDocument[];
 	createDBInterface: CreateDBInterface;
 }
 
