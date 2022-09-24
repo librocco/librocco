@@ -1,10 +1,9 @@
-import { CouchDocument, RawSnap } from '../../../types';
-import { BookStock, NoteType, Stock, Note } from '../types';
+import { RawSnap } from '@/types';
+import { BookStock, NoteType, Stock, Note } from './types';
 
-import { defaultTransformBook } from '../../test-setup';
+import { defaultTransformBook } from '@runner/test-setup';
 
-export const sortById = ({ _id: id1 }: CouchDocument, { _id: id2 }: CouchDocument) =>
-	id1 < id2 ? -1 : 1;
+import { sortById } from '@/utils/pouchdb';
 
 export const pickBooksWithQuantity = (sn: RawSnap): { books: BookStock[] } => ({
 	books: sn.books

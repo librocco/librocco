@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { unwrapDoc, unwrapDocs } from '../../../utils/pouchdb';
-import { MapWarehouses, TransformNote, TransformSnap, TestSetup } from '../../../types';
-import { Stock, Note } from '../types';
+import { MapWarehouses, TransformNote, TransformSnap, TestSetup } from '@/types';
+import { Stock, Note } from './types';
 
 import {
 	createCommitNote,
@@ -9,8 +8,9 @@ import {
 	createGetNotes,
 	createGetStock,
 	createGetWarehouses
-} from '../../../utils/test-setup';
-import { updateStock, pickBooksWithQuantity, sortById } from './utils';
+} from '@/utils/test-setup';
+import { unwrapDoc, unwrapDocs, sortById } from '@/utils/pouchdb';
+import { updateStock, pickBooksWithQuantity } from './utils';
 
 // #region transform_data
 

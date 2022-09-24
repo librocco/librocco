@@ -1,4 +1,4 @@
-import { CouchDocument, RawBookStock } from '../../types';
+import { CouchDocument, RawBookStock } from '@/types';
 
 // #region types
 export type NoteType = 'in-note' | 'out-note';

@@ -1,11 +1,11 @@
 import { describe } from 'vitest';
 
-import { newTestRunner } from './runner/runner';
-import * as testDataLoader from './runner/__tests__/testDataLoader';
+import { newTestRunner } from '@runner/runner';
 
-import * as datamodels from './datamodels';
+import * as testDataLoader from '@loaders/smoke-test-loader';
 
-import * as tests from './tests';
+import * as datamodels from '@tests/datamodels';
+import * as tests from '@tests/tests';
 
 describe('Datamodel tests', async () => {
 	// We're currently using the `testDataLoader` from unit tests,
