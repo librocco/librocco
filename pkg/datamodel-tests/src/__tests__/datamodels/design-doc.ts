@@ -1,12 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { CouchDocument, CreateDBInterface, DesignDocument, TestSetup } from '../../../types';
-import { Stock } from '../types';
+import { CouchDocument, CreateDBInterface, DesignDocument, TestSetup } from '@/types';
+import { Stock } from './types';
 
-import exampleSetup from './example-pouch';
+import exampleSetup from '@unit-tests/datamodels/example-pouch';
 
-import { createDBInteractions, createGetWarehouses } from '../../../utils/test-setup';
-import { unwrapDocs } from '../../../utils/pouchdb';
-import { sortById } from './utils';
+import { createDBInteractions, createGetWarehouses } from '@/utils/test-setup';
+import { unwrapDocs, sortById } from '@/utils/pouchdb';
 
 // This design document is essentially pointless, but is here
 // to test out the design document uploading working

@@ -1,4 +1,4 @@
-import { CouchDocument, CreateDBInterface, DBInteractionHOF, DBInterface } from 'src/types';
+import { CouchDocument, CreateDBInterface, DBInteractionHOF, DBInterface } from '@/types';
 
 /**
  * Creates a HOF returning `commitNote` database interaction. It works the same way as if
