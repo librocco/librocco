@@ -4,6 +4,8 @@
 		"rootDir": "src",
 		"baseUrl": ".",
 
+		"types": ["vitest/importMeta"],
+		"module": "esnext",
 		"lib": ["ESNext"]
 	},
 	"exclude": ["node_modules"],
