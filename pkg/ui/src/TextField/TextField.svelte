@@ -6,7 +6,6 @@
 	let placeholder: string = '';
 	const onChange: () => void = () => {};
 	export { label, startAdornment, endAdornment, placeholder, onChange, className as class };
-	
 </script>
 
 <div class={className}>
