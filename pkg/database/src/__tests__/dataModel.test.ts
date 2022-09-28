@@ -8,7 +8,7 @@ import { note, bookOne, bookTwo } from '../__testData__/dataModel';
 
 const db = createDatabaseInterface(uuidv4());
 
-describe('Test data model', () => {
+describe.skip('Test data model', () => {
 	test('All database funcitonality', async () => {
 		const { total_rows } = await db.getNotes();
 		expect(total_rows).toEqual(0);
