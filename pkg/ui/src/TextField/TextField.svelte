@@ -1,33 +1,55 @@
 <script lang="ts">
-	let className = '';
-	let label: string = 'label';
-	let startAdornment: string = '';
-	let endAdornment: string = '';
-	let placeholder: string = '';
-	const onChange: () => void = () => {};
-	export { label, startAdornment, endAdornment, placeholder, onChange, className as class };
+	export let label = '';
+	export let placeholder = '';
+	export let name = '';
+
+	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
+	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
+	const inputBaseClasses = [
+		'block',
+		'w-full',
+		'border-0',
+		'text-sm',
+		'focus:outline-0',
+		'focus:ring-0'
+	];
+
+	const containerBaseClasses = [
+		'flex',
+		'outline',
+		'rounded-md',
+		'focus-within:outline-2',
+		'focus-within:outline-cyan-700'
+	];
+
+	const helpTextColour = 'text-gray-500';
+	const containerBorderWidth = 'outline-1 shadow-sm';
+	const containerBorderColour = 'outline-gray-300';
+
+	const labelClasses = labelBaseClasses.join(' ');
+	const inputClasses = inputBaseClasses.join(' ');
+	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(' ');
+	const containerClasses = containerBaseClasses
+		.concat(containerBorderColour, containerBorderWidth)
+		.join(' ');
 </script>
 
-<div class={className}>
-	<label for="input" class="block text-sm font-medium text-gray-700">
+<div class="space-y-1">
+	<label for={name} class={labelClasses}>
 		{label}
 	</label>
-	<div class="relative mt-1 rounded-md shadow-sm">
-		<div class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-			<span class="text-gray-500 sm:text-sm">{startAdornment}</span>
-		</div>
-		<input
-			type="text"
-			name="input"
-			id="input"
-			class="block w-full rounded-md border-gray-500 border-2 pl-7 pr-12 focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
-			{placeholder}
-			aria-label="input"
-		/>
-		<div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
-			<span class="text-gray-500 sm:text-sm">
-				{endAdornment}
-			</span>
-		</div>
+	<div class={containerClasses}>
+		{#if $$slots.startAdornment}
+			<div class="flex items-center mr-0 ml-3	">
+				<slot name="startAdornment" />
+			</div>
+		{/if}
+		<input type="text" {name} id={name} class={inputClasses} {placeholder} aria-label={name} />
+		{#if $$slots.endAdornment}
+			<div class="flex items-center ml-1 mr-3">
+				<slot name="endAdornment" />
+			</div>
+		{/if}
 	</div>
+	<p class={helpTextClasses} />
 </div>
