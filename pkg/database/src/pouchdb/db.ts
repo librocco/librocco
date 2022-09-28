@@ -210,11 +210,12 @@ export const newDatabase = (name: string): Database => {
 // #region Database
 
 // #region tests
+const getDBName = () => ['.temp-testdb', randomUUID()].join('-');
 if (import.meta.vitest) {
 	const { describe, test, expect } = import.meta.vitest;
 	describe('Test example implementation', () => {
 		test('should add books to note', async () => {
-			const db = newDatabase(randomUUID());
+			const db = newDatabase(getDBName());
 
 			const w = db.createWarehouse('science');
 			const note = await w.createInNote();
@@ -228,7 +229,7 @@ if (import.meta.vitest) {
 		});
 
 		test('should update the state with only commited notes', async () => {
-			const db = newDatabase(randomUUID());
+			const db = newDatabase(getDBName());
 
 			const scienceW = db.createWarehouse('science');
 			const note1 = await scienceW.createInNote();
@@ -253,7 +254,7 @@ if (import.meta.vitest) {
 		});
 
 		test('outbound notes should decrement the book stock', async () => {
-			const db = newDatabase(randomUUID());
+			const db = newDatabase(getDBName());
 
 			const scienceW = db.createWarehouse('science');
 			const n1 = await scienceW.createInNote();
@@ -269,7 +270,7 @@ if (import.meta.vitest) {
 		});
 
 		test('should be able to delete note(s)', async () => {
-			const db = newDatabase(randomUUID());
+			const db = newDatabase(getDBName());
 
 			const w = db.createWarehouse('wh');
 			const note1 = await w.createInNote();
@@ -287,7 +288,7 @@ if (import.meta.vitest) {
 		});
 
 		test('should be able to set books stock', async () => {
-			const db = newDatabase(randomUUID());
+			const db = newDatabase(getDBName());
 
 			const w = db.createWarehouse('wh');
 			const note1 = await w.createInNote();
