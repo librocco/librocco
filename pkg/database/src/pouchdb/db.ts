@@ -1,16 +1,12 @@
+import PouchDB from 'pouchdb';
 import { randomUUID } from 'crypto';
 
 interface NoteEntry extends Note {
+	_id: string;
+	_rev: string;
 	books: Record<string, number>;
 	commited: boolean;
 }
-
-const inMemDB: Record<
-	string,
-	{
-		notes: Record<string, NoteEntry>;
-	}
-> = {};
 
 // #region BookStock
 interface Volume {
@@ -29,7 +25,7 @@ interface NoteProto {
 	addVolumes(...params: VolumeQuantityTuple[]): Promise<NoteEntry>;
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteEntry>;
 	delete(): Promise<void>;
-	commit(): Promise<void>;
+	commit(): Promise<NoteEntry>;
 }
 interface Note extends NoteProto {
 	_id: string;
@@ -37,8 +33,13 @@ interface Note extends NoteProto {
 	warehouse: string;
 }
 
-export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
-	const _id = randomUUID();
+export const newNote = (
+	db: PouchDB.Database,
+	w: Warehouse<NoteEntry>,
+	type: NoteType
+): NoteEntry => {
+	const randId = randomUUID();
+	const _id = [w.name, randId].join('/');
 
 	const noteProto: NoteProto = {
 		async addVolumes(...params) {
@@ -55,23 +56,28 @@ export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
 
 			if (typeof params[0] == 'string') {
 				updateQuantity(...(params as VolumeQuantityTuple));
-				return w.getNote(_id);
+			} else {
+				params.forEach((update) => updateQuantity(...(update as VolumeQuantityTuple)));
 			}
 
-			params.forEach((update) => updateQuantity(...(update as VolumeQuantityTuple)));
-			return w.getNote(_id);
+			await w.updateNote(n);
+			return n;
 		},
 		async setVolumeQuantity(isbn, quantity) {
 			const n = await w.getNote(_id);
 			n.books[isbn] = quantity;
-			return w.getNote(_id);
+			await w.updateNote(n);
+			return n;
 		},
 		async delete() {
-			w.deleteNote(_id);
+			const n = await w.getNote(_id);
+			w.deleteNote(n);
 		},
 		async commit() {
-			const n = await w.getNote(_id);
-			n.commited = true;
+			let n = await w.getNote(_id);
+			n = { ...n, commited: true };
+			await db.put(n);
+			return n;
 		}
 	};
 
@@ -88,15 +94,31 @@ export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
 // #endregion Note
 
 // #region Warehouse
-const getNotesForWarehouse = (db: Database, w: Warehouse<NoteEntry>) =>
-	w.name === 'default'
-		? Object.values(db.getNotes())
-		: Object.values(db.getNotes()).filter(({ warehouse }) => warehouse === w.name);
+const getNotesForWarehouse = async (
+	db: PouchDB.Database,
+	w: Warehouse<NoteEntry>
+): Promise<NoteEntry[]> => {
+	const query =
+		w.name === 'default'
+			? db.allDocs({
+					include_docs: true
+			  })
+			: db.allDocs({
+					startkey: `${w.name}/`,
+					// All notes are prepended with warehouse name, like so "science/note-1"
+					// This way we're reading from the first "science/" until (excluding) "science0"
+					// "0" comes right after "/" aplhabetically
+					endkey: `${w.name}0`,
+					include_docs: true
+			  });
+	const res = await query;
+	return res.rows.map(({ doc }) => doc as NoteEntry);
+};
 
-const getStockForWarehouse = (db: Database, w: Warehouse<NoteEntry>) => {
-	const notes = getNotesForWarehouse(db, w);
+const getStockForWarehouse = async (db: PouchDB.Database, w: Warehouse<NoteEntry>) => {
+	const notes = await getNotesForWarehouse(db, w);
 	const stockObj: Record<string, number> = {};
-	notes.forEach(({ books, commited, type }) => {
+	notes.forEach(({ commited, books, type }) => {
 		if (!commited) return;
 		Object.entries(books).forEach(([isbn, q]) => {
 			// We're using a volume quatity as a change to final quantity
@@ -120,34 +142,44 @@ const getStockForWarehouse = (db: Database, w: Warehouse<NoteEntry>) => {
 interface Warehouse<N extends Note = Note> {
 	createInNote(): Promise<N>;
 	createOutNote(): Promise<N>;
-	deleteNote(_id: string): Promise<void>;
 	getNotes(): Promise<N[]>;
 	getNote(id: string): Promise<N>;
+	updateNote(note: NoteEntry): Promise<N>;
+	deleteNote(note: NoteEntry): Promise<void>;
 	getStock(): Promise<Volume[]>;
 	name: string;
 }
-export const newWarehouse = (db: Database, name = 'default'): Warehouse<NoteEntry> => {
+export const newWarehouse = (db: PouchDB.Database, name = 'default'): Warehouse<NoteEntry> => {
 	const proto: Warehouse<NoteEntry> = {
 		async createInNote() {
-			const n = newNote(this, 'inbound');
-			db.setNotes({ ...db.getNotes(), [n._id]: n });
+			const n = newNote(db, this, 'inbound');
+			db.put(n);
 			return n;
 		},
 		async createOutNote() {
-			const n = newNote(this, 'outbound');
-			db.setNotes({ ...db.getNotes(), [n._id]: n });
+			const n = newNote(db, this, 'outbound');
+			db.put(n);
 			return n;
-		},
-		async deleteNote(_id) {
-			const notes = db.getNotes();
-			delete notes[_id];
-			db.setNotes(notes);
 		},
 		async getNotes() {
 			return getNotesForWarehouse(db, this);
 		},
-		async getNote(noteId: string) {
-			return db.getNotes()[noteId];
+		getNote(noteId: string) {
+			return db.get(noteId);
+		},
+		async deleteNote(note) {
+			return new Promise((resolve, reject) => {
+				db.remove(note, {}, (err) => {
+					if (err) {
+						return reject(err);
+					}
+					return resolve();
+				});
+			});
+		},
+		async updateNote(note) {
+			await db.put(note);
+			return note;
 		},
 		async getStock() {
 			return getStockForWarehouse(db, this);
@@ -161,25 +193,16 @@ export const newWarehouse = (db: Database, name = 'default'): Warehouse<NoteEntr
 // #region Database
 interface Database {
 	createWarehouse(name: string): Warehouse<NoteEntry>;
-	// This is kinda TEMP
-	setNotes(notes: Record<string, NoteEntry>): void;
-	getNotes(): Record<string, NoteEntry>;
+	db: PouchDB.Database;
 }
 export const newDatabase = (name: string): Database => {
-	inMemDB[name] = {
-		notes: {}
-	};
-	const db = inMemDB[name];
+	const db = new PouchDB(name);
+
 	const proto: Database = {
-		setNotes(notes) {
-			db.notes = notes;
-		},
-		getNotes() {
-			return db.notes;
-		},
 		createWarehouse(name) {
-			return newWarehouse(this, name);
-		}
+			return newWarehouse(db, name);
+		},
+		db
 	};
 
 	return Object.assign(Object.create(proto), proto);
@@ -189,7 +212,7 @@ export const newDatabase = (name: string): Database => {
 // #region tests
 if (import.meta.vitest) {
 	const { describe, test, expect } = import.meta.vitest;
-	describe('Test in-memory implementation', () => {
+	describe('Test example implementation', () => {
 		test('should add books to note', async () => {
 			const db = newDatabase(randomUUID());
 
@@ -260,7 +283,7 @@ if (import.meta.vitest) {
 			notes = await w.getNotes();
 			expect(notes.length).toEqual(1);
 			expect(await w.getNote(note1._id)).toBeTruthy();
-			expect(await w.getNote(note2._id)).toBeFalsy();
+			await expect(w.getNote(note2._id)).rejects.toThrow();
 		});
 
 		test('should be able to set books stock', async () => {
@@ -273,7 +296,7 @@ if (import.meta.vitest) {
 			let noteFromDB = await w.getNote(note1._id);
 			expect(noteFromDB.books['0001112222']).toEqual(5);
 
-			note1.setVolumeQuantity('0001112222', 2);
+			await note1.setVolumeQuantity('0001112222', 2);
 			noteFromDB = await w.getNote(note1._id);
 			expect(noteFromDB.books['0001112222']).toEqual(2);
 		});
