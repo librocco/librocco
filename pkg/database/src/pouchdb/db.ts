@@ -22,8 +22,11 @@ interface Volume {
 // #region Note
 type NoteType = 'inbound' | 'outbound';
 
+type VolumeQuantityTuple = [string, number];
+
 interface NoteProto {
-	addVolumes(isbn: string, quantity: number): Promise<NoteEntry>;
+	addVolumes(...params: VolumeQuantityTuple): Promise<NoteEntry>;
+	addVolumes(...params: VolumeQuantityTuple[]): Promise<NoteEntry>;
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteEntry>;
 	delete(): Promise<void>;
 	commit(): Promise<void>;
@@ -38,14 +41,24 @@ export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
 	const _id = randomUUID();
 
 	const noteProto: NoteProto = {
-		async addVolumes(isbn, quantity) {
+		async addVolumes(...params) {
 			const n = await w.getNote(_id);
 			const books = n.books;
-			if (books[isbn]) {
-				books[isbn] += quantity;
-			} else {
-				books[isbn] = quantity;
+
+			const updateQuantity = (isbn: string, quantity: number) => {
+				if (books[isbn]) {
+					books[isbn] += quantity;
+				} else {
+					books[isbn] = quantity;
+				}
+			};
+
+			if (typeof params[0] == 'string') {
+				updateQuantity(...(params as VolumeQuantityTuple));
+				return w.getNote(_id);
 			}
+
+			params.forEach((update) => updateQuantity(...(update as VolumeQuantityTuple)));
 			return w.getNote(_id);
 		},
 		async setVolumeQuantity(isbn, quantity) {
@@ -183,9 +196,7 @@ if (import.meta.vitest) {
 			const w = db.createWarehouse('science');
 			const note = await w.createInNote();
 
-			await note.addVolumes('0001112222', 2);
-			await note.addVolumes('0001112223', 3);
-			await note.addVolumes('0001112223', 1);
+			await note.addVolumes(['0001112222', 2], ['0001112223', 3], ['0001112223', 1]);
 			await note.commit();
 
 			const scienceStock = await w.getStock();
@@ -225,6 +236,7 @@ if (import.meta.vitest) {
 			const n1 = await scienceW.createInNote();
 			await n1.addVolumes('0001112222', 5);
 			await n1.commit();
+
 			const n2 = await scienceW.createOutNote();
 			await n2.addVolumes('0001112222', 3);
 			await n2.commit();
