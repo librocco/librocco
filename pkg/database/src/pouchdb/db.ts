@@ -23,10 +23,10 @@ interface Volume {
 type NoteType = 'inbound' | 'outbound';
 
 interface NoteProto {
-	addVolumes(isbn: string, quantity: number): NoteEntry;
-	setVolumeQuantity(isbn: string, quantity: number): NoteEntry;
-	delete(): void;
-	commit(): void;
+	addVolumes(isbn: string, quantity: number): Promise<NoteEntry>;
+	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteEntry>;
+	delete(): Promise<void>;
+	commit(): Promise<void>;
 }
 interface Note extends NoteProto {
 	_id: string;
@@ -38,8 +38,9 @@ export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
 	const _id = randomUUID();
 
 	const noteProto: NoteProto = {
-		addVolumes(isbn, quantity) {
-			const books = w.getNote(_id).books;
+		async addVolumes(isbn, quantity) {
+			const n = await w.getNote(_id);
+			const books = n.books;
 			if (books[isbn]) {
 				books[isbn] += quantity;
 			} else {
@@ -47,15 +48,17 @@ export const newNote = (w: Warehouse<NoteEntry>, type: NoteType): NoteEntry => {
 			}
 			return w.getNote(_id);
 		},
-		setVolumeQuantity(isbn, quantity) {
-			w.getNote(_id).books[isbn] = quantity;
+		async setVolumeQuantity(isbn, quantity) {
+			const n = await w.getNote(_id);
+			n.books[isbn] = quantity;
 			return w.getNote(_id);
 		},
-		delete() {
+		async delete() {
 			w.deleteNote(_id);
 		},
-		commit() {
-			w.getNote(_id).commited = true;
+		async commit() {
+			const n = await w.getNote(_id);
+			n.commited = true;
 		}
 	};
 
@@ -102,38 +105,38 @@ const getStockForWarehouse = (db: Database, w: Warehouse<NoteEntry>) => {
 };
 
 interface Warehouse<N extends Note = Note> {
-	createInNote(): N & NoteProto;
-	createOutNote(): N & NoteProto;
-	deleteNote(_id: string): void;
-	getNotes(): N[];
-	getNote(id: string): N;
-	getStock(): Volume[];
+	createInNote(): Promise<N>;
+	createOutNote(): Promise<N>;
+	deleteNote(_id: string): Promise<void>;
+	getNotes(): Promise<N[]>;
+	getNote(id: string): Promise<N>;
+	getStock(): Promise<Volume[]>;
 	name: string;
 }
 export const newWarehouse = (db: Database, name = 'default'): Warehouse<NoteEntry> => {
 	const proto: Warehouse<NoteEntry> = {
-		createInNote() {
+		async createInNote() {
 			const n = newNote(this, 'inbound');
 			db.setNotes({ ...db.getNotes(), [n._id]: n });
 			return n;
 		},
-		createOutNote() {
+		async createOutNote() {
 			const n = newNote(this, 'outbound');
 			db.setNotes({ ...db.getNotes(), [n._id]: n });
 			return n;
 		},
-		deleteNote(_id) {
+		async deleteNote(_id) {
 			const notes = db.getNotes();
 			delete notes[_id];
 			db.setNotes(notes);
 		},
-		getNotes() {
+		async getNotes() {
 			return getNotesForWarehouse(db, this);
 		},
-		getNote(noteId: string) {
+		async getNote(noteId: string) {
 			return db.getNotes()[noteId];
 		},
-		getStock() {
+		async getStock() {
 			return getStockForWarehouse(db, this);
 		},
 		name
@@ -174,83 +177,93 @@ export const newDatabase = (name: string): Database => {
 if (import.meta.vitest) {
 	const { describe, test, expect } = import.meta.vitest;
 	describe('Test in-memory implementation', () => {
-		test('should add books to note', () => {
+		test('should add books to note', async () => {
 			const db = newDatabase(randomUUID());
 
-			const scienceW = db.createWarehouse('science');
-			scienceW
-				.createInNote()
-				.addVolumes('0001112222', 2)
-				.addVolumes('0001112223', 3)
-				.addVolumes('0001112223', 1)
-				.commit();
+			const w = db.createWarehouse('science');
+			const note = await w.createInNote();
 
-			const scienceStock = scienceW.getStock();
+			await note.addVolumes('0001112222', 2);
+			await note.addVolumes('0001112223', 3);
+			await note.addVolumes('0001112223', 1);
+			await note.commit();
+
+			const scienceStock = await w.getStock();
 			expect(scienceStock[0].quantity).toEqual(2);
 			expect(scienceStock[1].quantity).toEqual(4);
 		});
 
-		test('should update the state with only commited notes', () => {
+		test('should update the state with only commited notes', async () => {
 			const db = newDatabase(randomUUID());
 
 			const scienceW = db.createWarehouse('science');
-			const note1 = scienceW.createInNote().addVolumes('0001112222', 2);
-			const note2 = scienceW.createInNote().addVolumes('0001112222', 3);
+			const note1 = await scienceW.createInNote();
+			await note1.addVolumes('0001112222', 2);
 
-			let scienceStock = scienceW.getStock();
+			const note2 = await scienceW.createInNote();
+			await note2.addVolumes('0001112222', 3);
+
+			let scienceStock = await scienceW.getStock();
 
 			// No note is yet committed so results should be 0
 			expect(scienceStock.length).toEqual(0);
 
-			note1.commit();
+			await note1.commit();
 			// Only the quantity from the first note should be applied
-			scienceStock = scienceW.getStock();
+			scienceStock = await scienceW.getStock();
 			expect(scienceStock[0].quantity).toEqual(2);
 
-			note2.commit();
-			scienceStock = scienceW.getStock();
+			await note2.commit();
+			scienceStock = await scienceW.getStock();
 			expect(scienceStock[0].quantity).toEqual(5);
 		});
 
-		test('outbound notes should decrement the book stock', () => {
+		test('outbound notes should decrement the book stock', async () => {
 			const db = newDatabase(randomUUID());
 
 			const scienceW = db.createWarehouse('science');
-			scienceW.createInNote().addVolumes('0001112222', 5).commit();
-			scienceW.createOutNote().addVolumes('0001112222', 3).commit();
+			const n1 = await scienceW.createInNote();
+			await n1.addVolumes('0001112222', 5);
+			await n1.commit();
+			const n2 = await scienceW.createOutNote();
+			await n2.addVolumes('0001112222', 3);
+			await n2.commit();
 
-			const scienceStock = scienceW.getStock();
+			const scienceStock = await scienceW.getStock();
 			expect(scienceStock[0].quantity).toEqual(2);
 		});
 
-		test('should be able to delete note(s)', () => {
+		test('should be able to delete note(s)', async () => {
 			const db = newDatabase(randomUUID());
 
 			const w = db.createWarehouse('wh');
-			const note1 = w.createInNote();
-			const note2 = w.createInNote();
+			const note1 = await w.createInNote();
+			const note2 = await w.createInNote();
 
-			let notes = w.getNotes();
+			let notes = await w.getNotes();
 			expect(notes.length).toEqual(2);
 
 			// Delete second note
-			note2.delete();
-			notes = w.getNotes();
+			await note2.delete();
+			notes = await w.getNotes();
 			expect(notes.length).toEqual(1);
-			expect(w.getNote(note1._id)).toBeTruthy();
-			expect(w.getNote(note2._id)).toBeFalsy();
+			expect(await w.getNote(note1._id)).toBeTruthy();
+			expect(await w.getNote(note2._id)).toBeFalsy();
 		});
 
-		test('should be able to set books stock', () => {
+		test('should be able to set books stock', async () => {
 			const db = newDatabase(randomUUID());
 
 			const w = db.createWarehouse('wh');
-			const note1 = w.createInNote().addVolumes('0001112222', 5);
+			const note1 = await w.createInNote();
+			await note1.addVolumes('0001112222', 5);
 
-			expect(w.getNote(note1._id).books['0001112222']).toEqual(5);
+			let noteFromDB = await w.getNote(note1._id);
+			expect(noteFromDB.books['0001112222']).toEqual(5);
 
 			note1.setVolumeQuantity('0001112222', 2);
-			expect(w.getNote(note1._id).books['0001112222']).toEqual(2);
+			noteFromDB = await w.getNote(note1._id);
+			expect(noteFromDB.books['0001112222']).toEqual(2);
 		});
 	});
 }
