@@ -19,7 +19,7 @@
 		'outline',
 		'rounded-md',
 		'focus-within:outline-2',
-		'focus-within:outline-cyan-700'
+		'focus-within:outline-teal-500'
 	];
 
 	const helpTextColour = 'text-gray-500';
