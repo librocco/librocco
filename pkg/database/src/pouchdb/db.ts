@@ -1,211 +1,33 @@
 import PouchDB from 'pouchdb';
 import { randomUUID } from 'crypto';
 
-interface NoteEntry extends Note {
-	_id: string;
-	_rev: string;
-	books: Record<string, number>;
-	commited: boolean;
+import { WarehouseInterface } from './types-implementation';
+
+import { newWarehouse } from './warehouse';
+
+// #region standard_api
+interface DatabaseProto {
+	createWarehouse(name: string): WarehouseInterface;
 }
 
-// #region BookStock
-interface Volume {
-	isbn: string;
-	quantity: number;
-}
-// #endregion BookStock
+type DatabaseInterface = DatabaseProto;
+// #endregion standard_api
 
-// #region Note
-type NoteType = 'inbound' | 'outbound';
+class Database implements DatabaseInterface {
+	private _db;
 
-type VolumeQuantityTuple = [string, number];
+	constructor(db: PouchDB.Database) {
+		this._db = db;
+	}
 
-interface NoteProto {
-	addVolumes(...params: VolumeQuantityTuple): Promise<NoteEntry>;
-	addVolumes(...params: VolumeQuantityTuple[]): Promise<NoteEntry>;
-	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteEntry>;
-	delete(): Promise<void>;
-	commit(): Promise<NoteEntry>;
-}
-interface Note extends NoteProto {
-	_id: string;
-	type: NoteType;
-	warehouse: string;
+	createWarehouse(name: string) {
+		return newWarehouse(this._db, name);
+	}
 }
 
-export const newNote = (
-	db: PouchDB.Database,
-	w: Warehouse<NoteEntry>,
-	type: NoteType
-): NoteEntry => {
-	const randId = randomUUID();
-	const _id = [w.name, randId].join('/');
-
-	const noteProto: NoteProto = {
-		async addVolumes(...params) {
-			const n = await w.getNote(_id);
-			const books = n.books;
-
-			const updateQuantity = (isbn: string, quantity: number) => {
-				if (books[isbn]) {
-					books[isbn] += quantity;
-				} else {
-					books[isbn] = quantity;
-				}
-			};
-
-			if (typeof params[0] == 'string') {
-				updateQuantity(...(params as VolumeQuantityTuple));
-			} else {
-				params.forEach((update) => updateQuantity(...(update as VolumeQuantityTuple)));
-			}
-
-			await w.updateNote(n);
-			return n;
-		},
-		async setVolumeQuantity(isbn, quantity) {
-			const n = await w.getNote(_id);
-			n.books[isbn] = quantity;
-			await w.updateNote(n);
-			return n;
-		},
-		async delete() {
-			const n = await w.getNote(_id);
-			w.deleteNote(n);
-		},
-		async commit() {
-			let n = await w.getNote(_id);
-			n = { ...n, commited: true };
-			await db.put(n);
-			return n;
-		}
-	};
-
-	const note = Object.assign(Object.create(noteProto) as typeof noteProto, {
-		_id,
-		type,
-		warehouse: w.name,
-		commited: false,
-		books: {}
-	});
-
-	return Object.assign(note, Object.create(noteProto));
-};
-// #endregion Note
-
-// #region Warehouse
-const getNotesForWarehouse = async (
-	db: PouchDB.Database,
-	w: Warehouse<NoteEntry>
-): Promise<NoteEntry[]> => {
-	const query =
-		w.name === 'default'
-			? db.allDocs({
-					include_docs: true
-			  })
-			: db.allDocs({
-					startkey: `${w.name}/`,
-					// All notes are prepended with warehouse name, like so "science/note-1"
-					// This way we're reading from the first "science/" until (excluding) "science0"
-					// "0" comes right after "/" aplhabetically
-					endkey: `${w.name}0`,
-					include_docs: true
-			  });
-	const res = await query;
-	return res.rows.map(({ doc }) => doc as NoteEntry);
-};
-
-const getStockForWarehouse = async (db: PouchDB.Database, w: Warehouse<NoteEntry>) => {
-	const notes = await getNotesForWarehouse(db, w);
-	const stockObj: Record<string, number> = {};
-	notes.forEach(({ commited, books, type }) => {
-		if (!commited) return;
-		Object.entries(books).forEach(([isbn, q]) => {
-			// We're using a volume quatity as a change to final quantity
-			// increment for inbound notes, decrement for outbound
-			const delta = type === 'outbound' ? -q : q;
-			if (!stockObj[isbn]) {
-				stockObj[isbn] = delta;
-				return;
-			}
-			stockObj[isbn] += delta;
-		});
-	});
-	return Object.entries(stockObj)
-		.map(([isbn, quantity]) => ({
-			isbn,
-			quantity
-		}))
-		.sort((a, b) => (a.isbn < b.isbn ? -1 : 1));
-};
-
-interface Warehouse<N extends Note = Note> {
-	createInNote(): Promise<N>;
-	createOutNote(): Promise<N>;
-	getNotes(): Promise<N[]>;
-	getNote(id: string): Promise<N>;
-	updateNote(note: NoteEntry): Promise<N>;
-	deleteNote(note: NoteEntry): Promise<void>;
-	getStock(): Promise<Volume[]>;
-	name: string;
-}
-export const newWarehouse = (db: PouchDB.Database, name = 'default'): Warehouse<NoteEntry> => {
-	const proto: Warehouse<NoteEntry> = {
-		async createInNote() {
-			const n = newNote(db, this, 'inbound');
-			db.put(n);
-			return n;
-		},
-		async createOutNote() {
-			const n = newNote(db, this, 'outbound');
-			db.put(n);
-			return n;
-		},
-		async getNotes() {
-			return getNotesForWarehouse(db, this);
-		},
-		getNote(noteId: string) {
-			return db.get(noteId);
-		},
-		async deleteNote(note) {
-			return new Promise((resolve, reject) => {
-				db.remove(note, {}, (err) => {
-					if (err) {
-						return reject(err);
-					}
-					return resolve();
-				});
-			});
-		},
-		async updateNote(note) {
-			await db.put(note);
-			return note;
-		},
-		async getStock() {
-			return getStockForWarehouse(db, this);
-		},
-		name
-	};
-	return Object.create(proto);
-};
-// #endregion Warehouse
-
-// #region Database
-interface Database {
-	createWarehouse(name: string): Warehouse<NoteEntry>;
-	db: PouchDB.Database;
-}
 export const newDatabase = (name: string): Database => {
 	const db = new PouchDB(name);
-
-	const proto: Database = {
-		createWarehouse(name) {
-			return newWarehouse(db, name);
-		},
-		db
-	};
-
-	return Object.assign(Object.create(proto), proto);
+	return new Database(db);
 };
 // #region Database
 
@@ -214,11 +36,14 @@ const getDBName = () => ['.temp-testdb', randomUUID()].join('-');
 if (import.meta.vitest) {
 	const { describe, test, expect } = import.meta.vitest;
 	describe('Test example implementation', () => {
-		test('should add books to note', async () => {
+		test.only('should add books to note', async () => {
 			const db = newDatabase(getDBName());
 
 			const w = db.createWarehouse('science');
+			console.log(w);
+
 			const note = await w.createInNote();
+			console.log(note);
 
 			await note.addVolumes(['0001112222', 2], ['0001112223', 3], ['0001112223', 1]);
 			await note.commit();
