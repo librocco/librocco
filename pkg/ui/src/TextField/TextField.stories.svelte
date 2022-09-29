@@ -8,7 +8,7 @@
 <Meta title="Text Field component" />
 
 <Story name="Default">
-	<TextField label="Default" />
+	<TextField label="Default" helpText="Insert your input" />
 </Story>
 <Story name="Default with placeholder">
 	<TextField label="Default with placeholder" placeholder="placeholder" />
@@ -19,7 +19,7 @@
 		label="Start Adornment, with the mail icon and email placeholder"
 	>
 		<div slot="startAdornment">
-			<div class="w-8">
+			<div class="w-5 h-5">
 				<Mail />
 			</div>
 		</div>
