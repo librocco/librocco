@@ -2,6 +2,7 @@
 	export let label = '';
 	export let placeholder = '';
 	export let name = '';
+	export let helpText = '';
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
 	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
@@ -18,7 +19,8 @@
 		'flex',
 		'outline',
 		'rounded-md',
-		'focus-within:outline-2',
+		'shadow-sm',
+		'focus-within:outline-[3px]',
 		'focus-within:outline-teal-500'
 	];
 
@@ -40,16 +42,18 @@
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots.startAdornment}
-			<div class="flex items-center mr-0 ml-3	">
+			<div class="flex items-center mr-0 ml-3	text-gray-400">
 				<slot name="startAdornment" />
 			</div>
 		{/if}
 		<input type="text" {name} id={name} class={inputClasses} {placeholder} aria-label={name} />
 		{#if $$slots.endAdornment}
-			<div class="flex items-center ml-1 mr-3">
+			<div class="flex items-center ml-1 mr-3 text-gray-400">
 				<slot name="endAdornment" />
 			</div>
 		{/if}
 	</div>
-	<p class={helpTextClasses} />
+	{#if helpText}
+		<p class={helpTextClasses}>{helpText}</p>
+	{/if}
 </div>
