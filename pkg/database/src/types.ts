@@ -1,6 +1,6 @@
 export interface Note {
 	_id: string;
-    books: Volume[];
+	books: Volume[];
 }
 
 export interface BookData {
@@ -12,6 +12,6 @@ export interface BookData {
 export interface Volume extends BookData {
 	price: number;
 	quantity: number;
-    note: string;
-    date: string;
+	note: string;
+	date: string;
 }
