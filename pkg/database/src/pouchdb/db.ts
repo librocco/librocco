@@ -1,9 +1,12 @@
 import PouchDB from 'pouchdb';
+import { default as MemoryAdapter } from 'pouchdb-adapter-memory';
 import { randomUUID } from 'crypto';
 
 import { WarehouseInterface } from './types-implementation';
 
 import { newWarehouse } from './warehouse';
+
+PouchDB.plugin(MemoryAdapter);
 
 // #region standard_api
 interface DatabaseProto {
@@ -26,7 +29,7 @@ class Database implements DatabaseInterface {
 }
 
 export const newDatabase = (name: string): Database => {
-	const db = new PouchDB(name);
+	const db = new PouchDB(name, { adapter: 'memory' });
 	return new Database(db);
 };
 // #region Database
