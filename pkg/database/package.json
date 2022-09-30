@@ -4,7 +4,8 @@
 	"main": "./dist/index.js",
 	"dependencies": {
 		"pouchdb": "~7.3.0",
-		"uuid": "~8.3.2"
+		"uuid": "~8.3.2",
+		"pouchdb-adapter-memory": "~7.3.0"
 	},
 	"exports": {
 		".": {
