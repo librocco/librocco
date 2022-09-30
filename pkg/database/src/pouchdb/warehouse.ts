@@ -8,14 +8,15 @@ import { newNote } from './note';
 type Database = PouchDB.Database;
 
 class Warehouse implements WarehouseInterface {
-	private _db;
+	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
+	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
+	#db: Database;
 
 	name;
 
 	constructor(db: Database, data: WarehouseData) {
-		this._db = db;
-
 		this.name = data.name;
+		this.#db = db;
 	}
 
 	async createInNote() {
@@ -23,7 +24,7 @@ class Warehouse implements WarehouseInterface {
 			type: 'inbound',
 			_id: [this.name, 'inbound', randomUUID()].join('/')
 		});
-		// await this._db.put(n);
+		await this.#db.put(n);
 		return n;
 	}
 
@@ -32,22 +33,22 @@ class Warehouse implements WarehouseInterface {
 			type: 'outbound',
 			_id: [this.name, 'outbound', randomUUID()].join('/')
 		});
-		this._db.put(n);
+		this.#db.put(n);
 		return n;
 	}
 
 	async getNotes() {
-		return getNotesForWarehouse(this._db, this);
+		return getNotesForWarehouse(this.#db, this);
 	}
 
 	async getNote(noteId: string): Promise<NoteInterface> {
-		const noteData = (await this._db.get(noteId)) as NoteData;
+		const noteData = (await this.#db.get(noteId)) as NoteData;
 		return newNote(this, noteData);
 	}
 
 	deleteNote(note: NoteInterface) {
 		return new Promise<void>((resolve, reject) => {
-			this._db.remove(note, {}, (err) => {
+			this.#db.remove(note, {}, (err) => {
 				if (err) {
 					return reject(err);
 				}
@@ -57,12 +58,12 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async updateNote(note: NoteInterface) {
-		await this._db.put(note);
+		await this.#db.put(note);
 		return note;
 	}
 
 	async getStock() {
-		return getStockForWarehouse(this._db, this);
+		return getStockForWarehouse(this.#db, this);
 	}
 }
 
@@ -70,7 +71,10 @@ export const newWarehouse = (db: Database, name = 'default'): Warehouse => {
 	return new Warehouse(db, { name });
 };
 
-const getNotesForWarehouse = async (db: Database, w: Warehouse): Promise<NoteInterface[]> => {
+const getNotesForWarehouse = async (
+	db: Database,
+	w: WarehouseInterface
+): Promise<NoteInterface[]> => {
 	const query =
 		w.name === 'default'
 			? db.allDocs({
@@ -88,12 +92,12 @@ const getNotesForWarehouse = async (db: Database, w: Warehouse): Promise<NoteInt
 	return res.rows.map(({ doc }) => newNote(w, doc as NoteData));
 };
 
-const getStockForWarehouse = async (db: Database, w: Warehouse) => {
+const getStockForWarehouse = async (db: Database, w: WarehouseInterface) => {
 	const notes = await getNotesForWarehouse(db, w);
 	const stockObj: Record<string, number> = {};
 	notes.forEach(({ committed, books, type }) => {
 		if (!committed) return;
-		books.forEach(({ isbn, quantity: q }) => {
+		Object.entries(books).forEach(([isbn, q]) => {
 			// We're using a volume quatity as a change to final quantity
 			// increment for inbound notes, decrement for outbound
 			const delta = type === 'outbound' ? -q : q;
