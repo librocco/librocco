@@ -1,10 +1,13 @@
 <script lang="ts">
+	import { v4 as uuid } from 'uuid';
 	export let name: string;
 
 	export let label = '';
 	export let helpText = '';
 	export let checked = false;
 	export let disabled = false;
+
+	const id = uuid();
 
 	const labelBaseClasses = ['font-medium', disabled ? 'text-gray-400' : 'text-gray-700'].join(' ');
 	const helpTextColor = disabled ? 'text-gray-300' : 'text-gray-500';
@@ -23,7 +26,7 @@
 	<div class="flex items-center h-5">
 		<input
 			type="checkbox"
-			id={name}
+			{id}
 			aria-describedby={`${name}-description`}
 			class={inputBaseClasses}
 			{checked}
@@ -31,7 +34,7 @@
 		/>
 	</div>
 	<div class="ml-3 text-sm">
-		<label for={name} class={labelBaseClasses}>
+		<label for={id} class={labelBaseClasses}>
 			{label}
 		</label>
 		<p id={`${name}-description`} class={helpTextColor}>
