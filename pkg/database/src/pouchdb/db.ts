@@ -14,14 +14,14 @@ type DatabaseInterface = DatabaseProto;
 // #endregion standard_api
 
 class Database implements DatabaseInterface {
-	private _db;
+	#db: PouchDB.Database;
 
 	constructor(db: PouchDB.Database) {
-		this._db = db;
+		this.#db = db;
 	}
 
 	createWarehouse(name: string) {
-		return newWarehouse(this._db, name);
+		return newWarehouse(this.#db, name);
 	}
 }
 
@@ -40,10 +40,8 @@ if (import.meta.vitest) {
 			const db = newDatabase(getDBName());
 
 			const w = db.createWarehouse('science');
-			console.log(w);
 
 			const note = await w.createInNote();
-			console.log(note);
 
 			await note.addVolumes(['0001112222', 2], ['0001112223', 3], ['0001112223', 1]);
 			await note.commit();
