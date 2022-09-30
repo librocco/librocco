@@ -2,7 +2,9 @@ import { VolumeQuantityTuple } from './types';
 import { NoteInterface, WarehouseInterface, NoteData } from './types-implementation';
 
 export class Note implements NoteInterface {
-	private _w;
+	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
+	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
+	#w;
 
 	_id;
 	_rev;
@@ -11,11 +13,11 @@ export class Note implements NoteInterface {
 	committed;
 
 	constructor(warehouse: WarehouseInterface, data: NoteData) {
-		this._w = warehouse;
+		this.#w = warehouse;
 
 		this._id = data._id;
 		this.type = data.type;
-		this.books = data.books || [];
+		this.books = data.books || {};
 		this.committed = Boolean(data.committed);
 		this._rev = data._rev || '';
 	}
@@ -25,7 +27,7 @@ export class Note implements NoteInterface {
 		const isTuple = (
 			params: Parameters<NoteInterface['addVolumes']>
 		): params is VolumeQuantityTuple => {
-			return Array.isArray(params[0]);
+			return !Array.isArray(params[0]);
 		};
 
 		const updateQuantity = (isbn: string, quantity: number) => {
@@ -42,21 +44,21 @@ export class Note implements NoteInterface {
 			params.forEach((update) => updateQuantity(...update));
 		}
 
-		return this._w.updateNote(this);
+		return this.#w.updateNote(this);
 	}
 
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface> {
 		this.books[isbn] = quantity;
-		return this._w.updateNote(this);
+		return this.#w.updateNote(this);
 	}
 
 	delete(): Promise<void> {
-		return this._w.deleteNote(this);
+		return this.#w.deleteNote(this);
 	}
 
 	commit(): Promise<NoteInterface> {
 		this.committed = true;
-		return this._w.updateNote(this);
+		return this.#w.updateNote(this);
 	}
 }
 
