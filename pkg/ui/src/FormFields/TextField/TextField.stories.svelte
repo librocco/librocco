@@ -5,7 +5,7 @@
 	import TextField from './TextField.svelte';
 </script>
 
-<Meta title="Text Field component" />
+<Meta title="Form Fields / Text Field" />
 
 <Story name="Default">
 	<TextField label="Default" helpText="Insert your input" />
