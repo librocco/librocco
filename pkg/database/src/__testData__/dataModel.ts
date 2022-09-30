@@ -1,4 +1,4 @@
-import { Volume, Note } from "../types";
+import { Volume, Note } from '../types';
 
 export const database = {
 	notes: []
@@ -18,8 +18,7 @@ export const notes: Note[] = [
 
 				note: '123',
 				quantity: 3,
-				date: "28-08-2022"
-
+				date: '28-08-2022'
 			},
 			{
 				isbn: '0300088108',
@@ -32,8 +31,7 @@ export const notes: Note[] = [
 
 				note: '123',
 				quantity: 3,
-				date: "28-08-2022"
-
+				date: '28-08-2022'
 			}
 		]
 	},
@@ -51,8 +49,7 @@ export const notes: Note[] = [
 
 				note: '456',
 				quantity: 3,
-				date: "29-08-2022"
-
+				date: '29-08-2022'
 			},
 			{
 				isbn: '0300088108',
@@ -65,8 +62,7 @@ export const notes: Note[] = [
 
 				note: '456',
 				quantity: 3,
-				date: "29-08-2022"
-
+				date: '29-08-2022'
 			}
 		]
 	},
@@ -83,8 +79,7 @@ export const notes: Note[] = [
 
 				note: '789',
 				quantity: 1,
-				date: "30-08-2022"
-
+				date: '30-08-2022'
 			}
 		]
 	}
@@ -107,7 +102,7 @@ export const books: Volume[] = [
 
 		note: '123',
 		quantity: 3,
-		date: "28-08-2022"
+		date: '28-08-2022'
 	},
 	{
 		isbn: '0300088108',
@@ -120,8 +115,7 @@ export const books: Volume[] = [
 
 		note: '',
 		quantity: 3,
-		date: "20-08-2022"
-
+		date: '20-08-2022'
 	},
 	{
 		isbn: '0520204832',
@@ -133,8 +127,7 @@ export const books: Volume[] = [
 
 		note: '123',
 		quantity: 1,
-		date: "28-08-2022"
-
+		date: '28-08-2022'
 	}
 ];
 
@@ -148,8 +141,7 @@ export const bookOne: Volume = {
 
 	note: '789',
 	quantity: 1,
-	date: "23-07-2021"
-
+	date: '23-07-2021'
 };
 export const bookTwo: Volume = {
 	isbn: '0691055491',
@@ -162,7 +154,7 @@ export const bookTwo: Volume = {
 
 	note: '456',
 	quantity: 1,
-	date: "23-08-2020"
+	date: '23-08-2020'
 };
 export const databaseWithNote = {
 	notes: [note]
