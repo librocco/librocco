@@ -1,11 +1,7 @@
 {
 	"name": "@librocco/datamodel-tests",
 	"version": "0.0.1",
-	"dependencies": {
-		"pouchdb": "~7.3.0",
-		"uuid": "~8.3.2",
-		"@types/node": "~18.7.16"
-	},
+	"dependencies": {},
 	"scripts": {
 		"dev": "vite dev",
 		"build": "echo 'datamodel-tests has no build functionality at this moment'",
@@ -19,15 +15,18 @@
 	"devDependencies": {
 		"@types/pouchdb": "~6.4.0",
 		"@types/uuid": "~8.3.4",
+		"@types/node": "~18.7.16",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
 		"eslint": "^8.16.0",
 		"eslint-config-prettier": "^8.3.0",
+		"pouchdb": "~7.3.0",
+		"pouchdb-adapter-memory": "~7.3.0",
 		"prettier": "^2.6.2",
 		"typescript": "^4.7.4",
+		"uuid": "~8.3.2",
 		"vite": "^3.0.0",
-		"vitest": "~0.21.1",
-		"@types/node": "~18.7.16"
+		"vitest": "~0.21.1"
 	},
 	"type": "module"
 }

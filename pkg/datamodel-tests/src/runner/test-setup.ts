@@ -1,22 +1,25 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { test as t } from 'vitest';
+import { randomUUID } from 'crypto';
+import PouchDB from 'pouchdb';
 
 import {
-	RawBook,
 	RawSnap,
 	RawNote,
 	GetNotesAndWarehouses,
-	TestSetup,
 	Test,
-	MapWarehouses
-} from '../types';
-
-import { newDB } from './utils';
-import { sortById } from '@/utils/pouchdb';
+	TestStock,
+	TransformNote,
+	TransformStock,
+	RawBookStock,
+	NoteType,
+	MapWarehouses,
+	ImplementationSetup,
+	VolumeStock
+} from '@/types';
 
 // #region types
 interface RawData {
-	books: RawBook[];
 	notes: RawNote[];
 	snaps: RawSnap[];
 }
@@ -24,44 +27,31 @@ interface RawData {
 // #endregion types
 
 // #region newModal
-export const newModel = (rawData: RawData, setup: TestSetup) => {
-	const {
-		transformBooks = defaultTransformBook,
-		transformNotes = defaultTransformNote,
-		transformSnaps = defaultTransformSnap,
-		transformWarehouse = defaultTransformSnap,
-		mapWarehouses = () => {}
-	} = setup.transform;
-
-	const books = rawData.books.map(transformBooks);
-
+export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
 	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
-		const notes = rawData.notes.slice(0, n).map(transformNotes);
-		const rawSnap = rawData.snaps[n - 1];
-		const rawWarehouses = warehousesFromSnap(rawSnap, mapWarehouses);
+		const notes = rawData.notes.slice(0, n).map(transformNote);
 
-		const snap = transformSnaps(rawSnap);
-		const warehouses = Object.values(rawWarehouses)
-			.map((w) => transformWarehouse(w))
-			.sort(sortById);
+		const fullStockRaw = rawData.snaps[n - 1];
+		const fullStock = transformStock(fullStockRaw);
 
-		return { notes, snap, warehouses };
+		const warehouses = mapWarehouses(fullStockRaw.books);
+
+		return { notes, fullStock, warehouses };
 	};
-
-	const data = { books, getNotesAndWarehouses };
 
 	const test: Test = (name, cb) => {
 		t(name, async () => {
 			// Get new db per test basis
-			const db = await newDB();
+			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
+			const db = setup.newDatabase(pouchInstance);
 
-			// Upload design documents (if any)
-			const ddUpdates = setup.designDocuments?.map((dd) => db.put(dd));
-			if (ddUpdates) {
-				await Promise.all(ddUpdates);
-			}
+			//			// Upload design documents (if any)
+			//			const ddUpdates = setup.designDocuments?.map((dd) => db.put(dd));
+			//			if (ddUpdates) {
+			//				await Promise.all(ddUpdates);
+			//			}
 
-			await cb(data, setup.createDBInterface(db));
+			await cb(db, getNotesAndWarehouses);
 
 			// Destroy the db after the test
 			db.destroy();
@@ -74,34 +64,43 @@ export const newModel = (rawData: RawData, setup: TestSetup) => {
 };
 // #endregion newModal
 
-// #region defaultTransformers
-export const defaultTransformBook = (b: { volumeInfo: Pick<RawBook['volumeInfo'], 'title'> }) => ({
-	_id: b.volumeInfo.title
+// #region test_data_transformers
+const transformNote: TransformNote = ({ id, type, books }) => ({
+	id,
+	// Transform from "in-note" to "inbound"
+	type: [type.split('-')[0], 'bound'].join('') as NoteType,
+	books: books.map(transformBookStock).sort(sortByISBN)
 });
-export const defaultTransformNote = (el: { id: string }) => ({ _id: el.id });
-export const defaultTransformSnap = (sn: RawSnap) => ({
-	_id: 'all-warehouses',
-	books: sn.books.map(defaultTransformBook)
+const transformStock: TransformStock = (sn) => ({
+	id: 'all-warehouses',
+	books: sn.books.map(transformBookStock).sort(sortByISBN)
 });
-export const defaultTransformWarehouse = (wh: RawSnap) => ({
-	_id: wh.id,
-	books: wh.books.map(defaultTransformBook)
-});
-// #endregion defaultTransformers
+const mapWarehouses: MapWarehouses = (books) => {
+	const warehousesObject = books.reduce((acc, b) => {
+		const wName = b.warehouse;
+
+		const warehouse = acc[wName] || ({ id: wName, books: [] } as TestStock);
+		const entry = transformBookStock(b);
+
+		return {
+			...acc,
+			[wName]: {
+				...warehouse,
+				books: [...warehouse.books, entry].sort(sortByISBN)
+			}
+		};
+	}, {} as Record<string, TestStock>);
+
+	return Object.values(warehousesObject);
+};
+// #endregion test_data_transformers
 
 // #region helpers
-const warehousesFromSnap = (snap: RawSnap, mapWarehouses: MapWarehouses): RawSnap[] => {
-	const warehouseRecord = snap.books.reduce((acc, b) => {
-		let wName = '';
-		mapWarehouses(b, (w: string) => (wName = w));
-
-		if (!wName) return acc;
-
-		const warehouse = acc[wName] || { id: wName, books: [] };
-
-		return { ...acc, [wName]: { ...warehouse, books: [...warehouse.books, b] } };
-	}, {} as Record<string, RawSnap>);
-
-	return Object.values(warehouseRecord);
-};
+const getISBN = (b: RawBookStock): string =>
+	b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
+const transformBookStock = (b: RawBookStock): VolumeStock => ({
+	isbn: getISBN(b),
+	quantity: b.quantity
+});
+const sortByISBN = ({ isbn: i1 }: VolumeStock, { isbn: i2 }: VolumeStock) => (i1 < i2 ? -1 : 1);
 // #endregion helpers

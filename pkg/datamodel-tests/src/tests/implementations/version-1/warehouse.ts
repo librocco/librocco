@@ -1,7 +1,7 @@
 import { randomUUID } from 'crypto';
 
-import { WarehouseData } from './types';
-import { NoteData, NoteInterface, WarehouseInterface } from './types-implementation';
+import { VolumeStock, WarehouseData } from '@/types';
+import { NoteData, NoteInterface, WarehouseInterface } from './types';
 
 import { newNote } from './note';
 
@@ -37,7 +37,7 @@ class Warehouse implements WarehouseInterface {
 		return n;
 	}
 
-	async getNotes() {
+	async getNotes(): Promise<NoteInterface[]> {
 		return getNotesForWarehouse(this.#db, this);
 	}
 
@@ -62,12 +62,12 @@ class Warehouse implements WarehouseInterface {
 		return note;
 	}
 
-	async getStock() {
+	async getStock(): Promise<VolumeStock[]> {
 		return getStockForWarehouse(this.#db, this);
 	}
 }
 
-export const newWarehouse = (db: Database, name = 'default'): Warehouse => {
+export const newWarehouse = (db: Database, name = 'default'): WarehouseInterface => {
 	return new Warehouse(db, { name });
 };
 
