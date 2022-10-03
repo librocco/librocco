@@ -4,7 +4,7 @@ import { newTestRunner } from '@runner/runner';
 
 import * as testDataLoader from '@loaders/smoke-test-loader';
 
-import * as datamodels from '@tests/datamodels';
+import * as implementations from '@tests/implementations';
 import * as tests from '@tests/tests';
 
 describe('Datamodel tests', async () => {
@@ -12,7 +12,7 @@ describe('Datamodel tests', async () => {
 	// but will switch it up with loader reading data from fs or an image
 	const runner = await newTestRunner(testDataLoader);
 
-	Object.entries(datamodels).forEach(([name, config]) => {
+	Object.entries(implementations).forEach(([name, config]) => {
 		describe(name, () => {
 			const setup = runner.newModel(config);
 
