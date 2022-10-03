@@ -1,5 +1,5 @@
-import { VolumeQuantityTuple } from './types';
-import { NoteInterface, WarehouseInterface, NoteData } from './types-implementation';
+import { VolumeQuantityTuple } from '@/types';
+import { NoteInterface, WarehouseInterface, NoteData } from './types';
 
 export class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
