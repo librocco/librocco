@@ -13,6 +13,14 @@ export type DesignDocument = {
 };
 // #endregion misc
 
+// #region utils
+/**
+ * Used to make one or more properties on the object optional.
+ */
+export type PickPartial<R extends Record<string, any>, K extends keyof R> = Omit<R, K> &
+	Partial<Pick<R, K>>;
+// #endregion utils
+
 // #region rawData
 interface IndustryIdentifier {
 	type: 'ISBN_10' | 'ISBN_13';
@@ -30,7 +38,6 @@ export interface RawBook {
 		language: string;
 	};
 }
-
 export interface RawBookStock extends RawBook {
 	warehouse: string;
 	quantity: number;
@@ -50,83 +57,102 @@ export interface RawSnap {
 
 // #region runner
 export interface TestDataLoader {
-	getBooks: () => Promise<RawBook[]>;
 	getNotes: () => Promise<RawNote[]>;
 	getSnaps: () => Promise<RawSnap[]>;
 }
 // #endregion runner
 
 // #region testSetup
-export interface TransformBook<S extends Record<string, any> = Record<string, any>> {
-	(book: RawBook): CouchDocument<S>;
+interface TestNote {
+	id: string;
+	type: NoteType;
+	books: VolumeStock[];
+}
+export interface TransformNote {
+	(note: RawNote): TestNote;
 }
 
-export interface TransformNote<S extends Record<string, any> = Record<string, any>> {
-	(note: RawNote): CouchDocument<S>;
+export interface TestStock {
+	id: string;
+	books: VolumeStock[];
 }
-
-export interface AddToWarehouse {
-	(wName: string): void;
-}
-
-export interface TransformSnap<S extends Record<string, any> = Record<string, any>> {
-	(db: RawSnap): CouchDocument<S>;
+export interface TransformStock {
+	(db: RawSnap): TestStock;
 }
 
 export interface MapWarehouses {
-	(book: RawBookStock, addToWarehouse: AddToWarehouse): void;
-}
-
-export interface TransformConfig {
-	transformBooks?: TransformBook;
-	transformNotes?: TransformNote;
-	transformSnaps?: TransformSnap;
-	mapWarehouses?: MapWarehouses;
-	transformWarehouse?: TransformSnap;
-}
-
-export interface DBInteraction<R = void, P extends any[] = never[]> {
-	(...params: P): Promise<R>;
-}
-export interface DBInteractionHOF<R = void, P extends any[] = never[]> {
-	(db: PouchDB.Database): DBInteraction<R, P>;
-}
-
-export interface DBInterface {
-	commitNote: DBInteraction<void, [CouchDocument]>;
-	getNotes: DBInteraction<CouchDocument[]>;
-	getStock: DBInteraction<CouchDocument>;
-	getWarehouses: DBInteraction<CouchDocument[]>;
-}
-
-export interface CreateDBInterface {
-	(db: PouchDB.Database): DBInterface;
-}
-
-export interface TestSetup {
-	transform: TransformConfig;
-	designDocuments?: DesignDocument[];
-	createDBInterface: CreateDBInterface;
+	(books: RawBookStock[]): TestStock[];
 }
 
 export interface GetNotesAndWarehouses {
 	(n: number): {
-		notes: CouchDocument[];
-		snap: CouchDocument;
-		warehouses: CouchDocument[];
+		notes: TestNote[];
+		fullStock: TestStock;
+		warehouses: TestStock[];
 	};
 }
 
-interface TestData {
-	books: CouchDocument[];
-	getNotesAndWarehouses: GetNotesAndWarehouses;
-}
-
 export interface TestFunction {
-	(data: TestData, db: DBInterface): Promise<void>;
+	(db: DatabaseInterface, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
 }
 
 export interface Test {
 	(name: string, fn: TestFunction): void;
 }
+
+export interface ImplementationSetup {
+	newDatabase: (db: PouchDB.Database) => DatabaseInterface;
+}
 // #endregion testSetup
+
+// #region standard_api
+export type NoteType = 'inbound' | 'outbound';
+
+export interface VolumeStock {
+	isbn: string;
+	quantity: number;
+}
+export type VolumeQuantityTuple = [string, number];
+
+export interface NoteProto<A extends Record<string, any> = Record<string, any>> {
+	addVolumes(...params: VolumeQuantityTuple | VolumeQuantityTuple[]): Promise<NoteInterface<A>>;
+	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface<A>>;
+	delete(): Promise<void>;
+	commit(): Promise<NoteInterface<A>>;
+}
+export type NoteData<A extends Record<string, any> = Record<string, any>> = {
+	_id: string;
+	type: NoteType;
+} & A;
+
+export type NoteInterface<A extends Record<string, any> = Record<string, any>> = NoteProto<A> &
+	NoteData<A>;
+
+export interface WarehouseProto<N extends NoteInterface<any> = NoteInterface> {
+	createInNote(): Promise<N>;
+	createOutNote(): Promise<N>;
+	getNotes(): Promise<N[]>;
+	getNote(id: string): Promise<N>;
+	updateNote(note: N): Promise<N>;
+	deleteNote(note: N): Promise<void>;
+	getStock(): Promise<VolumeStock[]>;
+}
+export type WarehouseData<A extends Record<string, any> = Record<string, any>> = {
+	name: string;
+} & A;
+
+export type WarehouseInterface<
+	N extends NoteInterface = NoteInterface,
+	D extends Record<string, any> = Record<string, any>
+> = WarehouseProto<NoteInterface<N>> & WarehouseData<D>;
+
+export interface DatabaseProto<W extends WarehouseInterface> {
+	createWarehouse(name: string): W;
+	destroy(): Promise<void>;
+}
+
+export type DatabaseInterface<
+	N extends NoteInterface = NoteInterface,
+	D extends Record<string, any> = Record<string, any>
+> = DatabaseProto<WarehouseInterface<N, D>>;
+// #endregion standard_api
