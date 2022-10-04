@@ -102,6 +102,7 @@ export interface Test {
 
 export interface ImplementationSetup {
 	newDatabase: (db: PouchDB.Database) => DatabaseInterface;
+	designDocuments?: DesignDocument[];
 }
 // #endregion testSetup
 
@@ -147,7 +148,9 @@ export type WarehouseInterface<
 > = WarehouseProto<NoteInterface<N>> & WarehouseData<D>;
 
 export interface DatabaseProto<W extends WarehouseInterface> {
-	createWarehouse(name: string): W;
+	_pouch: PouchDB.Database;
+	warehouse(name?: string): W;
+	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	destroy(): Promise<void>;
 }
 

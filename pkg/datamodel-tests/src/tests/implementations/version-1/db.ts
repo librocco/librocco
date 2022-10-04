@@ -1,19 +1,23 @@
+import { DesignDocument } from '@/types';
 import { DatabaseInterface } from './types';
 
 import { newWarehouse } from './warehouse';
 
 class Database implements DatabaseInterface {
-	#db: PouchDB.Database;
+	_pouch: PouchDB.Database;
 
 	constructor(db: PouchDB.Database) {
-		this.#db = db;
+		this._pouch = db;
 	}
 
 	warehouse(name = 'default') {
-		return newWarehouse(this.#db, name);
+		return newWarehouse(this._pouch, name);
+	}
+	updateDesignDoc(doc: DesignDocument) {
+		return this._pouch.put(doc);
 	}
 	destroy() {
-		return this.#db.destroy();
+		return this._pouch.destroy();
 	}
 }
 
