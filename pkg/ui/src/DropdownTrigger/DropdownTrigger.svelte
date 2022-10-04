@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SvelteComponentDev } from 'svelte/internal';
-
+	// import  {ChevronDown} from '@librocco/svg';
 	export let label = '';
 	export let Icon: typeof SvelteComponentDev | null = null;
 </script>
@@ -14,9 +14,8 @@
 			aria-expanded="true"
 			aria-haspopup="true"
 		>
-			<span class="w-6 pr-1"> <svelte:component this={Icon} /> </span>
+			<div class="w-6 pr-1"><svelte:component this={Icon} /></div>
 			{label}
-			<!-- Heroicon name: mini/chevron-down -->
 			<svg
 				class="-mr-1 ml-2 h-5 w-5"
 				xmlns="http://www.w3.org/2000/svg"
