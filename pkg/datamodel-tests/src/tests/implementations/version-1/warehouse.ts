@@ -67,7 +67,7 @@ class Warehouse implements WarehouseInterface {
 	}
 }
 
-export const newWarehouse = (db: Database, name = 'default'): WarehouseInterface => {
+export const newWarehouse = (db: Database, name: string): WarehouseInterface => {
 	return new Warehouse(db, { name });
 };
 
