@@ -8,7 +8,7 @@ export const addBooksToNote: TestFunction = async (db, getNotesAndWarehouses) =>
 	const [noteData] = notes;
 	const { books } = noteData;
 
-	const w = db.createWarehouse('test-warehouse');
+	const w = db.warehouse('test-warehouse');
 
 	const note = await w.createInNote();
 
@@ -36,7 +36,7 @@ export const commitNote: TestFunction = async (db, getNotesAndWarehouses) => {
 		books.map(({ isbn, quantity }) => [isbn, quantity])
 	) as VolumeQuantityTuple[][];
 
-	const warehouse = db.createWarehouse('test-warehouse');
+	const warehouse = db.warehouse('test-warehouse');
 	const note1 = await warehouse.createInNote();
 	await note1.addVolumes(...vqTuple1);
 
@@ -59,7 +59,7 @@ export const commitNote: TestFunction = async (db, getNotesAndWarehouses) => {
 };
 
 export const deleteNotes: TestFunction = async (db) => {
-	const w = db.createWarehouse('wh');
+	const w = db.warehouse('wh');
 	const note1 = await w.createInNote();
 	const note2 = await w.createInNote();
 
@@ -75,7 +75,7 @@ export const deleteNotes: TestFunction = async (db) => {
 };
 
 export const explicitlySetVolumeStock: TestFunction = async (db) => {
-	const w = db.createWarehouse('wh');
+	const w = db.warehouse('wh');
 	const note1 = await w.createInNote();
 	await note1.addVolumes('0001112222', 5);
 
@@ -85,4 +85,36 @@ export const explicitlySetVolumeStock: TestFunction = async (db) => {
 	await note1.setVolumeQuantity('0001112222', 2);
 	noteFromDB = await w.getNote(note1._id);
 	expect(noteFromDB.books['0001112222']).toEqual(2);
+};
+
+export const getFullStock: TestFunction = async (db) => {
+	const science = db.warehouse('science');
+	const horses = db.warehouse('horses');
+
+	const n1 = await science.createInNote();
+	await n1.addVolumes('0123456789', 5);
+	await n1.commit();
+
+	const n2 = await horses.createInNote();
+	await n2.addVolumes('0123456789', 2);
+	await n2.commit();
+
+	const scienceStock = await science.getStock();
+	const horsesStock = await horses.getStock();
+	const fullStock = await db.warehouse().getStock();
+
+	expect(scienceStock).toEqual([{ isbn: '0123456789', quantity: 5 }]);
+	expect(horsesStock).toEqual([{ isbn: '0123456789', quantity: 2 }]);
+	expect(fullStock).toEqual([{ isbn: '0123456789', quantity: 7 }]);
+};
+
+export const uploadDesignDocuments: TestFunction = async (db) => {
+	const w = db.warehouse();
+	await w.createInNote();
+	await w.createInNote();
+
+	const res = await db._pouch.query('docs/count', { reduce: true });
+	const nDocs = res.rows[0].value;
+
+	expect(nDocs).toEqual(2);
 };
