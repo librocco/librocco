@@ -15,9 +15,7 @@ import {
 	NoteType,
 	MapWarehouses,
 	ImplementationSetup,
-	VolumeStock,
-	DesignDocument,
-	CouchDocument
+	VolumeStock
 } from '@/types';
 
 // #region types
@@ -47,22 +45,11 @@ export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
 			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
 			const db = setup.newDatabase(pouchInstance);
 
-			// Upload design documents
-			// The 'docs/count' is used as a smoke test to validate 'db.updateDesignDoc'
-			const docsCount: DesignDocument = {
-				_id: '_design/docs',
-				views: {
-					count: {
-						map: function (doc: CouchDocument) {
-							emit(doc._id);
-						}.toString(),
-						reduce: '_count'
-					}
-				}
-			};
-			const designDocs = [docsCount, ...(setup.designDocuments || [])];
-			const ddUpdates = designDocs.map((dd) => db.updateDesignDoc(dd));
-			await Promise.all(ddUpdates);
+			// Upload design documents if any
+			const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
+			if (ddUpdates?.length) {
+				await Promise.all(ddUpdates);
+			}
 
 			await cb(db, getNotesAndWarehouses);
 
