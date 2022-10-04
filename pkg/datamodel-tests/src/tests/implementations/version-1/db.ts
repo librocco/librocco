@@ -9,7 +9,7 @@ class Database implements DatabaseInterface {
 		this.#db = db;
 	}
 
-	createWarehouse(name: string) {
+	warehouse(name = 'default') {
 		return newWarehouse(this.#db, name);
 	}
 	destroy() {
