@@ -3,7 +3,7 @@
 
 	import { Mail } from '@librocco/svg';
 
-	import Sidebar from './Sidebar.svelte';
+	import SidebarNav from './SidebarNav.svelte';
 	import SidebarItem from './SidebarItem.svelte';
 	import SidebarItemGroup from './SidebarItemGroup.svelte';
 
@@ -52,19 +52,19 @@
 	<div class="w-52 space-y-4">
 		<div class="space-y-2">
 			<h1 class="text-md bold">Warehouses</h1>
-			<Sidebar>
+			<SidebarNav>
 				{#each items as item}
 					<SidebarItem {...item} />
 				{/each}
-			</Sidebar>
+			</SidebarNav>
 		</div>
 		<div class="space-y-2">
 			<h1 class="text-md bold">In Notes</h1>
-			<Sidebar>
+			<SidebarNav>
 				{#each folders as folder, index}
 					<SidebarItemGroup {...folder} {index} />
 				{/each}
-			</Sidebar>
+			</SidebarNav>
 		</div>
 	</div>
 </Story>
