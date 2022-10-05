@@ -41,13 +41,7 @@
 	];
 </script>
 
-<Meta
-	title="Sidebar Navigation"
-	argTypes={{
-		class: { control: 'string' },
-		selected: { control: 'boolean' }
-	}}
-/>
+<Meta title="Sidebar Navigation" />
 <Story name="Prototype">
 	<div class="w-52 space-y-4">
 		<div class="space-y-2">
