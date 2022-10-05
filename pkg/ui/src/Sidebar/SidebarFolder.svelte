@@ -4,16 +4,16 @@
 
 	import SidebarItem from './SidebarItem.svelte';
 
-	export let name: string;
-	export let index: number;
-	export let expanded = false;
-	export let items: SidebarItem[];
-
 	interface SidebarItem {
 		name: string;
 		href: string;
 		current: boolean;
 	}
+
+	export let name: string;
+	export let index: number;
+	export let expanded = false;
+	export let items: SidebarItem[];
 
 	const controlId = `sub-menu-${index}`;
 
@@ -30,9 +30,8 @@
 		'text-left',
 		'text-sm',
 		'font-normal',
-		'focus:outline-none',
-		'focus:ring-2',
-		'focus:ring-teal-500'
+		'focus:outline',
+		'focus:outline-teal-500'
 	].join(' ');
 </script>
 
