@@ -20,6 +20,11 @@
 			placeholder="You can resize me in any direction"
 			resize={Resize.Both}
 		/>
-		<Textarea name="maxlength" label="Max Length" placeholder="I have a max char length of 20" />
+		<Textarea
+			name="maxlength"
+			label="Max Length"
+			placeholder="I have a max char length of 20"
+			maxlength={20}
+		/>
 	</div>
 </Story>
