@@ -1,18 +1,19 @@
 <script lang="ts">
 	import { Meta, Story } from '@storybook/addon-svelte-csf';
 
-	import { Tabs, TabList, TabPanel, Tab } from './index';
+	import { Tabs, TabList, TabPanel } from './index';
+
+	const tabsList = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
+
+	// NOTE: Small screen select and regular tabs will not appear synced in storybook pen
+	// Try viewing the story as a pop out ;)
 </script>
 
-<Meta title="Components: TabNav" />
+<Meta title="TabNav" />
 
 <Story name="TabNav">
 	<Tabs>
-		<TabList>
-			<Tab name="Agglungi con codice" />
-			<Tab name="Cerca libri da caricare" />
-			<Tab name="Crea nuovo libro" />
-		</TabList>
+		<TabList tabs={tabsList} />
 
 		<TabPanel>
 			<h2>Agglungi con codice panel</h2>
