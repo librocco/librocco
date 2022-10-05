@@ -1,21 +1,40 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
 	import { TABS } from './Tabs.svelte';
 
 	const tab = {};
 	const { registerTab, selectTab, selectedTab } = getContext(TABS);
 
+	export let name: string;
+
+	$: href = 'javascript:void(0)'; // `#${name.replace(' ', '-')}`;
+
 	registerTab(tab);
 
-	export let classes = '';
+	$: selected = $selectedTab === tab;
 
-	const baseClass = '';
-	const button = 'border-solid border-[1px] bg-none m-0 text-gray-500';
-	const selected = 'border-b-solid border-b-2 border-purple-500 text-gray-900';
+	$: linkTextClasses = selected ? 'text-gray-900' : 'text-gray-700 hover:text-gray-700';
+	$: linkClasses = [
+		linkTextClasses,
+		'group',
+		'relative',
+		'min-w-0',
+		'flex-1',
+		'overflow-hidden',
+		'bg-white',
+		'p-4',
+		'text-sm',
+		'font-mmedium',
+		'text-center',
+		'hover:bg-gray-50',
+		'focus:z-10'
+	].join(' ');
 
-	$: tabClass = [baseClass, $selectedTab === tab ? selected : button, classes].join(' ');
+	$: spanColourClasses = selected ? 'bg-teal-500' : 'bg-transparent';
+	$: spanClasses = [spanColourClasses, 'absolute', 'inset-x-0', 'bottom-0', 'h-0.5'].join(' ');
 </script>
 
-<button class={tabClass} on:click={() => selectTab(tab)}>
-	<slot />
-</button>
+<a {href} on:click={() => selectTab(tab)} class={linkClasses} aria-current="page">
+	<span>{name}</span>
+	<span aria-hidden="true" class={spanClasses} />
+</a>
