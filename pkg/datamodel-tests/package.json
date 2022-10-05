@@ -8,7 +8,8 @@
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test": "echo 'Running test runner unit tests' && vitest __tests__",
-		"run-tests": "vitest main.test.ts",
+		"test:implementations": "vitest main.test.ts",
+		"test:benchmark": "BENCHMARK=true vitest main.test.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
