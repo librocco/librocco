@@ -46,7 +46,11 @@
 		"vitest": "~0.21.1",
 		"storybook-addon-pseudo-states": "~1.9.0",
 		"svelte2tsx": "~0.5.13",
-		"chromatic": "~6.7.4"
+		"chromatic": "~6.7.4",
+		"@types/uuid": "~8.3.4"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+		"uuid": "~9.0.0"
+	}
 }
