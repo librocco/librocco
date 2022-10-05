@@ -6,13 +6,10 @@
 	import { setContext, onDestroy } from 'svelte';
 	import { writable, type Writable } from 'svelte/store';
 
-	export let tabsClasses = '';
 	const panels: {}[] = [];
 	const tabs: {}[] = [];
 	const selectedTab: Writable<{} | null> = writable(null);
 	const selectedPanel: Writable<{} | null> = writable(null);
-
-	$: joinedClasses = ['', tabsClasses].join(' ');
 
 	setContext(TABS, {
 		registerTab: (tab: {}) => {
@@ -52,6 +49,6 @@
 	});
 </script>
 
-<div class={joinedClasses}>
+<div>
 	<slot />
 </div>
