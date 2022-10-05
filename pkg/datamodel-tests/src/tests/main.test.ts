@@ -1,4 +1,5 @@
-import { describe } from 'vitest';
+import { afterAll, describe } from 'vitest';
+import { Bench } from 'tinybench';
 
 import { newTestRunner } from '@runner/runner';
 
@@ -14,11 +15,34 @@ describe('Datamodel tests', async () => {
 
 	Object.entries(implementations).forEach(([name, config]) => {
 		describe(name, () => {
-			const setup = runner.newModel(config);
+			const bench = new Bench();
+
+			const setup = runner.newModel(config, bench);
 
 			Object.entries(tests).forEach(([name, testFn]) => {
 				setup.test(name, testFn);
 			});
+
+			afterAll(() => {
+				printBenchmark(bench);
+			});
 		});
 	});
 });
+
+const formatBenchResult = (r?: number): string | number => {
+	if (!r) return 'N/A';
+	return Math.trunc(r * 1000) / 1000;
+};
+
+const printBenchmark = (bench: Bench) => {
+	console.table(
+		bench.tasks.map(({ name, result }) => {
+			return {
+				'Task Name': name,
+				'Average Time (s)': formatBenchResult(result?.mean),
+				'Variance (s)': formatBenchResult(result?.variance)
+			};
+		})
+	);
+};
