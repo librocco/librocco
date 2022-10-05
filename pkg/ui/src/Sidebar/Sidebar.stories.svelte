@@ -5,7 +5,7 @@
 
 	import Sidebar from './Sidebar.svelte';
 	import SidebarItem from './SidebarItem.svelte';
-	import SidebarFolder from './SidebarFolder.svelte';
+	import SidebarItemGroup from './SidebarItemGroup.svelte';
 
 	const voidLink = 'javascript:void(0)';
 
@@ -62,7 +62,7 @@
 			<h1 class="text-md bold">In Notes</h1>
 			<Sidebar>
 				{#each folders as folder, index}
-					<SidebarFolder {...folder} {index} />
+					<SidebarItemGroup {...folder} {index} />
 				{/each}
 			</Sidebar>
 		</div>
@@ -73,8 +73,8 @@
 	<div class="w-52 space-y-4">
 		<div class="space-y-2">
 			<h1 class="text-md bold">Default:</h1>
-			<SidebarFolder name="Warehouse 1" {items} expanded={false} index={1} />
-			<SidebarFolder name="Warehouse 1" {items} expanded index={2} />
+			<SidebarItemGroup name="Warehouse 1" {items} expanded={false} index={1} />
+			<SidebarItemGroup name="Warehouse 1" {items} expanded index={2} />
 		</div>
 	</div>
 </Story>
