@@ -33,6 +33,19 @@
 		'focus:outline',
 		'focus:outline-teal-500'
 	].join(' ');
+
+	$: iconExpandedClasses = expanded ? 'text-gray-400 rotate-90' : 'text-gray-300';
+	$: iconBaseClasses = [
+		iconExpandedClasses,
+		'h-5',
+		'w-5',
+		'mr-2',
+		'flex-shrink-0',
+		'transform',
+		'transform-all',
+		'duration-150',
+		'ease-in-out'
+	].join(' ');
 </script>
 
 <div class="group space-y-1">
@@ -43,9 +56,10 @@
 		aria-expanded={expanded}
 		on:click={() => (expanded = !expanded)}
 	>
-		<svg class="text-gray-300 mr-2 h-5 w-5 flex-shrink-0" viewBox="0 0 20 20" aria-hidden="true">
+		<svg class={iconBaseClasses} viewBox="0 0 20 20" aria-hidden="true">
 			<path d="M6 6L14 10L6 14V6Z" fill="currentColor" />
 		</svg>
+
 		{name}
 	</button>
 	{#if expanded}
