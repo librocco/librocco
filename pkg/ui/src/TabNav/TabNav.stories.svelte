@@ -9,9 +9,9 @@
 <Story name="TabNav">
 	<Tabs>
 		<TabList>
-			<Tab classes=" w-[33%] h-10 justify-center">Agglungi con codice</Tab>
-			<Tab classes="w-[33%] h-10 justify-center">Cerca libri da caricare</Tab>
-			<Tab classes="w-[33%] h-10 justify-center">Crea nuovo libro</Tab>
+			<Tab name="Agglungi con codice" />
+			<Tab name="Cerca libri da caricare" />
+			<Tab name="Crea nuovo libro" />
 		</TabList>
 
 		<TabPanel>
