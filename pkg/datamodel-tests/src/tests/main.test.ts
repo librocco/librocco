@@ -2,7 +2,7 @@ import { describe } from 'vitest';
 
 import { newTestRunner } from '@runner/runner';
 
-import * as testDataLoader from '@loaders/smoke-test-loader';
+import * as testDataLoader from '@loaders/couchdb-image-loader';
 
 import * as implementations from '@tests/implementations';
 import * as tests from '@tests/tests';
