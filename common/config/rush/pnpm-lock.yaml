@@ -107,6 +107,7 @@ importers:
       pouchdb: ~7.3.0
       pouchdb-adapter-memory: ~7.3.0
       prettier: ^2.6.2
+      tinybench: ~2.3.0
       typescript: ^4.7.4
       uuid: ~8.3.2
       vite: ^3.0.0
@@ -122,6 +123,7 @@ importers:
       pouchdb: 7.3.1
       pouchdb-adapter-memory: 7.3.1
       prettier: 2.8.3
+      tinybench: 2.3.1
       typescript: 4.9.4
       uuid: 8.3.2
       vite: 3.2.5_@types+node@18.7.23
