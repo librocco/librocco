@@ -1,6 +1,6 @@
 import { expect } from 'vitest';
 
-import { TestFunction, VolumeQuantityTuple } from './types';
+import { TestFunction, VolumeTransactionTuple } from './types';
 
 export const commit100Notes: TestFunction = async (db, getNotesAndWarehouses) => {
 	const { fullStock, notes } = getNotesAndWarehouses(100);
@@ -13,7 +13,10 @@ export const commit100Notes: TestFunction = async (db, getNotesAndWarehouses) =>
 				(note.type === 'inbound' ? w.createInNote() : w.createOutNote())
 					.then((n) =>
 						n.addVolumes(
-							...note.books.map(({ isbn, quantity }) => [isbn, quantity] as VolumeQuantityTuple)
+							...note.books.map(
+								({ isbn, quantity, warehouse }) =>
+									[isbn, quantity, warehouse] as VolumeTransactionTuple
+							)
 						)
 					)
 					.then((n) => n.commit())

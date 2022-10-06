@@ -19,6 +19,8 @@ import {
 	DatabaseInterface
 } from '@/types';
 
+import { sortBooks } from '@/utils/misc';
+
 // #region types
 interface RawData {
 	notes: RawNote[];
@@ -88,11 +90,11 @@ const transformNote: TransformNote = ({ id, type, books }) => ({
 	id,
 	// Transform from "in-note" to "inbound"
 	type: [type.split('-')[0], 'bound'].join('') as NoteType,
-	books: books.map(transformBookStock).sort(sortByISBN)
+	books: books.map(transformBookStock).sort(sortBooks)
 });
 const transformStock: TransformStock = (sn) => ({
 	id: 'all-warehouses',
-	books: sn.books.map(transformBookStock).sort(sortByISBN)
+	books: sn.books.map(transformBookStock).sort(sortBooks)
 });
 const mapWarehouses: MapWarehouses = (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
@@ -105,7 +107,7 @@ const mapWarehouses: MapWarehouses = (books) => {
 			...acc,
 			[wName]: {
 				...warehouse,
-				books: [...warehouse.books, entry].sort(sortByISBN)
+				books: [...warehouse.books, entry].sort(sortBooks)
 			}
 		};
 	}, {} as Record<string, TestStock>);
@@ -117,9 +119,9 @@ const mapWarehouses: MapWarehouses = (books) => {
 // #region helpers
 const getISBN = (b: RawBookStock): string =>
 	b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
-const transformBookStock = (b: RawBookStock): VolumeStock => ({
+const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string } => ({
 	isbn: getISBN(b),
-	quantity: b.quantity
+	quantity: b.quantity,
+	warehouse: b.warehouse
 });
-const sortByISBN = ({ isbn: i1 }: VolumeStock, { isbn: i2 }: VolumeStock) => (i1 < i2 ? -1 : 1);
 // #endregion helpers
