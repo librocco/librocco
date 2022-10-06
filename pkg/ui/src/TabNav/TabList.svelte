@@ -1,12 +1,18 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { TABS } from './Tabs.svelte';
+	import { getContext, onMount } from 'svelte';
 
+	import { TABS, type TabContext } from './TabContext.svelte';
 	import Tab from './Tab.svelte';
 
-	const { selectTab, selectedTab } = getContext(TABS);
-
 	export let tabs: string[];
+	export let initialTabIx = 0;
+
+	const { selectTab, registerTab, currentTab } = getContext<TabContext>(TABS);
+
+	onMount(() => {
+		tabs.forEach((tab) => registerTab(tab));
+		selectTab(tabs[initialTabIx]);
+	});
 
 	// TODO: label & aria
 
@@ -41,7 +47,7 @@
 	<label for="tabs" class="sr-only">Select a tab</label>
 	<select on:change={handleSelectOnChange} id="tabs" name="tabs" class={selectClasses}>
 		{#each tabs as tabName}
-			<Tab {tabName} selected={tabName === $selectedTab} />
+			<Tab {tabName} selected={tabName === $currentTab} />
 		{/each}
 	</select>
 </div>
@@ -49,7 +55,7 @@
 <div class="hidden sm:block">
 	<nav class={navClasses} aria-label="Tabs">
 		{#each tabs as tabName}
-			<Tab {tabName} selected={tabName === $selectedTab} on:click={() => selectTab(tabName)} />
+			<Tab {tabName} selected={tabName === $currentTab} on:click={() => selectTab(tabName)} />
 		{/each}
 	</nav>
 </div>
