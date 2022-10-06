@@ -96,7 +96,7 @@ export interface TestFunction {
 	(db: DatabaseInterface, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
 }
 
-export interface Test {
+export interface TestTask {
 	(name: string, fn: TestFunction): void;
 }
 
