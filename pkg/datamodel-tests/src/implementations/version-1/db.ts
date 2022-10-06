@@ -1,5 +1,5 @@
 import { DesignDocument } from '@/types';
-import { DatabaseInterface } from './types';
+import { DatabaseInterface, WarehouseInterface } from './types';
 
 import { newWarehouse } from './warehouse';
 
@@ -10,8 +10,8 @@ class Database implements DatabaseInterface {
 		this._pouch = db;
 	}
 
-	warehouse(name = 'default') {
-		return newWarehouse(this._pouch, name);
+	warehouse(name = 'default'): WarehouseInterface {
+		return newWarehouse(this, name);
 	}
 	updateDesignDoc(doc: DesignDocument) {
 		return this._pouch.put(doc);

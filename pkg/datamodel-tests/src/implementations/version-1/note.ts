@@ -1,4 +1,4 @@
-import { VolumeQuantityTuple } from '@/types';
+import { VolumeTransactionTuple } from '@/types';
 import { NoteInterface, WarehouseInterface, NoteData } from './types';
 
 export class Note implements NoteInterface {
@@ -26,29 +26,29 @@ export class Note implements NoteInterface {
 		// A check to see if the update function should be ran once or multiple times
 		const isTuple = (
 			params: Parameters<NoteInterface['addVolumes']>
-		): params is VolumeQuantityTuple => {
+		): params is VolumeTransactionTuple => {
 			return !Array.isArray(params[0]);
 		};
 
-		const updateQuantity = (isbn: string, quantity: number) => {
+		const updateQuantity = (isbn: string, quantity: number, warehouseName?: string) => {
 			if (this.books[isbn]) {
-				this.books[isbn] += quantity;
+				this.books[isbn].quantity += quantity;
 			} else {
-				this.books[isbn] = quantity;
+				this.books[isbn] = { quantity, warehouse: warehouseName || this.#w.name };
 			}
 		};
 
 		if (isTuple(params)) {
-			updateQuantity(...params);
+			updateQuantity(params[0], params[1], params[2]);
 		} else {
-			params.forEach((update) => updateQuantity(...update));
+			params.forEach((update) => updateQuantity(update[0], update[1], update[2]));
 		}
 
 		return this.#w.updateNote(this);
 	}
 
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface> {
-		this.books[isbn] = quantity;
+		this.books[isbn].quantity = quantity;
 		return this.#w.updateNote(this);
 	}
 
