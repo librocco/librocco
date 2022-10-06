@@ -4,7 +4,6 @@ import MemoryAdapter from 'pouchdb-adapter-memory';
 import { TestDataLoader, ImplementationSetup } from '@/types';
 
 import { newModel } from '@runner/test-setup';
-import Bench from 'tinybench';
 
 // Enable running of the tests against in-memory PouchDB
 PouchDB.plugin(MemoryAdapter);
@@ -15,6 +14,6 @@ export const newTestRunner = async (loader: TestDataLoader) => {
 	const data = { notes, snaps };
 
 	return {
-		newModel: (config: ImplementationSetup, bench: Bench) => newModel(data, config, bench)
+		newModel: (config: ImplementationSetup) => newModel(data, config)
 	};
 };
