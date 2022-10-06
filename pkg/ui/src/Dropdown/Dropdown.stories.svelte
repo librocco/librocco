@@ -21,31 +21,29 @@
 <Story name="Dropdown Items">
 	<StorybookGrid>
 		<StorybookItem>
-			<div class="absolute left-10">
+			<div class="absolute left-64">
 				<DropdownItem items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']} />
 			</div>
 		</StorybookItem>
 	</StorybookGrid>
 </Story>
 <Story name="Dropdown Compound Items">
-	<div>
-		<StorybookItem>
-			<div class="absolute left-10">
-				<DropdownItemCompound
-					items={[
-						{
-							label: 'Published',
-							description: 'This job posting can be viewed by anyone who has the link',
-							selected: false
-						},
-						{
-							label: 'Published',
-							description: 'This job posting can be viewed by anyone who has the link',
-							selected: true
-						}
-					]}
-				/>
-			</div>
-		</StorybookItem>
-	</div></Story
->
+	<StorybookItem>
+		<div class="absolute left-30">
+			<DropdownItemCompound
+				items={[
+					{
+						label: 'Published',
+						description: 'This job posting can be viewed by anyone who has the link',
+						selected: false
+					},
+					{
+						label: 'Published',
+						description: 'This job posting can be viewed by anyone who has the link',
+						selected: true
+					}
+				]}
+			/>
+		</div>
+	</StorybookItem>
+</Story>
