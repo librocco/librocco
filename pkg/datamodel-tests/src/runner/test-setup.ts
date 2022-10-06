@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { test as t } from 'vitest';
+import { test as t, bench as b } from 'vitest';
 import { randomUUID } from 'crypto';
 import PouchDB from 'pouchdb';
 
@@ -17,7 +17,6 @@ import {
 	ImplementationSetup,
 	VolumeStock
 } from '@/types';
-import Bench from 'tinybench';
 
 // #region types
 interface RawData {
@@ -28,7 +27,7 @@ interface RawData {
 // #endregion types
 
 // #region newModal
-export const newModel = (rawData: RawData, setup: ImplementationSetup, bench: Bench) => {
+export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
 	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
 		const notes = rawData.notes.slice(0, n).map(transformNote);
 
@@ -42,29 +41,45 @@ export const newModel = (rawData: RawData, setup: ImplementationSetup, bench: Be
 
 	const test: Test = (name, cb) => {
 		t(name, async () => {
-			bench.add(name, async () => {
-				// Get new db per test basis
-				const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
-				const db = setup.newDatabase(pouchInstance);
+			// Get new db per test basis
+			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
+			const db = setup.newDatabase(pouchInstance);
 
-				// Upload design documents if any
-				const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
-				if (ddUpdates?.length) {
-					await Promise.all(ddUpdates);
-				}
+			// Upload design documents if any
+			const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
+			if (ddUpdates?.length) {
+				await Promise.all(ddUpdates);
+			}
 
-				await cb(db, getNotesAndWarehouses);
+			await cb(db, getNotesAndWarehouses);
 
-				// Destroy the db after the test
-				db.destroy();
-			});
+			// Destroy the db after the test
+			db.destroy();
+		});
+	};
 
-			await bench.run();
+	const bench: Test = (name, cb) => {
+		b(name, async () => {
+			// Get new db per test basis
+			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
+			const db = setup.newDatabase(pouchInstance);
+
+			// Upload design documents if any
+			const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
+			if (ddUpdates?.length) {
+				await Promise.all(ddUpdates);
+			}
+
+			await cb(db, getNotesAndWarehouses);
+
+			// Destroy the db after the test
+			db.destroy();
 		});
 	};
 
 	return {
-		test
+		test,
+		bench
 	};
 };
 // #endregion newModal
