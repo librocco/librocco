@@ -2,7 +2,7 @@ import { expect } from 'vitest';
 
 import { TestFunction, DesignDocument, CouchDocument } from '@/types';
 
-import { addBooksToNote, commitNote, deleteNotes, explicitlySetVolumeStock } from '@/tests/tests';
+import { addBooksToNote, commitNote, deleteNotes, explicitlySetVolumeStock } from '@/tests';
 
 // A smoke test for uploading the design documents
 const uploadDesignDocuments: TestFunction = async (db) => {

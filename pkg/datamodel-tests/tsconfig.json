@@ -4,7 +4,6 @@
 		"paths": {
 			"@/*": ["src/*"],
 			"@runner/*": ["src/runner/*"],
-			"@tests/*": ["src/tests/*"],
 			"@loaders/*": ["src/data-loaders/*"],
 			"@unit-tests/*": ["src/__tests__/*"],
 			"@unit-test-data/*": ["src/__testData__/*"]

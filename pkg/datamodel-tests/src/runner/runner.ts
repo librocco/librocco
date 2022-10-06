@@ -14,6 +14,6 @@ export const newTestRunner = async (loader: TestDataLoader) => {
 	const data = { notes, snaps };
 
 	return {
-		newModel: (config: ImplementationSetup) => newModel(data, config)
+		setup: (config: ImplementationSetup) => newModel(data, config)
 	};
 };
