@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Meta, Story } from '@storybook/addon-svelte-csf';
 
-	import { Tabs, TabList, TabPanel } from './index';
+	import { TabContext, TabList, TabPanel } from './index';
 
 	const tabsList = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
 
@@ -12,19 +12,19 @@
 <Meta title="TabNav" />
 
 <Story name="TabNav">
-	<Tabs>
+	<TabContext>
 		<TabList tabs={tabsList} />
 
-		<TabPanel>
+		<TabPanel tabIx={0}>
 			<h2>Agglungi con codice panel</h2>
 		</TabPanel>
 
-		<TabPanel>
+		<TabPanel tabIx={1}>
 			<h2>Cerca libri da caricare panel</h2>
 		</TabPanel>
 
-		<TabPanel>
+		<TabPanel tabIx={2}>
 			<h2>Crea nuovo libro</h2>
 		</TabPanel>
-	</Tabs>
+	</TabContext>
 </Story>
