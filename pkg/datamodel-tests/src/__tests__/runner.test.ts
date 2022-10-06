@@ -4,7 +4,7 @@ import { newTestRunner } from '@runner/runner';
 
 import * as testDataLoader from '@loaders/smoke-test-loader';
 
-import * as datamodels from '@/tests/implementations';
+import * as datamodels from '@/implementations';
 import tests from './tests';
 
 describe('Datamodel tests', async () => {
@@ -14,7 +14,7 @@ describe('Datamodel tests', async () => {
 
 	Object.entries(datamodels).forEach(([name, config]) => {
 		describe(name, () => {
-			const setup = runner.newModel(config);
+			const setup = runner.setup(config);
 
 			Object.entries(tests).forEach(([name, testFn]) => {
 				setup.test(name, testFn);
