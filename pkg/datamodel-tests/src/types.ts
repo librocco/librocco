@@ -66,7 +66,7 @@ export interface TestDataLoader {
 interface TestNote {
 	id: string;
 	type: NoteType;
-	books: VolumeStock[];
+	books: (VolumeStock & { warehouse: string })[];
 }
 export interface TransformNote {
 	(note: RawNote): TestNote;
@@ -112,11 +112,14 @@ export type NoteType = 'inbound' | 'outbound';
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
+	warehouse: string;
 }
-export type VolumeQuantityTuple = [string, number];
+export type VolumeTransactionTuple = [string, number, string] | [string, number];
 
 export interface NoteProto<A extends Record<string, any> = Record<string, any>> {
-	addVolumes(...params: VolumeQuantityTuple | VolumeQuantityTuple[]): Promise<NoteInterface<A>>;
+	addVolumes(
+		...params: VolumeTransactionTuple | VolumeTransactionTuple[]
+	): Promise<NoteInterface<A>>;
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface<A>>;
 	delete(): Promise<void>;
 	commit(): Promise<NoteInterface<A>>;
