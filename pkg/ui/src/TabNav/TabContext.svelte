@@ -10,8 +10,8 @@
 	export interface TabContext {
 		tabs: Tabs;
 		currentTab: CurrentTab;
-		registerTab: (tabId: string) => void;
-		selectTab: (tabId: string) => void;
+		registerTab: (tabName: string) => void;
+		selectTab: (tabName: string) => void;
 	}
 </script>
 
@@ -22,8 +22,8 @@
 	const tabs: Tabs = writable([]);
 	const currentTab: CurrentTab = writable('');
 
-	const registerTab = (tabId: string) => tabs.update((tabs) => [...tabs, tabId]);
-	const selectTab = (tabId: string) => currentTab.set(tabId);
+	const registerTab = (tabName: string) => tabs.update((tabs) => [...tabs, tabName]);
+	const selectTab = (tabName: string) => currentTab.set(tabName);
 
 	setContext<TabContext>(TABS, {
 		tabs,

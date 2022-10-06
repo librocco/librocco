@@ -3,7 +3,7 @@
 
 	import { TabContext, TabList, TabPanel } from './index';
 
-	const tabsList = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
+	const tabNames = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
 </script>
 
 <Meta title="TabNav" />
@@ -15,7 +15,7 @@
 			It's better to view this story in the popout canvas (top right) before clicking any tabs.`}
 		</p>
 		<TabContext>
-			<TabList tabs={tabsList} />
+			<TabList {tabNames} />
 
 			<TabPanel tabIx={0}>
 				<div class="w-full border pt-2 px-6">

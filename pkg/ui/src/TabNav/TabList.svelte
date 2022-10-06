@@ -4,15 +4,15 @@
 	import { TABS, type TabContext } from './TabContext.svelte';
 	import Tab from './Tab.svelte';
 
-	export let tabs: string[];
+	export let tabNames: string[];
 	export let initialTabIx = 0;
 	export let ariaLabel = 'Select a tab';
 
 	const { selectTab, registerTab, currentTab } = getContext<TabContext>(TABS);
 
 	onMount(() => {
-		tabs.forEach((tab) => registerTab(tab));
-		selectTab(tabs[initialTabIx]);
+		tabNames.forEach((tab) => registerTab(tab));
+		selectTab(tabNames[initialTabIx]);
 	});
 
 	const handleSelectOnChange = (e: Event) => {
@@ -45,7 +45,7 @@
 <div class="sm:hidden">
 	<label for="tabs" class="sr-only">{ariaLabel}</label>
 	<select on:change={handleSelectOnChange} id="tabs" name="tabs" class={selectClasses}>
-		{#each tabs as tabName}
+		{#each tabNames as tabName}
 			<Tab {tabName} selected={tabName === $currentTab} />
 		{/each}
 	</select>
@@ -54,7 +54,7 @@
 <div class="hidden sm:block">
 	<span id="tabs" class="sr-only">{ariaLabel}</span>
 	<nav class={navClasses} aria-labelledby="tabs">
-		{#each tabs as tabName}
+		{#each tabNames as tabName}
 			<Tab {tabName} selected={tabName === $currentTab} on:click={() => selectTab(tabName)} />
 		{/each}
 	</nav>
