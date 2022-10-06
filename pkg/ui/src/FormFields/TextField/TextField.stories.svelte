@@ -5,16 +5,21 @@
 	import TextField from './TextField.svelte';
 </script>
 
-<Meta title="Text Field component" />
+<Meta title="Form Fields / Text Field" />
 
 <Story name="Default">
-	<TextField label="Default" helpText="Insert your input" />
+	<TextField name="default" label="Default" helpText="Insert your input" />
 </Story>
 <Story name="Default with placeholder">
-	<TextField label="Default with placeholder" placeholder="placeholder" />
+	<TextField
+		name="default-placeholder"
+		label="Default with placeholder"
+		placeholder="placeholder"
+	/>
 </Story>
 <Story name="Start Adornment, with the mail icon and email placeholder">
 	<TextField
+		name="start-adornment"
 		placeholder="placeholderemail@gmail.com"
 		label="Start Adornment, with the mail icon and email placeholder"
 	>
@@ -27,6 +32,7 @@
 </Story>
 <Story name="Start & End, with the dollar sign and USD">
 	<TextField
+		name="start-end-adornment"
 		placeholder="placeholderemail@gmail.com"
 		label="Start & End, with the dollar sign and USD"
 	>
