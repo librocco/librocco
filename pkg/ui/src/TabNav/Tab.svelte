@@ -1,13 +1,6 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { TABS } from './Tabs.svelte';
-
-	const { registerTab } = getContext(TABS);
-
 	export let tabName: string;
 	export let selected: boolean;
-
-	registerTab(tabName);
 
 	// TODO: Handle this
 	$: href = 'javascript:void(0)'; // `#${name.replace(' ', '-')}`;

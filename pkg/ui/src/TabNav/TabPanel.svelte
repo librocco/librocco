@@ -1,13 +1,14 @@
-<script>
+<script lang="ts">
 	import { getContext } from 'svelte';
-	import { TABS } from './Tabs.svelte';
+	import { TABS, type TabContext } from './TabContext.svelte';
 
-	const panel = {};
-	const { registerPanel, selectedPanel } = getContext(TABS);
+	export let tabIx: number;
 
-	registerPanel(panel);
+	const { tabs, currentTab } = getContext<TabContext>(TABS);
+
+	$: tabId = $tabs[tabIx];
 </script>
 
-{#if $selectedPanel === panel}
+{#if $currentTab === tabId}
 	<slot />
 {/if}
