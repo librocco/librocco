@@ -1,5 +1,7 @@
 import { describe } from 'vitest';
 
+import { Test } from '@/types';
+
 import { newTestRunner } from '@runner/runner';
 
 import * as testDataLoader from '@loaders/couchdb-image-loader';
@@ -12,12 +14,14 @@ describe('Datamodel tests', async () => {
 	// but will switch it up with loader reading data from fs or an image
 	const runner = await newTestRunner(testDataLoader);
 
-	Object.entries(implementations).forEach(([name, config]) => {
-		describe(name, () => {
-			const setup = runner.newModel(config);
+	const setups = Object.entries(implementations).map(
+		([name, config]) => [name, runner.newModel(config)] as [string, { test: Test; bench: Test }]
+	);
 
-			Object.entries(tests).forEach(([name, testFn]) => {
-				setup.test(name, testFn);
+	Object.entries(tests).forEach(([name, testFn]) => {
+		describe(name, () => {
+			setups.forEach(([implementation, setup]) => {
+				setup.bench(implementation, testFn);
 			});
 		});
 	});
