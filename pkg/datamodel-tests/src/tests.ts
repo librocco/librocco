@@ -110,34 +110,10 @@ export const commitNote: TestFunction = async (db, getNotesAndWarehouses) => {
 	expect(wStock).toEqual(stock2.books);
 };
 
-export const test20Notes: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { fullStock, notes } = getNotesAndWarehouses(20);
-
-	const w = db.warehouse();
-
-	const noteUpdates = notes.map(
-		(note) =>
-			new Promise<void>((resolve, reject) => {
-				(note.type === 'inbound' ? w.createInNote() : w.createOutNote())
-					.then((n) =>
-						n.addVolumes(
-							...note.books.map(({ isbn, quantity }) => [isbn, quantity] as VolumeQuantityTuple)
-						)
-					)
-					.then((n) => n.commit())
-					.then(() => resolve())
-					.catch((err) => reject(err));
-			})
-	);
-	await Promise.all(noteUpdates);
-
-	const stock = await w.getStock();
-
-	expect(stock).toEqual(fullStock.books);
-};
-
-export const test40Notes: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { fullStock, notes } = getNotesAndWarehouses(60);
+// This test is here to test commiting of multiple notes received from test data
+// we test the commiting of larger number of notes in benchmark tests
+export const test5Notes: TestFunction = async (db, getNotesAndWarehouses) => {
+	const { fullStock, notes } = getNotesAndWarehouses(5);
 
 	const w = db.warehouse();
 
