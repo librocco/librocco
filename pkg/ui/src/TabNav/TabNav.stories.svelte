@@ -4,27 +4,39 @@
 	import { TabContext, TabList, TabPanel } from './index';
 
 	const tabsList = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
-
-	// NOTE: Small screen select and regular tabs will not appear synced in storybook pen
-	// Try viewing the story as a pop out ;)
 </script>
 
 <Meta title="TabNav" />
 
 <Story name="TabNav">
-	<TabContext>
-		<TabList tabs={tabsList} />
+	<div>
+		<p class="text-sm mb-4">
+			{`Note: Each tab behaves as a <a> with href=#tabName. 
+			It's better to view this story in the popout canvas (top right) before clicking any tabs.`}
+		</p>
+		<TabContext>
+			<TabList tabs={tabsList} />
 
-		<TabPanel tabIx={0}>
-			<h2>Agglungi con codice panel</h2>
-		</TabPanel>
+			<TabPanel tabIx={0}>
+				<div class="w-full border pt-2 px-6">
+					<h2 class="font-bold text-md">Panel 1</h2>
+					<p>Agglungi con codice content</p>
+				</div>
+			</TabPanel>
 
-		<TabPanel tabIx={1}>
-			<h2>Cerca libri da caricare panel</h2>
-		</TabPanel>
+			<TabPanel tabIx={1}>
+				<div class="w-full border pt-2 px-6">
+					<h2 class="font-bold text-md">Panel 2</h2>
+					<p>Cerca libri da caricare content</p>
+				</div>
+			</TabPanel>
 
-		<TabPanel tabIx={2}>
-			<h2>Crea nuovo libro</h2>
-		</TabPanel>
-	</TabContext>
+			<TabPanel tabIx={2}>
+				<div class="w-full border pt-2 px-6">
+					<h2 class="font-bold text-md">Panel 3</h2>
+					<p>Crea nuovo libro content</p>
+				</div>
+			</TabPanel>
+		</TabContext>
+	</div>
 </Story>

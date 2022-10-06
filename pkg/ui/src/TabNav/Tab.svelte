@@ -2,8 +2,7 @@
 	export let tabName: string;
 	export let selected: boolean;
 
-	// TODO: Handle this
-	$: href = 'javascript:void(0)'; // `#${name.replace(' ', '-')}`;
+	$: href = `#${tabName}`;
 
 	$: linkTextClasses = selected ? 'text-gray-900' : 'text-gray-700 hover:text-gray-700';
 	$: linkClasses = [
@@ -30,7 +29,7 @@
 
 <option class="sm:hidden" {selected}>{tabName}</option>
 
-<a {href} on:click class={linkClasses} aria-current="page">
+<a {href} on:click class={linkClasses} aria-current={selected ? 'page' : 'false'}>
 	<span>{tabName}</span>
 	<span aria-hidden="true" class={spanClasses} />
 </a>

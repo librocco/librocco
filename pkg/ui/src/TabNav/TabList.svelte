@@ -6,6 +6,7 @@
 
 	export let tabs: string[];
 	export let initialTabIx = 0;
+	export let ariaLabel = 'Select a tab';
 
 	const { selectTab, registerTab, currentTab } = getContext<TabContext>(TABS);
 
@@ -13,8 +14,6 @@
 		tabs.forEach((tab) => registerTab(tab));
 		selectTab(tabs[initialTabIx]);
 	});
-
-	// TODO: label & aria
 
 	const handleSelectOnChange = (e: Event) => {
 		const target = e.target as HTMLSelectElement;
@@ -44,7 +43,7 @@
 
 <!-- Small screens = Select > Option (Tab.svelte) -->
 <div class="sm:hidden">
-	<label for="tabs" class="sr-only">Select a tab</label>
+	<label for="tabs" class="sr-only">{ariaLabel}</label>
 	<select on:change={handleSelectOnChange} id="tabs" name="tabs" class={selectClasses}>
 		{#each tabs as tabName}
 			<Tab {tabName} selected={tabName === $currentTab} />
@@ -53,7 +52,8 @@
 </div>
 <!-- Med screens+ = Nav > A (Tab.svelte)  -->
 <div class="hidden sm:block">
-	<nav class={navClasses} aria-label="Tabs">
+	<span id="tabs" class="sr-only">{ariaLabel}</span>
+	<nav class={navClasses} aria-labelledby="tabs">
 		{#each tabs as tabName}
 			<Tab {tabName} selected={tabName === $currentTab} on:click={() => selectTab(tabName)} />
 		{/each}
