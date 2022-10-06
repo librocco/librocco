@@ -8,8 +8,8 @@
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test": "echo 'Running test runner unit tests' && vitest __tests__",
-		"test:implementations": "vitest main.test.ts",
-		"test:benchmark": "vitest bench main.bench.ts",
+		"test:implementations": "docker compose up -d && vitest main.test.ts",
+		"test:benchmark": "docker compose up -d && vitest bench main.bench.ts",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
