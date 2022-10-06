@@ -1,7 +1,8 @@
+/* eslint-disable no-case-declarations */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'vitest';
 
-import { TestFunction, VolumeQuantityTuple } from '@/types';
+import { TestFunction, VolumeTransactionTuple } from '@/types';
 
 // Base functionality
 export const deleteNotes: TestFunction = async (db) => {
@@ -26,11 +27,11 @@ export const explicitlySetVolumeStock: TestFunction = async (db) => {
 	await note1.addVolumes('0001112222', 5);
 
 	let noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.books['0001112222']).toEqual(5);
+	expect(noteFromDB.books['0001112222'].quantity).toEqual(5);
 
 	await note1.setVolumeQuantity('0001112222', 2);
 	noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.books['0001112222']).toEqual(2);
+	expect(noteFromDB.books['0001112222'].quantity).toEqual(2);
 };
 
 export const getFullStock: TestFunction = async (db) => {
@@ -49,25 +50,29 @@ export const getFullStock: TestFunction = async (db) => {
 	const horsesStock = await horses.getStock();
 	const fullStock = await db.warehouse().getStock();
 
-	expect(scienceStock).toEqual([{ isbn: '0123456789', quantity: 5 }]);
-	expect(horsesStock).toEqual([{ isbn: '0123456789', quantity: 2 }]);
-	expect(fullStock).toEqual([{ isbn: '0123456789', quantity: 7 }]);
+	expect(scienceStock).toEqual([{ isbn: '0123456789', quantity: 5, warehouse: 'science' }]);
+	expect(horsesStock).toEqual([{ isbn: '0123456789', quantity: 2, warehouse: 'horses' }]);
+	expect(fullStock).toEqual([
+		{ isbn: '0123456789', quantity: 2, warehouse: 'horses' },
+		{ isbn: '0123456789', quantity: 5, warehouse: 'science' }
+	]);
 };
 
 // Tests using the extensive test data
-export const addBooksToNote: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { notes, fullStock } = getNotesAndWarehouses(1);
+export const addBooksToNote: TestFunction = async (db, getTestData) => {
+	const { notes, fullStock } = getTestData(1);
 	const [noteData] = notes;
 	const { books } = noteData;
 
-	const w = db.warehouse('test-warehouse');
+	const w = db.warehouse();
 
 	const note = await w.createInNote();
 
-	const volumeQuantityTuples = books.map(({ isbn, quantity }) => [
+	const volumeQuantityTuples = books.map(({ isbn, quantity, warehouse }) => [
 		isbn,
-		quantity
-	]) as VolumeQuantityTuple[];
+		quantity,
+		warehouse
+	]) as VolumeTransactionTuple[];
 
 	await note.addVolumes(...volumeQuantityTuples);
 	await note.commit();
@@ -77,18 +82,18 @@ export const addBooksToNote: TestFunction = async (db, getNotesAndWarehouses) =>
 	expect(wStock).toEqual(fullStock.books);
 };
 
-export const commitNote: TestFunction = async (db, getNotesAndWarehouses) => {
+export const commitNote: TestFunction = async (db, getTestData) => {
 	// Stock after 1st note has been commited
-	const { fullStock: stock1 } = getNotesAndWarehouses(1);
+	const { fullStock: stock1 } = getTestData(1);
 
 	// Stock after 2nd note has been commited
-	const { notes, fullStock: stock2 } = getNotesAndWarehouses(2);
+	const { notes, fullStock: stock2 } = getTestData(2);
 
 	const [vqTuple1, vqTuple2] = notes.map(({ books }) =>
-		books.map(({ isbn, quantity }) => [isbn, quantity])
-	) as VolumeQuantityTuple[][];
+		books.map(({ isbn, quantity, warehouse }) => [isbn, quantity, warehouse])
+	) as VolumeTransactionTuple[][];
 
-	const warehouse = db.warehouse('test-warehouse');
+	const warehouse = db.warehouse();
 	const note1 = await warehouse.createInNote();
 	await note1.addVolumes(...vqTuple1);
 
@@ -112,28 +117,39 @@ export const commitNote: TestFunction = async (db, getNotesAndWarehouses) => {
 
 // This test is here to test commiting of multiple notes received from test data
 // we test the commiting of larger number of notes in benchmark tests
-export const test5Notes: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { fullStock, notes } = getNotesAndWarehouses(5);
+export const test5Notes: TestFunction = async (db, getTestData) => {
+	const { fullStock, notes, warehouses } = getTestData(5);
 
 	const w = db.warehouse();
 
 	const noteUpdates = notes.map(
 		(note) =>
-			new Promise<void>((resolve, reject) => {
+			new Promise<void>((resolve, reject) =>
 				(note.type === 'inbound' ? w.createInNote() : w.createOutNote())
 					.then((n) =>
 						n.addVolumes(
-							...note.books.map(({ isbn, quantity }) => [isbn, quantity] as VolumeQuantityTuple)
+							...note.books.map(
+								({ isbn, quantity, warehouse }) =>
+									[isbn, quantity, warehouse] as VolumeTransactionTuple
+							)
 						)
 					)
 					.then((n) => n.commit())
 					.then(() => resolve())
-					.catch((err) => reject(err));
-			})
+					.catch((err) => reject(err))
+			)
 	);
 	await Promise.all(noteUpdates);
 
 	const stock = await w.getStock();
 
 	expect(stock).toEqual(fullStock.books);
+
+	const warehouseAssertions = warehouses.map(async (warehouse) => {
+		const w = db.warehouse(warehouse.id);
+
+		const wStock = await w.getStock();
+		expect(wStock).toEqual(warehouse.books);
+	});
+	await Promise.all(warehouseAssertions);
 };

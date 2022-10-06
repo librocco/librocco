@@ -1,20 +1,20 @@
 import { randomUUID } from 'crypto';
 
 import { VolumeStock, WarehouseData } from '@/types';
-import { NoteData, NoteInterface, WarehouseInterface } from './types';
+import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface } from './types';
 
 import { newNote } from './note';
 
-type Database = PouchDB.Database;
+import { sortBooks } from '@/utils/misc';
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
 	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
-	#db: Database;
+	#db: DatabaseInterface;
 
 	name;
 
-	constructor(db: Database, data: WarehouseData) {
+	constructor(db: DatabaseInterface, data: WarehouseData) {
 		this.name = data.name;
 		this.#db = db;
 	}
@@ -24,7 +24,7 @@ class Warehouse implements WarehouseInterface {
 			type: 'inbound',
 			_id: [this.name, 'inbound', randomUUID()].join('/')
 		});
-		await this.#db.put(n);
+		await this.#db._pouch.put(n);
 		return n;
 	}
 
@@ -33,7 +33,7 @@ class Warehouse implements WarehouseInterface {
 			type: 'outbound',
 			_id: [this.name, 'outbound', randomUUID()].join('/')
 		});
-		this.#db.put(n);
+		this.#db._pouch.put(n);
 		return n;
 	}
 
@@ -42,13 +42,13 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async getNote(noteId: string): Promise<NoteInterface> {
-		const noteData = (await this.#db.get(noteId)) as NoteData;
+		const noteData = (await this.#db._pouch.get(noteId)) as NoteData;
 		return newNote(this, noteData);
 	}
 
 	deleteNote(note: NoteInterface) {
 		return new Promise<void>((resolve, reject) => {
-			this.#db.remove(note, {}, (err) => {
+			this.#db._pouch.remove(note, {}, (err) => {
 				if (err) {
 					return reject(err);
 				}
@@ -58,7 +58,7 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async updateNote(note: NoteInterface) {
-		await this.#db.put(note);
+		await this.#db._pouch.put(note);
 		return note;
 	}
 
@@ -67,20 +67,20 @@ class Warehouse implements WarehouseInterface {
 	}
 }
 
-export const newWarehouse = (db: Database, name: string): WarehouseInterface => {
+export const newWarehouse = (db: DatabaseInterface, name: string): WarehouseInterface => {
 	return new Warehouse(db, { name });
 };
 
 const getNotesForWarehouse = async (
-	db: Database,
+	db: DatabaseInterface,
 	w: WarehouseInterface
 ): Promise<NoteInterface[]> => {
 	const query =
 		w.name === 'default'
-			? db.allDocs({
+			? db._pouch.allDocs({
 					include_docs: true
 			  })
-			: db.allDocs({
+			: db._pouch.allDocs({
 					startkey: `${w.name}/`,
 					// All notes are prepended with warehouse name, like so "science/note-1"
 					// This way we're reading from the first "science/" until (excluding) "science0"
@@ -92,26 +92,37 @@ const getNotesForWarehouse = async (
 	return res.rows.map(({ doc }) => newNote(w, doc as NoteData));
 };
 
-const getStockForWarehouse = async (db: Database, w: WarehouseInterface) => {
-	const notes = await getNotesForWarehouse(db, w);
-	const stockObj: Record<string, number> = {};
-	notes.forEach(({ committed, books, type }) => {
+const getStockForWarehouse = async (db: DatabaseInterface, warehouse: WarehouseInterface) => {
+	const allNotes = await getNotesForWarehouse(db, db.warehouse());
+	const stockObj: Record<string, Record<string, number>> = {};
+	allNotes.forEach(({ committed, books, type }) => {
 		if (!committed) return;
-		Object.entries(books).forEach(([isbn, q]) => {
+		Object.entries(books).forEach(([isbn, { quantity: q, warehouse: w }]) => {
+			// Don't account for the volume entry if it doesn't belong to this warehouse
+			// unless we're getting the full stock (default warehouse)
+			if (warehouse.name !== 'default' && w != warehouse.name) return;
 			// We're using a volume quatity as a change to final quantity
 			// increment for inbound notes, decrement for outbound
 			const delta = type === 'outbound' ? -q : q;
 			if (!stockObj[isbn]) {
-				stockObj[isbn] = delta;
+				stockObj[isbn] = { [w]: delta };
 				return;
 			}
-			stockObj[isbn] += delta;
+			if (!stockObj[isbn][w]) {
+				stockObj[isbn][w] = delta;
+				return;
+			}
+			stockObj[isbn][w] += delta;
 		});
 	});
 	return Object.entries(stockObj)
-		.map(([isbn, quantity]) => ({
-			isbn,
-			quantity
-		}))
-		.sort((a, b) => (a.isbn < b.isbn ? -1 : 1));
+		.reduce((acc, [isbn, quantitiesPerWarehouse]) => {
+			const allISBNCopies = Object.entries(quantitiesPerWarehouse).map(([warehouse, quantity]) => ({
+				isbn,
+				quantity,
+				warehouse
+			}));
+			return [...acc, ...allISBNCopies];
+		}, [] as { isbn: string; quantity: number; warehouse: string }[])
+		.sort(sortBooks);
 };
