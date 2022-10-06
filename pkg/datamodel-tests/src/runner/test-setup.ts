@@ -7,7 +7,7 @@ import {
 	RawSnap,
 	RawNote,
 	GetNotesAndWarehouses,
-	Test,
+	TestTask,
 	TestStock,
 	TransformNote,
 	TransformStock,
@@ -15,7 +15,8 @@ import {
 	NoteType,
 	MapWarehouses,
 	ImplementationSetup,
-	VolumeStock
+	VolumeStock,
+	DatabaseInterface
 } from '@/types';
 
 // #region types
@@ -27,7 +28,7 @@ interface RawData {
 // #endregion types
 
 // #region newModal
-export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
+export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
 		const notes = rawData.notes.slice(0, n).map(transformNote);
 
@@ -39,41 +40,35 @@ export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
 		return { notes, fullStock, warehouses };
 	};
 
-	const test: Test = (name, cb) => {
+	const taskSetup = async (): Promise<DatabaseInterface> => {
+		// Get new db per test basis
+		const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
+		const db = config.newDatabase(pouchInstance);
+
+		// Upload design documents if any
+		const ddUpdates = config.designDocuments?.map((dd) => db.updateDesignDoc(dd));
+		if (ddUpdates?.length) {
+			await Promise.all(ddUpdates);
+		}
+
+		return db;
+	};
+
+	const taskTeardown = (db: DatabaseInterface) => db.destroy();
+
+	const test: TestTask = (name, cb) => {
 		t(name, async () => {
-			// Get new db per test basis
-			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
-			const db = setup.newDatabase(pouchInstance);
-
-			// Upload design documents if any
-			const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
-			if (ddUpdates?.length) {
-				await Promise.all(ddUpdates);
-			}
-
+			const db = await taskSetup();
 			await cb(db, getNotesAndWarehouses);
-
-			// Destroy the db after the test
-			db.destroy();
+			taskTeardown(db);
 		});
 	};
 
-	const bench: Test = (name, cb) => {
+	const bench: TestTask = (name, cb) => {
 		b(name, async () => {
-			// Get new db per test basis
-			const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
-			const db = setup.newDatabase(pouchInstance);
-
-			// Upload design documents if any
-			const ddUpdates = setup.designDocuments?.map((dd) => db.updateDesignDoc(dd));
-			if (ddUpdates?.length) {
-				await Promise.all(ddUpdates);
-			}
-
+			const db = await taskSetup();
 			await cb(db, getNotesAndWarehouses);
-
-			// Destroy the db after the test
-			db.destroy();
+			taskTeardown(db);
 		});
 	};
 
@@ -84,6 +79,10 @@ export const newModel = (rawData: RawData, setup: ImplementationSetup) => {
 };
 // #endregion newModal
 
+/**
+ * @TODO these should be hard coded in the data (already transformed)
+ * when we agree on the input data
+ */
 // #region test_data_transformers
 const transformNote: TransformNote = ({ id, type, books }) => ({
 	id,
