@@ -7,3 +7,4 @@ export { default as ArrowCircleLeft } from './ArrowCircleLeft.svelte';
 export { default as Mail } from './Mail.svelte';
 export { default as Plus } from './Plus.svelte';
 export { default as DropdownIcon } from './DropdownIcon.svelte';
+export { default as Check } from './Check.svelte';
