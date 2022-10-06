@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  test-data:
+    image: ghcr.io/librocco/datamodel-testdata
+    container_name: librocco-testdata
+    ports:
+      - 5000:5984
+  
+  couch:
+    image: couchdb
+    container_name: librocco-testcouch
+    ports: 
+      - 5001:5984
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=admin
