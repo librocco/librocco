@@ -27,11 +27,11 @@ export const explicitlySetVolumeStock: TestFunction = async (db) => {
 	await note1.addVolumes('0001112222', 5);
 
 	let noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.books['0001112222'].quantity).toEqual(5);
+	expect(noteFromDB.getVolume('0001112222')[0].quantity).toEqual(5);
 
 	await note1.setVolumeQuantity('0001112222', 2);
 	noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.books['0001112222'].quantity).toEqual(2);
+	expect(noteFromDB.getVolume('0001112222')[0].quantity).toEqual(2);
 };
 
 export const getFullStock: TestFunction = async (db) => {
