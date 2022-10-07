@@ -6,14 +6,16 @@ import {
 	DatabaseInterface as DI
 } from '@/types';
 
-interface NoteVolume {
-	quantity: number;
-	warehouse: string;
-}
+type QuantityPerWarehouse = {
+	[warehouse: string]: number;
+};
+export type VolumesByISBN = {
+	[isbn: string]: QuantityPerWarehouse;
+};
 
 export type AdditionalData = {
 	_rev: string;
-	books: Record<string, NoteVolume>;
+	books: VolumesByISBN;
 	committed: boolean;
 };
 export type NoteInterface = NI<AdditionalData>;

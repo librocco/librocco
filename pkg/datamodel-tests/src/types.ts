@@ -123,6 +123,8 @@ export interface NoteProto<A extends Record<string, any> = Record<string, any>> 
 	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface<A>>;
 	delete(): Promise<void>;
 	commit(): Promise<NoteInterface<A>>;
+	getVolume(isbn: string): VolumeStock[];
+	getVolumes(): VolumeStock[];
 }
 export type NoteData<A extends Record<string, any> = Record<string, any>> = {
 	_id: string;
