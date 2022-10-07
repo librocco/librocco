@@ -5,8 +5,7 @@
 			"@/*": ["src/*"],
 			"@runner/*": ["src/runner/*"],
 			"@loaders/*": ["src/data-loaders/*"],
-			"@unit-tests/*": ["src/__tests__/*"],
-			"@unit-test-data/*": ["src/__testData__/*"]
+			"@unit-test-data/*": ["src/runner/__testData__/*"]
 		},
 		"rootDir": "src",
 		"baseUrl": ".",
