@@ -9,7 +9,7 @@ declare global {
 	 * map function is ran, and when we write it, it gets serialized to
 	 * string, so we're declaring this to keep TS quiet.
 	 */
-	function emit(k: string, v?: any): void;
+	function emit(k: string | number | Array<string | number>, v?: any): void;
 }
 
 export {};
