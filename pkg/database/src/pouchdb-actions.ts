@@ -38,7 +38,7 @@ const addBook = (database: PouchDB.Database) => async (id: Note['_id'], newBook:
 	return database.put({ ...note, books });
 };
 const listBooks = (database: PouchDB.Database) => async (id: Note['_id']) => {
-	const { books } = await database.get<{ books: unknown }>(id);
+	const { books } = await database.get<{ books: unknown[] }>(id);
 	return books;
 };
 const removeBook = (database: PouchDB.Database) => async (id: Note['_id'], isbn: Volume['isbn']) => {
