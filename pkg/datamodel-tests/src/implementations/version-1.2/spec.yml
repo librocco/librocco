@@ -1,0 +1,11 @@
+version:
+  warehouse:
+    note:
+      - name: "(inbound|outbound)-<id>"
+      doc:
+        - committed: boolean
+        - type: inbound | outbound
+      volume:
+        - isbn: string
+        - quantity: number
+        - warehouse: string
