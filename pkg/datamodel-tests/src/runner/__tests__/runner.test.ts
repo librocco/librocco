@@ -2,7 +2,7 @@ import { describe } from 'vitest';
 
 import { newTestRunner } from '@runner/runner';
 
-import * as testDataLoader from './test-data-loader';
+import * as testDataLoader from '@loaders/fs-data-loader';
 
 import * as implementations from '@/implementations';
 import tests from './tests';
