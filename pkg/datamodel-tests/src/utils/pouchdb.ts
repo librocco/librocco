@@ -9,14 +9,14 @@ import { CouchDocument } from '@/types';
  * _note: in order for this to work, `include_docs` option should be passed to
  * the pouchdb query._
  * @param res a result received from `PouchDB.allDocs({...options, include_docs: true})`
- * @returns and array of `doc` entries from each pouchdb "row", excluding the `_rev` (including `_id`)
+ * @returns and array of `doc` entries from each pouchdb "row", (including `_id` and `_rev`)
  */
 export const unwrapDocs = (res: PouchDB.Core.AllDocsResponse<Record<string, any>>) =>
 	res.rows.reduce((acc, { doc }) => {
 		if (!doc) {
 			return acc;
 		}
-		return [...acc, unwrapDoc(doc)];
+		return [...acc, doc];
 	}, [] as CouchDocument[]);
 
 /**
@@ -24,7 +24,9 @@ export const unwrapDocs = (res: PouchDB.Core.AllDocsResponse<Record<string, any>
  * @param doc pouch db document (including `_rev` and `_id`)
  * @returns the provided document without the `_rev` field (including `_id`)
  */
-export const unwrapDoc = (doc: PouchDB.Core.IdMeta & PouchDB.Core.GetMeta): CouchDocument => {
+export const unwrapDoc = (
+	doc: PouchDB.Core.IdMeta & PouchDB.Core.GetMeta
+): Omit<CouchDocument, '_rev'> => {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { _rev, ...document } = doc;
 	return document;
