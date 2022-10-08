@@ -5,6 +5,7 @@
 // #region misc
 export type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = {
 	_id: string;
+	_rev: string;
 } & Doc;
 
 export type DesignDocument = {
@@ -126,10 +127,12 @@ export interface NoteProto<A extends Record<string, any> = Record<string, any>> 
 	getVolume(isbn: string): VolumeStock[];
 	getVolumes(): VolumeStock[];
 }
-export type NoteData<A extends Record<string, any> = Record<string, any>> = {
-	_id: string;
+export interface NoteBase {
 	type: NoteType;
-} & A;
+	committed: boolean;
+}
+export type NoteData<A extends Record<string, any> = Record<string, any>> =
+	CouchDocument<NoteBase> & A;
 
 export type NoteInterface<A extends Record<string, any> = Record<string, any>> = NoteProto<A> &
 	NoteData<A>;
