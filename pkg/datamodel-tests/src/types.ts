@@ -66,7 +66,7 @@ export interface TestDataLoader {
 interface TestNote {
 	id: string;
 	type: NoteType;
-	books: (VolumeStock & { warehouse: string })[];
+	books: VolumeStock[];
 }
 export interface TransformNote {
 	(note: RawNote): TestNote;
