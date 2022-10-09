@@ -8,7 +8,7 @@ export class Note implements NoteInterface {
 	#w;
 
 	_id;
-	_rev;
+	_rev?;
 	type;
 	books;
 	committed;
@@ -20,7 +20,9 @@ export class Note implements NoteInterface {
 		this.type = data.type;
 		this.books = data.books || {};
 		this.committed = Boolean(data.committed);
-		this._rev = data._rev || '';
+		if (data._rev) {
+			this._rev = data._rev || '';
+		}
 	}
 
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
@@ -90,6 +92,11 @@ export class Note implements NoteInterface {
 	commit(): Promise<NoteInterface> {
 		this.committed = true;
 		return this.#w.updateNote(this);
+	}
+
+	updateRev(rev: string): NoteInterface {
+		this._rev = rev;
+		return this;
 	}
 }
 
