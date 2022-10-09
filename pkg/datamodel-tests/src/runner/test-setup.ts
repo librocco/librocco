@@ -3,6 +3,8 @@ import { test as t, bench as b } from 'vitest';
 import { randomUUID } from 'crypto';
 import PouchDB from 'pouchdb';
 
+import { __withDocker__ } from './env';
+
 import {
 	RawSnap,
 	RawNote,
@@ -44,7 +46,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 
 	const taskSetup = async (): Promise<DatabaseInterface> => {
 		// Get new db per test basis
-		const pouchInstance = new PouchDB(randomUUID(), { adapter: 'memory' });
+		const pouchInstance = initDB();
 		const db = config.newDatabase(pouchInstance);
 
 		// Upload design documents if any
@@ -56,13 +58,10 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		return db;
 	};
 
-	const taskTeardown = (db: DatabaseInterface) => db.destroy();
-
 	const test: TestTask = (name, cb) => {
 		t(name, async () => {
 			const db = await taskSetup();
 			await cb(db, getNotesAndWarehouses);
-			taskTeardown(db);
 		});
 	};
 
@@ -70,7 +69,6 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		b(name, async () => {
 			const db = await taskSetup();
 			await cb(db, getNotesAndWarehouses);
-			taskTeardown(db);
 		});
 	};
 
@@ -125,3 +123,15 @@ const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string 
 	warehouse: b.warehouse
 });
 // #endregion helpers
+
+// #region env
+const initDB = (): PouchDB.Database => {
+	const dbName = randomUUID();
+	const fullName = __withDocker__
+		? ['http://admin:admin@127.0.0.1:5001', `a${dbName}`].join('/')
+		: dbName;
+	const options = __withDocker__ ? {} : { adapter: 'memory' };
+
+	return new PouchDB(fullName, options);
+};
+// #endregion env
