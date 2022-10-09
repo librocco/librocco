@@ -7,11 +7,20 @@ services:
     ports:
       - 5000:5984
   
-  couch:
+  couch-1:
     image: couchdb
-    container_name: librocco-testcouch
+    container_name: librocco-testcouch-1
     ports: 
       - 5001:5984
+    environment:
+      - COUCHDB_USER=admin
+      - COUCHDB_PASSWORD=admin
+      
+  couch-2:
+    image: couchdb
+    container_name: librocco-testcouch-2
+    ports: 
+      - 5002:5984
     environment:
       - COUCHDB_USER=admin
       - COUCHDB_PASSWORD=admin
