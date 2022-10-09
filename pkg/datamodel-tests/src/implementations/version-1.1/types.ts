@@ -14,11 +14,14 @@ export type VolumesByISBN = {
 };
 
 export type AdditionalData = {
-	_rev: string;
+	_rev?: string;
 	books: VolumesByISBN;
 	committed: boolean;
 };
-export type NoteInterface = NI<AdditionalData>;
-export type NoteData = PickPartial<ND<AdditionalData>, 'books' | 'committed' | '_rev'>;
+export type AdditoinalMethods = {
+	updateRev: (rev: string) => NoteInterface;
+};
+export type NoteInterface = NI<AdditionalData & AdditoinalMethods>;
+export type NoteData = PickPartial<ND<AdditionalData>, 'books' | 'committed'>;
 export type WarehouseInterface = WI<NoteInterface>;
 export type DatabaseInterface = DI<NoteInterface>;

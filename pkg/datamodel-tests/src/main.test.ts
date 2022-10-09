@@ -1,5 +1,7 @@
 import { describe } from 'vitest';
 
+import { __withDocker__ } from './runner/env';
+
 import { newTestRunner } from '@runner/runner';
 
 import * as couchdbImageLoader from '@loaders/couchdb-image-loader';
@@ -10,7 +12,7 @@ import * as tests from './tests';
 
 import { processTestName, processVersionName } from './utils/misc';
 
-const testDataLoader = process.env.FULL_TEST_DATA ? couchdbImageLoader : fsDataLoader;
+const testDataLoader = __withDocker__ ? couchdbImageLoader : fsDataLoader;
 
 describe('Datamodel tests', async () => {
 	const runner = await newTestRunner(testDataLoader);

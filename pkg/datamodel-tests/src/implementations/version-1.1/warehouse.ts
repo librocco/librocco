@@ -31,8 +31,7 @@ class Warehouse implements WarehouseInterface {
 			type: 'inbound',
 			_id: [this.name, 'inbound', randomUUID()].join('/')
 		});
-		await this.#db._pouch.put(n);
-		return n;
+		return this.updateNote(n);
 	}
 
 	async createOutNote() {
@@ -40,8 +39,7 @@ class Warehouse implements WarehouseInterface {
 			type: 'outbound',
 			_id: [this.name, 'outbound', randomUUID()].join('/')
 		});
-		this.#db._pouch.put(n);
-		return n;
+		return this.updateNote(n);
 	}
 
 	async getNotes(): Promise<NoteInterface[]> {
@@ -55,7 +53,7 @@ class Warehouse implements WarehouseInterface {
 
 	deleteNote(note: NoteInterface) {
 		return new Promise<void>((resolve, reject) => {
-			this.#db._pouch.remove(note, {}, (err) => {
+			this.#db._pouch.remove(note as Required<NoteInterface>, {}, (err) => {
 				if (err) {
 					return reject(err);
 				}
@@ -65,8 +63,8 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async updateNote(note: NoteInterface) {
-		await this.#db._pouch.put(note);
-		return note;
+		const { rev } = await this.#db._pouch.put(note);
+		return note.updateRev(rev);
 	}
 
 	async getStock(): Promise<VolumeStock[]> {
