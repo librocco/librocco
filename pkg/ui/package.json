@@ -13,7 +13,9 @@
 		"storybook": "start-storybook -p 6006",
 		"build-storybook": "build-storybook",
 		"postinstall": "svelte-kit sync",
-		"story:dev": "histoire dev"
+		"story:dev": "histoire dev",
+		"story:build": "histoire build",
+		"story:preview": "histoire preview"
 	},
 	"devDependencies": {
 		"@librocco/svg": "workspace:*",
@@ -50,7 +52,8 @@
 		"chromatic": "~6.7.4",
 		"@types/uuid": "~8.3.4",
 		"histoire": "~0.11.2",
-		"@histoire/plugin-svelte": "~0.11.2"
+		"@histoire/plugin-svelte": "~0.11.2",
+		"@histoire/controls": "~0.11.3"
 	},
 	"type": "module",
 	"dependencies": {
