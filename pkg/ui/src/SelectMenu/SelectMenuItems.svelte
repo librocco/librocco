@@ -1,5 +1,6 @@
 <script lang="ts">
-	export let items = [{ label: '', description: '', selected: false }];
+	export let items = [{ label: '', description: '' }];
+	export let selected = '';
 </script>
 
 <div>
@@ -20,7 +21,7 @@
 					<div class="flex justify-between">
 						<p class="font-normal group-hover:font-semibold ">{item.label}</p>
 
-						{#if item.selected}
+						{#if item.label === selected}
 							<!-- @TODO replace with svg -->
 							<span class="text-indigo-500 group-hover:text-white">
 								<svg

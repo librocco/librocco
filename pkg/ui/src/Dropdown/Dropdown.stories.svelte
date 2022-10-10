@@ -5,8 +5,8 @@
 	import { ChevronLeft } from '@librocco/svg';
 
 	import DropdownTrigger from './DropdownTrigger.svelte';
-	import DropdownItem from './DropdownItem.svelte';
-	import DropdownItemCompound from './DropdownItemCompound.svelte';
+	import DropdownItems from './DropdownItems.svelte';
+	import Dropdown from './Dropdown.svelte';
 </script>
 
 <Meta title="Components: Dropdown" />
@@ -22,28 +22,23 @@
 	<StorybookGrid>
 		<StorybookItem>
 			<div class="absolute left-64">
-				<DropdownItem items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']} />
+				<DropdownItems items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']} />
 			</div>
 		</StorybookItem>
 	</StorybookGrid>
 </Story>
-<Story name="Dropdown Compound Items">
-	<StorybookItem>
-		<div class="absolute left-30">
-			<DropdownItemCompound
-				items={[
-					{
-						label: 'Published',
-						description: 'This job posting can be viewed by anyone who has the link',
-						selected: false
-					},
-					{
-						label: 'Published',
-						description: 'This job posting can be viewed by anyone who has the link',
-						selected: true
-					}
-				]}
-			/>
-		</div>
-	</StorybookItem>
+<Story name="Dropdown Menu">
+	<StorybookGrid>
+		<StorybookItem>
+			<div class="absolute left-64">
+				<Dropdown>
+					<DropdownTrigger slot="trigger" label="Options" Icon={ChevronLeft} />
+					<DropdownItems
+						slot="items"
+						items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']}
+					/>
+				</Dropdown>
+			</div>
+		</StorybookItem>
+	</StorybookGrid>
 </Story>
