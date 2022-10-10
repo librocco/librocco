@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { SvelteComponentDev } from 'svelte/internal';
-	// import  {ChevronDown} from '@librocco/svg';
+
 	export let label = '';
 	export let Icon: typeof SvelteComponentDev | null = null;
 </script>
