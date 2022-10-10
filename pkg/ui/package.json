@@ -54,6 +54,7 @@
 	},
 	"type": "module",
 	"dependencies": {
-		"uuid": "~9.0.0"
+		"uuid": "~9.0.0",
+		"lucide-svelte": "~0.91.0"
 	}
 }
