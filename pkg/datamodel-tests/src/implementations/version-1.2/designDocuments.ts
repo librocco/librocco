@@ -1,14 +1,24 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { DesignDocument, CouchDocument } from '@/types';
 
 const warehouseStockDocument: DesignDocument = {
-	_id: '_design/stock',
+	_id: '_design/warehouse',
 	views: {
-		by_warehouse: {
+		notes: {
 			map: function (doc: CouchDocument) {
-				const [note, isbn] = doc._id.slice(1).split('/');
-				if (isbn) {
-					const [nType] = note.split('-');
-					const delta = nType == 'inbound' ? doc.quantity : -doc.quantity;
+				if (doc.type && ['inbound', 'outbound'].includes(doc.type)) {
+					const [warehouse] = doc._id.split('/');
+					emit(warehouse);
+				}
+			}.toString()
+		},
+		stock: {
+			map: function (doc: CouchDocument) {
+				// Full transaction doc id would look something like this
+				// <warehouse>/<note_type>/<note_timestamp>/<isbn>/<transaction_timestamp>
+				const [_w, noteType, _d, isbn] = doc._id.split('/');
+				if (doc.isbn && doc.committed) {
+					const delta = noteType == 'inbound' ? doc.quantity : -doc.quantity;
 					// We wish our entries to be sorted by warehouse and then by isbn with delta as value
 					emit([doc.warehouse, isbn], delta);
 				}

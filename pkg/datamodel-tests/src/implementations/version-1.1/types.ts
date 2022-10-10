@@ -14,9 +14,7 @@ export type VolumesByISBN = {
 };
 
 export type AdditionalData = {
-	_rev?: string;
 	books: VolumesByISBN;
-	committed: boolean;
 };
 export type AdditoinalMethods = {
 	updateRev: (rev: string) => NoteInterface;
