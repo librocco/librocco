@@ -193,6 +193,7 @@ importers:
 
   ../../pkg/ui:
     specifiers:
+      '@histoire/controls': ~0.11.3
       '@histoire/plugin-svelte': ~0.11.2
       '@librocco/svg': workspace:*
       '@storybook/addon-actions': ^6.4.22
@@ -234,6 +235,7 @@ importers:
       lucide-svelte: 0.91.0_svelte2tsx@0.5.14+svelte@3.49.0
       uuid: 9.0.0
     devDependencies:
+      '@histoire/controls': 0.11.3
       '@histoire/plugin-svelte': 0.11.2_aa479cd4e533d427cc9692834e31e192
       '@librocco/svg': link:../svg
       '@storybook/addon-actions': 6.5.10
@@ -2536,6 +2538,62 @@ packages:
       minimist: 1.2.6
     dev: true
 
+  /@codemirror/commands/6.1.1:
+    resolution: {integrity: sha512-ibDohwkk7vyu3VsnZNlQhwk0OETBtlkYV+6AHfn5Zgq0sxa+yGVX+apwtC3M4wh6AH7yU5si/NysoECs5EGS3Q==}
+    dependencies:
+      '@codemirror/language': 6.2.1
+      '@codemirror/state': 6.1.2
+      '@codemirror/view': 6.3.0
+      '@lezer/common': 1.0.1
+    dev: true
+
+  /@codemirror/lang-json/6.0.0:
+    resolution: {integrity: sha512-DvTcYTKLmg2viADXlTdufrT334M9jowe1qO02W28nvm+nejcvhM5vot5mE8/kPrxYw/HJHhwu1z2PyBpnMLCNQ==}
+    dependencies:
+      '@codemirror/language': 6.2.1
+      '@lezer/json': 1.0.0
+    dev: true
+
+  /@codemirror/language/6.2.1:
+    resolution: {integrity: sha512-MC3svxuvIj0MRpFlGHxLS6vPyIdbTr2KKPEW46kCoCXw2ktb4NTkpkPBI/lSP/FoNXLCBJ0mrnUi1OoZxtpW1Q==}
+    dependencies:
+      '@codemirror/state': 6.1.2
+      '@codemirror/view': 6.3.0
+      '@lezer/common': 1.0.1
+      '@lezer/highlight': 1.1.1
+      '@lezer/lr': 1.2.3
+      style-mod: 4.0.0
+    dev: true
+
+  /@codemirror/lint/6.0.0:
+    resolution: {integrity: sha512-nUUXcJW1Xp54kNs+a1ToPLK8MadO0rMTnJB8Zk4Z8gBdrN0kqV7uvUraU/T2yqg+grDNR38Vmy/MrhQN/RgwiA==}
+    dependencies:
+      '@codemirror/state': 6.1.2
+      '@codemirror/view': 6.3.0
+      crelt: 1.0.5
+    dev: true
+
+  /@codemirror/state/6.1.2:
+    resolution: {integrity: sha512-Mxff85Hp5va+zuj+H748KbubXjrinX/k28lj43H14T2D0+4kuvEFIEIO7hCEcvBT8ubZyIelt9yGOjj2MWOEQA==}
+    dev: true
+
+  /@codemirror/theme-one-dark/6.1.0:
+    resolution: {integrity: sha512-AiTHtFRu8+vWT9wWUWDM+cog6ZwgivJogB1Tm/g40NIpLwph7AnmxrSzWfvJN5fBVufsuwBxecQCNmdcR5D7Aw==}
+    dependencies:
+      '@codemirror/language': 6.2.1
+      '@codemirror/state': 6.1.2
+      '@codemirror/view': 6.3.0
+      '@lezer/highlight': 1.1.1
+    dev: true
+
+  /@codemirror/view/6.3.0:
+    resolution: {integrity: sha512-jMN9OGKmzRPJ+kksfMrB5e/A9heQncirHsz8XNBpgEbYONCk5tWHMKVWKTNwznkUGD5mnigXI1i5YIcWpscSPg==}
+    dependencies:
+      '@codemirror/state': 6.1.2
+      style-mod: 4.0.0
+      w3c-keyname: 2.2.6
+    dev: true
+
   /@colors/colors/1.5.0:
     resolution: {integrity: sha512-ooWCrlZP11i8GImSjTHYHLkvFDP48nS4+204nGb1RiX/WXYHmJA2III9/e2DWVabCESdW7hBAEzHRqUn9OUVvQ==}
     engines: {node: '>=0.1.90'}
@@ -2599,7 +2657,7 @@ packages:
   /@histoire/app/0.11.2_vite@3.0.9:
     resolution: {integrity: sha512-Matfz/5HhZzHJ7W8DbMK8a42wMfIqRYx+mZAD3yZGzFKCplabqRCkllTecGMaIBp41Jgifup5LYGDXhWSV/76Q==}
     dependencies:
-      '@histoire/controls': 0.11.2
+      '@histoire/controls': 0.11.3
       '@histoire/shared': 0.11.2_vite@3.0.9
       '@histoire/vendors': 0.11.2
       '@types/flexsearch': 0.7.3
@@ -2609,10 +2667,17 @@ packages:
       - vite
     dev: true
 
-  /@histoire/controls/0.11.2:
-    resolution: {integrity: sha512-LxMM1N6f8KClf+I6yuUgJIEmMljsdGJwLwLf7L3FHZwUuErm8iUHtV4aeIOv9cCmLRxHPqffiHdDmcivSGjLsw==}
+  /@histoire/controls/0.11.3:
+    resolution: {integrity: sha512-6BuLfWE9eGQWDkO9W7C1oAb3W7ZfvWj6nQ8v3gj5yVjNpLZR8vSNkTHKZ6RJiyhroHC+xoMNCQmaD4n+W6NoSg==}
     dependencies:
-      '@histoire/vendors': 0.11.2
+      '@codemirror/commands': 6.1.1
+      '@codemirror/lang-json': 6.0.0
+      '@codemirror/language': 6.2.1
+      '@codemirror/lint': 6.0.0
+      '@codemirror/state': 6.1.2
+      '@codemirror/theme-one-dark': 6.1.0
+      '@codemirror/view': 6.3.0
+      '@histoire/vendors': 0.11.3
     dev: true
 
   /@histoire/plugin-svelte/0.11.2_aa479cd4e533d427cc9692834e31e192:
@@ -2621,7 +2686,7 @@ packages:
       histoire: ^0.11.2
       svelte: ^3.0.0
     dependencies:
-      '@histoire/controls': 0.11.2
+      '@histoire/controls': 0.11.3
       '@histoire/shared': 0.11.2_vite@3.0.9
       '@histoire/vendors': 0.11.2
       histoire: 0.11.2_vite@3.0.9
@@ -2645,6 +2710,10 @@ packages:
 
   /@histoire/vendors/0.11.2:
     resolution: {integrity: sha512-9An2EW0+F4TXanSKCz+umPwm93cA+yuWt62LVZPGjkVEnntHrMqGZq8u5ObpEJdA5RpZkDC9Z5xIb9PGM3Bv1g==}
+    dev: true
+
+  /@histoire/vendors/0.11.3:
+    resolution: {integrity: sha512-Cbq3FKQgl/r7+sjuZQKJWdRnMQOzN274zHJv3ueJwCpaPeo0rbUKim3h5w8680j/lIJV9JI72iMtzYcR2VcTTg==}
     dev: true
 
   /@humanwhocodes/config-array/0.10.4:
@@ -2988,6 +3057,29 @@ packages:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.0
       '@jridgewell/sourcemap-codec': 1.4.14
+    dev: true
+
+  /@lezer/common/1.0.1:
+    resolution: {integrity: sha512-8TR5++Q/F//tpDsLd5zkrvEX5xxeemafEaek7mUp7Y+bI8cKQXdSqhzTOBaOogETcMOVr0pT3BBPXp13477ciw==}
+    dev: true
+
+  /@lezer/highlight/1.1.1:
+    resolution: {integrity: sha512-duv9D23O9ghEDnnUDmxu+L8pJy4nYo4AbCOHIudUhscrLSazqeJeK1V50EU6ZufWF1zv0KJwu/frFRyZWXxHBQ==}
+    dependencies:
+      '@lezer/common': 1.0.1
+    dev: true
+
+  /@lezer/json/1.0.0:
+    resolution: {integrity: sha512-zbAuUY09RBzCoCA3lJ1+ypKw5WSNvLqGMtasdW6HvVOqZoCpPr8eWrsGnOVWGKGn8Rh21FnrKRVlJXrGAVUqRw==}
+    dependencies:
+      '@lezer/highlight': 1.1.1
+      '@lezer/lr': 1.2.3
+    dev: true
+
+  /@lezer/lr/1.2.3:
+    resolution: {integrity: sha512-qpB7rBzH8f6Mzjv2AVZRahcm+2Cf7nbIH++uXbvVOL1yIRvVWQ3HAM/saeBLCyz/togB7LGo76qdJYL1uKQlqA==}
+    dependencies:
+      '@lezer/common': 1.0.1
     dev: true
 
   /@mapbox/node-pre-gyp/1.0.9:
@@ -7285,6 +7377,10 @@ packages:
       sha.js: 2.4.11
     dev: true
 
+  /crelt/1.0.5:
+    resolution: {integrity: sha512-+BO9wPPi+DWTDcNYhr/W90myha8ptzftZT+LwcmUbbok0rcP/fequmFYCw8NMoH7pkAZQzU78b3kYrlua5a9eA==}
+    dev: true
+
   /cross-spawn/6.0.5:
     resolution: {integrity: sha512-eTVLrBSt7fjbDygz805pMnstIs2VTBNkRm0qxZd+M7A5XDdxVRWO5MxGBXZhjY4cqLYLdtrGqRf8mBPmzwSpWQ==}
     engines: {node: '>=4.8'}
@@ -9733,7 +9829,7 @@ packages:
       vite: ^2.9.0 || ^3.0.0
     dependencies:
       '@histoire/app': 0.11.2_vite@3.0.9
-      '@histoire/controls': 0.11.2
+      '@histoire/controls': 0.11.3
       '@histoire/shared': 0.11.2_vite@3.0.9
       '@histoire/vendors': 0.11.2
       '@types/flexsearch': 0.7.3
@@ -14326,6 +14422,10 @@ packages:
       webpack: 4.46.0
     dev: true
 
+  /style-mod/4.0.0:
+    resolution: {integrity: sha512-OPhtyEjyyN9x3nhPsu76f52yUGXiZcgvsrFVtvTkyGRQJ0XK+GPc6ov1z+lRpbeabka+MYEQxOYRnt5nF30aMw==}
+    dev: true
+
   /style-to-object/0.3.0:
     resolution: {integrity: sha512-CzFnRRXhzWIdItT3OmF8SQfWyahHhjq3HwcMNCNLn+N7klOOqPjMeG/4JSu77D7ypZdGvSzvkrbyeTMizz2VrA==}
     dependencies:
@@ -15564,6 +15664,10 @@ packages:
     resolution: {integrity: sha512-z8P5DvDNjKDoFIHK7q8r8lackT6l+jo/Ye3HOle7l9nICP9lf1Ci25fy9vHd0JOWewkIFzXIEig3TdKT7JQ5fQ==}
     dependencies:
       browser-process-hrtime: 1.0.0
+    dev: true
+
+  /w3c-keyname/2.2.6:
+    resolution: {integrity: sha512-f+fciywl1SJEniZHD6H+kUO8gOnwIr7f4ijKA6+ZvJFjeGi1r4PDLl53Ayud9O/rk64RqgoQine0feoeOU0kXg==}
     dev: true
 
   /w3c-xmlserializer/2.0.0:
