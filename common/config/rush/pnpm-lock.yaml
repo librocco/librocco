@@ -214,6 +214,7 @@ importers:
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
       histoire: ~0.11.2
+      lucide-svelte: ~0.91.0
       postcss: ~8.4.13
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
@@ -230,6 +231,7 @@ importers:
       vite: ^3.0.0
       vitest: ~0.21.1
     dependencies:
+      lucide-svelte: 0.91.0_svelte2tsx@0.5.14+svelte@3.49.0
       uuid: 9.0.0
     devDependencies:
       '@histoire/plugin-svelte': 0.11.2_aa479cd4e533d427cc9692834e31e192
@@ -11500,6 +11502,16 @@ packages:
 
   /ltgt/2.2.1:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
+    dev: false
+
+  /lucide-svelte/0.91.0_svelte2tsx@0.5.14+svelte@3.49.0:
+    resolution: {integrity: sha512-ooROSKqT2aB3DIemt+SepXKay33qcB2g6EBdbOx5WZbDswsBZcSb1ovsaMBDFhjLQBIwpgy73GNeFbgRovjGwQ==}
+    peerDependencies:
+      svelte: ^3.49.0
+      svelte2tsx: ^0.4.12
+    dependencies:
+      svelte: 3.49.0
+      svelte2tsx: 0.5.14_svelte@3.49.0+typescript@4.7.4
     dev: false
 
   /lz-string/1.4.4:
