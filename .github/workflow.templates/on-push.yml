@@ -4,7 +4,7 @@
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
 
-name: Cheks
+name: Checks
 
 "on":
   - push
