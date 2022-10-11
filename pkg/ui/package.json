@@ -16,7 +16,6 @@
 		"story:preview": "histoire preview"
 	},
 	"devDependencies": {
-		"@librocco/svg": "workspace:*",
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/kit": "next",
 		"@sveltejs/package": "~1.0.0-next.1",
