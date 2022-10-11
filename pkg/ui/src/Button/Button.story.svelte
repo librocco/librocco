@@ -3,7 +3,7 @@
 
 	import { Mail } from 'lucide-svelte';
 
-	import { ButtonSize, ButtonShape, ButtonColor, IconPosition } from './enums';
+	import { ButtonSize, ButtonShape, ButtonColor } from './enums';
 	import Button from './Button.svelte';
 
 	export let Hst: Hst;
@@ -50,7 +50,8 @@
 	<Hst.Variant title="Icon Start">
 		{#each Object.values(ButtonSize) as size}
 			<div class="py-2">
-				<Button {size} Icon={Mail} {color}>
+				<Button {size} {color}>
+					<div name="startAdornment"><Mail /></div>
 					{buttonText}
 				</Button>
 			</div>
@@ -60,8 +61,9 @@
 	<Hst.Variant title="Icon End">
 		{#each Object.values(ButtonSize) as size}
 			<div class="py-2">
-				<Button {size} Icon={Mail} iconPosition={IconPosition.End} {color}>
+				<Button {size} {color}>
 					{buttonText}
+					<div name="endAdornment"><Mail /></div>
 				</Button>
 			</div>
 		{/each}
