@@ -42,7 +42,8 @@
 		"@types/uuid": "~8.3.4",
 		"histoire": "~0.11.2",
 		"@histoire/plugin-svelte": "~0.11.2",
-		"@histoire/controls": "~0.11.3"
+		"@histoire/controls": "~0.11.3",
+		"autoprefixer": "~10.4.12"
 	},
 	"type": "module",
 	"dependencies": {
