@@ -2,8 +2,8 @@ import { expect } from 'vitest';
 
 import { TestFunction, VolumeTransactionTuple } from './types';
 
-export const commit100Notes: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { fullStock, notes } = getNotesAndWarehouses(100);
+export const commit20Notes: TestFunction = async (db, getNotesAndWarehouses) => {
+	const { fullStock, notes } = getNotesAndWarehouses(20);
 
 	const w = db.warehouse();
 
