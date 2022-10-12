@@ -1,11 +1,13 @@
 <script lang="ts">
-	import { Story, Meta } from '@storybook/addon-svelte-csf';
+	import type { Hst } from '@histoire/plugin-svelte';
 
-	import { Mail } from '@librocco/svg';
+	import { Mail } from 'lucide-svelte';
 
 	import SidebarNav from './SidebarNav.svelte';
 	import SidebarItem from './SidebarItem.svelte';
 	import SidebarItemGroup from './SidebarItemGroup.svelte';
+
+	export let Hst: Hst;
 
 	const voidLink = 'javascript:void(0)';
 
@@ -41,47 +43,15 @@
 	];
 </script>
 
-<Meta title="Sidebar Navigation" />
-<Story name="Prototype">
-	<div class="w-52 space-y-4">
+<Hst.Story title="Sidebar Navigation / Items" layout={{ type: 'grid', width: 400 }}>
+	<Hst.Variant title="Item: Default">
 		<div class="space-y-2">
-			<h1 class="text-md bold">Warehouses</h1>
-			<SidebarNav>
-				{#each items as item}
-					<SidebarItem {...item} />
-				{/each}
-			</SidebarNav>
-		</div>
-		<div class="space-y-2">
-			<h1 class="text-md bold">In Notes</h1>
-			<SidebarNav>
-				{#each folders as folder, index}
-					<SidebarItemGroup {...folder} {index} />
-				{/each}
-			</SidebarNav>
-		</div>
-	</div>
-</Story>
-
-<Story name="Folder">
-	<div class="w-52 space-y-4">
-		<div class="space-y-2">
-			<h1 class="text-md bold">Default:</h1>
-			<SidebarItemGroup name="Warehouse 1" {items} expanded={false} index={1} />
-			<SidebarItemGroup name="Warehouse 1" {items} expanded index={2} />
-		</div>
-	</div>
-</Story>
-
-<Story name="Item">
-	<div class="w-52 space-y-4">
-		<div class="space-y-2">
-			<h1 class="text-md bold">Default:</h1>
 			<SidebarItem name="Warehouse 1" href={voidLink} />
 			<SidebarItem name="Warehouse 1" href={voidLink} current />
 		</div>
+	</Hst.Variant>
+	<Hst.Variant title="Item: With Icon">
 		<div class="space-y-2">
-			<h1 class="text-md bold">With Icon:</h1>
 			<SidebarItem name="Warehouse 1" href={voidLink}>
 				<Mail />
 			</SidebarItem>
@@ -89,10 +59,17 @@
 				<Mail />
 			</SidebarItem>
 		</div>
+	</Hst.Variant>
+	<Hst.Variant title="Item: Nested">
 		<div class="space-y-2">
-			<h1 class="text-md bold">Nested:</h1>
 			<SidebarItem name="Warehouse 1" href={voidLink} nested />
 			<SidebarItem name="Warehouse 1" href={voidLink} nested current />
 		</div>
-	</div>
-</Story>
+	</Hst.Variant>
+	<Hst.Variant title="Item Group">
+		<div class="space-y-2">
+			<SidebarItemGroup name="Warehouse 1" {items} expanded={false} index={1} />
+			<SidebarItemGroup name="Warehouse 1" {items} expanded index={2} />
+		</div>
+	</Hst.Variant>
+</Hst.Story>
