@@ -17,8 +17,3 @@ export enum ButtonSize {
 	LG = 'lg',
 	XL = 'xl'
 }
-
-export enum IconPosition {
-	Start = 'left',
-	End = 'right'
-}
