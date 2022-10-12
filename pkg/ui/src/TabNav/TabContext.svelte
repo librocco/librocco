@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-	import { v4 as uuid } from 'uuid';
 	import type { Writable } from 'svelte/store';
 
-	export const TABS = `tabs-${uuid()}`;
+	export const TABS = Symbol();
 
 	type Tabs = Writable<string[]>;
 	type CurrentTab = Writable<string>;
