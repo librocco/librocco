@@ -8,7 +8,10 @@ const config = {
 		plugins: [HstSvelte()],
 		setupFile: './src/histoire.setup.ts',
 		vite: {
-			base: '/'
+			base: '/',
+			server: {
+				open: true
+			}
 		}
 	},
 	build: {
