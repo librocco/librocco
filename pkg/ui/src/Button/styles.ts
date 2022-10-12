@@ -1,4 +1,4 @@
-import { ButtonShape, ButtonSize, ButtonColor, IconPosition } from './enums';
+import { ButtonShape, ButtonSize, ButtonColor } from './enums';
 
 // #region sizeStyles
 /**
@@ -122,73 +122,4 @@ export const colorClassesLookup: Record<ButtonColor, string> = {
 	[ButtonColor.Primary]: 'text-white bg-indigo-600 hover:bg-indigo-700',
 	[ButtonColor.Secondary]: 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200',
 	[ButtonColor.White]: 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
-};
-
-/**
- * ```yaml
- * xs:   w-4 h-4
- * sm:   w-4 h-4
- * base: w-5 h-5
- * lg:   w-5 h-5
- * xl:   w-5 h-5
- * ```
- */
-export const iconSizeLookup: Record<ButtonSize, string> = {
-	[ButtonSize.XS]: 'w-4 h-4',
-	[ButtonSize.SM]: 'w-4 h-4',
-	[ButtonSize.Base]: 'w-5 h-5',
-	[ButtonSize.LG]: 'w-5 h-5',
-	[ButtonSize.XL]: 'w-5 h-5'
-};
-
-/**
- * ```yaml
- * start:
- *  xs:   mr-1.5 -left-0.5
- *  sm:   mr-1.5 -left-0.5
- *  base: mr-1.5 -left-0.5
- *  lg:   mr-2.5 -left-0.5
- *  xl:   mr-2.5 -left-0.5
- *
- * end:
- *  xs:   ml-1.5 left-0.5
- *  sm:   ml-1.5 left-0.5
- *  base: ml-1.5 left-0.5
- *  lg:   ml-2.5 left-0.5
- *  xl:   ml-2.5 left-0.5
- * ```
- */
-export const iconSpacingLookup: Record<IconPosition, Record<ButtonSize, string>> = {
-	[IconPosition.Start]: {
-		// According to mockup, margin right here should be 8px
-		// however, in order to not mess with the original padding of the button (container of this element)
-		// we're offsetting to the left by 2px (hence the '-left-0.5'). This, however
-		// leaves the margin in place (from original position), therefore, all margins are offset by 2px
-		// 8px - 2px = 6px --> hence 'mr-1.5'
-		[ButtonSize.XS]: 'mr-1.5 -left-0.5',
-		[ButtonSize.SM]: 'mr-1.5 -left-0.5',
-		[ButtonSize.Base]: 'mr-1.5 -left-0.5',
-		[ButtonSize.LG]: 'mr-2.5 -left-0.5',
-		[ButtonSize.XL]: 'mr-2.5 -left-0.5'
-	},
-	[IconPosition.End]: {
-		[ButtonSize.XS]: 'ml-1.5 left-0.5',
-		[ButtonSize.SM]: 'ml-1.5 left-0.5',
-		[ButtonSize.Base]: 'ml-1.5 left-0.5',
-		[ButtonSize.LG]: 'ml-2.5 left-0.5',
-		[ButtonSize.XL]: 'ml-2.5 left-0.5'
-	}
-};
-
-/**
- * ```yaml
- * primary:   text-white
- * secondary: text-indigo-500
- * white:     text-gray-500
- * ```
- */
-export const iconColorLookup: Record<ButtonColor, string> = {
-	[ButtonColor.Primary]: 'text-white',
-	[ButtonColor.Secondary]: 'text-indigo-500',
-	[ButtonColor.White]: 'text-gray-500'
 };

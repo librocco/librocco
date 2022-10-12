@@ -1,15 +1,20 @@
 <script lang="ts">
-	import { Story, Meta } from '@storybook/addon-svelte-csf';
+	import type { Hst } from '@histoire/plugin-svelte';
 
 	import Checkbox from './Checkbox.svelte';
+
+	export let Hst: Hst;
 </script>
 
-<Meta title="Form Fields / Checkbox" />
-
-<Story name="Default">
-	<div class="flex flex-col w-72 space-y-5">
+<Hst.Story title="Form Fields / Checkbox" layout={{ type: 'grid' }}>
+	<Hst.Variant title="Default">
 		<Checkbox name="default" label="Select an option?" helpText="Unchecked & focussable" />
+	</Hst.Variant>
+	<Hst.Variant title="Checked">
 		<Checkbox name="checked" label="Select an option?" helpText="Checked" checked={true} />
+	</Hst.Variant>
+	<Hst.Variant title="Disabled">
+		/>
 		<Checkbox
 			name="disabled"
 			label="Select an option?"
@@ -17,5 +22,5 @@
 			disabled={true}
 			checked={true}
 		/>
-	</div>
-</Story>
+	</Hst.Variant>
+</Hst.Story>
