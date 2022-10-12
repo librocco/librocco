@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ChevronLeft, ChevronRight } from '@librocco/svg';
+	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
 
 	import { getButtonClasses } from './styles';
 
