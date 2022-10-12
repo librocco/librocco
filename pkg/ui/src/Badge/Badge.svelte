@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { BadgeColor, BadgeSize } from './enums';
 
+	export let label: string;
 	export let size: BadgeSize = BadgeSize.Base;
-
 	export let color: BadgeColor = BadgeColor.Neutral;
 
 	/**
@@ -33,4 +33,4 @@
 	$: colorAndSize = [colorClassesLookup[color], sizeLookup[size]].join(' ');
 </script>
 
-<span class={['inline-flex items-center rounded', colorAndSize].join(' ')}>Badge</span>
+<span class={['inline-flex items-center rounded', colorAndSize].join(' ')}>{label}</span>
