@@ -43,11 +43,14 @@
 		"histoire": "~0.11.2",
 		"@histoire/plugin-svelte": "~0.11.2",
 		"@histoire/controls": "~0.11.3",
-		"autoprefixer": "~10.4.12"
-	},
-	"type": "module",
-	"dependencies": {
-		"uuid": "~9.0.0",
+		"autoprefixer": "~10.4.12",
 		"lucide-svelte": "~0.91.0"
-	}
+	},
+	"peerDependencies": {
+		"lucide-svelte": "~0.91.0"
+	},
+	"dependencies": {
+		"uuid": "~9.0.0"
+	},
+	"type": "module"
 }

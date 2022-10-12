@@ -31,9 +31,9 @@ importers:
       lucide-svelte: 0.91.0_svelte@3.49.0
     devDependencies:
       '@librocco/ui': link:../../pkg/ui
-      '@sveltejs/adapter-auto': 1.0.0-next.81
+      '@sveltejs/adapter-auto': 1.0.0-next.82
       '@sveltejs/adapter-static': 1.0.0-next.39
-      '@sveltejs/kit': 1.0.0-next.512_svelte@3.49.0+vite@3.0.9
+      '@sveltejs/kit': 1.0.0-next.514_svelte@3.49.0+vite@3.0.9
       '@typescript-eslint/eslint-plugin': 5.35.1_54d374a03989604482a8593813b3274c
       '@typescript-eslint/parser': 5.35.1_eslint@8.22.0+typescript@4.7.4
       eslint: 8.22.0
@@ -191,13 +191,12 @@ importers:
       vite: ^3.0.0
       vitest: ~0.21.1
     dependencies:
-      lucide-svelte: 0.91.0_svelte2tsx@0.5.14+svelte@3.49.0
       uuid: 9.0.0
     devDependencies:
       '@histoire/controls': 0.11.3
       '@histoire/plugin-svelte': 0.11.2_aa479cd4e533d427cc9692834e31e192
-      '@sveltejs/adapter-auto': 1.0.0-next.81
-      '@sveltejs/kit': 1.0.0-next.512_svelte@3.49.0+vite@3.0.9
+      '@sveltejs/adapter-auto': 1.0.0-next.82
+      '@sveltejs/kit': 1.0.0-next.514_svelte@3.49.0+vite@3.0.9
       '@sveltejs/package': 1.0.0-next.1_svelte@3.49.0+typescript@4.7.4
       '@tailwindcss/forms': 0.5.3_tailwindcss@3.0.24
       '@testing-library/svelte': 3.1.3_svelte@3.49.0
@@ -209,6 +208,7 @@ importers:
       eslint-config-prettier: 8.5.0_eslint@8.22.0
       eslint-plugin-svelte3: 4.0.0_eslint@8.22.0+svelte@3.49.0
       histoire: 0.11.2_vite@3.0.9
+      lucide-svelte: 0.91.0_svelte2tsx@0.5.14+svelte@3.49.0
       postcss: 8.4.16
       prettier: 2.7.1
       prettier-plugin-svelte: 2.7.0_prettier@2.7.1+svelte@3.49.0
@@ -2025,12 +2025,12 @@ packages:
       '@sinonjs/commons': 1.8.3
     dev: true
 
-  /@sveltejs/adapter-auto/1.0.0-next.81:
-    resolution: {integrity: sha512-q+0Rh2upU7i3m0fVi/CHrkt+BbTR7bkQ2OoVTVMKwSqrBenr6utPB/7y8tyRrZ21gzUihMSbeFpzbpmzVOI+2g==}
+  /@sveltejs/adapter-auto/1.0.0-next.82:
+    resolution: {integrity: sha512-TWckpkD7fLwwNcHHN7gDuV+xpu07NJ6aaMa6p9FgeFF16yBeEyGVtsM2bpujjS+u0w6IP4VGsRWEMOOF2b/WYA==}
     dependencies:
       '@sveltejs/adapter-cloudflare': 1.0.0-next.38
-      '@sveltejs/adapter-netlify': 1.0.0-next.79
-      '@sveltejs/adapter-vercel': 1.0.0-next.77
+      '@sveltejs/adapter-netlify': 1.0.0-next.80
+      '@sveltejs/adapter-vercel': 1.0.0-next.78
     transitivePeerDependencies:
       - encoding
       - supports-color
@@ -2044,8 +2044,8 @@ packages:
       worktop: 0.8.0-next.14
     dev: true
 
-  /@sveltejs/adapter-netlify/1.0.0-next.79:
-    resolution: {integrity: sha512-XaihONVwUeXVVt9f2xcFgRExfG8jWKPkyqi715kzPbrgpqH3zaRgLJM2ABEGQ3g2MEn+6op+Z2olIWhM+RA0Cg==}
+  /@sveltejs/adapter-netlify/1.0.0-next.80:
+    resolution: {integrity: sha512-L7Y3hXenJwmPbuzG+o8eUPm/6F3KpHHPUKRgoryYKgVjYGEHt1y1Go1k0JF6Tww8WF59y/j+ljWcBo9RU7MpeQ==}
     dependencies:
       '@iarna/toml': 2.2.5
       esbuild: 0.15.9
@@ -2056,8 +2056,8 @@ packages:
     resolution: {integrity: sha512-EeD39H6iEe0UEKnKxLFTZFZpi/FcX5xfbAvsMQ+B09aDZccpQmkJBSIo+4kq1JsQGSjwi/+J3aE9bR67R6CIyQ==}
     dev: true
 
-  /@sveltejs/adapter-vercel/1.0.0-next.77:
-    resolution: {integrity: sha512-r4MqtP+lzx83HfcvI8PU0Yxzmxt6WQq9nzZETLboJouJzhSBUFIN5RmNZfEn6nNIlUwZbGQUEK/FxsRnnxI/Ig==}
+  /@sveltejs/adapter-vercel/1.0.0-next.78:
+    resolution: {integrity: sha512-K7zOlVwX/MV/b6iUbrY7QVn+v8ABBSEi6rjIfYiXCZc+j0nS5WNrcH1/Qdk/pzxK+7O5OuaNZAw3QylJDV5CZw==}
     dependencies:
       '@vercel/nft': 0.22.1
       esbuild: 0.15.9
@@ -2066,8 +2066,8 @@ packages:
       - supports-color
     dev: true
 
-  /@sveltejs/kit/1.0.0-next.512_svelte@3.49.0+vite@3.0.9:
-    resolution: {integrity: sha512-/KywzSMXdNxYGujJfdlAbLgV9m0TSSKqC8XluZ46M6oPAM1fUsjfBBtukU/Vx3hP7ldR8d/vpKX3amENAMw50g==}
+  /@sveltejs/kit/1.0.0-next.514_svelte@3.49.0+vite@3.0.9:
+    resolution: {integrity: sha512-1vBKNeLkaQGz/QEQ9bxWwqHwJbBQJTVKReFoFQugGBhiT/Q39Uv+FpXWh+XND9OxMJ947ndqp/EiQj0IAmPwhg==}
     engines: {node: '>=16.14'}
     hasBin: true
     requiresBuild: true
@@ -6621,7 +6621,7 @@ packages:
     dependencies:
       svelte: 3.49.0
       svelte2tsx: 0.5.14_svelte@3.49.0+typescript@4.7.4
-    dev: false
+    dev: true
 
   /lucide-svelte/0.91.0_svelte@3.49.0:
     resolution: {integrity: sha512-ooROSKqT2aB3DIemt+SepXKay33qcB2g6EBdbOx5WZbDswsBZcSb1ovsaMBDFhjLQBIwpgy73GNeFbgRovjGwQ==}
