@@ -9,8 +9,8 @@
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test": "echo 'Running test runner unit tests' && vitest __tests__",
 		"test:quicktest": "echo \"Running tests with simple test data loaded from fs (max 10 notes)\" && vitest main.test.ts",
-		"test:full": "docker compose up -d && FULL_TEST_SUPPORT=true vitest main.test.ts",
-		"benchmark": "docker compose up -d && FULL_TEST_SUPPORT=true vitest bench main.bench.ts",
+		"test:full": "docker compose up -d && FULL_TEST_SUPPORT=true vitest main.test.ts; docker compose down",
+		"benchmark": "docker compose up -d && FULL_TEST_SUPPORT=true vitest bench main.bench.ts; docker compose down",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
