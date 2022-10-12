@@ -1,30 +1,34 @@
 <script lang="ts">
-	import { Story, Meta } from '@storybook/addon-svelte-csf';
+	import type { Hst } from '@histoire/plugin-svelte';
 
 	import Textarea, { Resize } from './';
+
+	export let Hst: Hst;
 </script>
 
-<Meta title="Form Fields / Textarea" />
-
-<Story name="Default">
-	<div class="space-y-8">
+<Hst.Story title="Form Fields / Textarea" layout={{ type: 'grid', width: 500 }}>
+	<Hst.Variant title="Default">
 		<Textarea
 			name="default"
 			label="Default"
 			helpText="Here is some help text"
 			placeholder="This is a placeholder"
 		/>
+	</Hst.Variant>
+	<Hst.Variant title="Resizable">
 		<Textarea
 			name="resizable"
 			label="Resizable"
 			placeholder="You can resize me in any direction"
 			resize={Resize.Both}
 		/>
+	</Hst.Variant>
+	<Hst.Variant title="Max Length">
 		<Textarea
 			name="maxlength"
 			label="Max Length"
 			placeholder="I have a max char length of 20"
 			maxlength={20}
 		/>
-	</div>
-</Story>
+	</Hst.Variant>
+</Hst.Story>
