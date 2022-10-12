@@ -4,7 +4,7 @@
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
 
-name: Cheks
+name: Checks
 
 "on":
   - push
@@ -36,35 +36,6 @@ jobs:
         #! Run typecheck even if linting fails
         if: success() || failure()
         run: rush typecheck
-  storybook-ui:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-
-      #! We want to push the storybook to chromatic only for PRs (to make sure we stay below the free monthly allowance)
-      #! but this job is triggered on push. This action will try to see if the pushed commit is in a PR
-      - uses: jwalton/gh-find-current-pr@v1
-        id: findPr
-        with:
-          state: open
-
-      - name: Build and upload storybook
-        if: success() && steps.findPr.outputs.number
-        run: cd pkg/ui && ./node_modules/.bin/chromatic --project-token=${{ secrets.CHROMAUI_PROJECT_TOKEN }}
-
-      - name: Build storybook
-        if: success() && ! steps.findPr.outputs.number
-        run: cd pkg/ui && rushx build-storybook
   perform-monorepo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
