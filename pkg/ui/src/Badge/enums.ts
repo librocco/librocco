@@ -1,5 +1,5 @@
 export enum BadgeColor {
-	Primary = 'primary',
+	Neutral = 'neutral',
 	Error = 'error',
 	Warning = 'warning',
 	Success = 'success'
