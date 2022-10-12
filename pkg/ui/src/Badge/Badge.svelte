@@ -3,11 +3,11 @@
 
 	export let size: BadgeSize = BadgeSize.Base;
 
-	export let color: BadgeColor = BadgeColor.Primary;
+	export let color: BadgeColor = BadgeColor.Neutral;
 
 	/**
 	 * ```yaml
-	 * Primary:
+	 * Neutral:
 	 * 	bg-gray-100 text-gray-800
 	 * Error:
 	 * 	bg-red-100 px-2.5 text-red-800
@@ -19,7 +19,7 @@
 	 */
 
 	export const colorClassesLookup: Record<BadgeColor, string> = {
-		[BadgeColor.Primary]: 'bg-gray-100 text-gray-800',
+		[BadgeColor.Neutral]: 'bg-gray-100 text-gray-800',
 		[BadgeColor.Error]: 'bg-red-100 px-2.5 text-red-800',
 		[BadgeColor.Warning]: 'bg-yellow-100 text-yellow-800',
 		[BadgeColor.Success]: 'bg-green-100 text-green-800'
@@ -33,4 +33,4 @@
 	$: colorAndSize = [colorClassesLookup[color], sizeLookup[size]].join(' ');
 </script>
 
-<span class={['inline-flex items-center rounded-full', colorAndSize].join(' ')}>Badge</span>
+<span class={['inline-flex items-center rounded', colorAndSize].join(' ')}>Badge</span>
