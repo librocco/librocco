@@ -1,3 +1,15 @@
+# See https://github.com/isaacs/github/issues/170
+# To quote Rich Harris:
+# For some unfathomable reason, browsers render tabs as 8 spaces.
+# Even among the minority of developers who agree that tabs > spaces,
+# I've yet to find anyone who thinks that makes sense.
+
+# Actually, this is not working (at least in the review of the PR it's in)
+# ~~What works is appending `ts=4` to a URL~~
+# Actually, ^^^ is not working
+# What works is changing personal preferences at
+# https://github.com/settings/appearance#tab-size-heading
+
 root = true
 
 [*]
