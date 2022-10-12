@@ -1,15 +1,10 @@
 <script lang="ts">
-	import type { SvelteComponentDev } from 'svelte/internal';
-
-	import { ButtonColor, ButtonShape, ButtonSize, IconPosition } from './enums';
+	import { ButtonColor, ButtonShape, ButtonSize } from './enums';
 	import {
 		shapeRadiusLookup,
 		textSizeLookup,
 		shapeSpacingLookup,
-		colorClassesLookup,
-		iconSizeLookup,
-		iconSpacingLookup,
-		iconColorLookup
+		colorClassesLookup
 	} from './styles';
 
 	let className = '';
@@ -89,11 +84,6 @@
 	 */
 	export let color: ButtonColor = ButtonColor.Primary;
 	/**
-	 * Optional icon SVG as svelte component
-	 */
-	export let Icon: typeof SvelteComponentDev | null = null;
-	export let iconPosition: IconPosition = IconPosition.Start;
-	/**
 	 * A custom html tag we want to render the element as (defaults to "button")
 	 */
 	export let as: string = 'button';
@@ -106,24 +96,18 @@
 	const focusClasses =
 		'focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-white';
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
-
-	$: showIcon = Icon && shape !== ButtonShape.Circular;
-	$: iconSizeClasses = iconSizeLookup[size];
-	$: iconSpacingClasses = iconSpacingLookup[iconPosition][size];
-	$: iconColorClass = iconColorLookup[color];
-	$: iconClasses = ['block', iconSizeClasses, iconSpacingClasses, iconColorClass].join(' ');
 </script>
 
 <svelte:element this={as} class={containerClasses} on:click>
-	<span class="flex items-center">
-		{#if showIcon && iconPosition === IconPosition.Start}
-			<span class={iconClasses}><svelte:component this={Icon} /></span>
+	<span class="flex items-center gap-x-2">
+		{#if $$slots.startAdornment && !ButtonShape.Circular}
+			<slot name="startAdornment" />
 		{/if}
 
 		<slot />
 
-		{#if showIcon && iconPosition === IconPosition.End}
-			<span class={iconClasses}><svelte:component this={Icon} /></span>
+		{#if $$slots.endAdornment && !ButtonShape.Circular}
+			<slot name="endAdornment" />
 		{/if}
 	</span>
 </svelte:element>
