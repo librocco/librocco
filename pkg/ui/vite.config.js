@@ -10,6 +10,11 @@ const config = {
 		vite: {
 			base: '/'
 		}
+	},
+	build: {
+		rollupOptions: {
+			external: ['lucide-svelte']
+		}
 	}
 };
 
