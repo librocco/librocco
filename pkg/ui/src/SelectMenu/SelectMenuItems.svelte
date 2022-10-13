@@ -1,11 +1,10 @@
 <script lang="ts">
+	import { getContext, onMount } from 'svelte';
 	import { fade } from 'svelte/transition';
 
-	export let items: { label: string; description: string }[];
-
-	import { getContext, onMount } from 'svelte';
-
 	import { SELECT, type SelectMenuContext } from './SelectMenuContext.svelte';
+
+	export let items: { label: string; description: string }[];
 
 	export let ariaLabel = 'Select an option';
 
@@ -26,7 +25,7 @@
 
 <div transition:fade>
 	<ul
-		class="absolute right-0 z-10 mt-2 w-72 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
+		class="absolute  z-10 mt-2 w-72 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
 		tabindex="-1"
 		role="listbox"
 		aria-labelledby="listbox-label"

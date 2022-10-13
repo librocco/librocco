@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ChevronDown } from 'lucide-svelte';
+
 	export let label: string;
 	export let visible = false;
 </script>
@@ -13,7 +15,11 @@
 			aria-haspopup="true"
 			on:click={() => (visible = !visible)}
 		>
-			<slot name="icon" class="w-6 pr-1" />
+			{#if $$slots.icon}
+				<div class="pr-2 ">
+					<slot name="icon" />
+				</div>
+			{/if}
 			{label}
 			<svg
 				class="-mr-1 ml-2 h-5 w-5"
@@ -40,18 +46,7 @@
 			aria-haspopup="true"
 		>
 			<span class="sr-only">Open options</span>
-			<!-- Heroicon name: mini/ellipsis-vertical -->
-			<svg
-				class="h-5 w-5"
-				xmlns="http://www.w3.org/2000/svg"
-				viewBox="0 0 20 20"
-				fill="currentColor"
-				aria-hidden="true"
-			>
-				<path
-					d="M10 3a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM10 8.5a1.5 1.5 0 110 3 1.5 1.5 0 010-3zM11.5 15.5a1.5 1.5 0 10-3 0 1.5 1.5 0 003 0z"
-				/>
-			</svg>
+			<ChevronDown />
 		</button>
 	</div>
 </div>
