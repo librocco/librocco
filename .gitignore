@@ -11,6 +11,8 @@
 **/.env.test.local
 **/.env.production.local
 **/.env.staging.local
+**/.envrc
+
 
 # Misc. .log files
 **/npm-debug.log*
