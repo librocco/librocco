@@ -1,10 +1,7 @@
 <script lang="ts">
 	import { Meta, Story } from '@storybook/addon-svelte-csf';
 	import { StorybookItem, StorybookGrid } from '../utils/stories';
-
-	import SelectMenuTrigger from './SelectMenuTrigger.svelte';
-	import SelectMenuItems from './SelectMenuItems.svelte';
-	import SelectMenu from './SelectMenu.svelte';
+	import { SelectMenuContext, SelectMenuTrigger, SelectMenuItems, SelectMenu } from './index';
 </script>
 
 <Meta title="Components: SelectMenu" />
@@ -12,49 +9,54 @@
 <Story name="Select Menu Trigger">
 	<StorybookGrid>
 		<StorybookItem>
-			<SelectMenuTrigger label="Options" />
+			<SelectMenuContext initialValue="Different Value">
+				<SelectMenuTrigger />
+			</SelectMenuContext>
 		</StorybookItem>
 	</StorybookGrid>
 </Story>
 <Story name="Select Menu Item">
 	<StorybookItem>
 		<div class="absolute left-30">
-			<SelectMenuItems
-				items={[
-					{
-						label: 'Published',
-						description: 'This Note is committed'
-					},
-					{
-						label: 'Draft',
-						description: 'This Note is a draft'
-					}
-				]}
-			/>
+			<SelectMenuContext initialValue="Different Value">
+				<SelectMenuItems
+					items={[
+						{
+							label: 'Published',
+							description: 'This job posting can be viewed by anyone who has the link'
+						},
+						{
+							label: 'Draft',
+							description: 'This job posting can be viewed by anyone who has the link'
+						}
+					]}
+				/>
+			</SelectMenuContext>
 		</div>
 	</StorybookItem>
 </Story>
 <Story name="Select Menu">
 	<StorybookItem>
 		<div class="absolute left-30">
-			<SelectMenu>
-				<SelectMenuTrigger slot="trigger" label="Options" />
+			<SelectMenuContext initialValue="Custom Label">
+				<SelectMenu>
+					<SelectMenuTrigger slot="trigger" />
 
-				<SelectMenuItems
-					selected="Published"
-					slot="items"
-					items={[
-						{
-							label: 'Published',
-							description: 'This Note is committed'
-						},
-						{
-							label: 'Draft',
-							description: 'This Note is a draft'
-						}
-					]}
-				/>
-			</SelectMenu>
+					<SelectMenuItems
+						slot="items"
+						items={[
+							{
+								label: 'Published',
+								description: 'This job posting can be viewed by anyone who has the link'
+							},
+							{
+								label: 'Draft',
+								description: 'This job posting can be viewed by anyone who has the link'
+							}
+						]}
+					/>
+				</SelectMenu>
+			</SelectMenuContext>
 		</div>
 	</StorybookItem>
 </Story>

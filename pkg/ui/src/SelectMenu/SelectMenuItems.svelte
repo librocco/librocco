@@ -1,29 +1,52 @@
 <script lang="ts">
-	export let items = [{ label: '', description: '' }];
-	export let selected = '';
+	import { fade } from 'svelte/transition';
+
+	export let items: { label: string; description: string }[];
+
+	import { getContext, onMount } from 'svelte';
+
+	import { SELECT, type SelectMenuContext } from './SelectMenuContext.svelte';
+
+	export let ariaLabel = 'Select an option';
+
+	const { selectItem, registerItem, current } = getContext<SelectMenuContext>(SELECT);
+
+	onMount(() => {
+		items.forEach((item) => registerItem(item.label));
+	});
+
+	const handleSelectOnChange = (e: Event) => {
+		const target = e.currentTarget as HTMLLIElement;
+		const text = target.getElementsByTagName('p').item(0)
+			? target.getElementsByTagName('p').item(0).innerText
+			: '';
+		selectItem(text || '');
+	};
 </script>
 
-<div>
+<div transition:fade>
 	<ul
 		class="absolute right-0 z-10 mt-2 w-72 origin-top-right divide-y divide-gray-200 overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none"
 		tabindex="-1"
 		role="listbox"
 		aria-labelledby="listbox-label"
+		aria-label={ariaLabel}
 		aria-activedescendant="listbox-option-0"
 	>
-		{#each items as item}
+		{#each items as item, i}
 			<li
-				class="group text-gray-600 cursor-default select-none p-4 text-sm hover:text-white hover:bg-indigo-500"
-				id="listbox-option-0"
+				class="group text-gray-600 cursor-default select-none p-4 text-sm hover:text-white hover:bg-teal-500"
+				id={`listbox-option-${i}`}
 				role="option"
+				on:click={handleSelectOnChange}
 			>
 				<div class="flex flex-col">
 					<div class="flex justify-between">
-						<p class="font-normal group-hover:font-semibold ">{item.label}</p>
+						<p class="font-normal group-hover:font-semibold">{item.label}</p>
 
-						{#if item.label === selected}
+						{#if item.label === $current}
 							<!-- @TODO replace with svg -->
-							<span class="text-indigo-500 group-hover:text-white">
+							<span class="text-yellow-500 group-hover:text-white">
 								<svg
 									class="h-5 w-5"
 									xmlns="http://www.w3.org/2000/svg"
@@ -40,7 +63,7 @@
 							</span>
 						{/if}
 					</div>
-					<p class="text-gray-500 mt-2 group-hover:text-indigo-200">{item.description}</p>
+					<p class="text-gray-500 mt-2 group-hover:text-teal-200">{item.description}</p>
 				</div>
 			</li>
 		{/each}
