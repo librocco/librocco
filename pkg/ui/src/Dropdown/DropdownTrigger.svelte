@@ -1,20 +1,19 @@
 <script lang="ts">
-	import type { SvelteComponentDev } from 'svelte/internal';
-
-	export let label = '';
-	export let Icon: typeof SvelteComponentDev | null = null;
+	export let label: string;
+	export let visible = false;
 </script>
 
 <div class="relative inline-block text-left">
 	<div class="hidden md:block">
 		<button
 			type="button"
-			class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+			class="inline-flex w-full justify-center rounded-md border border-gray-300 bg-white px-2 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-gray-100"
 			id="menu-button"
-			aria-expanded="true"
+			aria-expanded={visible}
 			aria-haspopup="true"
+			on:click={() => (visible = !visible)}
 		>
-			<div class="w-6 pr-1"><svelte:component this={Icon} /></div>
+			<slot name="icon" class="w-6 pr-1" />
 			{label}
 			<svg
 				class="-mr-1 ml-2 h-5 w-5"
@@ -35,7 +34,7 @@
 	<div class="md:hidden">
 		<button
 			type="button"
-			class="flex items-center rounded-full bg-gray-100 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-gray-100"
+			class="flex items-center rounded-full bg-gray-100 text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-gray-100"
 			id="menu-button"
 			aria-expanded="true"
 			aria-haspopup="true"

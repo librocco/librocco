@@ -1,12 +1,16 @@
-<div class="fixed top-16 w-72">
+<script>
+	let visible = false;
+	export let current = '';
+</script>
+
+<div>
 	<div class="relative mt-1">
-		<slot name="trigger" />
-		<!-- <Transition
-          as={Fragment}
-          leave="transition ease-in duration-100"
-          leaveFrom="opacity-100"
-          leaveTo="opacity-0"
-        > -->
-		<slot name="items" />
+		<div on:click={() => (visible = !visible)}>
+			<slot name="trigger" {visible} />
+		</div>
+
+		{#if visible}
+			<slot name="items" {current} />
+		{/if}
 	</div>
 </div>
