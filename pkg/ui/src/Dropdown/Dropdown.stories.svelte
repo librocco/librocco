@@ -14,7 +14,7 @@
 <Story name="Dropdown Trigger">
 	<StorybookGrid>
 		<StorybookItem>
-			<DropdownTrigger Icon={ChevronLeft} label="Options" />
+			<DropdownTrigger label="Options" />
 		</StorybookItem>
 	</StorybookGrid>
 </Story>
@@ -22,7 +22,16 @@
 	<StorybookGrid>
 		<StorybookItem>
 			<div class="absolute left-64">
-				<DropdownItems items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']} />
+				<DropdownItems
+					items={[
+						{ label: 'Edit', href: '' },
+						{ label: 'Archive', href: '' },
+						{ label: 'Move', href: '' },
+						{ label: 'Share', href: '' },
+						{ label: 'Add To Favorites', href: '' },
+						{ label: 'Delete', href: '' }
+					]}
+				/>
 			</div>
 		</StorybookItem>
 	</StorybookGrid>
@@ -32,10 +41,17 @@
 		<StorybookItem>
 			<div class="absolute left-64">
 				<Dropdown>
-					<DropdownTrigger slot="trigger" label="Options" Icon={ChevronLeft} />
+					<DropdownTrigger slot="trigger" label="Options" />
 					<DropdownItems
 						slot="items"
-						items={['Edit', 'Archive', 'Move', 'Share', 'Add To Favorites', 'Delete']}
+						items={[
+							{ label: 'Edit', href: '' },
+							{ label: 'Archive', href: '' },
+							{ label: 'Move', href: '' },
+							{ label: 'Share', href: '' },
+							{ label: 'Add To Favorites', href: '' },
+							{ label: 'Delete', href: '' }
+						]}
 					/>
 				</Dropdown>
 			</div>
