@@ -1,7 +1,7 @@
 {
   "**/{pkg,apps}/**/!(vite|svelte|tailwind|postcss)*.{ts,js,svelte}": [
     "eslint --fix --max-warnings=0",
-    "prettier --write"
+    "prettier --write --plugin-search-dir=. --plugin=prettier-plugin-svelte"
   ],
   "*.{json,md,mdx}": ["prettier --write"]
 }
