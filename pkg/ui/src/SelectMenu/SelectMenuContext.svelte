@@ -1,8 +1,7 @@
 <script context="module" lang="ts">
-	import { v4 as uuid } from 'uuid';
 	import type { Writable } from 'svelte/store';
 
-	export const SELECT = `select-menu-${uuid()}`;
+	export const SELECT = Symbol();
 
 	type Items = Writable<string[]>;
 	type Current = Writable<string>;

@@ -1,23 +1,18 @@
 <script lang="ts">
-	import { Meta, Story } from '@storybook/addon-svelte-csf';
-	import { StorybookItem, StorybookGrid } from '../utils/stories';
+	import type { Hst } from '@histoire/plugin-svelte';
 	import { SelectMenuContext, SelectMenuTrigger, SelectMenuItems, SelectMenu } from './index';
+
+	export let Hst: Hst;
 </script>
 
-<Meta title="Components: SelectMenu" />
-
-<Story name="Select Menu Trigger">
-	<StorybookGrid>
-		<StorybookItem>
-			<SelectMenuContext initialValue="Different Value">
-				<SelectMenuTrigger />
-			</SelectMenuContext>
-		</StorybookItem>
-	</StorybookGrid>
-</Story>
-<Story name="Select Menu Item">
-	<StorybookItem>
-		<div class="absolute left-30">
+<Hst.Story title="SelectMenu" layout={{ type: 'single' }}>
+	<Hst.Variant title="Select Menu Trigger">
+		<SelectMenuContext initialValue="Different Value">
+			<SelectMenuTrigger />
+		</SelectMenuContext>
+	</Hst.Variant>
+	<Hst.Variant title="Select Menu Item">
+		<div>
 			<SelectMenuContext initialValue="Different Value">
 				<SelectMenuItems
 					items={[
@@ -33,11 +28,9 @@
 				/>
 			</SelectMenuContext>
 		</div>
-	</StorybookItem>
-</Story>
-<Story name="Select Menu">
-	<StorybookItem>
-		<div class="absolute left-30">
+	</Hst.Variant>
+	<Hst.Variant title="Select Menu">
+		<div>
 			<SelectMenuContext initialValue="Custom Label">
 				<SelectMenu>
 					<SelectMenuTrigger slot="trigger" />
@@ -58,5 +51,5 @@
 				</SelectMenu>
 			</SelectMenuContext>
 		</div>
-	</StorybookItem>
-</Story>
+	</Hst.Variant>
+</Hst.Story>
