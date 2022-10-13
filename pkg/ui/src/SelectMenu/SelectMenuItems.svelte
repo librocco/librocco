@@ -17,7 +17,7 @@
 	const handleSelectOnChange = (e: Event) => {
 		const target = e.currentTarget as HTMLLIElement;
 		const text = target.getElementsByTagName('p').item(0)
-			? target.getElementsByTagName('p').item(0).innerText
+			? (target.getElementsByTagName('p').item(0) || {}).innerText
 			: '';
 		selectItem(text || '');
 	};
