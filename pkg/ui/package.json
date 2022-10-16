@@ -44,7 +44,9 @@
 		"@histoire/plugin-svelte": "~0.11.2",
 		"@histoire/controls": "~0.11.3",
 		"autoprefixer": "~10.4.12",
-		"lucide-svelte": "~0.91.0"
+		"lucide-svelte": "~0.91.0",
+		"svelte-headless-table": "~0.15.1",
+		"svelte-table": "~0.5.1"
 	},
 	"peerDependencies": {
 		"lucide-svelte": "~0.91.0"
