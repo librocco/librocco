@@ -39,6 +39,7 @@
 		"vite": "^3.0.0",
 		"vitest": "~0.21.1",
 		"svelte2tsx": "~0.5.13",
+		"svelte-headless-table": "~0.15.1",
 		"@types/uuid": "~8.3.4",
 		"histoire": "~0.11.2",
 		"@histoire/plugin-svelte": "~0.11.2",
