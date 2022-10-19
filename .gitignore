@@ -13,7 +13,6 @@
 **/.env.staging.local
 **/.envrc
 
-
 # Misc. .log files
 **/npm-debug.log*
 **/.pnpm-debug.log*
