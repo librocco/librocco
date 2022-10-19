@@ -119,7 +119,7 @@ export const shapeRadiusLookup: Record<
  * ```
  */
 export const colorClassesLookup: Record<ButtonColor, string> = {
-	[ButtonColor.Primary]: 'text-white bg-indigo-600 hover:bg-indigo-700',
-	[ButtonColor.Secondary]: 'text-indigo-700 bg-indigo-100 hover:bg-indigo-200',
+	[ButtonColor.Primary]: 'text-gray-900 bg-teal-600 hover:bg-teal-700',
+	[ButtonColor.Secondary]: 'text-pink-700 bg-pink-50 hover:bg-pink-100',
 	[ButtonColor.White]: 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
 };
