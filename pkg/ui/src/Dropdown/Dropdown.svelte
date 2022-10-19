@@ -2,6 +2,8 @@
 	import { Menu, MenuButton, MenuItems, MenuItem, Transition } from '@rgossiaux/svelte-headlessui';
 	import { ChevronDown, MoreVertical } from 'lucide-svelte';
 
+	import { classNames } from '../utils/styles';
+
 	import { AlignContainerEdge } from './enums';
 
 	export let buttonLabel: string;
@@ -64,15 +66,9 @@
 		'focus:outline-none'
 	].join(' ');
 
-	const linkClasses = [
-		'block',
-		'px-4',
-		'py-2',
-		'text-sm',
-		'text-gray-700',
-		'hover:bg-gray-100',
-		'hover:text-gray-900'
-	].join(' ');
+	const itemClasses = ['block', 'px-5', 'py-3', 'min-w-fit', 'text-sm'].join(' ');
+
+	const voidMenuItemClick = () => {};
 </script>
 
 <Menu>
@@ -101,12 +97,19 @@
 		leaveFrom="transform opacity-100 scale-100"
 		leaveTo="transform opacity-0 scale-95"
 	>
-		<MenuItems class={containerClasses}>
-			{#each items as { label, href, onClick }, ix (ix)}
-				<MenuItem class="py-1 px-2 min-w-fit">
-					<a {href} on:click={onClick} class={linkClasses}>
+		<MenuItems class={containerClasses} as="nav">
+			{#each items as { label, href, onClick = voidMenuItemClick }, ix (ix)}
+				<MenuItem let:active {href} on:click={onClick}>
+					<span
+						class={classNames(
+							itemClasses,
+							active ? 'bg-teal-200 text-gray-700' : 'bg-white text-gray-900',
+							ix === 0 ? 'rounded-t-md' : '',
+							ix === items.length - 1 ? 'rounded-b-md' : ''
+						)}
+					>
 						{label}
-					</a>
+					</span>
 				</MenuItem>
 			{/each}
 		</MenuItems>
