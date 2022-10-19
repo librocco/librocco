@@ -11,7 +11,7 @@
 
 	import { AlignContainerEdge } from './enums';
 
-	import { classNames } from '$utils/styles';
+	import { classNames } from '../utils/styles';
 
 	interface Option {
 		title: string;
