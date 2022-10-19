@@ -15,3 +15,11 @@ export const filterPositionClass = (inputClasses: string, baseClasses: string[])
 	});
 	return baseClasses;
 };
+
+/**
+ * Filters a list of class names by boolean flags
+ *
+ * @param classes - Class name args
+ * @returns
+ */
+export const classNames = (...classes: string[]) => classes.filter(Boolean).join(' ');
