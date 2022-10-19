@@ -6,8 +6,8 @@ const buttonBaseClasses =
 
 const buttonStateClassLookup: Record<ButtonState, string> = {
 	inactive: 'text-gray-500 border-gray-300',
-	active: 'text-indigo-600 bg-indigo-50 border-indigo-500',
-	hover: 'hover:bg-indigo-50',
+	active: 'text-pink-600 bg-pink-50 border-pink-500',
+	hover: 'hover:bg-pink-50',
 	disabled: 'opacity-50'
 };
 export const getButtonClasses = (...states: ButtonState[]): string =>
