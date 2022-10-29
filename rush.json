@@ -387,7 +387,6 @@
     },
     { "packageName": "@librocco/scaffold", "projectFolder": "pkg/scaffold" },
     { "packageName": "@librocco/ui", "projectFolder": "pkg/ui" },
-    { "packageName": "@librocco/shared", "projectFolder": "pkg/shared" },
     { "packageName": "js-search", "projectFolder": "pkg/js-search" },
     {
       "packageName": "@librocco/database",
