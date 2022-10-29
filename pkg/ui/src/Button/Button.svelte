@@ -92,7 +92,8 @@
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
-<svelte:element this={as} class={containerClasses} on:click on:keydown>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<svelte:element this={as} class={containerClasses} on:click>
 	<span class="flex items-center gap-x-2">
 		{#if $$slots.startAdornment && shape !== ButtonShape.Circular}
 			<slot name="startAdornment" />
