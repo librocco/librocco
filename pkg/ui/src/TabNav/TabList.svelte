@@ -31,14 +31,7 @@
 		'focus:outline-teal-500'
 	].join(' ');
 
-	const navClasses = [
-		'isolate',
-		'flex',
-		'divide-x',
-		'divide-gray-200',
-		'rounded-lg',
-		'shadow'
-	].join(' ');
+	const navClasses = ['isolate', 'flex', 'divide-x', 'divide-gray-200', 'rounded-lg', 'shadow'].join(' ');
 </script>
 
 <!-- Small screens = Select > Option (Tab.svelte) -->
