@@ -50,11 +50,7 @@
 {:else}
 	<nav class={['flex', inputClasses].join(' ')}>
 		<svelte:component this={Wrapper} to={prevLink}>
-			<ArrowButton
-				variant="left"
-				disabled={!prevLink}
-				on:click={() => onPaginate(prevLink, prevItem)}
-			/>
+			<ArrowButton variant="left" disabled={!prevLink} on:click={() => onPaginate(prevLink, prevItem)} />
 		</svelte:component>
 
 		{#each itemsToRender as item}
@@ -74,11 +70,7 @@
 		{/each}
 
 		<svelte:component this={Wrapper} to={nextLink}>
-			<ArrowButton
-				variant="right"
-				disabled={!nextLink}
-				on:click={() => onPaginate(nextLink, nextItem)}
-			/>
+			<ArrowButton variant="right" disabled={!nextLink} on:click={() => onPaginate(nextLink, nextItem)} />
 		</svelte:component>
 	</nav>
 {/if}

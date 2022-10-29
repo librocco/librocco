@@ -1,11 +1,6 @@
 <script lang="ts">
 	import { ButtonColor, ButtonShape, ButtonSize } from './enums';
-	import {
-		shapeRadiusLookup,
-		textSizeLookup,
-		shapeSpacingLookup,
-		colorClassesLookup
-	} from './styles';
+	import { shapeRadiusLookup, textSizeLookup, shapeSpacingLookup, colorClassesLookup } from './styles';
 
 	let className = '';
 	export { className as class };
@@ -93,8 +88,7 @@
 	$: spacingClasses = shapeSpacingLookup[shape][size];
 	$: sizeClasses = [textClasses, spacingClasses].join(' ');
 	$: colorClasses = colorClassesLookup[color];
-	const focusClasses =
-		'focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
+	const focusClasses = 'focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 

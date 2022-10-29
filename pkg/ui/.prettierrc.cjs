@@ -1,1 +1,1 @@
-module.exports = require("../scaffold/.prettierrc.ui.cjs");
+module.exports = require('../scaffold/.prettierrc.ui.cjs');
