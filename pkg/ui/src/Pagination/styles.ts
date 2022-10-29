@@ -1,8 +1,7 @@
 import type { ButtonState } from './types';
 
 // #region buttonClasses
-const buttonBaseClasses =
-	'w-10 h-[38px] flex items-center justify-center text-sm leading-5 font-medium border';
+const buttonBaseClasses = 'w-10 h-[38px] flex items-center justify-center text-sm leading-5 font-medium border';
 
 const buttonStateClassLookup: Record<ButtonState, string> = {
 	inactive: 'text-gray-500 border-gray-300',
