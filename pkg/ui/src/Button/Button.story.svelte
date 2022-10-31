@@ -51,7 +51,7 @@
 		{#each Object.values(ButtonSize) as size}
 			<div class="py-2">
 				<Button {size} {color}>
-					<div name="startAdornment"><Mail /></div>
+					<span slot="startAdornment"><Mail /></span>
 					{buttonText}
 				</Button>
 			</div>
@@ -63,7 +63,7 @@
 			<div class="py-2">
 				<Button {size} {color}>
 					{buttonText}
-					<div name="endAdornment"><Mail /></div>
+					<div slot="endAdornment"><Mail /></div>
 				</Button>
 			</div>
 		{/each}
