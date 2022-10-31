@@ -98,15 +98,15 @@
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
-<svelte:element this={as} class={containerClasses} on:click>
+<svelte:element this={as} class={containerClasses} on:click on:keydown>
 	<span class="flex items-center gap-x-2">
-		{#if $$slots.startAdornment && !ButtonShape.Circular}
+		{#if $$slots.startAdornment && shape !== ButtonShape.Circular}
 			<slot name="startAdornment" />
 		{/if}
 
 		<slot />
 
-		{#if $$slots.endAdornment && !ButtonShape.Circular}
+		{#if $$slots.endAdornment && shape !== ButtonShape.Circular}
 			<slot name="endAdornment" />
 		{/if}
 	</span>
