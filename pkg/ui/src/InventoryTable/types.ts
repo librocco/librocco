@@ -1,12 +1,12 @@
 export type TableData = {
 	ISBN: number;
-	Title: string;
-	Author: string;
-	Editor: string;
-	Quantity: number;
-	Price: number;
-	Year: number;
-	OutOfPrint: boolean;
-	EditedBy: string;
-	Classification: string;
+	title: string;
+	author: string;
+	editor: string;
+	quantity: number;
+	price: number;
+	year: number;
+	outOfPrint: boolean;
+	editedBy: string;
+	classification: string;
 };

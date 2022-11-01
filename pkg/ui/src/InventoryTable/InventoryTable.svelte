@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let headerRows: string[] = [
+	const columnTitles: string[] = [
 		'ISBN',
 		'Title',
 		'Author',
@@ -7,8 +7,8 @@
 		'Quantity',
 		'Price',
 		'Year',
-		'OutOfPrint',
-		'EditedBy',
+		'Out Of Print',
+		'Edited By',
 		'Classification'
 	];
 </script>
@@ -21,17 +21,14 @@
 					<table class="min-w-full divide-y divide-gray-300">
 						<thead class="bg-gray-50">
 							<tr>
-								{#each headerRows as headerRow (headerRow)}
+								{#each columnTitles as columnTitle (columnTitle)}
 									<th
 										scope="col"
 										class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
 									>
-										<!-- svelte-ignore a11y-invalid-attribute -->
-										<a href="#" class="group">
-											<div class="flex justify-center">
-												{headerRow}
-											</div>
-										</a>
+										<div class="flex justify-center">
+											{columnTitle}
+										</div>
 									</th>
 								{/each}
 							</tr>

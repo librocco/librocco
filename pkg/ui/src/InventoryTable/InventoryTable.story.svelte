@@ -1,46 +1,83 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
-	import { InventoryRow, InventoryTable } from './index';
+	import { InventoryTableRow, InventoryTable } from './index';
 	import type { TableData } from './types';
 	export let Hst: Hst;
 
 	const data: TableData[] = [
 		{
 			ISBN: 917289012312,
-			Title: 'Miti Del Nord',
-			Author: 'Neil Gaiman',
-			Editor: 'N/A',
-			Quantity: 3,
-			Price: 10,
-			Year: 2017,
-			OutOfPrint: false,
-			EditedBy: '',
-			Classification: ''
+			title: 'Miti Del Nord',
+			author: 'Neil Gaiman',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
 		},
 		{
 			ISBN: 917289012312,
-			Title: 'Hellenistic history and culture',
-			Author: 'Peter Green',
-			Editor: 'N/A',
-			Quantity: 3,
-			Price: 10,
-			Year: 2017,
-			OutOfPrint: false,
-			EditedBy: '',
-			Classification: ''
+			title: 'Hellenistic history and culture',
+			author: 'Peter Green',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
 		},
 
 		{
 			ISBN: 917289012310,
-			Title: 'Studies in Greek culture and Roman policy',
-			Author: 'Robert Lamberton',
-			Editor: 'N/A',
-			Quantity: 3,
-			Price: 10,
-			Year: 2017,
-			OutOfPrint: false,
-			EditedBy: '',
-			Classification: ''
+			title: 'Studies in Greek culture and Roman policy',
+			author: 'Robert Lamberton',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
+		},
+		{
+			ISBN: 917289012312,
+			title: 'Miti Del Nord',
+			author: 'Neil Gaiman',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
+		},
+		{
+			ISBN: 917289012312,
+			title: 'Hellenistic history and culture',
+			author: 'Peter Green',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
+		},
+
+		{
+			ISBN: 917289012310,
+			title: 'Studies in Greek culture and Roman policy',
+			author: 'Robert Lamberton',
+			editor: 'N/A',
+			quantity: 3,
+			price: 10,
+			year: 2017,
+			outOfPrint: false,
+			editedBy: '',
+			classification: ''
 		}
 	];
 </script>
@@ -48,8 +85,8 @@
 <Hst.Story title="Table">
 	<Hst.Variant>
 		<InventoryTable>
-			{#each data as rowData}
-				<InventoryRow {rowData} />
+			{#each data as rowData, index}
+				<InventoryTableRow className={index % 2 === 0 ? undefined : 'bg-gray-50'} {rowData} />
 			{/each}
 		</InventoryTable>
 	</Hst.Variant>
