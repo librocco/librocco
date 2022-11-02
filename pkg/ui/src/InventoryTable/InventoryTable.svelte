@@ -24,9 +24,9 @@
 								{#each columnTitles as columnTitle (columnTitle)}
 									<th
 										scope="col"
-										class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900 sm:pl-6"
+										class="py-3.5 pl-4 pr-3 text-left text-sm font-semibold text-gray-900"
 									>
-										<div class="flex justify-center">
+										<div>
 											{columnTitle}
 										</div>
 									</th>
@@ -34,7 +34,7 @@
 							</tr>
 						</thead>
 
-						<tbody class="divide-y divide-gray-200 bg-white">
+						<tbody class="divide-y  divide-gray-200 bg-white">
 							<slot />
 						</tbody>
 					</table>
