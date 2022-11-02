@@ -9,7 +9,7 @@
 			ISBN: 917289012312,
 			title: 'Miti Del Nord',
 			author: 'Neil Gaiman',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -21,7 +21,7 @@
 			ISBN: 917289012312,
 			title: 'Hellenistic history and culture',
 			author: 'Peter Green',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -34,7 +34,7 @@
 			ISBN: 917289012310,
 			title: 'Studies in Greek culture and Roman policy',
 			author: 'Robert Lamberton',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -46,7 +46,7 @@
 			ISBN: 917289012312,
 			title: 'Miti Del Nord',
 			author: 'Neil Gaiman',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -58,7 +58,7 @@
 			ISBN: 917289012312,
 			title: 'Hellenistic history and culture',
 			author: 'Peter Green',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -71,7 +71,7 @@
 			ISBN: 917289012310,
 			title: 'Studies in Greek culture and Roman policy',
 			author: 'Robert Lamberton',
-			editor: 'N/A',
+			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -85,8 +85,8 @@
 <Hst.Story title="Table">
 	<Hst.Variant>
 		<InventoryTable>
-			{#each data as rowData, index}
-				<InventoryTableRow className={index % 2 === 0 ? undefined : 'bg-gray-50'} {rowData} />
+			{#each data as rowData}
+				<InventoryTableRow {...rowData} />
 			{/each}
 		</InventoryTable>
 	</Hst.Variant>
