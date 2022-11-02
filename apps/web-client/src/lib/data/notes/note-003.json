@@ -1,0 +1,21 @@
+{
+	"id": "note-003",
+	"type": "in-note",
+	"entries": [
+		{
+			"isbn": "0195071409",
+			"warehouse": "jazz",
+			"quantity": 7
+		},
+		{
+			"isbn": "0195399706",
+			"warehouse": "jazz",
+			"quantity": 12
+		},
+		{
+			"isbn": "0194349276",
+			"warehouse": "jazz",
+			"quantity": 14
+		}
+	]
+}
