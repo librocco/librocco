@@ -1,32 +1,32 @@
 {
-  "entries": [
-    {
-      "quantity": 16,
-      "isbn": "0061983411"
-    },
-    {
-      "quantity": 9,
-      "isbn": "019976915X"
-    },
-    {
-      "quantity": 18,
-      "isbn": "0195071409"
-    },
-    {
-      "quantity": 0,
-      "isbn": "0195399706"
-    },
-    {
-      "quantity": 25,
-      "isbn": "0194349276"
-    },
-    {
-      "quantity": 10,
-      "isbn": "0080524230"
-    },
-    {
-      "quantity": 25,
-      "isbn": "0007149522"
-    }
-  ]
+	"entries": [
+		{
+			"quantity": 16,
+			"isbn": "0061983411"
+		},
+		{
+			"quantity": 9,
+			"isbn": "019976915X"
+		},
+		{
+			"quantity": 18,
+			"isbn": "0195071409"
+		},
+		{
+			"quantity": 0,
+			"isbn": "0195399706"
+		},
+		{
+			"quantity": 25,
+			"isbn": "0194349276"
+		},
+		{
+			"quantity": 10,
+			"isbn": "0080524230"
+		},
+		{
+			"quantity": 25,
+			"isbn": "0007149522"
+		}
+	]
 }

@@ -1,16 +1,17 @@
 {
-  "entries": [
-    {
-      "quantity": 16,
-      "isbn": "0061983411"
-    },
-    {
-      "quantity": 10,
-      "isbn": "0080524230"
-    },
-    {
-      "quantity": 25,
-      "isbn": "0007149522"
-    }
-  ]
+	"entries": [
+		{
+			"quantity": 16,
+			"isbn": "0061983411"
+		},
+		{
+			"quantity": 10,
+			"isbn": "0080524230"
+		},
+		{
+			"quantity": 25,
+			"isbn": "0007149522"
+		}
+	],
+	"inNotes": ["note-005", "note-009"]
 }

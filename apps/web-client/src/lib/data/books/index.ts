@@ -1,3 +1,5 @@
+import type { BookStore } from '../stores';
+
 import book1 from './0007149522.json';
 import book2 from './0061983411.json';
 import book3 from './0080524230.json';
@@ -14,4 +16,4 @@ export default {
 	'0195071409': book5,
 	'0195399706': book6,
 	'019976915X': book7
-};
+} as BookStore;
