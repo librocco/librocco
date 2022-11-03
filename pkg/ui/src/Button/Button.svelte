@@ -1,11 +1,6 @@
 <script lang="ts">
 	import { ButtonColor, ButtonShape, ButtonSize } from './enums';
-	import {
-		shapeRadiusLookup,
-		textSizeLookup,
-		shapeSpacingLookup,
-		colorClassesLookup
-	} from './styles';
+	import { shapeRadiusLookup, textSizeLookup, shapeSpacingLookup, colorClassesLookup } from './styles';
 
 	let className = '';
 	export { className as class };
@@ -93,12 +88,12 @@
 	$: spacingClasses = shapeSpacingLookup[shape][size];
 	$: sizeClasses = [textClasses, spacingClasses].join(' ');
 	$: colorClasses = colorClassesLookup[color];
-	const focusClasses =
-		'focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
+	const focusClasses = 'focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
-<svelte:element this={as} class={containerClasses} on:click on:keydown>
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<svelte:element this={as} class={containerClasses} on:click>
 	<span class="flex items-center gap-x-2">
 		{#if $$slots.startAdornment && shape !== ButtonShape.Circular}
 			<slot name="startAdornment" />

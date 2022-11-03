@@ -85,10 +85,7 @@ export const shapeSpacingLookup: Record<ButtonShape, Record<ButtonSize, string>>
  * 	xl:   rounded-[25px]
  * ```
  */
-export const shapeRadiusLookup: Record<
-	ButtonShape.Square | ButtonShape.Rounded,
-	Record<ButtonSize, string>
-> = {
+export const shapeRadiusLookup: Record<ButtonShape.Square | ButtonShape.Rounded, Record<ButtonSize, string>> = {
 	[ButtonShape.Square]: {
 		[ButtonSize.XS]: 'rounded',
 		[ButtonSize.SM]: 'rounded-md',
