@@ -1,5 +1,5 @@
 export type TableData = {
-	ISBN: number;
+	isbn: number;
 	title: string;
 	author: string;
 	editor: string;
