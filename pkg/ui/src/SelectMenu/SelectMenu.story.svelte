@@ -16,9 +16,5 @@
 </script>
 
 <Hst.Story title="SelectMenu" layout={{ type: 'grid', width: 500 }}>
-	<SelectMenu
-		{options}
-		alignItemsEdge={AlignContainerEdge.Left}
-		ariaLabel="Change published status"
-	/>
+	<SelectMenu {options} alignItemsEdge={AlignContainerEdge.Left} ariaLabel="Change published status" />
 </Hst.Story>

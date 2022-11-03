@@ -64,9 +64,7 @@
 <Listbox value={selected} on:change={(e) => (selected = e.detail)} let:open>
 	<div class="relative inline-block text-left">
 		<ListboxLabel class="sr-only">{ariaLabel}</ListboxLabel>
-		<div
-			class="inline-flex divide-x divide-teal-600 rounded-md shadow-sm text-white text-sm font-medium"
-		>
+		<div class="inline-flex divide-x divide-teal-600 rounded-md text-sm font-medium text-white shadow-sm">
 			<div class="inline-flex items-center gap-x-2 rounded-l-md bg-teal-500 py-2 px-4">
 				<Check aria-hidden="true" />
 				<p>{selected.title}</p>
@@ -77,21 +75,11 @@
 			</ListboxButton>
 		</div>
 
-		<Transition
-			show={open}
-			leave="transition ease-in duration-100"
-			leaveFrom="opacity-100"
-			leaveTo="opacity-0"
-		>
+		<Transition show={open} leave="transition ease-in duration-100" leaveFrom="opacity-100" leaveTo="opacity-0">
 			<ListboxOptions class={optionsClasses}>
 				{#each options as option, ix (ix)}
 					<ListboxOption value={option} let:selected let:active>
-						<div
-							class={classNames(
-								'group p-2.5 hover:bg-teal-500',
-								active ? 'bg-teal-500' : 'bg-white'
-							)}
-						>
+						<div class={classNames('group p-2.5 hover:bg-teal-500', active ? 'bg-teal-500' : 'bg-white')}>
 							<div class="flex justify-between">
 								<p
 									class={classNames(
@@ -105,10 +93,7 @@
 								{#if selected}
 									<Check
 										aria-hidden="true"
-										class={classNames(
-											'group-hover:text-white',
-											active ? 'text-white' : 'text-teal-500'
-										)}
+										class={classNames('group-hover:text-white', active ? 'text-white' : 'text-teal-500')}
 									/>
 								{/if}
 							</div>
