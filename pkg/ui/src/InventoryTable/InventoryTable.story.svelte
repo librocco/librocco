@@ -6,7 +6,7 @@
 
 	const data: TableData[] = [
 		{
-			ISBN: 917289012312,
+			isbn: 917289012312,
 			title: 'Miti Del Nord',
 			author: 'Neil Gaiman',
 			editor: '',
@@ -18,7 +18,7 @@
 			classification: ''
 		},
 		{
-			ISBN: 917289012312,
+			isbn: 917289012312,
 			title: 'Hellenistic history and culture',
 			author: 'Peter Green',
 			editor: '',
@@ -31,7 +31,7 @@
 		},
 
 		{
-			ISBN: 917289012310,
+			isbn: 917289012310,
 			title: 'Studies in Greek culture and Roman policy',
 			author: 'Robert Lamberton',
 			editor: '',
@@ -43,7 +43,7 @@
 			classification: ''
 		},
 		{
-			ISBN: 917289012312,
+			isbn: 917289012312,
 			title: 'Miti Del Nord',
 			author: 'Neil Gaiman',
 			editor: '',
@@ -55,7 +55,7 @@
 			classification: ''
 		},
 		{
-			ISBN: 917289012312,
+			isbn: 917289012312,
 			title: 'Hellenistic history and culture',
 			author: 'Peter Green',
 			editor: '',
@@ -68,7 +68,7 @@
 		},
 
 		{
-			ISBN: 917289012310,
+			isbn: 917289012310,
 			title: 'Studies in Greek culture and Roman policy',
 			author: 'Robert Lamberton',
 			editor: '',
