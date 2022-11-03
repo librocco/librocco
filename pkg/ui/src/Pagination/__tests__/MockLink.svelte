@@ -9,6 +9,7 @@
 	export let to = '';
 </script>
 
+<!-- svelte-ignore a11y-click-events-have-key-events -->
 <span on:click={() => mockNavigate(to)}>
 	<slot />
 </span>

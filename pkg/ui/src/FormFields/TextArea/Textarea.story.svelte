@@ -8,12 +8,7 @@
 
 <Hst.Story title="Form Fields / Textarea" layout={{ type: 'grid', width: 500 }}>
 	<Hst.Variant title="Default">
-		<Textarea
-			name="default"
-			label="Default"
-			helpText="Here is some help text"
-			placeholder="This is a placeholder"
-		/>
+		<Textarea name="default" label="Default" helpText="Here is some help text" placeholder="This is a placeholder" />
 	</Hst.Variant>
 	<Hst.Variant title="Resizable">
 		<Textarea
@@ -24,11 +19,6 @@
 		/>
 	</Hst.Variant>
 	<Hst.Variant title="Max Length">
-		<Textarea
-			name="maxlength"
-			label="Max Length"
-			placeholder="I have a max char length of 20"
-			maxlength={20}
-		/>
+		<Textarea name="maxlength" label="Max Length" placeholder="I have a max char length of 20" maxlength={20} />
 	</Hst.Variant>
 </Hst.Story>

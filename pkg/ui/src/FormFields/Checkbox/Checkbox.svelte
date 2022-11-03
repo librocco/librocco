@@ -23,7 +23,7 @@
 </script>
 
 <div class="relative flex items-start">
-	<div class="flex items-center h-5">
+	<div class="flex h-5 items-center">
 		<input
 			type="checkbox"
 			{id}
