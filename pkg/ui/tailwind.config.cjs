@@ -1,20 +1,8 @@
 const theme = require('../scaffold/tailwind.theme');
+const plugins = require('../scaffold/tailwind.plugins');
 
 module.exports = {
 	content: ['./src/**/*.{html,js,svelte,ts}'],
 	theme,
-	plugins: [
-		require('@tailwindcss/forms'),
-		function ({ addUtilities }) {
-			addUtilities({
-				'.scrollbar-hide': {
-					'&::--webkit-scrollbar': {
-						display: 'none'
-					},
-					'-ms-overflow-style': 'none',
-					'scrollbar-width': 'none'
-				}
-			});
-		}
-	]
+	plugins
 };
