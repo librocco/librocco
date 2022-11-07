@@ -2,14 +2,25 @@
 	import { Check, ChevronDown, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
-	import { InventoryPage, SidebarItemGroup, TextField, Pagination, Badge, BadgeColor } from '@librocco/ui';
+	import {
+		InventoryPage,
+		SidebarItemGroup,
+		TextField,
+		Pagination,
+		Badge,
+		BadgeColor,
+		InventoryTable,
+		InventoryTableRow
+	} from '@librocco/ui';
 
-	import { inNotes } from '$lib/data/stores';
+	import { createTableContentStore, inNotes } from '$lib/data/stores';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse = !currentNote
 		? ''
 		: Object.entries($inNotes).find(([, notes]) => notes.includes(currentNote))![0];
+
+	const tableContent = createTableContentStore('inbound');
 </script>
 
 <InventoryPage>
@@ -54,9 +65,15 @@
 	</svelte:fragment>
 
 	<!-- Table slot -->
-	<div class="flex h-full w-full items-center justify-center bg-violet-200" slot="table">
-		<h1 class="text-3xl font-semibold tracking-wider text-violet-300">TABLE</h1>
-	</div>
+	<svelte:fragment slot="table">
+		{#if $tableContent.length}
+			<InventoryTable>
+				{#each $tableContent as data}
+					<InventoryTableRow {data} />
+				{/each}
+			</InventoryTable>
+		{/if}
+	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
