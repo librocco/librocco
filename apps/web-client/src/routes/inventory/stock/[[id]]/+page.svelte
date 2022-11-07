@@ -2,11 +2,13 @@
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
-	import { InventoryPage, SidebarItem, TextField, Pagination } from '@librocco/ui';
+	import { InventoryPage, SidebarItem, TextField, Pagination, InventoryTable, InventoryTableRow } from '@librocco/ui';
 
-	import { warehouses } from '$lib/data/stores';
+	import { createTableContentStore, warehouses } from '$lib/data/stores';
 
 	$: currentWarehouse = $page.params.id;
+
+	const tableContent = createTableContentStore('stock');
 </script>
 
 <InventoryPage>
@@ -33,9 +35,15 @@
 	</div>
 
 	<!-- Table slot -->
-	<div class="flex h-full w-full items-center justify-center bg-violet-200" slot="table">
-		<h1 class="text-3xl font-semibold tracking-wider text-violet-300">TABLE</h1>
-	</div>
+	<svelte:fragment slot="table">
+		{#if $tableContent.length}
+			<InventoryTable>
+				{#each $tableContent as data}
+					<InventoryTableRow {data} />
+				{/each}
+			</InventoryTable>
+		{/if}
+	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div slot="tableFooter">
