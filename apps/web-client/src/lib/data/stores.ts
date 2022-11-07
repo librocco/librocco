@@ -61,12 +61,7 @@ export const createTableContentStore = (contentType: keyof typeof contentStoreLo
 	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
 		[contentStoreLookup[contentType], page, bookStore],
 		([content, page, bookStore]) => {
-			let { id } = page.params as { id?: string };
-
-			// If no warehouse 'id' specified, show stock for 'all'
-			if (!id && contentType === 'stock') {
-				id = 'all';
-			}
+			const { id } = page.params as { id?: string };
 
 			// No id will happen quite ofter: this means we're on root of the view
 			// with no single note specified.
