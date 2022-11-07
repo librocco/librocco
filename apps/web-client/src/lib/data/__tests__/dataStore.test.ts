@@ -9,7 +9,6 @@ import note1 from '../notes/note-001.json';
 import note2 from '../notes/note-002.json';
 import note3 from '../notes/note-003.json';
 
-import all from '../warehouses/all.json';
 import jazz from '../warehouses/jazz.json';
 
 import { createTableContentStore } from '../stores';
@@ -39,7 +38,7 @@ describe('Test table content store', () => {
 		expect(get(outNoteStore).map(pickIsbnQuantity)).toEqual(note2.entries.map(pickIsbnQuantity));
 
 		// Test 'outbound' note content
-		const warehouseStore = createTableContentStore('warehouse');
+		const warehouseStore = createTableContentStore('stock');
 		page.set({ params: { id: 'jazz' } });
 		expect(get(warehouseStore).map(pickIsbnQuantity)).toEqual(jazz.entries.map(pickIsbnQuantity));
 	});
@@ -77,12 +76,5 @@ describe('Test table content store', () => {
 		// Test for non existing note
 		page.set({ params: { id: 'non-existing-note' } });
 		expect(get(inNoteStore)).toEqual([]);
-	});
-
-	test("If no param for 'id' in warehouse context, should show stock for 'all'", () => {
-		const warehouseStore = createTableContentStore('warehouse');
-
-		page.set({ params: {} });
-		expect(get(warehouseStore).map(pickIsbnQuantity)).toEqual(all.entries.map(pickIsbnQuantity));
 	});
 });

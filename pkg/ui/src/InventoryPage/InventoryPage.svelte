@@ -6,7 +6,7 @@
 	</section>
 
 	<section class="flex w-full flex-col">
-		<div class="min-h-[100px] flex-shrink-0 bg-gray-50 p-10 pt-6">
+		<div class="min-h-[100px] flex-shrink-0 p-10 pt-6">
 			<slot name="tableHeader" />
 		</div>
 
