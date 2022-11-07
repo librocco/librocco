@@ -21,7 +21,6 @@
 			isbn: 917289012312,
 			title: 'Hellenistic history and culture',
 			author: 'Peter Green',
-			editor: '',
 			quantity: 3,
 			price: 10,
 			year: 2017,
@@ -50,8 +49,7 @@
 			quantity: 3,
 			price: 10,
 			year: 2017,
-			outOfPrint: false,
-			editedBy: '',
+			outOfPrint: true,
 			classification: ''
 		},
 		{
@@ -75,9 +73,8 @@
 			quantity: 3,
 			price: 10,
 			year: 2017,
-			outOfPrint: false,
-			editedBy: '',
-			classification: ''
+			outOfPrint: true,
+			editedBy: ''
 		}
 	];
 </script>
