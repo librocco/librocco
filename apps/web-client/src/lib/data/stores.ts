@@ -53,7 +53,7 @@ export const inNotes = derived(warehouseStore, (ws) =>
 export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
 
 const contentStoreLookup = {
-	warehouse: warehouseStore,
+	stock: warehouseStore,
 	inbound: inNoteStore,
 	outbound: outNoteStore
 };
@@ -64,7 +64,7 @@ export const createTableContentStore = (contentType: keyof typeof contentStoreLo
 			let { id } = page.params as { id?: string };
 
 			// If no warehouse 'id' specified, show stock for 'all'
-			if (!id && contentType === 'warehouse') {
+			if (!id && contentType === 'stock') {
 				id = 'all';
 			}
 
