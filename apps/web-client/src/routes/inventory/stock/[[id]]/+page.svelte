@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
+	import { page } from '$app/stores';
 
 	import { InventoryPage, SidebarItem, TextField, Pagination } from '@librocco/ui';
+
+	import { warehouses } from '$lib/data/stores';
+
+	$: currentWarehouse = $page.params.id;
 </script>
 
 <InventoryPage>
@@ -12,15 +17,14 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		<SidebarItem href="#" name="All" current />
-		<SidebarItem href="#" name="Varia 2018" />
-		<SidebarItem href="#" name="Scolastica 2021" />
-		<SidebarItem href="#" name="Nuovo 2022" />
+		{#each $warehouses as name}
+			<SidebarItem href="/inventory/stock/{name}" {name} current={name === currentWarehouse} />
+		{/each}
 	</nav>
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">All</h1>
+		<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">{currentWarehouse}</h1>
 		<TextField name="search" placeholder="Serach">
 			<svelte:fragment slot="startAdornment">
 				<Search class="h-5 w-5" />

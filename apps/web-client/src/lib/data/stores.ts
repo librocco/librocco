@@ -45,7 +45,10 @@ const outNoteStore = readable<NoteStore>(allOutbound);
 
 export const warehouses = derived(warehouseStore, (ws) => Object.keys(ws));
 export const inNotes = derived(warehouseStore, (ws) =>
-	Object.entries(ws).reduce((acc, [wName, { inNotes }]) => (!inNotes?.length ? acc : { ...acc, [wName]: inNotes }))
+	Object.entries(ws).reduce(
+		(acc, [wName, { inNotes }]) => ({ ...acc, [wName]: inNotes || [] }),
+		{} as Record<string, string[]>
+	)
 );
 export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
 

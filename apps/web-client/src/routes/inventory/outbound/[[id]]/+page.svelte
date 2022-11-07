@@ -1,7 +1,12 @@
 <script lang="ts">
 	import { Check, ChevronDown, Search } from 'lucide-svelte';
+	import { page } from '$app/stores';
 
 	import { InventoryPage, SidebarItem, TextField, Pagination, Badge, BadgeColor } from '@librocco/ui';
+
+	import { outNotes } from '$lib/data/stores';
+
+	$: currentNote = $page.params.id;
 </script>
 
 <InventoryPage>
@@ -12,28 +17,33 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		<SidebarItem name="Silvio" href="" current />
-		<SidebarItem name="Sandra" href="" />
+		{#each $outNotes as name}
+			<SidebarItem {name} href="/inventory/outbound/{name}" current={name === currentNote} />
+		{/each}
 	</nav>
 
 	<!-- Table header slot -->
-	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		<div>
-			<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-				<span class="align-middle">Silvio OUT</span>
-			</h2>
-			<div class="flex items-center gap-1.5 whitespace-nowrap">
-				<TextField name="commit-status" placeholder="Draft">
-					<Check class="h-5 w-5" slot="startAdornment" />
-					<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
+	<svelte:fragment slot="tableHeader">
+		{#if currentNote}
+			<div class="flex w-full items-end justify-between">
+				<div>
+					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
+						<span class="align-middle">{currentNote}</span>
+					</h2>
+					<div class="flex items-center gap-1.5 whitespace-nowrap">
+						<TextField name="commit-status" placeholder="Draft">
+							<Check class="h-5 w-5" slot="startAdornment" />
+							<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
+						</TextField>
+						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+					</div>
+				</div>
+				<TextField name="search" placeholder="Serach">
+					<Search slot="startAdornment" class="h-5 w-5" />
 				</TextField>
-				<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
 			</div>
-		</div>
-		<TextField name="search" placeholder="Serach">
-			<Search slot="startAdornment" class="h-5 w-5" />
-		</TextField>
-	</div>
+		{/if}
+	</svelte:fragment>
 
 	<!-- Table slot -->
 	<div class="flex h-full w-full items-center justify-center bg-violet-200" slot="table">
