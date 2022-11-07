@@ -1,0 +1,21 @@
+{
+	"entries": [
+		{
+			"quantity": 9,
+			"isbn": "019976915X"
+		},
+		{
+			"quantity": 18,
+			"isbn": "0195071409"
+		},
+		{
+			"quantity": 0,
+			"isbn": "0195399706"
+		},
+		{
+			"quantity": 25,
+			"isbn": "0194349276"
+		}
+	],
+	"inNotes": ["note-000", "note-001", "note-003", "note-007"]
+}
