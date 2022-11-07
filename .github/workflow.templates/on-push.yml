@@ -14,6 +14,8 @@ jobs:
 
   ui-test: #@ test_job("UI Tests", "pkg/ui")
 
+  web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
+
   lint-and-typecheck:
     runs-on: ubuntu-latest
     timeout-minutes: 10
