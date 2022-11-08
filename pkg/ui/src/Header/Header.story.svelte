@@ -11,7 +11,7 @@
 
 <Hst.Story title="Header" layout={{ type: 'grid', width: 1000 }}>
 	<Hst.Variant title="Default">
-		<Header>
+		<Header currentLocation="/inventory/stock">
 			<Button slot="actionButton" color={ButtonColor.White}>
 				<span slot="startAdornment"><FolderPlus /></span>
 				Create new warehouse</Button
