@@ -8,14 +8,7 @@
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
 	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
-	const inputBaseClasses = [
-		'block',
-		'w-full',
-		'border-0',
-		'text-sm',
-		'focus:outline-0',
-		'focus:ring-0'
-	];
+	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0'];
 
 	const containerBaseClasses = [
 		'flex',
@@ -33,9 +26,7 @@
 	const labelClasses = labelBaseClasses.join(' ');
 	const inputClasses = inputBaseClasses.join(' ');
 	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(' ');
-	const containerClasses = containerBaseClasses
-		.concat(containerBorderColour, containerBorderWidth)
-		.join(' ');
+	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
 </script>
 
 <div class="space-y-1">
@@ -44,21 +35,13 @@
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots.startAdornment}
-			<div class="flex items-center mr-0 ml-3	text-gray-400">
+			<div class="mr-0 ml-3 flex items-center	text-gray-400">
 				<slot name="startAdornment" />
 			</div>
 		{/if}
-		<input
-			type="text"
-			id={name}
-			aria-label={name}
-			class={inputClasses}
-			{name}
-			{disabled}
-			{placeholder}
-		/>
+		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {disabled} {placeholder} />
 		{#if $$slots.endAdornment}
-			<div class="flex items-center ml-1 mr-3 text-gray-400">
+			<div class="ml-1 mr-3 flex items-center text-gray-400">
 				<slot name="endAdornment" />
 			</div>
 		{/if}

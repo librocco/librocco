@@ -10,12 +10,9 @@
 	export let items: { label: string; href: string; onClick?: () => void }[];
 	export let alignItemsEdge: AlignContainerEdge = AlignContainerEdge.Right;
 
-	const baseButtonClasses = [
-		'focus:ring-offset-2',
-		'focus:ring-teal-500',
-		'focus:ring-2',
-		'focus:outline-none'
-	].join(' ');
+	const baseButtonClasses = ['focus:ring-offset-2', 'focus:ring-teal-500', 'focus:ring-2', 'focus:outline-none'].join(
+		' '
+	);
 
 	const smallButtonClasses = [
 		baseButtonClasses,
