@@ -1,9 +1,8 @@
 <script lang="ts">
 	import Logo from './Logo.svelte';
-	import { page } from '$app/stores';
 
 	export let title = 'Stock';
-	export let currentUrl = $page.url.pathname;
+	export let currentLocation: string;
 
 	const links = [
 		{
@@ -33,10 +32,8 @@
 					{href}
 					class="
 							px-3 py-2 text-sm rounded-md
-							{currentUrl === label.toLowerCase()
-						? 'bg-teal-500 text-gray-900'
-						: 'text-white hover:text-teal-500'}"
-					aria-current={currentUrl === label.toLowerCase() ? 'page' : 'false'}
+							{currentLocation === href ? 'bg-teal-500 text-gray-900' : 'text-white hover:text-teal-500'}"
+					aria-current={currentLocation === href ? 'page' : 'false'}
 				>
 					<span>{label}</span>
 				</a>
