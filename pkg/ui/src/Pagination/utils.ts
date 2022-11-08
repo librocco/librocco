@@ -9,11 +9,7 @@
  * @param currentItem index of the current item selected
  * @returns an array of items to render
  */
-export const getItemsToRender = (
-	numItems: number,
-	maxItems: number,
-	currentItem: number
-): (number | null)[] => {
+export const getItemsToRender = (numItems: number, maxItems: number, currentItem: number): (number | null)[] => {
 	// Avoid exploding if no items provided
 	if (numItems === 0) return [];
 
