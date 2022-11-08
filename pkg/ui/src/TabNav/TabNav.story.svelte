@@ -13,22 +13,22 @@
 		<TabList {tabNames} />
 
 		<TabPanel tabIx={0}>
-			<div class="w-full border pt-2 px-6 text-gray-900">
-				<h2 class="font-bold text-md">Panel 1</h2>
+			<div class="w-full border px-6 pt-2 text-gray-900">
+				<h2 class="text-md font-bold">Panel 1</h2>
 				<p>Agglungi con codice content</p>
 			</div>
 		</TabPanel>
 
 		<TabPanel tabIx={1}>
-			<div class="w-full border pt-2 px-6 text-gray-900">
-				<h2 class="font-bold text-md">Panel 2</h2>
+			<div class="w-full border px-6 pt-2 text-gray-900">
+				<h2 class="text-md font-bold">Panel 2</h2>
 				<p>Cerca libri da caricare content</p>
 			</div>
 		</TabPanel>
 
 		<TabPanel tabIx={2}>
-			<div class="w-full border pt-2 px-6 text-gray-900">
-				<h2 class="font-bold text-md">Panel 3</h2>
+			<div class="w-full border px-6 pt-2 text-gray-900">
+				<h2 class="text-md font-bold">Panel 3</h2>
 				<p>Crea nuovo libro content</p>
 			</div>
 		</TabPanel>

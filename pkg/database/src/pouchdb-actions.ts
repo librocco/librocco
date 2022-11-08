@@ -38,18 +38,17 @@ const addBook = (database: PouchDB.Database) => async (id: Note['_id'], newBook:
 	return database.put({ ...note, books });
 };
 const listBooks = (database: PouchDB.Database) => async (id: Note['_id']) => {
-	const { books } = await database.get(id);
+	const { books } = await database.get<{ books: unknown }>(id);
 	return books;
 };
-const removeBook =
-	(database: PouchDB.Database) => async (id: Note['_id'], isbn: Volume['isbn']) => {
-		const note = (await database.get(id)) as Note;
-		// make sure its there
-		const index = note.books.findIndex((book) => book.isbn === isbn);
+const removeBook = (database: PouchDB.Database) => async (id: Note['_id'], isbn: Volume['isbn']) => {
+	const note = (await database.get(id)) as Note;
+	// make sure its there
+	const index = note.books.findIndex((book) => book.isbn === isbn);
 
-		/** @TODO create error interface */
-		if (index === -1) throw new Error('Book does not exist');
+	/** @TODO create error interface */
+	if (index === -1) throw new Error('Book does not exist');
 
-		const newBooks = note.books.filter((book) => book.isbn !== isbn);
-		return database.put({ ...note, books: newBooks });
-	};
+	const newBooks = note.books.filter((book) => book.isbn !== isbn);
+	return database.put({ ...note, books: newBooks });
+};

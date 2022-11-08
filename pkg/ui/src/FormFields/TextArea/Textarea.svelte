@@ -44,6 +44,6 @@
 		/>
 	</div>
 	{#if helpText}
-		<p class="mt-2 text-sm min-h-[20px]">{helpText}</p>
+		<p class="mt-2 min-h-[20px] text-sm">{helpText}</p>
 	{/if}
 </div>
