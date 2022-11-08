@@ -20,8 +20,8 @@
 	];
 </script>
 
-<header class="w-full px-[70px] bg-gray-900">
-	<div class="h-16 border-b border-sky-900 flex items-center ">
+<header class="w-full bg-gray-900 px-[70px]">
+	<div class="flex h-16 items-center border-b border-sky-900 ">
 		<div class="mr-4">
 			<Logo />
 		</div>
@@ -31,7 +31,7 @@
 				<a
 					{href}
 					class="
-							px-3 py-2 text-sm rounded-md
+							rounded-md px-3 py-2 text-sm
 							{currentLocation === href ? 'bg-teal-500 text-gray-900' : 'text-white hover:text-teal-500'}"
 					aria-current={currentLocation === href ? 'page' : 'false'}
 				>

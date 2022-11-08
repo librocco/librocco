@@ -25,9 +25,9 @@
 	};
 </script>
 
-<tr class="even:bg-gray-50 whitespace-nowrap text-sm text-gray-500 ">
+<tr class="whitespace-nowrap text-sm text-gray-500 even:bg-gray-50 ">
 	{#each Object.values(cols) as col}
-		<td class="first:text-gray-900 first:font-medium py-2 pl-4">
+		<td class="py-2 pl-4 first:font-medium first:text-gray-900">
 			{col ?? 'N/A'}
 		</td>
 	{/each}
