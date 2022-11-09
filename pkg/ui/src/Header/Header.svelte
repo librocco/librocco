@@ -30,9 +30,9 @@
 			{#each links as { label, href }}
 				<a
 					{href}
-					class="
-							rounded-md px-3 py-2 text-sm
-							{currentLocation === href ? 'bg-teal-500 text-gray-900' : 'text-white hover:text-teal-500'}"
+					class="rounded-md px-3 py-2 text-sm {currentLocation === href
+						? 'bg-teal-500 text-gray-900'
+						: 'text-white hover:text-teal-500'}"
 					aria-current={currentLocation === href ? 'page' : 'false'}
 				>
 					<span>{label}</span>
@@ -41,12 +41,10 @@
 		</nav>
 	</div>
 	<div class="flex h-24 items-center justify-between">
-		<h2 class="text-3xl font-bold leading-7 text-white">
+		<h1 class="text-3xl font-bold leading-7 text-white">
 			{title}
-		</h2>
+		</h1>
 
-		<div class="flex">
-			<slot name="actionButton" />
-		</div>
+		<slot name="actionButton" />
 	</div>
 </header>
