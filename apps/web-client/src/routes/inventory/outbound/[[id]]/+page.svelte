@@ -10,7 +10,8 @@
 		Badge,
 		BadgeColor,
 		InventoryTable,
-		InventoryTableRow
+		InventoryTableRow,
+		Header
 	} from '@librocco/ui';
 
 	import { createTableContentStore, outNotes } from '$lib/data/stores';
@@ -22,9 +23,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<div class="flex h-[168px] w-full items-center justify-center bg-gray-200" slot="header">
-		<h1 class="text-3xl font-semibold tracking-wider text-gray-300">HEADER</h1>
-	</div>
+	<Header title="Outbound" currentLocation="/inventory/outbound" slot="header" />
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
