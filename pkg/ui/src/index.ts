@@ -9,3 +9,4 @@ export * from './SelectMenu';
 export * from './TextEditable';
 export * from './InventoryPage';
 export * from './InventoryTable';
+export * from './Header';

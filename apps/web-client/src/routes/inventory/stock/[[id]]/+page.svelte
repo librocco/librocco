@@ -2,7 +2,15 @@
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
-	import { InventoryPage, SidebarItem, TextField, Pagination, InventoryTable, InventoryTableRow } from '@librocco/ui';
+	import {
+		InventoryPage,
+		SidebarItem,
+		TextField,
+		Pagination,
+		InventoryTable,
+		InventoryTableRow,
+		Header
+	} from '@librocco/ui';
 
 	import { createTableContentStore, warehouses } from '$lib/data/stores';
 
@@ -13,9 +21,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<div class="flex h-[168px] w-full items-center justify-center bg-gray-200" slot="header">
-		<h1 class="text-3xl font-semibold tracking-wider text-gray-300">HEADER</h1>
-	</div>
+	<Header title="Stock" currentLocation="/inventory/stock" slot="header" />
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
@@ -46,12 +52,11 @@
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
-	<div slot="tableFooter">
-		<div class="flex items-center justify-between">
-			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>1</strong> to <strong>10</strong> of <strong>97</strong> results
-			</p>
-			<Pagination maxItems={7} value={0} numPages={10} />
-		</div>
+	<div class="flex h-full items-center justify-between" slot="tableFooter">
+		<p class="cursor-normal select-none text-sm font-medium leading-5">
+			Showing <strong>1</strong> to <strong>10</strong> of <strong>97</strong> results
+		</p>
+		<Pagination maxItems={7} value={0} numPages={10} />
+		/>
 	</div>
 </InventoryPage>
