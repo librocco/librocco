@@ -17,5 +17,6 @@
 			"warehouse": "science",
 			"quantity": 18
 		}
-	]
+	],
+	"state": "draft"
 }
