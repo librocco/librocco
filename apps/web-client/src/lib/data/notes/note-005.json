@@ -17,5 +17,6 @@
 			"warehouse": "science",
 			"quantity": 5
 		}
-	]
+	],
+	"state": "committed"
 }

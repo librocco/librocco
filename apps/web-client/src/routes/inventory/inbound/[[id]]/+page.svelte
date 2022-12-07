@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Check, ChevronDown, Search } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
 	import {
@@ -11,10 +11,12 @@
 		BadgeColor,
 		InventoryTable,
 		InventoryTableRow,
-		Header
+		Header,
+		SelectMenu
 	} from '@librocco/ui';
 
-	import { createTableContentStore, inNotes } from '$lib/data/stores';
+	import { createNoteStateStore, createTableContentStore, inNotes } from '$lib/data/stores';
+	import { NoteState, noteStates } from '$lib/enums/noteStates';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse = !currentNote
@@ -22,8 +24,10 @@
 		: Object.entries($inNotes).find(([, notes]) => notes.includes(currentNote))![0];
 
 	const tableContent = createTableContentStore('inbound');
+	$: state = createNoteStateStore(currentNote, 'inbound');
 </script>
 
+<!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
 	<Header title="Inbound" currentLocation="/inventory/inbound" slot="header" />
@@ -49,10 +53,12 @@
 						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
 					</h2>
 					<div class="flex items-center gap-1.5 whitespace-nowrap">
-						<TextField name="commit-status" placeholder="Draft">
-							<Check class="h-5 w-5" slot="startAdornment" />
-							<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
-						</TextField>
+						<SelectMenu
+							class="w-[138px]"
+							options={noteStates}
+							bind:value={$state}
+							disabled={$state === NoteState.Committed}
+						/>
 						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
 					</div>
 				</div>
@@ -65,9 +71,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent.length}
+		{#if $tableContent?.entries?.length}
 			<InventoryTable>
-				{#each $tableContent as data}
+				{#each $tableContent.entries as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
