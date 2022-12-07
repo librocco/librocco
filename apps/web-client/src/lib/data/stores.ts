@@ -46,7 +46,12 @@ const outNoteStore = readable<NoteStore>(allOutbound);
 export const warehouses = derived(warehouseStore, (ws) => Object.keys(ws));
 export const inNotes = derived(warehouseStore, (ws) =>
 	Object.entries(ws).reduce(
-		(acc, [wName, { inNotes }]) => ({ ...acc, [wName]: inNotes || [] }),
+		(acc, [wName, { inNotes }]) => ({
+			...acc,
+			// For each warehouse, we want to also add the in-notes to 'all' warehouse
+			all: [...(acc.all ? acc.all : []), ...(inNotes || [])],
+			[wName]: inNotes || []
+		}),
 		{} as Record<string, string[]>
 	)
 );
@@ -57,6 +62,7 @@ const contentStoreLookup = {
 	inbound: inNoteStore,
 	outbound: outNoteStore
 };
+
 export const createTableContentStore = (contentType: keyof typeof contentStoreLookup) =>
 	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
 		[contentStoreLookup[contentType], page, bookStore],
