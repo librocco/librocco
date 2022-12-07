@@ -42,9 +42,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent.length}
+		{#if $tableContent?.entries?.length}
 			<InventoryTable>
-				{#each $tableContent as data}
+				{#each $tableContent.entries as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>

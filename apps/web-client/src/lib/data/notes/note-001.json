@@ -17,5 +17,6 @@
 			"warehouse": "jazz",
 			"quantity": 15
 		}
-	]
+	],
+	"state": "committed"
 }
