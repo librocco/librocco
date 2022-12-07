@@ -2,7 +2,7 @@
 	import type { Hst } from '@histoire/plugin-svelte';
 	import { Settings2 } from 'lucide-svelte';
 
-	import { Dropdown } from './index';
+	import { Dropdown, DropdownItem } from './index';
 
 	export let Hst: Hst;
 
@@ -19,5 +19,10 @@
 <Hst.Story title="Dropdown" layout={{ type: 'grid' }}>
 	<Dropdown buttonLabel="Options" {items}>
 		<div slot="buttonIcon"><Settings2 /></div>
+		<div slot="items">
+			{#each items as { label, href }, ix (ix)}
+				<DropdownItem {label} {href} index={ix} listLength={items.length} />
+			{/each}
+		</div>
 	</Dropdown>
 </Hst.Story>
