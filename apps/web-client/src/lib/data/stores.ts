@@ -1,10 +1,11 @@
-import { readable, derived, type Readable } from 'svelte/store';
+import { readable, derived, type Readable, writable, get } from 'svelte/store';
 import { page } from '$app/stores';
 
 import allBooks from './books';
 import allWarehouse from './warehouses';
 import allInbound from './notes/inbound';
 import allOutbound from './notes/outbound';
+import type { NoteState, NoteTempState } from '$lib/enums/noteStates';
 
 interface BookEntry {
 	isbn: string;
@@ -38,10 +39,11 @@ const warehouseStore = readable<WarehouseStore>(allWarehouse);
 interface NoteStore {
 	[noteId: string]: {
 		entries: VolumeQuantity[];
+		state?: NoteState;
 	};
 }
-const inNoteStore = readable<NoteStore>(allInbound);
-const outNoteStore = readable<NoteStore>(allOutbound);
+const inNoteStore = writable<NoteStore>(allInbound);
+const outNoteStore = writable<NoteStore>(allOutbound);
 
 export const warehouses = derived(warehouseStore, (ws) => Object.keys(ws));
 export const inNotes = derived(warehouseStore, (ws) =>
@@ -57,6 +59,62 @@ export const inNotes = derived(warehouseStore, (ws) =>
 );
 export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
 
+/**
+ * A factory function used to create a store containing the state of a note.
+ * The created store is a writable store where subscribing to the store will return the derived value of `state` for the note,
+ * while setting the value of the store will update the `state` of the note in the note content store.
+ *
+ * @param noteId The id of the note to create a store for.
+ * @param type The type (inbound | outbound) of note to create a store for.
+ * @returns A store containing the committed state of the note.
+ *
+ * @example
+ * ```svelte
+ * <script>
+ *   import { page } from '$app/stores';
+ *   $: state = createNoteStateStore($page.params.noteId, "inbound");
+ * </script>
+ *
+ * <p>Note State: {$state}</p>
+ *
+ * <select bind:value={$state}>
+ *   <option value="draft">Draft</option>
+ *   <option value="committed">Commit</option>
+ *   <option value="deleted">Delete</option>
+ * </select>
+ * ```
+ */
+export const createNoteStateStore = (noteId: string | undefined, type: 'inbound' | 'outbound') => {
+	// Create a derived store that returns the committed state of the note
+	const currentState = derived<Readable<NoteStore>, NoteState | NoteTempState | undefined>(
+		contentStoreLookup[type],
+		({ [noteId || '']: note }) => (noteId ? note?.state : undefined)
+	);
+
+	// The set function updates the original store (which then updates the derived store)
+	const set = (state: NoteState) => {
+		// Update the store if noteId is defined, no-op otherwise
+		// This shouldn't really happen in production
+		if (noteId) {
+			// Update the note store with the new committed state
+			contentStoreLookup[type].update((notes) => ({
+				...notes,
+				[noteId]: {
+					...notes[noteId],
+					state
+				}
+			}));
+		}
+	};
+
+	// The update funciton probably won't be used, but it's here for completeness of the writable store contract
+	const update = (cb: (state: NoteState | NoteTempState | undefined) => NoteState) => {
+		set(cb(get(currentState)));
+	};
+
+	return { subscribe: currentState.subscribe, set, update };
+};
+
 const contentStoreLookup = {
 	stock: warehouseStore,
 	inbound: inNoteStore,
@@ -64,26 +122,28 @@ const contentStoreLookup = {
 };
 
 export const createTableContentStore = (contentType: keyof typeof contentStoreLookup) =>
-	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
-		[contentStoreLookup[contentType], page, bookStore],
-		([content, page, bookStore]) => {
-			const { id } = page.params as { id?: string };
+	derived<
+		[Readable<NoteStore>, typeof page, Readable<BookStore>],
+		{ entries: DisplayRow[]; state?: NoteState | NoteTempState | undefined }
+	>([contentStoreLookup[contentType], page, bookStore], ([content, page, bookStore]) => {
+		const { id } = page.params as { id?: string };
 
-			// No id will happen quite ofter: this means we're on root of the view
-			// with no single note specified.
-			if (!id) {
-				return [];
-			}
+		// No id will happen quite often: this means we're on root of the view
+		// with no single note specified.
+		if (!id) {
+			return { entries: [] as DisplayRow[], committed: false };
+		}
 
-			// TODO: we might want to throw 404 here...
-			if (!content[id]) {
-				return [];
-			}
+		// TODO: we might want to throw 404 here...
+		if (!content[id]) {
+			return { entries: [] as DisplayRow[], committed: false };
+		}
 
-			return content[id].entries.map(({ isbn, quantity }) => ({
+		return {
+			entries: content[id].entries.map(({ isbn, quantity }) => ({
 				...bookStore[isbn],
 				isbn,
 				quantity
-			}));
-		}
-	);
+			}))
+		};
+	});
