@@ -5,7 +5,7 @@ import allBooks from './books';
 import allWarehouse from './warehouses';
 import allInbound from './notes/inbound';
 import allOutbound from './notes/outbound';
-import type { NoteState, NoteTempState } from '$lib/enums/noteStates';
+import { noteStateLookup, type NoteState, type NoteTempState } from '$lib/enums/noteStates';
 
 interface BookEntry {
 	isbn: string;
@@ -85,25 +85,38 @@ export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
  * ```
  */
 export const createNoteStateStore = (noteId: string | undefined, type: 'inbound' | 'outbound') => {
+	const contentStore = contentStoreLookup[type];
+
 	// Create a derived store that returns the committed state of the note
-	const currentState = derived<Readable<NoteStore>, NoteState | NoteTempState | undefined>(
-		contentStoreLookup[type],
-		({ [noteId || '']: note }) => (noteId ? note?.state : undefined)
-	);
+	const currentState = writable<NoteState | NoteTempState | undefined>();
+
+	contentStore.subscribe((notes) => {
+		// Update the current state store with the new committed state if noteId is defined
+		// no-op otherwise
+		if (noteId) {
+			currentState.set(notes[noteId]?.state);
+		}
+	});
 
 	// The set function updates the original store (which then updates the derived store)
 	const set = (state: NoteState) => {
 		// Update the store if noteId is defined, no-op otherwise
 		// This shouldn't really happen in production
 		if (noteId) {
+			// Update the note store with temp state until the content store is updated
+			const stateProps = noteStateLookup[state];
+			currentState.set(stateProps.tempState);
 			// Update the note store with the new committed state
-			contentStoreLookup[type].update((notes) => ({
-				...notes,
-				[noteId]: {
-					...notes[noteId],
-					state
-				}
-			}));
+			/** @TODO setTimeout is only here to simulate an asynchronous update, remove later */
+			setTimeout(() => {
+				contentStore.update((notes) => ({
+					...notes,
+					[noteId]: {
+						...notes[noteId],
+						state
+					}
+				}));
+			}, 1000);
 		}
 	};
 
