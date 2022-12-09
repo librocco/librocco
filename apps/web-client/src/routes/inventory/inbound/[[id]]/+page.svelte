@@ -16,7 +16,7 @@
 	} from '@librocco/ui';
 
 	import { createNoteStateStore, createTableContentStore, inNotes } from '$lib/data/stores';
-	import { NoteState, noteStates } from '$lib/enums/noteStates';
+	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse = !currentNote
@@ -47,21 +47,23 @@
 	<svelte:fragment slot="tableHeader">
 		{#if Boolean(currentNote)}
 			<div class="flex w-full items-end justify-between">
-				<div>
-					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<span class="align-middle">{currentNote} </span>
-						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
-					</h2>
-					<div class="flex items-center gap-1.5 whitespace-nowrap">
-						<SelectMenu
-							class="w-[138px]"
-							options={noteStates}
-							bind:value={$state}
-							disabled={$state === NoteState.Committed}
-						/>
-						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+				{#if $state}
+					<div>
+						<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
+							<span class="align-middle">{currentNote} </span>
+							<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
+						</h2>
+						<div class="flex items-center gap-1.5 whitespace-nowrap">
+							<SelectMenu
+								class="w-[138px]"
+								options={noteStates}
+								bind:value={$state}
+								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+							/>
+							<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+						</div>
 					</div>
-				</div>
+				{/if}
 				<TextField name="search" placeholder="Serach">
 					<Search slot="startAdornment" class="h-5 w-5" />
 				</TextField>
