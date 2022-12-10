@@ -1,4 +1,4 @@
-import type { BookStore } from '../stores';
+import type { BookStore } from '../backend_temp';
 
 import book1 from './0007149522.json';
 import book2 from './0061983411.json';

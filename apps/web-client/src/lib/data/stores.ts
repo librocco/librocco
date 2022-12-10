@@ -1,52 +1,36 @@
-import { readable, derived, type Readable, writable, get } from 'svelte/store';
+/**
+ * This file contains the middle layer stores serving as a bridge between the backend and the frontend.
+ * It keep the frontend code agnostic to the backend implementation and vice versa.
+ *
+ * We use this so that we're able to change up the frontend code (and frontend interface of these stores)
+ * without having to change the backend code and vice versa.
+ */
+
+import { derived, type Readable, writable, get } from 'svelte/store';
+
+import { NoteState, noteStateLookup, type NoteTempState } from '$lib/enums/noteStates';
+
 import { page } from '$app/stores';
 
-import allBooks from './books';
-import allWarehouse from './warehouses';
-import allInbound from './notes/inbound';
-import allOutbound from './notes/outbound';
-import { noteStateLookup, type NoteState, type NoteTempState } from '$lib/enums/noteStates';
+import {
+	bookStore,
+	deleteNote,
+	commitNote,
+	contentStoreLookup,
+	warehouseStore,
+	outNoteStore,
+	type BookEntry,
+	type BookStore,
+	type NoteStore
+} from '$lib/data/backend_temp';
 
-interface BookEntry {
-	isbn: string;
-	title: string;
-	authors?: string[];
-	publisher?: string;
-	year?: string;
-	price?: number;
-}
-
-interface VolumeQuantity {
-	isbn: string;
-	quantity: number;
-}
-
+/**
+ * The properties of a book + quantity row shown in the note/warehouse table.
+ */
 type DisplayRow = BookEntry & { quantity: number };
 
-export interface BookStore {
-	[isbn: string]: BookEntry;
-}
-const bookStore = readable<BookStore>(allBooks);
-
-interface WarehouseStore {
-	[warehouse: string]: {
-		entries: VolumeQuantity[];
-		inNotes?: string[];
-	};
-}
-const warehouseStore = readable<WarehouseStore>(allWarehouse);
-
-interface NoteStore {
-	[noteId: string]: {
-		entries: VolumeQuantity[];
-		state?: NoteState;
-	};
-}
-const inNoteStore = writable<NoteStore>(allInbound);
-const outNoteStore = writable<NoteStore>(allOutbound);
-
-export const warehouses = derived(warehouseStore, (ws) => Object.keys(ws));
-export const inNotes = derived(warehouseStore, (ws) =>
+/** A list of all (non deleted) inbound notes available, used for `/inbound` view note navigation */
+export const inNoteList = derived(warehouseStore, (ws) =>
 	Object.entries(ws).reduce(
 		(acc, [wName, { inNotes }]) => ({
 			...acc,
@@ -57,7 +41,10 @@ export const inNotes = derived(warehouseStore, (ws) =>
 		{} as Record<string, string[]>
 	)
 );
-export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
+/** A list of all (non deleted) outbound notes available, used for `/outbound` view note navigation */
+export const outNoteList = derived(outNoteStore, (on) => Object.keys(on));
+/** A list of all the warehouses available, used for `/stock` view warehouse navigation */
+export const warehouseList = derived(warehouseStore, (warehouses) => Object.keys(warehouses));
 
 /**
  * A factory function used to create a store containing the state of a note.
@@ -106,16 +93,24 @@ export const createNoteStateStore = (noteId: string | undefined, type: 'inbound'
 			// Update the note store with temp state until the content store is updated
 			const stateProps = noteStateLookup[state];
 			currentState.set(stateProps.tempState);
+
 			// Update the note store with the new committed state
 			/** @TODO setTimeout is only here to simulate an asynchronous update, remove later */
 			setTimeout(() => {
-				contentStore.update((notes) => ({
-					...notes,
-					[noteId]: {
-						...notes[noteId],
-						state
-					}
-				}));
+				// Delete the note if the state is 'deleted'
+				if (state === 'deleted') {
+					return deleteNote(noteId, type);
+				}
+				// Commit note if state is 'committed'
+				if (state === 'committed') {
+					return commitNote(noteId, type);
+				}
+				// Set the internal state to draft, signaling the note
+				// has been saved/updated to the content store.
+				if (state === 'draft') {
+					currentState.set(NoteState.Draft);
+				}
+				// Updates to draft won't be happening for now
 			}, 1000);
 		}
 	};
@@ -128,35 +123,32 @@ export const createNoteStateStore = (noteId: string | undefined, type: 'inbound'
 	return { subscribe: currentState.subscribe, set, update };
 };
 
-const contentStoreLookup = {
-	stock: warehouseStore,
-	inbound: inNoteStore,
-	outbound: outNoteStore
-};
-
+/**
+ * Creates a store containing the content for table display for a given view.
+ * @param contentType
+ * @returns
+ */
 export const createTableContentStore = (contentType: keyof typeof contentStoreLookup) =>
-	derived<
-		[Readable<NoteStore>, typeof page, Readable<BookStore>],
-		{ entries: DisplayRow[]; state?: NoteState | NoteTempState | undefined }
-	>([contentStoreLookup[contentType], page, bookStore], ([content, page, bookStore]) => {
-		const { id } = page.params as { id?: string };
+	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
+		[contentStoreLookup[contentType], page, bookStore],
+		([content, page, bookStore]) => {
+			const { id } = page.params as { id?: string };
 
-		// No id will happen quite often: this means we're on root of the view
-		// with no single note specified.
-		if (!id) {
-			return { entries: [] as DisplayRow[], committed: false };
-		}
+			// No id will happen quite often: this means we're on root of the view
+			// with no single note specified.
+			if (!id) {
+				return [];
+			}
 
-		// TODO: we might want to throw 404 here...
-		if (!content[id]) {
-			return { entries: [] as DisplayRow[], committed: false };
-		}
+			// If the note/warehouse doesn't exist (or is 'deleted', return undefined)
+			if (!content[id] || content[id].state === NoteState.Deleted) {
+				return [];
+			}
 
-		return {
-			entries: content[id].entries.map(({ isbn, quantity }) => ({
+			return content[id].entries.map(({ isbn, quantity }) => ({
 				...bookStore[isbn],
 				isbn,
 				quantity
-			}))
-		};
-	});
+			}));
+		}
+	);
