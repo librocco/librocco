@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
+	import { Delete, Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
 	import {
@@ -38,7 +38,7 @@
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if currentNote}
+		{#if $state && $state !== NoteState.Deleted}
 			<div class="flex w-full items-end justify-between">
 				{#if $state}
 					<div>
@@ -65,7 +65,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent?.entries?.length}
+		{#if $tableContent.length}
 			<InventoryTable>
 				{#each $tableContent as data}
 					<InventoryTableRow {data} />
