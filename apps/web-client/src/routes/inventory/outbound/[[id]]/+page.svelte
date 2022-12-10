@@ -15,8 +15,9 @@
 		SelectMenu
 	} from '@librocco/ui';
 
-	import { createNoteStateStore, createTableContentStore, outNotes } from '$lib/data/stores';
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
+
+	import { createNoteStateStore, createTableContentStore, outNoteList } from '$lib/data/stores';
 
 	$: currentNote = $page.params.id;
 
@@ -30,7 +31,7 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $outNotes as name}
+		{#each $outNoteList as name}
 			<SidebarItem {name} href="/inventory/outbound/{name}" current={name === currentNote} />
 		{/each}
 	</nav>
@@ -66,7 +67,7 @@
 	<svelte:fragment slot="table">
 		{#if $tableContent?.entries?.length}
 			<InventoryTable>
-				{#each $tableContent.entries as data}
+				{#each $tableContent as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>

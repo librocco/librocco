@@ -28,23 +28,23 @@ describe('Test table content store', () => {
 
 	test('should derive from appropriate store for content type', () => {
 		// Test 'inbound' note content
-		const inNoteStore = createTableContentStore('inbound');
+		const inNoteContent = createTableContentStore('inbound');
 		page.set({ params: { id: 'note-001' } });
-		expect(get(inNoteStore).map(pickIsbnQuantity)).toEqual(note1.entries.map(pickIsbnQuantity));
+		expect(get(inNoteContent).map(pickIsbnQuantity)).toEqual(note1.entries.map(pickIsbnQuantity));
 
 		// Test 'outbound' note content
-		const outNoteStore = createTableContentStore('outbound');
+		const outNoteContet = createTableContentStore('outbound');
 		page.set({ params: { id: 'note-002' } });
-		expect(get(outNoteStore).map(pickIsbnQuantity)).toEqual(note2.entries.map(pickIsbnQuantity));
+		expect(get(outNoteContet).map(pickIsbnQuantity)).toEqual(note2.entries.map(pickIsbnQuantity));
 
 		// Test 'outbound' note content
-		const warehouseStore = createTableContentStore('stock');
+		const warehouseContent = createTableContentStore('stock');
 		page.set({ params: { id: 'jazz' } });
-		expect(get(warehouseStore).map(pickIsbnQuantity)).toEqual(jazz.entries.map(pickIsbnQuantity));
+		expect(get(warehouseContent).map(pickIsbnQuantity)).toEqual(jazz.entries.map(pickIsbnQuantity));
 	});
 
 	test('should show full book data in returned rows', () => {
-		const inNoteStore = createTableContentStore('inbound');
+		const inNoteContent = createTableContentStore('inbound');
 		page.set({ params: { id: 'note-001' } });
 
 		const wantRows = note1.entries.map(({ isbn, quantity }) => ({
@@ -53,28 +53,28 @@ describe('Test table content store', () => {
 			isbn
 		}));
 
-		expect(get(inNoteStore)).toEqual(wantRows);
+		expect(get(inNoteContent)).toEqual(wantRows);
 	});
 
 	test('should react to changes in page store', () => {
-		const inNoteStore = createTableContentStore('inbound');
+		const inNoteContent = createTableContentStore('inbound');
 
 		page.set({ params: { id: 'note-001' } });
-		expect(get(inNoteStore).map(pickIsbnQuantity)).toEqual(note1.entries.map(pickIsbnQuantity));
+		expect(get(inNoteContent).map(pickIsbnQuantity)).toEqual(note1.entries.map(pickIsbnQuantity));
 
 		page.set({ params: { id: 'note-003' } });
-		expect(get(inNoteStore).map(pickIsbnQuantity)).toEqual(note3.entries.map(pickIsbnQuantity));
+		expect(get(inNoteContent).map(pickIsbnQuantity)).toEqual(note3.entries.map(pickIsbnQuantity));
 	});
 
 	test("should return a empty array if no 'id' param or note not found", () => {
-		const inNoteStore = createTableContentStore('inbound');
+		const inNoteContent = createTableContentStore('inbound');
 
 		// Test for no 'id' param
 		page.set({ params: {} });
-		expect(get(inNoteStore)).toEqual([]);
+		expect(get(inNoteContent)).toEqual([]);
 
 		// Test for non existing note
 		page.set({ params: { id: 'non-existing-note' } });
-		expect(get(inNoteStore)).toEqual([]);
+		expect(get(inNoteContent)).toEqual([]);
 	});
 });

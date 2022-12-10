@@ -15,13 +15,14 @@
 		SelectMenu
 	} from '@librocco/ui';
 
-	import { createNoteStateStore, createTableContentStore, inNotes } from '$lib/data/stores';
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
+
+	import { createNoteStateStore, createTableContentStore, inNoteList } from '$lib/data/stores';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse = !currentNote
 		? ''
-		: Object.entries($inNotes).find(([, notes]) => notes.includes(currentNote))![0];
+		: Object.entries($inNoteList).find(([, notes]) => notes.includes(currentNote))![0];
 
 	const tableContent = createTableContentStore('inbound');
 	$: state = createNoteStateStore(currentNote, 'inbound');
@@ -34,7 +35,7 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each Object.entries($inNotes) as [name, notes]}
+		{#each Object.entries($inNoteList) as [name, notes]}
 			<SidebarItemGroup
 				{name}
 				index={0}
@@ -73,9 +74,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent?.entries?.length}
+		{#if $tableContent?.length}
 			<InventoryTable>
-				{#each $tableContent.entries as data}
+				{#each $tableContent as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
