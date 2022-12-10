@@ -103,20 +103,6 @@ export const deleteNote = (noteId: string, type: 'inbound' | 'outbound') => {
 		notes[noteId].state = NoteState.Deleted;
 		return notes;
 	});
-
-	/**
-	 * @Note this is a bit messy, the way everything is organised:
-	 * - Available notes are gathered per warehouse basis (if the note is inbound) from Object.keys (if the note is outbound)
-	 */
-	// Remove the note from the notes list in warehouse
-	warehouseStore.update((warehouses) => {
-		Object.entries(warehouses).forEach(([wName, { inNotes }]) => {
-			if (inNotes?.includes(noteId)) {
-				warehouses[wName].inNotes = inNotes.filter((id) => id !== noteId);
-			}
-		});
-		return warehouses;
-	});
 };
 
 /**
@@ -125,13 +111,11 @@ export const deleteNote = (noteId: string, type: 'inbound' | 'outbound') => {
  * @param type note type: `inbound` | `outbound`
  */
 export const commitNote = (noteId: string, type: 'inbound' | 'outbound') => {
+	// Update the note state as committed
 	const contentStore = contentStoreLookup[type];
-	contentStore.update((notes) => ({
-		...notes,
-		[noteId]: {
-			...notes[noteId],
-			state: NoteState.Committed
-		}
-	}));
+	contentStore.update((notes) => {
+		notes[noteId].state = NoteState.Committed;
+		return notes;
+	});
 };
 // #region note_state_actions
