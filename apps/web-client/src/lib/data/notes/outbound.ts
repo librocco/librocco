@@ -1,3 +1,5 @@
+import type { NoteStore } from '../backend_temp';
+
 import note2 from './note-002.json';
 import note4 from './note-004.json';
 import note6 from './note-006.json';
@@ -8,4 +10,4 @@ export default {
 	'note-004': note4,
 	'note-006': note6,
 	'note-008': note8
-};
+} as NoteStore;

@@ -12,7 +12,7 @@
 		Header
 	} from '@librocco/ui';
 
-	import { createTableContentStore, warehouses } from '$lib/data/stores';
+	import { createTableContentStore, warehouseList } from '$lib/data/stores';
 
 	$: currentWarehouse = $page.params.id;
 
@@ -25,7 +25,7 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $warehouses as name}
+		{#each $warehouseList as name}
 			<SidebarItem href="/inventory/stock/{name}" {name} current={name === currentWarehouse} />
 		{/each}
 	</nav>
@@ -42,9 +42,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent?.entries?.length}
+		{#if $tableContent.length}
 			<InventoryTable>
-				{#each $tableContent.entries as data}
+				{#each $tableContent as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
