@@ -18,6 +18,7 @@ import {
 	commitNote,
 	contentStoreLookup,
 	warehouseStore,
+	inNoteStore,
 	outNoteStore,
 	type BookEntry,
 	type BookStore,
@@ -30,19 +31,25 @@ import {
 type DisplayRow = BookEntry & { quantity: number };
 
 /** A list of all (non deleted) inbound notes available, used for `/inbound` view note navigation */
-export const inNoteList = derived(warehouseStore, (ws) =>
-	Object.entries(ws).reduce(
-		(acc, [wName, { inNotes }]) => ({
-			...acc,
-			// For each warehouse, we want to also add the in-notes to 'all' warehouse
-			all: [...(acc.all ? acc.all : []), ...(inNotes || [])],
-			[wName]: inNotes || []
-		}),
-		{} as Record<string, string[]>
-	)
-);
+export const inNoteList = derived([warehouseStore, inNoteStore], ([warehouses, inNotes]) => {
+	console.log('inNotes', inNotes);
+	const inNotesByWarehouse: Record<string, string[]> = { all: [] };
+	// Iterate over all warehouses and add non-deleted inNotes for each warehouse to the inNotesByWarehouse object
+	Object.keys(warehouses).forEach((warehouse) => {
+		inNotesByWarehouse[warehouse] = [];
+		warehouses[warehouse].inNotes?.forEach((noteId) => {
+			if (inNotes[noteId].state !== 'deleted') inNotesByWarehouse[warehouse].push(noteId);
+		});
+		// Add the notes to the `all` warehouse
+		inNotesByWarehouse.all.push(...inNotesByWarehouse[warehouse]);
+	});
+	console.log('Successfully derived', inNotesByWarehouse);
+	return inNotesByWarehouse;
+});
 /** A list of all (non deleted) outbound notes available, used for `/outbound` view note navigation */
-export const outNoteList = derived(outNoteStore, (on) => Object.keys(on));
+export const outNoteList = derived(outNoteStore, (outNotes) =>
+	Object.keys(outNotes).filter((noteId) => outNotes[noteId].state !== 'deleted')
+);
 /** A list of all the warehouses available, used for `/stock` view warehouse navigation */
 export const warehouseList = derived(warehouseStore, (warehouses) => Object.keys(warehouses));
 
