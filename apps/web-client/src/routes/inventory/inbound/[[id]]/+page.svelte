@@ -18,11 +18,13 @@
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
 
 	import { createNoteStateStore, createTableContentStore, inNoteList } from '$lib/data/stores';
+	import { get } from 'svelte/store';
 
 	$: currentNote = $page.params.id;
-	$: currentNoteWarehouse = !currentNote
-		? ''
-		: Object.entries($inNoteList).find(([, notes]) => notes.includes(currentNote))![0];
+	$: currentNoteWarehouse =
+		(currentNote &&
+			Object.keys($inNoteList).find((wName) => wName !== 'all' && $inNoteList[wName].includes(currentNote))) ||
+		'';
 
 	const tableContent = createTableContentStore('inbound');
 	$: state = createNoteStateStore(currentNote, 'inbound');
@@ -35,36 +37,34 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each Object.entries($inNoteList) as [name, notes]}
+		{#each Object.entries($inNoteList) as [name, notes], index (name)}
 			<SidebarItemGroup
 				{name}
-				index={0}
-				items={notes.map((name) => ({ name, href: `/inventory/inbound/${name}`, current: name === $page.params.id }))}
+				{index}
+				items={notes?.map((name) => ({ name, href: `/inventory/inbound/${name}`, current: name === $page.params.id }))}
 			/>
 		{/each}
 	</nav>
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if Boolean(currentNote)}
+		{#if $state && $state !== NoteState.Deleted}
 			<div class="flex w-full items-end justify-between">
-				{#if $state}
-					<div>
-						<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-							<span class="align-middle">{currentNote} </span>
-							<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
-						</h2>
-						<div class="flex items-center gap-1.5 whitespace-nowrap">
-							<SelectMenu
-								class="w-[138px]"
-								options={noteStates}
-								bind:value={$state}
-								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-							/>
-							<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
-						</div>
+				<div>
+					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
+						<span class="align-middle">{currentNote} </span>
+						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
+					</h2>
+					<div class="flex items-center gap-1.5 whitespace-nowrap">
+						<SelectMenu
+							class="w-[138px]"
+							options={noteStates}
+							bind:value={$state}
+							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+						/>
+						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
 					</div>
-				{/if}
+				</div>
 				<TextField name="search" placeholder="Serach">
 					<Search slot="startAdornment" class="h-5 w-5" />
 				</TextField>
@@ -74,7 +74,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent?.length}
+		{#if $tableContent.length}
 			<InventoryTable>
 				{#each $tableContent as data}
 					<InventoryTableRow {data} />
