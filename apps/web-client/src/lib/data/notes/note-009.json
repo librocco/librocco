@@ -1,22 +1,23 @@
 {
-	"id": "note-009",
-	"type": "in-note",
-	"entries": [
-		{
-			"isbn": "0061983411",
-			"warehouse": "science",
-			"quantity": 8
-		},
-		{
-			"isbn": "0080524230",
-			"warehouse": "science",
-			"quantity": 10
-		},
-		{
-			"isbn": "0007149522",
-			"warehouse": "science",
-			"quantity": 18
-		}
-	],
-	"state": "draft"
+  "id": "note-009",
+  "type": "in-note",
+  "entries": [
+    {
+      "isbn": "0061983411",
+      "warehouse": "science",
+      "quantity": 8
+    },
+    {
+      "isbn": "0080524230",
+      "warehouse": "science",
+      "quantity": 10
+    },
+    {
+      "isbn": "0007149522",
+      "warehouse": "science",
+      "quantity": 18
+    }
+  ],
+  "state": "draft",
+  "updatedAt": "2022-11-22T02:40:39.839Z"
 }

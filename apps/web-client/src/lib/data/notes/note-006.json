@@ -1,22 +1,23 @@
 {
-	"id": "note-006",
-	"type": "out-note",
-	"entries": [
-		{
-			"isbn": "0195071409",
-			"warehouse": "jazz",
-			"quantity": 2
-		},
-		{
-			"isbn": "0080524230",
-			"warehouse": "science",
-			"quantity": 4
-		},
-		{
-			"isbn": "0194349276",
-			"warehouse": "jazz",
-			"quantity": 1
-		}
-	],
-	"state": "deleted"
+  "id": "note-006",
+  "type": "out-note",
+  "entries": [
+    {
+      "isbn": "0195071409",
+      "warehouse": "jazz",
+      "quantity": 2
+    },
+    {
+      "isbn": "0080524230",
+      "warehouse": "science",
+      "quantity": 4
+    },
+    {
+      "isbn": "0194349276",
+      "warehouse": "jazz",
+      "quantity": 1
+    }
+  ],
+  "state": "deleted",
+  "updatedAt": "2022-05-13T04:57:05.421Z"
 }
