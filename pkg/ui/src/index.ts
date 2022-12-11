@@ -5,3 +5,5 @@ export * from './Pagination';
 export * from './Sidebar';
 export * from './TabNav';
 export * from './FormFields';
+export * from './SelectMenu';
+export * from './TextEditable';
