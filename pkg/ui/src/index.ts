@@ -12,3 +12,4 @@ export * from './InventoryTable';
 export * from './Header';
 export * from './Dropdown';
 export * from './SelectMenu';
+export * from './TextEditable';

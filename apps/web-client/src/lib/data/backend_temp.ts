@@ -55,6 +55,7 @@ export interface WarehouseStore {
 /** A structure of the note store (inNoteStore or outNoteStore): `writable<NoteStore>()`. */
 export interface NoteStore {
 	[noteId: string]: {
+		displayName?: string;
 		entries: VolumeQuantity[];
 		state?: NoteState;
 	};
