@@ -12,21 +12,30 @@
 		InventoryTable,
 		InventoryTableRow,
 		Header,
-		SelectMenu
+		SelectMenu,
+		TextEditable
 	} from '@librocco/ui';
 
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
 
-	import { createNoteStateStore, createTableContentStore, inNoteList } from '$lib/data/stores';
-	import { get } from 'svelte/store';
+	import {
+		createNoteDisplayNameStore,
+		createNoteStateStore,
+		createTableContentStore,
+		inNoteList
+	} from '$lib/data/stores';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse =
 		(currentNote &&
-			Object.keys($inNoteList).find((wName) => wName !== 'all' && $inNoteList[wName].includes(currentNote))) ||
+			Object.keys($inNoteList).find(
+				(wName) => wName !== 'all' && $inNoteList[wName].find(({ id }) => currentNote === id)
+			)) ||
 		'';
 
 	const tableContent = createTableContentStore('inbound');
+
+	$: displayName = createNoteDisplayNameStore(currentNote, 'inbound');
 	$: state = createNoteStateStore(currentNote, 'inbound');
 </script>
 
@@ -41,7 +50,11 @@
 			<SidebarItemGroup
 				{name}
 				{index}
-				items={notes?.map((name) => ({ name, href: `/inventory/inbound/${name}`, current: name === $page.params.id }))}
+				items={notes?.map(({ id, displayName }) => ({
+					name: displayName || id,
+					href: `/inventory/inbound/${id}`,
+					current: name === $page.params.id
+				}))}
 			/>
 		{/each}
 	</nav>
@@ -52,7 +65,7 @@
 			<div class="flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<span class="align-middle">{currentNote} </span>
+						<TextEditable class="inline-block" bind:value={$displayName} />
 						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
 					</h2>
 					<div class="flex items-center gap-1.5 whitespace-nowrap">

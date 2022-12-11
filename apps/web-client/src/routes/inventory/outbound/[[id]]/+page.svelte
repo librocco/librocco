@@ -12,16 +12,24 @@
 		InventoryTable,
 		InventoryTableRow,
 		Header,
-		SelectMenu
+		SelectMenu,
+		TextEditable
 	} from '@librocco/ui';
 
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
 
-	import { createNoteStateStore, createTableContentStore, outNoteList } from '$lib/data/stores';
+	import {
+		createNoteDisplayNameStore,
+		createNoteStateStore,
+		createTableContentStore,
+		outNoteList
+	} from '$lib/data/stores';
 
 	$: currentNote = $page.params.id;
 
 	const tableContent = createTableContentStore('outbound');
+
+	$: displayName = createNoteDisplayNameStore(currentNote, 'outbound');
 	$: state = createNoteStateStore(currentNote, 'outbound');
 </script>
 
@@ -31,8 +39,8 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $outNoteList as name}
-			<SidebarItem {name} href="/inventory/outbound/{name}" current={name === currentNote} />
+		{#each $outNoteList as { displayName, id }}
+			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === currentNote} />
 		{/each}
 	</nav>
 
@@ -42,8 +50,8 @@
 			<div class="flex w-full items-end justify-between">
 				{#if $state}
 					<div>
-						<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-							<span class="align-middle">{currentNote}</span>
+						<h2 class="mb-4 text-gray-900">
+							<TextEditable bind:value={$displayName} />
 						</h2>
 						<div class="flex items-center gap-1.5 whitespace-nowrap">
 							<SelectMenu

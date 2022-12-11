@@ -6,7 +6,7 @@
  * without having to change the backend code and vice versa.
  */
 
-import { derived, type Readable, writable, get } from 'svelte/store';
+import { derived, type Readable, writable, get, type Writable } from 'svelte/store';
 
 import { NoteState, noteStateLookup, type NoteTempState } from '$lib/enums/noteStates';
 
@@ -30,25 +30,36 @@ import {
  */
 type DisplayRow = BookEntry & { quantity: number };
 
+interface NoteListEntry {
+	id: string;
+	displayName?: string;
+}
+
 /** A list of all (non deleted) inbound notes available, used for `/inbound` view note navigation */
 export const inNoteList = derived([warehouseStore, inNoteStore], ([warehouses, inNotes]) => {
-	console.log('inNotes', inNotes);
-	const inNotesByWarehouse: Record<string, string[]> = { all: [] };
+	const inNotesByWarehouse: Record<string, NoteListEntry[]> = { all: [] };
 	// Iterate over all warehouses and add non-deleted inNotes for each warehouse to the inNotesByWarehouse object
 	Object.keys(warehouses).forEach((warehouse) => {
 		inNotesByWarehouse[warehouse] = [];
-		warehouses[warehouse].inNotes?.forEach((noteId) => {
-			if (inNotes[noteId].state !== 'deleted') inNotesByWarehouse[warehouse].push(noteId);
+		warehouses[warehouse].inNotes?.forEach((id) => {
+			const { state, displayName } = inNotes[id];
+			// If note not deleted, add to in notes list: try and use displayName, otherwise use noteId
+			if (state !== 'deleted') inNotesByWarehouse[warehouse].push({ id, displayName });
 		});
 		// Add the notes to the `all` warehouse
 		inNotesByWarehouse.all.push(...inNotesByWarehouse[warehouse]);
 	});
-	console.log('Successfully derived', inNotesByWarehouse);
 	return inNotesByWarehouse;
 });
 /** A list of all (non deleted) outbound notes available, used for `/outbound` view note navigation */
-export const outNoteList = derived(outNoteStore, (outNotes) =>
-	Object.keys(outNotes).filter((noteId) => outNotes[noteId].state !== 'deleted')
+export const outNoteList = derived<Writable<NoteStore>, NoteListEntry[]>(outNoteStore, (outNotes) =>
+	// If note not deleted, add to out notes list: try and use displayName, otherwise use noteId
+	Object.entries(outNotes)
+		.filter(([, { state }]) => state !== 'deleted')
+		.map(([id, { displayName }]) => ({
+			id,
+			displayName
+		}))
 );
 /** A list of all the warehouses available, used for `/stock` view warehouse navigation */
 export const warehouseList = derived(warehouseStore, (warehouses) => Object.keys(warehouses));
@@ -128,6 +139,66 @@ export const createNoteStateStore = (noteId: string | undefined, type: 'inbound'
 	};
 
 	return { subscribe: currentState.subscribe, set, update };
+};
+
+/**
+ * A factory function used to create a store containing the name for a given note. It subscribes to
+ * the note content store and updates the interna store with the `displayName` of the note. If the `displayName`
+ * of the note is note provided, it will return the `id` of the note instead.
+ * @param noteId The id of the note to create a store for.
+ * @param type The type (inbound | outbound) of note to create a store for.
+ * @returns the internal store containing the `displayName` for the note and a `set` function to update the `displayName` of the note in the note content store.
+ */
+export const createNoteDisplayNameStore = (noteId: string | undefined, type: 'inbound' | 'outbound') => {
+	const contentStore = contentStoreLookup[type];
+
+	// Create an internal store that will contain the displayName of the note
+	const currentDisplayName = writable<string>();
+
+	// Subscribe to the content store and update currentDisplayName with the displayName of the note.
+	contentStore.subscribe((notes) => {
+		// Update the currentDisplayName store with the new displayName if noteId is defined
+		// no-op otherwise
+		if (noteId) {
+			currentDisplayName.set(notes[noteId]?.displayName || noteId);
+		}
+	});
+
+	// The set function updates the `displayName` for the note in the content store
+	const set = (displayName: string) => {
+		// Update the note `displayName` if `noteId` is defined
+		// No-op otherwise
+		if (noteId) {
+			contentStore.update((notes) => {
+				// Do a no-op of note with given id doesn't exist in the store
+				if (!notes[noteId]) {
+					return notes;
+				}
+
+				notes[noteId].displayName = displayName;
+				return notes;
+			});
+		}
+	};
+
+	// Write an update function with the same logic as set
+	const update = (fn: (value: string | undefined) => string) => {
+		// Update the note `displayName` if `noteId` is defined
+		// No-op otherwise
+		if (noteId) {
+			contentStore.update((notes) => {
+				// Do a no-op of note with given id doesn't exist in the store
+				if (!notes[noteId]) {
+					return notes;
+				}
+
+				notes[noteId].displayName = fn(notes[noteId].displayName);
+				return notes;
+			});
+		}
+	};
+
+	return { subscribe: currentDisplayName.subscribe, set, update };
 };
 
 /**
