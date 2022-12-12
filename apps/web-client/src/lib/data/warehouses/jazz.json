@@ -1,10 +1,6 @@
 {
 	"entries": [
 		{
-			"quantity": 9,
-			"isbn": "019976915X"
-		},
-		{
 			"quantity": 18,
 			"isbn": "0195071409"
 		},
@@ -15,6 +11,70 @@
 		{
 			"quantity": 25,
 			"isbn": "0194349276"
+		},
+		{
+			"isbn": "0028724305",
+			"quantity": 10
+		},
+		{
+			"isbn": "0076112950",
+			"quantity": 9
+		},
+		{
+			"isbn": "014028656X",
+			"quantity": 9
+		},
+		{
+			"isbn": "0140515216",
+			"quantity": 20
+		},
+		{
+			"isbn": "0205697518",
+			"quantity": 2
+		},
+		{
+			"isbn": "022623603X",
+			"quantity": 5
+		},
+		{
+			"isbn": "0253210682",
+			"quantity": 15
+		},
+		{
+			"isbn": "0292726368",
+			"quantity": 6
+		},
+		{
+			"isbn": "0300104200",
+			"quantity": 3
+		},
+		{
+			"isbn": "0306795280",
+			"quantity": 16
+		},
+		{
+			"isbn": "0312429479",
+			"quantity": 4
+		},
+		{
+			"isbn": "0312857438",
+			"quantity": 13
+		},
+		{
+			"isbn": "0375421491",
+			"quantity": 8
+		},
+		{
+			"isbn": "0385474849",
+			"quantity": 11
+		},
+		{
+			"isbn": "0415939658",
+			"quantity": 8
+		},
+		{
+			"isbn": "0446710059",
+			"quantity": 13
 		}
 	],
 	"inNotes": ["note-000", "note-001", "note-003", "note-007"]
