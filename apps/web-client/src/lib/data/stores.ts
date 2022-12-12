@@ -22,7 +22,8 @@ import {
 	outNoteStore,
 	type BookEntry,
 	type BookStore,
-	type NoteStore
+	type NoteStore,
+	type WarehouseStore
 } from '$lib/data/backend_temp';
 
 /**
@@ -201,13 +202,23 @@ export const createNoteDisplayNameStore = (noteId: string | undefined, type: 'in
 	return { subscribe: currentDisplayName.subscribe, set, update };
 };
 
+export const createNoteUpdatedAtStore = (noteId: string | undefined, type: 'inbound' | 'outbound') => {
+	const contentStore = contentStoreLookup[type];
+	// return a derived store that returns the updatedAt date for the note
+	return derived(contentStore, (notes) => {
+		if (noteId) {
+			return notes[noteId] ? new Date(notes[noteId].updatedAt) : undefined;
+		}
+	});
+};
+
 /**
  * Creates a store containing the content for table display for a given view.
  * @param contentType
  * @returns
  */
 export const createTableContentStore = (contentType: keyof typeof contentStoreLookup) =>
-	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
+	derived<[Readable<NoteStore | WarehouseStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
 		[contentStoreLookup[contentType], page, bookStore],
 		([content, page, bookStore]) => {
 			const { id } = page.params as { id?: string };
@@ -219,7 +230,7 @@ export const createTableContentStore = (contentType: keyof typeof contentStoreLo
 			}
 
 			// If the note/warehouse doesn't exist (or is 'deleted', return undefined)
-			if (!content[id] || content[id].state === NoteState.Deleted) {
+			if (!content[id] || (content as NoteStore)[id].state === NoteState.Deleted) {
 				return [];
 			}
 
