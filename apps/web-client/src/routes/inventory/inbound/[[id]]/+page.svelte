@@ -21,9 +21,12 @@
 	import {
 		createNoteDisplayNameStore,
 		createNoteStateStore,
+		createNoteUpdatedAtStore,
 		createTableContentStore,
 		inNoteList
 	} from '$lib/data/stores';
+
+	import { generateUpdatedAtString } from '$lib/utils/time';
 
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse =
@@ -37,6 +40,7 @@
 
 	$: displayName = createNoteDisplayNameStore(currentNote, 'inbound');
 	$: state = createNoteStateStore(currentNote, 'inbound');
+	$: updatedAt = createNoteUpdatedAtStore(currentNote, 'inbound');
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -75,7 +79,9 @@
 							bind:value={$state}
 							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 						/>
-						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+						{#if $updatedAt}
+							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+						{/if}
 					</div>
 				</div>
 				<TextField name="search" placeholder="Serach">

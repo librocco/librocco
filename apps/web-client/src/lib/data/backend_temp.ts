@@ -57,6 +57,7 @@ export interface NoteStore {
 	[noteId: string]: {
 		displayName?: string;
 		entries: VolumeQuantity[];
+		updatedAt: string;
 		state?: NoteState;
 	};
 }
