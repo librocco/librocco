@@ -1,23 +1,23 @@
 {
-  "id": "note-002",
-  "type": "out-note",
-  "entries": [
-    {
-      "isbn": "0195399706",
-      "warehouse": "jazz",
-      "quantity": 9
-    },
-    {
-      "isbn": "019976915X",
-      "warehouse": "jazz",
-      "quantity": 17
-    },
-    {
-      "isbn": "0195071409",
-      "warehouse": "jazz",
-      "quantity": 3
-    }
-  ],
-  "state": "draft",
-  "updatedAt": "2022-10-30T11:23:49.457Z"
+	"id": "note-002",
+	"type": "out-note",
+	"entries": [
+		{
+			"isbn": "0195399706",
+			"warehouse": "jazz",
+			"quantity": 9
+		},
+		{
+			"isbn": "019976915X",
+			"warehouse": "jazz",
+			"quantity": 17
+		},
+		{
+			"isbn": "0195071409",
+			"warehouse": "jazz",
+			"quantity": 3
+		}
+	],
+	"state": "draft",
+	"updatedAt": "2022-10-30T11:23:49.457Z"
 }
