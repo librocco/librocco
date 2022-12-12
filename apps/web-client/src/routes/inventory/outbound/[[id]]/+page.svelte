@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Delete, Search } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
 	import {
@@ -21,9 +21,12 @@
 	import {
 		createNoteDisplayNameStore,
 		createNoteStateStore,
+		createNoteUpdatedAtStore,
 		createTableContentStore,
 		outNoteList
 	} from '$lib/data/stores';
+
+	import { generateUpdatedAtString } from '$lib/utils/time';
 
 	$: currentNote = $page.params.id;
 
@@ -31,6 +34,7 @@
 
 	$: displayName = createNoteDisplayNameStore(currentNote, 'outbound');
 	$: state = createNoteStateStore(currentNote, 'outbound');
+	$: updatedAt = createNoteUpdatedAtStore(currentNote, 'outbound');
 </script>
 
 <InventoryPage>
@@ -60,7 +64,9 @@
 								bind:value={$state}
 								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 							/>
-							<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+							{#if $updatedAt}
+								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+							{/if}
 						</div>
 					</div>
 				{/if}
