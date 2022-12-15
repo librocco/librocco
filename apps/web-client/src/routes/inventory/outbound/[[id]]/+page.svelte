@@ -22,19 +22,24 @@
 		createNoteDisplayNameStore,
 		createNoteStateStore,
 		createNoteUpdatedAtStore,
-		createTableContentStore,
+		createTableContentStores,
 		outNoteList
 	} from '$lib/data/stores';
+	import { contentStoreLookup } from '$lib/data/backend_temp';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
 	$: currentNote = $page.params.id;
 
-	const tableContent = createTableContentStore('outbound');
-
 	$: displayName = createNoteDisplayNameStore(currentNote, 'outbound');
 	$: state = createNoteStateStore(currentNote, 'outbound');
 	$: updatedAt = createNoteUpdatedAtStore(currentNote, 'outbound');
+
+	$: contentStores = createTableContentStores(contentStoreLookup['inbound'], currentNote);
+
+	$: entries = contentStores.entries;
+	$: currentPage = contentStores.currentPage;
+	$: paginationData = contentStores.paginationData;
 </script>
 
 <InventoryPage>
@@ -79,9 +84,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent.length}
+		{#if $entries.length}
 			<InventoryTable>
-				{#each $tableContent as data}
+				{#each $entries as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
@@ -90,9 +95,14 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		<p class="cursor-normal select-none text-sm font-medium leading-5">
-			Showing <strong>1</strong> to <strong>10</strong> of <strong>97</strong> results
-		</p>
-		<Pagination maxItems={7} value={0} numPages={10} />
+		{#if $paginationData.totalItems}
+			<p class="cursor-normal select-none text-sm font-medium leading-5">
+				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+				<strong>{$paginationData.totalItems}</strong> results
+			</p>
+		{/if}
+		{#if $paginationData.numPages > 1}
+			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{/if}
 	</div>
 </InventoryPage>

@@ -10,8 +10,6 @@ import { derived, type Readable, writable, get, type Writable } from 'svelte/sto
 
 import { NoteState, noteStateLookup, type NoteTempState } from '$lib/enums/noteStates';
 
-import { page } from '$app/stores';
-
 import {
 	bookStore,
 	deleteNote,
@@ -212,32 +210,126 @@ export const createNoteUpdatedAtStore = (noteId: string | undefined, type: 'inbo
 	});
 };
 
-/**
- * Creates a store containing the content for table display for a given view.
- * @param contentType
- * @returns
- */
-export const createTableContentStore = (contentType: keyof typeof contentStoreLookup) =>
-	derived<[Readable<NoteStore | WarehouseStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
-		[contentStoreLookup[contentType], page, bookStore],
-		([content, page, bookStore]) => {
-			const { id } = page.params as { id?: string };
+interface PaginationData {
+	numPages: number;
+	firstItem: number;
+	lastItem: number;
+	totalItems: number;
+}
 
+interface TableContentStores {
+	entries: Readable<DisplayRow[]>;
+	currentPage: Writable<number>;
+	paginationData: Readable<PaginationData>;
+}
+
+interface CreateTableContentStores {
+	(
+		contentStore: Readable<NoteStore | WarehouseStore>,
+		id: string | undefined,
+		entriesPerPage?: number
+	): TableContentStores;
+}
+
+export const createTableContentStores: CreateTableContentStores = (contentStore, id, entriesPerPage = 10) => {
+	// Create a store that will contain the current page of the table
+	const currentPage = writable(0);
+
+	// Create a store that will contain all of the entries for the warehouse/node
+	const allEntries = derived<[Readable<NoteStore | WarehouseStore>, Readable<BookStore>], DisplayRow[]>(
+		[contentStore, bookStore],
+		([$contentStore, $bookStore]) => {
 			// No id will happen quite often: this means we're on root of the view
-			// with no single note specified.
+			// with no single note/warehouse specified.
 			if (!id) {
 				return [];
 			}
 
 			// If the note/warehouse doesn't exist (or is 'deleted', return undefined)
-			if (!content[id] || (content as NoteStore)[id].state === NoteState.Deleted) {
+			if (!$contentStore[id] || ($contentStore as NoteStore)[id].state === 'deleted') {
 				return [];
 			}
 
-			return content[id].entries.map(({ isbn, quantity }) => ({
-				...bookStore[isbn],
-				isbn,
-				quantity
+			// Return the entries for the note/warehouse extended with the properties of the corresponding book (keyed by isbn)
+			return ($contentStore as NoteStore)[id].entries.map(({ isbn, quantity }) => ({
+				...$bookStore[isbn],
+				quantity,
+				isbn
 			}));
 		}
 	);
+
+	// Create a store that will contain the entries for the current page
+	const entries = derived<[Readable<DisplayRow[]>, Readable<number>], DisplayRow[]>(
+		[allEntries, currentPage],
+		([$allEntries, $currentPage]) => {
+			// If there are no entries, return an empty array
+			if ($allEntries.length === 0) {
+				return [];
+			}
+
+			// Return the entries for the current page
+			return $allEntries.slice($currentPage * entriesPerPage, ($currentPage + 1) * entriesPerPage);
+		}
+	);
+
+	// Create a store that will contain the pagination data: numPages, firstItem, lastItem, totalItems,
+	// derived from the allEntries and currentPage stores
+	const paginationData = derived<[Readable<DisplayRow[]>, Readable<number>], PaginationData>(
+		[allEntries, currentPage],
+		([$allEntries, $currentPage]) => {
+			// If there are no entries, return an empty array
+			if ($allEntries.length === 0) {
+				return {
+					numPages: 0,
+					firstItem: 0,
+					lastItem: 0,
+					totalItems: 0
+				};
+			}
+
+			// Return the entries for the current page
+			return {
+				numPages: Math.ceil($allEntries.length / entriesPerPage),
+				firstItem: $currentPage * entriesPerPage + 1,
+				lastItem: Math.min(($currentPage + 1) * entriesPerPage, $allEntries.length),
+				totalItems: $allEntries.length
+			};
+		}
+	);
+
+	// Return the created stores
+	return {
+		entries,
+		currentPage,
+		paginationData
+	};
+};
+
+// /**
+//  * Creates a store containing the content for table display for a given view.
+//  * @param contentType
+//  * @returns
+//  */
+// export const createTableContentStore = (contentStore: Readable<NoteStore | WarehouseStore>, id: string) =>
+// 	derived<[Readable<NoteStore | WarehouseStore>, Readable<BookStore>], DisplayRow[]>(
+// 		[contentStoreLookup[contentType], bookStore],
+// 		([content, bookStore]) => {
+// 			// No id will happen quite often: this means we're on root of the view
+// 			// with no single note/warehouse specified.
+// 			if (!id) {
+// 				return [];
+// 			}
+
+// 			// If the note/warehouse doesn't exist (or is 'deleted', return undefined)
+// 			if (!content[id] || (content as NoteStore)[id].state === NoteState.Deleted) {
+// 				return [];
+// 			}
+
+// 			return content[id].entries.map(({ isbn, quantity }) => ({
+// 				...bookStore[isbn],
+// 				isbn,
+// 				quantity
+// 			}));
+// 		}
+// 	);
