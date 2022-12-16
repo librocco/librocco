@@ -14,7 +14,9 @@
 	<span
 		class="block min-w-fit px-5 py-3 text-sm {active
 			? 'bg-teal-200 text-gray-700'
-			: 'bg-white text-gray-900'} {index === 0 ? 'rounded-t-md' : ''} {index === listLength - 1 ? 'rounded-b-md' : ''}"
+			: 'bg-white text-gray-900'} {index === 0 ? 'rounded-t-md' : ''} {index === listLength - 1
+			? 'rounded-b-md'
+			: ''}"
 	>
 		{label}
 	</span>
