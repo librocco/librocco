@@ -39,9 +39,17 @@
 
 <div {...$$restProps}>
 	{#if !isEditing}
-		<p on:click={edit} on:keydown class="group relative inline-block h-[38px] cursor-pointer pt-4 pr-8" on:focus={edit}>
+		<p
+			on:click={edit}
+			on:keydown
+			class="group relative inline-block h-[38px] cursor-pointer pt-4 pr-8"
+			on:focus={edit}
+		>
 			<span class="inline-block align-middle text-lg font-medium leading-6">{text}</span>
-			<button class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block" on:click={edit}>
+			<button
+				class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block"
+				on:click={edit}
+			>
 				<Pencil class="h-4 w-4 text-cyan-700" />
 			</button>
 		</p>
