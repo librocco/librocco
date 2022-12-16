@@ -1,4 +1,4 @@
-import type { NoteStore } from '../backend_temp';
+import type { NoteStore } from '$lib/types/inventory';
 
 import note2 from './note-002.json';
 import note4 from './note-004.json';

@@ -1,4 +1,4 @@
-import type { BookStore } from '../backend_temp';
+import type { BookStore } from '$lib/types/inventory';
 
 import book0 from './0007149522.json';
 import book1 from './0028724305.json';

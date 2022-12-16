@@ -16,16 +16,9 @@
 		TextEditable
 	} from '@librocco/ui';
 
-	import { NoteState, noteStates, NoteTempState } from '$lib/enums/noteStates';
+	import { NoteState, noteStates, NoteTempState } from '$lib/enums/inventory';
 
-	import {
-		createNoteDisplayNameStore,
-		createNoteStateStore,
-		createNoteUpdatedAtStore,
-		createTableContentStores,
-		inNoteList
-	} from '$lib/data/stores';
-	import { contentStoreLookup } from '$lib/data/backend_temp';
+	import { inNoteList, createNoteStores } from '$lib/stores/inventory';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
@@ -37,15 +30,14 @@
 			)) ||
 		'';
 
-	$: displayName = createNoteDisplayNameStore(currentNote, 'inbound');
-	$: state = createNoteStateStore(currentNote, 'inbound');
-	$: updatedAt = createNoteUpdatedAtStore(currentNote, 'inbound');
+	$: noteStores = createNoteStores('inbound', currentNote);
 
-	$: contentStores = createTableContentStores(contentStoreLookup['inbound'], currentNote);
-
-	$: entries = contentStores.entries;
-	$: currentPage = contentStores.currentPage;
-	$: paginationData = contentStores.paginationData;
+	$: displayName = noteStores.displayName;
+	$: state = noteStores.state;
+	$: updatedAt = noteStores.updatedAt;
+	$: entries = noteStores.entries;
+	$: currentPage = noteStores.currentPage;
+	$: paginationData = noteStores.paginationData;
 </script>
 
 <!-- svelte-ignore missing-declaration -->
