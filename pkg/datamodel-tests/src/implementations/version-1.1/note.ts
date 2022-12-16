@@ -2,7 +2,7 @@ import { VolumeStock, VolumeTransactionTuple } from '@/types';
 import { sortBooks } from '@/utils/misc';
 import { NoteInterface, WarehouseInterface, NoteData } from './types';
 
-export class Note implements NoteInterface {
+class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
 	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
 	#w;
