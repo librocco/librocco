@@ -9,20 +9,20 @@
 		Pagination,
 		InventoryTable,
 		InventoryTableRow,
-		Header
+		Header,
+		TextEditable
 	} from '@librocco/ui';
 
-	import { createTableContentStores, warehouseList } from '$lib/data/stores';
-	import { contentStoreLookup } from '$lib/data/backend_temp';
+	import { warehouseList, createWarehouseStores } from '$lib/stores/inventory';
 
 	$: currentWarehouse = $page.params.id;
 
-	const stock = contentStoreLookup['stock'];
-	$: contentStores = createTableContentStores(stock, currentWarehouse);
+	$: warehouesStores = createWarehouseStores(currentWarehouse);
 
-	$: entries = contentStores.entries;
-	$: paginationData = contentStores.paginationData;
-	$: currentPage = contentStores.currentPage;
+	$: displayName = warehouesStores.displayName;
+	$: entries = warehouesStores.entries;
+	$: currentPage = warehouesStores.currentPage;
+	$: paginationData = warehouesStores.paginationData;
 </script>
 
 <InventoryPage>
@@ -31,14 +31,16 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $warehouseList as name}
-			<SidebarItem href="/inventory/stock/{name}" {name} current={name === currentWarehouse} />
+		{#each $warehouseList as { displayName, id }}
+			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
 		{/each}
 	</nav>
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">{currentWarehouse}</h1>
+		<h2 class="mb-4 text-gray-900">
+			<TextEditable bind:value={$displayName} />
+		</h2>
 		<TextField name="search" placeholder="Serach">
 			<svelte:fragment slot="startAdornment">
 				<Search class="h-5 w-5" />

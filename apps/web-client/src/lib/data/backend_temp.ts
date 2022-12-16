@@ -13,55 +13,14 @@
 
 import { readable, writable } from 'svelte/store';
 
-import { NoteState } from '$lib/enums/noteStates';
+import { NoteState } from '$lib/enums/inventory';
+
+import type { BookStore, WarehouseStore, NoteStore } from '$lib/types/inventory';
 
 import allBooks from './books';
 import allWarehouse from './warehouses';
 import allInbound from './notes/inbound';
 import allOutbound from './notes/outbound';
-
-// #region types
-/**
- * An interface for a full book entry, used to type the entries in books store and
- * as part of the `DisplayRow` structure.
- */
-export interface BookEntry {
-	isbn: string;
-	title: string;
-	authors?: string[];
-	publisher?: string;
-	year?: string;
-	price?: number;
-}
-
-/** A structure of the books store: `readable<BookStore>()`. */
-export interface BookStore {
-	[isbn: string]: BookEntry;
-}
-
-/** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
-interface VolumeQuantity {
-	isbn: string;
-	quantity: number;
-}
-/** A structure of the warehouse store: `readable<WarehouseStore>()`. */
-export interface WarehouseStore {
-	[warehouse: string]: {
-		entries: VolumeQuantity[];
-		inNotes?: string[];
-	};
-}
-
-/** A structure of the note store (inNoteStore or outNoteStore): `writable<NoteStore>()`. */
-export interface NoteStore {
-	[noteId: string]: {
-		displayName?: string;
-		entries: VolumeQuantity[];
-		updatedAt: string;
-		state?: NoteState;
-	};
-}
-// #endregion types
 
 // #region main_stores
 /**
