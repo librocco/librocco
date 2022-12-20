@@ -18,19 +18,24 @@
 
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/inventory';
 
-	import { inNoteList, createNoteStores } from '$lib/stores/inventory';
+	import type { InNoteList } from '$lib/types/db';
+
+	import { createNoteStores } from '$lib/stores/inventory';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
+	import { db } from '$lib/db';
+
+	const getCurrentWarehouse = (inNoteList: InNoteList, noteId: string) => {
+		const warehouse = inNoteList.find(({ notes }) => notes.find(({ id }) => id === noteId));
+		return warehouse?.id || '';
+	};
+
+	const inNoteList = db().stream().inNoteList;
 
 	$: currentNote = $page.params.id;
-	$: currentNoteWarehouse =
-		(currentNote &&
-			Object.keys($inNoteList).find(
-				(wName) => wName !== 'all' && $inNoteList[wName].find(({ id }) => currentNote === id)
-			)) ||
-		'';
+	$: currentNoteWarehouse = currentNote && getCurrentWarehouse($inNoteList, currentNote);
 
-	$: noteStores = createNoteStores('inbound', currentNote);
+	$: noteStores = createNoteStores(db(), 'inbound', currentNote);
 
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
@@ -47,14 +52,14 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each Object.entries($inNoteList) as [name, notes], index (name)}
+		{#each $inNoteList as { id, displayName, notes }, index (id)}
 			<SidebarItemGroup
-				{name}
+				name={displayName || id}
 				{index}
 				items={notes?.map(({ id, displayName }) => ({
 					name: displayName || id,
 					href: `/inventory/inbound/${id}`,
-					current: name === $page.params.id
+					current: id === $page.params.id
 				}))}
 			/>
 		{/each}

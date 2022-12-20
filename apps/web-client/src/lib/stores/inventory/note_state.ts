@@ -1,77 +1,59 @@
-import { derived, get, writable, type Readable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from 'svelte/store';
 
 import { NoteState, noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
 
-import type { NoteStore } from '$lib/types/inventory';
+import type { NoteInterface } from '$lib/types/db';
 
 /** A union type for note states used in the client app */
 type NoteAppState = NoteState | NoteTempState | undefined;
 
 interface CreateInternalStateStore {
-	(conetentStore: Readable<NoteStore>, notdId: string | undefined): Writable<NoteAppState>;
+	(note: NoteInterface): Writable<NoteAppState>;
 }
 
 /**
  * Creates a note state store for internal usage:
- * - the store listens to updates in the content store
- * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the content store
- * @param contentStore a reference to the store containing the note content (inNoteStore or outNoteStore)
- * @param noteId id used to subscribe to the content store and look for updates to the right note
+ * - the store listens to updates to the note in the db and streams the value for the state to the UI
+ * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the db
+ * @note Note interface for db communication
  */
-export const createInternalStateStore: CreateInternalStateStore = (contentStore, noteId) => {
+export const createInternalStateStore: CreateInternalStateStore = (note) => {
 	const state = writable<NoteAppState>();
 
-	// Update the internal state each time the content store is updated
-	contentStore.subscribe((content) => {
-		// No-op if the noteId is not defined
-		if (!noteId) return;
-		state.set(content[noteId]?.state);
+	// Update the internal state each time the note in the db updates
+	note.stream().state.subscribe((content) => {
+		state.set(content);
 	});
 
 	return state;
 };
 
 interface CreateDisplayStateStore {
-	(
-		contentStore: Writable<NoteStore>,
-		noteId: string | undefined,
-		internalStateStore: Writable<NoteAppState>
-	): Writable<NoteAppState>;
+	(note: NoteInterface, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
 }
 
 /**
  * Creates a note state store for display purposes:
  * - the store us used to bind to the value of note state element in the UI
  * - it streams the current value of the internal state store
- *   (either a definitive state of the note in the content store, or temporary state, while the content store is being updated)
- * - it handles updates, comming from the UI, by updating the internal state store and the note in the content store accordingly.
- * @param conetentStore
- * @param internalStateStore
+ *   (either a definitive state of the note in the db, or temporary state, while the note in the database is being updated)
+ * - it handles updates, comming from the UI, by updating the internal state store and the note in the db accordingly
  */
-export const createDisplayStateStore: CreateDisplayStateStore = (conetentStore, noteId, internalStateStore) => {
+export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore) => {
 	const set = (state: NoteState) => {
-		// No-op if the noteId is not defined (this shouldn't really happen, but as an edge case)
-		if (!noteId) return;
-
-		// For committed or deleted state, we're setting the temporary state and updating the content store.
+		// For committed or deleted state, we're setting the temporary state and updating the note in the db.
 		//
 		// Other updates are no-op as we don't allow explicit setting of temporary states
 		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is no-op.
-		if ([NoteState.Committed, NoteState.Deleted].includes(state)) {
-			internalStateStore.set(noteStateLookup[state].tempState);
-
-			/** @TEMP */
-			// The setTimeout is temporary, to simulate the async nature of the update in production
-			setTimeout(() => {
-				// Update the state of the note in the content store
-				conetentStore.update((notes) => {
-					// No-op if note not found
-					if (!notes[noteId]) return notes;
-
-					notes[noteId].state = state;
-					return notes;
-				});
-			}, 1000);
+		switch (state) {
+			case NoteState.Committed:
+				internalStateStore.set(noteStateLookup[state].tempState);
+				return note.commit();
+			case NoteState.Deleted:
+				internalStateStore.set(noteStateLookup[state].tempState);
+				return note.delete();
+			default:
+				return;
 		}
 	};
 
@@ -85,18 +67,4 @@ export const createDisplayStateStore: CreateDisplayStateStore = (conetentStore, 
 		set,
 		update
 	};
-};
-
-export const createUpdatedAtStore = (
-	contentStore: Readable<NoteStore>,
-	noteId: string | undefined
-): Readable<Date | undefined> => {
-	const store = derived(contentStore, ($contentStore) => {
-		// No-op if the noteId is not defined or no note in store
-		if (!noteId || !$contentStore[noteId]) return undefined;
-
-		return new Date($contentStore[noteId].updatedAt);
-	});
-
-	return store;
 };

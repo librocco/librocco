@@ -1,13 +1,13 @@
 import { writable, type Readable, type Writable } from 'svelte/store';
 
 import type { NoteAppState, PaginationData, VolumeQuantity } from '$lib/types/inventory';
-import { contentStoreLookup, bookStore } from '$lib/data/backend_temp';
+import type { DbInterface } from '$lib/types/db';
+
+import { bookStore } from '$lib/db/data';
 
 import { createDisplayNameStore } from './display_name';
-import { createDisplayStateStore, createInternalStateStore, createUpdatedAtStore } from './note_state';
-import { createDisplayEntriesStore, createEntriesStore, createPaginationDataStore } from './table_content';
-
-export * from './navigation';
+import { createDisplayStateStore, createInternalStateStore } from './note_state';
+import { createDisplayEntriesStore, createPaginationDataStore } from './table_content';
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -17,24 +17,29 @@ interface NoteDisplayStores {
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
 }
-
 interface CreateNoteStores {
-	(noteType: 'inbound' | 'outbound', noteId: string): NoteDisplayStores;
+	(db: DbInterface, id: string, warehouseId?: string): NoteDisplayStores;
 }
 
-export const createNoteStores: CreateNoteStores = (noteType: 'inbound' | 'outbound', noteId: string) => {
-	// Get appropriate content store for the note type
-	const contentStore = contentStoreLookup[noteType];
+/**
+ * A helper function used to create all the stores needed to display a note view.
+ * @param db db interface
+ * @param noteId
+ * @param warehouseId (optional) in notes are organised per warehouse basis, for out notes this should be `undefined`
+ * @returns
+ */
+export const createNoteStores: CreateNoteStores = (db, noteId, warehouseId) => {
+	const note = db.warehouse(warehouseId).note(noteId);
 
-	const internalState = createInternalStateStore(contentStore, noteId);
+	const internalState = createInternalStateStore(note);
+	const updatedAt = note.stream().updatedAt;
 
-	const state = createDisplayStateStore(contentStore, noteId, internalState);
-	const displayName = createDisplayNameStore(contentStore, noteId, internalState);
-	const updatedAt = createUpdatedAtStore(contentStore, noteId);
 	const currentPage = writable(0);
-	const allEntries = createEntriesStore(contentStore, bookStore, noteId);
-	const entries = createDisplayEntriesStore(allEntries, currentPage);
-	const paginationData = createPaginationDataStore(allEntries, currentPage);
+
+	const displayName = createDisplayNameStore(note, internalState);
+	const state = createDisplayStateStore(note, internalState);
+	const entries = createDisplayEntriesStore(note, currentPage, bookStore);
+	const paginationData = createPaginationDataStore(note, currentPage);
 
 	return {
 		displayName,
@@ -52,19 +57,23 @@ interface WarehouseDisplayStores {
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
 }
-
 interface CreateWarehouseStores {
-	(id: string): WarehouseDisplayStores;
+	(db: DbInterface, warehouseId: string): WarehouseDisplayStores;
 }
 
-export const createWarehouseStores: CreateWarehouseStores = (id: string) => {
-	const contentStore = contentStoreLookup['stock'];
-
-	const displayName = createDisplayNameStore(contentStore, id);
+/**
+ * Creates all the stores needed to display a warehouse view.
+ * @param db db interface
+ * @param warehouseId
+ * @returns
+ */
+export const createWarehouseStores: CreateWarehouseStores = (db, warehouseId) => {
+	const warehouse = db.warehouse(warehouseId);
 	const currentPage = writable(0);
-	const allEntries = createEntriesStore(contentStore, bookStore, id);
-	const entries = createDisplayEntriesStore(allEntries, currentPage);
-	const paginationData = createPaginationDataStore(allEntries, currentPage);
+
+	const displayName = createDisplayNameStore(warehouse);
+	const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore);
+	const paginationData = createPaginationDataStore(warehouse, currentPage);
 
 	return {
 		displayName,
