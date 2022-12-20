@@ -13,11 +13,14 @@
 		TextEditable
 	} from '@librocco/ui';
 
-	import { warehouseList, createWarehouseStores } from '$lib/stores/inventory';
+	import { createWarehouseStores } from '$lib/stores/inventory';
+	import { db } from '$lib/db';
+
+	const warehouseList = db().stream().warehouseList;
 
 	$: currentWarehouse = $page.params.id;
 
-	$: warehouesStores = createWarehouseStores(currentWarehouse);
+	$: warehouesStores = createWarehouseStores(db(), currentWarehouse);
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;

@@ -18,13 +18,16 @@
 
 	import { NoteState, noteStates, NoteTempState } from '$lib/enums/inventory';
 
-	import { outNoteList, createNoteStores } from '$lib/stores/inventory';
+	import { createNoteStores } from '$lib/stores/inventory';
+	import { db } from '$lib/db';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
+	const outNoteList = db().stream().outNoteList;
+
 	$: currentNote = $page.params.id;
 
-	$: noteStores = createNoteStores('outbound', currentNote);
+	$: noteStores = createNoteStores(db(), 'outbound', currentNote);
 
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
