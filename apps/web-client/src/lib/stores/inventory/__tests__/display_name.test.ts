@@ -10,18 +10,17 @@ import { createDisplayNameStore } from '../display_name';
 import { waitForCondition } from '$lib/__testUtils__/waitForCondition';
 
 import { defaultNote, defaultWarehouse } from '$lib/__testData__/inventory';
+import { newNote } from '$lib/db/note';
+import { newWarehouse } from '$lib/db/warehouse';
 
 describe('createDisplayNameStore', () => {
 	test('should stream the display name from the content store for given note/warehouse id', async () => {
-		const noteStore = writable<NoteStore>({
+		// Test for note
+		const inNoteStore = writable<NoteStore>({
 			'note-1': defaultNote
 		});
-		const warehouseStore = writable({
-			'warehouse-1': defaultWarehouse
-		});
-
-		// Test for note
-		const noteDisplayName = createDisplayNameStore(noteStore, 'note-1');
+		const note = newNote(inNoteStore)('note-1');
+		const noteDisplayName = createDisplayNameStore(note);
 		await waitForCondition(
 			() => get(noteDisplayName),
 			(value) => value === 'Note 1',
@@ -35,7 +34,11 @@ describe('createDisplayNameStore', () => {
 		);
 
 		// Test for warehouse
-		const warehouseDisplayName = createDisplayNameStore(warehouseStore, 'warehouse-1');
+		const warehouseStore = writable({
+			'warehouse-1': defaultWarehouse
+		});
+		const warehouse = newWarehouse({ inNoteStore, warehouseStore, outNoteStore: writable() })('warehouse-1');
+		const warehouseDisplayName = createDisplayNameStore(warehouse);
 		await waitForCondition(
 			() => get(warehouseDisplayName),
 			(value) => value === 'Warehouse 1',
@@ -53,7 +56,8 @@ describe('createDisplayNameStore', () => {
 		const noteStore = writable<NoteStore>({
 			'note-1': defaultNote
 		});
-		const noteDisplayName = createDisplayNameStore(noteStore, 'note-1');
+		const note = newNote(noteStore)('note-1');
+		const noteDisplayName = createDisplayNameStore(note);
 
 		// Update to the displayName store should get propagated to the content store
 		noteDisplayName.set('Note 1 updated');
@@ -68,8 +72,9 @@ describe('createDisplayNameStore', () => {
 		const noteStore = writable<NoteStore>({
 			'note-1': defaultNote
 		});
+		const note = newNote(noteStore)('note-1');
 		const internalStateStore = writable<NoteAppState>(NoteState.Draft);
-		const noteDisplayName = createDisplayNameStore(noteStore, 'note-1', internalStateStore);
+		const noteDisplayName = createDisplayNameStore(note, internalStateStore);
 
 		// Update to the displayName store should get propagated to the content store
 		noteDisplayName.set('Note 1 updated');
