@@ -30,7 +30,6 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (db, noteId, warehouseId) => {
-	console.log('Note ID: ' + noteId + ' Warehouse ID: ' + warehouseId);
 	const note = db.warehouse(warehouseId).note(noteId);
 
 	const internalState = createInternalStateStore(note);

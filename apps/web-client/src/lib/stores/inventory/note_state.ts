@@ -11,35 +11,46 @@ type NoteAppState = NoteState | NoteTempState | undefined;
 interface CreateInternalStateStore {
 	(note: NoteInterface): Writable<NoteAppState>;
 }
-
 /**
  * Creates a note state store for internal usage:
  * - the store listens to updates to the note in the db and streams the value for the state to the UI
  * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the db
- * @note Note interface for db communication
+ * @param note Note interface for db communication
  */
 export const createInternalStateStore: CreateInternalStateStore = (note) => {
 	const state = writable<NoteAppState>();
 
-	// Update the internal state each time the note in the db updates
-	note.stream().state.subscribe((content) => {
-		console.log('Note state streamed: ', content);
-		state.set(content);
-	});
+	return {
+		...state,
+		subscribe: (...params: Parameters<typeof state.subscribe>) => {
+			// Create subscription to the stream, updating the internal store
+			// with each stream update.
+			const streamSub = note.stream().state.subscribe((content) => {
+				state.set(content);
+			});
+			// Pass the params to internal store subscription
+			const unsubscribe = state.subscribe(...params);
 
-	return state;
+			// return an unsubscribe function closing both subscriptions
+			return () => {
+				streamSub.unsubscribe();
+				return unsubscribe();
+			};
+		}
+	};
 };
 
 interface CreateDisplayStateStore {
 	(note: NoteInterface, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
 }
-
 /**
  * Creates a note state store for display purposes:
  * - the store us used to bind to the value of note state element in the UI
  * - it streams the current value of the internal state store
  *   (either a definitive state of the note in the db, or temporary state, while the note in the database is being updated)
  * - it handles updates, comming from the UI, by updating the internal state store and the note in the db accordingly
+ * @param note Note interface for db communication
+ * @param internalStateStore a store in charge of internal state (this is used to set the temporary state while the note in the db is being updated)
  */
 export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore) => {
 	const set = (state: NoteState) => {
