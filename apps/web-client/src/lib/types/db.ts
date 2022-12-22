@@ -1,15 +1,21 @@
 import type { Readable, Writable } from 'svelte/store';
 
-import type { NoteStore, VolumeQuantity, WarehouseStore } from './inventory';
-import type { NoteState } from '$lib/enums/inventory';
+import type { NoteStore, WarehouseStore } from './inventory';
+import type { NoteState } from '$lib/enums/db';
 
-// #region stores
+// #region misc
+/** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
+export interface VolumeQuantity {
+	isbn: string;
+	quantity: number;
+}
+
 export interface Stores {
 	warehouseStore: Writable<WarehouseStore>;
 	inNoteStore: Writable<NoteStore>;
 	outNoteStore: Writable<NoteStore>;
 }
-// #endregion stores
+// #endregion misc
 
 // #region note
 export interface NoteStream {
