@@ -14,6 +14,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
+		"@librocco/db": "workspace:*",
 		"@types/pouchdb": "~6.4.0",
 		"@types/uuid": "~8.3.4",
 		"@types/node": "~18.7.16",
@@ -27,7 +28,8 @@
 		"typescript": "^4.7.4",
 		"uuid": "~8.3.2",
 		"vite": "^3.0.0",
-		"vitest": "0.23.4"
+		"vitest": "0.23.4",
+		"rxjs": "~7.8.0"
 	},
 	"type": "module"
 }
