@@ -16,7 +16,8 @@
 		TextEditable
 	} from '@librocco/ui';
 
-	import { NoteState, noteStates, NoteTempState } from '$lib/enums/inventory';
+	import { noteStates, NoteTempState } from '$lib/enums/inventory';
+	import { NoteState } from '$lib/enums/db';
 
 	import { createNoteStores } from '$lib/stores/inventory';
 	import { db } from '$lib/db';
@@ -27,7 +28,7 @@
 
 	$: currentNote = $page.params.id;
 
-	$: noteStores = createNoteStores(db(), 'outbound', currentNote);
+	$: noteStores = createNoteStores(db(), currentNote);
 
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;

@@ -14,19 +14,19 @@ export const newWarehouse =
 
 		const update = (warehouse: Partial<WarehouseStore[keyof WarehouseStore]>) =>
 			new Promise<void>((resolve) => {
+				// No-op if warehouse not found
+				if (!id) return;
+
 				/** @TEMP Set timeout is here to simulate the async behaviour in production */
 				setTimeout(() => {
 					warehouseStore.update((store) => {
 						const existinWarehouse = store[id];
 
-						// No-op if warehouse not found
-						if (!id) return store;
-
 						store[id] = { ...existinWarehouse, ...warehouse };
 
 						return store;
 					});
-				});
+				}, 1000);
 				resolve();
 			});
 
@@ -37,7 +37,7 @@ export const newWarehouse =
 		const stream = () => ({
 			displayName: derived(warehouseStore, ($warehouseStore) => {
 				const warehouse = $warehouseStore[id];
-				return warehouse ? warehouse.displayName : id;
+				return warehouse?.displayName || id;
 			}),
 			entries: derived(warehouseStore, ($warehouseStore) => {
 				const warehouse = $warehouseStore[id];

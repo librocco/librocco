@@ -13,7 +13,7 @@
 
 import { readable, writable } from 'svelte/store';
 
-import { NoteState } from '$lib/enums/inventory';
+import { NoteState } from '$lib/enums/db';
 
 import type { BookStore, WarehouseStore, NoteStore } from '$lib/types/inventory';
 

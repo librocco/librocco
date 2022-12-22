@@ -1,7 +1,8 @@
 import { describe, test, expect } from 'vitest';
 import { writable, get } from 'svelte/store';
 
-import { NoteState, NoteTempState } from '$lib/enums/inventory';
+import { NoteTempState } from '$lib/enums/inventory';
+import { NoteState } from '$lib/enums/db';
 
 import type { NoteAppState, NoteStore } from '$lib/types/inventory';
 

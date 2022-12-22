@@ -1,6 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
-import { NoteState, noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
+import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
+import { NoteState } from '$lib/enums/db';
 
 import type { NoteInterface } from '$lib/types/db';
 
