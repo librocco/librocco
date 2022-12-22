@@ -1,4 +1,5 @@
-import type { Readable, Writable } from 'svelte/store';
+import type { Writable } from 'svelte/store';
+import type { Observable } from 'rxjs';
 
 import type { NoteStore, WarehouseStore } from './inventory';
 import type { NoteState } from '$lib/enums/db';
@@ -19,10 +20,10 @@ export interface Stores {
 
 // #region note
 export interface NoteStream {
-	state: Readable<NoteState | undefined>;
-	displayName: Readable<string | undefined>;
-	updatedAt: Readable<Date | undefined>;
-	entries: Readable<VolumeQuantity[]>;
+	state: Observable<NoteState | undefined>;
+	displayName: Observable<string | undefined>;
+	updatedAt: Observable<Date | undefined>;
+	entries: Observable<VolumeQuantity[]>;
 }
 
 export interface NoteInterface {
@@ -35,8 +36,8 @@ export interface NoteInterface {
 
 // #region warehouse
 export interface WarehouseStream {
-	displayName: Readable<string | undefined>;
-	entries: Readable<VolumeQuantity[]>;
+	displayName: Observable<string | undefined>;
+	entries: Observable<VolumeQuantity[]>;
 }
 
 export interface WarehouseInterface {
@@ -67,10 +68,10 @@ interface FindNote {
 }
 
 export interface DbStream {
-	warehouseList: Readable<NavListEntry[]>;
-	outNoteList: Readable<NavListEntry[]>;
-	inNoteList: Readable<InNoteList>;
-	findNote: Readable<FindNote>;
+	warehouseList: Observable<NavListEntry[]>;
+	outNoteList: Observable<NavListEntry[]>;
+	inNoteList: Observable<InNoteList>;
+	findNote: Observable<FindNote>;
 }
 
 export interface DbInterface {
