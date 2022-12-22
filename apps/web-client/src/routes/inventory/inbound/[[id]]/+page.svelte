@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
+	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	import {
@@ -19,27 +20,21 @@
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
 
-	import type { InNoteList } from '$lib/types/db';
-
 	import { createNoteStores } from '$lib/stores/inventory';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { db } from '$lib/db';
 
-	const getCurrentWarehouse = (inNoteList: InNoteList, noteId: string) => {
-		const warehouse = inNoteList.find(
-			({ id, notes }) =>
-				// "all" is note the 'warehouse' we're looking for
-				id !== 'all' && notes.find(({ id }) => id === noteId)
-		);
-		return warehouse?.id || '';
-	};
-
-	const inNoteList = db().stream().inNoteList;
+	const { inNoteList, checkNote } = db().stream();
 
 	$: currentNote = $page.params.id;
-	$: currentNoteWarehouse = currentNote && getCurrentWarehouse($inNoteList, currentNote);
 
+	// Navigate back to /inventory/inbound if the note doesn't exist (or is deleted)
+	$: if (!$checkNote(currentNote) || $checkNote(currentNote)?.state === NoteState.Deleted) {
+		goto('/inventory/inbound');
+	}
+
+	$: currentNoteWarehouse = $checkNote(currentNote)?.warehouse;
 	$: noteStores = createNoteStores(db(), currentNote, currentNoteWarehouse);
 
 	$: displayName = noteStores.displayName;

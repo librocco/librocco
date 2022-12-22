@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -24,10 +25,14 @@
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
-	const outNoteList = db().stream().outNoteList;
+	const { outNoteList, checkNote } = db().stream();
 
 	$: currentNote = $page.params.id;
 
+	// Navigate back to /inventory/outbound if the note doesn't exist (or is deleted)
+	$: if (currentNote && (!$checkNote(currentNote) || $checkNote(currentNote)?.state === NoteState.Deleted)) {
+		goto('/inventory/outbound');
+	}
 	$: noteStores = createNoteStores(db(), currentNote);
 
 	$: displayName = noteStores.displayName;
