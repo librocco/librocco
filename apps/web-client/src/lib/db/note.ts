@@ -24,8 +24,8 @@ export const newNote =
 
 						return store;
 					});
+					resolve();
 				}, 1000);
-				resolve();
 			});
 
 		const commit = () => update({ state: NoteState.Committed });

@@ -42,10 +42,13 @@ export const derivedObservable = <T, U>(store: Readable<T>, fn: (value: T) => U)
  */
 export const readableFromStream = <T>(observable: Observable<T>): Readable<T> => {
 	const store = readable<T>(undefined, (set) => {
-		const sub = observable.subscribe({
+		const observer = observable.subscribe({
 			next: (value) => set(value)
 		});
-		return () => sub.unsubscribe();
+		// I have no idea how and why this happens, but if we destructure the `{ unsubscribe }` from the `observer`
+		// and return it, or return `observer.unsubscribe` directly, instead of this exact pattern (an unnamed function calling the `observer.unsubscribe`)
+		// we get weird internal errors like 'Cannot read property of undefined, reading 'close'` when the store is unsubscribed from.
+		return () => observer.unsubscribe();
 	});
 	return store;
 };

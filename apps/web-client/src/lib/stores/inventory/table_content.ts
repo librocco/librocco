@@ -2,6 +2,7 @@ import { derived, type Readable } from 'svelte/store';
 
 import type { BookStore, DisplayRow, PaginationData } from '$lib/types/inventory';
 import type { NoteInterface, WarehouseInterface } from '$lib/types/db';
+
 import { readableFromStream } from '$lib/utils/streams';
 
 interface CreateDisplayEntriesStore {
