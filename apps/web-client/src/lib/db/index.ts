@@ -2,7 +2,7 @@ import { derived } from 'svelte/store';
 
 import { NoteState } from '$lib/enums/db';
 
-import type { DbInterface, DbStream, InNoteList, Stores } from '$lib/types/db';
+import type { DbInterface, DbStream, InNoteList, NoteLookupResult, Stores } from '$lib/types/db';
 
 import { newWarehouse } from './warehouse';
 
@@ -58,6 +58,31 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 			Object.entries($outNoteStore)
 				.filter(([, { state }]) => state !== NoteState.Deleted)
 				.map(([id, { displayName }]) => ({ id, displayName }))
+		),
+		checkNote: derived(
+			[warehouseStore, inNoteStore, outNoteStore],
+			([$warehouseStore, $inNoteStore, $outNoteStore]) => {
+				const notes: Record<string, NoteLookupResult> = {};
+
+				Object.entries($warehouseStore).forEach(([warehouseId, { inNotes }]) => {
+					if (inNotes) {
+						inNotes.forEach((noteId) => {
+							const note = $inNoteStore[noteId];
+							if (!note) return;
+							notes[noteId] = {
+								warehouse: warehouseId,
+								type: 'inbound',
+								state: note.state
+							};
+						});
+					}
+				});
+				Object.entries($outNoteStore).forEach(([noteId, note]) => {
+					notes[noteId] = { warehouse: 'all', type: 'outbound', state: note.state };
+				});
+
+				return (noteId: string) => notes[noteId];
+			}
 		)
 	});
 
