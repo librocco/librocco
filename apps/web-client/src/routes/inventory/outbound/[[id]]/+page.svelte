@@ -25,12 +25,12 @@
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
-	const { outNoteList, checkNote } = db().stream();
+	const { outNoteList, findNote } = db().stream();
 
 	$: currentNote = $page.params.id;
 
 	// Navigate back to /inventory/outbound if the note doesn't exist (or is deleted)
-	$: if (currentNote && (!$checkNote(currentNote) || $checkNote(currentNote)?.state === NoteState.Deleted)) {
+	$: if (currentNote && (!$findNote(currentNote) || $findNote(currentNote)?.state === NoteState.Deleted)) {
 		goto('/inventory/outbound');
 	}
 	$: noteStores = createNoteStores(db(), currentNote);

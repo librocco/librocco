@@ -11,11 +11,10 @@
  * 		- Self hosted (configurable through env variables) couchdb (for production)
  */
 
-import { readable, writable } from 'svelte/store';
-
-import { NoteState } from '$lib/enums/db';
+import { derived, readable, writable } from 'svelte/store';
 
 import type { BookStore, WarehouseStore, NoteStore } from '$lib/types/inventory';
+import type { NoteLookupResult } from '$lib/types/db';
 
 import allBooks from './books';
 import allWarehouse from './warehouses';
@@ -39,6 +38,45 @@ export const inNoteStore = writable<NoteStore>(allInbound);
 /** A store containing all outbound notes. (This is currently a baked in, test data store)  */
 export const outNoteStore = writable<NoteStore>(allOutbound);
 
+/** A derived store used to look up the note state, type, warehouse and displayName */
+export const noteLookup = derived(
+	[inNoteStore, outNoteStore, warehouseStore],
+	([$inNoteStore, $outNoteStore, $warehouseStore]) => {
+		const lookup: Record<string, NoteLookupResult> = {};
+
+		// Add in notes to the lookup
+		for (const [warehouse, { inNotes }] of Object.entries($warehouseStore)) {
+			if (inNotes) {
+				for (const noteId of inNotes) {
+					const note = $inNoteStore[noteId];
+					if (note) {
+						lookup[noteId] = {
+							id: noteId,
+							state: note.state,
+							type: 'inbound',
+							warehouse,
+							displayName: note.displayName
+						};
+					}
+				}
+			}
+		}
+
+		// Add out notes to the lookup
+		for (const [noteId, { state, displayName }] of Object.entries($outNoteStore)) {
+			lookup[noteId] = {
+				id: noteId,
+				state,
+				type: 'outbound',
+				warehouse: 'all',
+				displayName
+			};
+		}
+
+		return lookup;
+	}
+);
+
 /** A lookup table for the content stores, used to get the correct content for a given view (stock/inbound/outbound). */
 export const contentStoreLookup = {
 	stock: warehouseStore,
@@ -46,37 +84,3 @@ export const contentStoreLookup = {
 	outbound: outNoteStore
 };
 // #endregion main_stores
-
-// #region note_state_actions
-/**
- * Delete the note from the store. In current implementation the note `state` is set to `deleted`.
- * We might want to change that in the future, for example, completely delete the note, or update the logic
- * to keep the note as, sort of, an archive and periodically clean up the archive of deleted notes.
- *
- * If the note is `deleted` it is omitted from the navigation list and will not be shown in the UI.
- * @param noteId
- * @param type note type: `inbound` | `outbound`
- */
-export const deleteNote = (noteId: string, type: 'inbound' | 'outbound') => {
-	// Update the note state as deleted
-	const contentStore = contentStoreLookup[type];
-	contentStore.update((notes) => {
-		notes[noteId].state = NoteState.Deleted;
-		return notes;
-	});
-};
-
-/**
- * Sets the note state to `committed`. After that point the note is no longer editable.
- * @param noteId
- * @param type note type: `inbound` | `outbound`
- */
-export const commitNote = (noteId: string, type: 'inbound' | 'outbound') => {
-	// Update the note state as committed
-	const contentStore = contentStoreLookup[type];
-	contentStore.update((notes) => {
-		notes[noteId].state = NoteState.Committed;
-		return notes;
-	});
-};
-// #region note_state_actions
