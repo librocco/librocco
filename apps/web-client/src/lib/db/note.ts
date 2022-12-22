@@ -1,9 +1,11 @@
-import { type Writable, derived } from 'svelte/store';
+import type { Writable } from 'svelte/store';
 
 import { NoteState } from '$lib/enums/db';
 
 import type { NoteStore } from '$lib/types/inventory';
 import type { NoteInterface, NoteStream } from '$lib/types/db';
+
+import { derivedObservable } from '$lib/utils/streams';
 
 export const newNote =
 	(contentStore: Writable<NoteStore>) =>
@@ -22,7 +24,7 @@ export const newNote =
 
 						return store;
 					});
-				});
+				}, 1000);
 				resolve();
 			});
 
@@ -33,19 +35,19 @@ export const newNote =
 		const setName = (displayName: string) => update({ displayName });
 
 		const stream = (): NoteStream => {
-			const state = derived(contentStore, ($contentStore) => {
+			const state = derivedObservable(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];
 				return note ? note.state : undefined;
 			});
-			const displayName = derived(contentStore, ($contentStore) => {
+			const displayName = derivedObservable(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];
 				return note?.displayName || noteId;
 			});
-			const updatedAt = derived(contentStore, ($contentStore) => {
+			const updatedAt = derivedObservable(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];
 				return note ? new Date(note.updatedAt) : undefined;
 			});
-			const entries = derived(contentStore, ($contentStore) => {
+			const entries = derivedObservable(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];
 				return note ? note.entries : [];
 			});

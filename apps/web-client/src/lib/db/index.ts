@@ -6,6 +6,8 @@ import type { DbInterface, DbStream, NavListEntry, Stores } from '$lib/types/db'
 
 import { newWarehouse } from './warehouse';
 
+import { derivedObservable, observableFromStore } from '$lib/utils/streams';
+
 import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from './data';
 
 const defaultStores = {
@@ -28,36 +30,38 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 	const warehouse = (id = 'all') => newWarehouse(stores)(id);
 
 	const stream = (): DbStream => ({
-		warehouseList: derived(warehouseStore, ($warehouseStore) =>
+		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>
 			Object.entries($warehouseStore).map(([id, { displayName }]) => ({ id, displayName }))
 		),
 
-		inNoteList: derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
-			// Filter out outbound and deleted notes
-			const filteredNotes = Object.values($noteLookup).filter(
-				({ state, type }) => state !== NoteState.Deleted && type === 'inbound'
-			);
-			// Group notes by warehouse adding each note to 'all' warehouse
-			const groupedNotes = filteredNotes.reduce((acc, note) => {
-				const { warehouse, id, displayName } = note;
-				const warehouseIds = ['all', warehouse];
+		inNoteList: observableFromStore(
+			derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
+				// Filter out outbound and deleted notes
+				const filteredNotes = Object.values($noteLookup).filter(
+					({ state, type }) => state !== NoteState.Deleted && type === 'inbound'
+				);
+				// Group notes by warehouse adding each note to 'all' warehouse
+				const groupedNotes = filteredNotes.reduce((acc, note) => {
+					const { warehouse, id, displayName } = note;
+					const warehouseIds = ['all', warehouse];
 
-				warehouseIds.forEach((warehouse) => {
-					if (!acc[warehouse]) acc[warehouse] = [];
-					acc[warehouse].push({ id, displayName });
+					warehouseIds.forEach((warehouse) => {
+						if (!acc[warehouse]) acc[warehouse] = [];
+						acc[warehouse].push({ id, displayName });
+					});
+
+					return acc;
+				}, {} as Record<string, NavListEntry[]>);
+				// Transform grouped notes into in note list
+				// adding each warehouse's display name from warehouseStore
+				return Object.entries(groupedNotes).map(([warehouse, notes]) => {
+					const { displayName } = $warehouseStore[warehouse] || { displayName: warehouse };
+					return { id: warehouse, displayName, notes };
 				});
+			})
+		),
 
-				return acc;
-			}, {} as Record<string, NavListEntry[]>);
-			// Transform grouped notes into in note list
-			// adding each warehouse's display name from warehouseStore
-			return Object.entries(groupedNotes).map(([warehouse, notes]) => {
-				const { displayName } = $warehouseStore[warehouse] || { displayName: warehouse };
-				return { id: warehouse, displayName, notes };
-			});
-		}),
-
-		outNoteList: derived(noteLookup, ($noteLookup) =>
+		outNoteList: derivedObservable(noteLookup, ($noteLookup) =>
 			Object.values($noteLookup)
 				// Pluck non-deleted outbound notes
 				.filter(({ state, type }) => state !== NoteState.Deleted && type === 'outbound')
@@ -65,7 +69,7 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 				.map(({ id, displayName }) => ({ id, displayName }))
 		),
 
-		findNote: derived(noteLookup, ($noteLookup) => {
+		findNote: derivedObservable(noteLookup, ($noteLookup) => {
 			return (noteId: string) => $noteLookup[noteId];
 		})
 	});

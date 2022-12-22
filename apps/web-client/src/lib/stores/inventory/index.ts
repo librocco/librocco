@@ -8,6 +8,7 @@ import { bookStore } from '$lib/db/data';
 import { createDisplayNameStore } from './display_name';
 import { createDisplayStateStore, createInternalStateStore } from './note_state';
 import { createDisplayEntriesStore, createPaginationDataStore } from './table_content';
+import { readableFromStream } from '$lib/utils/streams';
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -29,10 +30,11 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (db, noteId, warehouseId) => {
+	console.log('Note ID: ' + noteId + ' Warehouse ID: ' + warehouseId);
 	const note = db.warehouse(warehouseId).note(noteId);
 
 	const internalState = createInternalStateStore(note);
-	const updatedAt = note.stream().updatedAt;
+	const updatedAt = readableFromStream(note.stream().updatedAt);
 
 	const currentPage = writable(0);
 

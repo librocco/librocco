@@ -1,9 +1,9 @@
-import { derived } from 'svelte/store';
-
 import type { Stores, WarehouseInterface } from '$lib/types/db';
 import type { WarehouseStore } from '$lib/types/inventory';
 
 import { newNote } from './note';
+
+import { derivedObservable } from '$lib/utils/streams';
 
 export const newWarehouse =
 	({ warehouseStore, inNoteStore, outNoteStore }: Stores) =>
@@ -35,11 +35,11 @@ export const newWarehouse =
 		const note = newNote(noteStore);
 
 		const stream = () => ({
-			displayName: derived(warehouseStore, ($warehouseStore) => {
+			displayName: derivedObservable(warehouseStore, ($warehouseStore) => {
 				const warehouse = $warehouseStore[id];
 				return warehouse?.displayName || id;
 			}),
-			entries: derived(warehouseStore, ($warehouseStore) => {
+			entries: derivedObservable(warehouseStore, ($warehouseStore) => {
 				const warehouse = $warehouseStore[id];
 				return warehouse ? warehouse.entries : [];
 			})
