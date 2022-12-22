@@ -14,7 +14,7 @@ const config =
 		: defineConfig({
 				build: {
 					lib: {
-						name: '@librocco/database',
+						name: '@librocco/db',
 						entry: path.join(__dirname, 'src', 'index.ts'),
 						fileName: (fmt) => (fmt === 'es' ? 'index.es.js' : 'index.js'),
 						formats: ['es', 'cjs']
