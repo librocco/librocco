@@ -23,6 +23,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 
 	// Update the internal state each time the note in the db updates
 	note.stream().state.subscribe((content) => {
+		console.log('Note state streamed: ', content);
 		state.set(content);
 	});
 

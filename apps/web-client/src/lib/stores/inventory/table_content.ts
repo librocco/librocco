@@ -2,6 +2,7 @@ import { derived, type Readable } from 'svelte/store';
 
 import type { BookStore, DisplayRow, PaginationData } from '$lib/types/inventory';
 import type { NoteInterface, WarehouseInterface } from '$lib/types/db';
+import { readableFromStream } from '$lib/utils/streams';
 
 interface CreateDisplayEntriesStore {
 	(
@@ -18,7 +19,7 @@ interface CreateDisplayEntriesStore {
  * @returns
  */
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, bookStore) => {
-	const entriesStore = entity.stream().entries;
+	const entriesStore = readableFromStream(entity.stream().entries);
 	// Create a derived store that streams the entries value from the content store
 	const displayEntries = derived(
 		[entriesStore, currentPageStore, bookStore],
@@ -46,7 +47,7 @@ export const createPaginationDataStore = (
 	entity: NoteInterface | WarehouseInterface,
 	currentPageStore: Readable<number>
 ): Readable<PaginationData> => {
-	const entriesStore = entity.stream().entries;
+	const entriesStore = readableFromStream(entity.stream().entries);
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
 		const totalItems = $entriesStore.length;

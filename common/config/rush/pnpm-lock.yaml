@@ -20,6 +20,7 @@ importers:
       postcss: ~8.4.13
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
+      rxjs: ~7.8.0
       svelte: ^3.44.0
       svelte-check: ^2.7.1
       svelte-preprocess: ^4.10.6
@@ -30,6 +31,7 @@ importers:
       vitest: ~0.24.5
     dependencies:
       lucide-svelte: 0.91.0_svelte@3.54.0
+      rxjs: 7.8.0
     devDependencies:
       '@librocco/ui': link:../../pkg/ui
       '@sveltejs/adapter-auto': 1.0.0-next.91_@sveltejs+kit@1.0.0-next.573
@@ -7432,6 +7434,12 @@ packages:
       queue-microtask: 1.2.3
     dev: true
 
+  /rxjs/7.8.0:
+    resolution: {integrity: sha512-F2+gxDshqmIub1KdvZkaEfGDwLNpPvk9Fs6LD/MyQxNgMds/WH9OdDDXOmxUZpME+iSK3rQCctkL0DYyytUqMg==}
+    dependencies:
+      tslib: 2.4.1
+    dev: false
+
   /sade/1.8.1:
     resolution: {integrity: sha512-xal3CZX1Xlo/k4ApwCFrHVACi9fBqJ7V+mwhBsuf/1IOKbBy098Fex+Wa/5QMubw09pSZ/u8EY8PWgevJsXp1A==}
     engines: {node: '>=6'}
@@ -8223,7 +8231,6 @@ packages:
 
   /tslib/2.4.1:
     resolution: {integrity: sha512-tGyy4dAjRIEwI7BzsB0lynWgOpfqjUdq91XXAlIWD2OwKBH7oCl/GZG/HT4BOHrTlPMOASlMQ7veyTqpmRcrNA==}
-    dev: true
 
   /tsutils/3.21.0_typescript@4.9.4:
     resolution: {integrity: sha512-mHKK3iUXL+3UF6xL5k0PEhKRUBKPBCv/+RkEOpjRWxxx27KKRBmmA60A9pgOUvMi8GKhRMPEmjBRPzs2W7O1OA==}
