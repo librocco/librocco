@@ -39,7 +39,7 @@ export interface NoteStore {
 		displayName?: string;
 		entries: VolumeQuantity[];
 		updatedAt: string;
-		state?: NoteState;
+		state: NoteState;
 	};
 }
 
