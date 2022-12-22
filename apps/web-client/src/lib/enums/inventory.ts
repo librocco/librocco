@@ -1,8 +1,4 @@
-export enum NoteState {
-	Draft = 'draft',
-	Committed = 'committed',
-	Deleted = 'deleted'
-}
+import { NoteState } from '$lib/enums/db';
 
 export enum NoteTempState {
 	Saving = 'saving',
