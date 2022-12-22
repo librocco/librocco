@@ -20,9 +20,6 @@ interface CreateDisplayEntriesStore {
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, bookStore) => {
 	const entriesStore = entity.stream().entries;
 	// Create a derived store that streams the entries value from the content store
-	entriesStore.subscribe((e) => {
-		console.log(e);
-	});
 	const displayEntries = derived(
 		[entriesStore, currentPageStore, bookStore],
 		([$entriesStore, $currentPageStore, $bookStore]) => {
