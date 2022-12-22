@@ -1,7 +1,7 @@
 import { writable, type Readable, type Writable } from 'svelte/store';
 
-import type { NoteAppState, PaginationData } from '$lib/types/inventory';
 import type { DbInterface, VolumeQuantity } from '$lib/types/db';
+import type { NoteAppState, PaginationData } from '$lib/types/inventory';
 
 import { bookStore } from '$lib/db/data';
 
@@ -40,10 +40,6 @@ export const createNoteStores: CreateNoteStores = (db, noteId, warehouseId) => {
 	const state = createDisplayStateStore(note, internalState);
 	const entries = createDisplayEntriesStore(note, currentPage, bookStore);
 	const paginationData = createPaginationDataStore(note, currentPage);
-
-	entries.subscribe((e) => {
-		console.log(e);
-	});
 
 	return {
 		displayName,
