@@ -2,11 +2,11 @@ import { derived } from 'svelte/store';
 
 import { NoteState } from '$lib/enums/db';
 
-import type { DbInterface, DbStream, InNoteList, NoteLookupResult, Stores } from '$lib/types/db';
+import type { DbInterface, DbStream, NavListEntry, Stores } from '$lib/types/db';
 
 import { newWarehouse } from './warehouse';
 
-import { warehouseStore, inNoteStore, outNoteStore } from './data';
+import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from './data';
 
 const defaultStores = {
 	warehouseStore,
@@ -23,7 +23,7 @@ const defaultStores = {
 export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 	const stores = { ...defaultStores, ...overrideStores };
 
-	const { warehouseStore, inNoteStore } = stores;
+	const { warehouseStore } = stores;
 
 	const warehouse = (id = 'all') => newWarehouse(stores)(id);
 
@@ -31,59 +31,43 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 		warehouseList: derived(warehouseStore, ($warehouseStore) =>
 			Object.entries($warehouseStore).map(([id, { displayName }]) => ({ id, displayName }))
 		),
-		inNoteList: derived([warehouseStore, inNoteStore], ([$warehouseStore, $inNoteStore]) => {
-			// Initialise the result with 'all' entries set up
-			const res: InNoteList = [{ id: 'all', notes: [] }];
 
-			Object.entries($warehouseStore).forEach(([id, { displayName, inNotes }]) => {
-				// Omit warehouse if there are no notes
-				if (!inNotes) return;
-				const notes = inNotes
-					// Filter out non existing or deleted notes
-					.filter((noteId) => $inNoteStore[noteId]?.state !== NoteState.Deleted)
-					// Add display name for each note
-					.map((noteId) => ({ id: noteId, displayName: $inNoteStore[noteId].displayName }));
+		inNoteList: derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
+			// Filter out outbound and deleted notes
+			const filteredNotes = Object.values($noteLookup).filter(
+				({ state, type }) => state !== NoteState.Deleted && type === 'inbound'
+			);
+			// Group notes by warehouse adding each note to 'all' warehouse
+			const groupedNotes = filteredNotes.reduce((acc, note) => {
+				const { warehouse, id, displayName } = note;
+				const warehouseIds = ['all', warehouse];
 
-				// Omit warehouse if there are no filtered notes
-				if (!notes.length) return;
+				warehouseIds.forEach((warehouse) => {
+					if (!acc[warehouse]) acc[warehouse] = [];
+					acc[warehouse].push({ id, displayName });
+				});
 
-				// Add warehouse to result
-				res.push({ id, displayName, notes });
-				// Add notes to 'all' list
-				res[0].notes.push(...notes);
+				return acc;
+			}, {} as Record<string, NavListEntry[]>);
+			// Transform grouped notes into in note list
+			// adding each warehouse's display name from warehouseStore
+			return Object.entries(groupedNotes).map(([warehouse, notes]) => {
+				const { displayName } = $warehouseStore[warehouse] || { displayName: warehouse };
+				return { id: warehouse, displayName, notes };
 			});
-			return res;
 		}),
-		outNoteList: derived(outNoteStore, ($outNoteStore) =>
-			Object.entries($outNoteStore)
-				.filter(([, { state }]) => state !== NoteState.Deleted)
-				.map(([id, { displayName }]) => ({ id, displayName }))
+
+		outNoteList: derived(noteLookup, ($noteLookup) =>
+			Object.values($noteLookup)
+				// Pluck non-deleted outbound notes
+				.filter(({ state, type }) => state !== NoteState.Deleted && type === 'outbound')
+				// Get id and displayName
+				.map(({ id, displayName }) => ({ id, displayName }))
 		),
-		checkNote: derived(
-			[warehouseStore, inNoteStore, outNoteStore],
-			([$warehouseStore, $inNoteStore, $outNoteStore]) => {
-				const notes: Record<string, NoteLookupResult> = {};
 
-				Object.entries($warehouseStore).forEach(([warehouseId, { inNotes }]) => {
-					if (inNotes) {
-						inNotes.forEach((noteId) => {
-							const note = $inNoteStore[noteId];
-							if (!note) return;
-							notes[noteId] = {
-								warehouse: warehouseId,
-								type: 'inbound',
-								state: note.state
-							};
-						});
-					}
-				});
-				Object.entries($outNoteStore).forEach(([noteId, note]) => {
-					notes[noteId] = { warehouse: 'all', type: 'outbound', state: note.state };
-				});
-
-				return (noteId: string) => notes[noteId];
-			}
-		)
+		findNote: derived(noteLookup, ($noteLookup) => {
+			return (noteId: string) => $noteLookup[noteId];
+		})
 	});
 
 	return { warehouse, stream };
