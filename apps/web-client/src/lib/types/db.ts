@@ -54,10 +54,21 @@ export interface NavListEntry {
 
 export type InNoteList = Array<NavListEntry & { notes: NavListEntry[] }>;
 
+export interface NoteLookupResult {
+	warehouse: string;
+	type: 'inbound' | 'outbound';
+	state: NoteState;
+}
+
+interface CheckNote {
+	(noteId: string): NoteLookupResult | undefined;
+}
+
 export interface DbStream {
 	warehouseList: Readable<NavListEntry[]>;
 	outNoteList: Readable<NavListEntry[]>;
 	inNoteList: Readable<InNoteList>;
+	checkNote: Readable<CheckNote>;
 }
 
 export interface DbInterface {
