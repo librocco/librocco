@@ -16,7 +16,8 @@
 		TextEditable
 	} from '@librocco/ui';
 
-	import { NoteState, noteStates, NoteTempState } from '$lib/enums/inventory';
+	import { noteStates, NoteTempState } from '$lib/enums/inventory';
+	import { NoteState } from '$lib/enums/db';
 
 	import type { InNoteList } from '$lib/types/db';
 
@@ -26,7 +27,11 @@
 	import { db } from '$lib/db';
 
 	const getCurrentWarehouse = (inNoteList: InNoteList, noteId: string) => {
-		const warehouse = inNoteList.find(({ notes }) => notes.find(({ id }) => id === noteId));
+		const warehouse = inNoteList.find(
+			({ id, notes }) =>
+				// "all" is note the 'warehouse' we're looking for
+				id !== 'all' && notes.find(({ id }) => id === noteId)
+		);
 		return warehouse?.id || '';
 	};
 
@@ -35,7 +40,7 @@
 	$: currentNote = $page.params.id;
 	$: currentNoteWarehouse = currentNote && getCurrentWarehouse($inNoteList, currentNote);
 
-	$: noteStores = createNoteStores(db(), 'inbound', currentNote);
+	$: noteStores = createNoteStores(db(), currentNote, currentNoteWarehouse);
 
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;

@@ -1,4 +1,7 @@
-import type { NoteState, NoteTempState } from '$lib/enums/inventory';
+import type { NoteTempState } from '$lib/enums/inventory';
+import type { NoteState } from '$lib/enums/db';
+
+import type { VolumeQuantity } from './db';
 
 /**
  * An interface for a full book entry, used to type the entries in books store and
@@ -16,12 +19,6 @@ export interface BookEntry {
 /** A structure of the books store: `readable<BookStore>()`. */
 export interface BookStore {
 	[isbn: string]: BookEntry;
-}
-
-/** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
-export interface VolumeQuantity {
-	isbn: string;
-	quantity: number;
 }
 
 /** The properties of a book + quantity row shown in the note/warehouse table. */

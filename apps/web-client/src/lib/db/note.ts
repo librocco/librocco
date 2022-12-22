@@ -1,6 +1,6 @@
 import { type Writable, derived } from 'svelte/store';
 
-import { NoteState } from '$lib/enums/inventory';
+import { NoteState } from '$lib/enums/db';
 
 import type { NoteStore } from '$lib/types/inventory';
 import type { NoteInterface, NoteStream } from '$lib/types/db';
@@ -39,7 +39,7 @@ export const newNote =
 			});
 			const displayName = derived(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];
-				return note ? note.displayName : undefined;
+				return note?.displayName || noteId;
 			});
 			const updatedAt = derived(contentStore, ($contentStore) => {
 				const note = $contentStore[noteId];

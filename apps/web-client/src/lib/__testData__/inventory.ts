@@ -1,4 +1,4 @@
-import { NoteState } from '$lib/enums/inventory';
+import { NoteState } from '$lib/enums/db';
 
 export const defaultNote = {
 	displayName: 'Note 1',
