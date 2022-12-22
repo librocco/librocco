@@ -24,11 +24,16 @@ interface CreateDisplayNameStore {
 export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalStateStore) => {
 	const displayName = readableFromStream(entity.stream().displayName);
 
+	// Set method updates the displayName in the database and, if the internal state store is provided, sets the temp state
+	// if internal state store is provided (and set to temp state by this action), it will be updated to the non-temp state
+	// when the db update is confirmed (but this happens outside of this store)
 	const set = (displayName: string) => {
 		internalStateStore?.set(NoteTempState.Saving);
 		entity.setName(displayName);
 	};
 
+	// Update method updates the store using the set method, only providing the current value of the store to the update function
+	// This will probably not be used, but is here for svelte store interface compatibility
 	const update = (fn: (displayName: string | undefined) => string) => {
 		set(fn(get(displayName)));
 	};
