@@ -21,6 +21,7 @@
 	import { NoteState } from '$lib/enums/db';
 
 	import { createNoteStores } from '$lib/stores/inventory';
+
 	import { db } from '$lib/db';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
