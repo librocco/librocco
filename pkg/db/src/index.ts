@@ -1,2 +1,2 @@
-export { createDatabaseInterface } from './db-actions';
-export { createDatabaseInterface as createPouchDatabaseInterface } from './pouchdb-actions';
+export * from './enums';
+export * from './types';
