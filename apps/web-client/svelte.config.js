@@ -8,7 +8,10 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter({ fallback: 'index.html' })
+		adapter: adapter(),
+		prerender: {
+			entries: ['/inventory/stock', '/inventory/inbound', '/inventory/outbound']
+		}
 	}
 };
 
