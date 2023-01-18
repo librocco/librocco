@@ -1,4 +1,5 @@
 const theme = require('../../pkg/scaffold/tailwind.theme');
+const plugins = require('../../pkg/scaffold/tailwind.plugins');
 
 module.exports = {
 	content: [
@@ -8,5 +9,5 @@ module.exports = {
 		'node_modules/@librocco/**/*.{html,js,svelte,ts}'
 	],
 	theme,
-	plugins: []
+	plugins
 };
