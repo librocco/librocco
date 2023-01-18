@@ -1,0 +1,23 @@
+{
+	"id": "note-004",
+	"type": "out-note",
+	"entries": [
+		{
+			"isbn": "0195071409",
+			"warehouse": "jazz",
+			"quantity": 1
+		},
+		{
+			"isbn": "019976915X",
+			"warehouse": "jazz",
+			"quantity": 2
+		},
+		{
+			"isbn": "0195399706",
+			"warehouse": "jazz",
+			"quantity": 30
+		}
+	],
+	"state": "committed",
+	"updatedAt": "2022-02-05T18:50:17.455Z"
+}
