@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Check, ChevronDown, Search } from 'lucide-svelte';
+	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -11,14 +12,36 @@
 		BadgeColor,
 		InventoryTable,
 		InventoryTableRow,
-		Header
+		Header,
+		SelectMenu,
+		TextEditable
 	} from '@librocco/ui';
 
-	import { createTableContentStore, outNotes } from '$lib/data/stores';
+	import { noteStates, NoteTempState } from '$lib/enums/inventory';
+	import { NoteState } from '$lib/enums/db';
+
+	import { createNoteStores } from '$lib/stores/inventory';
+
+	import { db } from '$lib/db';
+
+	import { generateUpdatedAtString } from '$lib/utils/time';
+
+	const { outNoteList, findNote } = db().stream();
 
 	$: currentNote = $page.params.id;
 
-	const tableContent = createTableContentStore('outbound');
+	// Navigate back to /inventory/outbound if the note doesn't exist (or is deleted)
+	$: if (currentNote && (!$findNote(currentNote) || $findNote(currentNote)?.state === NoteState.Deleted)) {
+		goto('/inventory/outbound');
+	}
+	$: noteStores = createNoteStores(db(), currentNote);
+
+	$: displayName = noteStores.displayName;
+	$: state = noteStores.state;
+	$: updatedAt = noteStores.updatedAt;
+	$: entries = noteStores.entries;
+	$: currentPage = noteStores.currentPage;
+	$: paginationData = noteStores.paginationData;
 </script>
 
 <InventoryPage>
@@ -27,27 +50,33 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $outNotes as name}
-			<SidebarItem {name} href="/inventory/outbound/{name}" current={name === currentNote} />
+		{#each $outNoteList as { displayName, id }}
+			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === currentNote} />
 		{/each}
 	</nav>
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if currentNote}
+		{#if $state && $state !== NoteState.Deleted}
 			<div class="flex w-full items-end justify-between">
-				<div>
-					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<span class="align-middle">{currentNote}</span>
-					</h2>
-					<div class="flex items-center gap-1.5 whitespace-nowrap">
-						<TextField name="commit-status" placeholder="Draft">
-							<Check class="h-5 w-5" slot="startAdornment" />
-							<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
-						</TextField>
-						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+				{#if $state}
+					<div>
+						<h2 class="mb-4 text-gray-900">
+							<TextEditable bind:value={$displayName} />
+						</h2>
+						<div class="flex items-center gap-1.5 whitespace-nowrap">
+							<SelectMenu
+								class="w-[138px]"
+								options={noteStates}
+								bind:value={$state}
+								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+							/>
+							{#if $updatedAt}
+								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+							{/if}
+						</div>
 					</div>
-				</div>
+				{/if}
 				<TextField name="search" placeholder="Serach">
 					<Search slot="startAdornment" class="h-5 w-5" />
 				</TextField>
@@ -57,9 +86,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent.length}
+		{#if $entries.length}
 			<InventoryTable>
-				{#each $tableContent as data}
+				{#each $entries as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
@@ -68,9 +97,14 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		<p class="cursor-normal select-none text-sm font-medium leading-5">
-			Showing <strong>1</strong> to <strong>10</strong> of <strong>97</strong> results
-		</p>
-		<Pagination maxItems={7} value={0} numPages={10} />
+		{#if $paginationData.totalItems}
+			<p class="cursor-normal select-none text-sm font-medium leading-5">
+				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+				<strong>{$paginationData.totalItems}</strong> results
+			</p>
+		{/if}
+		{#if $paginationData.numPages > 1}
+			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{/if}
 	</div>
 </InventoryPage>

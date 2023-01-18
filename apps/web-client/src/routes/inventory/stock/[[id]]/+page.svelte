@@ -9,14 +9,23 @@
 		Pagination,
 		InventoryTable,
 		InventoryTableRow,
-		Header
+		Header,
+		TextEditable
 	} from '@librocco/ui';
 
-	import { createTableContentStore, warehouses } from '$lib/data/stores';
+	import { createWarehouseStores } from '$lib/stores/inventory';
+	import { db } from '$lib/db';
+
+	const warehouseList = db().stream().warehouseList;
 
 	$: currentWarehouse = $page.params.id;
 
-	const tableContent = createTableContentStore('stock');
+	$: warehouesStores = createWarehouseStores(db(), currentWarehouse);
+
+	$: displayName = warehouesStores.displayName;
+	$: entries = warehouesStores.entries;
+	$: currentPage = warehouesStores.currentPage;
+	$: paginationData = warehouesStores.paginationData;
 </script>
 
 <InventoryPage>
@@ -25,14 +34,16 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $warehouses as name}
-			<SidebarItem href="/inventory/stock/{name}" {name} current={name === currentWarehouse} />
+		{#each $warehouseList as { displayName, id }}
+			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
 		{/each}
 	</nav>
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">{currentWarehouse}</h1>
+		<h2 class="mb-4 text-gray-900">
+			<TextEditable bind:value={$displayName} />
+		</h2>
 		<TextField name="search" placeholder="Serach">
 			<svelte:fragment slot="startAdornment">
 				<Search class="h-5 w-5" />
@@ -42,9 +53,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $tableContent.length}
+		{#if $entries.length}
 			<InventoryTable>
-				{#each $tableContent as data}
+				{#each $entries as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
@@ -53,10 +64,14 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		<p class="cursor-normal select-none text-sm font-medium leading-5">
-			Showing <strong>1</strong> to <strong>10</strong> of <strong>97</strong> results
-		</p>
-		<Pagination maxItems={7} value={0} numPages={10} />
-		/>
+		{#if $paginationData.totalItems}
+			<p class="cursor-normal select-none text-sm font-medium leading-5">
+				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+				<strong>{$paginationData.totalItems}</strong> results
+			</p>
+		{/if}
+		{#if $paginationData.numPages > 1}
+			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{/if}
 	</div>
 </InventoryPage>
