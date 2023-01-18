@@ -63,7 +63,9 @@
 		{name}
 	</button>
 	{#if expanded}
-		<div class="space-y-1" id={controlId} transition:slide={{ duration: 200, easing: expoOut }}>
+		<!-- The transition property here was preventing the component (and the page itself) from being dismounted, 
+			the '|local' part is the workaround as described in: https://github.com/sveltejs/svelte/issues/6812#issuecomment-934318223 -->
+		<div class="space-y-1" id={controlId} transition:slide|local={{ duration: 200, easing: expoOut }}>
 			{#each items as { name, href, current }}
 				<SidebarItem {name} {href} {current} nested={true} />
 			{/each}

@@ -45,12 +45,15 @@ const outNoteStore = readable<NoteStore>(allOutbound);
 
 export const warehouses = derived(warehouseStore, (ws) => Object.keys(ws));
 export const inNotes = derived(warehouseStore, (ws) =>
-	Object.entries(ws).reduce((acc, [wName, { inNotes }]) => (!inNotes?.length ? acc : { ...acc, [wName]: inNotes }))
+	Object.entries(ws).reduce(
+		(acc, [wName, { inNotes }]) => ({ ...acc, [wName]: inNotes || [] }),
+		{} as Record<string, string[]>
+	)
 );
 export const outNotes = derived(outNoteStore, (on) => Object.keys(on));
 
 const contentStoreLookup = {
-	warehouse: warehouseStore,
+	stock: warehouseStore,
 	inbound: inNoteStore,
 	outbound: outNoteStore
 };
@@ -58,12 +61,7 @@ export const createTableContentStore = (contentType: keyof typeof contentStoreLo
 	derived<[Readable<NoteStore>, typeof page, Readable<BookStore>], DisplayRow[]>(
 		[contentStoreLookup[contentType], page, bookStore],
 		([content, page, bookStore]) => {
-			let { id } = page.params as { id?: string };
-
-			// If no warehouse 'id' specified, show stock for 'all'
-			if (!id && contentType === 'warehouse') {
-				id = 'all';
-			}
+			const { id } = page.params as { id?: string };
 
 			// No id will happen quite ofter: this means we're on root of the view
 			// with no single note specified.
