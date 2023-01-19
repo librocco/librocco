@@ -83,7 +83,10 @@
 							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 						/>
 						{#if $updatedAt}
-							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+							<Badge
+								label="Last updated: {generateUpdatedAtString($updatedAt)}"
+								color={BadgeColor.Success}
+							/>
 						{/if}
 					</div>
 				</div>

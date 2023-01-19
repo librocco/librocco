@@ -1,0 +1,20 @@
+{
+	"volumeInfo": {
+		"title": "The Jazz Standards",
+		"authors": ["Ted Gioia"],
+		"publisher": "",
+		"publishedDate": "2012",
+		"industryIdentifiers": [
+			{
+				"type": "ISBN_13",
+				"identifier": "9780199769155"
+			},
+			{
+				"type": "ISBN_10",
+				"identifier": "019976915X"
+			}
+		],
+		"categories": ["African Americans"],
+		"language": "en"
+	}
+}

@@ -1,0 +1,72 @@
+{
+	"id": "note-003",
+	"type": "in-note",
+	"books": [
+		{
+			"volumeInfo": {
+				"title": "The Swing Era",
+				"authors": ["Gunther Schuller"],
+				"publisher": "History of Jazz",
+				"publishedDate": "1989",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0195071409"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780195071405"
+					}
+				],
+				"categories": ["History"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 7
+		},
+		{
+			"volumeInfo": {
+				"title": "The History of Jazz",
+				"authors": ["Ted Gioia"],
+				"publisher": "Oxford University Press",
+				"publishedDate": "2011-05-09",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780195399707"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0195399706"
+					}
+				],
+				"categories": ["History"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 12
+		},
+		{
+			"volumeInfo": {
+				"title": "Holiday Jazz Chants",
+				"authors": ["Carolyn Graham"],
+				"publisher": "Oxford",
+				"publishedDate": "1999-01-01",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0194349276"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780194349277"
+					}
+				],
+				"categories": ["Foreign Language Study"],
+				"language": "en"
+			},
+			"warehouse": "jazz",
+			"quantity": 14
+		}
+	]
+}

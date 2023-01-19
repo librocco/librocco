@@ -62,7 +62,11 @@
 			>
 				{#each options as option (option.value)}
 					<ListboxOption value={option.value} let:selected let:active>
-						<div class="group whitespace-normal py-[10px] px-4 hover:bg-teal-500 {active ? 'bg-teal-500' : 'bg-white'}">
+						<div
+							class="group whitespace-normal py-[10px] px-4 hover:bg-teal-500 {active
+								? 'bg-teal-500'
+								: 'bg-white'}"
+						>
 							<div class="flex justify-between">
 								<p
 									class="capitalize group-hover:text-white
@@ -72,11 +76,18 @@
 									{option.action || option.value}
 								</p>
 								{#if selected}
-									<Check aria-hidden="true" class="group-hover:text-white {active ? 'text-white' : 'text-teal-500'}" />
+									<Check
+										aria-hidden="true"
+										class="group-hover:text-white {active ? 'text-white' : 'text-teal-500'}"
+									/>
 								{/if}
 							</div>
 							{#if option.description}
-								<p class="{active ? 'text-white' : 'text-gray-500'} group-hover:text-white group-active:text-white">
+								<p
+									class="{active
+										? 'text-white'
+										: 'text-gray-500'} group-hover:text-white group-active:text-white"
+								>
 									{option.description}
 								</p>
 							{/if}
