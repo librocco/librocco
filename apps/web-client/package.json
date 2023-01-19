@@ -15,7 +15,7 @@
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
-		"@librocco/ui": "workspace:*",
+		"@types/pouchdb": "~6.4.0",
 		"@sveltejs/adapter-auto": "next",
 		"@sveltejs/kit": "1.0.0-next.573",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
@@ -34,11 +34,16 @@
 		"typescript": "^4.8.4",
 		"vite": "^3.0.0",
 		"@sveltejs/adapter-static": "~1.0.0-next.39",
-		"vitest": "~0.24.5"
+		"vitest": "~0.24.5",
+		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",
+		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
+		"rollup-plugin-node-polyfills": "~0.2.1"
 	},
 	"type": "module",
 	"dependencies": {
+		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "~0.91.0",
+		"pouchdb": "~7.3.0",
 		"rxjs": "~7.8.0"
 	}
 }
