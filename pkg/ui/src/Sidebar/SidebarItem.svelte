@@ -4,15 +4,15 @@
 	export let current = false;
 	export let nested = false;
 
-	const borderClasses = current && !nested ? 'border-pink-600' : 'border-transparent';
+	$: borderClasses = current && !nested ? 'border-pink-600' : 'border-transparent';
 
-	const colourClasses = current
+	$: colourClasses = current
 		? 'bg-pink-50 border-l-4 text-pink-600'
 		: 'text-gray-600 group-hover:text-gray-900 group-hover:bg-white';
 
 	const spacingClasses = nested ? 'pl-10 pr-2' : 'px-3';
 
-	const linkBaseClasses = [
+	$: linkBaseClasses = [
 		borderClasses,
 		colourClasses,
 		spacingClasses,

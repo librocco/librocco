@@ -118,7 +118,9 @@ export const commitNote: TestFunction = async (db, getTestData) => {
 	expect(wStock).toEqual(stock2.books);
 
 	// Check that note documents have been updated with commit state
-	const [n1DB, n2DB] = await Promise.all([note1._id, note2._id].map((id) => warehouse.getNote(id)));
+	const [n1DB, n2DB] = await Promise.all(
+		[note1._id, note2._id].map((id) => warehouse.getNote(id))
+	);
 	expect(n1DB.committed).toEqual(true);
 	expect(n2DB.committed).toEqual(true);
 };

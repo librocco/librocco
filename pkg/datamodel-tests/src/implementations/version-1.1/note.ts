@@ -43,7 +43,11 @@ class Note implements NoteInterface {
 				return;
 			}
 
-			this.books[matchIndex] = { isbn, warehouse, quantity: this[matchIndex].quantity + quantity };
+			this.books[matchIndex] = {
+				isbn,
+				warehouse,
+				quantity: this[matchIndex].quantity + quantity
+			};
 		};
 
 		if (isTuple(params)) {

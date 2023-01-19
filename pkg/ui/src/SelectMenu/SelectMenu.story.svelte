@@ -2,19 +2,34 @@
 	import type { Hst } from '@histoire/plugin-svelte';
 	import { SelectMenu } from './index';
 
-	import { AlignContainerEdge } from './enums';
-
 	export let Hst: Hst;
 
 	const options = [
+		{ value: 'draft', description: 'This note will save automatically as a draft transaction.' },
 		{
-			title: 'Published',
-			description: 'This job posting can be viewed by anyone who has the link.'
+			action: 'Publish',
+			value: 'published',
+			description: 'This note will be commited to the warehouse. Requires confirmation.'
 		},
-		{ title: 'Draft', description: 'This job posting will no longer be publicly accessible.' }
+		{
+			title: 'Delete',
+			value: 'deleted',
+			description: 'This note will be permenantly deleted. Requires confirmation.'
+		}
 	];
 </script>
 
 <Hst.Story title="SelectMenu" layout={{ type: 'grid', width: 500 }}>
-	<SelectMenu {options} alignItemsEdge={AlignContainerEdge.Left} ariaLabel="Change published status" />
+	<Hst.Variant title="Default">
+		<SelectMenu class="mb-[260px]" {options} />
+	</Hst.Variant>
+	<Hst.Variant title="Disabled">
+		<SelectMenu {options} disabled />
+	</Hst.Variant>
+	<Hst.Variant title="Open left">
+		<SelectMenu class="mb-[260px]" {options} />
+	</Hst.Variant>
+	<Hst.Variant title="Open right">
+		<SelectMenu class="mb-[260px] ml-[150px]" {options} open align="right" />
+	</Hst.Variant>
 </Hst.Story>

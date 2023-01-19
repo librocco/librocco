@@ -105,7 +105,9 @@ const getStockForWarehouse = async (db: DatabaseInterface, w: WarehouseInterface
 				}
 
 				const delta = type == 'inbound' ? quantity : -quantity;
-				const matchIndex = acc.findIndex((b) => b.isbn === isbn && b.warehouse === warehouse);
+				const matchIndex = acc.findIndex(
+					(b) => b.isbn === isbn && b.warehouse === warehouse
+				);
 
 				if (matchIndex == -1) {
 					return [...acc, { isbn, warehouse, quantity: delta }];

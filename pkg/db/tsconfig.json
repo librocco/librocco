@@ -4,13 +4,6 @@
 		"rootDir": "src",
 		"baseUrl": ".",
 
-		"outDir": "dist",
-		"sourceMap": true,
-		"removeComments": false,
-		"declaration": true,
-		"declarationDir": "dist",
-		"emitDeclarationOnly": true,
-
 		"types": ["vitest/importMeta"],
 		"module": "esnext",
 		"lib": ["ESNext"]
