@@ -1,0 +1,72 @@
+{
+	"id": "note-009",
+	"type": "in-note",
+	"books": [
+		{
+			"volumeInfo": {
+				"title": "Saving Darwin",
+				"authors": ["Karl Giberson"],
+				"publisher": "Harper Collins",
+				"publishedDate": "2009-10-06",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780061983412"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0061983411"
+					}
+				],
+				"categories": ["Religion"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 8
+		},
+		{
+			"volumeInfo": {
+				"title": "What Went Wrong?",
+				"authors": ["Trevor Kletz"],
+				"publisher": "Elsevier",
+				"publishedDate": "1998-06-23",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_10",
+						"identifier": "0080524230"
+					},
+					{
+						"type": "ISBN_13",
+						"identifier": "9780080524238"
+					}
+				],
+				"categories": ["Technology \u0026 Engineering"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 10
+		},
+		{
+			"volumeInfo": {
+				"title": "The Age of Wonder",
+				"authors": ["Richard Holmes"],
+				"publisher": "HarperCollins UK",
+				"publishedDate": "2008",
+				"industryIdentifiers": [
+					{
+						"type": "ISBN_13",
+						"identifier": "9780007149520"
+					},
+					{
+						"type": "ISBN_10",
+						"identifier": "0007149522"
+					}
+				],
+				"categories": ["Biographers"],
+				"language": "en"
+			},
+			"warehouse": "science",
+			"quantity": 18
+		}
+	]
+}
