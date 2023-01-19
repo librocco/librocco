@@ -8,7 +8,12 @@
 
 <Hst.Story title="Form Fields / Textarea" layout={{ type: 'grid', width: 500 }}>
 	<Hst.Variant title="Default">
-		<Textarea name="default" label="Default" helpText="Here is some help text" placeholder="This is a placeholder" />
+		<Textarea
+			name="default"
+			label="Default"
+			helpText="Here is some help text"
+			placeholder="This is a placeholder"
+		/>
 	</Hst.Variant>
 	<Hst.Variant title="Resizable">
 		<Textarea

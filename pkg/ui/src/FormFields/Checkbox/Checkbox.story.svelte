@@ -15,6 +15,12 @@
 	</Hst.Variant>
 	<Hst.Variant title="Disabled">
 		/>
-		<Checkbox name="disabled" label="Select an option?" helpText="Checked & disabeld" disabled={true} checked={true} />
+		<Checkbox
+			name="disabled"
+			label="Select an option?"
+			helpText="Checked & disabeld"
+			disabled={true}
+			checked={true}
+		/>
 	</Hst.Variant>
 </Hst.Story>
