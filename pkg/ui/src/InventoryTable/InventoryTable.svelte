@@ -13,7 +13,7 @@
 	];
 </script>
 
-<div class="scrollbar-hide overflow-x-auto shadow shadow-gray-300">
+<div class="overflow-x-auto shadow shadow-gray-300 scrollbar-hide">
 	<div class="inline-block min-w-full align-middle">
 		<div class="overflow-hidden">
 			<table class="min-w-full divide-y divide-gray-300">
