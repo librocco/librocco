@@ -8,7 +8,7 @@ import { newWarehouse } from './warehouse';
 
 import { derivedObservable, observableFromStore } from '$lib/utils/streams';
 
-import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from './data';
+import { warehouseStore, inNoteStore, outNoteStore, noteLookup, bookStore } from './data';
 
 const defaultStores = {
 	warehouseStore,
@@ -30,6 +30,7 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 	const warehouse = (id = 'all') => newWarehouse(stores)(id);
 
 	const stream = (): DbStream => ({
+		bookStock: observableFromStore(bookStore),
 		warehouseStock: observableFromStore(warehouseStore),
 		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>
 			Object.entries($warehouseStore).map(([id, { displayName }]) => ({ id, displayName }))
