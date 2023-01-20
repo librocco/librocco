@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { writable } from 'svelte/store';
+	import { onDestroy } from 'svelte';
 
 	import {
 		InventoryPage,
@@ -16,13 +18,40 @@
 	import { createWarehouseStores } from '$lib/stores/inventory';
 	import { db } from '$lib/db';
 
-	const warehouseList = db().stream().warehouseList;
+	import { observableFromStore } from '$lib/utils/streams';
+	import { combineLatest, from, BehaviorSubject } from 'rxjs';
+	import { map, mergeMap } from 'rxjs/operators';
+
+	const { warehouseList: warehouseListStream, warehouseStock: warehouseStock$ } = db().stream();
+	const { setName } = db().warehouse();
+
+	// Rx DisplayName
+	// - consumes from page.id, warehouseStock data, and local store (Behaviour Subject)
+	// - and updates via local store, through setName promise
+	const localDisplayName$ = new BehaviorSubject('');
+
+	const page$ = observableFromStore(page).pipe(map((page) => page?.params?.id));
+	const displayName$ = combineLatest([page$, warehouseStock$, localDisplayName$]).pipe(
+		map(([id, warehouses, localName]) => {
+			const source = localName ? localName : warehouses[id]?.displayName || id;
+			return source; //.toUpperCase();
+		})
+	);
+	const updateDisplayName$ = localDisplayName$
+		.pipe(
+			mergeMap((name) => {
+				const promise = setName(name);
+				return from(promise);
+			})
+		)
+		.subscribe();
+
+	onDestroy(() => updateDisplayName$.unsubscribe());
 
 	$: currentWarehouse = $page.params.id;
-
 	$: warehouesStores = createWarehouseStores(db(), currentWarehouse);
 
-	$: displayName = warehouesStores.displayName;
+	// $: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 	$: currentPage = warehouesStores.currentPage;
 	$: paginationData = warehouesStores.paginationData;
@@ -34,7 +63,7 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $warehouseList as { displayName, id }}
+		{#each $warehouseListStream as { displayName, id }}
 			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
 		{/each}
 	</nav>
@@ -42,7 +71,7 @@
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
 		<h2 class="mb-4 text-gray-900">
-			<TextEditable bind:value={$displayName} />
+			<TextEditable value={$displayName$} onSave={(value) => localDisplayName$.next(value)} />
 		</h2>
 		<TextField name="search" placeholder="Serach">
 			<svelte:fragment slot="startAdornment">

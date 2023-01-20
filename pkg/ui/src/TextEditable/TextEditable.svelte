@@ -11,11 +11,18 @@
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
 	export let value = '';
+	export let onSave = (newValue: string, oldValue?: string) => {
+		if (oldValue != newValue) {
+			oldValue = newValue;
+		}
+	};
 
 	let input: HTMLElement;
 
+	$: displayValue = value;
+
 	/** This is the internal value, used to store the current state of the input */
-	$: text = value;
+	$: internalValue = value;
 	export let isEditing = false;
 
 	/** Enter edit mode */
@@ -25,14 +32,12 @@
 	}
 	/** Reset the input to the original value */
 	function reset() {
-		text = value;
+		internalValue = value;
 		isEditing = false;
 	}
 	/** Save the input and propagate the new value to the parent component */
 	function save() {
-		if (value != text) {
-			value = text;
-		}
+		onSave(internalValue, value);
 		isEditing = false;
 	}
 </script>
@@ -40,7 +45,7 @@
 <div {...$$restProps}>
 	{#if !isEditing}
 		<p on:click={edit} on:keydown class="group relative inline-block h-[38px] cursor-pointer pt-4 pr-8" on:focus={edit}>
-			<span class="inline-block align-middle text-lg font-medium leading-6">{text}</span>
+			<span class="inline-block align-middle text-lg font-medium leading-6">{displayValue}</span>
 			<button class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block" on:click={edit}>
 				<Pencil class="h-4 w-4 text-cyan-700" />
 			</button>
@@ -50,7 +55,7 @@
 			<input
 				class="h-[38px] w-full p-2 text-lg font-medium leading-6 focus:outline-none"
 				bind:this={input}
-				bind:value={text}
+				bind:value={internalValue}
 				on:keydown={(e) => (e.key === 'Enter' ? save() : e.key === 'Escape' ? reset() : null)}
 				on:change
 			/>

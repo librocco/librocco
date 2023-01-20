@@ -30,10 +30,10 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 	const warehouse = (id = 'all') => newWarehouse(stores)(id);
 
 	const stream = (): DbStream => ({
+		warehouseStock: observableFromStore(warehouseStore),
 		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>
 			Object.entries($warehouseStore).map(([id, { displayName }]) => ({ id, displayName }))
 		),
-
 		inNoteList: observableFromStore(
 			derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
 				// Filter out outbound and deleted notes
