@@ -16,11 +16,16 @@
 	import { db } from '$lib/db';
 
 	import { observableFromStore } from '$lib/utils/streams';
-	import { combineLatest, from, BehaviorSubject } from 'rxjs';
+	import { combineLatest, from, BehaviorSubject, Observable } from 'rxjs';
 	import { map, mergeMap, combineLatestWith } from 'rxjs/operators';
 
 	const { warehouseStock: warehouseStock$, bookStock: bookStock$ } = db().stream();
 	const { setName } = db().warehouse();
+
+	// TODO: Next:: Write up notes on how you expect DB streams to conform close to Pouch methods
+
+	// Organising code
+	import { createPaginationStream, createEntriesStream } from '$lib/rx/factories';
 
 	// Rx local values (which probably don't need to be referenced elsewhere?)
 	const localDisplayName$ = new BehaviorSubject('');
@@ -54,47 +59,11 @@
 	// auto subscribe() // unsubscribe()
 	$setDisplayName$;
 
-	// Rx Entries
-	const entries$ = warehouse$.pipe(
-		map(({ entries }) => entries),
-		combineLatestWith(localCurrentPage$, bookStock$),
-		map(([entries, localCurrentPage, bookStock]) => {
-			const start = localCurrentPage * 10;
-			const end = start + 10;
+	// Rx Entries & PaginationData - using Rx "table_content" factories
+	const warehouseEntries$ = warehouse$.pipe(map(({ entries }) => entries));
 
-			return entries.slice(start, end).map(({ isbn, quantity }) => ({
-				...bookStock[isbn],
-				isbn,
-				quantity
-			}));
-		})
-	);
-
-	// Rx PaginationData
-	const paginationData$ = warehouse$.pipe(
-		map(({ entries }) => entries),
-		combineLatestWith(localCurrentPage$),
-		map(([entries, localCurrentPage]) => {
-			const totalItems = entries.length;
-			const numPages = Math.ceil(totalItems / 10);
-			const firstItem = localCurrentPage * 10 + 1;
-			const lastItem = Math.min(firstItem + 9, totalItems);
-			return {
-				numPages,
-				firstItem,
-				lastItem,
-				totalItems
-			};
-		})
-	);
-
-	// import { createWarehouseStores } from "$lib/stores/inventory"
-	// $: currentWarehouse = $page.params.id;
-	// $: warehouesStores = createWarehouseStores(db(), currentWarehouse);
-	// $: displayName = warehouesStores.displayName;
-	// $: entries = warehouesStores.entries;
-	// $: currentPage = warehouesStores.currentPage;
-	// $: paginationData = warehouesStores.paginationData;
+	const entries$ = createEntriesStream(warehouseEntries$, localCurrentPage$, bookStock$);
+	const paginationData$ = createPaginationStream(warehouseEntries$, localCurrentPage$);
 </script>
 
 <InventoryPage>
