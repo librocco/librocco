@@ -41,13 +41,9 @@
 	},
 	"type": "module",
 	"dependencies": {
-<<<<<<< HEAD
-		"lucide-svelte": "~0.91.0",
-=======
 		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "~0.91.0",
 		"pouchdb": "~7.3.0",
->>>>>>> main
 		"rxjs": "~7.8.0"
 	}
 }
