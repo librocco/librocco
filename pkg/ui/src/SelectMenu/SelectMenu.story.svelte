@@ -11,15 +11,11 @@
 			value: 'published',
 			description: 'This note will be commited to the warehouse. Requires confirmation.'
 		},
-<<<<<<< HEAD
-		{ title: 'Delete', value: 'deleted', description: 'This note will be permenantly deleted. Requires confirmation.' }
-=======
 		{
 			title: 'Delete',
 			value: 'deleted',
 			description: 'This note will be permenantly deleted. Requires confirmation.'
 		}
->>>>>>> main
 	];
 </script>
 
