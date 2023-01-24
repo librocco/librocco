@@ -16,7 +16,7 @@
 	import { db } from '$lib/db';
 
 	import { observableFromStore } from '$lib/utils/streams';
-	import { combineLatest, from, BehaviorSubject, Observable } from 'rxjs';
+	import { combineLatest, from, BehaviorSubject } from 'rxjs';
 	import { map, mergeMap, combineLatestWith } from 'rxjs/operators';
 
 	const { warehouseStock: warehouseStock$, bookStock: bookStock$ } = db().stream();
@@ -124,7 +124,12 @@
 			</p>
 		{/if}
 		{#if $paginationData$.numPages > 1}
-			<Pagination maxItems={7} bind:value={$localCurrentPage$} numPages={$paginationData$.numPages} />
+			<Pagination
+				maxItems={7}
+				value={$localCurrentPage$}
+				on:change={({ detail }) => localCurrentPage$.next(detail)}
+				numPages={$paginationData$.numPages}
+			/>
 		{/if}
 	</div>
 </InventoryPage>
