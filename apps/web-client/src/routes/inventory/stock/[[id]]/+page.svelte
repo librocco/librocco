@@ -22,7 +22,20 @@
 	const { warehouseStock: warehouseStock$, bookStock: bookStock$ } = db().stream();
 	const { setName } = db().warehouse();
 
-	// TODO: Next:: Write up notes on how you expect DB streams to conform close to Pouch methods
+	// TODO:
+	// 1. Come back to extracting DisplayName consume / set logic - should see how this fits in with
+	// "internalStateStore" required for Notes in CreateNoteStore
+	// createEntries|Pagination streams can be used in Note pages too,
+	// so really you are just looking to recreate these remaining factories with Rx
+	// Your point being that the logic can be consumed/managed more directly without all of these proxy files
+	// Variables like localDisplayName and localCurrentPage are also managed in some intermediary store,
+	// but they likely don't have to be, and I think it makes sense for them to be closer to the component
+	// The key next actions are to rebuild functionality in:
+	// Note DisplayName & State - with intermediary internal state store
+	// Note updatedAt
+	// 2. Write up notes on:
+	// - how you expect DB streams to conform close to Pouch methods
+	// - how this collection of central streams can be fed to factories in components
 
 	// Organising code
 	import { createPaginationStream, createEntriesStream } from '$lib/rx/factories';
@@ -33,8 +46,10 @@
 
 	// Rx WarhouseList
 	const warehouseList$ = warehouseStock$.pipe(
-		map((warehouses) => Object.entries(warehouses)),
-		map((warehouses) => warehouses.map(([id, { displayName }]) => ({ id, displayName })))
+		map((warehouses) => {
+			const warehouseArr = Object.entries(warehouses);
+			return warehouseArr.map(([id, { displayName }]) => ({ id, displayName }));
+		})
 	);
 
 	// Rx DisplayName
