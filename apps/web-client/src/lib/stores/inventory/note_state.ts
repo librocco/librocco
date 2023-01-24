@@ -4,6 +4,7 @@ import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
 import { NoteState } from '$lib/enums/db';
 
 import type { NoteInterface } from '$lib/types/db';
+import type { Subscription } from 'rxjs';
 
 /** A union type for note states used in the client app */
 type NoteAppState = NoteState | NoteTempState | undefined;
@@ -20,23 +21,51 @@ interface CreateInternalStateStore {
 export const createInternalStateStore: CreateInternalStateStore = (note) => {
 	const state = writable<NoteAppState>();
 
+	let noteSubscription: Subscription | undefined = undefined;
+
+	// Open note subscription opens a subscription to the note state which updates the internal store on change
+	const openNoteSubscription = () => {
+		noteSubscription = note.stream().state.subscribe((content) => {
+			state.set(content);
+		});
+	};
+
+	// Close note subscription closes the subscription to the note state
+	const closeNoteSubscription = () => {
+		noteSubscription?.unsubscribe();
+	};
+
+	// Count the number of subscribers to the store
+	let subscribers = 0;
+
+	// Remove subscriber decrements the number of subscribers and, if the number of subscribers is 0, closes the note subscription
+	const removeSubscriber = () => {
+		subscribers--;
+		if (subscribers === 0) {
+			closeNoteSubscription();
+		}
+	};
+
+	// Subscribe method increments the number of subscribers, if this is the first subscriber, it opens the note subscription
+	// and streams the internal 'state' store
+	const subscribe = (...params: Parameters<typeof state.subscribe>) => {
+		subscribers++;
+		if (subscribers === 1) {
+			openNoteSubscription();
+		}
+
+		const unsubInternal = state.subscribe(...params);
+
+		// The returned 'unsubscribe' function removes a subscriber and unsubscribes from the internal store
+		return () => {
+			removeSubscriber();
+			return unsubInternal();
+		};
+	};
+
 	return {
 		...state,
-		subscribe: (...params: Parameters<typeof state.subscribe>) => {
-			// Create subscription to the stream, updating the internal store
-			// with each stream update.
-			const streamSub = note.stream().state.subscribe((content) => {
-				state.set(content);
-			});
-			// Pass the params to internal store subscription
-			const unsubscribe = state.subscribe(...params);
-
-			// return an unsubscribe function closing both subscriptions
-			return () => {
-				streamSub.unsubscribe();
-				return unsubscribe();
-			};
-		}
+		subscribe
 	};
 };
 

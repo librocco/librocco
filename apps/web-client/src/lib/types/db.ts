@@ -1,7 +1,11 @@
 import type { Writable } from 'svelte/store';
 import type { Observable } from 'rxjs';
 
+<<<<<<< HEAD
 import type { BookStore, NoteStore, WarehouseStore } from './inventory';
+=======
+import type { NoteStore, WarehouseStore } from './inventory';
+>>>>>>> main
 import type { NoteState } from '$lib/enums/db';
 
 // #region misc
@@ -68,8 +72,11 @@ interface FindNote {
 }
 
 export interface DbStream {
+<<<<<<< HEAD
 	bookStock: Observable<BookStore>;
 	warehouseStock: Observable<WarehouseStore>;
+=======
+>>>>>>> main
 	warehouseList: Observable<NavListEntry[]>;
 	outNoteList: Observable<NavListEntry[]>;
 	inNoteList: Observable<InNoteList>;
