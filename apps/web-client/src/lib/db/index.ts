@@ -30,6 +30,8 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 	const warehouse = (id = 'all') => newWarehouse(stores)(id);
 
 	const stream = (): DbStream => ({
+		allInNotes: observableFromStore(stores.inNoteStore),
+		allNotesList: observableFromStore(noteLookup),
 		bookStock: observableFromStore(bookStore),
 		warehouseStock: observableFromStore(warehouseStore),
 		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>

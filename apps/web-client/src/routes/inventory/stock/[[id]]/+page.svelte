@@ -16,69 +16,47 @@
 	import { db } from '$lib/db';
 
 	import { observableFromStore } from '$lib/utils/streams';
-	import { combineLatest, from, BehaviorSubject } from 'rxjs';
-	import { map, mergeMap, combineLatestWith } from 'rxjs/operators';
+	import { combineLatest, BehaviorSubject } from 'rxjs';
+	import { map, tap } from 'rxjs/operators';
 
-	const { warehouseStock: warehouseStock$, bookStock: bookStock$ } = db().stream();
-	const { setName } = db().warehouse();
+	import {
+		createPaginationStream,
+		createEntriesStream,
+		createDisplayNameStream,
+		createDbUpdateStream
+	} from '$lib/rx/factories';
 
-	// TODO:
-	// 1. Come back to extracting DisplayName consume / set logic - should see how this fits in with
-	// "internalStateStore" required for Notes in CreateNoteStore
-	// createEntries|Pagination streams can be used in Note pages too,
-	// so really you are just looking to recreate these remaining factories with Rx
-	// Your point being that the logic can be consumed/managed more directly without all of these proxy files
-	// Variables like localDisplayName and localCurrentPage are also managed in some intermediary store,
-	// but they likely don't have to be, and I think it makes sense for them to be closer to the component
-	// The key next actions are to rebuild functionality in:
-	// Note DisplayName & State - with intermediary internal state store
-	// Note updatedAt
-	// 2. Write up notes on:
-	// - how you expect DB streams to conform close to Pouch methods
-	// - how this collection of central streams can be fed to factories in components
+	const { warehouseStock: warehouseStock$, bookStock: bookStock$, warehouseList: warehouseList$ } = db().stream();
 
-	// Organising code
-	import { createPaginationStream, createEntriesStream } from '$lib/rx/factories';
+	// TODO: The slug is not updated.
 
 	// Rx local values (which probably don't need to be referenced elsewhere?)
 	const localDisplayName$ = new BehaviorSubject('');
 	const localCurrentPage$ = new BehaviorSubject(0);
 
-	// Rx WarhouseList
-	const warehouseList$ = warehouseStock$.pipe(
-		map((warehouses) => {
-			const warehouseArr = Object.entries(warehouses);
-			return warehouseArr.map(([id, { displayName }]) => ({ id, displayName }));
-		})
+	const pageId$ = observableFromStore(page).pipe(
+		map((page) => page?.params?.id),
+		// Reset local values on change to page id
+		// TODO: This means e.g that current page would be reset to 0 on each local navigation
+		tap(() => localDisplayName$.next('')),
+		tap(() => localCurrentPage$.next(0))
 	);
-
-	// Rx DisplayName
-	// - consumes from page.id, warehouseStock data, and local store (Behaviour Subject)
-	// - and updates via local store, through setName promise
-	const pageId$ = observableFromStore(page).pipe(map((page) => page?.params?.id));
 	const warehouse$ = combineLatest([pageId$, warehouseStock$]).pipe(map(([id, warehouses]) => warehouses[id] || {}));
-	const displayName$ = warehouse$.pipe(
-		combineLatestWith(pageId$, localDisplayName$),
-		map(([warehouse, id, localName]) => {
-			const source = localName ? localName : warehouse?.displayName || id;
-			return source; //.toUpperCase();
-		})
-	);
 
-	const setDisplayName$ = localDisplayName$.pipe(
-		mergeMap((name) => {
-			const promise = setName(name);
-			return from(promise);
-		})
-	);
+	let warehouseInterface = db().warehouse($pageId$);
+	$: warehouseInterface;
+
+	const displayName$ = createDisplayNameStream(warehouse$, localDisplayName$, pageId$);
+	const setDisplayName$ = createDbUpdateStream(localDisplayName$, warehouseInterface.setName);
+
 	// auto subscribe() // unsubscribe()
 	$setDisplayName$;
 
 	// Rx Entries & PaginationData - using Rx "table_content" factories
 	const warehouseEntries$ = warehouse$.pipe(map(({ entries }) => entries));
 
-	const entries$ = createEntriesStream(warehouseEntries$, localCurrentPage$, bookStock$);
-	const paginationData$ = createPaginationStream(warehouseEntries$, localCurrentPage$);
+	$: entries$ = createEntriesStream(warehouseEntries$, localCurrentPage$, bookStock$);
+	$: paginationData$ = createPaginationStream(warehouseEntries$, localCurrentPage$);
 </script>
 
 <InventoryPage>

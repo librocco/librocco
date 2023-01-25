@@ -68,6 +68,8 @@ interface FindNote {
 }
 
 export interface DbStream {
+	allInNotes: Observable<NoteStore>;
+	allNotesList: Observable<Record<string, NoteLookupResult>>;
 	bookStock: Observable<BookStore>;
 	warehouseStock: Observable<WarehouseStore>;
 	warehouseList: Observable<NavListEntry[]>;

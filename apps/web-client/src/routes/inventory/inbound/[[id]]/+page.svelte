@@ -17,33 +17,109 @@
 		TextEditable
 	} from '@librocco/ui';
 
-	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
-
-	import { createNoteStores } from '$lib/stores/inventory';
 
 	import { db } from '$lib/db';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
-	const { inNoteList, findNote } = db().stream();
+	import { observableFromStore } from '$lib/utils/streams';
+	import { from, BehaviorSubject, EMPTY, combineLatest } from 'rxjs';
+	import { map, switchMap, tap } from 'rxjs/operators';
 
-	$: currentNote = $page.params.id;
+	import { noteStateLookup, noteStates, NoteTempState } from '$lib/enums/inventory';
+	import type { NoteInterface } from '$lib/types/db';
+
+	import {
+		createPaginationStream,
+		createEntriesStream,
+		createDisplayNameStream,
+		createNoteStateStream
+	} from '$lib/rx/factories';
+
+	const {
+		inNoteList: inNoteList$,
+		allNotesList: allNotesList$,
+		allInNotes: allInNotes$,
+		bookStock: bookStock$
+	} = db().stream();
+
+	const localDisplayName$ = new BehaviorSubject('');
+	const localNoteState$ = new BehaviorSubject<NoteTempState | null>(null);
+	const localCurrentPage$ = new BehaviorSubject(0);
+
+	const pageId$ = observableFromStore(page).pipe(
+		map((page) => page?.params?.id),
+		tap(() => localDisplayName$.next('')),
+		tap(() => localNoteState$.next(null)),
+		tap(() => localCurrentPage$.next(0))
+	);
+
+	const currentNoteLookup$ = combineLatest([pageId$, allNotesList$]).pipe(map(([id, notes]) => notes[id] || {}));
+	const currentNote$ = combineLatest([pageId$, allInNotes$]).pipe(map(([id, notes]) => notes[id] || {}));
+
+	const noteEntries$ = currentNote$.pipe(map(({ entries }) => entries));
+
+	$: ({ updatedAt } = $currentNote$);
+	$: displayName$ = createDisplayNameStream(currentNote$, localDisplayName$, pageId$);
+	$: noteState$ = createNoteStateStream(currentNote$, localNoteState$);
+	$: entries$ = createEntriesStream(noteEntries$, localCurrentPage$, bookStock$);
+	$: paginationData$ = createPaginationStream(noteEntries$, localCurrentPage$);
+
+	$: noteInterface = db().warehouse($currentNoteLookup$?.warehouse).note($pageId$);
 
 	// Navigate back to /inventory/inbound if the note doesn't exist (or is deleted)
-	$: if (currentNote && (!$findNote(currentNote) || $findNote(currentNote)?.state === NoteState.Deleted)) {
+	$: if ($pageId$ && (!$currentNoteLookup$ || $currentNoteLookup$.state === NoteState.Deleted)) {
 		goto('/inventory/inbound');
 	}
 
-	$: currentNoteWarehouse = $findNote(currentNote)?.warehouse;
-	$: noteStores = createNoteStores(db(), currentNote, currentNoteWarehouse);
+	// TODO: Should use `createDbUpdateStream` - but currently errors due to race condition with noteInterface
+	const setDisplayName$ = localDisplayName$.pipe(
+		switchMap((name) => {
+			if (!name) {
+				return EMPTY;
+			} else {
+				const promise = noteInterface.setName(name);
+				return from(promise);
+			}
+		})
+	);
 
-	$: displayName = noteStores.displayName;
-	$: state = noteStores.state;
-	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
-	$: currentPage = noteStores.currentPage;
-	$: paginationData = noteStores.paginationData;
+	// TODO: Should use `createDbUpdateStream` - but currently errors due to race condition with noteInterface
+	const updateNoteStateAction = (noteInterface: NoteInterface, state: NoteTempState) => {
+		switch (state) {
+			case NoteTempState.Committing:
+				return noteInterface.commit();
+			case NoteTempState.Deleting:
+				return noteInterface.delete();
+			default:
+				return Promise.resolve();
+		}
+	};
+
+	const updateNoteState$ = localNoteState$.pipe(
+		switchMap((state) => {
+			if (!state) {
+				return EMPTY;
+			} else {
+				const promise = updateNoteStateAction(noteInterface, state);
+				return from(promise);
+			}
+		}),
+		tap(() => localNoteState$.next(null))
+	);
+
+	// auto subscribe() / unsubscribe() dbUpdateStreams
+	$setDisplayName$;
+	$updateNoteState$;
+
+	// Event handlers
+	const handleDisplayNameUpdate = (value: string) => localDisplayName$.next(value);
+
+	const handleNoteStateUpdate = (detail: NoteState) => {
+		const tempState = noteStateLookup[detail].tempState;
+		localNoteState$.next(tempState);
+	};
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -53,7 +129,7 @@
 
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
-		{#each $inNoteList as { id, displayName, notes }, index (id)}
+		{#each $inNoteList$ as { id, displayName, notes }, index (id)}
 			<SidebarItemGroup
 				name={displayName || id}
 				{index}
@@ -68,23 +144,26 @@
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if $state && $state !== NoteState.Deleted}
+		{#if $noteState$ && $noteState$ !== NoteState.Deleted}
 			<div class="flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<TextEditable class="inline-block" bind:value={$displayName} />
-						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
+						<TextEditable value={$displayName$} onSave={handleDisplayNameUpdate} />
+						<span class="align-middle text-sm font-normal text-gray-500"
+							>in {$currentNoteLookup$?.warehouse}</span
+						>
 					</h2>
 					<div class="flex items-center gap-1.5 whitespace-nowrap">
 						<SelectMenu
 							class="w-[138px]"
 							options={noteStates}
-							bind:value={$state}
-							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+							value={$noteState$}
+							on:change={({ detail }) => handleNoteStateUpdate(detail)}
+							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($noteState$)}
 						/>
-						{#if $updatedAt}
+						{#if updatedAt}
 							<Badge
-								label="Last updated: {generateUpdatedAtString($updatedAt)}"
+								label="Last updated: {generateUpdatedAtString(new Date(updatedAt))}"
 								color={BadgeColor.Success}
 							/>
 						{/if}
@@ -99,9 +178,9 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $entries.length}
+		{#if $entries$.length}
 			<InventoryTable>
-				{#each $entries as data}
+				{#each $entries$ as data}
 					<InventoryTableRow {data} />
 				{/each}
 			</InventoryTable>
@@ -110,14 +189,14 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if $paginationData.totalItems}
+		{#if $paginationData$.totalItems}
 			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
-				<strong>{$paginationData.totalItems}</strong> results
+				Showing <strong>{$paginationData$.firstItem}</strong> to <strong>{$paginationData$.lastItem}</strong> of
+				<strong>{$paginationData$.totalItems}</strong> results
 			</p>
 		{/if}
-		{#if $paginationData.numPages > 1}
-			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{#if $paginationData$.numPages > 1}
+			<Pagination maxItems={7} bind:value={$localCurrentPage$} numPages={$paginationData$.numPages} />
 		{/if}
 	</div>
 </InventoryPage>

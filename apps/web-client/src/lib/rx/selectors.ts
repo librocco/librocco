@@ -6,9 +6,7 @@ import type { BookStore } from '$lib/types/inventory';
 // which could be dropped in to a Derived Svelte Store, a Rx Map function,
 // Or just be called directly with reactive variables in a component
 
-// TODO: Add JS Doc comments to each of these
-
-export const getTableEntries = (entries: VolumeQuantity[], currentPage: number, books: BookStore) => {
+export const getTableEntries = (entries: VolumeQuantity[] = [], currentPage = 0, books: BookStore) => {
 	const start = currentPage * 10;
 	const end = start + 10;
 
@@ -19,7 +17,7 @@ export const getTableEntries = (entries: VolumeQuantity[], currentPage: number, 
 	}));
 };
 
-export const getPaginationData = (entries: VolumeQuantity[], currentPage: number) => {
+export const getPaginationData = (entries: VolumeQuantity[] = [], currentPage = 0) => {
 	const totalItems = entries.length;
 	const numPages = Math.ceil(totalItems / 10);
 	const firstItem = currentPage * 10 + 1;

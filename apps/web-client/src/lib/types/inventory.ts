@@ -24,23 +24,27 @@ export interface BookStore {
 /** The properties of a book + quantity row shown in the note/warehouse table. */
 export type DisplayRow = BookEntry & { quantity: number };
 
+export interface WarehouseEntry {
+	entries: VolumeQuantity[];
+	inNotes?: string[];
+	displayName?: string;
+}
+
 /** A structure of the warehouse store: `readable<WarehouseStore>()`. */
 export interface WarehouseStore {
-	[warehouse: string]: {
-		entries: VolumeQuantity[];
-		inNotes?: string[];
-		displayName?: string;
-	};
+	[warehouse: string]: WarehouseEntry;
+}
+
+export interface NoteEntry {
+	displayName?: string;
+	entries: VolumeQuantity[];
+	updatedAt: string;
+	state: NoteState;
 }
 
 /** A structure of the note store (inNoteStore or outNoteStore): `writable<NoteStore>()`. */
 export interface NoteStore {
-	[noteId: string]: {
-		displayName?: string;
-		entries: VolumeQuantity[];
-		updatedAt: string;
-		state: NoteState;
-	};
+	[noteId: string]: NoteEntry;
 }
 
 /** A union type for note states used in the client app */

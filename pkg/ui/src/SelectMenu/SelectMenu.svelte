@@ -26,7 +26,7 @@
 	const dispatch = createEventDispatcher();
 	const handleChange = (e: CustomEvent) => {
 		value = e.detail;
-		dispatch('change', e.detail.value);
+		dispatch('change', value);
 	};
 </script>
 
