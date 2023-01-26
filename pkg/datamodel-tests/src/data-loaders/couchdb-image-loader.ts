@@ -20,18 +20,13 @@ export const getSnaps = async () => {
 };
 
 /** A convenience method allowing us to use the timeout as 'setTimeout' in async/await manner */
-const wait = (timeout: number) =>
-	new Promise<void>((resolve) => setTimeout(() => resolve(), timeout));
+const wait = (timeout: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), timeout));
 
 /**
  * Retry the async function passed as callback a number of times.
  * We're using this to wait for the couchdb container (containing test data) to come online.
  */
-const retry = async <CB extends () => Promise<any>>(
-	cb: CB,
-	retries: number,
-	backoff: number
-): Promise<ReturnType<CB>> => {
+const retry = async <CB extends () => Promise<any>>(cb: CB, retries: number, backoff: number): Promise<ReturnType<CB>> => {
 	try {
 		const res = await cb();
 		return res;
