@@ -13,10 +13,7 @@ export const commit20Notes: TestFunction = async (db, getNotesAndWarehouses) => 
 				(note.type === 'inbound' ? w.createInNote() : w.createOutNote())
 					.then((n) =>
 						n.addVolumes(
-							...note.books.map(
-								({ isbn, quantity, warehouse }) =>
-									[isbn, quantity, warehouse] as VolumeTransactionTuple
-							)
+							...note.books.map(({ isbn, quantity, warehouse }) => [isbn, quantity, warehouse] as VolumeTransactionTuple)
 						)
 					)
 					.then((n) => n.commit())
