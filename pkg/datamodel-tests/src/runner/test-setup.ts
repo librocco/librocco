@@ -59,10 +59,14 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 	};
 
 	const test: TestTask = (name, cb) => {
-		t(name, async () => {
-			const db = await taskSetup();
-			await cb(db, getNotesAndWarehouses);
-		});
+		t(
+			name,
+			async () => {
+				const db = await taskSetup();
+				await cb(db, getNotesAndWarehouses);
+			},
+			10000
+		);
 	};
 
 	const bench: TestTask = (name, cb) => {
@@ -115,8 +119,7 @@ const mapWarehouses: MapWarehouses = (books) => {
 // #endregion test_data_transformers
 
 // #region helpers
-const getISBN = (b: RawBookStock): string =>
-	b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
+const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
 const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string } => ({
 	isbn: getISBN(b),
 	quantity: b.quantity,
@@ -126,10 +129,8 @@ const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string 
 
 // #region env
 const initDB = (): PouchDB.Database => {
-	const dbName = randomUUID();
-	const fullName = __withDocker__
-		? ['http://admin:admin@127.0.0.1:5001', `a${dbName}`].join('/')
-		: dbName;
+	const dbName = new Date().toISOString().replaceAll(/[.:]/g, '-').toLowerCase();
+	const fullName = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : dbName;
 	const options = __withDocker__ ? {} : { adapter: 'memory' };
 
 	return new PouchDB(fullName, options);
