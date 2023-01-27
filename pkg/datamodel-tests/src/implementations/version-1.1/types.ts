@@ -1,20 +1,23 @@
 import {
-	PickPartial,
+	DatabaseInterface as DI,
+	WarehouseInterface as WI,
+	WarehouseData as WD,
 	NoteInterface as NI,
 	NoteData as ND,
-	WarehouseInterface as WI,
-	DatabaseInterface as DI,
 	VolumeStock
-} from '@/types';
+} from '@librocco/db';
 
+/** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
-	books: VolumeStock[];
-	displayName: string;
+	entries: VolumeStock[];
 };
-export type AdditoinalMethods = {
-	updateRev: (rev: string) => NoteInterface;
-};
-export type NoteInterface = NI<AdditionalData & AdditoinalMethods>;
-export type NoteData = PickPartial<ND<AdditionalData>, 'books' | 'committed'>;
-export type WarehouseInterface = WI<NoteInterface>;
-export type DatabaseInterface = DI<NoteInterface>;
+
+/** Note data (extended with additional fields) for internal implementation usage. */
+export type NoteData = ND<AdditionalData>;
+export type NoteInterface = NI<AdditionalData>;
+
+/** Warehouse data (extended with additional fields) for internal implementation usage. */
+export type WarehouseData = WD<AdditionalData>;
+export type WarehouseInterface = WI<NoteInterface, AdditionalData>;
+
+export type DatabaseInterface = DI<WarehouseInterface, NoteInterface>;
