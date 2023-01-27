@@ -45,4 +45,33 @@ export type WarehouseStockEntry = {
 	 */
 	value: number;
 };
-export default [warehouseDesignDocument];
+
+export const listDeisgnDocument: DesignDocument = {
+	_id: '_design/list',
+	views: {
+		warehouses: {
+			map: function (doc: WarehouseData | NoteData) {
+				if (doc.docType === 'warehouse') {
+					emit(doc._id, { displayName: doc.displayName });
+				}
+			}.toString()
+		},
+		outbound: {
+			map: function (doc: NoteData | WarehouseData) {
+				if (doc.docType === 'note' && (doc as NoteData).noteType === 'outbound') {
+					emit(doc._id, { displayName: doc.displayName });
+				}
+			}.toString()
+		},
+		inbound: {
+			map: function (doc: NoteData | WarehouseData) {
+				// Emit warehouse and inbound note documents
+				if (doc.docType === 'warehouse' || (doc.docType === 'note' && (doc as NoteData).noteType === 'inbound')) {
+					emit(doc._id, { type: doc.docType, displayName: doc.displayName });
+				}
+			}.toString()
+		}
+	}
+};
+
+export default [warehouseDesignDocument, listDeisgnDocument];

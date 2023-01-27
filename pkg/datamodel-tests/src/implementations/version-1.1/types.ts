@@ -9,6 +9,7 @@ import {
 
 export type AdditionalData = {
 	books: VolumeStock[];
+	displayName: string;
 };
 export type AdditoinalMethods = {
 	updateRev: (rev: string) => NoteInterface;
