@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { test as t, bench as b } from 'vitest';
-import { randomUUID } from 'crypto';
 import PouchDB from 'pouchdb';
+
+import { VolumeStock, NoteType, DatabaseInterface } from '@librocco/db';
 
 import { __withDocker__ } from './env';
 
@@ -14,11 +15,8 @@ import {
 	TransformNote,
 	TransformStock,
 	RawBookStock,
-	NoteType,
 	MapWarehouses,
-	ImplementationSetup,
-	VolumeStock,
-	DatabaseInterface
+	ImplementationSetup
 } from '@/types';
 
 import { sortBooks } from '@/utils/misc';
@@ -96,7 +94,11 @@ const transformNote: TransformNote = ({ id, type, books }) => ({
 });
 const transformStock: TransformStock = (sn) => ({
 	id: 'all-warehouses',
-	books: sn.books.map(transformBookStock).sort(sortBooks)
+	books: sn.books
+		.map(transformBookStock)
+		// Filter books with no quantity
+		.filter(({ quantity }) => Boolean(quantity))
+		.sort(sortBooks)
 });
 const mapWarehouses: MapWarehouses = (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
