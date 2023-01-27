@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import PouchDB from 'pouchdb';
 
-import { CouchDocument, RawNote, RawSnap } from '@/types';
+import { CouchDocument } from '@librocco/db';
+
+import { RawNote, RawSnap } from '@/types';
 
 import { unwrapDocs } from '@/utils/pouchdb';
 
@@ -9,14 +11,14 @@ export const getNotes = async () => {
 	const notesDB = new PouchDB('http://admin:admin@127.0.0.1:5000/raw_notes');
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const res = await retry(() => notesDB.allDocs({ include_docs: true }), 15, 200);
-	return unwrapDocs(res) as CouchDocument<RawNote>[];
+	return unwrapDocs(res as any) as CouchDocument<RawNote>[];
 };
 
 export const getSnaps = async () => {
 	const snapsDB = new PouchDB('http://admin:admin@127.0.0.1:5000/raw_snaps');
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const res = await retry(() => snapsDB.allDocs({ include_docs: true }), 15, 200);
-	return unwrapDocs(res) as CouchDocument<RawSnap>[];
+	return unwrapDocs(res as any) as CouchDocument<RawSnap>[];
 };
 
 /** A convenience method allowing us to use the timeout as 'setTimeout' in async/await manner */
