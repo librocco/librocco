@@ -36,3 +36,51 @@ export const uniqueTimestamp = (i = 0) => {
 
 	return [hexTimestamp, index, additional].join('');
 };
+
+export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Observable<boolean>): Promise<R> => {
+	// Create a stream to emit the result of the 'cb' function
+	// thus resolving this function as with the result of the 'cb'
+	const resultStream = new Subject<R>();
+
+	let timeout: NodeJS.Timeout | null = null;
+	let subscription: Subscription | null = null;
+
+	// Cue the 'cb' function to run as soon as the condition is met/resolved
+	subscription = condition
+		// We wish to prevent the subscription callback run on the same value multiple times.
+		//
+		// distinctUntilChanged() will turn this stream:
+		// |-false--false--false--true--true-->
+		// into:
+		// |-false----------------true-------->
+		.pipe(distinctUntilChanged())
+		.subscribe((ready) => {
+			// The condition is met, cancel the timeout and run the 'cb' function
+			if (ready) {
+				if (timeout) {
+					clearTimeout(timeout);
+				}
+				// Unsubscribe from the condition stream as we need to run the 'cb' function only once.
+				if (subscription) {
+					subscription.unsubscribe();
+				}
+				cb().then((result) => {
+					// Stream the result of the 'cb' function to the result stream
+					// thus resolving the promise returned by this function
+					resultStream.next(result);
+				});
+			} else {
+				// If the condition is not met after 2 seconds, stop the execution and throw an error.
+				// There can be only one timeout as we wish the function to timeout from the first run.
+				if (!timeout) {
+					timeout = setTimeout(() => {
+						subscription?.unsubscribe();
+						throw new Error("Error performing 'runWithcondition': Timed out");
+					}, 5000);
+				}
+			}
+		});
+
+	// Return a promise from result stream, eventually resolving to the result of the 'cb' function
+	return firstValueFrom(resultStream);
+};
