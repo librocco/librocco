@@ -3,20 +3,12 @@ import {
 	NoteInterface as NI,
 	NoteData as ND,
 	WarehouseInterface as WI,
-	DatabaseInterface as DI
+	DatabaseInterface as DI,
+	VolumeStock
 } from '@/types';
 
-type QuantityPerWarehouse = {
-	[warehouse: string]: number;
-};
-export type VolumesByISBN = {
-	[isbn: string]: QuantityPerWarehouse;
-};
-
 export type AdditionalData = {
-	_rev?: string;
-	books: VolumesByISBN;
-	committed: boolean;
+	books: VolumeStock[];
 };
 export type AdditoinalMethods = {
 	updateRev: (rev: string) => NoteInterface;

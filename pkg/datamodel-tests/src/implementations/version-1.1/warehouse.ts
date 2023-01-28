@@ -1,18 +1,11 @@
 import { randomUUID } from 'crypto';
 
 import { VolumeStock, WarehouseData } from '@/types';
-import {
-	NoteData,
-	NoteInterface,
-	WarehouseInterface,
-	DatabaseInterface,
-	VolumesByISBN
-} from './types';
+import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface } from './types';
 
 import { newNote } from './note';
 
 import { sortBooks } from '@/utils/misc';
-import { addVolumeWarehouseQuantityToStock } from './utils';
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -97,42 +90,30 @@ const getNotesForWarehouse = async (
 	return res.rows.map(({ doc }) => newNote(w, doc as NoteData));
 };
 
-const getStockForWarehouse = async (db: DatabaseInterface, warehouse: WarehouseInterface) => {
+const getStockForWarehouse = async (db: DatabaseInterface, w: WarehouseInterface) => {
 	const allNotes = await getNotesForWarehouse(db, db.warehouse());
 
-	// Populate the stock object from the volume transactions found in notes
-	const stockObj: VolumesByISBN = allNotes.reduce((fullStock, { committed, books, type }) => {
-		// If note not commited, skip
-		if (!committed) return fullStock;
-
-		return Object.entries(books).reduce((noteStock, [isbn, quantityPerWarehouse]) => {
-			// If warehouse "default" we're requesting an entire stock
-			if (warehouse.name == 'default') {
-				return Object.entries(quantityPerWarehouse).reduce((isbnStock, [w, q]) => {
-					const delta = type === 'outbound' ? -q : q;
-					return addVolumeWarehouseQuantityToStock(isbnStock, isbn, w, delta);
-				}, noteStock);
+	return allNotes
+		.reduce((acc, { type, books, committed }) => {
+			if (!committed) {
+				return acc;
 			}
 
-			// If warehouse anything other than the default, update the quantity only with
-			// transactions to the same warehouse (if any exists in this node, for this isbn and this warehouse)
-			const q = quantityPerWarehouse[warehouse.name];
-			if (!q) return noteStock;
+			return books.reduce((acc, { isbn, warehouse, quantity }) => {
+				if (![warehouse, 'default'].includes(w.name)) {
+					return acc;
+				}
 
-			const delta = type === 'outbound' ? -q : q;
-			return addVolumeWarehouseQuantityToStock(noteStock, isbn, warehouse.name, delta);
-		}, fullStock);
-	}, {} as VolumesByISBN);
+				const delta = type == 'inbound' ? quantity : -quantity;
+				const matchIndex = acc.findIndex((b) => b.isbn === isbn && b.warehouse === warehouse);
 
-	// Return the stock object transformed to standardised list of VolumeStock
-	return Object.entries(stockObj)
-		.reduce((acc, [isbn, quantitiesPerWarehouse]) => {
-			const allISBNCopies = Object.entries(quantitiesPerWarehouse).map(([warehouse, quantity]) => ({
-				isbn,
-				quantity,
-				warehouse
-			}));
-			return [...acc, ...allISBNCopies];
-		}, [] as { isbn: string; quantity: number; warehouse: string }[])
+				if (matchIndex == -1) {
+					return [...acc, { isbn, warehouse, quantity: delta }];
+				}
+
+				acc[matchIndex].quantity += delta;
+				return acc;
+			}, acc);
+		}, [] as VolumeStock[])
 		.sort(sortBooks);
 };
