@@ -1,4 +1,4 @@
-import { VolumeStock, VolumeTransactionTuple } from '@/types';
+import { VolumeTransactionTuple, VolumeStock } from '@/types';
 import { sortBooks } from '@/utils/misc';
 import { NoteInterface, WarehouseInterface, NoteData } from './types';
 
@@ -18,8 +18,8 @@ class Note implements NoteInterface {
 
 		this._id = data._id;
 		this.type = data.type;
-		this.books = data.books || {};
 		this.committed = Boolean(data.committed);
+		this.books = data.books || [];
 		if (data._rev) {
 			this._rev = data._rev || '';
 		}
@@ -33,16 +33,17 @@ class Note implements NoteInterface {
 			return !Array.isArray(params[0]);
 		};
 
-		const updateQuantity = (isbn: string, quantity: number, warehouseName = this.#w.name) => {
-			if (!this.books[isbn]) {
-				this.books[isbn] = { [warehouseName]: quantity };
+		const updateQuantity = (isbn: string, quantity: number, warehouse = this.#w.name) => {
+			const matchIndex = this.books.findIndex(
+				(entry) => entry.isbn === isbn && entry.warehouse === warehouse
+			);
+
+			if (matchIndex === -1) {
+				this.books.push({ isbn, warehouse, quantity });
 				return;
 			}
-			if (!this.books[isbn][warehouseName]) {
-				this.books[isbn][warehouseName] = quantity;
-				return;
-			}
-			this.books[isbn][warehouseName] += quantity;
+
+			this.books[matchIndex] = { isbn, warehouse, quantity: this[matchIndex].quantity + quantity };
 		};
 
 		if (isTuple(params)) {
@@ -55,33 +56,21 @@ class Note implements NoteInterface {
 	}
 
 	getVolume(isbn: string): VolumeStock[] {
-		return Object.entries(this.books[isbn])
-			.map(([warehouse, quantity]) => ({
-				isbn,
-				warehouse,
-				quantity
-			}))
+		return this.books
+			.reduce((acc, b) => (b.isbn === isbn ? [...acc, b] : acc), [] as VolumeStock[])
 			.sort(sortBooks);
 	}
 
 	getVolumes(): VolumeStock[] {
-		return Object.entries(this.books)
-			.reduce(
-				(acc, [isbn, warehouseQuantity]) => [
-					...acc,
-					...Object.entries(warehouseQuantity).map(([warehouse, quantity]) => ({
-						isbn,
-						warehouse,
-						quantity
-					}))
-				],
-				[] as VolumeStock[]
-			)
-			.sort(sortBooks);
+		return this.books.sort(sortBooks);
 	}
 
-	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface> {
-		this.books[isbn].quantity = quantity;
+	updateTransaction(
+		i: number,
+		{ quantity, warehouse }: Pick<VolumeStock, 'quantity' | 'warehouse'>
+	): Promise<NoteInterface> {
+		this.books[i].quantity = quantity;
+		this.books[i].warehouse = warehouse;
 		return this.#w.updateNote(this);
 	}
 

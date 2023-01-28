@@ -21,17 +21,20 @@ export const deleteNotes: TestFunction = async (db) => {
 	await expect(w.getNote(note2._id)).rejects.toThrow();
 };
 
-export const explicitlySetVolumeStock: TestFunction = async (db) => {
+export const updateVolumeTransaction: TestFunction = async (db) => {
 	const w = db.warehouse('wh');
 	const note1 = await w.createInNote();
 	await note1.addVolumes('0001112222', 5);
 
 	let noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.getVolume('0001112222')[0].quantity).toEqual(5);
+	let volumeTransactions = await noteFromDB.getVolume('0001112222');
+	expect(volumeTransactions[0].quantity).toEqual(5);
 
-	await note1.setVolumeQuantity('0001112222', 2);
+	await note1.updateTransaction(0, { quantity: 2, warehouse: 'other-warehouse' });
 	noteFromDB = await w.getNote(note1._id);
-	expect(noteFromDB.getVolume('0001112222')[0].quantity).toEqual(2);
+	volumeTransactions = await noteFromDB.getVolume('0001112222');
+	expect(volumeTransactions[0].quantity).toEqual(2);
+	expect(volumeTransactions[0].warehouse).toEqual('other-warehouse');
 };
 
 export const getFullStock: TestFunction = async (db) => {
@@ -113,6 +116,11 @@ export const commitNote: TestFunction = async (db, getTestData) => {
 	await note2.commit();
 	wStock = await warehouse.getStock();
 	expect(wStock).toEqual(stock2.books);
+
+	// Check that note documents have been updated with commit state
+	const [n1DB, n2DB] = await Promise.all([note1._id, note2._id].map((id) => warehouse.getNote(id)));
+	expect(n1DB.committed).toEqual(true);
+	expect(n2DB.committed).toEqual(true);
 };
 
 // This test is here to test commiting of multiple notes received from test data

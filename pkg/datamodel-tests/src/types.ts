@@ -5,7 +5,7 @@
 // #region misc
 export type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = {
 	_id: string;
-	_rev: string;
+	_rev?: string;
 } & Doc;
 
 export type DesignDocument = {
@@ -121,11 +121,16 @@ export interface NoteProto<A extends Record<string, any> = Record<string, any>> 
 	addVolumes(
 		...params: VolumeTransactionTuple | VolumeTransactionTuple[]
 	): Promise<NoteInterface<A>>;
-	setVolumeQuantity(isbn: string, quantity: number): Promise<NoteInterface<A>>;
+	updateTransaction(
+		i: number,
+		transaction: Pick<VolumeStock, 'quantity' | 'warehouse'>
+	): Promise<NoteInterface<A>>;
 	delete(): Promise<void>;
 	commit(): Promise<NoteInterface<A>>;
-	getVolume(isbn: string): VolumeStock[];
-	getVolumes(): VolumeStock[];
+	/** @TODO Should be 'getTransactionsForVolume' */
+	getVolume(isbn: string): VolumeStock[] | Promise<VolumeStock[]>;
+	/** @TODO Should be 'getTransactions' */
+	getVolumes(): VolumeStock[] | Promise<VolumeStock[]>;
 }
 export interface NoteBase {
 	type: NoteType;
