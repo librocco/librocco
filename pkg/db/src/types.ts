@@ -14,9 +14,12 @@ export type PickPartial<R extends Record<string, any>, K extends keyof R> = Omit
 // #endregion utils
 
 // #region misc
+export type VersionString = `v${number}`;
+export type VersionedString = `${VersionString}/${string}`;
+
 /** A type wrapper around a document in couchdb/pouchdb (adds `_id` and `_rev` to the document structure, passed as type param) */
 export type CouchDocument<Doc extends Record<string, any> = Record<string, any>> = {
-	_id: string;
+	_id: VersionedString;
 	docType: DocType;
 	_rev?: string | undefined;
 } & Doc;
@@ -31,7 +34,7 @@ export type DesignDocument = {
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
-	warehouse: string;
+	warehouseId: VersionedString;
 }
 // #endregion misc
 
@@ -64,7 +67,7 @@ export interface NoteStream {
 /**
  * A tuple used as param(s) for adding volumes to a note: [isbn, quantity, warehouse?]
  */
-export type VolumeTransactionTuple = [string, number, string] | [string, number];
+export type VolumeTransactionTuple = [string, number, VersionedString] | [string, number];
 
 /**
  * A standardized interface (interface of methods) for a note.

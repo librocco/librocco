@@ -12,14 +12,11 @@ const warehouseDesignDocument: DesignDocument = {
 
 				// Account for book transactions only if the note is committed
 				if (doc.docType === 'note' && entries && committed) {
-					// Note type can be inferred from the path (_id) - '<warehouse-id>/<note-type>/<note-uuid>'
-					const noteType = doc._id.split('/')[1];
-
 					entries.forEach((entry) => {
 						// Check if we should be incrementing or decrementing the overall quantity
-						const delta = noteType === 'inbound' ? entry.quantity : -entry.quantity;
+						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
-						emit([entry.warehouse, entry.isbn], delta);
+						emit([entry.warehouseId, entry.isbn], delta);
 					});
 				}
 			}.toString(),

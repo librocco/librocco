@@ -8,7 +8,7 @@ import { waitFor } from '@/__testUtils__';
 import { firstValueFrom } from 'rxjs';
 
 // A smoke test for the test runner
-const runnerSmokeTests: TestFunction = async (db, getNotesAndWarehouses) => {
+const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses) => {
 	// Full stock should be empty to begin with
 	const fullStock = await firstValueFrom(db.warehouse().stream().entries);
 	expect(fullStock).toEqual([]);
@@ -17,15 +17,15 @@ const runnerSmokeTests: TestFunction = async (db, getNotesAndWarehouses) => {
 	const createCommitAndCheckNote = async (curr: number, last: number): Promise<void> => {
 		if (curr > last) return;
 
-		const { notes, fullStock, warehouses } = getNotesAndWarehouses(curr + 1);
+		const { notes, fullStock, warehouses } = getNotesAndWarehouses(version)(curr + 1);
 
 		const note = notes[curr];
 		// If note is an inbound note, all books should be in the same warehouse, therefore we infer the warehouse from the first book.
 		// If note is outbound, we use the default warehouse so the setup is trivial.
-		const warehouse = note.type === 'inbound' ? db.warehouse(note.books[0].warehouse) : db.warehouse();
+		const warehouse = note.type === 'inbound' ? db.warehouse(note.books[0].warehouseId) : db.warehouse();
 
 		const n = await warehouse.note().create();
-		await n.addVolumes(...note.books.map(({ isbn, quantity, warehouse }) => [isbn, quantity, warehouse] as VolumeTransactionTuple));
+		await n.addVolumes(...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple));
 		await n.commit();
 
 		const assertionTuples = [
