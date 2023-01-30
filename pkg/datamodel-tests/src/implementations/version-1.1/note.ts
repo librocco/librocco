@@ -1,10 +1,10 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple } from '@librocco/db';
+import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple, VersionedString } from '@librocco/db';
 
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from './types';
 
-import { runAfterCondition, sortBooks, uniqueTimestamp } from '@/utils/misc';
+import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
 import { newDocumentStream } from '@/utils/pouchdb';
 
 class Note implements NoteInterface {
@@ -16,7 +16,7 @@ class Note implements NoteInterface {
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
 
-	_id: string;
+	_id: VersionedString;
 	docType = DocType.Note;
 	_rev?: string;
 
@@ -32,20 +32,23 @@ class Note implements NoteInterface {
 		this.#db = db;
 
 		// Outbound notes are assigned to the default warehouse, while inbound notes are assigned to a non-default warehouse
-		this.noteType = warehouse._id === '0-all' ? 'outbound' : 'inbound';
+		this.noteType = warehouse._id === versionId('0-all') ? 'outbound' : 'inbound';
 
-		// If id not provided (we're creating a new note), generate a unique timestamp
-		let tempId = id || uniqueTimestamp();
-		// Validate id (it should either be a full '<warehouse-id>/<note-type>/<note-id>' id or a single segment, '<note-id>')
-		const idSegments = tempId.split('/');
-		if (![1, 3].includes(idSegments.length)) {
-			throw new Error('Invalid note id: ' + tempId);
+		// If id provided, validate it:
+		// - it should either be a full id - 'v1/<warehouse-id>/<note-type>/<note-id>'
+		// - or a single segment id - '<note-id>'
+		if (id && ![1, 4].includes(id.split('/').length)) {
+			throw new Error('Invalid note id: ' + id);
 		}
-		// If single segment id provided, add warehouse and note type
-		if (idSegments.length === 1) {
-			tempId = `${warehouse._id}/${this.noteType}/${tempId}`;
-		}
-		this._id = tempId;
+
+		// Store the id internally:
+		// - if id is a single segment id, prepend the warehouse id and note type, and version the string
+		// - if id is a full id, assign it as is
+		this._id = !id
+			? versionId(`${warehouse._id}/${this.noteType}/${uniqueTimestamp()}`)
+			: isVersioned(id) // If id is versioned, it's a full id, assign it as is
+			? id
+			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
 
 		// If this is a new note, no need to check for DB, it should't exist, and unique timestamp as id
 		// assures this id is not taken
@@ -88,7 +91,7 @@ class Note implements NoteInterface {
 	/**
 	 * Update instance is a method for internal usage, used to update the instance with the data (doesn't update the DB)
 	 */
-	private updateInstance(data: Partial<NoteData>): NoteInterface {
+	private updateInstance(data: Partial<Omit<NoteData, '_id'>>): NoteInterface {
 		// Update the data with provided fields
 		this.updateField('_rev', data._rev);
 		this.updateField('noteType', data.noteType);
@@ -186,17 +189,17 @@ class Note implements NoteInterface {
 		};
 
 		return runAfterCondition(async () => {
-			const updateQuantity = (isbn: string, quantity: number, warehouse = this.#w._id) => {
-				const matchIndex = this.entries.findIndex((entry) => entry.isbn === isbn && entry.warehouse === warehouse);
+			const updateQuantity = (isbn: string, quantity: number, warehouseId = this.#w._id) => {
+				const matchIndex = this.entries.findIndex((entry) => entry.isbn === isbn && entry.warehouseId === warehouseId);
 
 				if (matchIndex === -1) {
-					this.entries.push({ isbn, warehouse, quantity });
+					this.entries.push({ isbn, warehouseId, quantity });
 					return;
 				}
 
 				this.entries[matchIndex] = {
 					isbn,
-					warehouse,
+					warehouseId,
 					quantity: this.entries[matchIndex].quantity + quantity
 				};
 			};

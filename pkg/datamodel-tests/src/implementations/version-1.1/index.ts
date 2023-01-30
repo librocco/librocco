@@ -4,6 +4,7 @@ import { newDatabase } from './db';
 import designDocuments from './designDocuments';
 
 const implementationSetup: ImplementationSetup = {
+	version: 'v1',
 	newDatabase,
 	designDocuments
 };

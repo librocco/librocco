@@ -2,7 +2,7 @@
 import { test as t, bench as b } from 'vitest';
 import PouchDB from 'pouchdb';
 
-import { VolumeStock, NoteType, DatabaseInterface } from '@librocco/db';
+import { VolumeStock, NoteType, DatabaseInterface, VersionString } from '@librocco/db';
 
 import { __withDocker__ } from './env';
 
@@ -31,13 +31,13 @@ interface RawData {
 
 // #region newModal
 export const newModel = (rawData: RawData, config: ImplementationSetup) => {
-	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
-		const notes = rawData.notes.slice(0, n).map(transformNote);
+	const getNotesAndWarehouses: GetNotesAndWarehouses = (version) => (n) => {
+		const notes = rawData.notes.slice(0, n).map(transformNote(version));
 
 		const fullStockRaw = rawData.snaps[n - 1];
-		const fullStock = transformStock(fullStockRaw);
+		const fullStock = transformStock(version)(fullStockRaw);
 
-		const warehouses = mapWarehouses(fullStockRaw.books);
+		const warehouses = mapWarehouses(version)(fullStockRaw.books);
 
 		return { notes, fullStock, warehouses };
 	};
@@ -61,7 +61,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 			name,
 			async () => {
 				const db = await taskSetup();
-				await cb(db, getNotesAndWarehouses);
+				await cb(db, config.version, getNotesAndWarehouses);
 			},
 			10000
 		);
@@ -70,7 +70,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 	const bench: TestTask = (name, cb) => {
 		b(name, async () => {
 			const db = await taskSetup();
-			await cb(db, getNotesAndWarehouses);
+			await cb(db, config.version, getNotesAndWarehouses);
 		});
 	};
 
@@ -86,26 +86,28 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
  * when we agree on the input data
  */
 // #region test_data_transformers
-const transformNote: TransformNote = ({ id, type, books }) => ({
-	id,
-	// Transform from "in-note" to "inbound"
-	type: [type.split('-')[0], 'bound'].join('') as NoteType,
-	books: books.map(transformBookStock).sort(sortBooks)
-});
-const transformStock: TransformStock = (sn) => ({
-	id: 'all-warehouses',
+const transformNote: TransformNote =
+	(version) =>
+	({ id, type, books }) => ({
+		id: `${version}/${id}`,
+		// Transform from "in-note" to "inbound"
+		type: [type.split('-')[0], 'bound'].join('') as NoteType,
+		books: books.map(transformBookStock(version)).sort(sortBooks)
+	});
+const transformStock: TransformStock = (version) => (sn) => ({
+	id: `all-warehouses`,
 	books: sn.books
-		.map(transformBookStock)
+		.map(transformBookStock(version))
 		// Filter books with no quantity
 		.filter(({ quantity }) => Boolean(quantity))
 		.sort(sortBooks)
 });
-const mapWarehouses: MapWarehouses = (books) => {
+const mapWarehouses: MapWarehouses = (version) => (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
-		const wName = b.warehouse;
+		const wName = `${version}/${b.warehouseId}`;
 
 		const warehouse = acc[wName] || ({ id: wName, books: [] } as TestStock);
-		const entry = transformBookStock(b);
+		const entry = transformBookStock(version)(b);
 
 		return {
 			...acc,
@@ -122,11 +124,13 @@ const mapWarehouses: MapWarehouses = (books) => {
 
 // #region helpers
 const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
-const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string } => ({
-	isbn: getISBN(b),
-	quantity: b.quantity,
-	warehouse: b.warehouse
-});
+const transformBookStock =
+	(version: VersionString) =>
+	(b: RawBookStock): VolumeStock => ({
+		isbn: getISBN(b),
+		quantity: b.quantity,
+		warehouseId: `${version}/${b.warehouseId}`
+	});
 // #endregion helpers
 
 // #region env

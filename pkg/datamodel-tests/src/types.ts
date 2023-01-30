@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DatabaseInterface, VolumeStock, NoteType, DesignDocument } from '@librocco/db';
+import { DatabaseInterface, VolumeStock, NoteType, DesignDocument, VersionedString, VersionString } from '@librocco/db';
 
 // #region rawData
 interface IndustryIdentifier {
@@ -22,7 +22,7 @@ export interface RawBook {
 	};
 }
 export interface RawBookStock extends RawBook {
-	warehouse: string;
+	warehouseId: string;
 	quantity: number;
 }
 
@@ -47,12 +47,12 @@ export interface TestDataLoader {
 
 // #region testSetup
 interface TestNote {
-	id: string;
+	id: VersionedString;
 	type: NoteType;
 	books: VolumeStock[];
 }
 export interface TransformNote {
-	(note: RawNote): TestNote;
+	(version: VersionString): (note: RawNote) => TestNote;
 }
 
 export interface TestStock {
@@ -60,15 +60,15 @@ export interface TestStock {
 	books: VolumeStock[];
 }
 export interface TransformStock {
-	(db: RawSnap): TestStock;
+	(version: VersionString): (db: RawSnap) => TestStock;
 }
 
 export interface MapWarehouses {
-	(books: RawBookStock[]): TestStock[];
+	(version: VersionString): (books: RawBookStock[]) => TestStock[];
 }
 
 export interface GetNotesAndWarehouses {
-	(n: number): {
+	(version: VersionString): (n: number) => {
 		notes: TestNote[];
 		fullStock: TestStock;
 		warehouses: TestStock[];
@@ -76,7 +76,7 @@ export interface GetNotesAndWarehouses {
 }
 
 export interface TestFunction {
-	(db: DatabaseInterface, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
+	(db: DatabaseInterface, version: VersionString, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
 }
 
 export interface TestTask {
@@ -84,6 +84,7 @@ export interface TestTask {
 }
 
 export interface ImplementationSetup {
+	version: VersionString;
 	newDatabase: (db: PouchDB.Database) => DatabaseInterface;
 	designDocuments?: DesignDocument[];
 }

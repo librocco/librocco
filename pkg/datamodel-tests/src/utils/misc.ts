@@ -1,8 +1,8 @@
 import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from 'rxjs';
 
-import { VolumeStock } from '@librocco/db';
+import { VersionedString, VolumeStock } from '@librocco/db';
 
-export const sortBooks = ({ isbn: i1, warehouse: w1 }: VolumeStock, { isbn: i2, warehouse: w2 }: VolumeStock) =>
+export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
 	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
 
 /** Replaces JS friendly version name ('version_1_1') with a human friendly version name ('version 1.1') */
@@ -84,3 +84,14 @@ export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Obse
 	// Return a promise from result stream, eventually resolving to the result of the 'cb' function
 	return firstValueFrom(resultStream);
 };
+
+/**
+ * Version id prepends an id string with v1/" prefix.
+ * If id is already versioned, it is returned as is.
+ */
+export const versionId = (id: string): VersionedString => (isVersioned(id) ? id : `v1/${id}`);
+
+/**
+ * Returns true if the id is a versioned string.
+ */
+export const isVersioned = (id: string): id is VersionedString => id.startsWith('v1/');
