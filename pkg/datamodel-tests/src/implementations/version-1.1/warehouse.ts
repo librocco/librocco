@@ -1,13 +1,13 @@
 import { BehaviorSubject, Observable } from 'rxjs';
 
-import { DocType, VolumeStock } from '@librocco/db';
+import { DocType, VersionedString, VolumeStock } from '@librocco/db';
 
 import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from './types';
 
 import { newNote } from './note';
 import { WarehouseStockEntry } from './designDocuments';
 
-import { runAfterCondition, sortBooks } from '@/utils/misc';
+import { isVersioned, runAfterCondition, sortBooks, versionId } from '@/utils/misc';
 import { newDocumentStream, newViewStream } from '@/utils/pouchdb';
 
 class Warehouse implements WarehouseInterface {
@@ -18,7 +18,7 @@ class Warehouse implements WarehouseInterface {
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
 
-	_id = '';
+	_id: VersionedString;
 	docType = DocType.Warehouse;
 	_rev?: string;
 
@@ -29,7 +29,8 @@ class Warehouse implements WarehouseInterface {
 		this.#db = db;
 
 		// If id not provided, we're accessing the default warehouse
-		this._id = id || '0-all';
+		// If the provided id is not versioned,version it
+		this._id = !id ? versionId('0-all') : isVersioned(id) ? id : versionId(id);
 
 		// If id provided, the note might or might not exist in the DB
 		// perform a check and update the instance accordingly
@@ -78,7 +79,7 @@ class Warehouse implements WarehouseInterface {
 	/**
 	 * Update instance is a method for internal usage, used to update the instance with the data (doesn't update the DB)
 	 */
-	private updateInstance(data: Partial<WarehouseData>) {
+	private updateInstance(data: Partial<Omit<WarehouseData, '_id'>>) {
 		// Update the data with provided fields
 		this.updateField('_rev', data._rev);
 		this.updateField('displayName', data.displayName);
@@ -101,7 +102,7 @@ class Warehouse implements WarehouseInterface {
 			const initialValues = {
 				...this,
 				// If creating a default warehouse, we're initialising the 'displayName' as "All"
-				displayName: this._id === '0-all' ? 'All' : ''
+				displayName: this._id === versionId('0-all') ? 'All' : ''
 			};
 			// Try and store the warehouse in the db
 			try {
@@ -206,7 +207,7 @@ class Warehouse implements WarehouseInterface {
 				'warehouse/stock',
 				{
 					group_level: 2,
-					...(this._id !== '0-all' && {
+					...(this._id !== versionId('0-all') && {
 						startkey: [this._id],
 						endkey: [this._id, {}],
 						include_end: true
@@ -214,7 +215,7 @@ class Warehouse implements WarehouseInterface {
 				},
 				({ rows }) =>
 					rows
-						.map(({ key: [warehouse, isbn], value: quantity }) => ({ isbn, quantity, warehouse }))
+						.map(({ key: [warehouseId, isbn], value: quantity }) => ({ isbn, quantity, warehouseId }))
 						.filter(({ quantity }) => quantity > 0)
 						.sort(sortBooks)
 			)

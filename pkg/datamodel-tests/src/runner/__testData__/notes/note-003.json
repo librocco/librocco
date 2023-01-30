@@ -21,8 +21,8 @@
 				"categories": ["History"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 7
+			"quantity": 7,
+			"warehouseId": "jazz"
 		},
 		{
 			"volumeInfo": {
@@ -43,8 +43,8 @@
 				"categories": ["History"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 12
+			"quantity": 12,
+			"warehouseId": "jazz"
 		},
 		{
 			"volumeInfo": {
@@ -65,8 +65,8 @@
 				"categories": ["Foreign Language Study"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 14
+			"quantity": 14,
+			"warehouseId": "jazz"
 		}
 	]
 }

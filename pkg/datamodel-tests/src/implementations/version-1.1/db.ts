@@ -25,11 +25,11 @@ class Database implements DatabaseInterface {
 	}
 
 	async findNote(id: string) {
-		// Note id looks something like this: "<warehouse-id>/<note-type>/<note-id>"
+		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
 		const idSegments = id.split('/');
 
 		// Validate the id is correct
-		if (idSegments.length !== 3) {
+		if (idSegments.length !== 4) {
 			throw new Error(`Invalid note id: ${id}`);
 		}
 
