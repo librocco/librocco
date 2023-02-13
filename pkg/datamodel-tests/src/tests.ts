@@ -2,11 +2,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'vitest';
 
-import { InNoteList, NavListEntry, VolumeStock, NoteState } from '@librocco/db';
+import { InNoteList, NavListEntry, VolumeStock, NoteState, utils } from '@librocco/db';
 
 import { TestFunction } from '@/types';
 
-import { versionId } from './utils/misc';
+const { versionId } = utils;
 
 import { waitFor } from '@/__testUtils__';
 

@@ -1,11 +1,10 @@
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
-import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple, VersionedString } from '@librocco/db';
+import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple, VersionedString, utils } from '@librocco/db';
 
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from './types';
 
-import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
-import { newDocumentStream } from '@/utils/pouchdb';
+const { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId, newDocumentStream } = utils;
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.

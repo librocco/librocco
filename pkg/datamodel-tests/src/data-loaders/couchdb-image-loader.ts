@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import PouchDB from 'pouchdb';
 
-import { CouchDocument } from '@librocco/db';
+import { CouchDocument, utils } from '@librocco/db';
 
 import { RawNote, RawSnap } from '@/types';
 
-import { unwrapDocs } from '@/utils/pouchdb';
+const { unwrapDocs } = utils;
 
 export const getNotes = async () => {
 	const notesDB = new PouchDB('http://admin:admin@127.0.0.1:5000/raw_notes');
