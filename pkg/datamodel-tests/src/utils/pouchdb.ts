@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { concat, from, map, Observable, switchMap } from 'rxjs';
 
-import { CouchDocument } from '@librocco/db';
+import { CouchDocument, VersionedString } from '@librocco/db';
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -18,7 +18,7 @@ export const unwrapDocs = (res: PouchDB.Core.AllDocsResponse<Record<string, any>
 		if (!doc) {
 			return acc;
 		}
-		return [...acc, doc];
+		return [...acc, { ...doc, _id: doc._id as VersionedString }];
 	}, [] as CouchDocument[]);
 
 /**

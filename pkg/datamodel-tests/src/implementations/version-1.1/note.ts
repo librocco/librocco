@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
 import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple, VersionedString } from '@librocco/db';
 
@@ -151,6 +151,11 @@ class Note implements NoteInterface {
 			if (this.committed) {
 				return this;
 			}
+			// If creating a note, we're also creating a warehouse. If the warehouse
+			// already exists, this is a no-op anyhow.
+			// No need to await this, as the warehouse is not needed for the note to function.
+			this.#w.create();
+			// Update note itself
 			const updatedData = { ...this, ...data };
 			const { rev } = await this.#db._pouch.put<NoteData>(updatedData);
 			return this.updateInstance({ ...updatedData, _rev: rev });
@@ -257,9 +262,22 @@ class Note implements NoteInterface {
 			displayName: this.createStream((change) => {
 				return change.doc?.displayName || '';
 			}),
-			entries: this.createStream((change) => (change.doc?.entries || []).sort(sortBooks)),
+
+			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
+			entries: combineLatest([
+				this.createStream((change) => (change.doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks)),
+				this.#db.stream().warehouseList
+			]).pipe(
+				map(([entries, warehouses]) => {
+					// Create a record of warehouse ids and names for easy lookup
+					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
+					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
+				})
+			),
+
 			/** @TODO update the data model to have 'state' */
 			state: this.createStream((change) => (change.doc?.committed ? NoteState.Committed : NoteState.Draft)),
+
 			updatedAt: this.createStream((change) => {
 				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
 				const ua = change.doc?.updatedAt;

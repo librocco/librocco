@@ -1,6 +1,6 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
-import { DocType, VersionedString, VolumeStock } from '@librocco/db';
+import { DocType, VersionedString, VolumeStock, VolumeStockClient } from '@librocco/db';
 
 import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from './types';
 
@@ -29,7 +29,7 @@ class Warehouse implements WarehouseInterface {
 		this.#db = db;
 
 		// If id not provided, we're accessing the default warehouse
-		// If the provided id is not versioned,version it
+		// If the provided id is not versioned, version it
 		this._id = !id ? versionId('0-all') : isVersioned(id) ? id : versionId(id);
 
 		// If id provided, the note might or might not exist in the DB
@@ -102,7 +102,7 @@ class Warehouse implements WarehouseInterface {
 			const initialValues = {
 				...this,
 				// If creating a default warehouse, we're initialising the 'displayName' as "All"
-				displayName: this._id === versionId('0-all') ? 'All' : ''
+				displayName: this._id === versionId('0-all') ? 'All' : this._id
 			};
 			// Try and store the warehouse in the db
 			try {
@@ -202,22 +202,32 @@ class Warehouse implements WarehouseInterface {
 	stream() {
 		return {
 			displayName: this.createStream((change) => change.doc?.displayName || ''),
-			entries: newViewStream<{ rows: WarehouseStockEntry }, VolumeStock[]>(
-				this.#db._pouch,
-				'warehouse/stock',
-				{
-					group_level: 2,
-					...(this._id !== versionId('0-all') && {
-						startkey: [this._id],
-						endkey: [this._id, {}],
-						include_end: true
-					})
-				},
-				({ rows }) =>
-					rows
-						.map(({ key: [warehouseId, isbn], value: quantity }) => ({ isbn, quantity, warehouseId }))
-						.filter(({ quantity }) => quantity > 0)
-						.sort(sortBooks)
+
+			entries: combineLatest([
+				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
+					this.#db._pouch,
+					'warehouse/stock',
+					{
+						group_level: 2,
+						...(this._id !== versionId('0-all') && {
+							startkey: [this._id],
+							endkey: [this._id, {}],
+							include_end: true
+						})
+					},
+					({ rows }) =>
+						rows
+							.map(({ key: [warehouseId, isbn], value: quantity }) => ({ isbn, quantity, warehouseId, warehouseName: '' }))
+							.filter(({ quantity }) => quantity > 0)
+							.sort(sortBooks)
+				),
+				this.#db.stream().warehouseList
+			]).pipe(
+				map(([entries, warehouses]) => {
+					// Create a record of warehouse ids and names for easy lookup
+					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
+					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
+				})
 			)
 		};
 	}
