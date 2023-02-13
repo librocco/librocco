@@ -1,32 +1,26 @@
 import { expect } from 'vitest';
+import { firstValueFrom } from 'rxjs';
 
-import { TestFunction, VolumeTransactionTuple } from './types';
+import { VolumeTransactionTuple } from '@librocco/db';
 
-export const commit100Notes: TestFunction = async (db, getNotesAndWarehouses) => {
-	const { fullStock, notes } = getNotesAndWarehouses(100);
+import { TestFunction } from './types';
 
-	const w = db.warehouse();
+export const commit20Notes: TestFunction = async (db, version, getNotesAndWarehouses) => {
+	const { fullStock, notes } = getNotesAndWarehouses(version)(20);
 
-	const noteUpdates = notes.map(
-		(note) =>
-			new Promise<void>((resolve, reject) => {
-				(note.type === 'inbound' ? w.createInNote() : w.createOutNote())
-					.then((n) =>
-						n.addVolumes(
-							...note.books.map(
-								({ isbn, quantity, warehouse }) =>
-									[isbn, quantity, warehouse] as VolumeTransactionTuple
-							)
-						)
-					)
-					.then((n) => n.commit())
-					.then(() => resolve())
-					.catch((err) => reject(err));
-			})
+	const noteUpdates = notes.map((note) =>
+		(note.type === 'inbound' ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
+			.then((w) => w.note().create())
+			.then((n) =>
+				n.addVolumes(
+					...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple)
+				)
+			)
+			.then((n) => n.commit())
 	);
 	await Promise.all(noteUpdates);
 
-	const stock = await w.getStock();
+	const stock = await firstValueFrom(db.warehouse().stream().entries);
 
 	expect(stock).toEqual(fullStock.books);
 };

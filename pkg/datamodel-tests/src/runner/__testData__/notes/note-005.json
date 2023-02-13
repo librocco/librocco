@@ -21,8 +21,8 @@
 				"categories": ["Biographers"],
 				"language": "en"
 			},
-			"warehouse": "science",
-			"quantity": 13
+			"quantity": 13,
+			"warehouseId": "science"
 		},
 		{
 			"volumeInfo": {
@@ -43,8 +43,8 @@
 				"categories": ["Religion"],
 				"language": "en"
 			},
-			"warehouse": "science",
-			"quantity": 8
+			"quantity": 8,
+			"warehouseId": "science"
 		},
 		{
 			"volumeInfo": {
@@ -62,11 +62,11 @@
 						"identifier": "9780080524238"
 					}
 				],
-				"categories": ["Technology \u0026 Engineering"],
+				"categories": ["Technology & Engineering"],
 				"language": "en"
 			},
-			"warehouse": "science",
-			"quantity": 5
+			"quantity": 5,
+			"warehouseId": "science"
 		}
 	]
 }

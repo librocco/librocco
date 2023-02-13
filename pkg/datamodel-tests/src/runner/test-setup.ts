@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { test as t, bench as b } from 'vitest';
-import { randomUUID } from 'crypto';
 import PouchDB from 'pouchdb';
+
+import { NoteType, DatabaseInterface, VersionString, VolumeStockClient } from '@librocco/db';
 
 import { __withDocker__ } from './env';
 
@@ -14,11 +15,8 @@ import {
 	TransformNote,
 	TransformStock,
 	RawBookStock,
-	NoteType,
 	MapWarehouses,
-	ImplementationSetup,
-	VolumeStock,
-	DatabaseInterface
+	ImplementationSetup
 } from '@/types';
 
 import { sortBooks } from '@/utils/misc';
@@ -33,13 +31,13 @@ interface RawData {
 
 // #region newModal
 export const newModel = (rawData: RawData, config: ImplementationSetup) => {
-	const getNotesAndWarehouses: GetNotesAndWarehouses = (n: number) => {
-		const notes = rawData.notes.slice(0, n).map(transformNote);
+	const getNotesAndWarehouses: GetNotesAndWarehouses = (version) => (n) => {
+		const notes = rawData.notes.slice(0, n).map(transformNote(version));
 
 		const fullStockRaw = rawData.snaps[n - 1];
-		const fullStock = transformStock(fullStockRaw);
+		const fullStock = transformStock(version)(fullStockRaw);
 
-		const warehouses = mapWarehouses(fullStockRaw.books);
+		const warehouses = mapWarehouses(version)(fullStockRaw.books);
 
 		return { notes, fullStock, warehouses };
 	};
@@ -59,16 +57,20 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 	};
 
 	const test: TestTask = (name, cb) => {
-		t(name, async () => {
-			const db = await taskSetup();
-			await cb(db, getNotesAndWarehouses);
-		});
+		t(
+			name,
+			async () => {
+				const db = await taskSetup();
+				await cb(db, config.version, getNotesAndWarehouses);
+			},
+			10000
+		);
 	};
 
 	const bench: TestTask = (name, cb) => {
 		b(name, async () => {
 			const db = await taskSetup();
-			await cb(db, getNotesAndWarehouses);
+			await cb(db, config.version, getNotesAndWarehouses);
 		});
 	};
 
@@ -84,22 +86,28 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
  * when we agree on the input data
  */
 // #region test_data_transformers
-const transformNote: TransformNote = ({ id, type, books }) => ({
-	id,
-	// Transform from "in-note" to "inbound"
-	type: [type.split('-')[0], 'bound'].join('') as NoteType,
-	books: books.map(transformBookStock).sort(sortBooks)
+const transformNote: TransformNote =
+	(version) =>
+	({ id, type, books }) => ({
+		id: `${version}/${id}`,
+		// Transform from "in-note" to "inbound"
+		type: [type.split('-')[0], 'bound'].join('') as NoteType,
+		books: books.map(transformBookStock(version)).sort(sortBooks)
+	});
+const transformStock: TransformStock = (version) => (sn) => ({
+	id: `all-warehouses`,
+	books: sn.books
+		.map(transformBookStock(version))
+		// Filter books with no quantity
+		.filter(({ quantity }) => Boolean(quantity))
+		.sort(sortBooks)
 });
-const transformStock: TransformStock = (sn) => ({
-	id: 'all-warehouses',
-	books: sn.books.map(transformBookStock).sort(sortBooks)
-});
-const mapWarehouses: MapWarehouses = (books) => {
+const mapWarehouses: MapWarehouses = (version) => (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
-		const wName = b.warehouse;
+		const wName = `${version}/${b.warehouseId}`;
 
 		const warehouse = acc[wName] || ({ id: wName, books: [] } as TestStock);
-		const entry = transformBookStock(b);
+		const entry = transformBookStock(version)(b);
 
 		return {
 			...acc,
@@ -115,21 +123,24 @@ const mapWarehouses: MapWarehouses = (books) => {
 // #endregion test_data_transformers
 
 // #region helpers
-const getISBN = (b: RawBookStock): string =>
-	b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
-const transformBookStock = (b: RawBookStock): VolumeStock & { warehouse: string } => ({
-	isbn: getISBN(b),
-	quantity: b.quantity,
-	warehouse: b.warehouse
-});
+const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
+const transformBookStock =
+	(version: VersionString) =>
+	(b: RawBookStock): VolumeStockClient => ({
+		isbn: getISBN(b),
+		quantity: b.quantity,
+		warehouseId: `${version}/${b.warehouseId}`,
+		// When the warehouse is created, the name is the same as the id.
+		// Since this test is used to check the stock aggregation after multiple notes,
+		// we're not bothering with assigning custom 'diplayName' to the warehouses.
+		warehouseName: `${version}/${b.warehouseId}`
+	});
 // #endregion helpers
 
 // #region env
 const initDB = (): PouchDB.Database => {
-	const dbName = randomUUID();
-	const fullName = __withDocker__
-		? ['http://admin:admin@127.0.0.1:5001', `a${dbName}`].join('/')
-		: dbName;
+	const dbName = new Date().toISOString().replaceAll(/[.:]/g, '-').toLowerCase();
+	const fullName = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : dbName;
 	const options = __withDocker__ ? {} : { adapter: 'memory' };
 
 	return new PouchDB(fullName, options);

@@ -21,8 +21,8 @@
 				"categories": ["History"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 1
+			"quantity": 1,
+			"warehouseId": "jazz"
 		},
 		{
 			"volumeInfo": {
@@ -43,8 +43,8 @@
 				"categories": ["African Americans"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 2
+			"quantity": 2,
+			"warehouseId": "jazz"
 		},
 		{
 			"volumeInfo": {
@@ -65,8 +65,8 @@
 				"categories": ["History"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 30
+			"quantity": 30,
+			"warehouseId": "jazz"
 		}
 	]
 }

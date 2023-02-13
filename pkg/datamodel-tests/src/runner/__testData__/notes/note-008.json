@@ -21,8 +21,8 @@
 				"categories": ["History"],
 				"language": "en"
 			},
-			"warehouse": "jazz",
-			"quantity": 15
+			"quantity": 15,
+			"warehouseId": "jazz"
 		},
 		{
 			"volumeInfo": {
@@ -43,8 +43,8 @@
 				"categories": ["Biographers"],
 				"language": "en"
 			},
-			"warehouse": "science",
-			"quantity": 6
+			"quantity": 6,
+			"warehouseId": "science"
 		},
 		{
 			"volumeInfo": {
@@ -62,11 +62,11 @@
 						"identifier": "9780080524238"
 					}
 				],
-				"categories": ["Technology \u0026 Engineering"],
+				"categories": ["Technology & Engineering"],
 				"language": "en"
 			},
-			"warehouse": "science",
-			"quantity": 1
+			"quantity": 1,
+			"warehouseId": "science"
 		}
 	]
 }
