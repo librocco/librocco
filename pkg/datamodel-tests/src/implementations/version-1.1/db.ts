@@ -1,9 +1,10 @@
-import { newViewStream } from '@/utils/pouchdb';
-import { DbStream, DesignDocument, DocType, InNoteList, NavListEntry } from '@librocco/db';
+import { DbStream, DesignDocument, DocType, InNoteList, NavListEntry, utils } from '@librocco/db';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 
 import { newWarehouse } from './warehouse';
+
+const { newViewStream } = utils;
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;

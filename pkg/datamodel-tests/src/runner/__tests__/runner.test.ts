@@ -1,5 +1,7 @@
 import { describe } from 'vitest';
 
+import { utils } from '@librocco/db';
+
 import { newTestRunner } from '@runner/runner';
 
 import * as testDataLoader from '@loaders/fs-data-loader';
@@ -7,7 +9,7 @@ import * as testDataLoader from '@loaders/fs-data-loader';
 import { version_1_1 as defaultImplementation } from '@/implementations';
 import tests from './tests';
 
-import { processTestName } from '@/utils/misc';
+const { processTestName } = utils;
 
 describe('Datamodel tests', async () => {
 	// We're currently using the `testDataLoader` for unit tests,

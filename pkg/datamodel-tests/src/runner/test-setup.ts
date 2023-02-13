@@ -2,7 +2,7 @@
 import { test as t, bench as b } from 'vitest';
 import PouchDB from 'pouchdb';
 
-import { NoteType, DatabaseInterface, VersionString, VolumeStockClient } from '@librocco/db';
+import { NoteType, DatabaseInterface, VersionString, VolumeStockClient, utils } from '@librocco/db';
 
 import { __withDocker__ } from './env';
 
@@ -19,7 +19,7 @@ import {
 	ImplementationSetup
 } from '@/types';
 
-import { sortBooks } from '@/utils/misc';
+const { sortBooks } = utils;
 
 // #region types
 interface RawData {
