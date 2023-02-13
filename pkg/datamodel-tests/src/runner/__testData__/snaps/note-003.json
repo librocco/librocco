@@ -1,93 +1,109 @@
 {
-	"id": "note-003",
-	"books": [
-		{
-			"volumeInfo": {
-				"title": "The Jazz Standards",
-				"authors": ["Ted Gioia"],
-				"publisher": "",
-				"publishedDate": "2012",
-				"industryIdentifiers": [
-					{
-						"type": "ISBN_13",
-						"identifier": "9780199769155"
-					},
-					{
-						"type": "ISBN_10",
-						"identifier": "019976915X"
-					}
-				],
-				"categories": ["African Americans"],
-				"language": "en"
-			},
-			"warehouse": "jazz",
-			"quantity": 2
-		},
-		{
-			"volumeInfo": {
-				"title": "The Swing Era",
-				"authors": ["Gunther Schuller"],
-				"publisher": "History of Jazz",
-				"publishedDate": "1989",
-				"industryIdentifiers": [
-					{
-						"type": "ISBN_10",
-						"identifier": "0195071409"
-					},
-					{
-						"type": "ISBN_13",
-						"identifier": "9780195071405"
-					}
-				],
-				"categories": ["History"],
-				"language": "en"
-			},
-			"warehouse": "jazz",
-			"quantity": 16
-		},
-		{
-			"volumeInfo": {
-				"title": "The History of Jazz",
-				"authors": ["Ted Gioia"],
-				"publisher": "Oxford University Press",
-				"publishedDate": "2011-05-09",
-				"industryIdentifiers": [
-					{
-						"type": "ISBN_13",
-						"identifier": "9780195399707"
-					},
-					{
-						"type": "ISBN_10",
-						"identifier": "0195399706"
-					}
-				],
-				"categories": ["History"],
-				"language": "en"
-			},
-			"warehouse": "jazz",
-			"quantity": 30
-		},
-		{
-			"volumeInfo": {
-				"title": "Holiday Jazz Chants",
-				"authors": ["Carolyn Graham"],
-				"publisher": "Oxford",
-				"publishedDate": "1999-01-01",
-				"industryIdentifiers": [
-					{
-						"type": "ISBN_10",
-						"identifier": "0194349276"
-					},
-					{
-						"type": "ISBN_13",
-						"identifier": "9780194349277"
-					}
-				],
-				"categories": ["Foreign Language Study"],
-				"language": "en"
-			},
-			"warehouse": "jazz",
-			"quantity": 14
-		}
-	]
+  "id": "note-003",
+  "books": [
+    {
+      "volumeInfo": {
+        "title": "The Jazz Standards",
+        "authors": [
+          "Ted Gioia"
+        ],
+        "publisher": "",
+        "publishedDate": "2012",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_13",
+            "identifier": "9780199769155"
+          },
+          {
+            "type": "ISBN_10",
+            "identifier": "019976915X"
+          }
+        ],
+        "categories": [
+          "African Americans"
+        ],
+        "language": "en"
+      },
+      "quantity": 2,
+      "warehouseId": "jazz"
+    },
+    {
+      "volumeInfo": {
+        "title": "The Swing Era",
+        "authors": [
+          "Gunther Schuller"
+        ],
+        "publisher": "History of Jazz",
+        "publishedDate": "1989",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "0195071409"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9780195071405"
+          }
+        ],
+        "categories": [
+          "History"
+        ],
+        "language": "en"
+      },
+      "quantity": 16,
+      "warehouseId": "jazz"
+    },
+    {
+      "volumeInfo": {
+        "title": "The History of Jazz",
+        "authors": [
+          "Ted Gioia"
+        ],
+        "publisher": "Oxford University Press",
+        "publishedDate": "2011-05-09",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_13",
+            "identifier": "9780195399707"
+          },
+          {
+            "type": "ISBN_10",
+            "identifier": "0195399706"
+          }
+        ],
+        "categories": [
+          "History"
+        ],
+        "language": "en"
+      },
+      "quantity": 30,
+      "warehouseId": "jazz"
+    },
+    {
+      "volumeInfo": {
+        "title": "Holiday Jazz Chants",
+        "authors": [
+          "Carolyn Graham"
+        ],
+        "publisher": "Oxford",
+        "publishedDate": "1999-01-01",
+        "industryIdentifiers": [
+          {
+            "type": "ISBN_10",
+            "identifier": "0194349276"
+          },
+          {
+            "type": "ISBN_13",
+            "identifier": "9780194349277"
+          }
+        ],
+        "categories": [
+          "Foreign Language Study"
+        ],
+        "language": "en"
+      },
+      "quantity": 14,
+      "warehouseId": "jazz"
+    }
+  ]
 }
