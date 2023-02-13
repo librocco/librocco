@@ -4,7 +4,7 @@
 import type { Observable } from 'rxjs';
 import PouchDB from 'pouchdb';
 
-import type { DocType, NoteState } from './enums';
+import type { DocType, NoteState } from '../enums';
 
 // #region utils
 /**
