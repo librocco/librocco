@@ -2,7 +2,7 @@
 import { test as t, bench as b } from 'vitest';
 import PouchDB from 'pouchdb';
 
-import { VolumeStock, NoteType, DatabaseInterface, VersionString } from '@librocco/db';
+import { NoteType, DatabaseInterface, VersionString, VolumeStockClient } from '@librocco/db';
 
 import { __withDocker__ } from './env';
 
@@ -126,10 +126,14 @@ const mapWarehouses: MapWarehouses = (version) => (books) => {
 const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
 const transformBookStock =
 	(version: VersionString) =>
-	(b: RawBookStock): VolumeStock => ({
+	(b: RawBookStock): VolumeStockClient => ({
 		isbn: getISBN(b),
 		quantity: b.quantity,
-		warehouseId: `${version}/${b.warehouseId}`
+		warehouseId: `${version}/${b.warehouseId}`,
+		// When the warehouse is created, the name is the same as the id.
+		// Since this test is used to check the stock aggregation after multiple notes,
+		// we're not bothering with assigning custom 'diplayName' to the warehouses.
+		warehouseName: `${version}/${b.warehouseId}`
 	});
 // #endregion helpers
 

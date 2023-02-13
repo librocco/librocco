@@ -36,6 +36,11 @@ export interface VolumeStock {
 	quantity: number;
 	warehouseId: VersionedString;
 }
+
+/** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
+export interface VolumeStockClient extends VolumeStock {
+	warehouseName: string;
+}
 // #endregion misc
 
 // #region note
@@ -61,7 +66,7 @@ export interface NoteStream {
 	state: Observable<NoteState | undefined>;
 	displayName: Observable<string | undefined>;
 	updatedAt: Observable<Date | undefined>;
-	entries: Observable<VolumeStock[]>;
+	entries: Observable<VolumeStockClient[]>;
 }
 
 /**
@@ -112,7 +117,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  */
 export interface WarehouseStream {
 	displayName: Observable<string | undefined>;
-	entries: Observable<VolumeStock[]>;
+	entries: Observable<VolumeStockClient[]>;
 }
 
 /**
