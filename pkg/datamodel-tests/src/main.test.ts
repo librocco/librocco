@@ -8,6 +8,7 @@ import * as couchdbImageLoader from '@loaders/couchdb-image-loader';
 import * as fsDataLoader from '@loaders/fs-data-loader';
 
 import * as implementations from './implementations';
+import * as benchmarks from './benchmarks';
 import * as tests from './tests';
 
 import { processTestName, processVersionName } from './utils/misc';
@@ -21,7 +22,9 @@ describe('Datamodel tests', async () => {
 		describe(processVersionName(versionName), () => {
 			const setup = runner.setup(config);
 
-			Object.entries(tests).forEach(([name, testFn]) => {
+			// Run tests on regular tests as well as benchmarks, as we sometimes want to debug the benchmark tests and
+			// this is easire than debugging when the tests are being ran 20+ times for benchmarks.
+			Object.entries({ ...tests, ...benchmarks }).forEach(([name, testFn]) => {
 				setup.test(processTestName(name), testFn);
 			});
 		});
