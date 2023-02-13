@@ -1,5 +1,7 @@
 import { describe } from 'vitest';
 
+import { utils } from '@librocco/db';
+
 import { __withDocker__ } from './runner/env';
 
 import { newTestRunner } from '@runner/runner';
@@ -11,7 +13,7 @@ import * as implementations from './implementations';
 import * as benchmarks from './benchmarks';
 import * as tests from './tests';
 
-import { processTestName, processVersionName } from './utils/misc';
+const { processTestName, processVersionName } = utils;
 
 const testDataLoader = __withDocker__ ? couchdbImageLoader : fsDataLoader;
 

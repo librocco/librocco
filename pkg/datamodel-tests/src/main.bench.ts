@@ -1,5 +1,7 @@
 import { describe } from 'vitest';
 
+import { utils } from '@librocco/db';
+
 import { newTestRunner } from '@runner/runner';
 
 import * as testDataLoader from '@loaders/couchdb-image-loader';
@@ -7,7 +9,7 @@ import * as testDataLoader from '@loaders/couchdb-image-loader';
 import * as implementations from './implementations';
 import * as tests from './benchmarks';
 
-import { processTestName, processVersionName } from './utils/misc';
+const { processTestName, processVersionName } = utils;
 
 describe('Datamodel benchmarks', async () => {
 	const runner = await newTestRunner(testDataLoader);
