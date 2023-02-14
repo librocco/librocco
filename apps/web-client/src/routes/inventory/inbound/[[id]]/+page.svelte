@@ -22,7 +22,7 @@
 
 	import { createNoteStores } from '$lib/stores/inventory';
 
-	import { db } from '$lib/db';
+	import { db } from '$lib/db/dummyDb';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 
