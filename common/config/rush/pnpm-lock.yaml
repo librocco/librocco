@@ -9,6 +9,7 @@ importers:
     specifiers:
       '@esbuild-plugins/node-globals-polyfill': ~0.1.1
       '@esbuild-plugins/node-modules-polyfill': ~0.1.4
+      '@librocco/db': workspace:*
       '@librocco/ui': workspace:*
       '@sveltejs/adapter-auto': next
       '@sveltejs/adapter-static': ~1.0.0-next.39
@@ -16,6 +17,7 @@ importers:
       '@types/pouchdb': ~6.4.0
       '@typescript-eslint/eslint-plugin': ^5.27.0
       '@typescript-eslint/parser': ^5.27.0
+      autoprefixer: ~10.4.13
       eslint: ^8.16.0
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
@@ -35,6 +37,7 @@ importers:
       vite: ^3.0.0
       vitest: ~0.24.5
     dependencies:
+      '@librocco/db': link:../../pkg/db
       '@librocco/ui': link:../../pkg/ui
       lucide-svelte: 0.91.0_svelte@3.55.1
       pouchdb: 7.3.1
@@ -48,6 +51,7 @@ importers:
       '@types/pouchdb': 6.4.0
       '@typescript-eslint/eslint-plugin': 5.48.2_101cdf21de94ccf8fd79d46613915786
       '@typescript-eslint/parser': 5.48.2_eslint@8.32.0+typescript@4.9.4
+      autoprefixer: 10.4.13_postcss@8.4.21
       eslint: 8.32.0
       eslint-config-prettier: 8.6.0_eslint@8.32.0
       eslint-plugin-svelte3: 4.0.0_eslint@8.32.0+svelte@3.55.1
