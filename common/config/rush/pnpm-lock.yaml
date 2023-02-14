@@ -9,7 +9,6 @@ importers:
     specifiers:
       '@esbuild-plugins/node-globals-polyfill': ~0.1.1
       '@esbuild-plugins/node-modules-polyfill': ~0.1.4
-      '@librocco/db': workspace:*
       '@librocco/ui': workspace:*
       '@sveltejs/adapter-auto': next
       '@sveltejs/adapter-static': ~1.0.0-next.39
@@ -25,7 +24,7 @@ importers:
       postcss: ~8.4.13
       pouchdb: ~7.3.0
       prettier: ^2.6.2
-      prettier-plugin-svelte: ^2.7.0
+      prettier-plugin-tailwindcss: ~0.1.13
       rollup-plugin-node-polyfills: ~0.2.1
       rxjs: ~7.8.0
       svelte: ^3.44.0
@@ -37,7 +36,6 @@ importers:
       vite: ^3.0.0
       vitest: ~0.24.5
     dependencies:
-      '@librocco/db': link:../../pkg/db
       '@librocco/ui': link:../../pkg/ui
       lucide-svelte: 0.91.0_svelte@3.55.1
       pouchdb: 7.3.1
@@ -57,7 +55,7 @@ importers:
       eslint-plugin-svelte3: 4.0.0_eslint@8.32.0+svelte@3.55.1
       postcss: 8.4.21
       prettier: 2.8.3
-      prettier-plugin-svelte: 2.9.0_prettier@2.8.3+svelte@3.55.1
+      prettier-plugin-tailwindcss: 0.1.13_prettier@2.8.3
       rollup-plugin-node-polyfills: 0.2.1
       svelte: 3.55.1
       svelte-check: 2.10.3_postcss@8.4.21+svelte@3.55.1
@@ -7359,6 +7357,15 @@ packages:
       prettier: '>=2.2.0'
     dependencies:
       prettier: 2.7.1
+    dev: true
+
+  /prettier-plugin-tailwindcss/0.1.13_prettier@2.8.3:
+    resolution: {integrity: sha512-/EKQURUrxLu66CMUg4+1LwGdxnz8of7IDvrSLqEtDqhLH61SAlNNUSr90UTvZaemujgl3OH/VHg+fyGltrNixw==}
+    engines: {node: '>=12.17.0'}
+    peerDependencies:
+      prettier: '>=2.2.0'
+    dependencies:
+      prettier: 2.8.3
     dev: true
 
   /prettier/2.7.1:
