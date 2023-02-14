@@ -9,6 +9,7 @@ importers:
     specifiers:
       '@esbuild-plugins/node-globals-polyfill': ~0.1.1
       '@esbuild-plugins/node-modules-polyfill': ~0.1.4
+      '@librocco/db': workspace:*
       '@librocco/ui': workspace:*
       '@sveltejs/adapter-auto': next
       '@sveltejs/adapter-static': ~1.0.0-next.39
@@ -36,6 +37,7 @@ importers:
       vite: ^3.0.0
       vitest: ~0.24.5
     dependencies:
+      '@librocco/db': link:../../pkg/db
       '@librocco/ui': link:../../pkg/ui
       lucide-svelte: 0.91.0_svelte@3.55.1
       pouchdb: 7.3.1

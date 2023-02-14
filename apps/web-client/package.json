@@ -42,6 +42,7 @@
 	},
 	"type": "module",
 	"dependencies": {
+		"@librocco/db": "workspace:*",
 		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "~0.91.0",
 		"pouchdb": "~7.3.0",

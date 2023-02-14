@@ -14,7 +14,7 @@
 	} from '@librocco/ui';
 
 	import { createWarehouseStores } from '$lib/stores/inventory';
-	import { db } from '$lib/db';
+	import { db } from '$lib/db/dummyDb';
 
 	const warehouseList = db().stream().warehouseList;
 
