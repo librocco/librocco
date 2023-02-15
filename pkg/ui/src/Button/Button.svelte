@@ -1,6 +1,14 @@
 <script lang="ts">
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { ButtonColor, ButtonShape, ButtonSize } from './enums';
 	import { shapeRadiusLookup, textSizeLookup, shapeSpacingLookup, colorClassesLookup } from './styles';
+
+	interface $$Props extends HTMLButtonAttributes {
+		class?: string;
+		size?: ButtonSize;
+		shape?: ButtonShape;
+		color?: ButtonColor;
+	}
 
 	let className = '';
 	export { className as class };
@@ -88,7 +96,7 @@
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
-<button class={containerClasses} on:click>
+<button class={containerClasses} on:click type="button" {...$$restProps}>
 	<span class="flex items-center gap-x-2">
 		{#if $$slots.startAdornment && shape !== ButtonShape.Circular}
 			<slot name="startAdornment" />
