@@ -1,8 +1,10 @@
 export interface BookEntry {
 	isbn: string;
 	title: string;
-	authors?: string[];
-	publisher?: string;
+	price: number;
 	year?: string;
-	price?: number;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: string;
 }
