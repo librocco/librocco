@@ -78,10 +78,6 @@
 	 * ```
 	 */
 	export let color: ButtonColor = ButtonColor.Primary;
-	/**
-	 * A custom html tag we want to render the element as (defaults to "button")
-	 */
-	export let as: string = 'button';
 
 	$: shapeClass = shape === ButtonShape.Circular ? 'rounded-full' : shapeRadiusLookup[shape][size];
 	$: textClasses = textSizeLookup[size];
@@ -92,8 +88,7 @@
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
-<!-- svelte-ignore a11y-click-events-have-key-events -->
-<svelte:element this={as} class={containerClasses} on:click>
+<button class={containerClasses} on:click>
 	<span class="flex items-center gap-x-2">
 		{#if $$slots.startAdornment && shape !== ButtonShape.Circular}
 			<slot name="startAdornment" />
@@ -105,4 +100,4 @@
 			<slot name="endAdornment" />
 		{/if}
 	</span>
-</svelte:element>
+</button>
