@@ -46,11 +46,13 @@
 		"autoprefixer": "~10.4.12",
 		"lucide-svelte": "~0.91.0",
 		"@rgossiaux/svelte-headlessui": "~1.0.2",
-		"jsdom": "20.0.0"
+		"jsdom": "20.0.0",
+		"felte": "~1.2.7"
 	},
 	"peerDependencies": {
 		"lucide-svelte": "~0.91.0",
-		"svelte": "^3.44.0"
+		"svelte": "^3.44.0",
+		"felte": "~1.2.7"
 	},
 	"dependencies": {
 		"uuid": "~9.0.0"
