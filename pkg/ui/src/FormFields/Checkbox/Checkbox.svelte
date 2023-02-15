@@ -1,16 +1,21 @@
 <script lang="ts">
 	import { v4 as uuid } from 'uuid';
-	export let name: string;
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	interface $$Props extends HTMLInputAttributes {
+		name: string;
+		label?: string;
+		helpText?: string;
+	}
+
+	export let name: string;
 	export let label = '';
 	export let helpText = '';
-	export let checked = false;
-	export let disabled = false;
 
 	const id = uuid();
 
-	const labelBaseClasses = ['font-medium', disabled ? 'text-gray-400' : 'text-gray-700'].join(' ');
-	const helpTextColor = disabled ? 'text-gray-300' : 'text-gray-500';
+	const labelBaseClasses = ['font-medium', $$restProps.disabled ? 'text-gray-400' : 'text-gray-700'].join(' ');
+	const helpTextColor = $$restProps.disabled ? 'text-gray-300' : 'text-gray-500';
 	const inputBaseClasses = [
 		'focus:ring-teal-500',
 		'h-4',
@@ -29,8 +34,7 @@
 			{id}
 			aria-describedby={`${name}-description`}
 			class={inputBaseClasses}
-			{checked}
-			{disabled}
+			{...$$restProps}
 		/>
 	</div>
 	<div class="ml-3 text-sm">
