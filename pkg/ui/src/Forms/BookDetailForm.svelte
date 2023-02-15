@@ -20,10 +20,10 @@
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<TextField name="isbn" label="ISBN" />
+				<TextField name="isbn" label="ISBN" required />
 			</div>
 			<div class="basis-full">
-				<TextField name="title" label="Title" />
+				<TextField name="title" label="Title" required />
 			</div>
 		</div>
 	</div>

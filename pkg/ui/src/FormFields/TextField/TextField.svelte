@@ -1,10 +1,15 @@
 <script lang="ts">
-	export let name: string;
+	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	interface $$Props extends HTMLInputAttributes {
+		name: string;
+		label?: string;
+		helpText?: string;
+	}
+
+	export let name: string;
 	export let label = '';
-	export let placeholder = '';
 	export let helpText = '';
-	export let disabled = false;
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
 	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
@@ -32,6 +37,9 @@
 <div class="space-y-1">
 	<label for={name} class={labelClasses}>
 		{label}
+		{#if $$restProps.required}
+			<span class="text-md font-medium text-red-700">*</span>
+		{/if}
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots.startAdornment}
@@ -39,7 +47,7 @@
 				<slot name="startAdornment" />
 			</div>
 		{/if}
-		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {disabled} {placeholder} />
+		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {...$$restProps} />
 		{#if $$slots.endAdornment}
 			<div class="ml-1 mr-3 flex items-center text-gray-400">
 				<slot name="endAdornment" />
