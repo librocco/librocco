@@ -29,6 +29,6 @@
 	</div>
 	<div class="flex justify-end gap-x-2 p-4">
 		<Button color={ButtonColor.Secondary} on:click={() => onCancel}>Cancel</Button>
-		<Button>Save</Button>
+		<Button type="submit">Save</Button>
 	</div>
 </form>
