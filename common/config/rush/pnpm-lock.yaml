@@ -222,9 +222,11 @@ importers:
       svelte: ^3.44.0
       svelte-check: ^2.7.1
       svelte-fragment-component: ~1.2.0
+      svelte-headlessui: ~0.0.14
       svelte-htm: ~1.2.0
       svelte-loader: ^3.1.2
       svelte-preprocess: ^4.10.6
+      svelte-transition: ~0.0.7
       svelte2tsx: ~0.5.13
       tailwindcss: ~3.0.24
       tslib: ^2.3.1
@@ -264,9 +266,11 @@ importers:
       svelte: 3.55.1
       svelte-check: 2.10.3_postcss@8.4.21+svelte@3.55.1
       svelte-fragment-component: 1.2.0_svelte@3.55.1
+      svelte-headlessui: 0.0.14
       svelte-htm: 1.2.0_svelte@3.55.1
       svelte-loader: 3.1.5_svelte@3.55.1
       svelte-preprocess: 4.10.7_720a9953ae0478bce00e7bc3a3de2065
+      svelte-transition: 0.0.7
       svelte2tsx: 0.5.23_svelte@3.55.1+typescript@4.9.4
       tailwindcss: 3.0.24
       tslib: 2.4.1
@@ -8326,6 +8330,12 @@ packages:
       svelte: 3.55.1
     dev: true
 
+  /svelte-headlessui/0.0.14:
+    resolution: {integrity: sha512-w2Sqj/xqmrUi5XtVXUeSh3lJUAUgpVSpA5ApnmLmFE+S16nk8XRsQof6Inj0Lrc+Qe91AnaDXGQxijuKZg4Vfg==}
+    dependencies:
+      svelte-transition: 0.0.7
+    dev: true
+
   /svelte-hmr/0.14.12_svelte@3.55.1:
     resolution: {integrity: sha512-4QSW/VvXuqVcFZ+RhxiR8/newmwOCTlbYIezvkeN6302YFRE8cXy0naamHcjz8Y9Ce3ITTZtrHrIL0AGfyo61w==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
@@ -8430,6 +8440,10 @@ packages:
       strip-indent: 3.0.0
       svelte: 3.55.1
       typescript: 4.9.4
+    dev: true
+
+  /svelte-transition/0.0.7:
+    resolution: {integrity: sha512-YMbl+eIkzeYKBz6E/I8KI8RMezhqB38t2B/Mx8BotmtiN+5wnKath7CWDc+8U9zKGJ/iUYHmx4MwQjIzo05nVg==}
     dev: true
 
   /svelte/3.55.1:
