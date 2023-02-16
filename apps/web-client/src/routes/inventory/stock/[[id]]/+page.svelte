@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { goto } from '$app/navigation';
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
@@ -13,14 +14,32 @@
 		TextEditable
 	} from '@librocco/ui';
 
+	import { db } from '$lib/db';
 	import { createWarehouseStores } from '$lib/stores/inventory';
-	import { db } from '$lib/db/dummyDb';
+	import { readableFromStream } from '$lib/utils/streams';
+	import type { WarehouseInterface } from '@librocco/db';
 
-	const warehouseList = db().stream().warehouseList;
+	const warehouseList = readableFromStream(db.stream().warehouseList, []);
 
-	$: currentWarehouse = $page.params.id;
+	$: currentWarehouseId = $page.params.id;
 
-	$: warehouesStores = createWarehouseStores(db(), currentWarehouse);
+	let warehouse: WarehouseInterface | undefined = undefined;
+
+	$: {
+		// Each time the current warehouse changes, set the ready to false
+		warehouse = undefined;
+		// Check if the warehouse exists, if not redirect back to /inventory/stock/0-all (default warehouse)
+		if (currentWarehouseId) {
+			db.warehouse(currentWarehouseId)
+				.get()
+				.then((res) => {
+					if (!res) return goto('/inventory/stock/0-all');
+					warehouse = res;
+				});
+		}
+	}
+
+	$: warehouesStores = createWarehouseStores(warehouse);
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
@@ -35,7 +54,7 @@
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
 		{#each $warehouseList as { displayName, id }}
-			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
+			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouseId} />
 		{/each}
 	</nav>
 
@@ -66,7 +85,8 @@
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
 		{#if $paginationData.totalItems}
 			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong>
+				of
 				<strong>{$paginationData.totalItems}</strong> results
 			</p>
 		{/if}
