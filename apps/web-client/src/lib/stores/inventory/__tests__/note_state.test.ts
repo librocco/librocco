@@ -1,24 +1,23 @@
 import { describe, test, expect } from 'vitest';
-import { get, writable } from 'svelte/store';
+import { get } from 'svelte/store';
+import { firstValueFrom } from 'rxjs';
+
+import { testUtils } from '@librocco/shared';
 
 import { NoteTempState } from '$lib/enums/inventory';
 import { NoteState } from '$lib/enums/db';
 
-import type { NoteStore } from '$lib/types/inventory';
-
 import { createInternalStateStore, createDisplayStateStore } from '../note_state';
 
-import { waitForCondition } from '$lib/__testUtils__/waitForCondition';
+import { newTestDB } from '$lib/__testUtils__/db';
 
-import { defaultNote } from '$lib/__testData__/inventory';
-import { newNote } from '$lib/db/note';
+const { waitFor } = testUtils;
 
 describe('createDisplayStateStore', () => {
-	test('should stream the internal note state to be displayed', () => {
-		const noteStore = writable<NoteStore>({
-			'note-1': defaultNote
-		});
-		const note = newNote(noteStore)('note-1');
+	test('should stream the internal note state to be displayed', async () => {
+		const db = newTestDB();
+		const note = await db.warehouse().note('note-1').create();
+
 		const internalStateStore = createInternalStateStore(note);
 		const displayStateStore = createDisplayStateStore(note, internalStateStore);
 
@@ -33,7 +32,10 @@ describe('createDisplayStateStore', () => {
 		// make assertions against temp states.
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
 
-		expect(get(displayStateStore)).toBe(NoteState.Draft);
+		// Wait for the store to set up (get initial value from the db)
+		await waitFor(() => {
+			expect(get(displayStateStore)).toBe(NoteState.Draft);
+		});
 		internalStateStore.set(NoteTempState.Saving);
 		expect(get(displayStateStore)).toBe(NoteTempState.Saving);
 
@@ -42,10 +44,9 @@ describe('createDisplayStateStore', () => {
 	});
 
 	test('should set the temp state to the internal store and update the content store', async () => {
-		const noteStore = writable<NoteStore>({
-			'note-1': defaultNote
-		});
-		const note = newNote(noteStore)('note-1');
+		const db = newTestDB();
+		const note = await db.warehouse().note('note-1').create();
+
 		const internalStateStore = createInternalStateStore(note);
 		const displayStateStore = createDisplayStateStore(note, internalStateStore);
 
@@ -55,14 +56,22 @@ describe('createDisplayStateStore', () => {
 		displayStateStore.set(NoteState.Committed);
 		// The internal state is streamed back to the display state store, so we can test the display store for temp state
 		expect(get(displayStateStore)).toBe(NoteTempState.Committing);
-		await waitForCondition(
-			() => get(displayStateStore),
-			(value) => value === NoteState.Committed,
-			2000
-		);
-		expect(get(noteStore)['note-1'].state).toBe(NoteState.Committed);
+		await waitFor(() => {
+			expect(get(displayStateStore)).toBe(NoteState.Committed);
+		});
+
+		// Check that the note state in db has been updated
+		const noteState = await firstValueFrom(note.stream().state);
+		expect(noteState).toBe(NoteState.Committed);
 
 		// Close the dummy subscription after assertions
 		cleanupSubscription();
+	});
+
+	test("should stream 'undefined' if no note provided", () => {
+		// Check for both internal state store as well as display state store
+		const internalStateStore = createInternalStateStore();
+		const displayStateStore = createDisplayStateStore(undefined, internalStateStore);
+		expect(get(displayStateStore)).toEqual(undefined);
 	});
 });
