@@ -197,9 +197,7 @@ class Warehouse implements WarehouseInterface {
 	 * observable signature type is inferred from the selector callback)
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private createStream<S extends (doc: PouchDB.Core.ChangesResponseChange<WarehouseData>) => any>(
-		selector: S
-	): Observable<ReturnType<S>> {
+	private createStream<S extends (doc?: WarehouseData) => any>(selector: S): Observable<ReturnType<S>> {
 		return newDocumentStream<WarehouseData, ReturnType<S>>(this.#db._pouch, this._id, selector);
 	}
 
@@ -210,7 +208,7 @@ class Warehouse implements WarehouseInterface {
 	 */
 	stream() {
 		return {
-			displayName: this.createStream((change) => change.doc?.displayName || ''),
+			displayName: this.createStream((doc) => doc?.displayName || ''),
 
 			entries: combineLatest([
 				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(

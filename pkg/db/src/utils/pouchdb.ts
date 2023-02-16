@@ -65,7 +65,7 @@ const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unk
 export const newDocumentStream = <M extends Record<string, unknown>, R>(
 	db: PouchDB.Database,
 	id: string,
-	selector: (doc: PouchDB.Core.ChangesResponseChange<M>) => R = (doc) => doc.doc as R
+	selector: (doc?: M) => R = (doc) => doc as R
 ) =>
 	new Observable<R>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
@@ -73,9 +73,14 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 		// This allows us to isolate the change emitter to a single subscription and make sure all
 		// unused emitters are cancelled from.
 		const emitter = newChangeEmitter<M>(db, id);
-		emitter.on('change', (change) => {
-			subscriber.next(selector(change));
-		});
+
+		const initialState = from(db.get<M>(id));
+		const changeStream = newChangesStream<M>(emitter).pipe(map(({ doc }) => doc));
+
+		concat(initialState, changeStream)
+			.pipe(map(selector))
+			.subscribe((doc) => subscriber.next(doc));
+
 		return () => emitter.cancel();
 	});
 
