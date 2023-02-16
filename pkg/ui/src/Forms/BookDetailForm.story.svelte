@@ -13,8 +13,10 @@
 		year: '',
 		price: 0
 	};
+
+	const publisherList = ['TCK Publishing', 'Reed Elsevier', 'Penguin Random House', 'Harper Collins', 'Bloomsbury'];
 </script>
 
 <Hst.Story title="Forms / BookDetailForm" layout={{ type: 'grid', width: 600 }}>
-	<BookDetailForm {book} onSubmit={() => console.info('yee-haw')} />
+	<BookDetailForm {book} {publisherList} />
 </Hst.Story>
