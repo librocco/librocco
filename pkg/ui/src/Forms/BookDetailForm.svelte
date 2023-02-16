@@ -32,7 +32,7 @@
 				<TextField name="year" label="Year" />
 			</div>
 			<div class="basis-full">
-				<TextField name="author" label="Author" />
+				<TextField name="authors" label="Authors" />
 			</div>
 			<div class="basis-full">
 				<TextField name="publisher" label="Publisher" />
@@ -50,7 +50,7 @@
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 p-4">
-		<Button color={ButtonColor.Secondary} on:click={() => onCancel}>Cancel</Button>
+		<Button color={ButtonColor.Secondary} on:click={onCancel}>Cancel</Button>
 		<Button type="submit">Save</Button>
 	</div>
 </form>
