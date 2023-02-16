@@ -250,9 +250,7 @@ class Note implements NoteInterface {
 	 * observable signature type is inferred from the selector callback)
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private createStream<S extends (doc: PouchDB.Core.ChangesResponseChange<NoteData>) => any>(
-		selector: S
-	): Observable<ReturnType<S>> {
+	private createStream<S extends (doc?: NoteData) => any>(selector: S): Observable<ReturnType<S>> {
 		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector);
 	}
 
@@ -263,14 +261,14 @@ class Note implements NoteInterface {
 	 */
 	stream() {
 		return {
-			displayName: this.createStream((change) => {
-				return change.doc?.displayName || '';
+			displayName: this.createStream((doc) => {
+				return doc?.displayName || '';
 			}),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: combineLatest([
-				this.createStream((change) =>
-					(change.doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks)
+				this.createStream((doc) =>
+					(doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks)
 				),
 				this.#db.stream().warehouseList
 			]).pipe(
@@ -285,11 +283,11 @@ class Note implements NoteInterface {
 			),
 
 			/** @TODO update the data model to have 'state' */
-			state: this.createStream((change) => (change.doc?.committed ? NoteState.Committed : NoteState.Draft)),
+			state: this.createStream((doc) => (doc?.committed ? NoteState.Committed : NoteState.Draft)),
 
-			updatedAt: this.createStream((change) => {
+			updatedAt: this.createStream((doc) => {
 				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
-				const ua = change.doc?.updatedAt;
+				const ua = doc?.updatedAt;
 				return ua ? new Date(ua) : new Date();
 			})
 		};

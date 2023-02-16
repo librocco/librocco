@@ -63,9 +63,9 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: Observable<NoteState | undefined>;
-	displayName: Observable<string | undefined>;
-	updatedAt: Observable<Date | undefined>;
+	state: Observable<NoteState>;
+	displayName: Observable<string>;
+	updatedAt: Observable<Date>;
 	entries: Observable<VolumeStockClient[]>;
 }
 
@@ -116,7 +116,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: Observable<string | undefined>;
+	displayName: Observable<string>;
 	entries: Observable<VolumeStockClient[]>;
 }
 

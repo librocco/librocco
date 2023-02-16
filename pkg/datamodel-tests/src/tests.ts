@@ -86,8 +86,8 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	// Subscribe to note streams
 	const { displayName: dn$, entries: e$, state: s$, updatedAt: ua$ } = note.stream();
 
-	let displayName: string | undefined = '';
-	let entries: VolumeStock[] = [];
+	let displayName: string | undefined = undefined;
+	let entries: VolumeStock[] | undefined = undefined;
 	let state: NoteState | undefined = undefined;
 	let updatedAt: Date | undefined = undefined;
 
@@ -96,6 +96,14 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	s$.subscribe((s) => (state = s));
 	ua$.subscribe((ua) => {
 		updatedAt = ua;
+	});
+
+	// Check that the stream gets initialised with the current values
+	await waitFor(() => {
+		expect(displayName).toEqual('');
+		expect(entries).toEqual([]);
+		expect(state).toEqual(NoteState.Draft);
+		expect(updatedAt).toBeDefined();
 	});
 
 	// Check for displayName stream
@@ -138,14 +146,21 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 	const warehouse2 = await db.warehouse('warehouse-2').create();
 	const defaultWarehouse = await db.warehouse().create();
 
-	let warehoues1Stock: VolumeStock[] = [];
-	let warehoues2Stock: VolumeStock[] = [];
-	let defaultWarehouesStock: VolumeStock[] = [];
+	let warehoues1Stock: VolumeStock[] | undefined = undefined;
+	let warehoues2Stock: VolumeStock[] | undefined = undefined;
+	let defaultWarehouesStock: VolumeStock[] | undefined = undefined;
 
 	// Subscribe to warehouse stock streams
 	warehouse1.stream().entries.subscribe((e) => (warehoues1Stock = e));
 	warehouse2.stream().entries.subscribe((e) => (warehoues2Stock = e));
 	defaultWarehouse.stream().entries.subscribe((e) => (defaultWarehouesStock = e));
+
+	// Check that the stream gets initialised with the current values
+	await waitFor(() => {
+		expect(warehoues1Stock).toEqual([]);
+		expect(warehoues2Stock).toEqual([]);
+		expect(defaultWarehouesStock).toEqual([]);
+	});
 
 	// Adding books to warehouse 1 should display changes in warehouse 1 and default warehouse stock streams
 	const note1 = warehouse1.note();
