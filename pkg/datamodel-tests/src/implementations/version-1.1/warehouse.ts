@@ -21,7 +21,7 @@ class Warehouse implements WarehouseInterface {
 	docType = DocType.Warehouse;
 	_rev?: string;
 
-	displayName?: string;
+	displayName = '';
 	entries: VolumeStock[] = [];
 
 	constructor(db: DatabaseInterface, id?: string) {

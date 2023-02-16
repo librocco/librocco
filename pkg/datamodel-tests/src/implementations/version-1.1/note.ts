@@ -24,7 +24,7 @@ class Note implements NoteInterface {
 	entries: VolumeStock[] = [];
 	committed = false;
 	displayName = '';
-	updatedAt = new Date().toISOString();
+	updatedAt: string | null = null;
 
 	constructor(warehouse: WarehouseInterface, db: DatabaseInterface, id?: string) {
 		this.#w = warehouse;
@@ -118,10 +118,12 @@ class Note implements NoteInterface {
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
 
+			const updatedAt = new Date().toISOString();
+
 			const sequentialNumber = (await this.#db._pouch.query('sequence/note')).rows[0];
 			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : '';
 
-			const initialValues = { ...this, displayName: `New Note${seqIndex}` };
+			const initialValues = { ...this, displayName: `New Note${seqIndex}`, updatedAt };
 			const { rev } = await this.#db._pouch.put<NoteData>(initialValues);
 
 			return this.updateInstance({ ...initialValues, _rev: rev });
@@ -160,7 +162,7 @@ class Note implements NoteInterface {
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
 			// Update note itself
-			const updatedData = { ...this, ...data };
+			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
 			const { rev } = await this.#db._pouch.put<NoteData>(updatedData);
 			return this.updateInstance({ ...updatedData, _rev: rev });
 		}, this.#initialized);
@@ -253,7 +255,7 @@ class Note implements NoteInterface {
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private createStream<S extends (doc?: NoteData) => any>(selector: S): Observable<ReturnType<S>> {
-		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector);
+		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this);
 	}
 
 	/**
@@ -285,7 +287,7 @@ class Note implements NoteInterface {
 			updatedAt: this.createStream((doc) => {
 				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
 				const ua = doc?.updatedAt;
-				return ua ? new Date(ua) : new Date();
+				return ua ? new Date(ua) : null;
 			})
 		};
 	}

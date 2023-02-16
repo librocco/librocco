@@ -35,8 +35,15 @@ class Database implements DatabaseInterface {
 			throw new Error(`Invalid note id: ${id}`);
 		}
 
-		const [warehouse] = idSegments;
-		return this.warehouse(warehouse).note(id).get();
+		// Get version number and warehouse id from the path segments
+		const [v, w] = idSegments;
+		const warehouseId = `${v}/${w}`;
+		const [note, warehouse] = await Promise.all([
+			this.warehouse(warehouseId).note(id).get(),
+			this.warehouse(warehouseId).get()
+		]);
+
+		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
 	stream(): DbStream {

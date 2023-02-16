@@ -2,14 +2,21 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'vitest';
 
-import { InNoteList, NavListEntry, VolumeStock, NoteState, utils } from '@librocco/db';
+import { InNoteList, NavListEntry, VolumeStock, NoteState, utils as u, VolumeStockClient } from '@librocco/db';
 import { testUtils } from '@librocco/shared';
 
 import { TestFunction } from '@/types';
 
-const { versionId } = utils;
+const { versionId } = u;
 
 const { waitFor } = testUtils;
+
+/**
+ * We're using EMPTY as a symbol, rather than 'undefined' or 'null' to be able to differentiate,
+ * with absolute certainty, between the stream not emitting anything and the stream emitting something.
+ */
+const EMPTY = Symbol('empty');
+type PossiblyEmpty<T> = typeof EMPTY | T;
 
 // Base functionality
 export const standardApi: TestFunction = async (db) => {
@@ -57,8 +64,10 @@ export const standardApi: TestFunction = async (db) => {
 	});
 
 	// DB interface should be able to find notes by their id.
-	const note2found = await db.findNote(note2._id);
+	const { note: note2found, warehouse: warehouse2Found } = (await db.findNote(note2._id)) || {};
 	expect(note2found).toEqual({ ...note2, displayName: 'New Note (2)' });
+	expect(warehouse2Found).toEqual(wh2);
+
 	// Non-existing notes should return undefined.
 	// We're manipulating a dynamic id from note2 as id patterns might differ per implementation.
 	// replacing last two letters should do the trick.
@@ -87,10 +96,10 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	// Subscribe to note streams
 	const { displayName: dn$, entries: e$, state: s$, updatedAt: ua$ } = note.stream();
 
-	let displayName: string | undefined = undefined;
-	let entries: VolumeStock[] | undefined = undefined;
-	let state: NoteState | undefined = undefined;
-	let updatedAt: Date | undefined = undefined;
+	let displayName: PossiblyEmpty<string> = EMPTY;
+	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	let state: PossiblyEmpty<NoteState> = EMPTY;
+	let updatedAt: PossiblyEmpty<Date | null> = EMPTY;
 
 	dn$.subscribe((dn) => (displayName = dn));
 	e$.subscribe((e) => (entries = e));
@@ -134,11 +143,11 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	const ts1 = note.updatedAt;
 	// Perform any update
 	const { updatedAt: ts2 } = await note.addVolumes('0123456789', 2);
-	// Check that the latest timestamp is different than the old timestamp
+	// Check that the latest timestamp is the same as the previous one (no update should have taken place)
 	expect(ts1).toEqual(ts2);
 	// Wait for the stream to update
 	await waitFor(() => {
-		expect(updatedAt?.toISOString()).toEqual(ts2);
+		expect((updatedAt as Date).toISOString()).toEqual(ts2);
 	});
 };
 
@@ -147,9 +156,9 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 	const warehouse2 = await db.warehouse('warehouse-2').create();
 	const defaultWarehouse = await db.warehouse().create();
 
-	let warehoues1Stock: VolumeStock[] | undefined = undefined;
-	let warehoues2Stock: VolumeStock[] | undefined = undefined;
-	let defaultWarehouesStock: VolumeStock[] | undefined = undefined;
+	let warehoues1Stock: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	let warehoues2Stock: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	let defaultWarehouesStock: PossiblyEmpty<VolumeStock[]> = EMPTY;
 
 	// Subscribe to warehouse stock streams
 	warehouse1.stream().entries.subscribe((e) => (warehoues1Stock = e));
@@ -248,7 +257,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 export const warehousesListStream: TestFunction = async (db) => {
 	const { warehouseList: wl$ } = db.stream();
-	let warehouseList: NavListEntry[] = [];
+	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 	wl$.subscribe((wl) => (warehouseList = wl));
 
 	// The default warehouse should be created automatically
@@ -285,7 +294,7 @@ export const warehousesListStream: TestFunction = async (db) => {
 
 export const inNotesStream: TestFunction = async (db) => {
 	const { inNoteList: inl$ } = db.stream();
-	let inNoteList: InNoteList = [];
+	let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 	const warehouse1 = await db.warehouse('warehouse-1').create();
@@ -364,7 +373,7 @@ export const inNotesStream: TestFunction = async (db) => {
 
 export const outNotesStream: TestFunction = async (db) => {
 	const { outNoteList: onl$ } = db.stream();
-	let outNoteList: NavListEntry[] = [];
+	let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 	const note1 = await db.warehouse().note().create();
@@ -451,4 +460,57 @@ export const sequenceNoteDesignDocument: TestFunction = async (db) => {
 
 	const note5 = await defaultWarehouse.note().create(); // New Note
 	expect(note5).toMatchObject({ displayName: 'New Note' });
+};
+
+export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = async (db) => {
+	// Db streams
+	let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
+	let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
+	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
+	db.stream().inNoteList.subscribe((inl) => (inNoteList = inl));
+	db.stream().outNoteList.subscribe((onl) => (outNoteList = onl));
+	db.stream().warehouseList.subscribe((wl) => (warehouseList = wl));
+	// The default warehosue gets created automatically, so we will essentially
+	// always be receiving the default warehouse in the warehouse (and in-note) list
+	const defaultWarehouse = {
+		id: versionId('0-all'),
+		displayName: 'All'
+	};
+	await waitFor(() => {
+		expect(inNoteList).toEqual([{ ...defaultWarehouse, notes: [] }]);
+		expect(outNoteList).toEqual([]);
+		expect(warehouseList).toEqual([defaultWarehouse]);
+	});
+
+	// Warehouse streams
+	const warehouse1 = db.warehouse('warehouse-1');
+	let w1entries: PossiblyEmpty<VolumeStockClient[]> = EMPTY;
+	let w1DisplayName: PossiblyEmpty<string> = EMPTY;
+	// Subscribing to the stream should not throw (even if the warehouse doesn't exist)
+	warehouse1.stream().entries.subscribe((w1e) => (w1entries = w1e));
+	warehouse1.stream().displayName.subscribe((w1dn) => (w1DisplayName = w1dn));
+	await waitFor(() => {
+		expect(w1entries).toEqual([]);
+		expect(w1DisplayName).toEqual('');
+	});
+
+	// Note streams
+	// Subscribing to the stream should not throw (even if the note doesn't exist)
+	const note1 = db.warehouse().note();
+	let n1entries: VolumeStockClient[] | undefined = undefined;
+	let n1DisplayName: PossiblyEmpty<string> = EMPTY;
+	let n1State: PossiblyEmpty<NoteState> = EMPTY;
+	let n1UpdatedAt: PossiblyEmpty<Date | null> = EMPTY;
+	// Subscribing to the stream should not throw (even if the note doesn't exist)
+	// and the stream should be initialized with an empty array
+	note1.stream().entries.subscribe((n1e) => (n1entries = n1e));
+	note1.stream().displayName.subscribe((n1dn) => (n1DisplayName = n1dn));
+	note1.stream().state.subscribe((n1s) => (n1State = n1s));
+	note1.stream().updatedAt.subscribe((n1u) => (n1UpdatedAt = n1u));
+	await waitFor(() => {
+		expect(n1entries).toEqual([]);
+		expect(n1DisplayName).toEqual('');
+		expect(n1State).toEqual(NoteState.Draft);
+		expect(n1UpdatedAt).toEqual(null);
+	});
 };
