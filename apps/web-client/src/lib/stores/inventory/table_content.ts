@@ -7,7 +7,7 @@ import { readableFromStream } from '$lib/utils/streams';
 
 interface CreateDisplayEntriesStore {
 	(
-		entity: NoteInterface | WarehouseInterface,
+		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
 		bookStore: Readable<BookStore>
 	): Readable<DisplayRow[]>;
@@ -20,7 +20,7 @@ interface CreateDisplayEntriesStore {
  * @returns
  */
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, bookStore) => {
-	const entriesStore = readableFromStream(entity.stream().entries);
+	const entriesStore = readableFromStream(entity?.stream().entries, []);
 	// Create a derived store that streams the entries value from the content store
 	const displayEntries = derived(
 		[entriesStore, currentPageStore, bookStore],
@@ -45,15 +45,16 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, cur
  * @returns
  */
 export const createPaginationDataStore = (
-	entity: NoteInterface | WarehouseInterface,
+	entity: NoteInterface | WarehouseInterface | undefined,
 	currentPageStore: Readable<number>
 ): Readable<PaginationData> => {
-	const entriesStore = readableFromStream(entity.stream().entries);
+	const entriesStore = readableFromStream(entity?.stream().entries, []);
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
 		const totalItems = $entriesStore.length;
 		const numPages = Math.ceil(totalItems / 10);
-		const firstItem = $currentPageStore * 10 + 1;
+		// If there are no items, (for one this won't be shown) we're returning 0 as first item
+		const firstItem = totalItems ? $currentPageStore * 10 + 1 : 0;
 		const lastItem = Math.min(firstItem + 9, totalItems);
 		return {
 			numPages,

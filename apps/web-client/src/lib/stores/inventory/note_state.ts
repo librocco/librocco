@@ -1,16 +1,17 @@
 import { get, writable, type Writable } from 'svelte/store';
 
+import type { NoteInterface } from '@librocco/db';
+
 import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
 import { NoteState } from '$lib/enums/db';
 
-import type { NoteInterface } from '$lib/types/db';
 import type { Subscription } from 'rxjs';
 
 /** A union type for note states used in the client app */
 type NoteAppState = NoteState | NoteTempState | undefined;
 
 interface CreateInternalStateStore {
-	(note: NoteInterface): Writable<NoteAppState>;
+	(note?: NoteInterface): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for internal usage:
@@ -25,7 +26,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
-		noteSubscription = note.stream().state.subscribe((content) => {
+		noteSubscription = note?.stream().state.subscribe((content) => {
 			state.set(content);
 		});
 	};
@@ -70,7 +71,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 };
 
 interface CreateDisplayStateStore {
-	(note: NoteInterface, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
+	(note: NoteInterface | undefined, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for display purposes:
@@ -90,10 +91,10 @@ export const createDisplayStateStore: CreateDisplayStateStore = (note, internalS
 		switch (state) {
 			case NoteState.Committed:
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note.commit();
+				return note?.commit();
 			case NoteState.Deleted:
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note.delete();
+				return note?.delete();
 			default:
 				return;
 		}
