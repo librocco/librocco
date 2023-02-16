@@ -183,14 +183,12 @@ class Warehouse implements WarehouseInterface {
 
 	/**
 	 * Create stream is a convenience method for internal usage, leveraging `newDocumentStream` to create a
-	 * pouchdb changes stream for a specific property on a note, while abstracting away the details of the subscription
+	 * pouchdb  stream for a specific property on a note, while abstracting away the details of the subscription
 	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
 	 * observable signature type is inferred from the selector callback)
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private createStream<S extends (doc: PouchDB.Core.ChangesResponseChange<WarehouseData>) => any>(
-		selector: S
-	): Observable<ReturnType<S>> {
+	private createStream<S extends (doc?: WarehouseData) => any>(selector: S): Observable<ReturnType<S>> {
 		return newDocumentStream<WarehouseData, ReturnType<S>>(this.#db._pouch, this._id, selector);
 	}
 
@@ -201,7 +199,7 @@ class Warehouse implements WarehouseInterface {
 	 */
 	stream() {
 		return {
-			displayName: this.createStream((change) => change.doc?.displayName || ''),
+			displayName: this.createStream((doc) => doc?.displayName || ''),
 
 			entries: combineLatest([
 				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
