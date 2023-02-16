@@ -26,6 +26,7 @@
 		"postcss": "~8.4.13",
 		"prettier": "^2.6.2",
 		"prettier-plugin-tailwindcss": "~0.1.13",
+		"pouchdb-adapter-memory": "~7.3.0",
 		"svelte": "^3.44.0",
 		"svelte-check": "^2.7.1",
 		"svelte-preprocess": "^4.10.6",
@@ -38,7 +39,8 @@
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
 		"rollup-plugin-node-polyfills": "~0.2.1",
-		"autoprefixer": "~10.4.13"
+		"autoprefixer": "~10.4.13",
+		"@types/uuid": "~9.0.0"
 	},
 	"type": "module",
 	"dependencies": {
@@ -46,6 +48,7 @@
 		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "~0.91.0",
 		"pouchdb": "~7.3.0",
-		"rxjs": "~7.8.0"
+		"rxjs": "~7.8.0",
+		"uuid": "~9.0.0"
 	}
 }
