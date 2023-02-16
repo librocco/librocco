@@ -1,11 +1,13 @@
 import { expect } from 'vitest';
 
 import { DesignDocument, CouchDocument, VolumeStock, VolumeTransactionTuple, WarehouseInterface } from '@librocco/db';
+import { testUtils } from '@librocco/shared';
 
 import { TestFunction } from '@/types';
 
-import { waitFor } from '@/__testUtils__';
 import { firstValueFrom } from 'rxjs';
+
+const { waitFor } = testUtils;
 
 // A smoke test for the test runner
 const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses) => {
