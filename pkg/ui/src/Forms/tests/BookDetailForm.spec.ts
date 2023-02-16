@@ -71,7 +71,7 @@ describe('Sets form field initial values via props:', () => {
 
 		render(BookDetailForm, { book });
 
-		expect(screen.getByRole('textbox', { name: 'publisher' })).toHaveValue(publisher);
+		expect(screen.getByRole('combobox', { name: 'publisher' })).toHaveValue(publisher);
 	});
 
 	it('input -> editedBy', () => {
