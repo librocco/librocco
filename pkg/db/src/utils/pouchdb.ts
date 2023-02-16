@@ -65,7 +65,8 @@ const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unk
 export const newDocumentStream = <M extends Record<string, unknown>, R>(
 	db: PouchDB.Database,
 	id: string,
-	selector: (doc?: M) => R = (doc) => doc as R
+	selector: (doc?: M) => R = (doc) => doc as R,
+	fallbackDoc: M = {} as M
 ) =>
 	new Observable<R>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
@@ -74,7 +75,14 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 		// unused emitters are cancelled from.
 		const emitter = newChangeEmitter<M>(db, id);
 
-		const initialState = from(db.get<M>(id));
+		const initialPromise = db
+			.get<M>(id)
+			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
+			.catch((err) => {
+				console.error(`Error streaming document: '${id}'`, err);
+				return fallbackDoc;
+			});
+		const initialState = from(initialPromise);
 		const changeStream = newChangesStream<M>(emitter).pipe(map(({ doc }) => doc));
 
 		concat(initialState, changeStream)
@@ -104,7 +112,14 @@ export const newViewStream = <M extends Record<string, any>, R>(
 
 		// Create an initial query to get the initial data
 		// (without this, the data would get updated only by changes happening after the subscription)
-		const initialQueryStream = from(db.query<M>(view, query_params));
+		const initialQueryPromise = db
+			.query<M>(view, query_params)
+			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
+			.catch((err) => {
+				console.error(`Error querying view '${view}':`, err);
+				return { rows: [], total_rows: 0, offset: 0 } as PouchDB.Query.Response<M>;
+			});
+		const initialQueryStream = from(initialQueryPromise);
 		// Create a stream for changes (happening after the subscription)
 		const updatesStream = newChangesStream<M>(emitter).pipe(
 			// The change only triggers a new query (as changes are partial and we require the full view update)

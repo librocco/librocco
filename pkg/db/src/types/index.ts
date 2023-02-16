@@ -55,7 +55,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		noteType: NoteType;
 		committed: boolean;
 		displayName: string;
-		updatedAt: string;
+		updatedAt: string | null;
 	} & A
 >;
 
@@ -65,7 +65,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 export interface NoteStream {
 	state: Observable<NoteState>;
 	displayName: Observable<string>;
-	updatedAt: Observable<Date>;
+	updatedAt: Observable<Date | null>;
 	entries: Observable<VolumeStockClient[]>;
 }
 
@@ -108,7 +108,7 @@ export type NoteInterface<A extends Record<string, any> = {}> = NoteProto<A> & N
  */
 export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 	{
-		displayName?: string;
+		displayName: string;
 	} & A
 >;
 
@@ -150,21 +150,18 @@ export type WarehouseInterface<
 // #region db
 export interface NavListEntry {
 	id: string;
-	displayName?: string;
+	displayName: string;
 }
 
 export type InNoteList = Array<NavListEntry & { notes: NavListEntry[] }>;
 
-export interface NoteLookupResult {
-	id: string;
-	warehouse: string;
-	type: 'inbound' | 'outbound';
-	state: NoteState;
-	displayName?: string;
+export interface NoteLookupResult<N extends NoteInterface, W extends WarehouseInterface> {
+	note: N;
+	warehouse: W;
 }
 
-export interface FindNote {
-	(noteId: string): NoteLookupResult | undefined;
+export interface FindNote<N extends NoteInterface, W extends WarehouseInterface> {
+	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
 /**
@@ -186,7 +183,7 @@ export interface DatabaseInterface<
 	_pouch: PouchDB.Database;
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	warehouse: (id?: string) => W;
-	findNote: (id: string) => Promise<N | undefined>;
+	findNote: FindNote<N, W>;
 	stream: () => DbStream;
 }
 // #endregion db

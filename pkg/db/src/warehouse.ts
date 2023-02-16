@@ -22,7 +22,7 @@ class Warehouse implements WarehouseInterface {
 	docType = DocType.Warehouse;
 	_rev?: string;
 
-	displayName?: string;
+	displayName = '';
 	entries: VolumeStock[] = [];
 
 	constructor(db: DatabaseInterface, id?: string) {
@@ -183,7 +183,7 @@ class Warehouse implements WarehouseInterface {
 
 	/**
 	 * Create stream is a convenience method for internal usage, leveraging `newDocumentStream` to create a
-	 * pouchdb  stream for a specific property on a note, while abstracting away the details of the subscription
+	 * pouchdb changes stream for a specific property on a note, while abstracting away the details of the subscription
 	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
 	 * observable signature type is inferred from the selector callback)
 	 */

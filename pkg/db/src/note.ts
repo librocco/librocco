@@ -25,7 +25,7 @@ class Note implements NoteInterface {
 	entries: VolumeStock[] = [];
 	committed = false;
 	displayName = '';
-	updatedAt = new Date().toISOString();
+	updatedAt: string | null = null;
 
 	constructor(warehouse: WarehouseInterface, db: DatabaseInterface, id?: string) {
 		this.#w = warehouse;
@@ -118,9 +118,10 @@ class Note implements NoteInterface {
 			// already exists, this is a no-op anyhow.
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
+			const updatedAt = new Date().toISOString();
 			// For some reason we need to spread '...this' as otherwise the put method mutates the instance (for some reason).
-			const { rev } = await this.#db._pouch.put<NoteData>({ ...this });
-			return this.updateField('_rev', rev);
+			const { rev } = await this.#db._pouch.put<NoteData>({ ...this, updatedAt });
+			return this.updateInstance({ _rev: rev, updatedAt });
 		}, this.#initialized);
 	}
 
@@ -156,7 +157,7 @@ class Note implements NoteInterface {
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
 			// Update note itself
-			const updatedData = { ...this, ...data };
+			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
 			const { rev } = await this.#db._pouch.put<NoteData>(updatedData);
 			return this.updateInstance({ ...updatedData, _rev: rev });
 		}, this.#initialized);
@@ -251,7 +252,7 @@ class Note implements NoteInterface {
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private createStream<S extends (doc?: NoteData) => any>(selector: S): Observable<ReturnType<S>> {
-		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector);
+		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this);
 	}
 
 	/**
@@ -288,7 +289,7 @@ class Note implements NoteInterface {
 			updatedAt: this.createStream((doc) => {
 				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
 				const ua = doc?.updatedAt;
-				return ua ? new Date(ua) : new Date();
+				return ua ? new Date(ua) : null;
 			})
 		};
 	}
