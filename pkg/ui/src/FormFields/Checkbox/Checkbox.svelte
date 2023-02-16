@@ -32,6 +32,7 @@
 		<input
 			type="checkbox"
 			{id}
+			{name}
 			aria-describedby={`${name}-description`}
 			class={inputBaseClasses}
 			{...$$restProps}

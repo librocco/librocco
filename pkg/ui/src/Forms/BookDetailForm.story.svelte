@@ -8,7 +8,7 @@
 	const book = {
 		isbn: '',
 		title: '',
-		authors: [],
+		authors: '',
 		publisher: '',
 		year: '',
 		price: 0
@@ -16,5 +16,5 @@
 </script>
 
 <Hst.Story title="Forms / BookDetailForm" layout={{ type: 'grid', width: 600 }}>
-	<BookDetailForm {book} onSubmit={() => {}} />
+	<BookDetailForm {book} onSubmit={() => console.info('yee-haw')} />
 </Hst.Story>

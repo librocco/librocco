@@ -6,5 +6,5 @@ export interface BookEntry {
 	authors?: string;
 	publisher?: string;
 	editedBy?: string;
-	outOfPrint?: string;
+	outOfPrint?: boolean;
 }
