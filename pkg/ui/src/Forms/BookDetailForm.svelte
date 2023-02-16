@@ -10,7 +10,7 @@
 	import type { BookEntry } from './types';
 
 	export let book: BookEntry;
-	export let publisherList: string[];
+	export let publisherList: string[] = [];
 	export let onSubmit: (values: BookEntry) => void = () => {};
 	export let onCancel = () => {};
 
@@ -19,7 +19,7 @@
 		onSubmit
 	});
 
-	const publisherCombo = createCombobox({ label: 'Publisher list' });
+	const publisherCombo = createCombobox({ label: 'publisher' });
 </script>
 
 <form class="divide-y-gray-200 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
