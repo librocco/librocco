@@ -41,12 +41,13 @@ export const derivedObservable = <T, U>(store: Readable<T>, fn: (value: T) => U)
  * @returns readable store
  */
 export const readableFromStream = <T>(observable: Observable<T> | undefined, fallback: T): Readable<T> => {
-	if (observable) {
-		return readable<T>(undefined, (set) => {
-			const observer = observable.subscribe((value) => set(value || fallback));
-			return () => observer.unsubscribe();
-		});
-	}
-	// If observable not provided, return a readable store with the fallback value
-	return readable<T>(fallback);
+	return readable<T>(fallback, (set) => {
+		// eslint-disable-next-line @typescript-eslint/no-empty-function
+		const fallbackObserver = { unsubscribe: () => {} };
+		const observer = observable
+			? observable.subscribe((value) => set(value || fallback))
+			: // If observer not provided, we return a 'Subscriber' with empty unsubscribe method (to comply with the signature)
+			  fallbackObserver;
+		return () => observer.unsubscribe();
+	});
 };

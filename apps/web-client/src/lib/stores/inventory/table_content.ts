@@ -1,7 +1,8 @@
 import { derived, type Readable } from 'svelte/store';
 
+import type { NoteInterface, WarehouseInterface } from '@librocco/db';
+
 import type { BookStore, DisplayRow, PaginationData } from '$lib/types/inventory';
-import type { NoteInterface, WarehouseInterface } from '$lib/types/db';
 
 import { readableFromStream } from '$lib/utils/streams';
 
@@ -28,10 +29,9 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, cur
 			const start = $currentPageStore * 10;
 			const end = start + 10;
 
-			return $entriesStore.slice(start, end).map(({ isbn, quantity }) => ({
-				...$bookStore[isbn],
-				isbn,
-				quantity
+			return $entriesStore.slice(start, end).map((entry) => ({
+				...$bookStore[entry.isbn],
+				...entry
 			}));
 		}
 	);

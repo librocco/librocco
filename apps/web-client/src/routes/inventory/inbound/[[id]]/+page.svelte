@@ -16,27 +16,39 @@
 		SelectMenu,
 		TextEditable
 	} from '@librocco/ui';
+	import type { NoteInterface } from '@librocco/db';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
 
 	import { createNoteStores } from '$lib/stores/inventory';
 
-	import { db } from '$lib/db/dummyDb';
+	import { db } from '$lib/db';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
+	import { readableFromStream } from '$lib/utils/streams';
 
-	const { inNoteList, findNote } = db().stream();
+	const inNoteList = readableFromStream(db.stream().inNoteList, []);
 
-	$: currentNote = $page.params.id;
+	$: currentNoteId = $page.params.id;
+	$: currentNoteWarehouse = $page.params.warehouseName;
 
-	// Navigate back to /inventory/inbound if the note doesn't exist (or is deleted)
-	$: if (currentNote && (!$findNote(currentNote) || $findNote(currentNote)?.state === NoteState.Deleted)) {
-		goto('/inventory/inbound');
+	let note: NoteInterface | undefined = undefined;
+
+	$: {
+		// Each time the current note changes, set the ready to false
+		note = undefined;
+		// Check if the note exists, if not redirect back to /inventory/inbound
+		if (currentNoteId) {
+			db.findNote(currentNoteId).then((res) => {
+				if (!res) return goto('/inventory/outbound');
+				note = res.note;
+				currentNoteWarehouse = res.warehouse.displayName;
+			});
+		}
 	}
 
-	$: currentNoteWarehouse = $findNote(currentNote)?.warehouse;
-	$: noteStores = createNoteStores(db(), currentNote, currentNoteWarehouse);
+	$: noteStores = createNoteStores(note);
 
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
