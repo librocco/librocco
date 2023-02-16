@@ -16,7 +16,7 @@
 	});
 </script>
 
-<form class="flex h-auto flex-col gap-y-6" use:form aria-label="Edit book details">
+<form class="divide-y-gray-200 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
