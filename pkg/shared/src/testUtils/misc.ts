@@ -1,6 +1,5 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 /**
+ * @TODO This is a duplicate
  * A test helper, runs the callback with 50 ms interval until the assertion is fulfilled or it times out.
  * If it times out, it rejects with the latest error.
  * @param {Function} cb The callback to run (this would normally hold assertions)
@@ -8,6 +7,7 @@
  */
 export const waitFor = (cb: () => void | Promise<void>, timeout = 2000) => {
 	return new Promise<void>((resolve, reject) => {
+		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let error: any = null;
 
 		// Retry the assertion every 50ms

@@ -3,12 +3,13 @@
 import { expect } from 'vitest';
 
 import { InNoteList, NavListEntry, VolumeStock, NoteState, utils } from '@librocco/db';
+import { testUtils } from '@librocco/shared';
 
 import { TestFunction } from '@/types';
 
 const { versionId } = utils;
 
-import { waitFor } from '@/__testUtils__';
+const { waitFor } = testUtils;
 
 // Base functionality
 export const standardApi: TestFunction = async (db) => {
