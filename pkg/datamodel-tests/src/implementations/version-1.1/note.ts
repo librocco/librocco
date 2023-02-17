@@ -118,8 +118,13 @@ class Note implements NoteInterface {
 			// already exists, this is a no-op anyhow.
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
+
+			const sequentialNumber = (await this.#db._pouch.query('sequence/note')).rows[0];
+			const number = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max})` : '';
+
 			// For some reason we need to spread '...this' as otherwise the put method mutates the instance (for some reason).
-			const { rev } = await this.#db._pouch.put<NoteData>({ ...this });
+			const { rev } = await this.#db._pouch.put<NoteData>({ ...this, displayName: `New Note${number}` });
+
 			return this.updateField('_rev', rev);
 		}, this.#initialized);
 	}
