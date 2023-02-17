@@ -99,10 +99,13 @@ class Warehouse implements WarehouseInterface {
 			if (this.#exists) {
 				return this;
 			}
+			const sequentialNumber = (await this.#db._pouch.query('sequence/warehouse')).rows[0];
+			const number = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max})` : '';
+
 			const initialValues = {
 				...this,
 				// If creating a default warehouse, we're initialising the 'displayName' as "All"
-				displayName: this._id === versionId('0-all') ? 'All' : this._id
+				displayName: this._id === versionId('0-all') ? 'All' : `New Warehouse${number}`
 			};
 			// Try and store the warehouse in the db
 			try {
