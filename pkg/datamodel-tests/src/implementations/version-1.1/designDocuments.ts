@@ -3,6 +3,58 @@ import { DesignDocument } from '@librocco/db';
 
 import { WarehouseData, NoteData } from './types';
 
+const sequenceNamingDesignDocument: DesignDocument = {
+	_id: '_design/sequence',
+	views: {
+		warehouse: {
+			map: function (doc: WarehouseData) {
+				const { displayName } = doc as NoteData;
+
+				let matchIx = 0;
+
+				if (doc.docType === 'warehouse' && /^New Warehouse( \([0-9]+\))?$/.test(displayName)) {
+					try {
+						// Try and check if index string is included ("New Warehouse (1)" and higher)
+						const match = displayName.match(/[0-9]+/);
+						if (match) {
+							matchIx = parseInt(match[0]);
+						}
+					} catch {
+						// Emit the 0
+						emit([doc._id], matchIx);
+					}
+
+					// Emit the index plus one
+
+					emit([doc._id], matchIx + 1);
+				}
+			}.toString(),
+			reduce: `_stats`
+		},
+		note: {
+			map: function (doc: NoteData) {
+				const { displayName } = doc as NoteData;
+
+				let matchIx = 0;
+
+				if (doc.docType === 'note' && /^New Note( \([0-9]+\))?$/.test(displayName)) {
+					try {
+						const match = displayName.match(/[0-9]+/);
+						if (match) {
+							matchIx = parseInt(match[0]);
+						}
+					} catch {
+						emit([doc._id], matchIx);
+					}
+
+					emit([doc._id], matchIx + 1);
+				}
+			}.toString(),
+			reduce: `_stats`
+		}
+	}
+};
+
 const warehouseDesignDocument: DesignDocument = {
 	_id: '_design/warehouse',
 	views: {
@@ -71,4 +123,4 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export default [warehouseDesignDocument, listDeisgnDocument];
+export default [warehouseDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
