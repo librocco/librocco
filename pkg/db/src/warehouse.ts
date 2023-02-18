@@ -178,6 +178,9 @@ class Warehouse implements WarehouseInterface {
 	 * Update warehouse display name.
 	 */
 	setName(displayName: string): Promise<WarehouseInterface> {
+		if (displayName === this.displayName || !displayName) {
+			return Promise.resolve(this);
+		}
 		return this.update({ displayName });
 	}
 
