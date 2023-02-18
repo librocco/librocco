@@ -10,7 +10,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	} = event;
 
 	if (redirectPaths.includes(pathname)) {
-		return Response.redirect(path.join(origin, '/inventory/stock/all'), 307);
+		return Response.redirect(path.join(origin, '/inventory/stock/0-all'), 307);
 	}
 
 	return resolve(event);
