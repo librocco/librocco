@@ -180,6 +180,9 @@ class Note implements NoteInterface {
 	 * Update note display name.
 	 */
 	setName(displayName: string): Promise<NoteInterface> {
+		if (displayName === this.displayName || !displayName) {
+			return Promise.resolve(this);
+		}
 		return this.update({ displayName });
 	}
 
