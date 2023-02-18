@@ -29,6 +29,10 @@ export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalS
 	// if internal state store is provided (and set to temp state by this action), it will be updated to the non-temp state
 	// when the db update is confirmed (but this happens outside of this store)
 	const set = (displayName: string) => {
+		// We're not allowing empty display names
+		if (!displayName) {
+			return;
+		}
 		internalStateStore?.set(NoteTempState.Saving);
 		entity?.setName(displayName);
 	};
