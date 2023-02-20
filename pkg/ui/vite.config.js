@@ -1,6 +1,8 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { HstSvelte } from '@histoire/plugin-svelte';
 
+import { searchForWorkspaceRoot } from 'vite';
+
 /** @type {import('vite').UserConfig} */
 const config = {
 	plugins: [sveltekit()],
@@ -10,7 +12,11 @@ const config = {
 		vite: {
 			base: '/',
 			server: {
-				open: true
+				open: true,
+				fs: {
+					// Allow serving files from workspace root with dev server
+					allow: [searchForWorkspaceRoot(process.cwd()), '../..']
+				}
 			}
 		}
 	},
