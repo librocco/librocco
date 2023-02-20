@@ -15,7 +15,6 @@ const config = {
 				open: true,
 				fs: {
 					// Allow serving files from workspace root with dev server
-
 					allow: [searchForWorkspaceRoot(process.cwd()), '../..']
 				}
 			}
