@@ -46,11 +46,21 @@
 		"autoprefixer": "~10.4.12",
 		"lucide-svelte": "~0.91.0",
 		"@rgossiaux/svelte-headlessui": "~1.0.2",
-		"jsdom": "20.0.0"
+		"jsdom": "20.0.0",
+		"felte": "~1.2.7",
+		"@testing-library/dom": "~8.20.0",
+		"@testing-library/jest-dom": "~5.16.5",
+		"@testing-library/user-event": "~14.4.3",
+		"@types/testing-library__jest-dom": "~5.14.5",
+		"svelte-fragment-component": "~1.2.0",
+		"svelte-htm": "~1.2.0",
+		"svelte-headlessui": "~0.0.14",
+		"svelte-transition": "~0.0.7"
 	},
 	"peerDependencies": {
 		"lucide-svelte": "~0.91.0",
-		"svelte": "^3.44.0"
+		"svelte": "^3.44.0",
+		"felte": "~1.2.7"
 	},
 	"dependencies": {
 		"uuid": "~9.0.0"
