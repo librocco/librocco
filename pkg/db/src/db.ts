@@ -1,5 +1,7 @@
 import { DocType } from './enums';
 
+import { debug } from '@librocco/shared';
+
 import { DbStream, DesignDocument, InNoteList, NavListEntry } from './types';
 import { DatabaseInterface, WarehouseInterface } from './types/version_1';
 
@@ -53,35 +55,42 @@ class Database implements DatabaseInterface {
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
-	stream(): DbStream {
+	stream(ctx: debug.DebugCtx): DbStream {
 		return {
 			warehouseList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
 				'list/warehouses',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName }))
+				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				ctx
 			),
 
 			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
 				'list/outbound',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName }))
+				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				ctx
 			),
 
 			inNoteList: newViewStream<
 				{ rows: { key: string; value: { type: DocType; displayName?: string } } },
 				InNoteList
-			>(this._pouch, 'list/inbound', {}, ({ rows }) =>
-				rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
-					if (type === 'warehouse') {
-						return [...acc, { id: key, displayName, notes: [] }];
-					}
-					// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
-					acc[0].notes.push({ id: key, displayName });
-					acc[acc.length - 1].notes.push({ id: key, displayName });
-					return acc;
-				}, [] as InNoteList)
+			>(
+				this._pouch,
+				'list/inbound',
+				{},
+				({ rows }) =>
+					rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
+						if (type === 'warehouse') {
+							return [...acc, { id: key, displayName, notes: [] }];
+						}
+						// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
+						acc[0].notes.push({ id: key, displayName });
+						acc[acc.length - 1].notes.push({ id: key, displayName });
+						return acc;
+					}, [] as InNoteList),
+				ctx
 			)
 		};
 	}

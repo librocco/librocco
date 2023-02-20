@@ -1,4 +1,6 @@
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, tap } from 'rxjs';
+
+import { debug } from '@librocco/shared';
 
 import { DocType, NoteState } from './enums';
 
@@ -254,8 +256,11 @@ class Note implements NoteInterface {
 	 * observable signature type is inferred from the selector callback)
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private createStream<S extends (doc?: NoteData) => any>(selector: S): Observable<ReturnType<S>> {
-		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this);
+	private createStream<S extends (doc?: NoteData) => any>(
+		selector: S,
+		ctx: debug.DebugCtx
+	): Observable<ReturnType<S>> {
+		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this, ctx);
 	}
 
 	/**
@@ -263,19 +268,21 @@ class Note implements NoteInterface {
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
 	 * initiated only when the stream is subscribed to (and canceled on unsubscribe).
 	 */
-	stream() {
+	stream(ctx: debug.DebugCtx) {
 		return {
 			displayName: this.createStream((doc) => {
 				return doc?.displayName || '';
-			}),
+			}, ctx),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: combineLatest([
-				this.createStream((doc) =>
-					(doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks)
+				this.createStream(
+					(doc) => (doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks),
+					ctx
 				),
-				this.#db.stream().warehouseList
+				this.#db.stream(ctx).warehouseList
 			]).pipe(
+				tap(debug.log(ctx, 'note_entries:stream:input')),
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce(
@@ -283,17 +290,18 @@ class Note implements NoteInterface {
 						{}
 					);
 					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
-				})
+				}),
+				tap(debug.log(ctx, 'note_entries:stream:output'))
 			),
 
 			/** @TODO update the data model to have 'state' */
-			state: this.createStream((doc) => (doc?.committed ? NoteState.Committed : NoteState.Draft)),
+			state: this.createStream((doc) => (doc?.committed ? NoteState.Committed : NoteState.Draft), ctx),
 
 			updatedAt: this.createStream((doc) => {
 				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
 				const ua = doc?.updatedAt;
 				return ua ? new Date(ua) : null;
-			})
+			}, ctx)
 		};
 	}
 }

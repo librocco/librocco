@@ -1,4 +1,5 @@
 import { DbStream, DesignDocument, DocType, InNoteList, NavListEntry, utils } from '@librocco/db';
+import { debug } from '@librocco/shared';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 
@@ -42,20 +43,22 @@ class Database implements DatabaseInterface {
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
-	stream(): DbStream {
+	stream(ctx: debug.DebugCtx): DbStream {
 		return {
 			warehouseList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
 				'list/warehouses',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName }))
+				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				ctx
 			),
 
 			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
 				'list/outbound',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName }))
+				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				ctx
 			),
 
 			inNoteList: newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string } } }, InNoteList>(
@@ -71,7 +74,8 @@ class Database implements DatabaseInterface {
 						acc[0].notes.push({ id: key, displayName });
 						acc[acc.length - 1].notes.push({ id: key, displayName });
 						return acc;
-					}, [] as InNoteList)
+					}, [] as InNoteList),
+				ctx
 			)
 		};
 	}

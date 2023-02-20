@@ -1,6 +1,7 @@
 import { get, writable, type Writable } from 'svelte/store';
 
 import type { NoteInterface } from '@librocco/db';
+import { debug } from '@librocco/shared';
 
 import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
 import { NoteState } from '$lib/enums/db';
@@ -11,7 +12,7 @@ import type { Subscription } from 'rxjs';
 type NoteAppState = NoteState | NoteTempState | undefined;
 
 interface CreateInternalStateStore {
-	(note?: NoteInterface): Writable<NoteAppState>;
+	(note: NoteInterface | undefined, ctx: debug.DebugCtx): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for internal usage:
@@ -19,20 +20,22 @@ interface CreateInternalStateStore {
  * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the db
  * @param note Note interface for db communication
  */
-export const createInternalStateStore: CreateInternalStateStore = (note) => {
+export const createInternalStateStore: CreateInternalStateStore = (note, ctx) => {
 	const state = writable<NoteAppState>();
 
 	let noteSubscription: Subscription | undefined = undefined;
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
-		noteSubscription = note?.stream().state.subscribe((content) => {
+		noteSubscription = note?.stream(ctx).state.subscribe((content) => {
+			debug.log(ctx, 'internal_state_store:update')(content);
 			state.set(content);
 		});
 	};
 
 	// Close note subscription closes the subscription to the note state
 	const closeNoteSubscription = () => {
+		debug.log(ctx, 'internal_state_store: closing note subscription')({});
 		noteSubscription?.unsubscribe();
 	};
 
@@ -71,7 +74,11 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 };
 
 interface CreateDisplayStateStore {
-	(note: NoteInterface | undefined, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
+	(
+		note: NoteInterface | undefined,
+		internalStateStore: Writable<NoteAppState>,
+		ctx: debug.DebugCtx
+	): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for display purposes:
@@ -82,8 +89,9 @@ interface CreateDisplayStateStore {
  * @param note Note interface for db communication
  * @param internalStateStore a store in charge of internal state (this is used to set the temporary state while the note in the db is being updated)
  */
-export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore) => {
+export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore, ctx) => {
 	const set = (state: NoteState) => {
+		debug.log(ctx, 'display_state_store:set')(state);
 		// For committed or deleted state, we're setting the temporary state and updating the note in the db.
 		//
 		// Other updates are no-op as we don't allow explicit setting of temporary states

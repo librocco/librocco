@@ -30,15 +30,33 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (note) => {
-	const internalState = createInternalStateStore(note);
-	const updatedAt = readableFromStream(note?.stream().updatedAt, null);
+	const noteStateCtx = {
+		name: `[NOTE_STATE::${note?._id}]`,
+		debug: false
+	};
+	const internalState = createInternalStateStore(note, noteStateCtx);
+
+	const updatedAtCtx = {
+		name: `[NOTE_UPDATED_AT::${note?._id}]`,
+		debug: false
+	};
+	const updatedAt = readableFromStream(note?.stream(updatedAtCtx).updatedAt, null, updatedAtCtx);
 
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(note, internalState);
-	const state = createDisplayStateStore(note, internalState);
-	const entries = createDisplayEntriesStore(note, currentPage, bookStore);
-	const paginationData = createPaginationDataStore(note, currentPage);
+	const displayName = createDisplayNameStore(note, internalState, {
+		name: `[NOTE_DISPLAY_NAME::${note?._id}]`,
+		debug: false
+	});
+	const state = createDisplayStateStore(note, internalState, noteStateCtx);
+	const entries = createDisplayEntriesStore(note, currentPage, bookStore, {
+		name: `[NOTE_ENTRIES::${note?._id}]`,
+		debug: false
+	});
+	const paginationData = createPaginationDataStore(note, currentPage, {
+		name: `[NOTE_PAGINATION::${note?._id}]`,
+		debug: false
+	});
 
 	return {
 		displayName,
@@ -69,9 +87,18 @@ interface CreateWarehouseStores {
 export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(warehouse);
-	const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore);
-	const paginationData = createPaginationDataStore(warehouse, currentPage);
+	const displayName = createDisplayNameStore(warehouse, null, {
+		name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`,
+		debug: false
+	});
+	const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore, {
+		name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`,
+		debug: false
+	});
+	const paginationData = createPaginationDataStore(warehouse, currentPage, {
+		name: `[WAREHOUSE_PAGINATION::${warehouse?._id}]`,
+		debug: false
+	});
 
 	return {
 		displayName,

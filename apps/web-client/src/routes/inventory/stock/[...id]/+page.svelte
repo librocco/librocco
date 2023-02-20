@@ -3,6 +3,8 @@
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
+	import type { WarehouseInterface } from '@librocco/db';
+
 	import {
 		InventoryPage,
 		SidebarItem,
@@ -17,9 +19,9 @@
 	import { db } from '$lib/db';
 	import { createWarehouseStores } from '$lib/stores/inventory';
 	import { readableFromStream } from '$lib/utils/streams';
-	import type { WarehouseInterface } from '@librocco/db';
 
-	const warehouseList = readableFromStream(db.stream().warehouseList, []);
+	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
+	const warehouseList = readableFromStream(db.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
 
 	$: currentWarehouseId = $page.params.id;
 

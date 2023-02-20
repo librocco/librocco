@@ -26,6 +26,7 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
+		"@librocco/shared": "workspace:*",
 		"@types/pouchdb": "~6.4.0",
 		"@types/uuid": "~8.3.4",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
