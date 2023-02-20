@@ -7,6 +7,8 @@ export default defineConfig({
 	test: {
 		globals: true,
 		environment: 'jsdom',
-		deps: { inline: true }
+		deps: { inline: true },
+		// Add @testing-library/jest-dom matchers and mock modules
+		setupFiles: ['./vitest.setup.ts']
 	}
 });
