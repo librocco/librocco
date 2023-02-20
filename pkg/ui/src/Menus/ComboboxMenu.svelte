@@ -27,7 +27,7 @@
 			{@const active = $combobox.active === value}
 			{@const selected = $combobox.selected === value}
 			<li
-				class="relative cursor-default select-none py-2 pl-10 pr-4 {active
+				class="relative cursor-pointer select-none py-2 pl-10 pr-4 {active
 					? 'bg-teal-500 text-white'
 					: 'text-gray-900'}"
 				use:combobox.item={{ value }}
