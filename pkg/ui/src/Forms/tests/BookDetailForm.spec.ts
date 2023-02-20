@@ -1,4 +1,4 @@
-import { it, describe, expect, afterEach, vi } from 'vitest';
+import { test, expect, afterEach, vi } from 'vitest';
 import { render, screen, cleanup } from '@testing-library/svelte';
 import userEvent from '@testing-library/user-event';
 
@@ -23,99 +23,60 @@ afterEach(() => {
 	book = newBook();
 });
 
-it('Renders without exploding', () => {
+test('Renders without exploding', () => {
 	render(BookDetailForm, { book });
 	expect(screen.getByRole('form')).toBeInTheDocument();
 });
 
-describe('Sets form field initial values via props:', () => {
-	it('input -> isbn', () => {
-		const isbn = '819200012';
-		book.isbn = isbn;
+test('Sets form field initial values via props:', () => {
+	const isbn = '819200012';
+	const title = 'A brief history of the cosmos and essential kitchen appliances';
+	const price = 15;
+	const authors = 'Stephen Hawking, Bill Bryson';
+	const publisher = 'Penguin';
+	const editedBy = 'Anonymous';
+	const outOfPrint = true;
 
-		render(BookDetailForm, { book });
+	book.isbn = isbn;
+	book.title = title;
+	book.price = price;
+	book.authors = authors;
+	book.publisher = publisher;
+	book.editedBy = editedBy;
+	book.outOfPrint = outOfPrint;
 
-		expect(screen.getByRole('textbox', { name: 'isbn' })).toHaveValue(isbn);
-	});
+	render(BookDetailForm, { book });
 
-	it('input -> title', () => {
-		const title = 'A brief history of the cosmos and essential kitchen appliances';
-		book.title = title;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('textbox', { name: 'title' })).toHaveValue(title);
-	});
-
-	it('input -> price', () => {
-		const price = 15;
-		book.price = price;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('spinbutton', { name: 'price' })).toHaveValue(price);
-	});
-
-	it('input -> author', () => {
-		const authors = 'Stephen Hawking, Bill Bryson';
-		book.authors = authors;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('textbox', { name: 'authors' })).toHaveValue(authors);
-	});
-
-	it('input -> publisher', () => {
-		const publisher = 'Penguin';
-		book.publisher = publisher;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('combobox', { name: 'publisher' })).toHaveValue(publisher);
-	});
-
-	it('input -> editedBy', () => {
-		const editedBy = 'Anonymous';
-		book.editedBy = editedBy;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('textbox', { name: 'editedBy' })).toHaveValue(editedBy);
-	});
-
-	it('input -> outOfPrint', () => {
-		const outOfPrint = true;
-		book.outOfPrint = outOfPrint;
-
-		render(BookDetailForm, { book });
-
-		expect(screen.getByRole('checkbox', { name: 'Out of print' })).toBeChecked();
-	});
+	expect(screen.getByRole('textbox', { name: 'isbn' })).toHaveValue(isbn);
+	expect(screen.getByRole('textbox', { name: 'title' })).toHaveValue(title);
+	expect(screen.getByRole('spinbutton', { name: 'price' })).toHaveValue(price);
+	expect(screen.getByRole('textbox', { name: 'authors' })).toHaveValue(authors);
+	expect(screen.getByRole('combobox', { name: 'publisher' })).toHaveValue(publisher);
+	expect(screen.getByRole('textbox', { name: 'editedBy' })).toHaveValue(editedBy);
+	expect(screen.getByRole('checkbox', { name: 'Out of print' })).toBeChecked();
 });
 
-describe('Actions', async () => {
-	it('fires onSubmit & onCancel handlers', async () => {
-		const user = userEvent.setup();
+test('Fires onSubmit & onCancel handlers', async () => {
+	const user = userEvent.setup();
 
-		const mockSubmit = vi.fn();
-		const mockCancel = vi.fn();
+	const mockSubmit = vi.fn();
+	const mockCancel = vi.fn();
 
-		render(BookDetailForm, {
-			book,
-			onSubmit: mockSubmit,
-			onCancel: mockCancel
-		});
-
-		// TODO: For some reason mockSubmit is not being called. Have confirmed manually that this works.
-		// Likely because onSubmit is not being passed directly to button, but is managed through felte's `createForm`
-
-		// const saveButton = screen.getByText('Save');
-		const cancelButton = screen.getByText('Cancel');
-
-		// await user.click(saveButton);
-		await user.click(cancelButton);
-
-		// expect(mockSubmit).toHaveBeenCalled();
-		expect(mockCancel).toHaveBeenCalled();
+	render(BookDetailForm, {
+		book,
+		onSubmit: mockSubmit,
+		onCancel: mockCancel
 	});
+
+	// TODO: For some reason mockSubmit is not being called. Have confirmed manually that this works.
+	// Likely because onSubmit is not being passed directly to button, but is managed through felte's `createForm`
+
+	// const saveButton = screen.getByText('Save');
+	const cancelButton = screen.getByText('Cancel');
+
+	// await user.click(saveButton);
+	await user.click(cancelButton);
+
+	// expect(mockSubmit).toHaveBeenCalled();
+	expect(mockCancel).toHaveBeenCalled();
 });
