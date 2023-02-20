@@ -10,23 +10,13 @@ const sequenceNamingDesignDocument: DesignDocument = {
 			map: function (doc: WarehouseData) {
 				const { displayName } = doc as NoteData;
 
-				let matchIx = 0;
-
 				if (doc.docType === 'warehouse' && /^New Warehouse( \([0-9]+\))?$/.test(displayName)) {
-					try {
-						// Try and check if index string is included ("New Warehouse (1)" and higher)
-						const match = displayName.match(/[0-9]+/);
-						if (match) {
-							matchIx = parseInt(match[0]);
-						}
-					} catch {
-						// Emit the 0
-						emit([doc._id], matchIx);
+					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
+					if (match) {
+						emit(doc._id, parseInt(match[0]));
+					} else {
+						emit(doc._id, 1);
 					}
-
-					// Emit the index plus one
-
-					emit([doc._id], matchIx + 1);
 				}
 			}.toString(),
 			reduce: `_stats`
@@ -35,19 +25,13 @@ const sequenceNamingDesignDocument: DesignDocument = {
 			map: function (doc: NoteData) {
 				const { displayName } = doc as NoteData;
 
-				let matchIx = 0;
-
 				if (doc.docType === 'note' && /^New Note( \([0-9]+\))?$/.test(displayName)) {
-					try {
-						const match = displayName.match(/[0-9]+/);
-						if (match) {
-							matchIx = parseInt(match[0]);
-						}
-					} catch {
-						emit([doc._id], matchIx);
+					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
+					if (match) {
+						emit(doc._id, parseInt(match[0]));
+					} else {
+						emit(doc._id, 1);
 					}
-
-					emit([doc._id], matchIx + 1);
 				}
 			}.toString(),
 			reduce: `_stats`
