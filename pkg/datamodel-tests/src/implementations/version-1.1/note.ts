@@ -120,12 +120,12 @@ class Note implements NoteInterface {
 			this.#w.create();
 
 			const sequentialNumber = (await this.#db._pouch.query('sequence/note')).rows[0];
-			const number = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max})` : '';
+			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : '';
 
-			// For some reason we need to spread '...this' as otherwise the put method mutates the instance (for some reason).
-			const { rev } = await this.#db._pouch.put<NoteData>({ ...this, displayName: `New Note${number}` });
+			const initialValues = { ...this, displayName: `New Note${seqIndex}` };
+			const { rev } = await this.#db._pouch.put<NoteData>(initialValues);
 
-			return this.updateField('_rev', rev);
+			return this.updateInstance({ ...initialValues, _rev: rev });
 		}, this.#initialized);
 	}
 
