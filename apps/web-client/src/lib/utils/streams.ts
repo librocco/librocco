@@ -1,6 +1,8 @@
 import { readable, type Readable } from 'svelte/store';
 import { Observable } from 'rxjs';
 
+import { debug } from '@librocco/shared';
+
 /**
  * Creates an observable stream from a svelte store. This is modtly user
  * to simulate the backend db interface from test data is are unlikely to be used in production.
@@ -40,14 +42,21 @@ export const derivedObservable = <T, U>(store: Readable<T>, fn: (value: T) => U)
  * @param observable observable stream
  * @returns readable store
  */
-export const readableFromStream = <T>(observable: Observable<T> | undefined, fallback: T): Readable<T> => {
+export const readableFromStream = <T>(
+	observable: Observable<T> | undefined,
+	fallback: T,
+	ctx: debug.DebugCtx
+): Readable<T> => {
 	return readable<T>(fallback, (set) => {
-		// eslint-disable-next-line @typescript-eslint/no-empty-function
-		const fallbackObserver = { unsubscribe: () => {} };
-		const observer = observable
-			? observable.subscribe((value) => set(value || fallback))
-			: // If observer not provided, we return a 'Subscriber' with empty unsubscribe method (to comply with the signature)
-			  fallbackObserver;
+		if (!observable) {
+			debug.log(ctx, 'readable_from_stream: stream not provided:fallback:')(fallback);
+			// eslint-disable-next-line @typescript-eslint/no-empty-function
+			return () => {};
+		}
+		const observer = observable.subscribe((value) => {
+			debug.log(ctx, 'redable_from_stream:update')(value);
+			set(value || fallback);
+		});
 		return () => observer.unsubscribe();
 	});
 };

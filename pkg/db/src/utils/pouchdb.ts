@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { concat, from, map, Observable, switchMap } from 'rxjs';
+import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
+
+import { debug } from '@librocco/shared';
 
 import { CouchDocument, VersionedString } from '../types';
 
@@ -66,7 +68,8 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 	db: PouchDB.Database,
 	id: string,
 	selector: (doc?: M) => R = (doc) => doc as R,
-	fallbackDoc: M = {} as M
+	fallbackDoc: M = {} as M,
+	ctx: debug.DebugCtx = {}
 ) =>
 	new Observable<R>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
@@ -77,16 +80,29 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 
 		const initialPromise = db
 			.get<M>(id)
+			.then((res) => {
+				debug.log(ctx, 'document_stream:initial_query:result')(res);
+				return res;
+			})
 			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 			.catch((err) => {
-				console.error(`Error streaming document: '${id}'`, err);
+				debug.log(ctx, 'document_stream:initial_query:error')(err);
+				debug.log(ctx, 'document_stream:initial_query:error:fallback')(fallbackDoc);
 				return fallbackDoc;
 			});
 		const initialState = from(initialPromise);
-		const changeStream = newChangesStream<M>(emitter).pipe(map(({ doc }) => doc));
+		const changeStream = newChangesStream<M>(emitter, ctx).pipe(
+			tap(debug.log(ctx, 'document_stream:change')),
+			map(({ doc }) => doc),
+			tap(debug.log(ctx, 'document_stream:change:transformed'))
+		);
 
 		concat(initialState, changeStream)
-			.pipe(map(selector))
+			.pipe(
+				tap(debug.log(ctx, 'document_stream:result:raw')),
+				map(selector),
+				tap(debug.log(ctx, 'document_stream:result:transformed'))
+			)
 			.subscribe((doc) => subscriber.next(doc));
 
 		return () => emitter.cancel();
@@ -96,7 +112,8 @@ export const newViewStream = <M extends Record<string, any>, R>(
 	db: PouchDB.Database,
 	view: string,
 	query_params: PouchDB.Query.Options<Record<string, unknown>, M> = {},
-	transform: (doc: PouchDB.Query.Response<M>) => R = (rows) => rows as any
+	transform: (doc: PouchDB.Query.Response<M>) => R = (rows) => rows as any,
+	ctx: debug.DebugCtx
 ) =>
 	new Observable<R>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
@@ -116,30 +133,54 @@ export const newViewStream = <M extends Record<string, any>, R>(
 			.query<M>(view, query_params)
 			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 			.catch((err) => {
-				console.error(`Error querying view '${view}':`, err);
+				debug.log(ctx, 'view_stream:initial_query:error')(err);
 				return { rows: [], total_rows: 0, offset: 0 } as PouchDB.Query.Response<M>;
+			})
+			.then((res) => {
+				debug.log(ctx, 'view_stream:initial_query:result')(res);
+				return res;
 			});
 		const initialQueryStream = from(initialQueryPromise);
 		// Create a stream for changes (happening after the subscription)
-		const updatesStream = newChangesStream<M>(emitter).pipe(
+		const updatesStream = newChangesStream<M>(emitter, ctx).pipe(
+			tap(debug.log(ctx, 'view_stream:change')),
 			// The change only triggers a new query (as changes are partial and we require the full view update)
-			switchMap(() => from(db.query<M>(view, query_params)))
+			switchMap(() =>
+				from(
+					new Promise<PouchDB.Query.Response<M>>((resolve) => {
+						db.query<M>(view, query_params)
+							.then((res) => {
+								debug.log(ctx, 'view_stream:change_query:result')(res);
+								return resolve(res);
+							})
+							.catch((err) => {
+								debug.log(ctx, 'view_stream:change_query:error')(err);
+							});
+					})
+				)
+			)
 		);
 
 		// Concatanate the two streams and transform the result
 		const resultStream = concat(initialQueryStream, updatesStream).pipe(
 			// Transform the result to the desired format
-			map(transform)
+			tap(debug.log(ctx, 'view_stream:result:raw')),
+			map(transform),
+			tap(debug.log(ctx, 'view_stream:result:transformed'))
 		);
 
 		resultStream.subscribe(subscriber);
 
-		return () => emitter.cancel();
+		return () => {
+			debug.log(ctx, 'view_stream:cancel')({});
+			return emitter.cancel();
+		};
 	});
 
-const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>) =>
+const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>, ctx: debug.DebugCtx) =>
 	new Observable<PouchDB.Core.ChangesResponseChange<Model>>((subscriber) => {
 		emitter.on('change', (change) => {
+			debug.log(ctx, 'changes_stream:change')(change);
 			subscriber.next(change);
 		});
 	});

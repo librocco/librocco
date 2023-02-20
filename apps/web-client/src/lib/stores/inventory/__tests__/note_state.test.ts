@@ -18,8 +18,8 @@ describe('createDisplayStateStore', () => {
 		const db = newTestDB();
 		const note = await db.warehouse().note('note-1').create();
 
-		const internalStateStore = createInternalStateStore(note);
-		const displayStateStore = createDisplayStateStore(note, internalStateStore);
+		const internalStateStore = createInternalStateStore(note, {});
+		const displayStateStore = createDisplayStateStore(note, internalStateStore, {});
 
 		// The display state store subscribes to the internal state store and the note store (in db). When the first subscriber is subscribed to the
 		// display state store, the subscription to note state is opened. When the last subscriber unsubscribes from the display state store, the
@@ -47,8 +47,8 @@ describe('createDisplayStateStore', () => {
 		const db = newTestDB();
 		const note = await db.warehouse().note('note-1').create();
 
-		const internalStateStore = createInternalStateStore(note);
-		const displayStateStore = createDisplayStateStore(note, internalStateStore);
+		const internalStateStore = createInternalStateStore(note, {});
+		const displayStateStore = createDisplayStateStore(note, internalStateStore, {});
 
 		// See dummy subscription in the previous test ^^
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
@@ -61,7 +61,7 @@ describe('createDisplayStateStore', () => {
 		});
 
 		// Check that the note state in db has been updated
-		const noteState = await firstValueFrom(note.stream().state);
+		const noteState = await firstValueFrom(note.stream({}).state);
 		expect(noteState).toBe(NoteState.Committed);
 
 		// Close the dummy subscription after assertions
@@ -70,8 +70,8 @@ describe('createDisplayStateStore', () => {
 
 	test("should stream 'undefined' if no note provided", () => {
 		// Check for both internal state store as well as display state store
-		const internalStateStore = createInternalStateStore();
-		const displayStateStore = createDisplayStateStore(undefined, internalStateStore);
+		const internalStateStore = createInternalStateStore(undefined, {});
+		const displayStateStore = createDisplayStateStore(undefined, internalStateStore, {});
 		expect(get(displayStateStore)).toEqual(undefined);
 	});
 });

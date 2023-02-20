@@ -9,12 +9,12 @@ import { readable } from 'svelte/store';
 
 describe('tableContentStore', () => {
 	test("should not explode if no 'entity' is provided", async () => {
-		const de$ = createDisplayEntriesStore(undefined, readable(0), readable({}));
+		const de$ = createDisplayEntriesStore(undefined, readable(0), readable({}), {});
 		let displayEntries: VolumeQuantity[] | undefined;
 		de$.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
-		const pd$ = createPaginationDataStore(undefined, readable(0));
+		const pd$ = createPaginationDataStore(undefined, readable(0), {});
 		let paginationData: PaginationData | undefined;
 		pd$.subscribe((pd) => (paginationData = pd));
 		expect(paginationData).toEqual({
