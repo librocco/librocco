@@ -28,7 +28,8 @@
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
 
-	const outNoteList = readableFromStream(db.stream().outNoteList, []);
+	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
+	const outNoteList = readableFromStream(db.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
 	$: currentNoteId = $page.params.id;
 

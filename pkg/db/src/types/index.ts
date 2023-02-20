@@ -5,6 +5,7 @@ import type { Observable } from 'rxjs';
 import PouchDB from 'pouchdb';
 
 import type { DocType, NoteState } from '../enums';
+import { debug } from '@librocco/shared';
 
 // #region utils
 /**
@@ -90,7 +91,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
 	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
 	commit: () => Promise<NoteInterface<A>>;
-	stream: () => NoteStream;
+	stream: (ctx: debug.DebugCtx) => NoteStream;
 }
 
 /**
@@ -133,7 +134,7 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 
 	note: (id?: string) => N;
 	setName: (name: string) => Promise<WarehouseInterface<N, A>>;
-	stream: () => WarehouseStream;
+	stream: (ctx: debug.DebugCtx) => WarehouseStream;
 }
 
 /**
@@ -184,6 +185,6 @@ export interface DatabaseInterface<
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	warehouse: (id?: string) => W;
 	findNote: FindNote<N, W>;
-	stream: () => DbStream;
+	stream: (ctx: debug.DebugCtx) => DbStream;
 }
 // #endregion db

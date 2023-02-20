@@ -20,7 +20,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 	);
 	await Promise.all(noteUpdates);
 
-	const stock = await firstValueFrom(db.warehouse().stream().entries);
+	const stock = await firstValueFrom(db.warehouse().stream({}).entries);
 
 	expect(stock).toEqual(fullStock.books);
 };

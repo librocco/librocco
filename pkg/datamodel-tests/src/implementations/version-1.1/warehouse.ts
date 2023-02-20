@@ -1,6 +1,7 @@
 import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
 
 import { DocType, VersionedString, VolumeStock, VolumeStockClient, utils } from '@librocco/db';
+import { debug } from '@librocco/shared';
 
 import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from './types';
 
@@ -206,7 +207,7 @@ class Warehouse implements WarehouseInterface {
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
 	 * initiated only when the stream is subscribed to (and canceled on unsubscribe).
 	 */
-	stream() {
+	stream(ctx: debug.DebugCtx) {
 		return {
 			displayName: this.createStream((doc) => doc?.displayName || ''),
 
@@ -226,9 +227,10 @@ class Warehouse implements WarehouseInterface {
 						rows
 							.map(({ key: [warehouseId, isbn], value: quantity }) => ({ isbn, quantity, warehouseId, warehouseName: '' }))
 							.filter(({ quantity }) => quantity > 0)
-							.sort(sortBooks)
+							.sort(sortBooks),
+					ctx
 				),
-				this.#db.stream().warehouseList
+				this.#db.stream(ctx).warehouseList
 			]).pipe(
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup

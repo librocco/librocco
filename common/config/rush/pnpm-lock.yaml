@@ -116,6 +116,7 @@ importers:
 
   ../../pkg/db:
     specifiers:
+      '@librocco/shared': workspace:*
       '@types/pouchdb': ~6.4.0
       '@types/uuid': ~8.3.4
       '@typescript-eslint/eslint-plugin': ^5.27.0
@@ -135,6 +136,7 @@ importers:
       pouchdb-adapter-memory: 7.3.1
       uuid: 8.3.2
     devDependencies:
+      '@librocco/shared': link:../shared
       '@types/pouchdb': 6.4.0
       '@types/uuid': 8.3.4
       '@typescript-eslint/eslint-plugin': 5.48.2_101cdf21de94ccf8fd79d46613915786

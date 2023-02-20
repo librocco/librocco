@@ -23,7 +23,7 @@ describe('createDisplayNameStore', () => {
 		// Test for note
 		await note.setName('Note 1');
 
-		const ndn$ = createDisplayNameStore(note);
+		const ndn$ = createDisplayNameStore(note, null, {});
 		let noteDisplayName: string | undefined;
 		ndn$.subscribe((ndn) => (noteDisplayName = ndn));
 
@@ -39,7 +39,7 @@ describe('createDisplayNameStore', () => {
 		// Test for warehouse
 		await warehouse.setName('Warehouse 1');
 
-		const wdn$ = createDisplayNameStore(warehouse);
+		const wdn$ = createDisplayNameStore(warehouse, null, {});
 		let warehouseDisplayName: string | undefined;
 		wdn$.subscribe((wdn) => (warehouseDisplayName = wdn));
 
@@ -56,7 +56,7 @@ describe('createDisplayNameStore', () => {
 	test('should propagate the update to the db itself', async () => {
 		const db = newTestDB();
 		const note = await db.warehouse().note().create();
-		const ndn$ = createDisplayNameStore(note);
+		const ndn$ = createDisplayNameStore(note, null, {});
 
 		// Update to the displayName store should get propagated to the db
 		ndn$.set('Note 1 updated');
@@ -70,7 +70,7 @@ describe('createDisplayNameStore', () => {
 		const db = newTestDB();
 		const note = await db.warehouse().note().create();
 		const is$ = writable<NoteAppState>(NoteState.Draft);
-		const ndn$ = createDisplayNameStore(note, is$);
+		const ndn$ = createDisplayNameStore(note, is$, {});
 
 		// Update to the displayName store should get propagated to the db
 		ndn$.set('Note 1 updated');
@@ -78,7 +78,7 @@ describe('createDisplayNameStore', () => {
 	});
 
 	test("should not explode if 'entity' is not provided", async () => {
-		const ndn$ = createDisplayNameStore(undefined);
+		const ndn$ = createDisplayNameStore(undefined, null, {});
 		let noteDisplayName: string | undefined;
 		ndn$.subscribe((ndn) => (noteDisplayName = ndn));
 		expect(noteDisplayName).toEqual('');
