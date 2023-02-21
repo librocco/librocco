@@ -3,6 +3,42 @@ import { DesignDocument } from '@librocco/db';
 
 import { WarehouseData, NoteData } from './types';
 
+const sequenceNamingDesignDocument: DesignDocument = {
+	_id: '_design/sequence',
+	views: {
+		warehouse: {
+			map: function (doc: WarehouseData) {
+				const { displayName } = doc as NoteData;
+
+				if (doc.docType === 'warehouse' && /^New Warehouse( \([0-9]+\))?$/.test(displayName)) {
+					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
+					if (match) {
+						emit(doc._id, parseInt(match[0]));
+					} else {
+						emit(doc._id, 1);
+					}
+				}
+			}.toString(),
+			reduce: `_stats`
+		},
+		note: {
+			map: function (doc: NoteData) {
+				const { displayName } = doc as NoteData;
+
+				if (doc.docType === 'note' && /^New Note( \([0-9]+\))?$/.test(displayName)) {
+					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
+					if (match) {
+						emit(doc._id, parseInt(match[0]));
+					} else {
+						emit(doc._id, 1);
+					}
+				}
+			}.toString(),
+			reduce: `_stats`
+		}
+	}
+};
+
 const warehouseDesignDocument: DesignDocument = {
 	_id: '_design/warehouse',
 	views: {
@@ -71,4 +107,4 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export default [warehouseDesignDocument, listDeisgnDocument];
+export default [warehouseDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
