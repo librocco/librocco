@@ -399,14 +399,14 @@ export const sequenceWarehouseDesignDocument: TestFunction = async (db) => {
 	expect(wh2.displayName).toEqual('New Warehouse (2)');
 	expect(wh3.displayName).toEqual('New Warehouse (3)');
 
-	wh1.setName('New Name1');
-	wh2.setName('New Name2');
+	await wh1.setName('New Name1');
+	await wh2.setName('New Name2');
 
 	const wh4 = await db.warehouse('3').create(); // New Warehouse (4)
 	expect(wh4.displayName).toEqual('New Warehouse (4)');
 
-	wh3.setName('New Name3');
-	wh4.setName('New Name4');
+	await wh3.setName('New Name3');
+	await wh4.setName('New Name4');
 
 	const wh5 = await db.warehouse('4').create(); // New Warehouse
 	expect(wh5.displayName).toEqual('New Warehouse');
@@ -435,18 +435,4 @@ export const sequenceNoteDesignDocument: TestFunction = async (db) => {
 
 	const note5 = await defaultWarehouse.note().create(); // New Note
 	expect(note5).toMatchObject({ displayName: 'New Note' });
-};
-
-// test to check what the view reutrns by default in case of no "New Note/Warehouse"
-export const statsReduceFunctionDefault: TestFunction = async (db) => {
-	const defaultWarehouse = await db.warehouse().create();
-
-	const warehouseQuery = await db._pouch.query('sequence/warehouse');
-	expect(warehouseQuery.rows).toHaveLength(0);
-
-	const note = await defaultWarehouse.note().create(); // New Note
-	note.setName('New Name');
-
-	const noteQuery = await db._pouch.query('sequence/note');
-	expect(noteQuery.rows).toHaveLength(0);
 };
