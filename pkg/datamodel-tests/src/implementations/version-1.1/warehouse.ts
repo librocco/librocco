@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, tap } from 'rxjs';
 
 import { DocType, VersionedString, VolumeStock, VolumeStockClient, utils } from '@librocco/db';
 import { debug } from '@librocco/shared';
@@ -188,6 +188,9 @@ class Warehouse implements WarehouseInterface {
 	 * Update warehouse display name.
 	 */
 	setName(displayName: string): Promise<WarehouseInterface> {
+		if (displayName === this.displayName || !displayName) {
+			return Promise.resolve(this);
+		}
 		return this.update({ displayName });
 	}
 
@@ -198,8 +201,8 @@ class Warehouse implements WarehouseInterface {
 	 * observable signature type is inferred from the selector callback)
 	 */
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private createStream<S extends (doc?: WarehouseData) => any>(selector: S): Observable<ReturnType<S>> {
-		return newDocumentStream<WarehouseData, ReturnType<S>>(this.#db._pouch, this._id, selector);
+	private createStream<S extends (doc?: WarehouseData) => any>(selector: S, ctx: debug.DebugCtx): Observable<ReturnType<S>> {
+		return newDocumentStream<WarehouseData, ReturnType<S>>(this.#db._pouch, this._id, selector, this, ctx);
 	}
 
 	/**
@@ -209,7 +212,7 @@ class Warehouse implements WarehouseInterface {
 	 */
 	stream(ctx: debug.DebugCtx) {
 		return {
-			displayName: this.createStream((doc) => doc?.displayName || ''),
+			displayName: this.createStream((doc) => doc?.displayName || '', ctx),
 
 			entries: combineLatest([
 				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
@@ -225,18 +228,29 @@ class Warehouse implements WarehouseInterface {
 					},
 					({ rows }) =>
 						rows
-							.map(({ key: [warehouseId, isbn], value: quantity }) => ({ isbn, quantity, warehouseId, warehouseName: '' }))
+							.map(({ key: [warehouseId, isbn], value: quantity }) => ({
+								isbn,
+								quantity,
+								warehouseId,
+								warehouseName: ''
+							}))
 							.filter(({ quantity }) => quantity > 0)
 							.sort(sortBooks),
 					ctx
 				),
 				this.#db.stream(ctx).warehouseList
 			]).pipe(
+				tap(debug.log(ctx, 'warehouse_entries:stream:input')),
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
-				})
+					const res = entries.map((e) => ({
+						...e,
+						warehouseName: warehouseNames[e.warehouseId] || 'not-found'
+					}));
+					return res;
+				}),
+				tap(debug.log(ctx, 'warehouse_entries:stream:output'))
 			)
 		};
 	}

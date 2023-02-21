@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, map, Observable } from 'rxjs';
+import { BehaviorSubject, combineLatest, map, Observable, tap } from 'rxjs';
 
 import { DocType, NoteState, NoteType, VolumeStock, VolumeTransactionTuple, VersionedString, utils } from '@librocco/db';
 import { debug } from '@librocco/shared';
@@ -186,6 +186,9 @@ class Note implements NoteInterface {
 	 * Update note display name.
 	 */
 	setName(displayName: string): Promise<NoteInterface> {
+		if (displayName === this.displayName || !displayName) {
+			return Promise.resolve(this);
+		}
 		return this.update({ displayName });
 	}
 
@@ -273,13 +276,15 @@ class Note implements NoteInterface {
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: combineLatest([
 				this.createStream((doc) => (doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks), ctx),
-				this.#db.stream({}).warehouseList
+				this.#db.stream(ctx).warehouseList
 			]).pipe(
+				tap(debug.log(ctx, 'note_entries:stream:input')),
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
 					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
-				})
+				}),
+				tap(debug.log(ctx, 'note_entries:stream:output'))
 			),
 
 			/** @TODO update the data model to have 'state' */
