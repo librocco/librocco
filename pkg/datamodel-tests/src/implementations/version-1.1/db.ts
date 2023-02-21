@@ -23,7 +23,14 @@ class Database implements DatabaseInterface {
 	}
 
 	updateDesignDoc(doc: DesignDocument) {
-		return this._pouch.put(doc);
+		return this._pouch.put(doc).catch((err) => {
+			// If error is not a conflict, throw it back
+			if (err.status != 409) {
+				throw err;
+			}
+			// If the error was a conflict (document exists), update the document
+			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
+		});
 	}
 
 	async findNote(id: string) {
