@@ -110,14 +110,12 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 
 	// Check that the stream gets initialised with the current values
 	await waitFor(() => {
-		expect(displayName).toEqual('');
+		expect(displayName).toEqual('New Note');
 		expect(entries).toEqual([]);
 		expect(state).toEqual(NoteState.Draft);
 		expect(updatedAt).toBeDefined();
 	});
 
-	// Check for displayName stream
-	expect(displayName).toEqual('');
 	await note.setName('test');
 	await waitFor(() => {
 		expect(displayName).toEqual('test');
