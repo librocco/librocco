@@ -99,9 +99,15 @@ class Warehouse implements WarehouseInterface {
 			if (this.#exists) {
 				return this;
 			}
-			const sequentialNumber = (await this.#db._pouch.query('sequence/warehouse')).rows[0];
 
-			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : '';
+			let sequentialNumber = 0;
+			try {
+				const sequenceQuery = await this.#db._pouch.query('sequence/warehouse');
+				sequentialNumber = sequenceQuery.rows[0].value.max;
+			} catch {
+				//
+			}
+			const seqIndex = sequentialNumber ? ` (${sequentialNumber + 1})` : '';
 
 			const initialValues = {
 				...this,
