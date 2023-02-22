@@ -28,26 +28,30 @@
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
 
+	import type { PageData } from './$types';
+
+	export let data: PageData;
+
 	const inNoteListCtx = { name: '[IN_NOTE_LIST]', debug: false };
 	const inNoteList = readableFromStream(db.stream(inNoteListCtx).inNoteList, [], inNoteListCtx);
 
-	$: currentNoteId = $page.params.id;
+	// $: currentNoteId = $page.params.id;
 	$: currentNoteWarehouse = $page.params.warehouseName;
 
-	let note: NoteInterface | undefined = undefined;
+	let note: NoteInterface | undefined = data.warehouse;
 
-	$: {
-		// Each time the current note changes, set the ready to false
-		note = undefined;
-		// Check if the note exists, if not redirect back to /inventory/inbound
-		if (currentNoteId) {
-			db.findNote(currentNoteId).then((res) => {
-				if (!res) return goto('/inventory/outbound');
-				note = res.note;
-				currentNoteWarehouse = res.warehouse.displayName;
-			});
-		}
-	}
+	// $: {
+	// 	// Each time the current note changes, set the ready to false
+	// 	note = undefined;
+	// 	// Check if the note exists, if not redirect back to /inventory/inbound
+	// 	if (currentNoteId) {
+	// 		db.findNote(currentNoteId).then((res) => {
+	// 			if (!res) return goto('/inventory/outbound');
+	// 			note = res.note;
+	// 			currentNoteWarehouse = res.warehouse.displayName;
+	// 		});
+	// 	}
+	// }
 
 	$: noteStores = createNoteStores(note);
 
