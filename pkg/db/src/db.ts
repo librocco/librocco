@@ -9,6 +9,10 @@ import { newWarehouse } from './warehouse';
 
 import { newViewStream } from './utils';
 
+import designDocs from './design_documents';
+
+import { replicate } from './utils/pouchdb';
+
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
 
@@ -20,6 +24,20 @@ class Database implements DatabaseInterface {
 		this.warehouse('0-all').create();
 	}
 
+	async init(remote?: { database: PouchDB.Database }) {
+		//  Utilise db.updateDesignDoc to load the design documents into the db
+		const designdDocsPromise = designDocs.forEach((designDoc) => {
+			this.updateDesignDoc(designDoc);
+		});
+
+		// create default warehouse
+		const whPromise = this.warehouse().create();
+
+		// Set up replication between local pouch and "remote" couch
+
+		remote && replicate({ local: this._pouch, remote: remote.database });
+		await Promise.all([whPromise, designdDocsPromise]);
+	}
 	warehouse(id?: string): WarehouseInterface {
 		return newWarehouse(this, id);
 	}
