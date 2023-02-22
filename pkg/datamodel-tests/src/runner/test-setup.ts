@@ -47,11 +47,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		const pouchInstance = initDB();
 		const db = config.newDatabase(pouchInstance);
 
-		// Upload design documents if any
-		const ddUpdates = config.designDocuments?.map((dd) => db.updateDesignDoc(dd));
-		if (ddUpdates?.length) {
-			await Promise.all(ddUpdates);
-		}
+		await db.init();
 
 		return db;
 	};

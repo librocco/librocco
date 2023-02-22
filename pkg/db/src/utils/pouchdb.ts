@@ -184,3 +184,25 @@ const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.
 			subscriber.next(change);
 		});
 	});
+
+/**
+ * A function that handles replication, returns resolve when replication is complete and reject otherwise
+ * @param local - local pouchdb instance
+ * @param remote - remote pouchdb instance
+ */
+
+export const replicate = (database: { remote: PouchDB.Database; local: PouchDB.Database }) =>
+	new Promise<void>((resolve, reject) => {
+		database.local.replicate
+			.to(database.remote)
+			.on('complete', function () {
+				// yay, we're done!
+				console.log('Replication complete');
+				resolve();
+			})
+			.on('error', function (err) {
+				// boo, something went wrong!
+				console.log('could not replicate to remote db', err);
+				reject();
+			});
+	});

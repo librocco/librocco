@@ -186,5 +186,6 @@ export interface DatabaseInterface<
 	warehouse: (id?: string) => W;
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
+	init: (remote?: { database: PouchDB.Database }) => void;
 }
 // #endregion db
