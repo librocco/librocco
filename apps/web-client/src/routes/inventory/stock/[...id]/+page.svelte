@@ -20,26 +20,30 @@
 	import { createWarehouseStores } from '$lib/stores/inventory';
 	import { readableFromStream } from '$lib/utils/streams';
 
+	import type { PageData } from './$types';
+
+	export let data: PageData;
+
 	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
 	const warehouseList = readableFromStream(db.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
 
 	$: currentWarehouseId = $page.params.id;
 
-	let warehouse: WarehouseInterface | undefined = undefined;
+	let warehouse: WarehouseInterface | undefined = data.warehouse;
 
-	$: {
-		// Each time the current warehouse changes, set the ready to false
-		warehouse = undefined;
-		// Check if the warehouse exists, if not redirect back to /inventory/stock/0-all (default warehouse)
-		if (currentWarehouseId) {
-			db.warehouse(currentWarehouseId)
-				.get()
-				.then((res) => {
-					if (!res) return goto('/inventory/stock/0-all');
-					warehouse = res;
-				});
-		}
-	}
+	// $: {
+	// 	// Each time the current warehouse changes, set the ready to false
+	// 	warehouse = undefined;
+	// 	// Check if the warehouse exists, if not redirect back to /inventory/stock/0-all (default warehouse)
+	// 	if (currentWarehouseId) {
+	// 		db.warehouse(currentWarehouseId)
+	// 			.get()
+	// 			.then((res) => {
+	// 				// if (!res) return goto('/inventory/stock/0-all');
+	// 				warehouse = res;
+	// 			});
+	// 	}
+	// }
 
 	$: warehouesStores = createWarehouseStores(warehouse);
 
