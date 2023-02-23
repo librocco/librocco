@@ -21,8 +21,11 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"test": "vitest",
 		"test:ci": "CI=true vitest run",
+		"test": "echo 'Running test runner unit tests' && vitest __tests__",
+		"test:quicktest": "echo \"Running tests with simple test data loaded from fs (max 10 notes)\" && vitest main.test.ts",
+		"test:full": "docker compose up -d && FULL_TEST_SUPPORT=true vitest main.test.ts; docker compose down",
+		"benchmark": "docker compose up -d && FULL_TEST_SUPPORT=true vitest bench main.bench.ts; docker compose down",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
@@ -33,10 +36,13 @@
 		"@typescript-eslint/parser": "^5.27.0",
 		"eslint": "^8.16.0",
 		"eslint-config-prettier": "^8.3.0",
+		"pouchdb": "~7.3.0",
+		"pouchdb-adapter-memory": "~7.3.0",
 		"prettier": "^2.6.2",
 		"typescript": "^4.8.4",
+		"uuid": "~8.3.2",
 		"vite": "^3.0.0",
-		"vitest": "~0.21.1",
+		"vitest": "~0.28.5",
 		"rxjs": "~7.8.0"
 	},
 	"type": "module"
