@@ -5,6 +5,8 @@ import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
+import { replicate } from '@librocco/db';
+
 const { newViewStream } = utils;
 
 class Database implements DatabaseInterface {
@@ -17,9 +19,8 @@ class Database implements DatabaseInterface {
 		// All of this is done automatically when running db.warehouse('0-all')
 		this.warehouse('0-all').create();
 	}
-	async init(remote?: { database: PouchDB.Database }) {
-		//  Utilise db.updateDesignDoc to load the design documents into the db
 
+	async init(params?: { remoteDb: string }) {
 		let promises = [];
 
 		// Upload design documents if any
@@ -33,8 +34,9 @@ class Database implements DatabaseInterface {
 		promises.push(whPromise);
 
 		// Set up replication between local pouch and "remote" couch
-		remote && promises.push(replicate({ local: this._pouch, remote: remote.database }));
-		return Promise.all(promises);
+		params && promises.push(replicate({ local: this._pouch, remote: params.remoteDb }));
+		await Promise.all(promises);
+		return this;
 	}
 
 	warehouse(id?: string): WarehouseInterface {
@@ -110,27 +112,5 @@ class Database implements DatabaseInterface {
 export const newDatabase = (db: PouchDB.Database): Database => {
 	return new Database(db);
 };
-
-/**
- * A function that handles replication, returns resolve when replication is complete and reject otherwise
- * @param local - local pouchdb instance
- * @param remote - remote pouchdb instance
- */
-
-const replicate = (database: { remote: PouchDB.Database; local: PouchDB.Database }) =>
-	new Promise<void>((resolve, reject) => {
-		database.local.replicate
-			.to(database.remote)
-			.on('complete', function () {
-				// yay, we're done!
-				console.log('Replication complete');
-				resolve();
-			})
-			.on('error', function (err) {
-				// boo, something went wrong!
-				console.log('could not replicate to remote db', err);
-				reject();
-			});
-	});
 
 // #region Database

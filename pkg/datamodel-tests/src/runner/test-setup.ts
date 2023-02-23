@@ -44,10 +44,14 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 
 	const taskSetup = async (): Promise<DatabaseInterface> => {
 		// Get new db per test basis
-		const pouchInstance = initDB();
+		const dbName = new Date().toISOString().replaceAll(/[.:]/g, '-').toLowerCase();
+		const pouchInstance = new PouchDB(dbName, { adapter: 'memory' });
+
 		const db = config.newDatabase(pouchInstance);
 
-		await db.init();
+		const fullName = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : dbName;
+
+		__withDocker__ ? db.init({ database: fullName }) : db.init();
 
 		return db;
 	};
@@ -82,6 +86,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
  * when we agree on the input data
  */
 // #region test_data_transformers
+
 const transformNote: TransformNote =
 	(version) =>
 	({ id, type, books }) => ({
@@ -90,6 +95,7 @@ const transformNote: TransformNote =
 		type: [type.split('-')[0], 'bound'].join('') as NoteType,
 		books: books.map(transformBookStock(version)).sort(sortBooks)
 	});
+
 const transformStock: TransformStock = (version) => (sn) => ({
 	id: `all-warehouses`,
 	books: sn.books
@@ -98,6 +104,7 @@ const transformStock: TransformStock = (version) => (sn) => ({
 		.filter(({ quantity }) => Boolean(quantity))
 		.sort(sortBooks)
 });
+
 const mapWarehouses: MapWarehouses = (version) => (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
 		const wName = `${version}/${b.warehouseId}`;
@@ -119,7 +126,9 @@ const mapWarehouses: MapWarehouses = (version) => (books) => {
 // #endregion test_data_transformers
 
 // #region helpers
+
 const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
+
 const transformBookStock =
 	(version: VersionString) =>
 	(b: RawBookStock): VolumeStockClient => ({
@@ -132,13 +141,3 @@ const transformBookStock =
 		warehouseName: `${version}/${b.warehouseId}`
 	});
 // #endregion helpers
-
-// #region env
-const initDB = (): PouchDB.Database => {
-	const dbName = new Date().toISOString().replaceAll(/[.:]/g, '-').toLowerCase();
-	const fullName = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : dbName;
-	const options = __withDocker__ ? {} : { adapter: 'memory' };
-
-	return new PouchDB(fullName, options);
-};
-// #endregion env
