@@ -182,11 +182,10 @@ export interface DatabaseInterface<
 	N extends NoteInterface = NoteInterface
 > {
 	_pouch: PouchDB.Database;
-	initialised: boolean;
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	warehouse: (id?: string) => W;
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
-	init: (params?: { remoteDb: string }) => Promise<DatabaseInterface>;
+	init: (params?: { remoteDb?: string }) => Promise<DatabaseInterface>;
 }
 // #endregion db
