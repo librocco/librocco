@@ -15,9 +15,11 @@ import { replicate } from './utils/pouchdb';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
+	initialised: boolean;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+		this.initialised = false;
 
 		// Initialize the default warehouse (this makes sure the "0-all" warehouse exists, otherwise it will be created)
 		// All of this is done automatically when running db.warehouse('0-all')
@@ -25,6 +27,7 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params?: { remoteDb: string }): Promise<DatabaseInterface> {
+		if (this.initialised) return this;
 		const promises = [];
 
 		// Upload design documents if any
@@ -40,6 +43,7 @@ class Database implements DatabaseInterface {
 		// Set up replication between local pouch and "remote" couch
 		params && promises.push(replicate({ local: this._pouch, remote: params.remoteDb }));
 		await Promise.all(promises);
+		this.initialised = true;
 		return this;
 	}
 
