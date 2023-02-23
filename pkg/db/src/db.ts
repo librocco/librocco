@@ -24,20 +24,25 @@ class Database implements DatabaseInterface {
 		this.warehouse('0-all').create();
 	}
 
-	async init(remote?: { database: PouchDB.Database }) {
-		//  Utilise db.updateDesignDoc to load the design documents into the db
-		const designdDocsPromise = designDocs.forEach((designDoc) => {
-			this.updateDesignDoc(designDoc);
-		});
+	async init(params?: { remoteDb: string }): Promise<DatabaseInterface> {
+		let promises = [];
+
+		// Upload design documents if any
+		const ddUpdates = designDocs.map((dd) => this.updateDesignDoc(dd));
+		if (ddUpdates?.length) {
+			promises.push(ddUpdates);
+		}
 
 		// create default warehouse
 		const whPromise = this.warehouse().create();
+		promises.push(whPromise);
 
 		// Set up replication between local pouch and "remote" couch
-
-		remote && replicate({ local: this._pouch, remote: remote.database });
-		await Promise.all([whPromise, designdDocsPromise]);
+		params && promises.push(replicate({ local: this._pouch, remote: params.remoteDb }));
+		await Promise.all(promises);
+		return this;
 	}
+
 	warehouse(id?: string): WarehouseInterface {
 		return newWarehouse(this, id);
 	}

@@ -191,13 +191,35 @@ const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.
  * @param remote - remote pouchdb instance
  */
 
-export const replicate = (database: { remote: PouchDB.Database; local: PouchDB.Database }) =>
+export const replicate = (database: { remote: string; local: PouchDB.Database }) =>
 	new Promise<void>((resolve, reject) => {
 		database.local.replicate
 			.to(database.remote)
 			.on('complete', function () {
-				// yay, we're done!
+				// after unidirectional replication is done, initiate live syncing (bidirectional)
 				console.log('Replication complete');
+
+				database.local
+					.sync(database.remote, { live: true, retry: true })
+					.on('change', function (info) {
+						// handle change
+					})
+					.on('paused', function () {
+						// replication paused (e.g. user went offline)
+					})
+					.on('active', function () {
+						// replicate resumed (e.g. user went back online)
+					})
+					.on('denied', function (info) {
+						// a document failed to replicate, e.g. due to permissions
+					})
+					.on('complete', function (info) {
+						// handle complete
+					})
+					.on('error', function (err) {
+						// handle error
+					});
+
 				resolve();
 			})
 			.on('error', function (err) {
