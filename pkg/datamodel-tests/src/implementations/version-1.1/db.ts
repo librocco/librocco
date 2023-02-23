@@ -1,21 +1,51 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DbStream, DesignDocument, DocType, InNoteList, NavListEntry, utils } from '@librocco/db';
 import { debug } from '@librocco/shared';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
-
+import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
-const { newViewStream } = utils;
+const { newViewStream, replicateFromRemote, replicateLive } = utils;
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
+	private initialised = false;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+	}
 
-		// Initialize the default warehouse (this makes sure the "0-all" warehouse exists, otherwise it will be created)
-		// All of this is done automatically when running db.warehouse('0-all')
-		this.warehouse('0-all').create();
+	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
+		if (this.initialised) return this;
+
+		const promises: Promise<any>[] = [];
+
+		// Upload design documents if any
+		if (designDocs.length) {
+			designDocs.forEach((dd) => {
+				promises.push(this.updateDesignDoc(dd));
+			});
+		}
+
+		// create default warehouse
+		const whPromise = this.warehouse().create();
+		promises.push(whPromise);
+
+		if (params && params.remoteDb) {
+			// Pull data from the remote db (if provided)
+			const initialReplication = replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+			promises.push(initialReplication);
+
+			// Start live sync between local and remote db
+			replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+		}
+
+		// Wait for all the init operations to complete before returning
+		await Promise.all(promises);
+		this.initialised = true;
+
+		return this;
 	}
 
 	warehouse(id?: string): WarehouseInterface {
@@ -91,5 +121,3 @@ class Database implements DatabaseInterface {
 export const newDatabase = (db: PouchDB.Database): Database => {
 	return new Database(db);
 };
-
-// #region Database
