@@ -16,7 +16,7 @@ class Database implements DatabaseInterface {
 		this._pouch = db;
 	}
 
-	async init(params?: { remoteDb?: string }): Promise<DatabaseInterface> {
+	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
 		if (this.initialised) return this;
 
 		const promises: Promise<any>[] = [];
@@ -34,11 +34,11 @@ class Database implements DatabaseInterface {
 
 		if (params && params.remoteDb) {
 			// Pull data from the remote db (if provided)
-			const initialReplication = replicateFromRemote({ local: this._pouch, remote: params.remoteDb });
+			const initialReplication = replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
 			promises.push(initialReplication);
 
 			// Start live sync between local and remote db
-			replicateLive({ local: this._pouch, remote: params.remoteDb });
+			replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
 		}
 
 		// Wait for all the init operations to complete before returning
