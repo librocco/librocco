@@ -25,7 +25,7 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params?: { remoteDb: string }): Promise<DatabaseInterface> {
-		let promises = [];
+		const promises = [];
 
 		// Upload design documents if any
 		const ddUpdates = designDocs.map((dd) => this.updateDesignDoc(dd));
