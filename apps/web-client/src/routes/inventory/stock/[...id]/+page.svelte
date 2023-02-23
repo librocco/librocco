@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
@@ -27,23 +26,7 @@
 	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
 	const warehouseList = readableFromStream(db.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
 
-	$: currentWarehouseId = $page.params.id;
-
 	let warehouse: WarehouseInterface | undefined = data.warehouse;
-
-	// $: {
-	// 	// Each time the current warehouse changes, set the ready to false
-	// 	warehouse = undefined;
-	// 	// Check if the warehouse exists, if not redirect back to /inventory/stock/0-all (default warehouse)
-	// 	if (currentWarehouseId) {
-	// 		db.warehouse(currentWarehouseId)
-	// 			.get()
-	// 			.then((res) => {
-	// 				// if (!res) return goto('/inventory/stock/0-all');
-	// 				warehouse = res;
-	// 			});
-	// 	}
-	// }
 
 	$: warehouesStores = createWarehouseStores(warehouse);
 
@@ -60,7 +43,7 @@
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
 		{#each $warehouseList as { displayName, id }}
-			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouseId} />
+			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
 		{/each}
 	</nav>
 
