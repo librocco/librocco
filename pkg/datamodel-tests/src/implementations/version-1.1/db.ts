@@ -9,9 +9,11 @@ const { newViewStream, replicate } = utils;
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
+	initialised: boolean;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+		this.initialised = false;
 
 		// Initialize the default warehouse (this makes sure the "0-all" warehouse exists, otherwise it will be created)
 		// All of this is done automatically when running db.warehouse('0-all')
@@ -19,6 +21,8 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params?: { remoteDb: string }) {
+		if (this.initialised) return this;
+		this.initialised = true;
 		const promises = [];
 
 		// Upload design documents if any
