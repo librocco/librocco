@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
-	import { goto } from '$app/navigation';
 	import { page } from '$app/stores';
 
 	import {
@@ -16,10 +15,12 @@
 		SelectMenu,
 		TextEditable
 	} from '@librocco/ui';
-	import type { NoteInterface } from '@librocco/db';
+	import type { NoteInterface, WarehouseInterface } from '@librocco/db';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
+
+	import type { PageData } from './$types';
 
 	import { createNoteStores } from '$lib/stores/inventory';
 
@@ -28,30 +29,13 @@
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
 
-	import type { PageData } from './$types';
-
 	export let data: PageData;
 
 	const inNoteListCtx = { name: '[IN_NOTE_LIST]', debug: false };
 	const inNoteList = readableFromStream(db.stream(inNoteListCtx).inNoteList, [], inNoteListCtx);
 
-	// $: currentNoteId = $page.params.id;
-	$: currentNoteWarehouse = $page.params.warehouseName;
-
-	let note: NoteInterface | undefined = data.warehouse;
-
-	// $: {
-	// 	// Each time the current note changes, set the ready to false
-	// 	note = undefined;
-	// 	// Check if the note exists, if not redirect back to /inventory/inbound
-	// 	if (currentNoteId) {
-	// 		db.findNote(currentNoteId).then((res) => {
-	// 			if (!res) return goto('/inventory/outbound');
-	// 			note = res.note;
-	// 			currentNoteWarehouse = res.warehouse.displayName;
-	// 		});
-	// 	}
-	// }
+	let note: NoteInterface | undefined = data.note;
+	let warehouse: WarehouseInterface | undefined = data.warehouse;
 
 	$: noteStores = createNoteStores(note);
 
@@ -90,7 +74,11 @@
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
 						<TextEditable class="inline-block" bind:value={$displayName} />
-						<span class="align-middle text-sm font-normal text-gray-500">in {currentNoteWarehouse}</span>
+						{#if warehouse}
+							<span class="align-middle text-sm font-normal text-gray-500"
+								>in {warehouse.displayName}</span
+							>
+						{/if}
 					</h2>
 					<div class="flex items-center gap-1.5 whitespace-nowrap">
 						<SelectMenu
