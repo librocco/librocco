@@ -1,7 +1,8 @@
-export { newDatabase as newDatabaseInterface } from './db';
-export { default as designDocuments } from './design_documents';
+const currentVersion = 'v1';
+
+import * as implementations from './implementations';
+const newDatabaseInterface = implementations[currentVersion];
+export { newDatabaseInterface };
 
 export * from './enums';
 export * from './types';
-
-export * as utils from './utils';
