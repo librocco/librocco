@@ -51,7 +51,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 
 		const fullName = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : dbName;
 
-		__withDocker__ ? db.init({ database: fullName }) : db.init();
+		__withDocker__ ? db.init({ remoteDb: fullName }) : db.init();
 
 		return db;
 	};

@@ -5,9 +5,7 @@ import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
-import { replicate } from '@librocco/db';
-
-const { newViewStream } = utils;
+const { newViewStream, replicate } = utils;
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -21,7 +19,7 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params?: { remoteDb: string }) {
-		let promises = [];
+		const promises = [];
 
 		// Upload design documents if any
 		const ddUpdates = designDocs.map((dd) => this.updateDesignDoc(dd));

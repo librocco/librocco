@@ -203,6 +203,7 @@ export const replicate = (database: { remote: string; local: PouchDB.Database })
 					.sync(database.remote, { live: true, retry: true })
 					.on('change', function (info) {
 						// handle change
+						console.log({ info });
 					})
 					.on('paused', function () {
 						// replication paused (e.g. user went offline)
@@ -212,12 +213,15 @@ export const replicate = (database: { remote: string; local: PouchDB.Database })
 					})
 					.on('denied', function (info) {
 						// a document failed to replicate, e.g. due to permissions
+						console.log({ info });
 					})
 					.on('complete', function (info) {
 						// handle complete
+						console.log({ info });
 					})
 					.on('error', function (err) {
 						// handle error
+						console.log({ err });
 					});
 
 				resolve();
