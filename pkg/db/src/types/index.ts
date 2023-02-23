@@ -186,6 +186,6 @@ export interface DatabaseInterface<
 	warehouse: (id?: string) => W;
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
-	init: (params?: { remoteDb?: string }) => Promise<DatabaseInterface>;
+	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
 }
 // #endregion db
