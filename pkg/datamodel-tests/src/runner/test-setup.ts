@@ -52,9 +52,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		// If testing with docker support, we're using the remote db to replicate to/from
 		const remoteDb = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : undefined;
 
-		db.init({ remoteDb }, {});
-
-		return db;
+		return db.init({ remoteDb }, {});
 	};
 
 	const test: TestTask = (name, cb) => {
