@@ -185,45 +185,26 @@ const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.
 		});
 	});
 
-/**
- * A function that handles replication, returns resolve when replication is complete and reject otherwise
- * @param local - local pouchdb instance
- * @param remote - remote pouchdb instance
- */
+interface ReplicateFn<R = Promise<void>> {
+	(params: { local: PouchDB.Database; remote: string }): R;
+}
 
-export const replicate = (database: { remote: string; local: PouchDB.Database }) =>
+/**
+ * A helper function used to replicate a remote (PouchDB/CouchDB) db to a local PouchDB instance.
+ * This is a one time, one way replication used to initialize the local db.
+ * It wraps the PouchDB replication API in a promise, resolving when the replication is complete.
+ * @param params
+ * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
+ * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @returns
+ */
+export const replicateFromRemote: ReplicateFn = ({ remote, local }) =>
 	new Promise<void>((resolve, reject) => {
-		database.local.replicate
-			.to(database.remote)
+		local.replicate
+			.from(remote)
 			.on('complete', function () {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
 				console.log('Replication complete');
-
-				database.local
-					.sync(database.remote, { live: true, retry: true })
-					.on('change', function (info) {
-						// handle change
-						console.log({ info });
-					})
-					.on('paused', function () {
-						// replication paused (e.g. user went offline)
-					})
-					.on('active', function () {
-						// replicate resumed (e.g. user went back online)
-					})
-					.on('denied', function (info) {
-						// a document failed to replicate, e.g. due to permissions
-						console.log({ info });
-					})
-					.on('complete', function (info) {
-						// handle complete
-						console.log({ info });
-					})
-					.on('error', function (err) {
-						// handle error
-						console.log({ err });
-					});
-
 				resolve();
 			})
 			.on('error', function (err) {
@@ -232,3 +213,37 @@ export const replicate = (database: { remote: string; local: PouchDB.Database })
 				reject();
 			});
 	});
+
+/**
+ * Open a continuous, bidirectional synchronisation (replication) between a local PouchDB instance and a remote (PouchDB/CouchDB) db.
+ * @param params
+ * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
+ * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @returns
+ */
+export const replicateLive: ReplicateFn<void> = ({ remote, local }) => {
+	local
+		.sync(remote, { live: true, retry: true })
+		.on('change', function (info) {
+			// handle change
+			console.log({ info });
+		})
+		.on('paused', function () {
+			// replication paused (e.g. user went offline)
+		})
+		.on('active', function () {
+			// replicate resumed (e.g. user went back online)
+		})
+		.on('denied', function (info) {
+			// a document failed to replicate, e.g. due to permissions
+			console.log({ info });
+		})
+		.on('complete', function (info) {
+			// handle complete
+			console.log({ info });
+		})
+		.on('error', function (err) {
+			// handle error
+			console.log({ err });
+		});
+};
