@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { DocType } from './enums';
 
 import { debug } from '@librocco/shared';
@@ -11,39 +12,45 @@ import { newViewStream } from './utils';
 
 import designDocs from './design_documents';
 
-import { replicate } from './utils/pouchdb';
+import { replicateFromRemote, replicateLive } from './utils/pouchdb';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
-	initialised: boolean;
+	private initialised = false;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
-		this.initialised = false;
-
-		// Initialize the default warehouse (this makes sure the "0-all" warehouse exists, otherwise it will be created)
-		// All of this is done automatically when running db.warehouse('0-all')
-		this.warehouse('0-all').create();
 	}
 
-	async init(params?: { remoteDb: string }): Promise<DatabaseInterface> {
+	async init(params?: { remoteDb?: string }): Promise<DatabaseInterface> {
 		if (this.initialised) return this;
-		const promises = [];
+
+		const promises: Promise<any>[] = [];
 
 		// Upload design documents if any
-		const ddUpdates = designDocs.map((dd) => this.updateDesignDoc(dd));
-		if (ddUpdates?.length) {
-			promises.push(ddUpdates);
+		if (designDocs.length) {
+			designDocs.forEach((dd) => {
+				promises.push(this.updateDesignDoc(dd));
+			});
 		}
 
 		// create default warehouse
 		const whPromise = this.warehouse().create();
 		promises.push(whPromise);
 
-		// Set up replication between local pouch and "remote" couch
-		params && promises.push(replicate({ local: this._pouch, remote: params.remoteDb }));
+		if (params && params.remoteDb) {
+			// Pull data from the remote db (if provided)
+			const initialReplication = replicateFromRemote({ local: this._pouch, remote: params.remoteDb });
+			promises.push(initialReplication);
+
+			// Start live sync between local and remote db
+			replicateLive({ local: this._pouch, remote: params.remoteDb });
+		}
+
+		// Wait for all the init operations to complete before returning
 		await Promise.all(promises);
 		this.initialised = true;
+
 		return this;
 	}
 
@@ -126,5 +133,3 @@ class Database implements DatabaseInterface {
 export const newDatabase = (db: PouchDB.Database): Database => {
 	return new Database(db);
 };
-
-// #region Database
