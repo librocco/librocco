@@ -184,3 +184,65 @@ const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.
 			subscriber.next(change);
 		});
 	});
+
+interface ReplicateFn<R = Promise<void>> {
+	(params: { local: PouchDB.Database; remote: string }, ctx: debug.DebugCtx): R;
+}
+
+/**
+ * A helper function used to replicate a remote (PouchDB/CouchDB) db to a local PouchDB instance.
+ * This is a one time, one way replication used to initialize the local db.
+ * It wraps the PouchDB replication API in a promise, resolving when the replication is complete.
+ * @param params
+ * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
+ * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @returns
+ */
+export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
+	new Promise<void>((resolve, reject) => {
+		local.replicate
+			.from(remote)
+			.on('complete', () => {
+				// after unidirectional replication is done, initiate live syncing (bidirectional)
+				debug.log(ctx, 'replicate_from_remote:complete')({ local: local.name, remote });
+				resolve();
+			})
+			.on('error', (error) => {
+				// boo, something went wrong!
+				debug.log(ctx, 'replicate_from_remote:error')({ local: local.name, remote, error });
+				reject();
+			});
+	});
+
+/**
+ * Open a continuous, bidirectional synchronisation (replication) between a local PouchDB instance and a remote (PouchDB/CouchDB) db.
+ * @param params
+ * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
+ * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @returns
+ */
+export const replicateLive: ReplicateFn<void> = ({ remote, local }, ctx) => {
+	const info = { local: local.name, remote };
+
+	local
+		.sync(remote, { live: true, retry: true })
+		.on('change', (change) => {
+			// handle change
+			debug.log(ctx, 'replicate_live:change')({ ...info, change });
+		})
+		.on('paused', () => {
+			// replication paused (e.g. user went offline)
+			debug.log(ctx, 'replicate_live:paused')(info);
+		})
+		.on('active', function () {
+			// replicate resumed (e.g. user went back online)
+			debug.log(ctx, 'replicate_live:active')(info);
+		})
+		.on('denied', (error) => {
+			debug.log(ctx, 'replicate_live:denied')({ ...info, error });
+		})
+		.on('error', function (error) {
+			// handle error
+			debug.log(ctx, 'replicate_live:error')({ ...info, error });
+		});
+};
