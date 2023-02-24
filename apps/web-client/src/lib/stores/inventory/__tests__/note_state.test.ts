@@ -15,7 +15,7 @@ const { waitFor } = testUtils;
 
 describe('createDisplayStateStore', () => {
 	test('should stream the internal note state to be displayed', async () => {
-		const db = newTestDB();
+		const db = await newTestDB();
 		const note = await db.warehouse().note('note-1').create();
 
 		const internalStateStore = createInternalStateStore(note, {});
@@ -44,7 +44,7 @@ describe('createDisplayStateStore', () => {
 	});
 
 	test('should set the temp state to the internal store and update the content store', async () => {
-		const db = newTestDB();
+		const db = await newTestDB();
 		const note = await db.warehouse().note('note-1').create();
 
 		const internalStateStore = createInternalStateStore(note, {});
