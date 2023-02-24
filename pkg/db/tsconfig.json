@@ -1,12 +1,17 @@
 {
 	"extends": "../scaffold/tsconfig.json",
 	"compilerOptions": {
+		"paths": {
+			"@/*": ["src/*"],
+			"@test-runner/*": ["src/test-runner/*"],
+			"@data-loaders/*": ["src/data-loaders/*"],
+			"@unit-test-data/*": ["src/test-runner/__testData__/*"]
+		},
 		"rootDir": "src",
 		"baseUrl": ".",
 
-		"types": ["vitest/importMeta"],
-		"module": "esnext",
-		"lib": ["ESNext"]
+		"lib": ["ESNext"],
+		"esModuleInterop": true
 	},
 	"exclude": ["node_modules"],
 	"include": ["src"]
