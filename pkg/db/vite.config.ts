@@ -18,6 +18,7 @@ export default defineConfig({
 			formats: ['es', 'cjs']
 		},
 		rollupOptions: {
+			external: ['rxjs, pouchdb'],
 			output: {
 				exports: 'named'
 			}
