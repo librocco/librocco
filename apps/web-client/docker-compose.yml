@@ -2,7 +2,7 @@ version: '3'
 
 services:
     db:
-        image: ghcr.io/librocco/datamodel-testdata
+        image: ghcr.io/librocco/dev-db:latest
         container_name: librocco-dev-db
         ports:
             - '5000:5984'
