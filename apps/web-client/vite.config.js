@@ -1,8 +1,6 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import path from 'path';
 
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
 import RollupNodePolyfill from 'rollup-plugin-node-polyfills';
 
 const rushDir = path.join(__dirname, '..', '..', 'common');
@@ -22,18 +20,7 @@ const config = {
 			// Define global variable for node modules required for PouchDB
 			define: {
 				global: 'globalThis'
-			},
-			plugins: [
-				// Enable node globals for PouchDB purposes.
-				// This works in dev mode (as ESBuild is used for dev server).
-				NodeGlobalsPolyfillPlugin({
-					process: true,
-					buffer: true
-				}),
-				// Polyfill node modules for PouchDB purposes (namely, 'events').
-				// This works in dev mode (as ESBuild is used for dev server).
-				NodeModulesPolyfillPlugin()
-			]
+			}
 		}
 	},
 	server: {
