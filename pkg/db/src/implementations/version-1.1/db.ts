@@ -35,14 +35,16 @@ class Database implements DatabaseInterface {
 		const whPromise = this.warehouse().create();
 		promises.push(whPromise);
 
-		if (params && params.remoteDb) {
-			// Pull data from the remote db (if provided)
-			const initialReplication = replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
-			promises.push(initialReplication);
-
-			// Start live sync between local and remote db
-			replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
-		}
+		const replication = (async () => {
+			if (params && params.remoteDb) {
+				// Pull data from the remote db (if provided)
+				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+				// Start live sync between local and remote db
+				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+			}
+			return;
+		})();
+		promises.push(replication);
 
 		// Wait for all the init operations to complete before returning
 		await Promise.all(promises);

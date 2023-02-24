@@ -45,10 +45,7 @@ export const sortById = ({ _id: id1 }: CouchDocument, { _id: id2 }: CouchDocumen
  * @param db pouchdb instance
  * @param id document id
  */
-const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unknown>>(
-	db: PouchDB.Database,
-	id: string
-) =>
+const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unknown>>(db: PouchDB.Database, id: string) =>
 	db.changes<M>({
 		since: 'now',
 		live: true,
@@ -200,16 +197,31 @@ interface ReplicateFn<R = Promise<void>> {
  */
 export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
 	new Promise<void>((resolve, reject) => {
+		const info = { local: local.name, remote };
+
 		local.replicate
 			.from(remote)
 			.on('complete', () => {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
-				debug.log(ctx, 'replicate_from_remote:complete')({ local: local.name, remote });
+				debug.log(ctx, 'replicate_from_remote:complete')(info);
 				resolve();
+			})
+			.on('paused', () => {
+				// replication paused (e.g. user went offline)
+				debug.log(ctx, 'replicate_live:paused')(info);
+			})
+			.on('active', function () {
+				// replicate resumed (e.g. user went back online)
+				debug.log(ctx, 'replicate_live:active')(info);
+			})
+			.on('denied', (error) => {
+				// boo, something went wrong!
+				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
+				reject();
 			})
 			.on('error', (error) => {
 				// boo, something went wrong!
-				debug.log(ctx, 'replicate_from_remote:error')({ local: local.name, remote, error });
+				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
 				reject();
 			});
 	});
