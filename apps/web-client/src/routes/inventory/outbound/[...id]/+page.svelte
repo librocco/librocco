@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -35,21 +34,7 @@
 	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
 	const outNoteList = readableFromStream(db.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
-	$: currentNoteId = $page.params.id;
-
-	let note: NoteInterface | undefined = data.warehouse;
-
-	// $: {
-	// 	// Each time the current note changes, set the ready to false
-	// 	note = undefined;
-	// 	// Check if the note exists, if not redirect back to /inventory/inbound
-	// 	if (currentNoteId) {
-	// 		db.findNote(currentNoteId).then((res) => {
-	// 			if (!res) return goto('/inventory/outbound');
-	// 			note = res.note;
-	// 		});
-	// 	}
-	// }
+	let note: NoteInterface | undefined = data.note;
 
 	$: noteStores = createNoteStores(note);
 
@@ -68,7 +53,7 @@
 	<!-- Sidebar slot -->
 	<nav class="divide-y divide-gray-300" slot="sidebar">
 		{#each $outNoteList as { displayName, id }}
-			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === currentNoteId} />
+			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === $page.params.id} />
 		{/each}
 	</nav>
 
