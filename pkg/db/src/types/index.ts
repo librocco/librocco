@@ -44,6 +44,19 @@ export interface VolumeStockClient extends VolumeStock {
 }
 // #endregion misc
 
+// #region books
+export interface BookEntry {
+	isbn: string;
+	title: string;
+	price: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+}
+// #endregion books
+
 // #region note
 export type NoteType = 'inbound' | 'outbound';
 
@@ -142,10 +155,8 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
  * * standard data structure
  * * standard method interface
  */
-export type WarehouseInterface<
-	N extends NoteInterface = NoteInterface,
-	A extends Record<string, any> = {}
-> = WarehouseProto<N, A> & WarehouseData<A>;
+export type WarehouseInterface<N extends NoteInterface = NoteInterface, A extends Record<string, any> = {}> = WarehouseProto<N, A> &
+	WarehouseData<A>;
 // #endregion warehouse
 
 // #region db
@@ -177,10 +188,7 @@ export interface DbStream {
 /**
  * A standardized interface (interface of methods) for a db.
  */
-export interface DatabaseInterface<
-	W extends WarehouseInterface = WarehouseInterface,
-	N extends NoteInterface = NoteInterface
-> {
+export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInterface, N extends NoteInterface = NoteInterface> {
 	_pouch: PouchDB.Database;
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	warehouse: (id?: string) => W;
