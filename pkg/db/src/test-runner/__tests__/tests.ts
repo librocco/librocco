@@ -14,6 +14,18 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 	const fullStock = await firstValueFrom(db.warehouse().stream({}).entries);
 	expect(fullStock).toEqual([]);
 
+	// Create warehouse documents and update displayNames
+	const { warehouses } = getNotesAndWarehouses(version)(3);
+	await Promise.all(
+		warehouses.map(({ id }) => {
+			db.warehouse(id)
+				.create()
+				// For the purose of testing, we set the displayName to the warehouse id
+				// correct default displayNames are tested in the unit tests
+				.then((w) => w.setName(id));
+		})
+	);
+
 	// Loop through three notes, fill them with entries and commit them (we need to do this recursively as we can't await in a loop)
 	const createCommitAndCheckNote = async (curr: number, last: number): Promise<void> => {
 		if (curr > last) return;
