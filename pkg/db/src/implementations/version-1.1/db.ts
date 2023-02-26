@@ -17,6 +17,11 @@ class Database implements DatabaseInterface {
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+
+		// Currently we're using up to 14 listeners (21 when replication is enabled).
+		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
+		// but will still show a warning if that number gets unexpectedly high (memory leak).
+		this._pouch.setMaxListeners(30);
 	}
 
 	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
