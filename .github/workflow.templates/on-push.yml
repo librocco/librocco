@@ -7,50 +7,52 @@
 name: Checks
 
 "on":
-  - push
+    - push
 
 jobs:
-  js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
+    js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
-  ui-test: #@ test_job("UI Tests", "pkg/ui")
+    ui-test: #@ test_job("UI Tests", "pkg/ui")
 
-  web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
+    web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
 
-  lint-and-typecheck:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    permissions:
-      id-token: write
-      contents: read
-      checks: write
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Lint all the packages
-        run: rush lint:strict
-      - name: Typecheck all the packages
-        #! Run typecheck even if linting fails
-        if: success() || failure()
-        run: rush typecheck
-  perform-monorepo-checks:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          fetch-depth: 0
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "16"
-      -  #@ cache_node()
-      -  #@ rush_add_path()
-      -  #@ rush_install()
-      -  #@ rush_build()
-      - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
-        run: rush check-workspace-projects
+    db-test: #@ test_job("DB Tests", "pkg/db")
+
+    lint-and-typecheck:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        permissions:
+            id-token: write
+            contents: read
+            checks: write
+        steps:
+            - uses: actions/checkout@v2
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "16"
+            -  #@ cache_node()
+            -  #@ rush_add_path()
+            -  #@ rush_install()
+            -  #@ rush_build()
+            - name: Lint all the packages
+              run: rush lint:strict
+            - name: Typecheck all the packages
+              #! Run typecheck even if linting fails
+              if: success() || failure()
+              run: rush typecheck
+    perform-monorepo-checks:
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v2
+              with:
+                  fetch-depth: 0
+            - uses: actions/setup-node@v2
+              with:
+                  node-version: "16"
+            -  #@ cache_node()
+            -  #@ rush_add_path()
+            -  #@ rush_install()
+            -  #@ rush_build()
+            - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
+              run: rush check-workspace-projects
