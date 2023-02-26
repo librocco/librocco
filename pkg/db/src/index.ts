@@ -1,4 +1,4 @@
-const currentVersion = 'v1';
+import { currentVersion } from './currentVersion';
 
 import * as implementations from './implementations';
 const newDatabaseInterface = implementations[currentVersion];
