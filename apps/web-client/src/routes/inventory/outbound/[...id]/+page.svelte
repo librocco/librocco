@@ -15,7 +15,6 @@
 		SelectMenu,
 		TextEditable
 	} from '@librocco/ui';
-	import type { NoteInterface } from '@librocco/db';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
@@ -34,7 +33,7 @@
 	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
 	const outNoteList = readableFromStream(db.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
-	let note: NoteInterface | undefined = data.note;
+	$: note = data.note;
 
 	$: noteStores = createNoteStores(note);
 

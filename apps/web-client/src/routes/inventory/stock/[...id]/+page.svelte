@@ -2,8 +2,6 @@
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
 
-	import type { WarehouseInterface } from '@librocco/db';
-
 	import {
 		InventoryPage,
 		SidebarItem,
@@ -26,7 +24,7 @@
 	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
 	const warehouseList = readableFromStream(db.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
 
-	let warehouse: WarehouseInterface | undefined = data.warehouse;
+	$: warehouse = data.warehouse;
 
 	$: warehouesStores = createWarehouseStores(warehouse);
 
