@@ -13,4 +13,8 @@
 		<pre>{text}</pre>
 		<TextEditable bind:value={text} />
 	</Hst.Variant>
+
+	<Hst.Variant title="Disabled">
+		<TextEditable bind:value={text} disabled />
+	</Hst.Variant>
 </Hst.Story>

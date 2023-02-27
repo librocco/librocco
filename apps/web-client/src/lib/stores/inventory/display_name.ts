@@ -1,6 +1,6 @@
 import { type Writable, get } from 'svelte/store';
 
-import type { NoteInterface, WarehouseInterface } from '@librocco/db';
+import { NoteState, type NoteInterface, type WarehouseInterface } from '@librocco/db';
 import { debug } from '@librocco/shared';
 
 import { NoteTempState } from '$lib/enums/inventory';
@@ -26,17 +26,23 @@ interface CreateDisplayNameStore {
  * @param internalStateStore (optional) reference to the internal state store for the note. If provided, the store will be updated with the temp state while the content store updates.
  */
 export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalStateStore, ctx = {}) => {
-	const displayName = readableFromStream(entity?.stream(ctx).displayName, '', ctx);
+	const displayNameInternal = readableFromStream(entity?.stream(ctx).displayName, '', ctx);
 
 	// Set method updates the displayName in the database and, if the internal state store is provided, sets the temp state
 	// if internal state store is provided (and set to temp state by this action), it will be updated to the non-temp state
 	// when the db update is confirmed (but this happens outside of this store)
 	const set = (displayName: string) => {
-		// We're not allowing empty display names
-		if (!displayName) {
+		const currentDisplayName = get(displayNameInternal);
+		const internalState = get(internalStateStore);
+		debug.log(ctx, 'display_name_store:set')({ displayName, currentDisplayName, internalState });
+
+		// We're not allowing empty display names nor updating the
+		// name if the name passed is the same as the current name.
+		if (!displayName || displayName === currentDisplayName || internalState === NoteState.Committed) {
+			debug.log(ctx, 'display_name_store:set:noop')({ displayName, currentDisplayName, internalState });
 			return;
 		}
-		debug.log(ctx, 'display_name_store:set')(displayName);
+
 		internalStateStore?.set(NoteTempState.Saving);
 		entity?.setName(displayName, ctx);
 	};
@@ -44,9 +50,9 @@ export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalS
 	// Update method updates the store using the set method, only providing the current value of the store to the update function
 	// This will probably not be used, but is here for svelte store interface compatibility
 	const update = (fn: (displayName: string | undefined) => string) => {
-		debug.log(ctx, 'display_name_store:update')(displayName);
-		set(fn(get(displayName)));
+		debug.log(ctx, 'display_name_store:update')(displayNameInternal);
+		set(fn(get(displayNameInternal)));
 	};
 
-	return { subscribe: displayName.subscribe, set, update };
+	return { subscribe: displayNameInternal.subscribe, set, update };
 };

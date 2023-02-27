@@ -63,7 +63,7 @@
 				{#if $state}
 					<div>
 						<h2 class="mb-4 text-gray-900">
-							<TextEditable bind:value={$displayName} />
+							<TextEditable bind:value={$displayName} disabled={$state === NoteState.Committed} />
 						</h2>
 						<div class="flex items-center gap-1.5 whitespace-nowrap">
 							<SelectMenu
