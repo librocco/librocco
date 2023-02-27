@@ -43,7 +43,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(note, internalState, {
+	const displayName = createDisplayNameStore(note, undefined, {
 		name: `[NOTE_DISPLAY_NAME::${note?._id}]`,
 		debug: false
 	});

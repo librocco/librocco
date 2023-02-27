@@ -72,7 +72,11 @@
 			<div class="flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<TextEditable class="inline-block" bind:value={$displayName} />
+						<TextEditable
+							class="inline-block"
+							bind:value={$displayName}
+							disabled={$state === NoteState.Committed}
+						/>
 						{#if warehouse}
 							<span class="align-middle text-sm font-normal text-gray-500"
 								>in {warehouse.displayName}</span
