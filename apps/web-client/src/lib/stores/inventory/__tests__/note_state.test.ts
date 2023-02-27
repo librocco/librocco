@@ -68,6 +68,36 @@ describe('createDisplayStateStore', () => {
 		cleanupSubscription();
 	});
 
+	test('should short circuit updates if the updated state is the same as the current state', async () => {
+		const db = await newTestDB();
+		const note = await db.warehouse().note('note-1').create();
+
+		// In production this is the most common case of setting the state to the same value.
+		// On init the state picker's bind:value runs an update with the initial state, which is the same as the current state.
+		await note.commit({});
+
+		const internalStateStore = createInternalStateStore(note, {});
+		const displayStateStore = createDisplayStateStore(note, internalStateStore, {});
+
+		// See dummy subscription in the previous test ^^
+		const cleanupSubscription = displayStateStore.subscribe(() => null);
+
+		// Wait for the store to set up (get initial value from the db)
+		await waitFor(() => {
+			expect(get(displayStateStore)).toBe(NoteState.Committed);
+		});
+
+		// Set the state to the same value as the current state.
+		// Normally this would trigger setting a temp 'committing' state until the
+		// note commit has finished a round trip. However, since the note is already committed
+		// not state update would come from the db and we would get stuck in the temp state.
+		displayStateStore.set(NoteState.Committed);
+		expect(get(displayStateStore)).toBe(NoteState.Committed);
+
+		// Close the dummy subscription after assertions
+		cleanupSubscription();
+	});
+
 	test("should stream 'undefined' if no note provided", () => {
 		// Check for both internal state store as well as display state store
 		const internalStateStore = createInternalStateStore(undefined, {});
