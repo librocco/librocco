@@ -22,7 +22,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 				.create()
 				// For the purose of testing, we set the displayName to the warehouse id
 				// correct default displayNames are tested in the unit tests
-				.then((w) => w.setName(id));
+				.then((w) => w.setName(id, {}));
 		})
 	);
 
@@ -39,7 +39,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 
 		const n = await warehouse.note().create();
 		await n.addVolumes(...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple));
-		await n.commit();
+		await n.commit({});
 
 		const assertionTuples = [
 			[db.warehouse(), fullStock.books] as [WarehouseInterface, VolumeStock[]],

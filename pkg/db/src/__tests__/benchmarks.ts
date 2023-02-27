@@ -15,7 +15,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 			db
 				.warehouse(id)
 				.create()
-				.then((w) => w.setName(id))
+				.then((w) => w.setName(id, {}))
 		)
 	);
 
@@ -27,7 +27,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 					...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple)
 				)
 			)
-			.then((n) => n.commit())
+			.then((n) => n.commit({}))
 	);
 	await Promise.all(noteUpdates);
 
