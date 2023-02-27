@@ -100,6 +100,14 @@ export const createDisplayStateStore: CreateDisplayStateStore = (note, internalS
 		const internalState = get(internalStateStore);
 		debug.log(ctx, 'display_state_store:set')({ state, internalState });
 
+		// If state is the same as the internal (current) state, we're not doing anything.
+		//
+		// This way we're avoiding temp state flashing (or getting stuck in temp state) when,
+		// for instance, bound value is set to 'committed' and the note is already committed.
+		if (state === internalState) {
+			return;
+		}
+
 		// For committed or deleted state, we're setting the temporary state and updating the note in the db.
 		//
 		// Other updates are no-op as we don't allow explicit setting of temporary states
