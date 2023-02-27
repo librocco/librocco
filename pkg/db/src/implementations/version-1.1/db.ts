@@ -25,7 +25,11 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
-		if (this.#initialised) return this;
+		debug.log(ctx, 'init_db:started')({});
+		if (this.#initialised) {
+			debug.log(ctx, 'init_db:already_initialised')({});
+			return this;
+		}
 
 		const promises: Promise<any>[] = [];
 
@@ -42,10 +46,14 @@ class Database implements DatabaseInterface {
 
 		const replication = (async () => {
 			if (params && params.remoteDb) {
+				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
 				// Pull data from the remote db (if provided)
 				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+				debug.log(ctx, 'init_db:replication:initial_replication_done')({});
 				// Start live sync between local and remote db
 				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+			} else {
+				debug.log(ctx, 'init_db:replication:skipped')({});
 			}
 			return;
 		})();

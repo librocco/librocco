@@ -201,9 +201,9 @@ export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
 
 		local.replicate
 			.from(remote)
-			.on('complete', () => {
+			.on('complete', (complete) => {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
-				debug.log(ctx, 'replicate_from_remote:complete')(info);
+				debug.log(ctx, 'replicate_from_remote:complete')({ ...info, complete });
 				resolve();
 			})
 			.on('paused', () => {
@@ -246,15 +246,18 @@ export const replicateLive: ReplicateFn<void> = ({ remote, local }, ctx) => {
 			// replication paused (e.g. user went offline)
 			debug.log(ctx, 'replicate_live:paused')(info);
 		})
-		.on('active', function () {
+		.on('active', () => {
 			// replicate resumed (e.g. user went back online)
 			debug.log(ctx, 'replicate_live:active')(info);
 		})
 		.on('denied', (error) => {
 			debug.log(ctx, 'replicate_live:denied')({ ...info, error });
 		})
-		.on('error', function (error) {
+		.on('error', (error) => {
 			// handle error
 			debug.log(ctx, 'replicate_live:error')({ ...info, error });
+		})
+		.on('complete', (complete) => {
+			debug.log(ctx, 'replicate_live:error')({ ...info, complete });
 		});
 };
