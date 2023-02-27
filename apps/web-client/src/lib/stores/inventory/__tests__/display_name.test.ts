@@ -1,4 +1,5 @@
-import { describe, test, expect } from 'vitest';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { describe, test, expect, vi } from 'vitest';
 import { writable, get } from 'svelte/store';
 import { testUtils } from '@librocco/shared';
 
@@ -10,6 +11,7 @@ import type { NoteAppState } from '$lib/types/inventory';
 import { createDisplayNameStore } from '../display_name';
 
 import { newTestDB } from '$lib/__testUtils__/db';
+import { BehaviorSubject } from 'rxjs';
 
 const { waitFor } = testUtils;
 
@@ -74,6 +76,60 @@ describe('createDisplayNameStore', () => {
 		// Update to the displayName store should get propagated to the db
 		ndn$.set('Note 1 updated');
 		expect(get(is$)).toEqual(NoteTempState.Saving);
+	});
+
+	test.only('should not propagate updates to the db if the display name is empty', async () => {
+		const mockSetName = vi.fn();
+
+		const mockEntity = {
+			setName: mockSetName,
+			stream: () => ({
+				displayName: new BehaviorSubject('temp')
+			})
+		} as any;
+
+		const mockInternalStateStore = writable<NoteAppState>(NoteState.Draft);
+		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		dn$.set('');
+
+		expect(mockSetName).not.toHaveBeenCalled();
+		expect(get(mockInternalStateStore)).toEqual(NoteState.Draft);
+	});
+
+	test('should not propagate updates to the db if the display name is same as the current one', async () => {
+		const mockSetName = vi.fn();
+
+		const mockEntity = {
+			setName: mockSetName,
+			stream: () => ({
+				displayName: new BehaviorSubject('Current Name')
+			})
+		} as any;
+
+		const mockInternalStateStore = writable<NoteAppState>(NoteState.Draft);
+		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		dn$.set('Current Name');
+
+		expect(mockSetName).not.toHaveBeenCalled();
+		expect(get(mockInternalStateStore)).toEqual(NoteState.Draft);
+	});
+
+	test.only("should not allow name changing if internal state == 'committed' (this is aplicable only to notes)", async () => {
+		const mockSetName = vi.fn();
+
+		const mockEntity = {
+			setName: mockSetName,
+			stream: () => ({
+				displayName: new BehaviorSubject('Current Name')
+			})
+		} as any;
+
+		const mockInternalStateStore = writable<NoteAppState>(NoteState.Committed);
+		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		dn$.set('New Name');
+
+		expect(mockSetName).not.toHaveBeenCalled();
+		expect(get(mockInternalStateStore)).toEqual(NoteState.Committed);
 	});
 
 	test("should not explode if 'entity' is not provided", async () => {
