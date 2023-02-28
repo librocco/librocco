@@ -199,4 +199,8 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	getBook: (isbn: string) => Promise<CouchDocument<BookEntry> | undefined>;
 	upsertBook: (bookEntry: CouchDocument<BookEntry>) => Promise<void>;
 }
+
+export interface NewDatabase {
+	(db: PouchDB.Database): DatabaseInterface;
+}
 // #endregion db
