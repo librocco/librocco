@@ -1,6 +1,7 @@
 import PouchDB from 'pouchdb';
 import MemoryAdapter from 'pouchdb-adapter-memory';
 import { v4 as uuid } from 'uuid';
+
 import { newDatabaseInterface } from '@librocco/db';
 
 // Enable running of the tests against in-memory PouchDB

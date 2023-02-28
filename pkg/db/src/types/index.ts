@@ -196,4 +196,8 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	stream: (ctx: debug.DebugCtx) => DbStream;
 	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
 }
+
+export interface NewDatabase {
+	(db: PouchDB.Database): DatabaseInterface;
+}
 // #endregion db
