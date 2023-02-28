@@ -22,7 +22,7 @@ describe('createDisplayNameStore', () => {
 		const note = await warehouse.note().create();
 
 		// Test for note
-		await note.setName('Note 1');
+		await note.setName('Note 1', {});
 
 		const ndn$ = createDisplayNameStore(note, null, {});
 		let noteDisplayName: string | undefined;
@@ -38,7 +38,7 @@ describe('createDisplayNameStore', () => {
 		});
 
 		// Test for warehouse
-		await warehouse.setName('Warehouse 1');
+		await warehouse.setName('Warehouse 1', {});
 
 		const wdn$ = createDisplayNameStore(warehouse, null, {});
 		let warehouseDisplayName: string | undefined;
@@ -78,7 +78,7 @@ describe('createDisplayNameStore', () => {
 		expect(get(is$)).toEqual(NoteTempState.Saving);
 	});
 
-	test.only('should not propagate updates to the db if the display name is empty', async () => {
+	test('should not propagate updates to the db if the display name is empty', async () => {
 		const mockSetName = vi.fn();
 
 		const mockEntity = {
@@ -114,7 +114,7 @@ describe('createDisplayNameStore', () => {
 		expect(get(mockInternalStateStore)).toEqual(NoteState.Draft);
 	});
 
-	test.only("should not allow name changing if internal state == 'committed' (this is aplicable only to notes)", async () => {
+	test("should not allow name changing if internal state == 'committed' (this is aplicable only to notes)", async () => {
 		const mockSetName = vi.fn();
 
 		const mockEntity = {
