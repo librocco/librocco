@@ -2,9 +2,7 @@ import { writable, type Readable, type Writable } from 'svelte/store';
 
 import type { NoteInterface, WarehouseInterface } from '@librocco/db';
 
-import type { DisplayRow, NoteAppState, PaginationData } from '$lib/types/inventory';
-
-import { bookStore } from '$lib/db/data';
+import type { FullTableRow, NoteAppState, PaginationData } from '$lib/types/inventory';
 
 import { createDisplayNameStore } from './display_name';
 import { createDisplayStateStore, createInternalStateStore } from './note_state';
@@ -16,7 +14,7 @@ interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
 	state: Writable<NoteAppState>;
 	updatedAt: Readable<Date | null>;
-	entries: Readable<DisplayRow[]>;
+	entries: Readable<FullTableRow[]>;
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
 }
@@ -49,7 +47,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 		debug: false
 	});
 	const state = createDisplayStateStore(note, internalState, noteStateCtx);
-	const entries = createDisplayEntriesStore(note, currentPage, bookStore, {
+	const entries = createDisplayEntriesStore(note, currentPage, {
 		name: `[NOTE_ENTRIES::${note?._id}]`,
 		debug: false
 	});
@@ -70,7 +68,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 
 interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
-	entries: Readable<DisplayRow[]>;
+	entries: Readable<FullTableRow[]>;
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
 }
@@ -91,7 +89,7 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 		name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`,
 		debug: false
 	});
-	const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore, {
+	const entries = createDisplayEntriesStore(warehouse, currentPage, {
 		name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`,
 		debug: false
 	});

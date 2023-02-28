@@ -3,7 +3,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
 
-import { DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { BookEntry, CouchDocument, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
@@ -51,6 +51,39 @@ class Database implements DatabaseInterface {
 		this.#initialised = true;
 
 		return this;
+	}
+
+	async getBook(isbn: string): Promise<CouchDocument<BookEntry> | undefined> {
+		return await this._pouch.get(isbn);
+	}
+
+	async getBooks(isbns: string[]): Promise<CouchDocument<BookEntry>[]> {
+		const rawBooks = await this._pouch.allDocs({ keys: isbns, include_docs: true });
+		// The rows are returned in the same order as the supplied keys array.
+		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
+
+		/** @TODO type assertion function for query instead of casting? */
+		const bookDocs = rawBooks.rows.reduce((values: CouchDocument<BookEntry>[], value) => {
+			if (value.doc) values.push(value.doc as CouchDocument<BookEntry>);
+			return values;
+		}, []);
+
+		return bookDocs;
+	}
+
+	async upsertBook(bookEntry: BookEntry): Promise<void> {
+		/** @TODO handle doc not found better? */
+		try {
+			const bookDocument = await this._pouch.get(bookEntry.isbn);
+			console.log('bookDocument', { bookDocument });
+			await this._pouch.put({ ...bookDocument, ...bookEntry });
+			return;
+		} catch (err) {
+			console.log('document not found');
+		}
+		await this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
+
+		return;
 	}
 
 	warehouse(id?: string): WarehouseInterface {

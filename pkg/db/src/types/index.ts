@@ -195,5 +195,8 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
 	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
+	getBooks: (isbns: string[]) => Promise<CouchDocument<BookEntry>[]>;
+	getBook: (isbn: string) => Promise<CouchDocument<BookEntry> | undefined>;
+	upsertBook: (bookEntry: CouchDocument<BookEntry>) => Promise<void>;
 }
 // #endregion db
