@@ -1,5 +1,4 @@
 /* eslint-disable no-case-declarations */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { expect } from 'vitest';
 
 import { testUtils } from '@librocco/shared';

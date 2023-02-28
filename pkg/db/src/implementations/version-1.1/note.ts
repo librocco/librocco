@@ -85,7 +85,6 @@ class Note implements NoteInterface {
 	 */
 	private updateField<K extends keyof NoteData>(field: K, value?: NoteData[K]) {
 		if (value !== undefined) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			this[field] = value as any;
 		}
 		this.#exists = true;
@@ -334,7 +333,6 @@ class Note implements NoteInterface {
 	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
 	 * observable signature type is inferred from the selector callback)
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private createStream<S extends (doc?: NoteData) => any>(selector: S, ctx: debug.DebugCtx): Observable<ReturnType<S>> {
 		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this, ctx);
 	}

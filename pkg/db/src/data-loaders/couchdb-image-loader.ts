@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import PouchDB from 'pouchdb';
 
 import { RawNote, RawSnap } from '@test-runner/types';

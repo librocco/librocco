@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
