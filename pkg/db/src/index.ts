@@ -1,7 +1,9 @@
 import { currentVersion } from './currentVersion';
 
 import * as implementations from './implementations';
-const newDatabaseInterface = implementations[currentVersion];
+import type { NewDatabase } from './types';
+
+const newDatabaseInterface = implementations[currentVersion] as NewDatabase;
 export { newDatabaseInterface };
 
 export * from './enums';
