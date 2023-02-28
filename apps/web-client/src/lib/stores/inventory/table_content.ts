@@ -3,18 +3,58 @@ import { debug } from '@librocco/shared';
 
 import type { NoteInterface, WarehouseInterface } from '@librocco/db';
 
-import type { BookStore, DisplayRow, PaginationData } from '$lib/types/inventory';
+import type { PaginationData, FullTableRow } from '$lib/types/inventory';
 
 import { readableFromStream } from '$lib/utils/streams';
+import { from, map, Observable, switchMap, tap } from 'rxjs';
+import { db } from '$lib/db';
+import type { DebugCtx } from '@librocco/shared/dist/debugger';
 
 interface CreateDisplayEntriesStore {
 	(
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
-		bookStore: Readable<BookStore>,
 		ctx: debug.DebugCtx
-	): Readable<DisplayRow[]>;
+	): Readable<FullTableRow[]>;
 }
+
+interface createDisplayRowStream {
+	(entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>, ctx: DebugCtx): Observable<
+		FullTableRow[]
+	>;
+}
+
+const createDisplayRowStream: createDisplayRowStream = (entity, ctx) => {
+	const fullTableRow = entity?.stream(ctx).entries.pipe(
+		switchMap((valueFromEntryStream) => {
+			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
+			// map entry to just isbns
+			return from(db.getBooks(isbns)).pipe(
+				tap((val) => console.log({ val })),
+
+				map((booksFromDb) => {
+					// for each value from entry stream (volume stock client)
+					return valueFromEntryStream.map((individualEntry) => {
+						// find the corresponding book in booksFromDb
+						// instead of find => look in the same index then look at first element (maybe book is not in yet???)
+						const bookData = booksFromDb.find((book) => book.isbn === individualEntry.isbn);
+						// account for books not found
+						if (!bookData) return;
+						// return bookData + entry value
+						const fullTableElement = { ...bookData, ...individualEntry };
+						return fullTableElement;
+					});
+					// return array of merged values of books and volume stock client
+				}),
+				tap((mergedValue) => console.log({ mergedValue }))
+			);
+		}),
+		tap((mergedValuesArray) => console.log({ mergedValuesArray }))
+	);
+
+	return fullTableRow;
+};
+
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
  * @param entity a note or warehouse interface
@@ -22,24 +62,22 @@ interface CreateDisplayEntriesStore {
  * @param bookStore a store with book data - used to extend each entry from the entity store with the rest of the book data
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, bookStore, ctx) => {
-	const entriesStore = readableFromStream(entity?.stream(ctx).entries, [], ctx);
-	// Create a derived store that streams the entries value from the content store
-	const displayEntries = derived(
-		[entriesStore, currentPageStore, bookStore],
-		([$entriesStore, $currentPageStore, $bookStore]) => {
-			debug.log(ctx, 'display_entries:derived:inputs')({ $entriesStore, $currentPageStore, $bookStore });
-			const start = $currentPageStore * 10;
-			const end = start + 10;
+export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, ctx) => {
+	const fullTableRowStream = createDisplayRowStream(entity, ctx);
+	const displayRowStore = readableFromStream(fullTableRowStream, [], ctx);
 
-			const res = $entriesStore.slice(start, end).map((entry) => ({
-				...$bookStore[entry.isbn],
-				...entry
-			}));
-			debug.log(ctx, 'display_entries:derived:res')(res);
-			return res;
-		}
-	);
+	// Create a derived store that streams the entries value from the content store
+	const displayEntries = derived([displayRowStore, currentPageStore], ([$displayRowStore, $currentPageStore]) => {
+		debug.log(ctx, 'display_entries:derived:inputs')({ $displayRowStore, $currentPageStore });
+		const start = $currentPageStore * 10;
+		const end = start + 10;
+
+		const res = $displayRowStore.slice(start, end).map((entry) => ({
+			...entry
+		}));
+		debug.log(ctx, 'display_entries:derived:res')(res);
+		return res;
+	});
 	return displayEntries;
 };
 
