@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { DatabaseInterface, VolumeStock, NoteType, VersionedString, VersionString } from '@/types';
 

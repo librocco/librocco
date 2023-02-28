@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export interface DebugCtx {
 	name?: string;
 	debug?: boolean;

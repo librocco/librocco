@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { describe, test, expect, vi } from 'vitest';
 import { writable, get } from 'svelte/store';
 import { testUtils } from '@librocco/shared';
