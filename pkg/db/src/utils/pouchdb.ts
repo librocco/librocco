@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
 
 import { debug } from '@librocco/shared';

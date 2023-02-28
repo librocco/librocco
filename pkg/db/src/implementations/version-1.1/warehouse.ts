@@ -80,7 +80,6 @@ class Warehouse implements WarehouseInterface {
 	 */
 	private updateField<K extends keyof WarehouseData>(field: K, value?: WarehouseData[K]) {
 		if (value !== undefined) {
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			this[field] = value as any;
 		}
 		this.#exists = true;
@@ -156,7 +155,6 @@ class Warehouse implements WarehouseInterface {
 			return this.updateInstance(res);
 		} catch (err) {
 			// If not found, return undefined
-			// eslint-disable-next-line @typescript-eslint/no-explicit-any
 			if ((err as any).status === 404) return undefined;
 			// For all other errors, throw
 			throw err;
@@ -217,7 +215,6 @@ class Warehouse implements WarehouseInterface {
 	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
 	 * observable signature type is inferred from the selector callback)
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private createStream<S extends (doc?: WarehouseData) => any>(selector: S, ctx: debug.DebugCtx): Observable<ReturnType<S>> {
 		return newDocumentStream<WarehouseData, ReturnType<S>>(this.#db._pouch, this._id, selector, this, ctx);
 	}
