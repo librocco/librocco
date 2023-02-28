@@ -19,19 +19,24 @@
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
 	import { NoteState } from '$lib/enums/db';
 
-	import { createNoteStores } from '$lib/stores/inventory';
+	import type { PageData } from './$types';
 
-	import { db } from '$lib/db';
+	import { getDB } from '$lib/db';
+
+	import { createNoteStores } from '$lib/stores/inventory';
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
 
-	import type { PageData } from './$types';
-
 	export let data: PageData;
 
+	// Db will be undefined only on server side. If in browser,
+	// it will be defined immediately, but `db.init` is ran asynchronously.
+	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
+	const db = getDB();
+
 	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
-	const outNoteList = readableFromStream(db.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
+	const outNoteList = readableFromStream(db?.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
 	$: note = data.note;
 

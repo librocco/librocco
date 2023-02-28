@@ -5,7 +5,7 @@ import type { LayoutLoad } from './$types';
 import { browser } from '$app/environment';
 import { DB_NAME, COUCHDB_HOST, COUCHDB_PORT, COUCHDB_USER, COUCHDB_PASSWORD } from '$lib/constants';
 
-import { db } from '$lib/db';
+import { createDB } from '$lib/db';
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ['', '/', '/inventory', '/inventory/', '/inventory/stock', '/inventory/stock/'];
@@ -24,7 +24,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			: undefined;
 
 		return {
-			db: await db.init({ remoteDb }, { name: '[DB_INIT]', debug: false })
+			db: await createDB().init({ remoteDb }, { name: '[DB_INIT]', debug: false })
 		};
 	}
 
