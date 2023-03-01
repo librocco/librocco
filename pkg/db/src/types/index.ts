@@ -197,7 +197,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
 	getBooks: (isbns: string[]) => Promise<CouchDocument<BookEntry>[]>;
 	getBook: (isbn: string) => Promise<CouchDocument<BookEntry> | undefined>;
-	upsertBook: (bookEntry: CouchDocument<BookEntry>) => Promise<void>;
+	upsertBook: (bookEntry: BookEntry) => Promise<void>;
 }
 
 export interface NewDatabase {

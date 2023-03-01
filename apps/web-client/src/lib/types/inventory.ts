@@ -22,11 +22,8 @@ export interface BookStore {
 	[isbn: string]: BookEntry;
 }
 
-/** The properties of a book + quantity row shown in the note/warehouse table. */
-export type DisplayRow = BookEntry & { quantity: number };
-
-/** The result of merging book data with their equivalent entry */
-export type FullTableRow = VolumeStockClient & CouchDocument<BookEntryFromDB>;
+/** The result of merging an entry with the equivalent book data */
+export type DisplayRow = VolumeStockClient & Partial<CouchDocument<BookEntryFromDB>>;
 
 /** A structure of the warehouse store: `readable<WarehouseStore>()`. */
 export interface WarehouseStore {
