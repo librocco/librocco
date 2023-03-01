@@ -62,7 +62,6 @@ class Database implements DatabaseInterface {
 		// The rows are returned in the same order as the supplied keys array.
 		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 
-		/** @TODO type assertion function for query instead of casting? */
 		const bookDocs = rawBooks.rows.reduce((values: CouchDocument<BookEntry>[], value) => {
 			if (value.doc) values.push(value.doc as CouchDocument<BookEntry>);
 			return values;
@@ -72,10 +71,8 @@ class Database implements DatabaseInterface {
 	}
 
 	async upsertBook(bookEntry: BookEntry): Promise<void> {
-		/** @TODO handle doc not found better? */
 		try {
 			const bookDocument = await this._pouch.get(bookEntry.isbn);
-			console.log('bookDocument', { bookDocument });
 			await this._pouch.put({ ...bookDocument, ...bookEntry });
 			return;
 		} catch (err) {
