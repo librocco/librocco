@@ -1,37 +1,37 @@
 import { derived, type Readable } from 'svelte/store';
 import { debug } from '@librocco/shared';
 
-import type { NoteInterface, WarehouseInterface } from '@librocco/db';
+import type { DatabaseInterface, NoteInterface, WarehouseInterface } from '@librocco/db';
 
-import type { PaginationData, FullTableRow } from '$lib/types/inventory';
+import type { PaginationData, DisplayRow } from '$lib/types/inventory';
 
 import { readableFromStream } from '$lib/utils/streams';
-import { from, map, Observable, switchMap, tap } from 'rxjs';
-import { db } from '$lib/db';
+import { from, map, Observable, switchMap } from 'rxjs';
 import type { DebugCtx } from '@librocco/shared/dist/debugger';
 
 interface CreateDisplayEntriesStore {
 	(
+		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
 		ctx: debug.DebugCtx
-	): Readable<FullTableRow[]>;
+	): Readable<DisplayRow[]>;
 }
 
-interface createDisplayRowStream {
-	(entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>, ctx: DebugCtx): Observable<
-		FullTableRow[]
-	>;
+interface CreateDisplayRowStream {
+	(
+		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+		entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>,
+		ctx: DebugCtx
+	): Observable<DisplayRow[]>;
 }
 
-const createDisplayRowStream: createDisplayRowStream = (entity, ctx) => {
+const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 	const fullTableRow = entity?.stream(ctx).entries.pipe(
 		switchMap((valueFromEntryStream) => {
 			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
 			// map entry to just isbns
 			return from(db.getBooks(isbns)).pipe(
-				tap((val) => console.log({ val })),
-
 				map((booksFromDb) => {
 					// for each value from entry stream (volume stock client)
 					return valueFromEntryStream.map((individualEntry) => {
@@ -39,17 +39,15 @@ const createDisplayRowStream: createDisplayRowStream = (entity, ctx) => {
 						// instead of find => look in the same index then look at first element (maybe book is not in yet???)
 						const bookData = booksFromDb.find((book) => book.isbn === individualEntry.isbn);
 						// account for books not found
-						if (!bookData) return;
+						if (!bookData) return individualEntry;
 						// return bookData + entry value
 						const fullTableElement = { ...bookData, ...individualEntry };
 						return fullTableElement;
 					});
 					// return array of merged values of books and volume stock client
-				}),
-				tap((mergedValue) => console.log({ mergedValue }))
+				})
 			);
-		}),
-		tap((mergedValuesArray) => console.log({ mergedValuesArray }))
+		})
 	);
 
 	return fullTableRow;
@@ -62,8 +60,8 @@ const createDisplayRowStream: createDisplayRowStream = (entity, ctx) => {
  * @param bookStore a store with book data - used to extend each entry from the entity store with the rest of the book data
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, ctx) => {
-	const fullTableRowStream = createDisplayRowStream(entity, ctx);
+export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity, currentPageStore, ctx) => {
+	const fullTableRowStream = createDisplayRowStream(db, entity, ctx);
 	const displayRowStore = readableFromStream(fullTableRowStream, [], ctx);
 
 	// Create a derived store that streams the entries value from the content store
