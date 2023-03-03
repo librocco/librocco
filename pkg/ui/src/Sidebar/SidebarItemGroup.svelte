@@ -3,7 +3,6 @@
 	import { expoOut } from 'svelte/easing';
 
 	import SidebarItem from './SidebarItem.svelte';
-	import NewEntitySideNavButton from './NewEntitySideNavButton.svelte';
 
 	interface SidebarItem {
 		name: string;
@@ -70,7 +69,6 @@
 			{#each items as { name, href, current }}
 				<SidebarItem {name} {href} {current} nested={true} />
 			{/each}
-			<NewEntitySideNavButton />
 		</div>
 	{/if}
 </div>
