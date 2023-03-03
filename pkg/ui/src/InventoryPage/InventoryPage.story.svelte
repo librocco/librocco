@@ -4,7 +4,7 @@
 
 	import { Pagination } from '../Pagination';
 	import { TextField } from '../FormFields';
-	import { SidebarItem, SidebarItemGroup } from '../Sidebar';
+	import { SidebarItem, SidebarItemGroup , NewEntitySideNavButton} from '../Sidebar';
 	import { Badge, BadgeColor } from '../Badge';
 	import { Header } from '../Header';
 
@@ -76,6 +76,7 @@
 				<SidebarItem href="#" name="Varia 2018" />
 				<SidebarItem href="#" name="Scolastica 2021" />
 				<SidebarItem href="#" name="Nuovo 2022" />
+				<NewEntitySideNavButton />
 			</nav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">All</h1>
@@ -104,12 +105,14 @@
 			<Header currentLocation="/inventory/inbound" title="Inbound" slot="header" />
 			<nav class="divide-y divide-gray-300" slot="sidebar">
 				<SidebarItemGroup name="Nuovo 2022" index={0} items={[]} />
+				<NewEntitySideNavButton label="New Note" active={false} />
 				<SidebarItemGroup
 					name="Scolastica 2021"
 					index={1}
 					items={[{ name: 'John', current: false, href: '' }]}
 					expanded
 				/>
+				<NewEntitySideNavButton label="New Note" active={false} />
 				<SidebarItemGroup
 					index={2}
 					name="Varia 2018"
@@ -120,6 +123,7 @@
 					]}
 					expanded
 				/>
+				<NewEntitySideNavButton label="New Note" />
 			</nav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<div>
@@ -157,6 +161,7 @@
 			<nav class="divide-y divide-gray-300" slot="sidebar">
 				<SidebarItem name="Silvio" href="" current />
 				<SidebarItem name="Sandra" href="" />
+				<NewEntitySideNavButton />
 			</nav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<div>

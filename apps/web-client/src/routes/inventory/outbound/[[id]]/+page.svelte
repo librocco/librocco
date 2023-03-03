@@ -14,7 +14,8 @@
 		InventoryTableRow,
 		Header,
 		SelectMenu,
-		TextEditable
+		TextEditable,
+		NewEntitySideNavButton
 	} from '@librocco/ui';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
@@ -53,6 +54,7 @@
 		{#each $outNoteList as { displayName, id }}
 			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === currentNote} />
 		{/each}
+		<NewEntitySideNavButton label="New Note" />
 	</nav>
 
 	<!-- Table header slot -->
