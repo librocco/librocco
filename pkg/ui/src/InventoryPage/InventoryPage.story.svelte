@@ -4,7 +4,7 @@
 
 	import { Pagination } from '../Pagination';
 	import { TextField } from '../FormFields';
-	import { SidebarItem, SidebarItemGroup , NewEntitySideNavButton} from '../Sidebar';
+	import { SidebarItem, SidebarItemGroup, NewEntitySideNavButton } from '../Sidebar';
 	import { Badge, BadgeColor } from '../Badge';
 	import { Header } from '../Header';
 
