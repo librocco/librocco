@@ -10,7 +10,8 @@
 		InventoryTable,
 		InventoryTableRow,
 		Header,
-		TextEditable
+		TextEditable,
+		NewEntitySideNavButton
 	} from '@librocco/ui';
 
 	import { createWarehouseStores } from '$lib/stores/inventory';
@@ -37,6 +38,7 @@
 		{#each $warehouseList as { displayName, id }}
 			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
 		{/each}
+		<NewEntitySideNavButton />
 	</nav>
 
 	<!-- Table header slot -->

@@ -14,7 +14,8 @@
 		InventoryTableRow,
 		Header,
 		SelectMenu,
-		TextEditable
+		TextEditable,
+		NewEntitySideNavButton
 	} from '@librocco/ui';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
@@ -63,6 +64,7 @@
 					current: id === $page.params.id
 				}))}
 			/>
+			<NewEntitySideNavButton label="New Note" active={displayName === currentNoteWarehouse} />
 		{/each}
 	</nav>
 
