@@ -3,7 +3,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
 
-import { BookEntry, CouchDocument, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { BookEntry, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
@@ -53,34 +53,43 @@ class Database implements DatabaseInterface {
 		return this;
 	}
 
-	async getBook(isbn: string): Promise<CouchDocument<BookEntry> | undefined> {
-		return await this._pouch.get(isbn);
+	async getBook(isbn: string): Promise<BookEntry | undefined> {
+		try {
+			// has to be awaited because otherwise the error will be thrown outside this function
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { _id, _rev, ...bookData } = await this._pouch.get<BookEntry>(isbn);
+
+			return bookData;
+		} catch (err) {
+			return undefined;
+		}
 	}
 
-	async getBooks(isbns: string[]): Promise<CouchDocument<BookEntry>[]> {
-		const rawBooks = await this._pouch.allDocs({ keys: isbns, include_docs: true });
+	async getBooks(isbns: string[]): Promise<(BookEntry | undefined)[]> {
+		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns, include_docs: true });
 		// The rows are returned in the same order as the supplied keys array.
 		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 
-		const bookDocs = rawBooks.rows.reduce((values: CouchDocument<BookEntry>[], value) => {
-			if (value.doc) values.push(value.doc as CouchDocument<BookEntry>);
-			return values;
-		}, []);
+		const bookDocs = rawBooks.rows.map(({ doc }) => {
+			if (!doc) return undefined;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { _id, _rev, ...rest } = doc;
+			return rest;
+		});
 
 		return bookDocs;
 	}
 
 	async upsertBook(bookEntry: BookEntry): Promise<void> {
+		let bookDoc: BookEntry | undefined = undefined;
 		try {
-			const bookDocument = await this._pouch.get(bookEntry.isbn);
-			await this._pouch.put({ ...bookDocument, ...bookEntry });
-			return;
+			bookDoc = await this._pouch.get(bookEntry.isbn);
 		} catch (err) {
-			console.log('document not found');
+			if ((err as any).status !== 404) throw err;
+			this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
+		} finally {
+			if (bookDoc) this._pouch.put({ ...bookDoc, ...bookEntry });
 		}
-		await this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
-
-		return;
 	}
 
 	warehouse(id?: string): WarehouseInterface {
