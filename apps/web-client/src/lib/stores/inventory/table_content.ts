@@ -29,22 +29,25 @@ interface CreateDisplayRowStream {
 const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 	const fullTableRow = entity?.stream(ctx).entries.pipe(
 		switchMap((valueFromEntryStream) => {
-			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
 			// map entry to just isbns
+			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
+
+			// return array of merged values of books and volume stock client
 			return from(db.getBooks(isbns)).pipe(
 				map((booksFromDb) => {
+					const booksMap = new Map();
+					booksFromDb.forEach((book) => book && booksMap.set(book.isbn, book));
+
 					// for each value from entry stream (volume stock client)
 					return valueFromEntryStream.map((individualEntry) => {
 						// find the corresponding book in booksFromDb
-						// instead of find => look in the same index then look at first element (maybe book is not in yet???)
-						const bookData = booksFromDb.find((book) => book.isbn === individualEntry.isbn);
+						const bookData = booksMap.get(individualEntry.isbn);
 						// account for books not found
 						if (!bookData) return individualEntry;
 						// return bookData + entry value
 						const fullTableElement = { ...bookData, ...individualEntry };
 						return fullTableElement;
 					});
-					// return array of merged values of books and volume stock client
 				})
 			);
 		})
@@ -55,9 +58,10 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
+ * @param db current context database
  * @param entity a note or warehouse interface
  * @param currentPageStore a store that containing the current page index
- * @param bookStore a store with book data - used to extend each entry from the entity store with the rest of the book data
+ * @param ctx debug context
  * @returns
  */
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity, currentPageStore, ctx) => {
