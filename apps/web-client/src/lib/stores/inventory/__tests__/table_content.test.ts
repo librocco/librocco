@@ -29,60 +29,8 @@ describe('tableContentStore', () => {
 			totalItems: 0
 		} as PaginationData);
 	});
-	test('should create display store from entries only if some books were not found', async () => {
-		const db = await newTestDB();
 
-		await db.upsertBook({
-			isbn: '0195399706',
-			title: 'The Age of Wonder',
-			authors: 'Richard Holmes',
-			publisher: 'HarperCollins UK',
-			year: '2008',
-			price: 69.99
-		});
-
-		const note = await db.warehouse().note('note-1').create();
-
-		await note.addVolumes(
-			['0195399706', 12, `v1/jazz`],
-			['019976915X', 10, `v1/jazz`],
-			['0195071409', 5, `v1/jazz`]
-		);
-
-		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
-		let displayEntries: DisplayRow[];
-		de$.subscribe((de) => (displayEntries = de));
-		const res = [
-			{
-				quantity: 5,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			},
-
-			{
-				isbn: '0195399706',
-				quantity: 12,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found',
-				title: 'The Age of Wonder',
-				authors: 'Richard Holmes',
-				publisher: 'HarperCollins UK',
-				year: '2008',
-				price: 69.99
-			},
-			{
-				quantity: 10,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			}
-		];
-
-		// toMatchObject because of _rev
-		await waitFor(() => expect(displayEntries).toMatchObject(res));
-
-		await new Promise((r) => setTimeout(r, 1000));
-	});
-	test('should create display store by merging books in db and entries streams', async () => {
+	test('should create display store from db and entries streams', async () => {
 		const db = await newTestDB();
 
 		await db.upsertBook({
@@ -122,7 +70,7 @@ describe('tableContentStore', () => {
 		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
-		const res = [
+		const want = [
 			{
 				isbn: '0195071409',
 				quantity: 5,
@@ -159,9 +107,109 @@ describe('tableContentStore', () => {
 			}
 		];
 
-		// toMatchObject because of _rev
-		await waitFor(() => expect(displayEntries).toMatchObject(res));
+		await waitFor(() => expect(displayEntries).toEqual(want));
+	});
 
-		await new Promise((r) => setTimeout(r, 1000));
+	test('should create display store only from entries streams if corresponding books do not exist', async () => {
+		const db = await newTestDB();
+
+		await db.upsertBook({
+			isbn: '0195399706',
+			title: 'The Age of Wonder',
+			authors: 'Richard Holmes',
+			publisher: 'HarperCollins UK',
+			year: '2008',
+			price: 69.99
+		});
+
+		await db.upsertBook({
+			isbn: '0195071409',
+			title: 'Saving Darwin',
+			authors: 'Karl Giberson',
+			publisher: 'Harper Collins',
+			year: '2009',
+			price: 22.0
+		});
+		const note = await db.warehouse().note('note-1').create();
+
+		await note.addVolumes(
+			['0195399706', 12, `v1/jazz`],
+			['019976915X', 10, `v1/jazz`],
+			['0195071409', 5, `v1/jazz`]
+		);
+
+		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
+		let displayEntries: DisplayRow[];
+		de$.subscribe((de) => (displayEntries = de));
+		const want = [
+			{
+				isbn: '0195071409',
+				quantity: 5,
+				warehouseId: `v1/jazz`,
+				warehouseName: 'not-found',
+				title: 'Saving Darwin',
+				authors: 'Karl Giberson',
+				publisher: 'Harper Collins',
+				year: '2009',
+				price: 22.0
+			},
+
+			{
+				isbn: '0195399706',
+				quantity: 12,
+				warehouseId: `v1/jazz`,
+				warehouseName: 'not-found',
+				title: 'The Age of Wonder',
+				authors: 'Richard Holmes',
+				publisher: 'HarperCollins UK',
+				year: '2008',
+				price: 69.99
+			},
+			{
+				isbn: '019976915X',
+				quantity: 10,
+				warehouseId: `v1/jazz`,
+				warehouseName: 'not-found'
+			}
+		];
+
+		await waitFor(() => expect(displayEntries).toEqual(want));
+	});
+
+	test('should return book if found and undefined otherwise', async () => {
+		const db = await newTestDB();
+
+		const book1 = {
+			isbn: '0195399706',
+			title: 'The Age of Wonder',
+			authors: 'Richard Holmes',
+			publisher: 'HarperCollins UK',
+			year: '2008',
+			price: 69.99
+		};
+
+		await db.upsertBook(book1);
+
+		const book1Found = await db.getBook('0195399706');
+
+		const bookUndefined = await db.getBook('019976915X');
+
+		await waitFor(() => expect(book1Found).toEqual(book1));
+		await waitFor(() => expect(bookUndefined).toBeUndefined());
+
+		const book2 = {
+			isbn: '019976915X',
+			title: 'Twelve Bar Blues',
+			authors: 'Patrick Neate',
+			publisher: 'Penguin UK',
+			year: '2002',
+			price: 39.86
+		};
+
+		await db.upsertBook(book2);
+
+		const book2Found = await db.getBook('019976915X');
+
+		await waitFor(() => expect(book2Found).toEqual(book2));
 	});
 });
