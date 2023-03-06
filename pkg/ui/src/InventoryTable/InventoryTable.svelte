@@ -4,70 +4,130 @@
 
 	export let rows: TableData[];
 
-	const columnTitles: string[] = [
-		'ISBN',
-		'Title',
-		'Author',
-		'Quantity',
-		'Price',
-		'Edited By',
-		'Out of Print',
-		'Year'
-	];
+	const headers = {
+		isbn: 'ISBN',
+		title: 'Title',
+		authors: 'Authors',
+		quantity: 'Quantity',
+		price: 'Price',
+		publisher: 'Publisher',
+		year: 'Year',
+		editedBy: 'Edited By',
+		outOfPrint: 'Out of Print'
+	};
 </script>
 
 <div class="overflow-x-auto">
 	<table class="min-w-full divide-y divide-gray-200 bg-white">
 		<thead>
-			<tr>
-				<th scope="col" class="px-2">
-					<Checkbox name="Select all" />
+			<tr class="whitespace-nowrap">
+				<th scope="col" class="px-2 text-center">
+					<span class="inline-block">
+						<Checkbox name="Select all" />
+					</span>
 				</th>
-				{#each columnTitles as columnTitle (columnTitle)}
-					<th
-						scope="col"
-						class="whitespace-nowrap py-2 px-3  text-left text-sm font-medium uppercase tracking-wide text-gray-500"
-					>
-						{columnTitle}
-					</th>
-				{/each}
+				<th
+					scope="col"
+					class="whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500"
+				>
+					<span class="hidden lg:inline">{headers.isbn}</span>
+					<span class="inline lg:hidden">book</span>
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 lg:table-cell"
+				>
+					{headers.title}
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium  uppercase tracking-wide text-gray-500 lg:table-cell"
+				>
+					{headers.authors}
+				</th>
+				<th
+					scope="col"
+					class="whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500"
+				>
+					{headers.quantity}
+				</th>
+				<th
+					scope="col"
+					class="whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500"
+				>
+					{headers.price}
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 sm:table-cell"
+				>
+					{headers.publisher}
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 md:table-cell"
+				>
+					{headers.year}
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 xl:table-cell"
+				>
+					{headers.editedBy}
+				</th>
+				<th
+					scope="col"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 xl:table-cell"
+				>
+					{headers.outOfPrint}
+				</th>
 			</tr>
 		</thead>
 
 		<tbody>
-			{#each rows as { isbn, title, author, quantity, price, year, outOfPrint, editedBy } (isbn)}
+			{#each rows as { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } (isbn)}
 				<tr class="whitespace-nowrap text-sm font-light text-gray-500 even:bg-gray-50">
-					<td class="px-2">
+					<td class="px-2 text-center sm:align-middle">
 						<span class="inline-block">
 							<Checkbox name={`Select ${title}`} />
 						</span>
 					</td>
-					<th scope="row" class="py-4 px-3 font-medium text-gray-800">
+					<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
 						{isbn}
+						<dl class="font-normal lg:hidden">
+							<dt class="sr-only">Title</dt>
+							<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
+							<dt class="sr-only lg:hidden">Authors</dt>
+							<dd class="mt-1 truncate font-light text-gray-500 lg:hidden">{authors}</dd>
+							<dt class="sr-only md:hidden">Year</dt>
+							<dd class="mt-1 truncate font-light text-gray-500 md:hidden">{year}</dd>
+						</dl>
 					</th>
-					<td class="py-4 px-3">
+					<td class="hidden px-3 py-4 lg:table-cell">
 						{title}
 					</td>
-					<td class="py-4 px-3">
-						{author}
+					<td class="hidden py-4 px-3 lg:table-cell">
+						{authors}
 					</td>
-					<td class="py-4 px-3 text-center">
+					<td class="py-4 px-3 text-left">
 						{quantity}
 					</td>
-					<td class="py-4 px-3 text-center">
+					<td class="py-4 px-3 text-left">
 						{price}
 					</td>
-
-					<td class="py-4 px-3">
+					<td class="hidden py-4 px-3 sm:table-cell">
+						{publisher}
+					</td>
+					<td class="hidden py-4 px-3 text-left md:table-cell">
+						{year}
+					</td>
+					<td class="hidden py-4 px-3 xl:table-cell">
 						{editedBy}
 					</td>
-					<td class="py-4 px-3 text-center">
+					<td class="hidden py-4 px-3 text-center xl:table-cell">
 						<span class="inline-block">
 							<Checkbox name={`${title} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
 						</span>
-					</td>
-					<td class="py-4 px-3 text-center">
-						{year}
 					</td>
 				</tr>
 			{/each}

@@ -8,64 +8,70 @@
 		{
 			isbn: '917289012390',
 			title: 'Miti Del Nord',
-			author: 'Neil Gaiman',
+			authors: 'Neil Gaiman',
 			quantity: 3,
 			price: 10,
+			publisher: 'Mondadori',
 			year: '2017',
-			outOfPrint: false,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: false
 		},
 		{
 			isbn: '917289012381',
 			title: 'Hellenistic history and culture',
-			author: 'Peter Green',
+			authors: 'Peter Green',
 			quantity: 3,
 			price: 10,
+			publisher: 'Penguin',
 			year: '2017',
-			outOfPrint: false,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: false
 		},
 
 		{
 			isbn: '917289012323',
 			title: 'Studies in Greek culture and Roman policy',
-			author: 'Robert Lamberton',
+			authors: 'Robert Lamberton',
 			quantity: 3,
 			price: 10,
+			publisher: 'Penguin',
 			year: '2017',
-			outOfPrint: false,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: false
 		},
 		{
 			isbn: '917289012371',
 			title: 'Miti Del Nord',
-			author: 'Neil Gaiman',
+			authors: 'Neil Gaiman',
 			quantity: 3,
 			price: 10,
+			publisher: 'Mondadori',
 			year: '2017',
-			outOfPrint: true,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: true
 		},
 		{
 			isbn: '917289012327',
 			title: 'Hellenistic history and culture',
-			author: 'Peter Green',
+			authors: 'Peter Green',
 			quantity: 3,
 			price: 10,
+			publisher: 'Penguin',
 			year: '2017',
-			outOfPrint: false,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: false
 		},
 
 		{
 			isbn: '917289012188',
 			title: 'Studies in Greek culture and Roman policy',
-			author: 'Robert Lamberton',
+			authors: 'Robert Lamberton',
 			quantity: 3,
 			price: 10,
+			publisher: 'Penguin',
 			year: '2017',
-			outOfPrint: true,
-			editedBy: ''
+			editedBy: '',
+			outOfPrint: true
 		}
 	];
 </script>
