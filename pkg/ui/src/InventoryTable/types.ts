@@ -1,9 +1,10 @@
 export type TableData = {
 	isbn?: string;
 	title?: string;
-	author?: string;
+	authors?: string;
 	quantity?: number;
 	price?: number;
+	publisher?: string;
 	year?: string;
 	editedBy?: string;
 	outOfPrint?: boolean;
