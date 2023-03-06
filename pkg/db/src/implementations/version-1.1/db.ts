@@ -81,14 +81,14 @@ class Database implements DatabaseInterface {
 	}
 
 	async upsertBook(bookEntry: BookEntry): Promise<void> {
-		let bookDoc: BookEntry | undefined = undefined;
 		try {
-			bookDoc = await this._pouch.get(bookEntry.isbn);
+			await this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
 		} catch (err) {
-			if ((err as any).status !== 404) throw err;
-			this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
-		} finally {
-			if (bookDoc) this._pouch.put({ ...bookDoc, ...bookEntry });
+			if ((err as any).status !== 409) throw err;
+
+			const bookDoc = await this._pouch.get(bookEntry.isbn);
+
+			await this._pouch.put({ ...bookDoc, ...bookEntry });
 		}
 	}
 

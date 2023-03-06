@@ -58,7 +58,7 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
- * @param db current context database
+ * @param db database interface
  * @param entity a note or warehouse interface
  * @param currentPageStore a store that containing the current page index
  * @param ctx debug context
@@ -66,19 +66,16 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
  */
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity, currentPageStore, ctx) => {
 	const fullTableRowStream = createDisplayRowStream(db, entity, ctx);
-	const displayRowStore = readableFromStream(fullTableRowStream, [], ctx);
+	const entriesStore = readableFromStream(fullTableRowStream, [], ctx);
 
 	// Create a derived store that streams the entries value from the content store
-	const displayEntries = derived([displayRowStore, currentPageStore], ([$displayRowStore, $currentPageStore]) => {
-		debug.log(ctx, 'display_entries:derived:inputs')({ $displayRowStore, $currentPageStore });
+	const displayEntries = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
+		debug.log(ctx, 'display_entries:derived:inputs')({ $entriesStore, $currentPageStore });
 		const start = $currentPageStore * 10;
 		const end = start + 10;
 
-		const res = $displayRowStore.slice(start, end).map((entry) => ({
-			...entry
-		}));
-		debug.log(ctx, 'display_entries:derived:res')(res);
-		return res;
+		debug.log(ctx, 'display_entries:derived:res');
+		return $entriesStore.slice(start, end);
 	});
 	return displayEntries;
 };
