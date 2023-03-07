@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { TableData } from './types';
-	import { Checkbox } from '../';
+	import { Checkbox, Button, ButtonColor } from '../';
+
+	import { createTable } from './table';
 
 	export let rows: TableData[];
 
@@ -15,12 +17,21 @@
 		editedBy: 'Edited By',
 		outOfPrint: 'Out of Print'
 	};
+
+	const { tableHeaderRow, tableRow, selected, data } = createTable(rows);
 </script>
 
 <div class="overflow-x-auto">
-	<table class="min-w-full divide-y divide-gray-200 bg-white">
+	<table class="relative min-w-full divide-y divide-gray-200 bg-white">
+		{#if $selected.length}
+			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
+				<Button color={ButtonColor.White}>
+					Delete {$selected.length}
+				</Button>
+			</div>
+		{/if}
 		<thead>
-			<tr class="whitespace-nowrap">
+			<tr class="whitespace-nowrap" use:tableHeaderRow={$data}>
 				<th scope="col" class="px-2 text-center">
 					<span class="inline-block">
 						<Checkbox name="Select all" />
@@ -28,7 +39,9 @@
 				</th>
 				<th
 					scope="col"
-					class="whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500"
+					class={false
+						? 'hidden'
+						: 'table-cell whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500'}
 				>
 					<span class="hidden lg:inline">{headers.isbn}</span>
 					<span class="inline lg:hidden">book</span>
@@ -85,11 +98,21 @@
 		</thead>
 
 		<tbody>
-			{#each rows as { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } (isbn)}
-				<tr class="whitespace-nowrap text-sm font-light text-gray-500 even:bg-gray-50">
-					<td class="px-2 text-center sm:align-middle">
+			{#each $data as row (row.isbn)}
+				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } = row}
+				<tr
+					use:tableRow={row}
+					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
+						$selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
+					}`}
+				>
+					<td
+						class={`px-2 text-center sm:align-middle border-l-4 
+							${$selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+						`}
+					>
 						<span class="inline-block">
-							<Checkbox name={`Select ${title}`} />
+							<Checkbox name={`Select ${title}`} checked={$selected.includes(row)} />
 						</span>
 					</td>
 					<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
