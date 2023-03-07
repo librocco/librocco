@@ -2,62 +2,62 @@ import { writable, type Writable } from 'svelte/store';
 
 import type { TableData } from './types';
 
-export function createTable(initialRows: TableData[]) {
+interface CreateTableOptions {
+	initialRows: TableData[];
+	onRowRemove?: (selected: TableData[]) => void;
+	onRowAdd?: (selected: TableData[]) => void;
+}
+
+// eslint-disable-next-line
+export function createTable({ initialRows, onRowRemove = () => {}, onRowAdd = () => {} }: CreateTableOptions) {
 	const data = writable(initialRows);
 	const selected = writable<TableData[]>([]);
 
-	const addRow = (store: Writable<TableData[]>) => (row: TableData) => {
-		store.update((rows) => [...rows, row]);
+	let $data: TableData[] = [];
+
+	const addRows = (newRows: TableData[]) => {
+		onRowAdd(newRows);
+		data.update((rows) => [...rows, ...newRows]);
+	};
+	const removeRows = (selectedRows: TableData[]) => {
+		const selectedIsbns = selectedRows.map(({ isbn }) => isbn);
+		const filteredRows = $data.filter((r) => !selectedIsbns.includes(r.isbn));
+
+		onRowRemove(selectedRows);
+		data.set(filteredRows);
+		selected.set([]);
 	};
 
-	const removeRow = (store: Writable<TableData[]>) => (row: TableData) => {
-		store.update((rows) => rows.filter((r) => r.isbn !== row.isbn));
-	};
-
-	const table = () => {
-		return {
-			destroy() {
-				return;
-			}
-		};
-	};
-
-	const tableHeaderRow = (node: HTMLTableRowElement, rowData: TableData[]) => {
-		const handleSelect = (event: HTMLElementEventMap['change']) => {
-			const isSelected = (event?.target as HTMLInputElement)?.checked;
-
-			if (isSelected) {
-				selected.set(rowData);
-			} else {
-				selected.set([]);
-			}
-		};
-
-		node.addEventListener('change', handleSelect, true);
+	// eslint-disable-next-line
+	const table = (node: HTMLTableElement) => {
+		const unsubscribe = data.subscribe((values) => ($data = values));
 
 		return {
 			destroy() {
-				node.removeEventListener('change', handleSelect, true);
+				unsubscribe();
 			}
 		};
 	};
 
-	const tableRow = (node: HTMLTableRowElement, rowData: TableData) => {
-		const handleSelect = (event: HTMLElementEventMap['change']) => {
-			const isSelected = (event?.target as HTMLInputElement)?.checked;
-
-			if (isSelected) {
-				addRow(selected)(rowData);
-			} else {
-				removeRow(selected)(rowData);
-			}
+	const rowSelect = (
+		node: HTMLTableRowElement,
+		{
+			on,
+			handleSelect
+		}: {
+			on: keyof HTMLElementEventMap;
+			handleSelect: (event: HTMLElementEventMap[typeof on], selected: Writable<TableData[]>) => void;
+		}
+	) => {
+		const onSelect = (event: HTMLElementEventMap[typeof on]) => {
+			handleSelect(event, selected);
 		};
 
-		node.addEventListener('change', handleSelect, true);
+		node.addEventListener(on, onSelect, true);
 
 		return {
 			destroy() {
-				node.removeEventListener('change', handleSelect, true);
+				node.removeEventListener(on, onSelect, true);
 			}
 		};
 	};
@@ -65,10 +65,9 @@ export function createTable(initialRows: TableData[]) {
 	return {
 		data,
 		selected,
-		addRow: addRow(data),
-		removeRow: removeRow(data),
 		table,
-		tableHeaderRow,
-		tableRow
+		addRows,
+		removeRows,
+		rowSelect
 	};
 }
