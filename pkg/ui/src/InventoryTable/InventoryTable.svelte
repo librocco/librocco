@@ -1,10 +1,9 @@
 <script lang="ts">
-	import type { TableData } from './types';
 	import { Checkbox, Button, ButtonColor } from '../';
 
-	import { createTable } from './table';
+	import type { createTable } from './table';
 
-	export let rows: TableData[];
+	export let table: ReturnType<typeof createTable>;
 
 	const headers = {
 		isbn: 'ISBN',
@@ -18,13 +17,13 @@
 		outOfPrint: 'Out of Print'
 	};
 
-	const { rowSelect, removeRows, table, selected, data } = createTable({ initialRows: rows });
+	const { rowSelect, removeRows, table: tableAction, selected, data } = table;
 
 	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
 </script>
 
 <div class="overflow-x-auto">
-	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:table>
+	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction>
 		{#if $selected.length}
 			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 				<Button color={ButtonColor.White} on:click={() => removeRows($selected)}>
