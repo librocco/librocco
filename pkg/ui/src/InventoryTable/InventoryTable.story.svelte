@@ -4,6 +4,8 @@
 	import type { TableData } from './types';
 	export let Hst: Hst;
 
+	import { createTable } from './table';
+
 	const rows: TableData[] = [
 		{
 			isbn: '917289012390',
@@ -74,10 +76,12 @@
 			outOfPrint: true
 		}
 	];
+
+	const table = createTable({ initialRows: rows });
 </script>
 
 <Hst.Story title="Table">
 	<Hst.Variant>
-		<InventoryTable {rows} />
+		<InventoryTable {table} />
 	</Hst.Variant>
 </Hst.Story>
