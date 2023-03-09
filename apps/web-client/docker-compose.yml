@@ -5,4 +5,4 @@ services:
         image: ghcr.io/librocco/dev-db:latest
         container_name: librocco-dev-db
         ports:
-            - '5000:5984'
+            - '${PUBLIC_COUCHDB_PORT}:5984'

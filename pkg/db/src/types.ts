@@ -4,7 +4,7 @@
 import type { Observable } from 'rxjs';
 import PouchDB from 'pouchdb';
 
-import type { DocType, NoteState } from '../enums';
+import type { DocType, NoteState } from './enums';
 import { debug } from '@librocco/shared';
 
 // #region utils
@@ -97,13 +97,13 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	create: () => Promise<NoteInterface<A>>;
 	get: () => Promise<NoteInterface<A> | undefined>;
 	// NOTE: update is private
-	delete: () => Promise<void>;
+	delete: (ctx: debug.DebugCtx) => Promise<void>;
 
 	// Note specific methods
-	setName: (name: string) => Promise<NoteInterface<A>>;
+	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
 	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
-	commit: () => Promise<NoteInterface<A>>;
+	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	stream: (ctx: debug.DebugCtx) => NoteStream;
 }
 
@@ -146,7 +146,7 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	delete: () => Promise<void>;
 
 	note: (id?: string) => N;
-	setName: (name: string) => Promise<WarehouseInterface<N, A>>;
+	setName: (name: string, ctx: debug.DebugCtx) => Promise<WarehouseInterface<N, A>>;
 	stream: (ctx: debug.DebugCtx) => WarehouseStream;
 }
 
@@ -195,6 +195,9 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
 	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
+	getBooks: (isbns: string[]) => Promise<(BookEntry | undefined)[]>;
+	getBook: (isbn: string) => Promise<BookEntry | undefined>;
+	upsertBook: (bookEntry: BookEntry) => Promise<void>;
 }
 
 export interface NewDatabase {
