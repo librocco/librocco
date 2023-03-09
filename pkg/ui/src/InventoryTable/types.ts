@@ -1,4 +1,4 @@
-export type TableData = {
+export type InventoryTableData = {
 	isbn: string;
 	title: string;
 	authors?: string;
