@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { quadIn } from 'svelte/easing';
+
 	import { Checkbox, Button, ButtonColor } from '../';
 
-	import type { createTable } from './table';
+	import type { createTable } from '../lib/actions';
+	import { fadeBgColor } from '../lib/transitions';
 
 	export let table: ReturnType<typeof createTable>;
 
@@ -67,7 +70,7 @@
 				</th>
 				<th
 					scope="col"
-					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium  uppercase tracking-wide text-gray-500 lg:table-cell"
+					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 lg:table-cell"
 				>
 					{headers.authors}
 				</th>
@@ -114,6 +117,8 @@
 			{#each $data as row (row.isbn)}
 				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } = row}
 				<tr
+					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
+					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
 					use:rowSelect={{
 						on: 'change',
 						handleSelect: (event, selected) => {
