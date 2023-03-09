@@ -1,6 +1,6 @@
 import { writable, type Writable } from 'svelte/store';
 
-import type { TableData } from './types';
+import type { TableData } from '../../InventoryTable/types';
 
 interface CreateTableOptions {
 	initialRows: TableData[];
