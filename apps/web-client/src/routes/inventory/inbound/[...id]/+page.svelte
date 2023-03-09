@@ -27,6 +27,7 @@
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
+	import { get } from 'svelte/store';
 
 	export let data: PageData;
 
@@ -49,6 +50,7 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
+	$: entries.subscribe((e) => console.log(e));
 </script>
 
 <!-- svelte-ignore missing-declaration -->
