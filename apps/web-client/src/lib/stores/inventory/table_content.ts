@@ -1,45 +1,84 @@
 import { derived, type Readable } from 'svelte/store';
 import { debug } from '@librocco/shared';
 
-import type { NoteInterface, WarehouseInterface } from '@librocco/db';
+import type { DatabaseInterface, NoteInterface, WarehouseInterface } from '@librocco/db';
 
-import type { BookStore, DisplayRow, PaginationData } from '$lib/types/inventory';
+import type { PaginationData, DisplayRow } from '$lib/types/inventory';
 
 import { readableFromStream } from '$lib/utils/streams';
+import { from, map, Observable, switchMap } from 'rxjs';
+import type { DebugCtx } from '@librocco/shared/dist/debugger';
 
 interface CreateDisplayEntriesStore {
 	(
+		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
-		bookStore: Readable<BookStore>,
 		ctx: debug.DebugCtx
 	): Readable<DisplayRow[]>;
 }
+
+interface CreateDisplayRowStream {
+	(
+		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+		entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>,
+		ctx: DebugCtx
+	): Observable<DisplayRow[]>;
+}
+
+const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
+	const fullTableRow = entity?.stream(ctx).entries.pipe(
+		switchMap((valueFromEntryStream) => {
+			// map entry to just isbns
+			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
+
+			// return array of merged values of books and volume stock client
+			return from(db.getBooks(isbns)).pipe(
+				map((booksFromDb) => {
+					const booksMap = new Map();
+					booksFromDb.forEach((book) => book && booksMap.set(book.isbn, book));
+
+					// for each value from entry stream (volume stock client)
+					return valueFromEntryStream.map((individualEntry) => {
+						// find the corresponding book in booksFromDb
+						const bookData = booksMap.get(individualEntry.isbn);
+						// account for books not found
+						if (!bookData) return individualEntry;
+						// return bookData + entry value
+						const fullTableElement = { ...bookData, ...individualEntry };
+						return fullTableElement;
+					});
+				})
+			);
+		})
+	);
+
+	return fullTableRow;
+};
+
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
+ * @param db database interface
  * @param entity a note or warehouse interface
- * @param currentPageStore a store that containing the current page index
- * @param bookStore a store with book data - used to extend each entry from the entity store with the rest of the book data
+ * @param currentPageStore a store containing the current page index
+ * @param ctx debug context
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (entity, currentPageStore, bookStore, ctx) => {
-	const entriesStore = readableFromStream(entity?.stream(ctx).entries, [], ctx);
-	// Create a derived store that streams the entries value from the content store
-	const displayEntries = derived(
-		[entriesStore, currentPageStore, bookStore],
-		([$entriesStore, $currentPageStore, $bookStore]) => {
-			debug.log(ctx, 'display_entries:derived:inputs')({ $entriesStore, $currentPageStore, $bookStore });
-			const start = $currentPageStore * 10;
-			const end = start + 10;
+export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity, currentPageStore, ctx) => {
+	const fullTableRowStream = createDisplayRowStream(db, entity, ctx);
+	const entriesStore = readableFromStream(fullTableRowStream, [], ctx);
 
-			const res = $entriesStore.slice(start, end).map((entry) => ({
-				...$bookStore[entry.isbn],
-				...entry
-			}));
-			debug.log(ctx, 'display_entries:derived:res')(res);
-			return res;
-		}
-	);
+	// Create a derived store that streams the entries value from the content store
+	const displayEntries = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
+		debug.log(ctx, 'display_entries:derived:input')({ $entriesStore, $currentPageStore });
+		const start = $currentPageStore * 10;
+		const end = start + 10;
+
+		const res = $entriesStore.slice(start, end);
+		debug.log(ctx, 'display_entries:derived:res')(res);
+
+		return res;
+	});
 	return displayEntries;
 };
 
