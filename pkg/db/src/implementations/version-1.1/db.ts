@@ -67,9 +67,9 @@ class Database implements DatabaseInterface {
 
 	async getBooks(isbns: string[]): Promise<(BookEntry | undefined)[]> {
 		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns, include_docs: true });
+
 		// The rows are returned in the same order as the supplied keys array.
 		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
-
 		const bookDocs = rawBooks.rows.map(({ doc }) => {
 			if (!doc) return undefined;
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
