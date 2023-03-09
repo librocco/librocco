@@ -70,7 +70,7 @@ class Database implements DatabaseInterface {
 		try {
 			// has to be awaited because otherwise the error will be thrown outside this function
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { _id, _rev, ...bookData } = await this._pouch.get<BookEntry>(isbn);
+			const { _id, _rev, ...bookData } = await this._pouch.get<BookEntry>(`books/${isbn}`);
 
 			return bookData;
 		} catch (err) {
@@ -79,7 +79,7 @@ class Database implements DatabaseInterface {
 	}
 
 	async getBooks(isbns: string[]): Promise<(BookEntry | undefined)[]> {
-		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns, include_docs: true });
+		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true });
 
 		// The rows are returned in the same order as the supplied keys array.
 		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
@@ -93,9 +93,10 @@ class Database implements DatabaseInterface {
 		return bookDocs;
 	}
 
-	async upsertBook(bookEntry: BookEntry): Promise<void> {
+	async upsertBook(b: BookEntry): Promise<void> {
+		const bookEntry = { ...b, _id: `books/${b.isbn}` };
 		try {
-			await this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
+			await this._pouch.put(bookEntry);
 		} catch (err) {
 			if ((err as any).status !== 409) throw err;
 
