@@ -117,7 +117,7 @@
 		</thead>
 
 		<tbody>
-			{#each rows as row (row.key)}
+			{#each rows as row, rowIx (row.key)}
 				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } = row}
 				<tr
 					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
@@ -132,7 +132,8 @@
 							} else {
 								selected.update((rows) => rows.filter((r) => r.isbn !== row.isbn));
 							}
-						}
+						},
+						position: rowIx
 					}}
 					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
 						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'

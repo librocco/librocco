@@ -52,10 +52,12 @@ export function createTable<T = Record<string, any>>({
 		node: HTMLTableRowElement,
 		{
 			on,
-			handleSelect
+			handleSelect,
+			position
 		}: {
 			on: keyof HTMLElementEventMap;
 			handleSelect: (event: HTMLElementEventMap[typeof on], selected: typeof selectedData) => void;
+			position?: number;
 		}
 	) => {
 		const onSelect = (event: HTMLElementEventMap[typeof on]) => {
@@ -63,8 +65,12 @@ export function createTable<T = Record<string, any>>({
 		};
 
 		node.addEventListener(on, onSelect, true);
+		setAriaRowIndex(node, position);
 
 		return {
+			update({ position }: { position?: number }) {
+				setAriaRowIndex(node, position);
+			},
 			destroy() {
 				node.removeEventListener(on, onSelect, true);
 			}
@@ -96,4 +102,15 @@ interface CreateTableOptions<T> {
  */
 function setRowKeys<T>(rows: T[]) {
 	return rows.map((row) => ({ ...row, key: uuidv4() }));
+}
+
+/**
+ * Helper to set `aria-rowindex`
+ * @param node
+ * @param position
+ */
+function setAriaRowIndex(node: HTMLElement, position: number | undefined) {
+	if (position !== undefined) {
+		node.setAttribute('aria-rowindex', `${position + 1}`);
+	}
 }
