@@ -6,7 +6,9 @@
 	import type { createTable } from '../lib/actions';
 	import { fadeBgColor } from '../lib/transitions';
 
-	export let table: ReturnType<typeof createTable>;
+	import type { InventoryTableData } from './types';
+
+	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
 	const headers = {
 		isbn: 'ISBN',
@@ -20,17 +22,18 @@
 		outOfPrint: 'Out of Print'
 	};
 
-	const { rowSelect, removeRows, table: tableAction, selected, data } = table;
+	const { rowSelect, removeRows, table: tableAction } = table;
+	$: ({ rows, selected } = $table);
 
 	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
 </script>
 
 <div class="overflow-x-auto">
 	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction>
-		{#if $selected.length}
+		{#if selected.length}
 			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
-				<Button color={ButtonColor.White} on:click={() => removeRows($selected)}>
-					Delete {$selected.length}
+				<Button color={ButtonColor.White} on:click={() => removeRows(selected)}>
+					Delete {selected.length}
 				</Button>
 			</div>
 		{/if}
@@ -43,7 +46,7 @@
 						const isSelected = isChecked(event);
 
 						if (isSelected) {
-							selected.set($data);
+							selected.set(rows);
 						} else {
 							selected.set([]);
 						}
@@ -52,7 +55,7 @@
 			>
 				<th scope="col" class="px-2 text-center">
 					<span class="inline-block">
-						<Checkbox name="Select all" checked={$selected.length ? true : false} />
+						<Checkbox name="Select all" checked={selected.length ? true : false} />
 					</span>
 				</th>
 				<th
@@ -114,7 +117,7 @@
 		</thead>
 
 		<tbody>
-			{#each $data as row (row.isbn)}
+			{#each rows as row (row.key)}
 				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } = row}
 				<tr
 					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
@@ -132,16 +135,16 @@
 						}
 					}}
 					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
-						$selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
+						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
 					}`}
 				>
 					<td
 						class={`px-2 text-center sm:align-middle border-l-4 
-							${$selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+							${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
 						`}
 					>
 						<span class="inline-block">
-							<Checkbox name={`Select ${title}`} checked={$selected.includes(row)} />
+							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
 						</span>
 					</td>
 					<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
