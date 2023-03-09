@@ -4,13 +4,12 @@ import type { NoteInterface, WarehouseInterface } from '@librocco/db';
 
 import type { DisplayRow, NoteAppState, PaginationData } from '$lib/types/inventory';
 
-import { bookStore } from '$lib/db/data';
-
 import { createDisplayNameStore } from './display_name';
 import { createDisplayStateStore, createInternalStateStore } from './note_state';
 import { createDisplayEntriesStore, createPaginationDataStore } from './table_content';
 
 import { readableFromStream } from '$lib/utils/streams';
+import { getDB } from '$lib/db';
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -44,12 +43,12 @@ export const createNoteStores: CreateNoteStores = (note) => {
 
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(note, internalState, {
+	const displayName = createDisplayNameStore(note, undefined, {
 		name: `[NOTE_DISPLAY_NAME::${note?._id}]`,
 		debug: false
 	});
 	const state = createDisplayStateStore(note, internalState, noteStateCtx);
-	const entries = createDisplayEntriesStore(note, currentPage, bookStore, {
+	const entries = createDisplayEntriesStore(getDB(), note, currentPage, {
 		name: `[NOTE_ENTRIES::${note?._id}]`,
 		debug: false
 	});
@@ -91,7 +90,7 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 		name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`,
 		debug: false
 	});
-	const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore, {
+	const entries = createDisplayEntriesStore(getDB(), warehouse, currentPage, {
 		name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`,
 		debug: false
 	});

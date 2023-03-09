@@ -3,7 +3,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
 
-import { DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { BookEntry, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
@@ -17,10 +17,19 @@ class Database implements DatabaseInterface {
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+
+		// Currently we're using up to 14 listeners (21 when replication is enabled).
+		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
+		// but will still show a warning if that number gets unexpectedly high (memory leak).
+		this._pouch.setMaxListeners(30);
 	}
 
 	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
-		if (this.#initialised) return this;
+		debug.log(ctx, 'init_db:started')({});
+		if (this.#initialised) {
+			debug.log(ctx, 'init_db:already_initialised')({});
+			return this;
+		}
 
 		const promises: Promise<any>[] = [];
 
@@ -37,10 +46,14 @@ class Database implements DatabaseInterface {
 
 		const replication = (async () => {
 			if (params && params.remoteDb) {
+				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
 				// Pull data from the remote db (if provided)
 				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+				debug.log(ctx, 'init_db:replication:initial_replication_done')({});
 				// Start live sync between local and remote db
 				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+			} else {
+				debug.log(ctx, 'init_db:replication:skipped')({});
 			}
 			return;
 		})();
@@ -51,6 +64,45 @@ class Database implements DatabaseInterface {
 		this.#initialised = true;
 
 		return this;
+	}
+
+	async getBook(isbn: string): Promise<BookEntry | undefined> {
+		try {
+			// has to be awaited because otherwise the error will be thrown outside this function
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { _id, _rev, ...bookData } = await this._pouch.get<BookEntry>(isbn);
+
+			return bookData;
+		} catch (err) {
+			return undefined;
+		}
+	}
+
+	async getBooks(isbns: string[]): Promise<(BookEntry | undefined)[]> {
+		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns, include_docs: true });
+
+		// The rows are returned in the same order as the supplied keys array.
+		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
+		const bookDocs = rawBooks.rows.map(({ doc }) => {
+			if (!doc) return undefined;
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { _id, _rev, ...rest } = doc;
+			return rest;
+		});
+
+		return bookDocs;
+	}
+
+	async upsertBook(bookEntry: BookEntry): Promise<void> {
+		try {
+			await this._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
+		} catch (err) {
+			if ((err as any).status !== 409) throw err;
+
+			const bookDoc = await this._pouch.get(bookEntry.isbn);
+
+			await this._pouch.put({ ...bookDoc, ...bookEntry });
+		}
 	}
 
 	warehouse(id?: string): WarehouseInterface {

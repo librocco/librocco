@@ -191,10 +191,16 @@ class Warehouse implements WarehouseInterface {
 	/**
 	 * Update warehouse display name.
 	 */
-	setName(displayName: string): Promise<WarehouseInterface> {
-		if (displayName === this.displayName || !displayName) {
+	setName(displayName: string, ctx: debug.DebugCtx): Promise<WarehouseInterface> {
+		const currentDisplayName = this.displayName;
+		debug.log(ctx, 'note:set_name')({ displayName, currentDisplayName });
+
+		if (displayName === currentDisplayName || !displayName) {
+			debug.log(ctx, 'note:set_name:noop')({ displayName, currentDisplayName });
 			return Promise.resolve(this);
 		}
+
+		debug.log(ctx, 'note:set_name:updating')({ displayName });
 		return this.update({ displayName });
 	}
 
