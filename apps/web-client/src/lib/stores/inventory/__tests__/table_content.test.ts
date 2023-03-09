@@ -12,13 +12,23 @@ const { waitFor } = testUtils;
 
 describe('tableContentStore', () => {
 	test("should not explode if no 'entity' is provided", async () => {
-		const db = await newTestDB();
-
-		const de$ = createDisplayEntriesStore(db, undefined, readable(0), {});
 		let displayEntries: VolumeQuantity[] | undefined;
+
+		// Both db and entity are undefined (this will happen at build time, as db is instantiated only in browser)
+		let de$ = createDisplayEntriesStore(undefined, undefined, readable(0), {});
 		de$.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
+		// Reset the 'displayEntries'
+		displayEntries = undefined;
+
+		// Should also work if db is defined but entity is undefined (this might happen if the entity id is not specified)
+		const db = await newTestDB();
+		de$ = createDisplayEntriesStore(db, undefined, readable(0), {});
+		de$.subscribe((de) => (displayEntries = de));
+		expect(displayEntries).toEqual([]);
+
+		// Same check for pagination
 		const pd$ = createPaginationDataStore(undefined, readable(0), {});
 		let paginationData: PaginationData | undefined;
 		pd$.subscribe((pd) => (paginationData = pd));
@@ -31,54 +41,10 @@ describe('tableContentStore', () => {
 	});
 
 	test('should stream book data with the entires (matching their isbn)', async () => {
-		// both are undefined
-
-		const deUndefinedDb$ = createDisplayEntriesStore(undefined, undefined, readable(0), {});
-
-		let displayEntriesUndefinedDb: DisplayRow[];
-		deUndefinedDb$.subscribe((de) => (displayEntriesUndefinedDb = de));
-		await waitFor(() => expect(displayEntriesUndefinedDb).toEqual([]));
-
-		// db is defined but not entity
 		const db = await newTestDB();
 
-		const deUndefinedEntity$ = createDisplayEntriesStore(db, undefined, readable(0), {});
-
-		let displayEntriesUndefinedEntity: DisplayRow[];
-		deUndefinedEntity$.subscribe((de) => (displayEntriesUndefinedEntity = de));
-
-		await waitFor(() => expect(displayEntriesUndefinedEntity).toEqual([]));
-
-		// both are defined
-
-		const book1Promise = db.upsertBook({
-			isbn: '0195399706',
-			title: 'The Age of Wonder',
-			authors: 'Richard Holmes',
-			publisher: 'HarperCollins UK',
-			year: '2008',
-			price: 69.99
-		});
-
-		const book2Promise = db.upsertBook({
-			isbn: '019976915X',
-			title: 'Twelve Bar Blues',
-			authors: 'Patrick Neate',
-			publisher: 'Penguin UK',
-			year: '2002',
-			price: 39.86
-		});
-
-		const note = await db.warehouse().note('note-1').create();
-
-		const volumesPromise = note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`]);
-
-		Promise.all([book1Promise, book2Promise, volumesPromise]);
-
-		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
-		let displayEntries: DisplayRow[];
-		de$.subscribe((de) => (displayEntries = de));
 		const book1 = {
+			isbn: '0195399706',
 			title: 'The Age of Wonder',
 			authors: 'Richard Holmes',
 			publisher: 'HarperCollins UK',
@@ -87,7 +53,6 @@ describe('tableContentStore', () => {
 		};
 		const book2 = {
 			isbn: '019976915X',
-
 			title: 'Twelve Bar Blues',
 			authors: 'Patrick Neate',
 			publisher: 'Penguin UK',
@@ -95,15 +60,25 @@ describe('tableContentStore', () => {
 			price: 39.86
 		};
 
+		const note = await db.warehouse().note('note-1').create();
+
+		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
+		let displayEntries: DisplayRow[];
+		de$.subscribe((de) => (displayEntries = de));
+
+		await Promise.all([
+			db.upsertBook(book1),
+			db.upsertBook(book2),
+			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
+		]);
+
 		const want = [
 			{
 				...book1,
-				isbn: '0195399706',
 				quantity: 12,
 				warehouseId: `v1/jazz`,
 				warehouseName: 'not-found'
 			},
-
 			{
 				...book2,
 				quantity: 10,
@@ -115,7 +90,7 @@ describe('tableContentStore', () => {
 		await waitFor(() => expect(displayEntries).toEqual(want));
 	});
 
-	test('should stream just the volume stock if for isbns with no book data found', async () => {
+	test('should stream just the volume stock for isbns with no book data found', async () => {
 		const db = await newTestDB();
 
 		const book1 = {
@@ -126,15 +101,18 @@ describe('tableContentStore', () => {
 			year: '2008',
 			price: 69.99
 		};
-		const book1Promise = db.upsertBook(book1);
 
 		const note = await db.warehouse().note('note-1').create();
-
-		const volumesPromise = note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`]);
 
 		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
+
+		Promise.all([
+			db.upsertBook(book1),
+			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
+		]);
+
 		const want = [
 			{
 				...book1,
@@ -149,7 +127,6 @@ describe('tableContentStore', () => {
 				warehouseName: 'not-found'
 			}
 		];
-		await Promise.all([book1Promise, volumesPromise]);
 
 		await waitFor(() => expect(displayEntries).toEqual(want));
 	});
