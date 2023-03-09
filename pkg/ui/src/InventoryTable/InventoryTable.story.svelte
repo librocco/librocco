@@ -1,10 +1,27 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
+	import { v4 as uuidv4 } from 'uuid';
+
+	import { Button, ButtonColor } from '../Button';
+
 	import InventoryTable from './InventoryTable.svelte';
+	import { createTable } from '../lib/actions';
+
 	import type { TableData } from './types';
+
 	export let Hst: Hst;
 
-	import { createTable } from './table';
+	const newRow = () => ({
+		isbn: uuidv4(),
+		title: 'Miti Del Nord',
+		authors: 'Neil Gaiman',
+		quantity: 3,
+		price: 10,
+		publisher: 'Mondadori',
+		year: '2017',
+		editedBy: '',
+		outOfPrint: false
+	});
 
 	const rows: TableData[] = [
 		{
@@ -82,6 +99,12 @@
 
 <Hst.Story title="Table">
 	<Hst.Variant>
-		<InventoryTable {table} />
+		<div class="flex flex-col gap-y-4">
+			<div class="w-24 p-1">
+				<Button color={ButtonColor.Primary} on:click={() => table.addRows([newRow()])}>Add row</Button>
+			</div>
+
+			<InventoryTable {table} />
+		</div>
 	</Hst.Variant>
 </Hst.Story>
