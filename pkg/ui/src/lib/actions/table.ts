@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid';
-import { derived, writable } from 'svelte/store';
+import { derived, writable, get } from 'svelte/store';
+import type { Action } from 'svelte/action';
 
 // eslint-disable-next-line
 export function createTable<T = Record<string, any>>({
@@ -7,13 +8,24 @@ export function createTable<T = Record<string, any>>({
 	onRowRemove = () => ({}),
 	onRowAdd = () => ({})
 }: CreateTableOptions<T>) {
+	/**
+	 * Type extends generic table data T with unique `key`
+	 */
+	type KeyedRows = T & { key: string };
+
+	/**
+	 * Store of table rows with unique keyss
+	 */
 	const data = writable(setRowKeys(rows));
 
-	type KeyedRows = T & { key: string };
-	let $data: KeyedRows[] = [];
-
+	/**
+	 * Store of selected table rows
+	 */
 	const selectedData = writable<KeyedRows[]>([]);
 
+	/**
+	 * Derived store of table state - combinin data & selectedData stores
+	 */
 	const state = derived([data, selectedData], ([$data, $selectedData]) => {
 		return {
 			rows: $data,
@@ -21,15 +33,23 @@ export function createTable<T = Record<string, any>>({
 		};
 	});
 
+	/**
+	 * Helper adds rows to table data store
+	 * @param newRows
+	 */
 	const addRows = (newRows: T[]) => {
 		const keyednNewRows = setRowKeys(newRows);
 		onRowAdd(keyednNewRows);
 		data.update((rows) => [...rows, ...keyednNewRows]);
 	};
 
+	/**
+	 * Helper removes rows from table data store & resets selected store
+	 * @param selectedRows
+	 */
 	const removeRows = (selectedRows: KeyedRows[]) => {
 		const selectedKeys = selectedRows.map(({ key }) => key);
-		const filteredRows = $data.filter((r) => !selectedKeys.includes(r.key));
+		const filteredRows = get(data).filter((r) => !selectedKeys.includes(r.key));
 
 		onRowRemove(selectedRows);
 
@@ -37,17 +57,22 @@ export function createTable<T = Record<string, any>>({
 		selectedData.set([]);
 	};
 
-	// eslint-disable-next-line
-	const table = (node: HTMLTableElement) => {
-		const unsubscribe = data.subscribe((values) => ($data = values));
-
+	/**
+	 * Table action
+	 */
+	const table: Action<HTMLTableElement> = () => {
 		return {
 			destroy() {
-				unsubscribe();
+				return;
 			}
 		};
 	};
 
+	/**
+	 * Row select action:
+	 * - Manages an event listener which handles row selection; can be defined on any event
+	 * - Manages row `aria-rowindex`
+	 */
 	const rowSelect = (
 		node: HTMLTableRowElement,
 		{
