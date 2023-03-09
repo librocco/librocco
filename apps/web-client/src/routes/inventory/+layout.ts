@@ -19,7 +19,6 @@ export const load: LayoutLoad = async ({ route, params, parent }) => {
 
 	// This should re-run on change to path, as far as I understand: https://kit.svelte.dev/docs/load#invalidation
 	const docId = params?.id;
-	console.log('docId', docId);
 
 	const [, , location] = route.id.split('/'); // e.g [ '', 'inventory', 'stock', '[...id]' ]
 

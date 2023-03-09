@@ -155,19 +155,27 @@ class Note implements NoteInterface {
 	 * Update is private as it's here for internal usage, while all updates to warehouse document
 	 * from outside the instance have their own designated methods.
 	 */
-	private update(data: Partial<NoteInterface>) {
+	private update(data: Partial<NoteInterface>, ctx: debug.DebugCtx) {
 		return runAfterCondition(async () => {
+			debug.log(ctx, 'note:update')({ data });
+
 			// Committed notes cannot be updated.
 			if (this.committed) {
+				debug.log(ctx, 'note:update:note_committed')(this);
 				return this;
 			}
+
 			// If creating a note, we're also creating a warehouse. If the warehouse
 			// already exists, this is a no-op anyhow.
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
-			// Update note itself
+
 			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
+			debug.log(ctx, 'note:updating')({ updatedData });
 			const { rev } = await this.#db._pouch.put<NoteData>(updatedData);
+			debug.log(ctx, 'note:updated')({ updatedData, rev });
+
+			// Update note itself
 			return this.updateInstance({ ...updatedData, _rev: rev });
 		}, this.#initialized);
 	}
@@ -175,7 +183,8 @@ class Note implements NoteInterface {
 	/**
 	 * Delete the note from the db.
 	 */
-	delete(): Promise<void> {
+	delete(ctx: debug.DebugCtx): Promise<void> {
+		debug.log(ctx, 'note:delete')({});
 		return runAfterCondition(async () => {
 			// Committed notes cannot be deleted.
 			if (!this.#exists || this.committed) {
@@ -188,11 +197,17 @@ class Note implements NoteInterface {
 	/**
 	 * Update note display name.
 	 */
-	setName(displayName: string): Promise<NoteInterface> {
-		if (displayName === this.displayName || !displayName) {
+	setName(displayName: string, ctx: debug.DebugCtx): Promise<NoteInterface> {
+		const currentDisplayName = this.displayName;
+		debug.log(ctx, 'note:set_name')({ displayName, currentDisplayName });
+
+		if (displayName === currentDisplayName || !displayName) {
+			debug.log(ctx, 'note:set_name:noop')({ displayName, currentDisplayName });
 			return Promise.resolve(this);
 		}
-		return this.update({ displayName });
+
+		debug.log(ctx, 'note:set_name:updating')({ displayName });
+		return this.update({ displayName }, ctx);
 	}
 
 	/**
@@ -228,7 +243,7 @@ class Note implements NoteInterface {
 				params.forEach((update) => updateQuantity(update[0], update[1], update[2]));
 			}
 
-			return this.update(this);
+			return this.update(this, {});
 		}, this.#initialized);
 	}
 
@@ -243,15 +258,16 @@ class Note implements NoteInterface {
 			entries.push(transaction);
 		}
 		// Post an update, the local entries will be updated by the update function.
-		return this.update({ entries });
+		return this.update({ entries }, {});
 	}
 
 	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
-	commit(): Promise<NoteInterface> {
-		return this.update({ committed: true });
+	commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
+		debug.log(ctx, 'note:commit')({});
+		return this.update({ committed: true }, ctx);
 	}
 
 	/**
@@ -281,13 +297,13 @@ class Note implements NoteInterface {
 				this.createStream((doc) => (doc?.entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks), ctx),
 				this.#db.stream(ctx).warehouseList
 			]).pipe(
-				tap(debug.log(ctx, 'note_entries:stream:input')),
+				tap(debug.log(ctx, 'note:entries:stream:input')),
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
 					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
 				}),
-				tap(debug.log(ctx, 'note_entries:stream:output'))
+				tap(debug.log(ctx, 'note:entries:stream:output'))
 			),
 
 			/** @TODO update the data model to have 'state' */

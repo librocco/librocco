@@ -27,15 +27,16 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
+		debug.log(ctx, 'internal_state_store:opening_note_subscription')({});
 		noteSubscription = note?.stream(ctx).state.subscribe((content) => {
-			debug.log(ctx, 'internal_state_store:update')(content);
+			debug.log(ctx, 'internal_state_store:update_from_db')(content);
 			state.set(content);
 		});
 	};
 
 	// Close note subscription closes the subscription to the note state
 	const closeNoteSubscription = () => {
-		debug.log(ctx, 'internal_state_store: closing note subscription')({});
+		debug.log(ctx, 'internal_state_store:closing_note_subscription')({});
 		noteSubscription?.unsubscribe();
 	};
 
@@ -52,13 +53,18 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 
 	// Subscribe method increments the number of subscribers, if this is the first subscriber, it opens the note subscription
 	// and streams the internal 'state' store
-	const subscribe = (...params: Parameters<typeof state.subscribe>) => {
+	const subscribe = (...[notify, invalidate]: Parameters<typeof state.subscribe>) => {
 		subscribers++;
 		if (subscribers === 1) {
 			openNoteSubscription();
 		}
 
-		const unsubInternal = state.subscribe(...params);
+		const unsubInternal = state.subscribe((value) => {
+			// Log for debugging
+			debug.log(ctx, 'internal_state_store:updated')(value);
+			// Notify the actual subscriber with appropriate value
+			notify(value);
+		}, invalidate);
 
 		// The returned 'unsubscribe' function removes a subscriber and unsubscribes from the internal store
 		return () => {
@@ -91,18 +97,36 @@ interface CreateDisplayStateStore {
  */
 export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore, ctx) => {
 	const set = (state: NoteState) => {
-		debug.log(ctx, 'display_state_store:set')(state);
+		const internalState = get(internalStateStore);
+		debug.log(ctx, 'display_state_store:set')({ state, internalState });
+
+		// If state is the same as the internal (current) state, we're not doing anything.
+		//
+		// This way we're avoiding temp state flashing (or getting stuck in temp state) when,
+		// for instance, bound value is set to 'committed' and the note is already committed.
+		if (state === internalState) {
+			return;
+		}
+
 		// For committed or deleted state, we're setting the temporary state and updating the note in the db.
 		//
 		// Other updates are no-op as we don't allow explicit setting of temporary states
-		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is no-op.
+		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is a no-op.
 		switch (state) {
 			case NoteState.Committed:
+				debug.log(
+					ctx,
+					'display_state_store:setting_temp_state'
+				)({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note?.commit();
+				return note?.commit(ctx);
 			case NoteState.Deleted:
+				debug.log(
+					ctx,
+					'display_state_store:setting_temp_state'
+				)({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note?.delete();
+				return note?.delete(ctx);
 			default:
 				return;
 		}
