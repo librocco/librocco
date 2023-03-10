@@ -3,9 +3,9 @@
 
 	import { Mail } from 'lucide-svelte';
 
-	import SidebarNav from './SidebarNav.svelte';
-	import SidebarItem from './SidebarItem.svelte';
-	import SidebarItemGroup from './SidebarItemGroup.svelte';
+	import SidebarNav from '../SidebarNav.svelte';
+	import SidebarItem from '../SidebarItem.svelte';
+	import SidebarItemGroup from '../SidebarItemGroup.svelte';
 
 	export let Hst: Hst;
 
