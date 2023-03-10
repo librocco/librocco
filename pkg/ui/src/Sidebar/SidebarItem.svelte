@@ -6,9 +6,7 @@
 
 	$: borderClasses = current && !nested ? 'border-pink-600' : 'border-transparent';
 
-	$: colourClasses = current
-		? 'bg-pink-50 border-l-4 text-pink-600'
-		: 'text-gray-600 group-hover:text-gray-900 group-hover:bg-white';
+	$: colourClasses = current ? 'bg-pink-50 text-pink-600' : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50';
 
 	const spacingClasses = nested ? 'pl-10 pr-2' : 'px-3';
 
