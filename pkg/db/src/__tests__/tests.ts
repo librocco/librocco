@@ -536,28 +536,35 @@ export const BookInterface: TestFunction = async (db) => {
 	};
 
 	const bookInterface = db.books();
-	await bookInterface.upsert([{ ...book1 }, { ...book2 }]);
-	const promise2 = bookInterface.upsert([{ ...book1, title: 'Updated Title' }]);
 
-	const promise3 = bookInterface.get(['0195399706']);
-	const promise4 = await bookInterface.upsert([{ ...book2, title: 'Updated Title 12' }]);
-	// const promise5 = bookInterface.get(['019976915X'])
-
-	const bookEntries: (BookEntry | undefined)[][] = [];
+	let bookEntries: (BookEntry | undefined)[] = [];
 
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_, updatedBookFromDb] = await Promise.all([promise2, promise3, promise4]);
+	const [_, __, ___] = await Promise.all([
+		bookInterface.upsert([{ ...book1 }, { ...book2 }]),
+		bookInterface.upsert([{ ...book1, title: 'Updated Title' }]),
+		bookInterface.get(['0195399706']),
+		bookInterface.upsert([{ ...book2, title: 'Updated Title 12' }]),
+		bookInterface.get(['019976915X'])
+	]);
+	const [updatedBookFromDb, updatedBook2FromDb] = await Promise.all([
+		bookInterface.get(['0195399706']),
+		bookInterface.get(['019976915X'])
+	]);
 
-	bookInterface.stream(['0195399706', '019976915X'], {}).subscribe((n1e) => {
-		bookEntries.push(n1e);
+	bookInterface.stream(['0195399706', '019976915X'], {}).subscribe((stream) => {
+		bookEntries = stream;
 	});
 
 	await waitFor(() => {
-		expect(bookEntries).toEqual([[book1, book2], { ...book1, title: 'Updated Title' }, { ...book2, title: 'Updated Title 12' }]);
+		expect(bookEntries).toEqual([
+			{ ...book1, title: 'Updated Title' },
+			{ ...book2, title: 'Updated Title 12' }
+		]);
 	});
 
 	await waitFor(() => {
-		expect(updatedBookFromDb).toEqual({ ...book1, title: 'Updated Title' });
-		// expect(updatedBook2FromDb).toEqual({ ...book2, title: "Updated Title 12" })
+		expect(updatedBookFromDb).toEqual([{ ...book1, title: 'Updated Title' }]);
+		expect(updatedBook2FromDb).toEqual([{ ...book2, title: 'Updated Title 12' }]);
 	});
 };
