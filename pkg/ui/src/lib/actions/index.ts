@@ -1,1 +1,0 @@
-export { createTable } from './table';
