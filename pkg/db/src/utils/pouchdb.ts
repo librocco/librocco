@@ -174,7 +174,7 @@ export const newViewStream = <M extends Record<string, any>, R>(
 		};
 	});
 
-const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>, ctx: debug.DebugCtx) =>
+export const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>, ctx: debug.DebugCtx) =>
 	new Observable<PouchDB.Core.ChangesResponseChange<Model>>((subscriber) => {
 		emitter.on('change', (change) => {
 			debug.log(ctx, 'changes_stream:change')(change);

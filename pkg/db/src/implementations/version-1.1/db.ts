@@ -3,13 +3,14 @@ import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
 
-import { BookEntry, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
 import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
+import { newBookInterface } from './book';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -66,44 +67,9 @@ class Database implements DatabaseInterface {
 		return this;
 	}
 
-	async getBook(isbn: string): Promise<BookEntry | undefined> {
-		try {
-			// has to be awaited because otherwise the error will be thrown outside this function
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { _id, _rev, ...bookData } = await this._pouch.get<BookEntry>(`books/${isbn}`);
-
-			return bookData;
-		} catch (err) {
-			return undefined;
-		}
-	}
-
-	async getBooks(isbns: string[]): Promise<(BookEntry | undefined)[]> {
-		const rawBooks = await this._pouch.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true });
-
-		// The rows are returned in the same order as the supplied keys array.
-		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
-		const bookDocs = rawBooks.rows.map(({ doc }) => {
-			if (!doc) return undefined;
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { _id, _rev, ...rest } = doc;
-			return rest;
-		});
-
-		return bookDocs;
-	}
-
-	async upsertBook(b: BookEntry): Promise<void> {
-		const bookEntry = { ...b, _id: `books/${b.isbn}` };
-		try {
-			await this._pouch.put(bookEntry);
-		} catch (err) {
-			if ((err as any).status !== 409) throw err;
-
-			const bookDoc = await this._pouch.get(bookEntry.isbn);
-
-			await this._pouch.put({ ...bookDoc, ...bookEntry });
-		}
+	books() {
+		const bookInterface = newBookInterface(this);
+		return bookInterface;
 	}
 
 	warehouse(id?: string): WarehouseInterface {
