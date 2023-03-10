@@ -4,7 +4,7 @@
 
 	import { Pagination } from '../Pagination';
 	import { TextField } from '../FormFields';
-	import { SidebarItem, SidebarItemGroup } from '../Sidebar';
+	import { SidebarItem, SidebarItemGroup, NewEntitySideNavButton, SideBarNav } from '../Sidebar';
 	import { Badge, BadgeColor } from '../Badge';
 	import { Header } from '../Header';
 
@@ -71,12 +71,13 @@
 	<Hst.Variant title="Prototype: Stock">
 		<InventoryPage>
 			<Header currentLocation="/inventory/stock" title="Stock" slot="header" />
-			<nav class="divide-y divide-gray-300" slot="sidebar">
+			<SideBarNav slot="sidebar">
 				<SidebarItem href="#" name="All" current />
 				<SidebarItem href="#" name="Varia 2018" />
 				<SidebarItem href="#" name="Scolastica 2021" />
 				<SidebarItem href="#" name="Nuovo 2022" />
-			</nav>
+				<NewEntitySideNavButton label="Create warehouse" />
+			</SideBarNav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<h1 class="cursor-normal select-none text-lg font-semibold text-gray-900">All</h1>
 				<TextField name="search" placeholder="Serach">
@@ -102,14 +103,16 @@
 	<Hst.Variant title="Prototype: Inbound">
 		<InventoryPage>
 			<Header currentLocation="/inventory/inbound" title="Inbound" slot="header" />
-			<nav class="divide-y divide-gray-300" slot="sidebar">
+			<SideBarNav slot="sidebar">
 				<SidebarItemGroup name="Nuovo 2022" index={0} items={[]} />
+				<NewEntitySideNavButton label="Create Note" />
 				<SidebarItemGroup
 					name="Scolastica 2021"
 					index={1}
 					items={[{ name: 'John', current: false, href: '' }]}
 					expanded
 				/>
+				<NewEntitySideNavButton label="Create Note" />
 				<SidebarItemGroup
 					index={2}
 					name="Varia 2018"
@@ -120,7 +123,8 @@
 					]}
 					expanded
 				/>
-			</nav>
+				<NewEntitySideNavButton label="New Note" />
+			</SideBarNav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
@@ -154,10 +158,11 @@
 	<Hst.Variant title="Prototype: Outbound">
 		<InventoryPage>
 			<Header currentLocation="/inventory/outbound" title="Outbound" slot="header" />
-			<nav class="divide-y divide-gray-300" slot="sidebar">
+			<SideBarNav slot="sidebar">
 				<SidebarItem name="Silvio" href="" current />
 				<SidebarItem name="Sandra" href="" />
-			</nav>
+				<NewEntitySideNavButton label="Create note" />
+			</SideBarNav>
 			<div class="flex w-full items-end justify-between" slot="tableHeader">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
