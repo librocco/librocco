@@ -6,7 +6,7 @@ import { testUtils } from '@librocco/shared';
 
 import { NoteState } from '@/enums';
 
-import { InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
+import { BookEntry, InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
 import { TestFunction } from '@/test-runner/types';
 
 import { versionId } from '@/utils/misc';
@@ -512,5 +512,52 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 		expect(n1DisplayName).toEqual('');
 		expect(n1State).toEqual(NoteState.Draft);
 		expect(n1UpdatedAt).toEqual(null);
+	});
+};
+
+export const BookInterface: TestFunction = async (db) => {
+	const book1 = {
+		isbn: '0195399706',
+
+		title: 'The Age of Wonder',
+		authors: 'Richard Holmes',
+		publisher: 'HarperCollins UK',
+		year: '2008',
+		price: 69.99
+	};
+	const book2 = {
+		isbn: '019976915X',
+
+		title: 'Twelve Bar Blues',
+		authors: 'Patrick Neate',
+		publisher: 'Penguin UK',
+		year: '2002',
+		price: 39.86
+	};
+
+	const bookInterface = db.books();
+	await bookInterface.upsert([{ ...book1 }, { ...book2 }]);
+	const promise2 = bookInterface.upsert([{ ...book1, title: 'Updated Title' }]);
+
+	const promise3 = bookInterface.get(['0195399706']);
+	const promise4 = await bookInterface.upsert([{ ...book2, title: 'Updated Title 12' }]);
+	// const promise5 = bookInterface.get(['019976915X'])
+
+	const bookEntries: (BookEntry | undefined)[][] = [];
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const [_, updatedBookFromDb] = await Promise.all([promise2, promise3, promise4]);
+
+	bookInterface.stream(['0195399706', '019976915X'], {}).subscribe((n1e) => {
+		bookEntries.push(n1e);
+	});
+
+	await waitFor(() => {
+		expect(bookEntries).toEqual([[book1, book2], { ...book1, title: 'Updated Title' }, { ...book2, title: 'Updated Title 12' }]);
+	});
+
+	await waitFor(() => {
+		expect(updatedBookFromDb).toEqual({ ...book1, title: 'Updated Title' });
+		// expect(updatedBook2FromDb).toEqual({ ...book2, title: "Updated Title 12" })
 	});
 };
