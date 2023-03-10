@@ -204,7 +204,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 export interface BookInterface {
 	get: (isbns: string[]) => Promise<(BookEntry | undefined)[]>;
 	upsert: (bookEntries: BookEntry[]) => Promise<void>;
-	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<BookEntry[]>;
+	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<(BookEntry | undefined)[]>;
 }
 export interface NewDatabase {
 	(db: PouchDB.Database): DatabaseInterface;
