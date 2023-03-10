@@ -10,8 +10,8 @@
 		Pagination,
 		Badge,
 		BadgeColor,
-		InventoryTable,
-		InventoryTableRow,
+		// InventoryTable,
+		// createTable,
 		Header,
 		SelectMenu,
 		TextEditable
@@ -100,11 +100,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if $entries.length}
-			<InventoryTable>
-				{#each $entries as data}
-					<InventoryTableRow {data} />
-				{/each}
-			</InventoryTable>
+			<!-- <InventoryTable /> -->
 		{/if}
 	</svelte:fragment>
 
