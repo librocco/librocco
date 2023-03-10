@@ -4,13 +4,15 @@
 
 	import {
 		InventoryPage,
-		SidebarItem,
 		TextField,
 		Pagination,
 		// InventoryTable,
 		// createTable,
 		Header,
-		TextEditable
+		TextEditable,
+		SidebarItem,
+		SideBarNav,
+		NewEntitySideNavButton
 	} from '@librocco/ui';
 
 	import { createWarehouseStores } from '$lib/stores/inventory';
@@ -33,11 +35,14 @@
 	<Header title="Stock" currentLocation="/inventory/stock" slot="header" />
 
 	<!-- Sidebar slot -->
-	<nav class="divide-y divide-gray-300" slot="sidebar">
+	<SideBarNav slot="sidebar">
 		{#each $warehouseList as { displayName, id }}
 			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === currentWarehouse} />
 		{/each}
-	</nav>
+		<svelte:fragment slot="actions">
+			<NewEntitySideNavButton label="Create warehouse" />
+		</svelte:fragment>
+	</SideBarNav>
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
