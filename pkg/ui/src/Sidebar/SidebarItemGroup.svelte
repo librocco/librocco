@@ -70,5 +70,8 @@
 				<SidebarItem {name} {href} {current} nested={true} />
 			{/each}
 		</div>
+		<div class="ml-7 border-t border-dashed border-gray-300 pr-2">
+			<slot name="actions" />
+		</div>
 	{/if}
 </div>
