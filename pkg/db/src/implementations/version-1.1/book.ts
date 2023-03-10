@@ -13,28 +13,29 @@ class Book implements BookInterface {
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
-        await Promise.all(
-            bookEntries.map(async (bookEntry) => {
-                // eslint-disable-next-line no-async-promise-executor
-                return new Promise<void>(async (resolve, reject) => {
-                    try {
-                        await this.#db._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
-                        resolve();
-                    } catch (err) {
+		await Promise.all(
+			bookEntries.map(async (b) => {
+				// eslint-disable-next-line no-async-promise-executor
+				return new Promise<void>(async (resolve, reject) => {
+					const bookEntry = { ...b, _id: `books/${b.isbn}` };
+					try {
+						await this.#db._pouch.put(bookEntry);
+						resolve();
+					} catch (err) {
 						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-                        if ((err as any).status !== 409) reject();
+						if ((err as any).status !== 409) reject();
 
-                        const bookDoc = await this.#db._pouch.get(bookEntry.isbn);
-                        await this.#db._pouch.put({ ...bookDoc, ...bookEntry });
-                        resolve();
-                    }
-                });
-            })
-        );
+						const bookDoc = await this.#db._pouch.get(bookEntry._id);
+						await this.#db._pouch.put({ ...bookDoc, ...bookEntry });
+						resolve();
+					}
+				});
+			})
+		);
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
-		const rawBooks = await this.#db._pouch.allDocs<BookEntry>({ keys: isbns, include_docs: true });
+		const rawBooks = await this.#db._pouch.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true });
 		// The rows are returned in the same order as the supplied keys array.
 		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 
@@ -58,18 +59,18 @@ class Book implements BookInterface {
 			});
 
 			const initialPromise = this.#db._pouch
-				.allDocs<BookEntry>({ keys: isbns, include_docs: true })
+				.allDocs<(BookEntry | undefined)[]>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 				.then((res) => {
-                    debug.log(ctx, 'books_stream:initial_query:result')(res);
+					debug.log(ctx, 'books_stream:initial_query:result')(res);
 					return res;
 				})
 				// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 				.catch((err) => {
 					debug.log(ctx, 'document_stream:initial_query:error')(err);
-                    debug.log(ctx, 'document_stream:initial_query:error:fallback')({ rows: [] });
-                    return { rows: [] };
+					debug.log(ctx, 'document_stream:initial_query:error:fallback')({ rows: [] });
+					return { rows: [] };
 				});
-            const initialState = from(initialPromise).pipe(
+			const initialState = from(initialPromise).pipe(
 				map(({ rows }) => {
 					// const { _id, _rev, ...rest } = doc || {}
 					return rows.map(({ doc }) => {
@@ -80,38 +81,39 @@ class Book implements BookInterface {
 					});
 				})
 			);
-			const changeStream = newChangesStream<BookEntry[]>(emitter, ctx).pipe(
-                // The change only triggers a new query (as changes are partial and we require the full view update)
-                switchMap(() =>
-                    from(
-                        new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
-                            this.#db._pouch
-                                .allDocs<BookEntry>({ keys: isbns, include_docs: true })
-                                .then((res) => {
-                                    debug.log(ctx, 'books_stream:change_query:result')(res);
-                                    return resolve(res);
-                                })
-                                .catch((err) => {
-                                    debug.log(ctx, 'books_stream:change_query:error')(err);
-                                });
-                        })
-                    ),
-                ),
-                tap(debug.log(ctx, 'books_stream:change')),
-                map(({ doc }) => {
-                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-                    const { _id, _rev, ...rest } = doc || {};
-                    return [rest];
+			const changeStream = newChangesStream<(BookEntry | undefined)[]>(emitter, ctx).pipe(
+				// The change only triggers a new query (as changes are partial and we require the full view update)
+				switchMap(() =>
+					from(
+						new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
+							this.#db._pouch
+								.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
+								.then((res) => {
+									debug.log(ctx, 'books_stream:change_query:result')(res);
+									return resolve(res);
+								})
+								.catch((err) => {
+									debug.log(ctx, 'books_stream:change_query:error')(err);
+								});
+						})
+					)
+				),
+				tap(debug.log(ctx, 'books_stream:change')),
+				map(({ rows }) => {
+					rows.map(({ doc }) => {
+						// eslint-disable-next-line @typescript-eslint/no-unused-vars
+						const { _id, _rev, ...rest } = doc || {};
+						return [rest];
+					});
 				}),
-                tap(debug.log(ctx, 'books_stream:change:transformed'))
+				tap(debug.log(ctx, 'books_stream:change:transformed'))
 			);
 
 			concat(initialState, changeStream)
-
-                .pipe(
-                    tap(debug.log(ctx, 'books_stream:result:raw')),
+				.pipe(
+					tap(debug.log(ctx, 'books_stream:result:raw')),
 					map((doc) => doc),
-                    tap(debug.log(ctx, 'books_stream:result:transformed'))
+					tap(debug.log(ctx, 'books_stream:result:transformed'))
 				)
 				.subscribe((doc) => subscriber.next(doc));
 
