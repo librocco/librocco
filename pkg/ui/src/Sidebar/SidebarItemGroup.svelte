@@ -48,7 +48,7 @@
 	].join(' ');
 </script>
 
-<div class="group space-y-1">
+<div>
 	<button
 		type="button"
 		class={buttonBaseClasses}
@@ -65,10 +65,15 @@
 	{#if expanded}
 		<!-- The transition property here was preventing the component (and the page itself) from being dismounted, 
 			the '|local' part is the workaround as described in: https://github.com/sveltejs/svelte/issues/6812#issuecomment-934318223 -->
-		<div class="space-y-1" id={controlId} transition:slide|local={{ duration: 200, easing: expoOut }}>
+		<div id={controlId} transition:slide|local={{ duration: 200, easing: expoOut }}>
 			{#each items as { name, href, current }}
 				<SidebarItem {name} {href} {current} nested={true} />
 			{/each}
 		</div>
+		{#if $$slots.actions}
+			<div class="ml-7 border-t border-dashed border-gray-300 pr-2">
+				<slot name="actions" />
+			</div>
+		{/if}
 	{/if}
 </div>
