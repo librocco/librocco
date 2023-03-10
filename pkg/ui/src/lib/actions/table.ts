@@ -9,14 +9,15 @@ export function createTable<T = Record<string, any>>({
 	onRowAdd = () => ({})
 }: CreateTableOptions<T>) {
 	/**
-	 * Type extends generic table data T with unique `key`
+	 * Type extends generic table data T with unique `key` and `rowIx`
 	 */
-	type KeyedRows = T & { key: string };
+	type KeyedRows = T & { key: string; rowIx: number };
 
 	/**
-	 * Store of table rows with unique keyss
+	 * Store of table rows with unique keys & rowIx
 	 */
-	const data = writable(setRowKeys(rows));
+	const _data = writable(setRowKeys(rows));
+	const data = derived(_data, ($_data) => $_data.map((row, ix) => ({ ...row, rowIx: ix })));
 
 	/**
 	 * Store of selected table rows
@@ -40,7 +41,7 @@ export function createTable<T = Record<string, any>>({
 	const addRows = (newRows: T[]) => {
 		const keyednNewRows = setRowKeys(newRows);
 		onRowAdd(keyednNewRows);
-		data.update((rows) => [...rows, ...keyednNewRows]);
+		_data.update((rows) => [...rows, ...keyednNewRows]);
 	};
 
 	/**
@@ -53,15 +54,21 @@ export function createTable<T = Record<string, any>>({
 
 		onRowRemove(selectedRows);
 
-		data.set(filteredRows);
+		_data.set(filteredRows);
 		selectedData.set([]);
 	};
 
 	/**
 	 * Table action
 	 */
-	const table: Action<HTMLTableElement> = () => {
+	const table: Action<HTMLTableElement> = (node, { rowCount }: { rowCount: number }) => {
+		node.setAttribute('aria-rowcount', `${rowCount}`);
+
 		return {
+			// Update row-count if rows length changes
+			update({ rowCount }: { rowCount: number }) {
+				node.setAttribute('aria-rowcount', `${rowCount}`);
+			},
 			destroy() {
 				return;
 			}
@@ -90,11 +97,19 @@ export function createTable<T = Record<string, any>>({
 		};
 
 		node.addEventListener(on, onSelect, true);
-		setAriaRowIndex(node, position);
+
+		if (position !== undefined) {
+			// rows array is xero indexed while aria rowIx's start at 1
+			// https://www.w3.org/WAI/ARIA/apg/practices/grid-and-table-properties/#usingaria-rowcountandaria-rowindex
+			node.setAttribute('aria-rowindex', `${position + 1}`);
+		}
 
 		return {
+			// Update row-index if position changes
 			update({ position }: { position?: number }) {
-				setAriaRowIndex(node, position);
+				if (position !== undefined) {
+					node.setAttribute('aria-rowindex', `${position + 1}`);
+				}
 			},
 			destroy() {
 				node.removeEventListener(on, onSelect, true);
@@ -127,15 +142,4 @@ interface CreateTableOptions<T> {
  */
 function setRowKeys<T>(rows: T[]) {
 	return rows.map((row) => ({ ...row, key: uuidv4() }));
-}
-
-/**
- * Helper to set `aria-rowindex`
- * @param node
- * @param position
- */
-function setAriaRowIndex(node: HTMLElement, position: number | undefined) {
-	if (position !== undefined) {
-		node.setAttribute('aria-rowindex', `${position + 1}`);
-	}
 }
