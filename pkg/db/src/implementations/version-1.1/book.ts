@@ -2,7 +2,7 @@ import { BookEntry, BookInterface, DatabaseInterface } from '@/types';
 import { newChangesStream } from '@/utils/pouchdb';
 import { debug } from '@librocco/shared';
 
-import { concat, from, map, Observable, tap } from 'rxjs';
+import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
 
 class Book implements BookInterface {
 	#db: DatabaseInterface;
@@ -13,18 +13,24 @@ class Book implements BookInterface {
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
-		bookEntries.forEach(async (bookEntry) => {
-			try {
-				await this.#db._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
-			} catch (err) {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				if ((err as any).status !== 409) throw err;
+        await Promise.all(
+            bookEntries.map(async (bookEntry) => {
+                // eslint-disable-next-line no-async-promise-executor
+                return new Promise<void>(async (resolve, reject) => {
+                    try {
+                        await this.#db._pouch.put({ ...bookEntry, _id: bookEntry.isbn });
+                        resolve();
+                    } catch (err) {
+						// eslint-disable-next-line @typescript-eslint/no-explicit-any
+                        if ((err as any).status !== 409) reject();
 
-				const bookDoc = await this.#db._pouch.get(bookEntry.isbn);
-
-				await this.#db._pouch.put({ ...bookDoc, ...bookEntry });
-			}
-		});
+                        const bookDoc = await this.#db._pouch.get(bookEntry.isbn);
+                        await this.#db._pouch.put({ ...bookDoc, ...bookEntry });
+                        resolve();
+                    }
+                });
+            })
+        );
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
@@ -54,16 +60,16 @@ class Book implements BookInterface {
 			const initialPromise = this.#db._pouch
 				.allDocs<BookEntry>({ keys: isbns, include_docs: true })
 				.then((res) => {
-					debug.log(ctx, 'document_stream:initial_query:result')(res);
+                    debug.log(ctx, 'books_stream:initial_query:result')(res);
 					return res;
 				})
 				// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 				.catch((err) => {
 					debug.log(ctx, 'document_stream:initial_query:error')(err);
-					debug.log(ctx, 'document_stream:initial_query:error:fallback')({});
-					return {};
+                    debug.log(ctx, 'document_stream:initial_query:error:fallback')({ rows: [] });
+                    return { rows: [] };
 				});
-			const initialState = from(initialPromise).pipe(
+            const initialState = from(initialPromise).pipe(
 				map(({ rows }) => {
 					// const { _id, _rev, ...rest } = doc || {}
 					return rows.map(({ doc }) => {
@@ -75,20 +81,37 @@ class Book implements BookInterface {
 				})
 			);
 			const changeStream = newChangesStream<BookEntry[]>(emitter, ctx).pipe(
-				tap(debug.log(ctx, 'document_stream:change')),
-				map(({ doc }) => {
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					const { _id, _rev, ...rest } = doc || {};
-					return rest;
+                // The change only triggers a new query (as changes are partial and we require the full view update)
+                switchMap(() =>
+                    from(
+                        new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
+                            this.#db._pouch
+                                .allDocs<BookEntry>({ keys: isbns, include_docs: true })
+                                .then((res) => {
+                                    debug.log(ctx, 'books_stream:change_query:result')(res);
+                                    return resolve(res);
+                                })
+                                .catch((err) => {
+                                    debug.log(ctx, 'books_stream:change_query:error')(err);
+                                });
+                        })
+                    ),
+                ),
+                tap(debug.log(ctx, 'books_stream:change')),
+                map(({ doc }) => {
+                    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                    const { _id, _rev, ...rest } = doc || {};
+                    return [rest];
 				}),
-				tap(debug.log(ctx, 'document_stream:change:transformed'))
+                tap(debug.log(ctx, 'books_stream:change:transformed'))
 			);
 
 			concat(initialState, changeStream)
-				.pipe(
-					tap(debug.log(ctx, 'document_stream:result:raw')),
+
+                .pipe(
+                    tap(debug.log(ctx, 'books_stream:result:raw')),
 					map((doc) => doc),
-					tap(debug.log(ctx, 'document_stream:result:transformed'))
+                    tap(debug.log(ctx, 'books_stream:result:transformed'))
 				)
 				.subscribe((doc) => subscriber.next(doc));
 
