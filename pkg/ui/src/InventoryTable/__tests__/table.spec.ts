@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import html from 'svelte-htm';
 import { get } from 'svelte/store';
-import { vi } from 'vitest';
+import { vi, expect, test, describe } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
 import { createTable } from '../table';
