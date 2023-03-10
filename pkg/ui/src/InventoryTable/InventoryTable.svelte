@@ -29,7 +29,7 @@
 </script>
 
 <div class="overflow-x-auto">
-	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction>
+	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount: rows.length }}>
 		{#if selected.length}
 			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 				<Button color={ButtonColor.White} on:click={() => removeRows(selected)}>
@@ -41,6 +41,7 @@
 			<tr
 				class="whitespace-nowrap"
 				use:rowSelect={{
+					position: 0,
 					on: 'change',
 					handleSelect: (event, selected) => {
 						const isSelected = isChecked(event);
@@ -117,12 +118,14 @@
 		</thead>
 
 		<tbody>
-			{#each rows as row, rowIx (row.key)}
-				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint } = row}
+			{#each rows as row (row.key)}
+				{@const { isbn, title, authors, quantity, price, publisher, year, editedBy, outOfPrint, rowIx } = row}
 				<tr
 					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
 					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
 					use:rowSelect={{
+						// Header row starts the count at 0
+						position: rowIx + 1,
 						on: 'change',
 						handleSelect: (event, selected) => {
 							const isSelected = isChecked(event);
@@ -130,10 +133,9 @@
 							if (isSelected) {
 								selected.update((rows) => [...rows, row]);
 							} else {
-								selected.update((rows) => rows.filter((r) => r.isbn !== row.isbn));
+								selected.update((rows) => rows.filter((r) => r.key !== row.key));
 							}
-						},
-						position: rowIx
+						}
 					}}
 					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
 						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
