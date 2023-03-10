@@ -1,26 +1,22 @@
 <script lang="ts">
+	import type { HTMLButtonAttributes } from 'svelte/elements';
 	import { FilePlus } from 'lucide-svelte';
 
-	export let label = 'New Warehouse';
-	export let active = true;
-	export let onClick = () => {};
+	interface $$Props extends HTMLButtonAttributes {
+		label: string;
+	}
 
-	const indented = label === 'New Note';
+	export let label: string;
 </script>
 
-<div class={['mt-0 pr-2', `${indented ? 'pl-11' : 'pl-4'}`].join(' ')} aria-hidden="true">
-	<div class="w-full border-t border-dashed border-gray-50" />
-	<button
-		on:click={onClick}
-		type="button"
-		class={[
-			'flex items-center w-full content-between py-4 font-normal text-sm',
-			`${active ? 'text-pink-400' : 'text-gray-400'}`
-		].join(' ')}
-	>
-		<span class={'flex items-center w-full gap-x-2'}>
-			{label}
-		</span>
+<button
+	on:click
+	type="button"
+	class="flex w-full items-center justify-between p-4 text-sm font-normal text-gray-400 hover:text-pink-400"
+	{...$$restProps}
+>
+	{label}
+	<span aria-hidden="true">
 		<FilePlus />
-	</button>
-</div>
+	</span>
+</button>
