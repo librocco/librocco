@@ -1,8 +1,10 @@
-<nav aria-label="Sidebar" class="bg-white px-2">
+<nav aria-label="Sidebar">
 	<div class="flex flex-1 flex-col divide-y-2">
 		<slot />
 	</div>
-	<div class="border-t border-dashed border-gray-300">
-		<slot name="actions" />
-	</div>
+	{#if $$slots.actions}
+		<div class="border-t border-dashed border-gray-300">
+			<slot name="actions" />
+		</div>
+	{/if}
 </nav>
