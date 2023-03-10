@@ -80,15 +80,15 @@ export function createTable<T = Record<string, any>>({
 	 * - Manages an event listener which handles row selection; can be defined on any event
 	 * - Manages row `aria-rowindex`
 	 */
-	const rowSelect = (
+	const tableRow = (
 		node: HTMLTableRowElement,
 		{
-			on,
-			handleSelect,
+			on = 'click',
+			handleSelect = () => ({}),
 			position
 		}: {
-			on: keyof HTMLElementEventMap;
-			handleSelect: (event: HTMLElementEventMap[typeof on], selected: typeof selectedData) => void;
+			on?: keyof HTMLElementEventMap;
+			handleSelect?: (event: HTMLElementEventMap[typeof on], selected: typeof selectedData) => void;
 			position?: number;
 		}
 	) => {
@@ -122,7 +122,7 @@ export function createTable<T = Record<string, any>>({
 		table,
 		addRows,
 		removeRows,
-		rowSelect
+		tableRow
 	};
 }
 

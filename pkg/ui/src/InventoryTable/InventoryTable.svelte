@@ -3,10 +3,10 @@
 
 	import { Checkbox, Button, ButtonColor } from '../';
 
-	import type { createTable } from '../lib/actions';
 	import { fadeBgColor } from '../lib/transitions';
 
 	import type { InventoryTableData } from './types';
+	import type { createTable } from './table';
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -22,14 +22,17 @@
 		outOfPrint: 'Out of Print'
 	};
 
-	const { rowSelect, removeRows, table: tableAction } = table;
+	const { tableRow, removeRows, table: tableAction } = table;
 	$: ({ rows, selected } = $table);
 
 	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
+
+	// table rows + one header row
+	$: rowCount = rows.length + 1;
 </script>
 
 <div class="overflow-x-auto">
-	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount: rows.length }}>
+	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 		{#if selected.length}
 			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 				<Button color={ButtonColor.White} on:click={() => removeRows(selected)}>
@@ -40,7 +43,7 @@
 		<thead>
 			<tr
 				class="whitespace-nowrap"
-				use:rowSelect={{
+				use:tableRow={{
 					position: 0,
 					on: 'change',
 					handleSelect: (event, selected) => {
@@ -123,7 +126,7 @@
 				<tr
 					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
 					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
-					use:rowSelect={{
+					use:tableRow={{
 						// Header row starts the count at 0
 						position: rowIx + 1,
 						on: 'change',
@@ -153,11 +156,11 @@
 					<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
 						{isbn}
 						<dl class="font-normal lg:hidden">
-							<dt class="sr-only">Title</dt>
+							<dt class="sr-only">Title:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
-							<dt class="sr-only lg:hidden">Authors</dt>
+							<dt class="sr-only lg:hidden">Authors:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 lg:hidden">{authors}</dd>
-							<dt class="sr-only md:hidden">Year</dt>
+							<dt class="sr-only md:hidden">Year:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 md:hidden">{year}</dd>
 						</dl>
 					</th>
