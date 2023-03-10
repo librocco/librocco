@@ -7,8 +7,8 @@
 		SidebarItem,
 		TextField,
 		Pagination,
-		InventoryTable,
-		InventoryTableRow,
+		// InventoryTable,
+		// createTable,
 		Header,
 		TextEditable
 	} from '@librocco/ui';
@@ -54,11 +54,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if $entries.length}
-			<InventoryTable>
-				{#each $entries as data}
-					<InventoryTableRow {data} />
-				{/each}
-			</InventoryTable>
+			<!-- <InventoryTable /> -->
 		{/if}
 	</svelte:fragment>
 
