@@ -3,14 +3,14 @@ import { debug } from '@librocco/shared';
 
 import { DocType } from '@/enums';
 
-import { DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
 
 import { DatabaseInterface, WarehouseInterface } from './types';
 import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
 import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
-import { newBookInterface } from './book';
+import { newBooksInterface } from './book';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -67,9 +67,8 @@ class Database implements DatabaseInterface {
 		return this;
 	}
 
-	books() {
-		const bookInterface = newBookInterface(this);
-		return bookInterface;
+	books(): BooksInterface {
+		return newBooksInterface(this);
 	}
 
 	warehouse(id?: string): WarehouseInterface {

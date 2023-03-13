@@ -1,34 +1,34 @@
-import { BookEntry, BookInterface, DatabaseInterface } from '@/types';
+import { BookEntry, BooksInterface, DatabaseInterface } from '@/types';
 import { newChangesStream, unwrapDocs } from '@/utils/pouchdb';
 import { debug } from '@librocco/shared';
 
 import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
 
-class Book implements BookInterface {
+class Books implements BooksInterface {
 	#db: DatabaseInterface;
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
-		return this;
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
 		await Promise.all(
 			bookEntries.map(async (b) => {
-				// eslint-disable-next-line no-async-promise-executor
-				return new Promise<void>(async (resolve, reject) => {
+				return new Promise<void>((resolve, reject) => {
 					const bookEntry = { ...b, _id: `books/${b.isbn}` };
-					try {
-						await this.#db._pouch.put(bookEntry);
-						resolve();
-					} catch (err) {
-						// eslint-disable-next-line @typescript-eslint/no-explicit-any
-						if ((err as any).status !== 409) reject();
+					this.#db._pouch
+						.put(bookEntry)
+						.then(() => resolve())
+						.catch((err) => {
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							if ((err as any).status !== 409) reject();
 
-						const bookDoc = await this.#db._pouch.get(bookEntry._id);
-						await this.#db._pouch.put({ ...bookDoc, ...bookEntry });
-						resolve();
-					}
+							this.#db._pouch.get(bookEntry._id).then((bookDoc) => {
+								this.#db._pouch.put({ ...bookDoc, ...bookEntry }).then(() => {
+									resolve();
+								});
+							});
+						});
 				});
 			})
 		);
@@ -92,6 +92,6 @@ class Book implements BookInterface {
 	}
 }
 
-export const newBookInterface = (db: DatabaseInterface): BookInterface => {
-	return new Book(db);
+export const newBooksInterface = (db: DatabaseInterface): BooksInterface => {
+	return new Books(db);
 };

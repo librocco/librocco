@@ -66,9 +66,10 @@ describe('tableContentStore', () => {
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
 
+		const booksInterface = db.books();
 		await Promise.all([
-			db.upsertBook(book1),
-			db.upsertBook(book2),
+			booksInterface.upsert([book1]),
+			booksInterface.upsert([book2]),
 			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
 		]);
 
@@ -108,8 +109,9 @@ describe('tableContentStore', () => {
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
 
+		const booksInterface = db.books();
 		Promise.all([
-			db.upsertBook(book1),
+			booksInterface.upsert([book1]),
 			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
 		]);
 
