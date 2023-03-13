@@ -1,8 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import PouchDB from 'pouchdb';
 
-import { CouchDocument } from '@/types';
-
 import { RawNote, RawSnap } from '@test-runner/types';
 
 import { unwrapDocs } from '@/utils/pouchdb';
@@ -10,15 +8,15 @@ import { unwrapDocs } from '@/utils/pouchdb';
 export const getNotes = async () => {
 	const notesDB = new PouchDB('http://admin:admin@127.0.0.1:5000/raw_notes');
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const res = await retry(() => notesDB.allDocs({ include_docs: true }), 15, 200);
-	return unwrapDocs(res as any) as CouchDocument<RawNote>[];
+	const res = await retry(() => notesDB.allDocs<RawNote>({ include_docs: true }), 15, 200);
+	return unwrapDocs(res).filter((n) => n !== undefined) as RawNote[];
 };
 
 export const getSnaps = async () => {
 	const snapsDB = new PouchDB('http://admin:admin@127.0.0.1:5000/raw_snaps');
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const res = await retry(() => snapsDB.allDocs({ include_docs: true }), 15, 200);
-	return unwrapDocs(res as any) as CouchDocument<RawSnap>[];
+	const res = await retry(() => snapsDB.allDocs<RawSnap>({ include_docs: true }), 15, 200);
+	return unwrapDocs(res).filter((n) => n !== undefined) as RawSnap[];
 };
 
 /** A convenience method allowing us to use the timeout as 'setTimeout' in async/await manner */

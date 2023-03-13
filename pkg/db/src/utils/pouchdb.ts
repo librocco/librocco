@@ -3,7 +3,7 @@ import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
 
 import { debug } from '@librocco/shared';
 
-import { CouchDocument, VersionedString } from '../types';
+import { CouchDocument } from '../types';
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -15,13 +15,13 @@ import { CouchDocument, VersionedString } from '../types';
  * @param res a result received from `PouchDB.allDocs({...options, include_docs: true})`
  * @returns and array of `doc` entries from each pouchdb "row", (including `_id` and `_rev`)
  */
-export const unwrapDocs = (res: PouchDB.Core.AllDocsResponse<Record<string, any> & Pick<CouchDocument, 'docType'>>) =>
-	res.rows.reduce((acc, { doc }) => {
-		if (!doc) {
-			return acc;
-		}
-		return [...acc, { ...doc, _id: doc._id as VersionedString }];
-	}, [] as CouchDocument[]);
+export const unwrapDocs = <T extends Record<string, any>>(res: PouchDB.Core.AllDocsResponse<T>): (T | undefined)[] =>
+	res.rows.map(({ doc: d }) => {
+		if (!d) return undefined;
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { _id, _rev, ...doc } = d;
+		return doc as T;
+	});
 
 /**
  * Unwraps a pouch db doc by removing `_rev` field (we use this to compare documents)
