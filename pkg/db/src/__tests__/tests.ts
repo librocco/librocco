@@ -515,7 +515,7 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 	});
 };
 
-export const BookInterface: TestFunction = async (db) => {
+export const booksInterface: TestFunction = async (db) => {
 	const book1 = {
 		isbn: '0195399706',
 
@@ -535,24 +535,41 @@ export const BookInterface: TestFunction = async (db) => {
 		price: 39.86
 	};
 
-	const bookInterface = db.books();
+	const booksInterface = db.books();
+
+	// insert test
+
+	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
+
+	const booksFromDb = await booksInterface.get(['0195399706', '019976915X']);
+
+	await waitFor(() => {
+		expect(booksFromDb).toEqual([book1, book2]);
+	});
+
+	// update test
+
+	await Promise.all([
+		booksInterface.upsert([
+			{ ...book1, title: 'Updated Title' },
+			{ ...book2, title: 'Updated Title 12' }
+		])
+	]);
+
+	const [updatedBooksFromDb] = await Promise.all([booksInterface.get(['0195399706', '019976915X'])]);
+
+	await waitFor(() => {
+		expect(updatedBooksFromDb).toEqual([
+			{ ...book1, title: 'Updated Title' },
+			{ ...book2, title: 'Updated Title 12' }
+		]);
+	});
+
+	// stream test
 
 	let bookEntries: (BookEntry | undefined)[] = [];
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const [_, __, ___] = await Promise.all([
-		bookInterface.upsert([{ ...book1 }, { ...book2 }]),
-		bookInterface.upsert([{ ...book1, title: 'Updated Title' }]),
-		bookInterface.get(['0195399706']),
-		bookInterface.upsert([{ ...book2, title: 'Updated Title 12' }]),
-		bookInterface.get(['019976915X'])
-	]);
-	const [updatedBookFromDb, updatedBook2FromDb] = await Promise.all([
-		bookInterface.get(['0195399706']),
-		bookInterface.get(['019976915X'])
-	]);
-
-	bookInterface.stream(['0195399706', '019976915X'], {}).subscribe((stream) => {
+	booksInterface.stream(['0195399706', '019976915X'], {}).subscribe((stream) => {
 		bookEntries = stream;
 	});
 
@@ -561,10 +578,5 @@ export const BookInterface: TestFunction = async (db) => {
 			{ ...book1, title: 'Updated Title' },
 			{ ...book2, title: 'Updated Title 12' }
 		]);
-	});
-
-	await waitFor(() => {
-		expect(updatedBookFromDb).toEqual([{ ...book1, title: 'Updated Title' }]);
-		expect(updatedBook2FromDb).toEqual([{ ...book2, title: 'Updated Title 12' }]);
 	});
 };

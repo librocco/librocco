@@ -32,8 +32,9 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 			// map entry to just isbns
 			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
 
+			const booksInterface = db.books();
 			// return array of merged values of books and volume stock client
-			return from(db.getBooks(isbns)).pipe(
+			return from(booksInterface.get(isbns)).pipe(
 				map((booksFromDb) => {
 					const booksMap = new Map();
 					booksFromDb.forEach((book) => book && booksMap.set(book.isbn, book));
