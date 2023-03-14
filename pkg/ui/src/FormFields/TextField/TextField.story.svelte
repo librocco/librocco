@@ -1,5 +1,5 @@
 <script lang="ts">
-import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from '@histoire/plugin-svelte';
 
 	import { Mail, Search, Edit, QrCode } from 'lucide-svelte';
 
@@ -13,7 +13,12 @@ import type { Hst } from '@histoire/plugin-svelte';
 
 <Hst.Story title="Form Fields / TextField" layout={{ type: 'grid', width: 700 }}>
 	<Hst.Variant title="Default">
-		<TextField name="default-placeholder" label="Default with placeholder" placeholder="placeholder" helpText="And some help text"/>
+		<TextField
+			name="default-placeholder"
+			label="Default with placeholder"
+			placeholder="placeholder"
+			helpText="And some help text"
+		/>
 	</Hst.Variant>
 	<Hst.Variant title="Start Adornment">
 		<TextField name="start-adornment" placeholder="placeholderemail@gmail.com" label="Start Adornment">
@@ -36,13 +41,13 @@ import type { Hst } from '@histoire/plugin-svelte';
 			<div slot="endAdornment" class="flex gap-x-2">
 				<Button size={ButtonSize.SM}>
 					<span slot="startAdornment">
-						<Search size={16}/>
+						<Search size={16} />
 					</span>
 					Search
 				</Button>
 				<Button size={ButtonSize.SM}>
 					<span slot="startAdornment">
-						<Edit  size={16}/>
+						<Edit size={16} />
 					</span>
 					Create
 				</Button>

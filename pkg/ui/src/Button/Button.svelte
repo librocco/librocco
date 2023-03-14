@@ -92,7 +92,8 @@
 	$: spacingClasses = shapeSpacingLookup[shape][size];
 	$: sizeClasses = [textClasses, spacingClasses].join(' ');
 	$: colorClasses = colorClassesLookup[color];
-	const focusClasses = 'focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
+	const focusClasses =
+		'focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
 	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
 </script>
 
