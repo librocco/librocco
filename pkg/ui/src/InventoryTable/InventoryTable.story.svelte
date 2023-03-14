@@ -13,7 +13,7 @@
 	const table = createTable({ rows });
 </script>
 
-<Hst.Story title="Table">
+<Hst.Story title="Tables / Inventory Table">
 	<Hst.Variant>
 		<div class="flex flex-col gap-y-4">
 			<div class="w-24 p-1">
