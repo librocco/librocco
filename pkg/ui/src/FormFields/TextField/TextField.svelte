@@ -2,21 +2,25 @@
 	import type { Action } from 'svelte/action';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	import { TextFieldSize } from "../enums";
+
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
 		label?: string;
 		helpText?: string;
 		inputAction?: Action | (() => void);
+		variant?: TextFieldSize;
 	}
 
 	export let name: string;
 	export let label = '';
 	export let helpText = '';
 	export let inputAction: Action = () => {};
+	export let variant: TextFieldSize = TextFieldSize.Base
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
-	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
-	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0'];
+	const helpTextBaseClasses = ['ml-[2px]', 'text-sm', 'min-h-[20px]'];
+	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0', variant];
 
 	const containerBaseClasses = [
 		'flex',
@@ -38,7 +42,7 @@
 	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
 </script>
 
-<div class={`mb-[2px] ${label ? "space-y-2" : ""}`}>
+<div class={`my-[2px] ${label ? "space-y-2" : ""}`}>
 	<label for={name} class={labelClasses}>
 		{label}
 		{#if $$restProps.required}
