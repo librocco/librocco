@@ -22,7 +22,7 @@
 	const publisherCombo = createCombobox({ label: 'publisher' });
 </script>
 
-<form class="divide-y-gray-200 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
+<form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
@@ -67,8 +67,8 @@
 			</div>
 		</div>
 	</div>
-	<div class="flex justify-end gap-x-2 p-4">
-		<Button color={ButtonColor.Secondary} on:click={onCancel}>Cancel</Button>
+	<div class="flex justify-end gap-x-2 px-4 py-6">
+		<Button color={ButtonColor.White} on:click={onCancel}>Cancel</Button>
 		<Button type="submit">Save</Button>
 	</div>
 </form>

@@ -1,0 +1,34 @@
+<script lang="ts">
+	import { X } from 'lucide-svelte';
+	import type { MouseEventHandler } from 'svelte/elements';
+
+	export let title: string;
+	export let supporting: string;
+	export let handleClose: MouseEventHandler<HTMLButtonElement>;
+</script>
+
+<div class="flex max-w-2xl flex-col shadow-lg">
+	<div class="flex items-start justify-between bg-gray-50 px-6 py-6">
+		<div class="flex flex-col gap-y-2">
+			<p class="text-xl font-normal text-gray-900">
+				{title}
+			</p>
+			<p class="text-base font-light text-gray-400">
+				{supporting}
+			</p>
+		</div>
+		<button
+			class="text-gray-400 hover:text-gray-800"
+			type="button"
+			aria-label={`Close dialog ${title}`}
+			on:click={handleClose}
+		>
+			<span aria-hidden="true">
+				<X />
+			</span>
+		</button>
+	</div>
+	<div class="bg-white">
+		<slot />
+	</div>
+</div>
