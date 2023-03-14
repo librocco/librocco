@@ -6,7 +6,7 @@ import type { DatabaseInterface, NoteInterface, WarehouseInterface } from '@libr
 import type { PaginationData, DisplayRow } from '$lib/types/inventory';
 
 import { readableFromStream } from '$lib/utils/streams';
-import { from, map, Observable, switchMap } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import type { DebugCtx } from '@librocco/shared/dist/debugger';
 
 interface CreateDisplayEntriesStore {
@@ -34,7 +34,7 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 
 			const booksInterface = db.books();
 			// return array of merged values of books and volume stock client
-			return from(booksInterface.get(isbns)).pipe(
+			return booksInterface.stream(isbns, ctx).pipe(
 				map((booksFromDb) => {
 					const booksMap = new Map();
 					booksFromDb.forEach((book) => book && booksMap.set(book.isbn, book));
