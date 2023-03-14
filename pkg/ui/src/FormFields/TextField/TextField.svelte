@@ -2,7 +2,7 @@
 	import type { Action } from 'svelte/action';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
-	import { TextFieldSize } from "../enums";
+	import { TextFieldSize } from '../enums';
 
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
@@ -16,7 +16,7 @@
 	export let label = '';
 	export let helpText = '';
 	export let inputAction: Action = () => {};
-	export let variant: TextFieldSize = TextFieldSize.Base
+	export let variant: TextFieldSize = TextFieldSize.Base;
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
 	const helpTextBaseClasses = ['ml-[2px]', 'text-sm', 'min-h-[20px]'];
@@ -24,7 +24,7 @@
 
 	const containerBaseClasses = [
 		'flex',
-		"mx-[2px]",
+		'mx-[2px]',
 		'outline',
 		'rounded-md',
 		'shadow-sm',
@@ -42,7 +42,7 @@
 	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
 </script>
 
-<div class={`my-[2px] ${label ? "space-y-2" : ""}`}>
+<div class={`my-[2px] ${label ? 'space-y-2' : ''}`}>
 	<label for={name} class={labelClasses}>
 		{label}
 		{#if $$restProps.required}
@@ -51,13 +51,13 @@
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots.startAdornment}
-			<div class="pr-0 pl-3 flex items-center bg-white text-gray-400">
+			<div class="flex items-center bg-white pr-0 pl-3 text-gray-400">
 				<slot name="startAdornment" />
 			</div>
 		{/if}
 		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {...$$restProps} use:inputAction />
 		{#if $$slots.endAdornment}
-			<div class="pl-1 pr-3 flex items-center bg-white text-gray-400">
+			<div class="flex items-center bg-white pl-1 pr-3 text-gray-400">
 				<slot name="endAdornment" />
 			</div>
 		{/if}
