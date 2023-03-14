@@ -15,3 +15,4 @@ export * from './SelectMenu';
 export * from './TextEditable';
 export * from './Forms';
 export * from './Slideover';
+export * from './Toast';
