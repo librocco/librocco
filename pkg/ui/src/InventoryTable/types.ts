@@ -9,3 +9,5 @@ export type InventoryTableData = {
 	editedBy?: string;
 	outOfPrint?: boolean;
 };
+
+export type OutNoteTableData = InventoryTableData & { warehouses: string[] };
