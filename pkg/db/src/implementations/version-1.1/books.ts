@@ -21,7 +21,7 @@ class Books implements BooksInterface {
 						.then(() => resolve())
 						.catch((err) => {
 							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							if ((err as any).status !== 409) reject();
+							if ((err as any).status !== 409) reject(err);
 
 							this.#db._pouch.get(bookEntry._id).then((bookDoc) => {
 								this.#db._pouch.put({ ...bookDoc, ...bookEntry }).then(() => {
@@ -63,7 +63,7 @@ class Books implements BooksInterface {
 			);
 
 			const changeStream = newChangesStream<BookEntry[]>(emitter, ctx).pipe(
-				// The change only triggers a new query (as changes are partial and we the all docs update)
+				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() =>
 					from(
 						new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
