@@ -1,8 +1,10 @@
-import { BookEntry, BooksInterface, DatabaseInterface } from '@/types';
-import { newChangesStream, unwrapDocs } from '@/utils/pouchdb';
+import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
+
 import { debug } from '@librocco/shared';
 
-import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
+import { BookEntry, BooksInterface, DatabaseInterface } from '@/types';
+
+import { newChangesStream, unwrapDocs } from '@/utils/pouchdb';
 
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
@@ -47,7 +49,7 @@ class Books implements BooksInterface {
 				since: 'now',
 				live: true,
 				include_docs: true,
-				filter: (doc) => isbns.includes(doc._id)
+				filter: (doc) => isbns.includes(doc._id.replace('books/', ''))
 			});
 
 			const initialState = from(

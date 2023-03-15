@@ -44,6 +44,14 @@ describe('tableContentStore', () => {
 		const db = await newTestDB();
 
 		const book1 = {
+			isbn: '0194349276',
+			title: 'Holiday Jazz Chants',
+			authors: 'Carolyn Graham',
+			publisher: 'Oxford',
+			year: '1999',
+			price: 39.86
+		};
+		const book2 = {
 			isbn: '0195399706',
 			title: 'The Age of Wonder',
 			authors: 'Richard Holmes',
@@ -51,7 +59,7 @@ describe('tableContentStore', () => {
 			year: '2008',
 			price: 69.99
 		};
-		const book2 = {
+		const book3 = {
 			isbn: '019976915X',
 			title: 'Twelve Bar Blues',
 			authors: 'Patrick Neate',
@@ -60,73 +68,64 @@ describe('tableContentStore', () => {
 			price: 39.86
 		};
 
+		// Set up initial state:
 		const note = await db.warehouse().note('note-1').create();
-
-		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
-		let displayEntries: DisplayRow[];
-		de$.subscribe((de) => (displayEntries = de));
-
 		await Promise.all([
-			db.books().upsert([book1, book2]),
-			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
+			// Only the transaction for book1 is present
+			note.addVolumes([book1.isbn, 12, `v1/jazz`]),
+			// Both books are present in the db
+			db.books().upsert([book1, book2])
 		]);
-
-		const want = [
-			{
-				...book1,
-				quantity: 12,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			},
-			{
-				...book2,
-				quantity: 10,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			}
-		];
-
-		await waitFor(() => expect(displayEntries).toEqual(want));
-	});
-
-	test('should stream just the volume stock for isbns with no book data found', async () => {
-		const db = await newTestDB();
-
-		const book1 = {
-			isbn: '0195399706',
-			title: 'The Age of Wonder',
-			authors: 'Richard Holmes',
-			publisher: 'HarperCollins UK',
-			year: '2008',
-			price: 69.99
-		};
-
-		const note = await db.warehouse().note('note-1').create();
 
 		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
 
-		Promise.all([
-			db.books().upsert([book1]),
-			note.addVolumes(['0195399706', 12, `v1/jazz`], ['019976915X', 10, `v1/jazz`])
-		]);
+		// Should receive the initial state (only book1 transaction in the note)
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: 'not-found' }
+			])
+		);
 
-		const want = [
-			{
-				...book1,
-				quantity: 12,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			},
-			{
-				isbn: '019976915X',
-				quantity: 10,
-				warehouseId: `v1/jazz`,
-				warehouseName: 'not-found'
-			}
-		];
+		// Update the note (add additional transactions)
+		await note.addVolumes([book2.isbn, 10, `v1/jazz`], [book3.isbn, 5, `v1/jazz`]);
+		await waitFor(() => {
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
+				// Book data for book2 is already available in the db
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
+				// Book data for book3 is not available in the db - only the transaction data is shown
+				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: 'not-found' }
+			]);
+		});
 
-		await waitFor(() => expect(displayEntries).toEqual(want));
+		// Update book data for book3
+		await db.books().upsert([book3]);
+		await waitFor(() => {
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
+				// Full book3 data should be displayed
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: 'not-found' }
+			]);
+		});
+
+		// Update the first book data
+		await db.books().upsert([{ ...book1, title: 'The Age of Wonder (updated)' }]);
+		// The update should be reflected in the resulting stream
+		await waitFor(() => {
+			expect(displayEntries).toEqual([
+				{
+					...book1,
+					title: 'The Age of Wonder (updated)',
+					quantity: 12,
+					warehouseId: `v1/jazz`,
+					warehouseName: 'not-found'
+				},
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: 'not-found' }
+			]);
+		});
 	});
 });
