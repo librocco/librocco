@@ -76,7 +76,7 @@ The db interface is created to satisfy our client app's needs. Being a book inve
 -   warehouse:
 
     -   warehouse is a section of the stock inventory
-    -   a warehouse could be an actual (physical) warehouse, or a simbolic one (representing a section of books in the store)
+    -   a warehouse could be an actual (physical) warehouse, or a symbolic one (representing a section of books in the store)
     -   each warehouse tracks inventory stock at a given point in time
 
     _Note: There can be multiple different warehouses, but there's always one (special) default warehouse. Each warehouse displays its own stock, while the default warehouse displays the entirety of the book stock (for all warehouses)._
@@ -217,7 +217,7 @@ More on initialising note/warehouse later.
 
 #### 2.1.7. Find note
 
-Note and its corresponting warehouse can also be accessed by note id, using the `db.findNote()` method, which checks if the note exists and (if it does), returns the note and its parent warehouse (in form of an object containing both `note` as note interface and `warehouse` as warehouse interface).
+Note and its corresponding warehouse can also be accessed by note id, using the `db.findNote()` method, which checks if the note exists and (if it does), returns the note and its parent warehouse (in form of an object containing both `note` as note interface and `warehouse` as warehouse interface).
 
 #### 2.1.8. Additional methods/properties
 
@@ -242,7 +242,7 @@ const wh1 = await db.warehouse('warehouse-1');
 const note1 = await wh1.note('note-1');
 ```
 
-Additionally, there's an asimetry in the way the existing notes/warehouses would be handled vs how the new ones are crated.
+Additionally, there's an asymetry in the way the existing notes/warehouses would be handled vs how the new ones are crated.
 
 **The solution**: Each call to `.warehouse` or `.note` creates a new instance (locally). That instance is populated with the default data to begin with, while fetching of the data for the instance is done in the background. The problem with this is that we can't know for sure if the data inside the instance is the default one or the one pulled from the db. This problem is in part solved, and, in part is not a problem at all.
 
