@@ -10,7 +10,7 @@ import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
 import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
-import { newBooksInterface } from './book';
+import { newBooksInterface } from './books';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;

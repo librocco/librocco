@@ -543,9 +543,7 @@ export const booksInterface: TestFunction = async (db) => {
 
 	const booksFromDb = await booksInterface.get(['0195399706', '019976915X']);
 
-	await waitFor(() => {
-		expect(booksFromDb).toEqual([book1, book2]);
-	});
+	expect(booksFromDb).toEqual([book1, book2]);
 
 	// update test
 
@@ -558,12 +556,10 @@ export const booksInterface: TestFunction = async (db) => {
 
 	const [updatedBooksFromDb] = await Promise.all([booksInterface.get(['0195399706', '019976915X'])]);
 
-	await waitFor(() => {
-		expect(updatedBooksFromDb).toEqual([
-			{ ...book1, title: 'Updated Title' },
-			{ ...book2, title: 'Updated Title 12' }
-		]);
-	});
+	expect(updatedBooksFromDb).toEqual([
+		{ ...book1, title: 'Updated Title' },
+		{ ...book2, title: 'Updated Title 12' }
+	]);
 
 	// stream test
 

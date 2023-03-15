@@ -13,7 +13,7 @@ class Books implements BooksInterface {
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
 		await Promise.all(
-			bookEntries.map(async (b) => {
+			bookEntries.map((b) => {
 				return new Promise<void>((resolve, reject) => {
 					const bookEntry = { ...b, _id: `books/${b.isbn}` };
 					this.#db._pouch

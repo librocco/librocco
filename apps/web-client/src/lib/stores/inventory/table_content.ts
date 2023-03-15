@@ -1,7 +1,7 @@
 import { derived, type Readable } from 'svelte/store';
 import { debug } from '@librocco/shared';
 
-import type { DatabaseInterface, NoteInterface, WarehouseInterface } from '@librocco/db';
+import type { BookEntry, DatabaseInterface, NoteInterface, WarehouseInterface } from '@librocco/db';
 
 import type { PaginationData, DisplayRow } from '$lib/types/inventory';
 
@@ -32,25 +32,11 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 			// map entry to just isbns
 			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
 
-			const booksInterface = db.books();
 			// return array of merged values of books and volume stock client
-			return booksInterface.stream(isbns, ctx).pipe(
-				map((booksFromDb) => {
-					const booksMap = new Map();
-					booksFromDb.forEach((book) => book && booksMap.set(book.isbn, book));
-
-					// for each value from entry stream (volume stock client)
-					return valueFromEntryStream.map((individualEntry) => {
-						// find the corresponding book in booksFromDb
-						const bookData = booksMap.get(individualEntry.isbn);
-						// account for books not found
-						if (!bookData) return individualEntry;
-						// return bookData + entry value
-						const fullTableElement = { ...bookData, ...individualEntry };
-						return fullTableElement;
-					});
-				})
-			);
+			return db
+				.books()
+				.stream(isbns, ctx)
+				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
 		})
 	);
 
