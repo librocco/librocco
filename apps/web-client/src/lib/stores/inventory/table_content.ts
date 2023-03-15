@@ -36,7 +36,11 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 			return db
 				.books()
 				.stream(isbns, ctx)
-				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
+				.pipe(
+					map((booksFromDb) =>
+						booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))
+					)
+				);
 		})
 	);
 
