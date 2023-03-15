@@ -6,7 +6,7 @@ import { testUtils } from '@librocco/shared';
 
 import { NoteState } from '@/enums';
 
-import { InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
+import { BookEntry, InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
 import { TestFunction } from '@/test-runner/types';
 
 import { versionId } from '@/utils/misc';
@@ -512,5 +512,84 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 		expect(n1DisplayName).toEqual('');
 		expect(n1State).toEqual(NoteState.Draft);
 		expect(n1UpdatedAt).toEqual(null);
+	});
+};
+
+export const booksInterface: TestFunction = async (db) => {
+	const book1 = {
+		isbn: '0195399706',
+		title: 'The Age of Wonder',
+		authors: 'Richard Holmes',
+		publisher: 'HarperCollins UK',
+		year: '2008',
+		price: 69.99
+	};
+	const book2 = {
+		isbn: '019976915X',
+		title: 'Twelve Bar Blues',
+		authors: 'Patrick Neate',
+		publisher: 'Penguin UK',
+		year: '2002',
+		price: 39.86
+	};
+	const book3 = {
+		isbn: '0194349276',
+		title: 'Holiday Jazz Chants',
+		authors: 'Carolyn Graham',
+		publisher: 'Oxford',
+		year: '1999',
+		price: 39.86
+	};
+
+	const booksInterface = db.books();
+
+	// insert test
+
+	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
+
+	const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
+
+	expect(booksFromDb).toEqual([book1, book2]);
+
+	// update test
+
+	await Promise.all([
+		booksInterface.upsert([
+			{ ...book1, title: 'Updated Title' },
+			{ ...book2, title: 'Updated Title 12' }
+		])
+	]);
+
+	const [updatedBooksFromDb] = await Promise.all([booksInterface.get([book1.isbn, book2.isbn])]);
+
+	expect(updatedBooksFromDb).toEqual([
+		{ ...book1, title: 'Updated Title' },
+		{ ...book2, title: 'Updated Title 12' }
+	]);
+
+	// stream test
+
+	let bookEntries: (BookEntry | undefined)[] = [];
+
+	booksInterface.stream([book1.isbn, book2.isbn, book3.isbn], {}).subscribe((stream) => {
+		bookEntries = stream;
+	});
+
+	await waitFor(() => {
+		expect(bookEntries).toEqual([{ ...book1, title: 'Updated Title' }, { ...book2, title: 'Updated Title 12' }, undefined]);
+	});
+
+	// Stream should update when the book in the db is updated
+	await db.books().upsert([{ ...book1, title: 'Stream updated title' }]);
+
+	await waitFor(() => {
+		expect(bookEntries).toEqual([{ ...book1, title: 'Stream updated title' }, { ...book2, title: 'Updated Title 12' }, undefined]);
+	});
+
+	// Stream should update if the book we're requesting (which didn't exist) is added
+	await db.books().upsert([book3]);
+
+	await waitFor(() => {
+		expect(bookEntries).toEqual([{ ...book1, title: 'Stream updated title' }, { ...book2, title: 'Updated Title 12' }, book3]);
 	});
 };
