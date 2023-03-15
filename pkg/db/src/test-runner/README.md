@@ -199,7 +199,7 @@ As mentioned above, we have two data loaders, one loading the data from fs and o
 
 When using fs-only (fs loader), the test is considered a "quicktest", only unit tests are ran, without spinning up any docker containers.
 
-_Note: quicktest only tests the base behaviour/methods/streams against a single, in-memoty database, without any replication or remote db of any kind. This should really be used for quicktests, while tests with full docker support should be used to test the full behaviour._
+_Note: quicktest only tests the base behaviour/methods/streams against a single, in-memory database, without any replication or remote db of any kind. This should really be used for quicktests, while tests with full docker support should be used to test the full behaviour._
 
 For full testing (using CouchDB image loader), we need to have the container(s) running and for that we have the `docker-compose.yml` set up.
 
