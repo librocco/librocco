@@ -195,11 +195,17 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	findNote: FindNote<N, W>;
 	stream: (ctx: debug.DebugCtx) => DbStream;
 	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
-	getBooks: (isbns: string[]) => Promise<(BookEntry | undefined)[]>;
-	getBook: (isbn: string) => Promise<BookEntry | undefined>;
-	upsertBook: (bookEntry: BookEntry) => Promise<void>;
+	books: () => BooksInterface;
 }
 
+/**
+ * An interface for books in a db
+ */
+export interface BooksInterface {
+	get: (isbns: string[]) => Promise<(BookEntry | undefined)[]>;
+	upsert: (bookEntries: BookEntry[]) => Promise<void>;
+	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<(BookEntry | undefined)[]>;
+}
 export interface NewDatabase {
 	(db: PouchDB.Database): DatabaseInterface;
 }
