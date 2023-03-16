@@ -396,8 +396,8 @@
 			"projectFolder": "pkg/db"
 		},
 		{
-			"packageName": "@librocco/datamodel-tests",
-			"projectFolder": "pkg/datamodel-tests"
+			"packageName": "@librocco/shared",
+			"projectFolder": "pkg/shared"
 		}
 	]
 }
