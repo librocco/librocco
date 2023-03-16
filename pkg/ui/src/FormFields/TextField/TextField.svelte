@@ -42,7 +42,7 @@
 	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
 </script>
 
-<div class={`my-[2px] ${label ? 'space-y-2' : ''}`}>
+<div class="my-[2px] {label ? 'space-y-2' : ''}">
 	<label for={name} class={labelClasses}>
 		{label}
 		{#if $$restProps.required}
