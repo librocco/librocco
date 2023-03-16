@@ -1,11 +1,10 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
 
-	import { Mail } from 'lucide-svelte';
-
-	import SidebarNav from './SidebarNav.svelte';
-	import SidebarItem from './SidebarItem.svelte';
-	import SidebarItemGroup from './SidebarItemGroup.svelte';
+	import SidebarNav from '../SidebarNav.svelte';
+	import SidebarItem from '../SidebarItem.svelte';
+	import SidebarItemGroup from '../SidebarItemGroup.svelte';
+	import NewEntitySideNavButton from '../NewEntitySideNavButton.svelte';
 
 	export let Hst: Hst;
 
@@ -49,12 +48,19 @@
 			{#each items as item}
 				<SidebarItem {...item} />
 			{/each}
+			<svelte:fragment slot="actions">
+				<NewEntitySideNavButton label="Create warehouse" />
+			</svelte:fragment>
 		</SidebarNav>
 	</Hst.Variant>
 	<Hst.Variant title="In Notes">
 		<SidebarNav>
 			{#each folders as folder, index}
-				<SidebarItemGroup {...folder} {index} />
+				<SidebarItemGroup {...folder} {index}>
+					<svelte:fragment slot="actions">
+						<NewEntitySideNavButton label="Create note" />
+					</svelte:fragment>
+				</SidebarItemGroup>
 			{/each}
 		</SidebarNav>
 	</Hst.Variant>

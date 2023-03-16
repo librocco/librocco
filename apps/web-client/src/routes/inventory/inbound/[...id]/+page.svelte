@@ -4,7 +4,6 @@
 
 	import {
 		InventoryPage,
-		SidebarItemGroup,
 		TextField,
 		Pagination,
 		Badge,
@@ -13,7 +12,10 @@
 		InventoryTableRow,
 		Header,
 		SelectMenu,
-		TextEditable
+		TextEditable,
+		SideBarNav,
+		SidebarItemGroup,
+		NewEntitySideNavButton
 	} from '@librocco/ui';
 
 	import { noteStates, NoteTempState } from '$lib/enums/inventory';
@@ -59,7 +61,7 @@
 	<Header title="Inbound" currentLocation="/inventory/inbound" slot="header" />
 
 	<!-- Sidebar slot -->
-	<nav class="divide-y divide-gray-300" slot="sidebar">
+	<SideBarNav slot="sidebar">
 		{#each $inNoteList as { id, displayName, notes }, index (id)}
 			<SidebarItemGroup
 				name={displayName || id}
@@ -69,9 +71,13 @@
 					href: `/inventory/inbound/${id}`,
 					current: id === $page.params.id
 				}))}
-			/>
+			>
+				<svelte:fragment slot="actions">
+					<NewEntitySideNavButton label="Create note" />
+				</svelte:fragment>
+			</SidebarItemGroup>
 		{/each}
-	</nav>
+	</SideBarNav>
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
