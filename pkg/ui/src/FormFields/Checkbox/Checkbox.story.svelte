@@ -14,7 +14,6 @@
 		<Checkbox name="checked" label="Select an option?" helpText="Checked" checked={true} />
 	</Hst.Variant>
 	<Hst.Variant title="Disabled">
-		/>
 		<Checkbox
 			name="disabled"
 			label="Select an option?"
