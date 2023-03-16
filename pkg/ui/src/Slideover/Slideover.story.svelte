@@ -24,7 +24,7 @@
 		<div class="m-4">
 			<Slideover
 				title="Create a new book"
-				supporting="Use this form to manually add a new book to your inbound note"
+				description="Use this form to manually add a new book to your inbound note"
 				handleClose={() => {}}
 			>
 				<BookDetailForm {book} {publisherList} />
