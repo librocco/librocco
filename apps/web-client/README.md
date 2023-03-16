@@ -42,7 +42,7 @@ The loading logic for all inventory views happens in `/inventory/+layout.ts` and
 
 -   `/inbound`:
 
-    -   the load function runs `db.findNote`, returning the note and its parent warehouse, passing the both down to the page component (as note interface and warehouse interface respectively)
+    -   the load function runs `db.findNote`, returning the note and its parent warehouse, passing them both down to the page component (as note interface and warehouse interface respectively)
     -   used to inspect, create, delete, update, commit the note (and its transactions)
     -   if note not found redirects back to the root of the view: `/inventory/inbound`
 
@@ -125,7 +125,7 @@ To achieve this behaviour, the note `state` store is composed of two parts, `int
     -   an actual Svelte, writable, store
     -   on subscribe, it opens subscription to the note's (in db) state
     -   each time the note in db updates, the update is streamed to update the internal state store
-    -   additionally, it it intentionally a writable store, allowing for explicit updates, for UI only states, as we'll explore below
+    -   additionally, it is intentionally a writable store, allowing for explicit updates, for UI only states, as we'll explore below
 -   `displayState` store is a "synthetic" store:
     -   doesn't really hold a value, but satisfies a Svelte store interface and the store contract, by exposing `subscribe`, `set` and `update` methods
     -   serves as a wrapper around the `internalState` store:
@@ -262,7 +262,7 @@ const paginationData = createPaginationDataStore(warehouse, currentPage, {});
 
 ##### Context
 
-One final thing to mention. So far we've been showing usage of factory functions with the last parameter being and empty object (`{}`), this is a placeholder for the debug context (and an empty object is a valid parameter if we don't want to use it).
+One final thing to mention. So far we've been showing usage of factory functions with the last parameter being an empty object (`{}`), this is a placeholder for the debug context (and an empty object is a valid parameter if we don't want to use it).
 
 This parameter is used to provide the debug context and pass it all the way back to the db streams (data/stream source), so we can use it for debugging of the entire data flow.
 
