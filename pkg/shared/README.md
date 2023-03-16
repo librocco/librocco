@@ -33,7 +33,7 @@ source.pipe(tap((val) => console.log('subscriber:received_value: ', val))).subsc
 });
 ```
 
-In this case the the logging is trivial and we can track the logs of everything streamed from the source, through the pipeline, all the way to the subscriber. There is a simple problem though: If we wanted to "turn on" the logging, we'd have to manually add each `.tap` and `console.log` each time.
+In this case the logging is trivial and we can track the logs of everything streamed from the source, through the pipeline, all the way to the subscriber. There is a simple problem though: If we wanted to "turn on" the logging, we'd have to manually add each `.tap` and `console.log` each time.
 This would be tiring as it is, but it's not the main problem.
 
 Imagine a second case where we use functions to construct parts of the pipeline (the example is purposefully trivial, but it's an oversimplification of a flow we use in production):
