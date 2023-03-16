@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -14,6 +15,7 @@
 		SideBarNav,
 		NewEntitySideNavButton
 	} from '@librocco/ui';
+	import { NEW_WAREHOUSE } from '@librocco/db';
 
 	import type { PageData } from './$types';
 
@@ -32,6 +34,16 @@
 
 	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
 	const warehouseList = readableFromStream(db?.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
+
+	/**
+	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
+		await warehouse.create();
+		goto(`/inventory/stock/${warehouse._id}`);
+	};
 
 	$: warehouse = data.warehouse;
 
@@ -53,7 +65,7 @@
 			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
-			<NewEntitySideNavButton label="Create warehouse" />
+			<NewEntitySideNavButton label="Create warehouse" on:click={handleCreateWarehouse} />
 		</svelte:fragment>
 	</SideBarNav>
 
