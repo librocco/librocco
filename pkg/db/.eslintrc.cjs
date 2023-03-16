@@ -8,12 +8,12 @@ module.exports = useTSConfig(
 		extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
 		plugins: ['@typescript-eslint'],
 		ignorePatterns: ['*.cjs'],
-		settings: {
-			'import/resolver': {}
-		},
 		parserOptions: {
 			sourceType: 'module',
 			ecmaVersion: 2020
+		},
+		settings: {
+			'import/resolver': {}
 		},
 		env: {
 			browser: true,

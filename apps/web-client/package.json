@@ -15,9 +15,10 @@
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
+		"@librocco/shared": "workspace:*",
 		"@types/pouchdb": "~6.4.0",
 		"@sveltejs/adapter-auto": "next",
-		"@sveltejs/kit": "1.0.0-next.573",
+		"@sveltejs/kit": "~1.3.0",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
 		"eslint": "^8.16.0",
@@ -26,25 +27,29 @@
 		"postcss": "~8.4.13",
 		"prettier": "^2.6.2",
 		"prettier-plugin-tailwindcss": "~0.1.13",
+		"pouchdb-adapter-memory": "~7.3.0",
 		"svelte": "^3.44.0",
 		"svelte-check": "^2.7.1",
 		"svelte-preprocess": "^4.10.6",
 		"tailwindcss": "~3.0.24",
 		"tslib": "^2.3.1",
 		"typescript": "^4.8.4",
-		"vite": "^3.0.0",
+		"vite": "^4.0.0",
 		"@sveltejs/adapter-static": "~1.0.0-next.39",
 		"vitest": "~0.24.5",
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
 		"rollup-plugin-node-polyfills": "~0.2.1",
-		"autoprefixer": "~10.4.13"
+		"autoprefixer": "~10.4.13",
+		"@types/uuid": "~9.0.0"
 	},
 	"type": "module",
 	"dependencies": {
+		"@librocco/db": "workspace:*",
 		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "~0.91.0",
 		"pouchdb": "~7.3.0",
-		"rxjs": "~7.8.0"
+		"rxjs": "~7.8.0",
+		"uuid": "~9.0.0"
 	}
 }

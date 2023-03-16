@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Resize } from './enums';
+	import { TextAreaResize } from '../enums';
 
 	export let name: string;
 
@@ -10,7 +10,7 @@
 	export let cols = 20;
 	export let maxlength: number | null = null;
 	export let minlength: number | null = null;
-	export let resize: Resize = Resize.YAxis;
+	export let resize: TextAreaResize = TextAreaResize.YAxis;
 	export let disabled = false;
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'].join(' ');
