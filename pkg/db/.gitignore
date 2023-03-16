@@ -1,2 +1,2 @@
 # Ignore test db files
-.temp-testdb*
+.test-dbs

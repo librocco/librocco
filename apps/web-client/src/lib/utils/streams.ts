@@ -1,6 +1,8 @@
 import { readable, type Readable } from 'svelte/store';
 import { Observable } from 'rxjs';
 
+import { debug } from '@librocco/shared';
+
 /**
  * Creates an observable stream from a svelte store. This is modtly user
  * to simulate the backend db interface from test data is are unlikely to be used in production.
@@ -40,15 +42,21 @@ export const derivedObservable = <T, U>(store: Readable<T>, fn: (value: T) => U)
  * @param observable observable stream
  * @returns readable store
  */
-export const readableFromStream = <T>(observable: Observable<T>): Readable<T> => {
-	const store = readable<T>(undefined, (set) => {
-		const observer = observable.subscribe({
-			next: (value) => set(value)
+export const readableFromStream = <T>(
+	observable: Observable<T> | undefined,
+	fallback: T,
+	ctx: debug.DebugCtx
+): Readable<T> => {
+	return readable<T>(fallback, (set) => {
+		if (!observable) {
+			debug.log(ctx, 'readable_from_stream: stream not provided:fallback:')(fallback);
+			// eslint-disable-next-line @typescript-eslint/no-empty-function
+			return () => {};
+		}
+		const observer = observable.subscribe((value) => {
+			debug.log(ctx, 'redable_from_stream:update')(value);
+			set(value || fallback);
 		});
-		// I have no idea how and why this happens, but if we destructure the `{ unsubscribe }` from the `observer`
-		// and return it, or return `observer.unsubscribe` directly, instead of this exact pattern (an unnamed function calling the `observer.unsubscribe`)
-		// we get weird internal errors like 'Cannot read property of undefined, reading 'close'` when the store is unsubscribed from.
 		return () => observer.unsubscribe();
 	});
-	return store;
 };

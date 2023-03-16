@@ -8,7 +8,20 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter({ fallback: 'index.html' })
+		adapter: adapter(),
+		prerender: {
+			entries: ['/inventory/stock', '/inventory/inbound', '/inventory/outbound']
+		},
+		typescript: {
+			config: (config) => ({
+				...config,
+				compilerOptions: {
+					...config.compilerOptions,
+					resolveJsonModule: true,
+					allowSyntheticDefaultImports: true
+				}
+			})
+		}
 	}
 };
 

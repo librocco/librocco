@@ -1,3 +1,5 @@
+import type { VolumeStockClient, BookEntry } from '@librocco/db';
+
 import type { NoteTempState } from '$lib/enums/inventory';
 import type { NoteState } from '$lib/enums/db';
 
@@ -7,7 +9,8 @@ import type { VolumeQuantity } from './db';
  * An interface for a full book entry, used to type the entries in books store and
  * as part of the `DisplayRow` structure.
  */
-export interface BookEntry {
+/** @TEMP this is needed until all data has been migrated to BookEntry type */
+export interface TempBookEntry {
 	isbn: string;
 	title: string;
 	authors?: string[];
@@ -18,11 +21,11 @@ export interface BookEntry {
 
 /** A structure of the books store: `readable<BookStore>()`. */
 export interface BookStore {
-	[isbn: string]: BookEntry;
+	[isbn: string]: TempBookEntry;
 }
 
 /** The properties of a book + quantity row shown in the note/warehouse table. */
-export type DisplayRow = BookEntry & { quantity: number };
+export type DisplayRow = VolumeStockClient & Partial<BookEntry>;
 
 /** A structure of the warehouse store: `readable<WarehouseStore>()`. */
 export interface WarehouseStore {
