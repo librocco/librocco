@@ -1,13 +1,25 @@
 <script lang="ts">
+	import { quadIn } from 'svelte/easing';
+
+	import type { createTable } from './table';
+	import type { InventoryTableData } from './types';
+	import { InventoryTableVariant } from './enums';
+
+	import { fadeBgColor } from '../lib/transitions';
 	import { Checkbox, Button, ButtonColor } from '../';
 
-	import type { InventoryTableData } from './types';
-	import type { createTable } from './table';
-
-	import CoreTableRow from './CoreTableRow.svelte';
-	import CoreTableHeaders from './CoreTableHeaders.svelte';
+	import { CoreBookTableData, OptionalBookTableData, OutNoteTableData } from './TableData';
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	export let variant: InventoryTableVariant = InventoryTableVariant.Default;
+
+	const { removeRows, table: tableAction, tableRow } = table;
+	$: ({ rows, selected } = $table);
+
+	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
+
+	// table rows + one header row
+	$: rowCount = rows.length + 1;
 
 	const headers = {
 		isbn: 'ISBN',
@@ -18,14 +30,12 @@
 		publisher: 'Publisher',
 		year: 'Year',
 		editedBy: 'Edited By',
-		outOfPrint: 'Out of Print'
+		outOfPrint: 'Out of Print',
+		warehouses: 'Warehouse'
 	};
 
-	const { removeRows, table: tableAction } = table;
-	$: ({ rows, selected } = $table);
-
-	// table rows + one header row
-	$: rowCount = rows.length + 1;
+	const headerStyles =
+		'whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500';
 </script>
 
 <div class="overflow-x-auto">
@@ -38,43 +48,106 @@
 			</div>
 		{/if}
 		<thead>
-			<CoreTableHeaders {table} {headers} let:headers={{ publisher, editedBy, outOfPrint }}>
-				<th
-					scope="col"
-					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 md:table-cell"
-				>
-					{publisher}
+			<tr
+				class="whitespace-nowrap"
+				use:tableRow={{
+					position: 0,
+					on: 'change',
+					handleSelect: (event, selected) => {
+						const isSelected = isChecked(event);
+
+						if (isSelected) {
+							selected.set(rows);
+						} else {
+							selected.set([]);
+						}
+					}
+				}}
+			>
+				<th scope="col" class="px-2 text-center">
+					<span class="inline-block">
+						<Checkbox name="Select all" checked={selected.length ? true : false} />
+					</span>
 				</th>
-				<th
-					scope="col"
-					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 xl:table-cell"
-				>
-					{editedBy}
+				<th scope="col" class={headerStyles}>
+					<span class="hidden lg:inline">{headers.isbn}</span>
+					<span class="inline lg:hidden">book</span>
 				</th>
-				<th
-					scope="col"
-					class="hidden whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500 xl:table-cell"
-				>
-					{outOfPrint}
+				<th scope="col" class="{headerStyles} hidden lg:table-cell">
+					{headers.title}
 				</th>
-			</CoreTableHeaders>
+				<th scope="col" class="{headerStyles} hidden lg:table-cell">
+					{headers.authors}
+				</th>
+				<th scope="col" class={headerStyles}>
+					<span class="hidden lg:inline">{headers.quantity}</span>
+					<span class="inline lg:hidden">qty</span>
+				</th>
+				<th scope="col" class={headerStyles}>
+					{headers.price}
+				</th>
+				<th scope="col" class="{headerStyles} hidden sm:table-cell">
+					{headers.year}
+				</th>
+				{#if variant === InventoryTableVariant.Default}
+					<th scope="col" class="{headerStyles} hidden md:table-cell">
+						{headers.publisher}
+					</th>
+					<th scope="col" class="{headerStyles} hidden xl:table-cell">
+						{headers.editedBy}
+					</th>
+					<th scope="col" class="{headerStyles} hidden xl:table-cell">
+						{headers.outOfPrint}
+					</th>
+				{:else}
+					<th scope="col" class={headerStyles}> {headers.warehouses} </th>
+				{/if}
+			</tr>
 		</thead>
 
 		<tbody>
 			{#each rows as row (row.key)}
-				<CoreTableRow {table} {row} let:row={{ title, publisher, editedBy, outOfPrint }}>
-					<td class="hidden py-4 px-3 md:table-cell">
-						{publisher}
-					</td>
-					<td class="hidden py-4 px-3 xl:table-cell">
-						{editedBy}
-					</td>
-					<td class="hidden py-4 px-3 text-center xl:table-cell">
+				{@const { rowIx, title, publisher, editedBy, outOfPrint, warehouses, ...core } = row}
+
+				<tr
+					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
+					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
+					use:tableRow={{
+						// Header row starts the count at 0
+						position: rowIx + 1,
+						on: 'change',
+						handleSelect: (event, selected) => {
+							const isSelected = isChecked(event);
+
+							if (isSelected) {
+								selected.update((rows) => [...rows, row]);
+							} else {
+								selected.update((rows) => rows.filter((r) => r.key !== row.key));
+							}
+						}
+					}}
+					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
+						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
+					}`}
+				>
+					<td
+						class={`px-2 text-center sm:align-middle border-l-4 
+							${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+						`}
+					>
 						<span class="inline-block">
-							<Checkbox name={`${title} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
+							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
 						</span>
 					</td>
-				</CoreTableRow>
+
+					<CoreBookTableData data={{ title, ...core }} />
+
+					{#if variant === InventoryTableVariant.Default}
+						<OptionalBookTableData data={{ publisher, editedBy, outOfPrint }} {rowIx} />
+					{:else}
+						<OutNoteTableData data={{ warehouses }} {rowIx} />
+					{/if}
+				</tr>
 			{/each}
 		</tbody>
 	</table>
