@@ -6,7 +6,7 @@ export type BookCoreRowData = {
 	price: number;
 	authors?: string;
 	quantity?: number;
-	year?: number;
+	year?: string;
 };
 
 export type BookOptionalRowData = {
