@@ -18,8 +18,14 @@
 	$: text = value;
 	export let isEditing = false;
 
+	export let disabled = false;
+
 	/** Enter edit mode */
 	function edit() {
+		// Noop if disabled
+		if (disabled) {
+			return;
+		}
 		isEditing = true;
 		tick().then(() => input.focus());
 	}
@@ -42,16 +48,18 @@
 		<p
 			on:click={edit}
 			on:keydown
-			class="group relative inline-block h-[38px] cursor-pointer pt-4 pr-8"
+			class="group relative inline-block h-[38px] pt-4 pr-8 {disabled ? 'cursor-normal' : 'cursor-pointer'}"
 			on:focus={edit}
 		>
 			<span class="inline-block align-middle text-lg font-medium leading-6">{text}</span>
-			<button
-				class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block"
-				on:click={edit}
-			>
-				<Pencil class="h-4 w-4 text-cyan-700" />
-			</button>
+			{#if !disabled}
+				<button
+					class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block"
+					on:click={edit}
+				>
+					<Pencil class="h-4 w-4 text-cyan-700" />
+				</button>
+			{/if}
 		</p>
 	{:else}
 		<div class="flex w-[400px] items-center gap-1  border-b-2 border-cyan-700">
