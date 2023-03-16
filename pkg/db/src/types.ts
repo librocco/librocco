@@ -5,6 +5,7 @@ import type { Observable } from 'rxjs';
 import PouchDB from 'pouchdb';
 
 import type { DocType, NoteState } from './enums';
+import { debug } from '@librocco/shared';
 
 // #region utils
 /**
@@ -43,6 +44,19 @@ export interface VolumeStockClient extends VolumeStock {
 }
 // #endregion misc
 
+// #region books
+export interface BookEntry {
+	isbn: string;
+	title: string;
+	price: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+}
+// #endregion books
+
 // #region note
 export type NoteType = 'inbound' | 'outbound';
 
@@ -55,7 +69,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		noteType: NoteType;
 		committed: boolean;
 		displayName: string;
-		updatedAt: string;
+		updatedAt: string | null;
 	} & A
 >;
 
@@ -63,9 +77,9 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: Observable<NoteState | undefined>;
-	displayName: Observable<string | undefined>;
-	updatedAt: Observable<Date | undefined>;
+	state: Observable<NoteState>;
+	displayName: Observable<string>;
+	updatedAt: Observable<Date | null>;
 	entries: Observable<VolumeStockClient[]>;
 }
 
@@ -83,14 +97,14 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	create: () => Promise<NoteInterface<A>>;
 	get: () => Promise<NoteInterface<A> | undefined>;
 	// NOTE: update is private
-	delete: () => Promise<void>;
+	delete: (ctx: debug.DebugCtx) => Promise<void>;
 
 	// Note specific methods
-	setName: (name: string) => Promise<NoteInterface<A>>;
+	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
 	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
-	commit: () => Promise<NoteInterface<A>>;
-	stream: () => NoteStream;
+	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	stream: (ctx: debug.DebugCtx) => NoteStream;
 }
 
 /**
@@ -108,7 +122,7 @@ export type NoteInterface<A extends Record<string, any> = {}> = NoteProto<A> & N
  */
 export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 	{
-		displayName?: string;
+		displayName: string;
 	} & A
 >;
 
@@ -116,7 +130,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: Observable<string | undefined>;
+	displayName: Observable<string>;
 	entries: Observable<VolumeStockClient[]>;
 }
 
@@ -132,8 +146,8 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	delete: () => Promise<void>;
 
 	note: (id?: string) => N;
-	setName: (name: string) => Promise<WarehouseInterface<N, A>>;
-	stream: () => WarehouseStream;
+	setName: (name: string, ctx: debug.DebugCtx) => Promise<WarehouseInterface<N, A>>;
+	stream: (ctx: debug.DebugCtx) => WarehouseStream;
 }
 
 /**
@@ -141,30 +155,25 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
  * * standard data structure
  * * standard method interface
  */
-export type WarehouseInterface<
-	N extends NoteInterface = NoteInterface,
-	A extends Record<string, any> = {}
-> = WarehouseProto<N, A> & WarehouseData<A>;
+export type WarehouseInterface<N extends NoteInterface = NoteInterface, A extends Record<string, any> = {}> = WarehouseProto<N, A> &
+	WarehouseData<A>;
 // #endregion warehouse
 
 // #region db
 export interface NavListEntry {
 	id: string;
-	displayName?: string;
+	displayName: string;
 }
 
 export type InNoteList = Array<NavListEntry & { notes: NavListEntry[] }>;
 
-export interface NoteLookupResult {
-	id: string;
-	warehouse: string;
-	type: 'inbound' | 'outbound';
-	state: NoteState;
-	displayName?: string;
+export interface NoteLookupResult<N extends NoteInterface, W extends WarehouseInterface> {
+	note: N;
+	warehouse: W;
 }
 
-export interface FindNote {
-	(noteId: string): NoteLookupResult | undefined;
+export interface FindNote<N extends NoteInterface, W extends WarehouseInterface> {
+	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
 /**
@@ -179,14 +188,25 @@ export interface DbStream {
 /**
  * A standardized interface (interface of methods) for a db.
  */
-export interface DatabaseInterface<
-	W extends WarehouseInterface = WarehouseInterface,
-	N extends NoteInterface = NoteInterface
-> {
+export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInterface, N extends NoteInterface = NoteInterface> {
 	_pouch: PouchDB.Database;
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	warehouse: (id?: string) => W;
-	findNote: (id: string) => Promise<N | undefined>;
-	stream: () => DbStream;
+	findNote: FindNote<N, W>;
+	stream: (ctx: debug.DebugCtx) => DbStream;
+	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
+	books: () => BooksInterface;
+}
+
+/**
+ * An interface for books in a db
+ */
+export interface BooksInterface {
+	get: (isbns: string[]) => Promise<(BookEntry | undefined)[]>;
+	upsert: (bookEntries: BookEntry[]) => Promise<void>;
+	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<(BookEntry | undefined)[]>;
+}
+export interface NewDatabase {
+	(db: PouchDB.Database): DatabaseInterface;
 }
 // #endregion db

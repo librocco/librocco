@@ -1,78 +1,34 @@
-import { derived } from 'svelte/store';
+import pouchdb from 'pouchdb';
 
-import { NoteState } from '$lib/enums/db';
+import { newDatabaseInterface, type DatabaseInterface } from '@librocco/db';
 
-import type { DbInterface, DbStream, NavListEntry, Stores } from '$lib/types/db';
+import { DB_NAME } from '$lib/constants';
 
-import { newWarehouse } from './warehouse';
+let db: DatabaseInterface | undefined = undefined;
 
-import { derivedObservable, observableFromStore } from '$lib/utils/streams';
+/**
+ * We're using createDB() instead of exporting the db itself because we don't want to
+ * instantiate the db on the server, as it leaves annoying '/dev' folder on the filesystem and
+ * we're using pouch in the browser only.
+ *
+ * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
+ * This is to prevent expensive `db.init()` operations on each route change.
+ */
+export const createDB = (): DatabaseInterface => {
+	if (db) {
+		return db;
+	}
 
-import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from './data';
+	const pouch = new pouchdb(DB_NAME);
+	db = newDatabaseInterface(pouch);
 
-const defaultStores = {
-	warehouseStore,
-	inNoteStore,
-	outNoteStore
+	return db;
 };
 
 /**
- * Creates an interface for db operations. Accepts optional stores argument to override the default store(s).
- * If not provided, falls back to the default stores. If provided partially, only the provided stores will be overridden.
- * @param overrideStores (optional) partial stores to override
- * @returns
+ * Get db returns the instantiated db instance. It's safe to run this in any environment (browser/server)
+ * as, it will simply return undefined if the db is not instantiated.
  */
-export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
-	const stores = { ...defaultStores, ...overrideStores };
-
-	const { warehouseStore } = stores;
-
-	const warehouse = (id = 'all') => newWarehouse(stores)(id);
-
-	const stream = (): DbStream => ({
-		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>
-			Object.entries($warehouseStore).map(([id, { displayName }]) => ({ id, displayName }))
-		),
-
-		inNoteList: observableFromStore(
-			derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
-				// Filter out outbound and deleted notes
-				const filteredNotes = Object.values($noteLookup).filter(
-					({ state, type }) => state !== NoteState.Deleted && type === 'inbound'
-				);
-				// Group notes by warehouse adding each note to 'all' warehouse
-				const groupedNotes = filteredNotes.reduce((acc, note) => {
-					const { warehouse, id, displayName } = note;
-					const warehouseIds = ['all', warehouse];
-
-					warehouseIds.forEach((warehouse) => {
-						if (!acc[warehouse]) acc[warehouse] = [];
-						acc[warehouse].push({ id, displayName });
-					});
-
-					return acc;
-				}, {} as Record<string, NavListEntry[]>);
-				// Transform grouped notes into in note list
-				// adding each warehouse's display name from warehouseStore
-				return Object.entries(groupedNotes).map(([warehouse, notes]) => {
-					const { displayName } = $warehouseStore[warehouse] || { displayName: warehouse };
-					return { id: warehouse, displayName, notes };
-				});
-			})
-		),
-
-		outNoteList: derivedObservable(noteLookup, ($noteLookup) =>
-			Object.values($noteLookup)
-				// Pluck non-deleted outbound notes
-				.filter(({ state, type }) => state !== NoteState.Deleted && type === 'outbound')
-				// Get id and displayName
-				.map(({ id, displayName }) => ({ id, displayName }))
-		),
-
-		findNote: derivedObservable(noteLookup, ($noteLookup) => {
-			return (noteId: string) => $noteLookup[noteId];
-		})
-	});
-
-	return { warehouse, stream };
+export const getDB = (): DatabaseInterface | undefined => {
+	return db;
 };
