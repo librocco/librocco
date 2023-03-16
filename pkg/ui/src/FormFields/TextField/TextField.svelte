@@ -2,28 +2,33 @@
 	import type { Action } from 'svelte/action';
 	import type { HTMLInputAttributes } from 'svelte/elements';
 
+	import { TextFieldSize } from '../enums';
+
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
 		label?: string;
 		helpText?: string;
 		inputAction?: Action | (() => void);
+		variant?: TextFieldSize;
 	}
 
 	export let name: string;
 	export let label = '';
 	export let helpText = '';
 	export let inputAction: Action = () => {};
+	export let variant: TextFieldSize = TextFieldSize.Base;
 
 	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
-	const helpTextBaseClasses = ['mt-2', 'text-sm', 'min-h-[20px]'];
-	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0'];
+	const helpTextBaseClasses = ['ml-[2px]', 'text-sm', 'min-h-[20px]'];
+	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0', variant];
 
 	const containerBaseClasses = [
 		'flex',
+		'mx-[2px]',
 		'outline',
 		'rounded-md',
 		'shadow-sm',
-		'focus-within:outline-[3px]',
+		'focus-within:outline-2',
 		'focus-within:outline-teal-500'
 	];
 
@@ -37,7 +42,7 @@
 	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
 </script>
 
-<div class="space-y-1">
+<div class="my-[2px] {label ? 'space-y-2' : ''}">
 	<label for={name} class={labelClasses}>
 		{label}
 		{#if $$restProps.required}
@@ -46,13 +51,13 @@
 	</label>
 	<div class={containerClasses}>
 		{#if $$slots.startAdornment}
-			<div class="mr-0 ml-3 flex items-center	text-gray-400">
+			<div class="flex items-center bg-white pr-0 pl-3 text-gray-400">
 				<slot name="startAdornment" />
 			</div>
 		{/if}
 		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {...$$restProps} use:inputAction />
 		{#if $$slots.endAdornment}
-			<div class="ml-1 mr-3 flex items-center text-gray-400">
+			<div class="flex items-center bg-white pl-1 pr-3 text-gray-400">
 				<slot name="endAdornment" />
 			</div>
 		{/if}
