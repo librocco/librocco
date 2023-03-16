@@ -1,7 +1,8 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
 
-	import Textarea, { Resize } from './';
+	import Textarea from './';
+	import { TextAreaResize } from '../enums';
 
 	export let Hst: Hst;
 </script>
@@ -20,7 +21,7 @@
 			name="resizable"
 			label="Resizable"
 			placeholder="You can resize me in any direction"
-			resize={Resize.Both}
+			resize={TextAreaResize.Both}
 		/>
 	</Hst.Variant>
 	<Hst.Variant title="Max Length">
