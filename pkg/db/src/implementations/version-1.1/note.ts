@@ -4,7 +4,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType, NoteState } from '@/enums';
 
-import { NoteType, VolumeStock, VolumeTransactionTuple, VersionedString } from '@/types';
+import { NoteType, VolumeStock, VersionedString } from '@/types';
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from './types';
 
 import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
@@ -211,18 +211,13 @@ class Note implements NoteInterface {
 	}
 
 	/**
-	 * Add volumes accepts a tuple update (isbn, quantity, warehouse) or an array of tuples (updates) for
+	 * Add volumes accepts an object or multiple objects of VolumeStockOptionalWarehouse updates (isbn, quantity, warehouse?) for
 	 * book quantities. If a volume with a given isbn is found, the quantity is aggregated, otherwise a new
 	 * entry is pushed to the list of entries.
 	 */
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
-		// A check to see if the update function should be ran once or multiple times
-		const isTuple = (params: Parameters<NoteInterface['addVolumes']>): params is VolumeTransactionTuple => {
-			return !Array.isArray(params[0]);
-		};
-
 		return runAfterCondition(async () => {
-			const updateQuantity = (isbn: string, quantity: number, warehouseId = this.#w._id) => {
+			const updateQuantity = (isbn: string, quantity: number, warehouseId: `v${number}/${string}`) => {
 				const matchIndex = this.entries.findIndex((entry) => entry.isbn === isbn && entry.warehouseId === warehouseId);
 
 				if (matchIndex === -1) {
@@ -237,11 +232,7 @@ class Note implements NoteInterface {
 				};
 			};
 
-			if (isTuple(params)) {
-				updateQuantity(params[0], params[1], params[2]);
-			} else {
-				params.forEach((update) => updateQuantity(update[0], update[1], update[2]));
-			}
+			params.forEach((update) => updateQuantity(update.isbn, update.quantity, versionId(update.warehouseId || this.#w._id)));
 
 			return this.update(this, {});
 		}, this.#initialized);

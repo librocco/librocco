@@ -125,7 +125,7 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 
 	// Check for entries stream
 	expect(entries).toEqual([]);
-	await note.addVolumes('0123456789', 2);
+	await note.addVolumes({ isbn: '0123456789', quantity: 2 });
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: '0123456789', quantity: 2, warehouseId: versionId('test-warehouse'), warehouseName: 'New Warehouse' }
@@ -142,7 +142,7 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	// Check for updatedAt stream
 	const ts1 = note.updatedAt;
 	// Perform any update
-	const { updatedAt: ts2 } = await note.addVolumes('0123456789', 2);
+	const { updatedAt: ts2 } = await note.addVolumes({ isbn: '0123456789', quantity: 2 });
 	// Check that the latest timestamp is the same as the previous one (no update should have taken place)
 	expect(ts1).toEqual(ts2);
 	// Wait for the stream to update
@@ -174,7 +174,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Adding books to warehouse 1 should display changes in warehouse 1 and default warehouse stock streams
 	const note1 = warehouse1.note();
-	await note1.addVolumes('0123456789', 3);
+	await note1.addVolumes({ isbn: '0123456789', quantity: 3 });
 	await note1.commit({});
 
 	await waitFor(() => {
@@ -189,7 +189,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Adding books to warehouse 2 should display changes in warehouse 2 and aggregate the stock of both warehouses in the default warehouse stock stream
 	const note2 = warehouse2.note();
-	await note2.addVolumes('0123456789', 3);
+	await note2.addVolumes({ isbn: '0123456789', quantity: 3 });
 	await note2.commit({});
 
 	await waitFor(() => {
@@ -207,7 +207,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Non committed notes should not be taken into account (when calculating the stock)
 	const note3 = warehouse1.note();
-	await note3.addVolumes('0123456789', 3);
+	await note3.addVolumes({ isbn: '0123456789', quantity: 3 });
 	await waitFor(() => {
 		expect(warehoues1Stock).toEqual([
 			{ isbn: '0123456789', quantity: 3, warehouseId: versionId('warehouse-1'), warehouseName: 'New Warehouse' }
@@ -218,8 +218,11 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Outbound notes should decrement the stock (of both the particular warehouse, as well as the default warehouse)
 	const note4 = defaultWarehouse.note();
-	await note4.addVolumes('0123456789', 2, versionId('warehouse-1'));
-	await note4.addVolumes('0123456789', 1, versionId('warehouse-2'));
+	await note4.addVolumes(
+		{ isbn: '0123456789', quantity: 2, warehouseId: 'warehouse-1' },
+		{ isbn: '0123456789', quantity: 1, warehouseId: 'warehouse-2' }
+	);
+
 	await note4.commit({});
 	await waitFor(() => {
 		expect(warehoues1Stock).toEqual([
@@ -248,7 +251,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Zero quantity should remove the entry from the stock stream
 	const note5 = defaultWarehouse.note();
-	await note5.addVolumes('0123456789', 1, versionId('warehouse-1'));
+	await note5.addVolumes({ isbn: '0123456789', quantity: 1, warehouseId: 'warehouse-1' });
 	await note5.commit({});
 	await waitFor(() => {
 		expect(warehoues1Stock).toEqual([]);

@@ -38,6 +38,13 @@ export interface VolumeStock {
 	warehouseId: VersionedString;
 }
 
+/**
+ * Used as param(s) for adding volumes to a note where the warehouseId could be optional and a plain string (non-versioned)
+ */
+export interface VolumeStockOptionalWarehouseId extends Omit<VolumeStock, 'warehouseId'> {
+	warehouseId?: string;
+}
+
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
 export interface VolumeStockClient extends VolumeStock {
 	warehouseName: string;
@@ -84,11 +91,6 @@ export interface NoteStream {
 }
 
 /**
- * A tuple used as param(s) for adding volumes to a note: [isbn, quantity, warehouse?]
- */
-export type VolumeTransactionTuple = [string, number, VersionedString] | [string, number];
-
-/**
  * A standardized interface (interface of methods) for a note.
  * Different implementations might vary, but should always extend this interface.
  */
@@ -101,7 +103,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 
 	// Note specific methods
 	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
-	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
+	addVolumes: (...params: VolumeStockOptionalWarehouseId[]) => Promise<NoteInterface<A>>;
 	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	stream: (ctx: debug.DebugCtx) => NoteStream;
