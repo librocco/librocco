@@ -1,16 +1,18 @@
 import { get, writable, type Writable } from 'svelte/store';
 
+import type { NoteInterface } from '@librocco/db';
+import { debug } from '@librocco/shared';
+
 import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
 import { NoteState } from '$lib/enums/db';
 
-import type { NoteInterface } from '$lib/types/db';
 import type { Subscription } from 'rxjs';
 
 /** A union type for note states used in the client app */
 type NoteAppState = NoteState | NoteTempState | undefined;
 
 interface CreateInternalStateStore {
-	(note: NoteInterface): Writable<NoteAppState>;
+	(note: NoteInterface | undefined, ctx: debug.DebugCtx): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for internal usage:
@@ -18,20 +20,23 @@ interface CreateInternalStateStore {
  * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the db
  * @param note Note interface for db communication
  */
-export const createInternalStateStore: CreateInternalStateStore = (note) => {
+export const createInternalStateStore: CreateInternalStateStore = (note, ctx) => {
 	const state = writable<NoteAppState>();
 
 	let noteSubscription: Subscription | undefined = undefined;
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
-		noteSubscription = note.stream().state.subscribe((content) => {
+		debug.log(ctx, 'internal_state_store:opening_note_subscription')({});
+		noteSubscription = note?.stream(ctx).state.subscribe((content) => {
+			debug.log(ctx, 'internal_state_store:update_from_db')(content);
 			state.set(content);
 		});
 	};
 
 	// Close note subscription closes the subscription to the note state
 	const closeNoteSubscription = () => {
+		debug.log(ctx, 'internal_state_store:closing_note_subscription')({});
 		noteSubscription?.unsubscribe();
 	};
 
@@ -48,13 +53,18 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 
 	// Subscribe method increments the number of subscribers, if this is the first subscriber, it opens the note subscription
 	// and streams the internal 'state' store
-	const subscribe = (...params: Parameters<typeof state.subscribe>) => {
+	const subscribe = (...[notify, invalidate]: Parameters<typeof state.subscribe>) => {
 		subscribers++;
 		if (subscribers === 1) {
 			openNoteSubscription();
 		}
 
-		const unsubInternal = state.subscribe(...params);
+		const unsubInternal = state.subscribe((value) => {
+			// Log for debugging
+			debug.log(ctx, 'internal_state_store:updated')(value);
+			// Notify the actual subscriber with appropriate value
+			notify(value);
+		}, invalidate);
 
 		// The returned 'unsubscribe' function removes a subscriber and unsubscribes from the internal store
 		return () => {
@@ -70,7 +80,11 @@ export const createInternalStateStore: CreateInternalStateStore = (note) => {
 };
 
 interface CreateDisplayStateStore {
-	(note: NoteInterface, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
+	(
+		note: NoteInterface | undefined,
+		internalStateStore: Writable<NoteAppState>,
+		ctx: debug.DebugCtx
+	): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for display purposes:
@@ -81,19 +95,38 @@ interface CreateDisplayStateStore {
  * @param note Note interface for db communication
  * @param internalStateStore a store in charge of internal state (this is used to set the temporary state while the note in the db is being updated)
  */
-export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore) => {
+export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore, ctx) => {
 	const set = (state: NoteState) => {
+		const internalState = get(internalStateStore);
+		debug.log(ctx, 'display_state_store:set')({ state, internalState });
+
+		// If state is the same as the internal (current) state, we're not doing anything.
+		//
+		// This way we're avoiding temp state flashing (or getting stuck in temp state) when,
+		// for instance, bound value is set to 'committed' and the note is already committed.
+		if (state === internalState) {
+			return;
+		}
+
 		// For committed or deleted state, we're setting the temporary state and updating the note in the db.
 		//
 		// Other updates are no-op as we don't allow explicit setting of temporary states
-		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is no-op.
+		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is a no-op.
 		switch (state) {
 			case NoteState.Committed:
+				debug.log(
+					ctx,
+					'display_state_store:setting_temp_state'
+				)({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note.commit();
+				return note?.commit(ctx);
 			case NoteState.Deleted:
+				debug.log(
+					ctx,
+					'display_state_store:setting_temp_state'
+				)({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
-				return note.delete();
+				return note?.delete(ctx);
 			default:
 				return;
 		}
