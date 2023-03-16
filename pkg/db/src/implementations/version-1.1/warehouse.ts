@@ -6,12 +6,14 @@ import { DocType } from '@/enums';
 
 import { VersionedString, VolumeStock, VolumeStockClient } from '@/types';
 
+import { NEW_WAREHOUSE } from '@/constants';
+
 import { NoteData, NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from './types';
 
 import { newNote } from './note';
 import { WarehouseStockEntry } from './designDocuments';
 
-import { isVersioned, runAfterCondition, sortBooks, versionId } from '@/utils/misc';
+import { runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
 import { newDocumentStream, newViewStream } from '@/utils/pouchdb';
 
 class Warehouse implements WarehouseInterface {
@@ -29,12 +31,17 @@ class Warehouse implements WarehouseInterface {
 	displayName = '';
 	entries: VolumeStock[] = [];
 
-	constructor(db: DatabaseInterface, id?: string) {
+	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
 
-		// If id not provided, we're accessing the default warehouse
-		// If the provided id is not versioned, version it
-		this._id = !id ? versionId('0-all') : isVersioned(id) ? id : versionId(id);
+		this._id = !id
+			? // If id not provided, we're accessing the default warehouse
+			  versionId('0-all')
+			: // If NEW_WAREHOUSE sentinel provided, generate a new id
+			id === NEW_WAREHOUSE
+			? versionId(uniqueTimestamp())
+			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
+			  versionId(id);
 
 		// If id provided, the note might or might not exist in the DB
 		// perform a check and update the instance accordingly
@@ -266,4 +273,4 @@ class Warehouse implements WarehouseInterface {
 	}
 }
 
-export const newWarehouse = (db: DatabaseInterface, id?: string): WarehouseInterface => new Warehouse(db, id);
+export const newWarehouse = (db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface => new Warehouse(db, id);
