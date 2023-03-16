@@ -3,7 +3,7 @@
 	import type { MouseEventHandler } from 'svelte/elements';
 
 	export let title: string;
-	export let supporting: string;
+	export let description: string;
 	export let handleClose: MouseEventHandler<HTMLButtonElement>;
 </script>
 
@@ -14,7 +14,7 @@
 				{title}
 			</p>
 			<p class="text-base font-light text-gray-400">
-				{supporting}
+				{description}
 			</p>
 		</div>
 		<button
