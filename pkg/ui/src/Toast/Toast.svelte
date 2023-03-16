@@ -18,7 +18,7 @@
 </script>
 
 <div
-	class={`flex items-center justify-between max-w-fit px-4 py-2 gap-x-4 shadow-md rounded-lg ${colourLookup[type]}`}
+	class="flex max-w-fit items-center justify-between gap-x-4 rounded-lg px-4 py-2 shadow-md {colourLookup[type]}"
 	role="alert"
 	transition:fade
 >
