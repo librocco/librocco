@@ -178,7 +178,7 @@ _Note: the transform step is unnecessary and will be omitted in the future when 
 The loader must be an object with two methods:
 
 -   getNotes - should return a list of notes in their chronological order
--   getSnaps - should return a list of snapshots of all of the warehouses, after each note has has been committed
+-   getSnaps - should return a list of snapshots of all of the warehouses, after each note has been committed
 
 Currently we have two data loaders implemented:
 
