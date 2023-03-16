@@ -292,6 +292,15 @@ const defaultWarehouse = db.warehouse();
 const defaultWarehouse = db.warehouse('0-all');
 ```
 
+_Note: when creating a new warehouse, the preferred way would be to have the db generate a new unique string. We do this by passing a special
+`NEW_WAREHOUSE` value, like so:_
+
+```typescript
+import { NEW_WAREHOUSE } from '@librocco/db';
+
+const warehouse = db.warehouse(NEW_WAREHOUSE).create();
+```
+
 #### 2.3.1. CRUD
 
 ##### Create

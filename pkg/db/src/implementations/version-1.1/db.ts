@@ -4,8 +4,10 @@ import { debug } from '@librocco/shared';
 import { DocType } from '@/enums';
 
 import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
-
 import { DatabaseInterface, WarehouseInterface } from './types';
+
+import { NEW_WAREHOUSE } from '@/constants';
+
 import designDocs from './designDocuments';
 import { newWarehouse } from './warehouse';
 
@@ -71,7 +73,7 @@ class Database implements DatabaseInterface {
 		return newBooksInterface(this);
 	}
 
-	warehouse(id?: string): WarehouseInterface {
+	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {
 		return newWarehouse(this, id);
 	}
 

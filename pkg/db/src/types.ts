@@ -4,8 +4,11 @@
 import type { Observable } from 'rxjs';
 import PouchDB from 'pouchdb';
 
-import type { DocType, NoteState } from './enums';
 import { debug } from '@librocco/shared';
+
+import type { DocType, NoteState } from './enums';
+
+import { NEW_WAREHOUSE } from './constants';
 
 // #region utils
 /**
@@ -212,8 +215,18 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	_pouch: PouchDB.Database;
 	/** Update design doc is here more for internal usage and, shouldn't really be called explicitly (call `db.init` instead). */
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
-	/** Warehouse returns a warehouse interface for a given warehouse id. If no id is provided, it falls back to the default (`0-all`) warehouse. */
-	warehouse: (id?: string) => W;
+	/**
+	 * Warehouse returns a warehouse interface for a given warehouse id.
+	 * If no id is provided, it falls back to the default (`0-all`) warehouse.
+	 *
+	 * To assign a new unique id to the warehouse, use `NEW_WAREHOUSE` as the id.
+	 * @example
+	 * ```ts
+	 * import { NEW_WAREHOUSE } from '@librocco/db';
+	 * const newWarehouse = db.warehouse(NEW_WAREHOUSE);
+	 * ```
+	 */
+	warehouse: (id?: string | typeof NEW_WAREHOUSE) => W;
 	/**
 	 * Find note accepts a note id and returns:
 	 * - if note exists: the note interface and warehouse interface for its parent warehouse
