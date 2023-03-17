@@ -241,7 +241,9 @@ class Note implements NoteInterface {
 	updateTransaction(transaction: VolumeStock): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
-		const i = entries.findIndex(({ isbn }) => isbn === transaction.isbn);
+		// handle edge case where we have multiple books with the same isbn, but belonging to different warehouses
+		const i = entries.findIndex(({ isbn, warehouseId }) => isbn === transaction.isbn && warehouseId === transaction.warehouseId);
+
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
 			entries[i] = transaction;
