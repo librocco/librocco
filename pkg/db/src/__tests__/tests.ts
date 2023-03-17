@@ -6,10 +6,11 @@ import { testUtils } from '@librocco/shared';
 
 import { NoteState } from '@/enums';
 
-import { BookEntry, InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
+import { BookEntry, InNoteList, NavListEntry, NoteInterface, VolumeStock, VolumeStockClient } from '@/types';
 import { TestFunction } from '@/test-runner/types';
 
 import { versionId } from '@/utils/misc';
+import { NoteData } from '@/implementations/version-1.1/types';
 
 const { waitFor } = testUtils;
 
@@ -595,4 +596,23 @@ export const booksInterface: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: 'Stream updated title' }, { ...book2, title: 'Updated Title 12' }, book3]);
 	});
+};
+
+export const updateTransaction: TestFunction = async (db) => {
+	const entry1 = { isbn: '12345678', warehouseId: versionId('warehouse-1'), quantity: 2 };
+	const entry2 = { isbn: '12345678', warehouseId: versionId('warehouse-2'), quantity: 1 };
+	const note1 = await db.warehouse('warehouse-1').note().create();
+	await note1.addVolumes(entry1);
+	const note2 = await db.warehouse('warehouse-2').note().create();
+	await note2.addVolumes(entry2);
+
+	await note1.updateTransaction({ ...entry1, quantity: 5 });
+
+	await note2.updateTransaction({ ...entry2, quantity: 9 });
+
+	const note1FromDb = (await note1.get()) as NoteInterface<NoteData>;
+	const note2FromDb = (await note2.get()) as NoteInterface<NoteData>;
+
+	expect(note1FromDb.entries).toEqual([{ ...entry1, quantity: 5 }]);
+	expect(note2FromDb.entries).toEqual([{ ...entry2, quantity: 9 }]);
 };
