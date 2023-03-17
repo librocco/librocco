@@ -115,22 +115,31 @@ class Database implements DatabaseInterface {
 				ctx
 			),
 
-			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
+			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string; committed?: boolean } } }, NavListEntry[]>(
 				this._pouch,
 				'v1_list/outbound',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				({ rows }) =>
+					rows
+						.filter(({ value: { committed } }) => !committed)
+						.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
 				ctx
 			),
 
-			inNoteList: newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string } } }, InNoteList>(
+			inNoteList: newViewStream<
+				{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } },
+				InNoteList
+			>(
 				this._pouch,
 				'v1_list/inbound',
 				{},
 				({ rows }) =>
-					rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
+					rows.reduce((acc, { key, value: { type, displayName = '', committed } }) => {
 						if (type === 'warehouse') {
 							return [...acc, { id: key, displayName, notes: [] }];
+						}
+						if (committed) {
+							return acc;
 						}
 						// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
 						acc[0].notes.push({ id: key, displayName });
