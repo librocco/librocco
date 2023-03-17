@@ -441,6 +441,47 @@ export const inNotesStream: TestFunction = async (db) => {
 			{ id: versionId('warehouse-2'), displayName: 'New Warehouse (2)', notes: [] }
 		]);
 	});
+
+	// Should not stream committed notes
+	const note3 = await warehouse1.note().create();
+	await waitFor(() => {
+		expect(inNoteList).toEqual([
+			{
+				id: versionId('0-all'),
+				displayName: 'All',
+				notes: [
+					{ id: note1._id, displayName: 'New Note - Updated' },
+					{
+						id: note3._id,
+						// There's already an outbound note with the name "New Note"
+						displayName: 'New Note (2)'
+					}
+				]
+			},
+			{
+				id: versionId('warehouse-1'),
+				displayName: 'New Warehouse',
+				notes: [
+					{ id: note1._id, displayName: 'New Note - Updated' },
+					{ id: note3._id, displayName: 'New Note (2)' }
+				]
+			},
+			{ id: versionId('warehouse-2'), displayName: 'New Warehouse (2)', notes: [] }
+		]);
+	});
+
+	await note3.commit({});
+	await waitFor(() => {
+		expect(inNoteList).toEqual([
+			{ id: versionId('0-all'), displayName: 'All', notes: [{ id: note1._id, displayName: 'New Note - Updated' }] },
+			{
+				id: versionId('warehouse-1'),
+				displayName: 'New Warehouse',
+				notes: [{ id: note1._id, displayName: 'New Note - Updated' }]
+			},
+			{ id: versionId('warehouse-2'), displayName: 'New Warehouse (2)', notes: [] }
+		]);
+	});
 };
 
 export const outNotesStream: TestFunction = async (db) => {
@@ -482,6 +523,21 @@ export const outNotesStream: TestFunction = async (db) => {
 	// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
 	// only the latter took place.
 	await note1.setName('New Note - Updated', {});
+	await waitFor(() => {
+		expect(outNoteList).toEqual([{ id: note1._id, displayName: 'New Note - Updated' }]);
+	});
+
+	// Should not stream committed notes
+	const note3 = await db.warehouse().note().create();
+	await waitFor(() => {
+		expect(outNoteList).toEqual([
+			{ id: note1._id, displayName: 'New Note - Updated' },
+			// There's already an inbound note with the name "New Note"
+			{ id: note3._id, displayName: 'New Note (2)' }
+		]);
+	});
+
+	await note3.commit({});
 	await waitFor(() => {
 		expect(outNoteList).toEqual([{ id: note1._id, displayName: 'New Note - Updated' }]);
 	});
