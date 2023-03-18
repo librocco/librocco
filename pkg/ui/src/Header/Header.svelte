@@ -1,23 +1,14 @@
 <script lang="ts">
 	import Logo from './Logo.svelte';
 
+	interface HeaderLink {
+		label: string;
+		href: string;
+	}
+
 	export let title = 'Stock';
 	export let currentLocation: string;
-
-	const links = [
-		{
-			label: 'Stock',
-			href: '/inventory/stock'
-		},
-		{
-			label: 'Inbound',
-			href: '/inventory/inbound'
-		},
-		{
-			label: 'Outbound',
-			href: '/inventory/outbound'
-		}
-	];
+	export let links = [] as HeaderLink[];
 </script>
 
 <header class="w-full bg-gray-900 px-[70px]">

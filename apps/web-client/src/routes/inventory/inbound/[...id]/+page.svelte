@@ -31,6 +31,8 @@
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
 
+	import { inventoryLinks } from '$lib/data';
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -68,7 +70,7 @@
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header title="Inbound" currentLocation="/inventory/inbound" slot="header" />
+	<Header links={inventoryLinks} title="Inbound" currentLocation="/inventory/inbound" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
