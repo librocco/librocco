@@ -52,7 +52,6 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: entries.subscribe((e) => console.log(e));
 </script>
 
 <!-- svelte-ignore missing-declaration -->
