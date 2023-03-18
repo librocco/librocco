@@ -25,6 +25,8 @@
 
 	import { readableFromStream } from '$lib/utils/streams';
 
+	import { inventoryLinks } from '$lib/data';
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -57,7 +59,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header title="Stock" currentLocation="/inventory/stock" slot="header" />
+	<Header links={inventoryLinks} title="Stock" currentLocation="/inventory/stock" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
