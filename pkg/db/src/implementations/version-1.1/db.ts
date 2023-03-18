@@ -13,6 +13,7 @@ import { newWarehouse } from './warehouse';
 
 import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
 import { newBooksInterface } from './books';
+import { replicationError } from './misc';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -50,11 +51,20 @@ class Database implements DatabaseInterface {
 		const replication = (async () => {
 			if (params && params.remoteDb) {
 				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
-				// Pull data from the remote db (if provided)
-				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
-				debug.log(ctx, 'init_db:replication:initial_replication_done')({});
-				// Start live sync between local and remote db
-				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+
+				// We're wrapping the replication in a try/catch block to prevent the app from crashing
+				// if the remote db is not available.
+				try {
+					// Pull data from the remote db (if provided)
+					await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+					debug.log(ctx, 'init_db:replication:initial_replication_done')({});
+					// Start live sync between local and remote db
+					replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+				} catch (err) {
+					// If remote db is not available, log the error and continue.
+					console.error(err);
+					console.error(replicationError);
+				}
 			} else {
 				debug.log(ctx, 'init_db:replication:skipped')({});
 			}
