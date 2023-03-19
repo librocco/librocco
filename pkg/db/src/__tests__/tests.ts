@@ -6,10 +6,11 @@ import { testUtils } from '@librocco/shared';
 
 import { NoteState } from '@/enums';
 
-import { BookEntry, InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
+import { BookEntry, InNoteList, NavListEntry, VersionedString, VolumeStock, VolumeStockClient } from '@/types';
 import { TestFunction } from '@/test-runner/types';
 
 import { versionId } from '@/utils/misc';
+import { OutOfStockError, TransactionWarehouseMismatchError } from '@/errors';
 
 const { waitFor } = testUtils;
 
@@ -720,4 +721,44 @@ export const booksInterface: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: 'Stream updated title' }, { ...book2, title: 'Updated Title 12' }, book3]);
 	});
+};
+
+export const dbGuards: TestFunction = async (db) => {
+	// The db should not allow for committing of inbound notes with transactions belonging
+	// to warehouse different then note's parent warehouse.
+	const note1 = await db.warehouse('warehouse-1').note().create();
+	await note1.addVolumes('12345678', 2, versionId('warehouse-2'));
+
+	await expect(note1.commit({})).rejects.toThrow(
+		new TransactionWarehouseMismatchError(versionId('warehouse-1'), [{ isbn: '12345678', warehouseId: versionId('warehouse-2') }])
+	);
+
+	// The db should not alow for committing of outbound notes with transactions specifying a quantity
+	// greater than the quantity available, for a given isbn in the given warehouse.
+	const wh1 = db.warehouse('warehouse-1');
+	// Add some books to the warehouse
+	const note2 = await wh1.note().create();
+	await note2.addVolumes(['11111111', 2, versionId('warehouse-1')], ['12345678', 3, versionId('warehouse-1')]);
+	await note2.commit({});
+
+	// Crate and try to commit an outbound note
+	const note3 = await db.warehouse().note().create();
+	await note3.addVolumes(
+		['11111111', 2, versionId('warehouse-1')],
+		// Add more books than available
+		['12345678', 4, versionId('warehouse-1')]
+	);
+	// The db should throw an error if trying to commit, as the quantity (for "12345678") is greater than the available quantity
+	await expect(note3.commit({})).rejects.toThrow(
+		new OutOfStockError([{ isbn: '12345678', warehouseId: versionId('warehouse-1'), quantity: 4, available: 3 }])
+	);
+
+	// Fix the quantity
+	await note3.updateTransaction({ isbn: '12345678', warehouseId: versionId('warehouse-1'), quantity: 3 });
+
+	// The validation error should be the same if warehouse not provided
+	await note3.addVolumes('11111111', 2);
+	await expect(note3.commit({})).rejects.toThrow(
+		new OutOfStockError([{ isbn: '11111111', warehouseId: '' as VersionedString, quantity: 2, available: 0 }])
+	);
 };
