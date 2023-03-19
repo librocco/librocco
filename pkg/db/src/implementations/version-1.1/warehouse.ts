@@ -113,7 +113,7 @@ class Warehouse implements WarehouseInterface {
 
 			let sequentialNumber = 0;
 			try {
-				const sequenceQuery = await this.#db._pouch.query('sequence/warehouse');
+				const sequenceQuery = await this.#db._pouch.query('v1_sequence/warehouse');
 				sequentialNumber = sequenceQuery.rows[0].value.max;
 			} catch {
 				//
@@ -234,7 +234,7 @@ class Warehouse implements WarehouseInterface {
 			entries: combineLatest([
 				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
 					this.#db._pouch,
-					'warehouse/stock',
+					'v1_warehouse/stock',
 					{
 						group_level: 2,
 						...(this._id !== versionId('0-all') && {

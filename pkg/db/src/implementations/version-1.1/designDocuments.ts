@@ -3,7 +3,7 @@ import { DesignDocument } from '@/types';
 import { WarehouseData, NoteData } from './types';
 
 const sequenceNamingDesignDocument: DesignDocument = {
-	_id: '_design/sequence',
+	_id: '_design/v1_sequence',
 	views: {
 		warehouse: {
 			map: function (doc: WarehouseData) {
@@ -39,7 +39,7 @@ const sequenceNamingDesignDocument: DesignDocument = {
 };
 
 const warehouseDesignDocument: DesignDocument = {
-	_id: '_design/warehouse',
+	_id: '_design/v1_warehouse',
 	views: {
 		stock: {
 			map: function (doc: WarehouseData | NoteData) {
@@ -61,7 +61,7 @@ const warehouseDesignDocument: DesignDocument = {
 };
 
 /**
- * A row in `_design/warehouse/_view/stock` query reponse.
+ * A row in `_design/v1_warehouse/_view/stock` query reponse.
  * The rows are sorted by warehouse and isbn. There might be multiple entries
  * for each [warehouse, isbn] pair so the results should be aggregated to show real quantity.
  */
@@ -79,7 +79,7 @@ export type WarehouseStockEntry = {
 };
 
 export const listDeisgnDocument: DesignDocument = {
-	_id: '_design/list',
+	_id: '_design/v1_list',
 	views: {
 		warehouses: {
 			map: function (doc: WarehouseData | NoteData) {
