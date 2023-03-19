@@ -9,6 +9,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from '
 
 import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
 import { newDocumentStream } from '@/utils/pouchdb';
+import { OutOfStockError, TransactionWarehouseMismatchError } from '@/errors';
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -219,6 +220,7 @@ class Note implements NoteInterface {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
 				const warehouseId = this.noteType === 'inbound' ? this.#w._id : update.warehouseId ? versionId(update.warehouseId) : '';
+
 				const matchIndex = this.entries.findIndex(
 					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
 				);
@@ -275,12 +277,50 @@ class Note implements NoteInterface {
 		return this.update(this, {});
 	}
 
+	private async getStockPerIsbn(isbns: string[]): Promise<Record<string, number>[]> {
+		return Promise.all(
+			isbns.map(async (isbn) => {
+				const { rows } = await this.#db._pouch.query<number>('v1_stock/by_isbn', { startkey: [isbn], endkey: [isbn, {}] });
+				return rows.reduce((acc, { key: [, warehouseId], value: quantity }) => ({ ...acc, [warehouseId]: quantity }), {});
+			})
+		);
+	}
+
 	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
-	commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
+	async commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
 		debug.log(ctx, 'note:commit')({});
+
+		switch (this.noteType) {
+			case 'inbound': {
+				const invalidTransactions = this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+				if (invalidTransactions.length) {
+					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
+				}
+				break;
+			}
+			case 'outbound': {
+				// Get availability per warehouse for each transaction isbn
+				const availabilityPerIsbn = await this.getStockPerIsbn(this.entries.map(({ isbn }) => isbn));
+
+				const invalidTransactions = this.entries
+					// Add corresponding availability to each transaction
+					.map((transaction, i) => ({
+						...transaction,
+						available: availabilityPerIsbn[i][transaction.warehouseId] || 0
+					}))
+					// Filter out transactions that are valid
+					.filter(({ quantity, available }) => quantity > available);
+
+				if (invalidTransactions.length) {
+					throw new OutOfStockError(invalidTransactions);
+				}
+			}
+		}
+		// Check transactions before committing
+
 		return this.update({ committed: true }, ctx);
 	}
 
