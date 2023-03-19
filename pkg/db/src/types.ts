@@ -107,9 +107,14 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	addVolumes: (...params: PickPartial<VolumeStock, 'warehouseId'>[]) => Promise<NoteInterface<A>>;
 	/**
 	 * Explicitly update an existing transaction row.
-	 * the transaction is matched with both isbn and warehouseId.
+	 * The transaction is matched by both isbn and warehouseId.
 	 */
 	updateTransaction: (transaction: PickPartial<VolumeStock, 'warehouseId'>) => Promise<NoteInterface<A>>;
+	/**
+	 * Remove "row" from note transactions .
+	 * The transaction is matched by both isbn and warehouseId.
+	 */
+	removeTransactions: (...transactions: Omit<VolumeStock, 'quantity'>[]) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**

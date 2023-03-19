@@ -91,6 +91,75 @@ export const standardApi: TestFunction = async (db) => {
 	expect(inboundNote.noteType).toEqual('inbound');
 };
 
+export const noteTransactionOperations: TestFunction = async (db) => {
+	// Set up two warehouses (with display names) and an outbound note
+	const [wh1, wh2] = await Promise.all([db.warehouse('wh1').create(), db.warehouse('wh2').create()]);
+	await Promise.all([wh1.setName('Warehouse 1', {}), wh2.setName('Warehouse 2', {})]);
+
+	// We're testing against an outbound note as it lets us test agains more robust functionality (different warehouses and such)
+	const note = await db.warehouse().note().create();
+
+	// Subscribe to entries to receive updates
+	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	note.stream({}).entries.subscribe((e) => (entries = e));
+
+	// Initial stream should be empty
+	await waitFor(() => {
+		expect(entries).toEqual([]);
+	});
+
+	// Adding volumes should add transactions to the note
+	await note.addVolumes(
+		{ isbn: '0123456789', quantity: 2, warehouseId: wh1._id },
+		// Having the same isbn for different warehouses will come in handy when testing update/remove transaction
+		{ isbn: '11111111', quantity: 4, warehouseId: wh1._id },
+		{ isbn: '11111111', quantity: 3, warehouseId: wh2._id }
+	);
+	await waitFor(() => {
+		expect(entries).toEqual([
+			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 4, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+		]);
+	});
+
+	// Adding volumes to the same ISBN/warheouseId pair should simply aggregate the quantities
+	await note.addVolumes(
+		// The add volumes operation should not confuse the transaction with the same isbn, but different warehouse
+		{ isbn: '11111111', quantity: 3, warehouseId: wh1._id },
+		{ isbn: '11111111', quantity: 7, warehouseId: wh2._id }
+	);
+	await waitFor(() => {
+		expect(entries).toEqual([
+			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 7, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+		]);
+	});
+
+	// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
+	await note.updateTransaction({ isbn: '11111111', quantity: 3, warehouseId: wh1._id });
+	await waitFor(() => {
+		expect(entries).toEqual([
+			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+		]);
+	});
+
+	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
+	await note.removeTransactions({ isbn: '0123456789', warehouseId: 'wh1' }, { isbn: '11111111', warehouseId: 'wh2' });
+	await waitFor(() => {
+		expect(entries).toEqual([{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' }]);
+	});
+
+	// Running remove transaction should be a no-op if the transaction doesn't exist
+	await note.removeTransactions({ isbn: '12345678', warehouseId: versionId(wh2._id) });
+	await waitFor(() => {
+		expect(entries).toEqual([{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' }]);
+	});
+};
+
 export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	// Create a new note
 	const note = await db.warehouse('test-warehouse').note().create();
@@ -594,28 +663,5 @@ export const booksInterface: TestFunction = async (db) => {
 
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: 'Stream updated title' }, { ...book2, title: 'Updated Title 12' }, book3]);
-	});
-};
-
-export const updateTransaction: TestFunction = async (db) => {
-	const entry1 = { isbn: '12345678', warehouseId: 'warehouse-1', quantity: 2 };
-	const entry2 = { isbn: '12345678', warehouseId: 'warehouse-2', quantity: 1 };
-	const note1 = await db.warehouse().note().create();
-	await note1.addVolumes(entry1, entry2);
-
-	await note1.updateTransaction({ ...entry1, quantity: 5, warehouseId: 'warehouse-1' });
-
-	await note1.updateTransaction({ ...entry2, quantity: 9, warehouseId: 'warehouse-2' });
-
-	const { entries: e$ } = note1.stream({});
-
-	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
-	e$.subscribe((e) => (entries = e));
-
-	await waitFor(() => {
-		expect(entries).toEqual([
-			{ ...entry1, quantity: 5, warehouseId: versionId('warehouse-1'), warehouseName: 'not-found' },
-			{ ...entry2, quantity: 9, warehouseId: versionId('warehouse-2'), warehouseName: 'not-found' }
-		]);
 	});
 };
