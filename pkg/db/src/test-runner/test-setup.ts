@@ -4,19 +4,8 @@ import PouchDB from 'pouchdb';
 
 import { __withDocker__ } from './env';
 
-import { NoteType, DatabaseInterface, VersionString, VolumeStockClient } from '@/types';
-import {
-	RawSnap,
-	RawNote,
-	GetNotesAndWarehouses,
-	TestTask,
-	TestStock,
-	TransformNote,
-	TransformStock,
-	RawBookStock,
-	MapWarehouses,
-	ImplementationSetup
-} from './types';
+import { DatabaseInterface } from '@/types';
+import { RawSnap, RawNote, GetNotesAndWarehouses, TestTask, TestStock, MapWarehouses, ImplementationSetup } from './types';
 
 import { sortBooks } from '@/utils/misc';
 
@@ -27,15 +16,13 @@ interface RawData {
 }
 // #endregion types
 
-// #region newModal
 export const newModel = (rawData: RawData, config: ImplementationSetup) => {
-	const getNotesAndWarehouses: GetNotesAndWarehouses = (version) => (n) => {
-		const notes = rawData.notes.slice(0, n).map(transformNote(version));
+	const getNotesAndWarehouses: GetNotesAndWarehouses = (n) => {
+		const notes = rawData.notes.slice(0, n);
 
-		const fullStockRaw = rawData.snaps[n - 1];
-		const fullStock = transformStock(version)(fullStockRaw);
+		const fullStock = rawData.snaps[n - 1];
 
-		const warehouses = mapWarehouses(version)(fullStockRaw.books);
+		const warehouses = mapWarehouses(fullStock.books);
 
 		return { notes, fullStock, warehouses };
 	};
@@ -76,65 +63,20 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		bench
 	};
 };
-// #endregion newModal
 
-/**
- * @TODO these should be hard coded in the data (already transformed)
- * when we agree on the input data
- */
-// #region test_data_transformers
-
-const transformNote: TransformNote =
-	(version) =>
-	({ id, type, books }) => ({
-		id: `${version}/${id}`,
-		// Transform from "in-note" to "inbound"
-		type: [type.split('-')[0], 'bound'].join('') as NoteType,
-		books: books.map(transformBookStock(version)).sort(sortBooks)
-	});
-
-const transformStock: TransformStock = (version) => (sn) => ({
-	id: `all-warehouses`,
-	books: sn.books
-		.map(transformBookStock(version))
-		// Filter books with no quantity
-		.filter(({ quantity }) => Boolean(quantity))
-		.sort(sortBooks)
-});
-
-const mapWarehouses: MapWarehouses = (version) => (books) => {
+const mapWarehouses: MapWarehouses = (books) => {
 	const warehousesObject = books.reduce((acc, b) => {
-		const wName = `${version}/${b.warehouseId}`;
-
-		const warehouse = acc[wName] || ({ id: wName, books: [] } as TestStock);
-		const entry = transformBookStock(version)(b);
+		const { warehouseId } = b;
+		const warehouse = acc[warehouseId] || ({ id: warehouseId, books: [] } as TestStock);
 
 		return {
 			...acc,
-			[wName]: {
+			[warehouseId]: {
 				...warehouse,
-				books: [...warehouse.books, entry].sort(sortBooks)
+				books: [...warehouse.books, b].sort(sortBooks)
 			}
 		};
 	}, {} as Record<string, TestStock>);
 
 	return Object.values(warehousesObject);
 };
-// #endregion test_data_transformers
-
-// #region helpers
-
-const getISBN = (b: RawBookStock): string => b.volumeInfo.industryIdentifiers.find(({ type }) => type === 'ISBN_10')?.identifier || '';
-
-const transformBookStock =
-	(version: VersionString) =>
-	(b: RawBookStock): VolumeStockClient => ({
-		isbn: getISBN(b),
-		quantity: b.quantity,
-		warehouseId: `${version}/${b.warehouseId}`,
-		// When the warehouse is created, the name is the same as the id.
-		// Since this test is used to check the stock aggregation after multiple notes,
-		// we're not bothering with assigning custom 'diplayName' to the warehouses.
-		warehouseName: `${version}/${b.warehouseId}`
-	});
-// #endregion helpers
