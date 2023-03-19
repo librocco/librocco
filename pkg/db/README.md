@@ -557,6 +557,69 @@ const note1 = db.warehouse().create().get();
 await note1.updateTransaction({ isbn: '12345678', warehouseId: 'warehouse-1', quantity: 5 });
 ```
 
+**Remove transactions:**
+
+To remove the transaction row from the note, we run `note.removeTransactions`, passing to it the `isbn` and `warehouseId`, like so:
+
+```typescript
+const note = await db.warehouse('warehouse-1').note().create();
+// Add a volume transaction
+await note.addVolumes('12345678', 2);
+
+// The note contains the transaction for isbn = "12345678", of quantity = 2, in warehouse = "warehouse-1"
+
+// Remove "12345678" for "warehouse-1"
+await note.removeTransactions({ isbn: '12345678' }); // In case of inbound note, the warehouseId is inferred from the note
+```
+
+In practice, if running against inbound notes, only isbn should suffice (as all transactions belong to the same warehouse), but in case of outbound notes, we might have a situation where we have multiple transactions for the same book (same isbn), but against different warehouses. Therefore, it's always a good idea to explicitly pass the `warehouseId`.
+
+In the example above we didn't provide the warehouse id as it can be inferred from the note (being an inbound note), while in an outbound note, the `warehouseId` falls back to empty string, in case we want to match the transaction with no `warehouseId` being assigned.
+
+```typescript
+// Create an outbound note
+const note = await db.warehouse().note().create();
+
+// Add two transactions with the same isbn, but different warehouses
+await note.addVolumes(
+	['12345678', 2, 'warehouse-1'],
+	// It's perfectly legal to not specify the warehouseId the first time around
+	// as it can be provided anytime before the note is committed
+	['12345678', 3]
+);
+
+// The following operation would delete the first entry
+await note.removeTransactions({ isbn: '12345678', warehouseId: 'warehouse-1' });
+
+// Both of the following operations would delete the second (warehouse unassigned) transaction
+await note.removeTransactions({ isbn: '12345678', warehouseId: '' });
+await note.removeTransactions({ isbn: '12345678' }); // In case of outbound note, warehouseId falls back to ''
+```
+
+Finally, we can remove multiple transactions at once, like so:
+
+```typescript
+const note = await db.warehouse().note().create();
+
+await note.addVolumes(
+	['00000000', 2, 'warehouse-1'],
+	['12345678', 2, 'warehouse-1'],
+	['12345678', 3, 'warehouse-2'],
+	['11111111', 5, 'warehouse-1']
+);
+
+// This is the same as running removeTransactions for each transaction
+await note.removeTransactions(
+	{ isbn: '00000000', warehouseId: 'warehouse-1' },
+	{ isbn: '12345678', warehouseId: 'warehouse-2' },
+	{ isbn: '11111111', warehouseId: 'warehouse-1' }
+);
+
+// This leaves us with only one transaction left in the note: isbn = "12345678", quantity = 2, warheouseId = "warehouse-1"
+```
+
+_Note: if no transaction is matched by isbn/warehouseId pair, the action is a no-op._
+
 ##### Delete
 
 To delete the note, we simply run:
