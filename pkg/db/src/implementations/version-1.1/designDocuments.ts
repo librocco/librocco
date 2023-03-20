@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { DesignDocument } from '@/types';
+import { versionId } from '@/utils/misc';
 import { WarehouseData, NoteData } from './types';
 
 const sequenceNamingDesignDocument: DesignDocument = {
@@ -51,7 +52,7 @@ const warehouseDesignDocument: DesignDocument = {
 						// Check if we should be incrementing or decrementing the overall quantity
 						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
-						emit([entry.warehouseId, entry.isbn], delta);
+						emit([entry.warehouseId || versionId(''), entry.isbn], delta);
 					});
 				}
 			}.toString(),

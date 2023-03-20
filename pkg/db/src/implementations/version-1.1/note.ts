@@ -217,22 +217,24 @@ class Note implements NoteInterface {
 	 */
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
-			const updateQuantity = (isbn: string, quantity: number, warehouseId: `v${number}/${string}`) => {
-				const matchIndex = this.entries.findIndex((entry) => entry.isbn === isbn && entry.warehouseId === warehouseId);
+			params.forEach((update) => {
+				const warehouseId = versionId(update.warehouseId || '');
+
+				const matchIndex = this.entries.findIndex(
+					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
+				);
 
 				if (matchIndex === -1) {
-					this.entries.push({ isbn, warehouseId, quantity });
+					this.entries.push({ isbn: update.isbn, warehouseId, quantity: update.quantity });
 					return;
 				}
 
 				this.entries[matchIndex] = {
-					isbn,
+					isbn: update.isbn,
 					warehouseId,
-					quantity: this.entries[matchIndex].quantity + quantity
+					quantity: this.entries[matchIndex].quantity + update.quantity
 				};
-			};
-
-			params.forEach((update) => updateQuantity(update.isbn, update.quantity, versionId(update.warehouseId || this.#w._id)));
+			});
 
 			return this.update(this, {});
 		}, this.#initialized);
@@ -242,13 +244,19 @@ class Note implements NoteInterface {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
 		// handle edge case where we have multiple books with the same isbn, but belonging to different warehouses
-		const i = entries.findIndex(({ isbn, warehouseId }) => isbn === transaction.isbn && warehouseId === transaction.warehouseId);
+		// match isbn only in case entry has no whId but transaction does (not undefined or empty string)
+		const i = entries.findIndex(
+			({ isbn, warehouseId }) =>
+				isbn === transaction.isbn &&
+				(warehouseId === versionId(transaction.warehouseId || '') || (warehouseId === versionId('') && transaction.warehouseId))
+		);
 
+		const versionedTransaction = { ...transaction, warehouseId: versionId(transaction.warehouseId || '') };
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
-			entries[i] = transaction;
+			entries[i] = versionedTransaction;
 		} else {
-			entries.push(transaction);
+			entries.push(versionedTransaction);
 		}
 		// Post an update, the local entries will be updated by the update function.
 		return this.update({ entries }, {});
@@ -259,6 +267,9 @@ class Note implements NoteInterface {
 	 * when calculating the stock of the warehouse.
 	 */
 	commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
+		if (this.entries.findIndex((entry) => entry.warehouseId === versionId('')) !== -1)
+			throw new Error('Cannot commit a note with empty warehouseId entries');
+
 		debug.log(ctx, 'note:commit')({});
 		return this.update({ committed: true }, ctx);
 	}
@@ -294,7 +305,7 @@ class Note implements NoteInterface {
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
+					return entries.map((e) => ({ ...e, warehouseName: e.warehouseId ? warehouseNames[e.warehouseId] : 'not-found' }));
 				}),
 				tap(debug.log(ctx, 'note:entries:stream:output'))
 			),
