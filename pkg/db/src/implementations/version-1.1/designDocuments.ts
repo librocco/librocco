@@ -70,7 +70,8 @@ const stockDesignDocument: DesignDocument = {
 						emit([entry.isbn, entry.warehouseId], delta);
 					});
 				}
-			}.toString()
+			}.toString(),
+			reduce: '_sum'
 		}
 	}
 };
