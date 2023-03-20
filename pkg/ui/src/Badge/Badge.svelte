@@ -14,7 +14,7 @@
 	 * Warning:
 	 * 	bg-yellow-100 text-yellow-800
 	 * Success:
-	 * bg-green-100 text-green-800
+	 * bg-teal-100 text-teal-800
 	 * ```
 	 */
 
@@ -22,7 +22,7 @@
 		[BadgeColor.Neutral]: 'bg-gray-100 text-gray-800',
 		[BadgeColor.Error]: 'bg-red-100 px-2.5 text-red-800',
 		[BadgeColor.Warning]: 'bg-yellow-100 text-yellow-800',
-		[BadgeColor.Success]: 'bg-green-100 text-green-800'
+		[BadgeColor.Success]: 'bg-teal-100 text-teal-800'
 	};
 
 	export const sizeLookup: Record<BadgeSize, string> = {
