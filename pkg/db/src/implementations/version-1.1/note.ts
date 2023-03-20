@@ -305,7 +305,9 @@ class Note implements NoteInterface {
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-					return entries.map((e) => ({ ...e, warehouseName: e.warehouseId ? warehouseNames[e.warehouseId] : 'not-found' }));
+					// warehouseId always has a fallback value
+					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId!] || 'not-found' }));
 				}),
 				tap(debug.log(ctx, 'note:entries:stream:output'))
 			),
