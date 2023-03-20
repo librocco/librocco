@@ -2,12 +2,13 @@
 	import type { createTable } from './table';
 	import type { OutNoteTableData } from './types';
 
-	import { Checkbox, Button, ButtonColor } from '../';
+	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from '../';
 
 	import TdWarehouseSelect from './TdWarehouseSelect.svelte';
 
 	import { quadIn } from 'svelte/easing';
 	import { fadeBgColor } from '../lib/transitions';
+	import { thRowBaseStyles } from './utils';
 
 	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
 
@@ -29,9 +30,6 @@
 		year: 'Year',
 		warehouses: 'Warehouse'
 	};
-
-	const headerStyles =
-		'whitespace-nowrap py-4 px-3 text-left text-sm font-medium uppercase tracking-wide text-gray-500';
 </script>
 
 <div class="overflow-x-auto">
@@ -65,28 +63,28 @@
 						<Checkbox name="Select all" checked={selected.length ? true : false} />
 					</span>
 				</th>
-				<th scope="col" class={headerStyles}>
+				<th scope="col" class={thRowBaseStyles}>
 					<span class="hidden lg:inline">{headers.isbn}</span>
 					<span class="inline lg:hidden">book</span>
 				</th>
-				<th scope="col" class="{headerStyles} hidden lg:table-cell">
+				<th scope="col" class="{thRowBaseStyles} hidden lg:table-cell">
 					{headers.title}
 				</th>
-				<th scope="col" class="{headerStyles} hidden lg:table-cell">
+				<th scope="col" class="{thRowBaseStyles} hidden lg:table-cell">
 					{headers.authors}
 				</th>
-				<th scope="col" class={headerStyles}>
+				<th scope="col" class={thRowBaseStyles}>
 					<span class="hidden lg:inline">{headers.quantity}</span>
 					<span class="inline lg:hidden">qty</span>
 				</th>
-				<th scope="col" class="{headerStyles} hidden sm:table-cell">
+				<th scope="col" class="{thRowBaseStyles} hidden sm:table-cell">
 					{headers.price}
 				</th>
-				<th scope="col" class="{headerStyles} hidden md:table-cell">
+				<th scope="col" class="{thRowBaseStyles} hidden md:table-cell">
 					{headers.year}
 				</th>
 
-				<th scope="col" class={headerStyles}> {headers.warehouses} </th>
+				<th scope="col" class={thRowBaseStyles}> {headers.warehouses} </th>
 			</tr>
 		</thead>
 
@@ -128,9 +126,9 @@
 						<dl class="font-normal lg:hidden">
 							<dt class="sr-only">Title:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
-							<dt class="sr-only lg:hidden">Authors:</dt>
+							<dt class="sr-only">Authors:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 lg:hidden">{authors}</dd>
-							<dt class="sr-only sm:hidden">Price:</dt>
+							<dt class="sr-only">Price:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">€{price}</dd>
 						</dl>
 					</th>
@@ -141,9 +139,7 @@
 						{authors}
 					</td>
 					<td class="py-4 px-3 text-left">
-						<span class="rounded-md bg-gray-100 px-3 py-2">
-							{quantity}
-						</span>
+						<Badge label={`${quantity}`} size={BadgeSize.LG} />
 					</td>
 					<td class="hidden py-4 px-3 text-left sm:table-cell">
 						{price}
