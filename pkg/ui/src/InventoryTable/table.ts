@@ -25,7 +25,7 @@ export function createTable<T = Record<string, any>>({
 	const selectedData = writable<KeyedRows[]>([]);
 
 	/**
-	 * Derived store of table state - combinin data & selectedData stores
+	 * Derived store of table state - combining data & selectedData stores
 	 */
 	const state = derived([data, selectedData], ([$data, $selectedData]) => {
 		return {
