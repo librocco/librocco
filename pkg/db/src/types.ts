@@ -35,13 +35,6 @@ export type DesignDocument = {
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
-	warehouseId: VersionedString;
-}
-
-/**
- * Used as param(s) for adding volumes to a note where the warehouseId could be optional and a plain string (non-versioned)
- */
-export interface VolumeStockOptionalWarehouseId extends Omit<VolumeStock, 'warehouseId'> {
 	warehouseId?: string;
 }
 
@@ -104,7 +97,16 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
 	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
-	addVolumes: (...params: VolumeStockOptionalWarehouseId[]) => Promise<NoteInterface<A>>;
+	/**
+	 * Add volumes accepts an array of volume stock entries and adds them to the note.
+	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
+	 */
+	addVolumes: (...params: VolumeStock[]) => Promise<NoteInterface<A>>;
+	/** Explicitly update an existing transaction row.
+	 * the transaction is matched with both isbn and warehouseId.
+	 * If entry with the same isbn previously has no warehouseId and
+	 * a warehouseId was provided, the empty warehouseId will be overwritten
+	 */
 	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
