@@ -89,7 +89,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	const row2 = rows[1];
 	// TODO: Fix table data row aria labels
-	const row2Name = `${row2.isbn} Title: ${row2.title} Authors: ${row2.authors} Year: ${row2.year} ${row2.title} ${row2.authors} ${row2.quantity} ${row2.price} ${row2.publisher} ${row2.year}`;
+	const row2Name = `${row2.isbn} Title: ${row2.title} Authors: ${row2.authors} Year: ${row2.year} ${row2.title} ${row2.authors} ${row2.quantity} ${row2.price} ${row2.year} ${row2.publisher}`;
 
 	const dataRow2 = screen.getByRole('row', { name: row2Name });
 
