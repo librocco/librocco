@@ -15,7 +15,7 @@
 	$: ({ warehouses } = data);
 </script>
 
-<td class="py-4 px-3">
+<td class="py-4 px-1.5">
 	{#if warehouses.length > 1}
 		<TextField
 			name={`Row ${rowIx} warehouse`}
