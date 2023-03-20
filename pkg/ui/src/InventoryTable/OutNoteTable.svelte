@@ -1,13 +1,15 @@
 <script lang="ts">
 	import type { createTable } from './table';
-	import type { InventoryTableData } from './types';
+	import type { OutNoteTableData } from './types';
 
 	import { Checkbox, Button, ButtonColor } from '../';
+
+	import TdWarehouseSelect from './TdWarehouseSelect.svelte';
 
 	import { quadIn } from 'svelte/easing';
 	import { fadeBgColor } from '../lib/transitions';
 
-	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
 
 	const { removeRows, table: tableAction, tableRow } = table;
 	$: ({ rows, selected } = $table);
@@ -25,8 +27,7 @@
 		price: 'Price',
 		publisher: 'Publisher',
 		year: 'Year',
-		editedBy: 'Edited By',
-		outOfPrint: 'Out of Print'
+		warehouses: 'Warehouse'
 	};
 
 	const headerStyles =
@@ -84,21 +85,14 @@
 				<th scope="col" class="{headerStyles} hidden sm:table-cell">
 					{headers.year}
 				</th>
-				<th scope="col" class="{headerStyles} hidden md:table-cell">
-					{headers.publisher}
-				</th>
-				<th scope="col" class="{headerStyles} hidden xl:table-cell">
-					{headers.editedBy}
-				</th>
-				<th scope="col" class="{headerStyles} hidden xl:table-cell">
-					{headers.outOfPrint}
-				</th>
+
+				<th scope="col" class={headerStyles}> {headers.warehouses} </th>
 			</tr>
 		</thead>
 
 		<tbody>
 			{#each rows as row (row.key)}
-				{@const { rowIx, isbn, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
+				{@const { isbn, title, authors, year, quantity, price, rowIx } = row}
 				<tr
 					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
 					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
@@ -122,8 +116,8 @@
 				>
 					<td
 						class={`px-2 text-center sm:align-middle border-l-4 
-						${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
-					`}
+                        ${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+                    `}
 					>
 						<span class="inline-block">
 							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
@@ -158,21 +152,7 @@
 						{year}
 					</td>
 
-					<td class="hidden py-4 px-3 md:table-cell">
-						{publisher}
-					</td>
-					<td class="hidden py-4 px-3 xl:table-cell">
-						{editedBy}
-					</td>
-					<td class="hidden py-4 px-3 text-center xl:table-cell">
-						<span class="inline-block">
-							<Checkbox
-								name={`Row ${rowIx} is out of print: ${outOfPrint}`}
-								checked={outOfPrint}
-								disabled
-							/>
-						</span>
-					</td>
+					<TdWarehouseSelect data={row} {rowIx} />
 				</tr>
 			{/each}
 		</tbody>

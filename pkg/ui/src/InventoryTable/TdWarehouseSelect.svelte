@@ -2,12 +2,12 @@
 	import { createCombobox } from 'svelte-headlessui';
 	import { ChevronsUpDown } from 'lucide-svelte';
 
-	import type { BookWarehousesRowData } from '../types';
+	import type { OutNoteTableData } from './types';
 
-	import { ComboboxMenu } from '../../Menus';
-	import { TextField } from '../../FormFields';
+	import { ComboboxMenu } from '../Menus';
+	import { TextField } from '../FormFields';
 
-	export let data: BookWarehousesRowData;
+	export let data: OutNoteTableData;
 	export let rowIx: number;
 
 	const combobox = createCombobox({ label: `Select ${rowIx} warehouse` });

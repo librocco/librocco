@@ -1,4 +1,13 @@
-export type InventoryTableData = BookCoreRowData & BookOptionalRowData & BookWarehousesRowData;
+export type InventoryTableData = BookCoreRowData & {
+	publisher?: string;
+	year?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+};
+
+export type OutNoteTableData = BookCoreRowData & {
+	warehouses: string[];
+};
 
 export type BookCoreRowData = {
 	isbn: string;
@@ -7,15 +16,4 @@ export type BookCoreRowData = {
 	authors?: string;
 	quantity?: number;
 	year?: string;
-};
-
-export type BookOptionalRowData = {
-	publisher?: string;
-	year?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-};
-
-export type BookWarehousesRowData = {
-	warehouses: string[];
 };
