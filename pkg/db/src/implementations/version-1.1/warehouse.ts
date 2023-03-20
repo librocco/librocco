@@ -256,7 +256,7 @@ class Warehouse implements WarehouseInterface {
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
 					const res = entries.map((e) => ({
 						...e,
-						warehouseName: warehouseNames[e.warehouseId] || 'not-found'
+						warehouseName: (e.warehouseId && warehouseNames[e.warehouseId]) || 'not-found'
 					}));
 					return res;
 				}),
