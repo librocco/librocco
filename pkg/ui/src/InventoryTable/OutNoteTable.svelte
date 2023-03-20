@@ -79,10 +79,10 @@
 					<span class="hidden lg:inline">{headers.quantity}</span>
 					<span class="inline lg:hidden">qty</span>
 				</th>
-				<th scope="col" class={headerStyles}>
+				<th scope="col" class="{headerStyles} hidden sm:table-cell">
 					{headers.price}
 				</th>
-				<th scope="col" class="{headerStyles} hidden sm:table-cell">
+				<th scope="col" class="{headerStyles} hidden md:table-cell">
 					{headers.year}
 				</th>
 
@@ -130,8 +130,8 @@
 							<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
 							<dt class="sr-only lg:hidden">Authors:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 lg:hidden">{authors}</dd>
-							<dt class="sr-only sm:hidden">Year:</dt>
-							<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">{year}</dd>
+							<dt class="sr-only sm:hidden">Price:</dt>
+							<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">€{price}</dd>
 						</dl>
 					</th>
 					<td class="hidden px-3 py-4 lg:table-cell">
@@ -145,10 +145,10 @@
 							{quantity}
 						</span>
 					</td>
-					<td class="py-4 px-3 text-left">
+					<td class="hidden py-4 px-3 text-left sm:table-cell">
 						{price}
 					</td>
-					<td class="hidden py-4 px-3 text-left sm:table-cell">
+					<td class="hidden py-4 px-3 text-left md:table-cell">
 						{year}
 					</td>
 
