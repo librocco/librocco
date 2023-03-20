@@ -736,29 +736,68 @@ export const dbGuards: TestFunction = async (db) => {
 	// The db should not alow for committing of outbound notes with transactions specifying a quantity
 	// greater than the quantity available, for a given isbn in the given warehouse.
 	const wh1 = db.warehouse('warehouse-1');
+
 	// Add some books to the warehouse
-	const note2 = await wh1.note().create();
-	await note2.addVolumes(['11111111', 2, versionId('warehouse-1')], ['12345678', 3, versionId('warehouse-1')]);
+	await wh1
+		.note()
+		.create()
+		.then((n) => n.addVolumes(['11111111', 2, versionId('warehouse-1')], ['12345678', 3, versionId('warehouse-1')]))
+		.then((n) => n.commit({}));
+
+	// Current state of the warehouse is:
+	// "11111111": 2
+	// "12345678": 3
+
+	// Try and commit an outbound note with a quantity greater than the available quantity
+	const note2 = await db
+		.warehouse()
+		.note()
+		.create()
+		// "11111111": 4 (required) > "11111111": 2 (available in warehouse)
+		.then((n) => n.addVolumes(['11111111', 4, versionId('warehouse-1')]));
+
+	await expect(note2.commit({})).rejects.toThrow(
+		new OutOfStockError([{ isbn: '11111111', warehouseId: versionId('warehouse-1'), quantity: 4, available: 2 }])
+	);
+
+	// Add 2 more "11111111" books to the warehouse: This way we should have 4 available, which is enough to commit the note2
+	// Note: It's important that the this note doesn't contain more that 4 books as that test case would pass even if the
+	// db didn't account for all the books in the warehouse (only the latest note): This was an actual bug, producing this test case.
+	await wh1
+		.note()
+		.create()
+		.then((n) => n.addVolumes(['11111111', 2, versionId('warehouse-1')]))
+		.then((n) => n.commit({}));
+
+	// Current state of the warehouse is:
+	// "11111111": 4
+	// "12345678": 3
+
+	// It should commit without errors now
 	await note2.commit({});
 
-	// Crate and try to commit an outbound note
-	const note3 = await db.warehouse().note().create();
-	await note3.addVolumes(
-		['11111111', 2, versionId('warehouse-1')],
-		// Add more books than available
-		['12345678', 4, versionId('warehouse-1')]
-	);
-	// The db should throw an error if trying to commit, as the quantity (for "12345678") is greater than the available quantity
-	await expect(note3.commit({})).rejects.toThrow(
-		new OutOfStockError([{ isbn: '12345678', warehouseId: versionId('warehouse-1'), quantity: 4, available: 3 }])
-	);
+	// Current state of the warehouse is:
+	// "11111111": 0
+	// "12345678": 3
 
-	// Fix the quantity
-	await note3.updateTransaction({ isbn: '12345678', warehouseId: versionId('warehouse-1'), quantity: 3 });
+	// Test that outbond notes are also taken into account when checking for available quantities
+	expect(
+		db
+			.warehouse()
+			.note()
+			.create()
+			// There are no more "11111111" books available in the warehouse
+			.then((n) => n.addVolumes(['11111111', 1, versionId('warehouse-1')]))
+			.then((n) => n.commit({}))
+	).rejects.toThrow(new OutOfStockError([{ isbn: '11111111', warehouseId: versionId('warehouse-1'), quantity: 1, available: 0 }]));
 
 	// The validation error should be the same if warehouse not provided
-	await note3.addVolumes('11111111', 2);
-	await expect(note3.commit({})).rejects.toThrow(
-		new OutOfStockError([{ isbn: '11111111', warehouseId: '' as VersionedString, quantity: 2, available: 0 }])
-	);
+	await expect(
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.addVolumes('11111111', 2))
+			.then((n) => n.commit({}))
+	).rejects.toThrow(new OutOfStockError([{ isbn: '11111111', warehouseId: '' as VersionedString, quantity: 2, available: 0 }]));
 };

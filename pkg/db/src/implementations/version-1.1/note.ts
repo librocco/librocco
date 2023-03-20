@@ -280,7 +280,11 @@ class Note implements NoteInterface {
 	private async getStockPerIsbn(isbns: string[]): Promise<Record<string, number>[]> {
 		return Promise.all(
 			isbns.map(async (isbn) => {
-				const { rows } = await this.#db._pouch.query<number>('v1_stock/by_isbn', { startkey: [isbn], endkey: [isbn, {}] });
+				const { rows } = await this.#db._pouch.query<number>('v1_stock/by_isbn', {
+					startkey: [isbn],
+					endkey: [isbn, {}],
+					group_level: 2
+				});
 				return rows.reduce((acc, { key: [, warehouseId], value: quantity }) => ({ ...acc, [warehouseId]: quantity }), {});
 			})
 		);
