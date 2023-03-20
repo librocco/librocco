@@ -17,7 +17,7 @@
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test:test-runner": "echo 'Running unit tests on the test runner' && vitest test-runner",
-		"test:ci": "docker compose up -d && TEST_MODE=current FULL_TEST_SUPPORT=true vitest run main.test.ts; docker compose down",
+		"test:ci": "docker compose up -d && TEST_MODE=current FULL_TEST_SUPPORT=true vitest run main.test.ts; RESULT=$?; docker compose down; exit $?",
 		"test": "echo 'Running tests only for the current version' && export TEST_MODE=current-version && rushx test:with-docker",
 		"test:quicktest": "echo 'Running tests only for the current version' && export TEST_MODE=current-version && rushx test:no-docker",
 		"test:all-versions": "echo 'Running tests for all versions' && rushx test:with-docker",
