@@ -52,7 +52,9 @@ const warehouseDesignDocument: DesignDocument = {
 						// Check if we should be incrementing or decrementing the overall quantity
 						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
-						emit([entry.warehouseId || versionId(''), entry.isbn], delta);
+						// if the note is committed, warehouseId will definitely exist
+						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+						emit([entry.warehouseId!, entry.isbn], delta);
 					});
 				}
 			}.toString(),
