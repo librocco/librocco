@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, map, Observable, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from 'rxjs';
 
 import { debug } from "@librocco/shared";
 
@@ -7,9 +7,9 @@ import { DocType, NoteState } from "@/enums";
 import { NoteType, VolumeStock, VersionedString, PickPartial } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
-import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
-import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
+import { newDocumentStream } from '@/utils/pouchdb';
+import { OutOfStockError, TransactionWarehouseMismatchError } from '@/errors';
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -19,6 +19,7 @@ class Note implements NoteInterface {
 
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
+	#stream: Observable<NoteData>;
 
 	_id: VersionedString;
 	docType = DocType.Note;
@@ -54,28 +55,20 @@ class Note implements NoteInterface {
 			? id
 			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
 
-		// If this is a new note, no need to check for DB, it should't exist, and unique timestamp as id
-		// assures this id is not taken
-		if (!id) {
-			this.#initialized.next(true);
-			return this;
-		}
+		// Create the internal document stream, which will be used to update the local instance on each change in the db.
+		const cache = new ReplaySubject<NoteData>(1);
+		this.#stream = newDocumentStream<NoteData, NoteData>(this.#db._pouch, this._id).pipe(
+			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
+			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
+			// will get the 'initialValue' (repeated value from the latest stream).
+			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+		);
 
-		// If id provided, the note might or might not exist in the DB
-		// perform a check and update the instance accordingly
-		this.#db._pouch
-			.get<NoteData>(this._id)
-			// If note exists, populate the local instance with the data from db,
-			// set the "exists" flag to true and mark the instance as initialized
-			.then((res) => {
-				this.updateInstance(res);
-				this.#exists = true;
-				this.#initialized.next(true);
-			})
-			// If note doesn't exist, mark the instance as initialized ('exists' is false by default)
-			.catch(() => {
-				this.#initialized.next(true);
-			});
+		// The first value from the stream will be either note data, or an empty object (if the note doesn't exist in the db).
+		// This is enough to signal that the note intsance is initialised.
+		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
+		// If data is not empty (note exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
+		this.#stream.subscribe((w) => this.updateInstance(w));
 
 		return this;
 	}
@@ -94,7 +87,12 @@ class Note implements NoteInterface {
 	/**
 	 * Update instance is a method for internal usage, used to update the instance with the data (doesn't update the DB)
 	 */
-	private updateInstance(data: Partial<Omit<NoteData, "_id">>): NoteInterface {
+	private updateInstance(data: Partial<Omit<NoteData, '_id'>>): NoteInterface {
+		// No-op if the data is empty
+		if (isEmpty(data)) {
+			return this;
+		}
+
 		// Update the data with provided fields
 		this.updateField("_rev", data._rev);
 		this.updateField("noteType", data.noteType);
@@ -333,6 +331,7 @@ class Note implements NoteInterface {
 	}
 
 	/**
+<<<<<<< HEAD
 	 * Create stream is a convenience method for internal usage, leveraging `newDocumentStream` to create a
 	 * pouchdb changes stream for a specific property on a note, while abstracting away the details of the subscription
 	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
@@ -343,12 +342,15 @@ class Note implements NoteInterface {
 	}
 
 	/**
+=======
+>>>>>>> 25d6e8a (Make the note/warehouse interface always in sync with the db state:)
 	 * Creates streams for the note data. The streams are hot in a way that they will
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
 	 * initiated only when the stream is subscribed to (and canceled on unsubscribe).
 	 */
 	stream(ctx: debug.DebugCtx) {
 		return {
+<<<<<<< HEAD
 			displayName: this.createStream((doc) => {
 				return doc?.displayName || "";
 			}, ctx),
@@ -356,6 +358,17 @@ class Note implements NoteInterface {
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: combineLatest([
 				this.createStream((doc) => (doc?.entries || []).map((e) => ({ ...e, warehouseName: "" })).sort(sortBooks), ctx),
+=======
+			displayName: this.#stream.pipe(
+				tap(debug.log(ctx, 'note_streams: display_name: input')),
+				map(({ displayName }) => displayName || ''),
+				tap(debug.log(ctx, 'note_streams: display_name: res'))
+			),
+
+			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
+			entries: combineLatest([
+				this.#stream.pipe(map(({ entries }) => (entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks))),
+>>>>>>> 25d6e8a (Make the note/warehouse interface always in sync with the db state:)
 				this.#db.stream(ctx).warehouseList
 			]).pipe(
 				tap(debug.log(ctx, "note:entries:stream:input")),
@@ -367,14 +380,17 @@ class Note implements NoteInterface {
 				tap(debug.log(ctx, "note:entries:stream:output"))
 			),
 
-			/** @TODO update the data model to have 'state' */
-			state: this.createStream((doc) => (doc?.committed ? NoteState.Committed : NoteState.Draft), ctx),
+			state: this.#stream.pipe(
+				tap(debug.log(ctx, 'note_streams: state: input')),
+				map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft)),
+				tap(debug.log(ctx, 'note_streams: state: res'))
+			),
 
-			updatedAt: this.createStream((doc) => {
-				// The date gets serialized as a string in the db, so we need to convert it back to a date object (if defined)
-				const ua = doc?.updatedAt;
-				return ua ? new Date(ua) : null;
-			}, ctx)
+			updatedAt: this.#stream.pipe(
+				tap(debug.log(ctx, 'note_streams: updated_at: input')),
+				map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
+				tap(debug.log(ctx, 'note_streams: updated_at: res'))
+			)
 		};
 	}
 }
