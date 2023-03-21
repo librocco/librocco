@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { DesignDocument } from '@/types';
-import { versionId } from '@/utils/misc';
 import { WarehouseData, NoteData } from './types';
 
 const sequenceNamingDesignDocument: DesignDocument = {
@@ -53,8 +52,7 @@ const warehouseDesignDocument: DesignDocument = {
 						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
 						// if the note is committed, warehouseId will definitely exist
-						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-						emit([entry.warehouseId!, entry.isbn], delta);
+						emit([entry.warehouseId, entry.isbn], delta);
 					});
 				}
 			}.toString(),

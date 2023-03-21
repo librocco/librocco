@@ -35,7 +35,7 @@ export type DesignDocument = {
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
-	warehouseId?: string;
+	warehouseId: string;
 }
 
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
@@ -101,13 +101,12 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
-	addVolumes: (...params: VolumeStock[]) => Promise<NoteInterface<A>>;
-	/** Explicitly update an existing transaction row.
+	addVolumes: (...params: PickPartial<VolumeStock, 'warehouseId'>[]) => Promise<NoteInterface<A>>;
+	/**
+	 * Explicitly update an existing transaction row.
 	 * the transaction is matched with both isbn and warehouseId.
-	 * If entry with the same isbn previously has no warehouseId and
-	 * a warehouseId was provided, the empty warehouseId will be overwritten
 	 */
-	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
+	updateTransaction: (transaction: PickPartial<VolumeStock, 'warehouseId'>) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**
