@@ -4,7 +4,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType, NoteState } from '@/enums';
 
-import { NoteType, VolumeStock, VersionedString } from '@/types';
+import { NoteType, VolumeStock, VersionedString, PickPartial } from '@/types';
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from './types';
 
 import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
@@ -211,15 +211,14 @@ class Note implements NoteInterface {
 	}
 
 	/**
-	 * Add volumes accepts an object or multiple objects of VolumeStockOptionalWarehouse updates (isbn, quantity, warehouse?) for
+	 * Add volumes accepts an object or multiple objects of VolumeStock updates (isbn, quantity, warehouseId?) for
 	 * book quantities. If a volume with a given isbn is found, the quantity is aggregated, otherwise a new
 	 * entry is pushed to the list of entries.
 	 */
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
-				const warehouseId = versionId(update.warehouseId || '');
-
+				const warehouseId = this.noteType === 'inbound' ? this.#w._id : update.warehouseId ? versionId(update.warehouseId) : '';
 				const matchIndex = this.entries.findIndex(
 					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
 				);
@@ -240,18 +239,19 @@ class Note implements NoteInterface {
 		}, this.#initialized);
 	}
 
-	updateTransaction(transaction: VolumeStock): Promise<NoteInterface> {
+	updateTransaction(transaction: PickPartial<VolumeStock, 'warehouseId'>): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
+
+		const versionedTransaction = { ...transaction, warehouseId: transaction.warehouseId ? versionId(transaction.warehouseId) : '' };
 		// handle edge case where we have multiple books with the same isbn, but belonging to different warehouses
 		// match isbn only in case entry has no whId but transaction does (not undefined or empty string)
 		const i = entries.findIndex(
 			({ isbn, warehouseId }) =>
-				isbn === transaction.isbn &&
-				(warehouseId === versionId(transaction.warehouseId || '') || (warehouseId === versionId('') && transaction.warehouseId))
+				isbn === versionedTransaction.isbn &&
+				(warehouseId === versionedTransaction.warehouseId || (!warehouseId && transaction.warehouseId))
 		);
 
-		const versionedTransaction = { ...transaction, warehouseId: versionId(transaction.warehouseId || '') };
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
 			entries[i] = versionedTransaction;
@@ -267,9 +267,6 @@ class Note implements NoteInterface {
 	 * when calculating the stock of the warehouse.
 	 */
 	commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
-		if (this.entries.findIndex((entry) => entry.warehouseId === versionId('')) !== -1)
-			throw new Error('Cannot commit a note with empty warehouseId entries');
-
 		debug.log(ctx, 'note:commit')({});
 		return this.update({ committed: true }, ctx);
 	}
@@ -306,8 +303,7 @@ class Note implements NoteInterface {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
 					// warehouseId always has a fallback value
-					// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId!] || 'not-found' }));
+					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
 				}),
 				tap(debug.log(ctx, 'note:entries:stream:output'))
 			),

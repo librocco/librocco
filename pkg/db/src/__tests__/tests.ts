@@ -6,11 +6,10 @@ import { testUtils } from '@librocco/shared';
 
 import { NoteState } from '@/enums';
 
-import { BookEntry, InNoteList, NavListEntry, NoteInterface, VolumeStock, VolumeStockClient } from '@/types';
+import { BookEntry, InNoteList, NavListEntry, VolumeStock, VolumeStockClient } from '@/types';
 import { TestFunction } from '@/test-runner/types';
 
 import { versionId } from '@/utils/misc';
-import { NoteData } from '@/implementations/version-1.1/types';
 
 const { waitFor } = testUtils;
 
@@ -126,7 +125,7 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 
 	// Check for entries stream
 	expect(entries).toEqual([]);
-	await note.addVolumes({ isbn: '0123456789', quantity: 2, warehouseId: 'test-warehouse' });
+	await note.addVolumes({ isbn: '0123456789', quantity: 2 });
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: '0123456789', quantity: 2, warehouseId: versionId('test-warehouse'), warehouseName: 'New Warehouse' }
@@ -175,7 +174,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Adding books to warehouse 1 should display changes in warehouse 1 and default warehouse stock streams
 	const note1 = warehouse1.note();
-	await note1.addVolumes({ isbn: '0123456789', quantity: 3, warehouseId: 'warehouse-1' });
+	await note1.addVolumes({ isbn: '0123456789', quantity: 3 });
 	await note1.commit({});
 
 	await waitFor(() => {
@@ -190,7 +189,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 
 	// Adding books to warehouse 2 should display changes in warehouse 2 and aggregate the stock of both warehouses in the default warehouse stock stream
 	const note2 = warehouse2.note();
-	await note2.addVolumes({ isbn: '0123456789', quantity: 3, warehouseId: 'warehouse-2' });
+	await note2.addVolumes({ isbn: '0123456789', quantity: 3 });
 	await note2.commit({});
 
 	await waitFor(() => {
@@ -601,54 +600,22 @@ export const booksInterface: TestFunction = async (db) => {
 export const updateTransaction: TestFunction = async (db) => {
 	const entry1 = { isbn: '12345678', warehouseId: 'warehouse-1', quantity: 2 };
 	const entry2 = { isbn: '12345678', warehouseId: 'warehouse-2', quantity: 1 };
-	const note1 = await db.warehouse('warehouse-1').note().create();
-	await note1.addVolumes(entry1);
-	const note2 = await db.warehouse('warehouse-2').note().create();
-	await note2.addVolumes(entry2);
-
-	await note1.updateTransaction({ ...entry1, quantity: 5 });
-
-	await note2.updateTransaction({ ...entry2, quantity: 9 });
-
-	const note1FromDb = (await note1.get()) as NoteInterface<NoteData>;
-	const note2FromDb = (await note2.get()) as NoteInterface<NoteData>;
-
-	expect(note1FromDb.entries).toEqual([{ ...entry1, quantity: 5, warehouseId: versionId('warehouse-1') }]);
-	expect(note2FromDb.entries).toEqual([{ ...entry2, quantity: 9, warehouseId: versionId('warehouse-2') }]);
-};
-
-export const addVolumes: TestFunction = async (db) => {
-	// add volumes w/o whId
-	const entry1 = { isbn: '12345678', warehouseId: 'warehouse-1', quantity: 2 };
-	const entry2 = { isbn: '87654321', quantity: 2 };
-
-	const note1 = await db.warehouse('warehouse-1').note().create();
+	const note1 = await db.warehouse().note().create();
 	await note1.addVolumes(entry1, entry2);
 
-	//check entries are in note
-	const note1FromDb = (await note1.get()) as NoteInterface<NoteData>;
+	await note1.updateTransaction({ ...entry1, quantity: 5, warehouseId: 'warehouse-1' });
 
-	expect(note1FromDb.entries).toEqual([
-		{ ...entry1, warehouseId: versionId('warehouse-1') },
-		{ ...entry2, warehouseId: versionId('') }
-	]);
+	await note1.updateTransaction({ ...entry2, quantity: 9, warehouseId: 'warehouse-2' });
 
-	// try to commit note and fail
+	const { entries: e$ } = note1.stream({});
 
-	expect(() => note1.commit({})).toThrow();
-
-	// update warehouseid in transaction
-	await note1.updateTransaction({ ...entry2, warehouseId: 'warehouse-2' });
-	note1.commit({});
-
-	const updatedNote1FromDb = (await note1.get()) as NoteInterface<NoteData>;
-
-	expect(updatedNote1FromDb.entries).toEqual([
-		{ ...entry1, warehouseId: versionId('warehouse-1') },
-		{ ...entry2, warehouseId: versionId('warehouse-2') }
-	]);
+	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	e$.subscribe((e) => (entries = e));
 
 	await waitFor(() => {
-		expect(updatedNote1FromDb.committed).toBeTruthy();
+		expect(entries).toEqual([
+			{ ...entry1, quantity: 5, warehouseId: versionId('warehouse-1'), warehouseName: 'not-found' },
+			{ ...entry2, quantity: 9, warehouseId: versionId('warehouse-2'), warehouseName: 'not-found' }
+		]);
 	});
 };
