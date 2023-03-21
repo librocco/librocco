@@ -17,7 +17,7 @@ export type NoteData = ND<AdditionalData>;
 export type NoteInterface = NI<AdditionalData>;
 
 /** Warehouse data (extended with additional fields) for internal implementation usage. */
-export type WarehouseData = WD<AdditionalData>;
-export type WarehouseInterface = WI<NoteInterface, AdditionalData>;
+export type WarehouseData = WD;
+export type WarehouseInterface = WI<NoteInterface>;
 
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface>;
