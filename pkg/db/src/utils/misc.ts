@@ -2,7 +2,7 @@ import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription
 
 import { VersionedString, VolumeStock } from '../types';
 
-export const sortBooks = ({ isbn: i1, warehouseId: w1 = '' }: VolumeStock, { isbn: i2, warehouseId: w2 = '' }: VolumeStock) =>
+export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
 	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
 
 /** Replaces JS friendly version name ('version_1_1') with a human friendly version name ('version 1.1') */
