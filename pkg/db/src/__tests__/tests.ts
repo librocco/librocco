@@ -874,3 +874,46 @@ export const dbGuards: TestFunction = async (db) => {
 			.then((n) => n.commit({}))
 	).rejects.toThrow(new OutOfStockError([{ isbn: "11111111", warehouseId: "" as VersionedString, quantity: 2, available: 0 }]));
 };
+
+export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) => {
+	// NoteInterface should always be able to update (_rev should be in sync)
+
+	// Create and displayName "store" for the note
+	let ndn: PossiblyEmpty<string> = EMPTY;
+
+	const note = await db.warehouse().note('note-1').create();
+	note.stream({}).displayName.subscribe((dn$) => (ndn = dn$));
+
+	// Set the initial name for the note
+	note.setName('Note name', {});
+	await waitFor(() => {
+		expect(ndn).toEqual('Note name');
+	});
+
+	// Update the name from a different instance, simulating an outside update
+	await db.warehouse().note('note-1').setName('Note name updated', {});
+	await waitFor(() => {
+		expect(ndn).toEqual('Note name updated');
+	});
+
+	// Original instance should also be able to update the name (should have the correct _rev)
+	note.setName('Note name updated again', {});
+	await waitFor(() => {
+		expect(ndn).toEqual('Note name updated again');
+	});
+
+	// The note interface should be in sync with the db
+	// We test this by instantianting a new note interface for the same note and checking equality after updates
+	const noteInst2 = db.warehouse().note('note-1');
+	await noteInst2.addVolumes({ isbn: '11111111', quantity: 2, warehouseId: versionId('warehouse-1') });
+
+	await waitFor(() => expect(note).toEqual(noteInst2));
+
+	// Test the same behaviour for the warehouse interface
+	const wInst1 = db.warehouse('warehosue-1');
+	const wInst2 = db.warehouse('warehosue-1');
+
+	await wInst2.setName("Warehouse 1's name", {});
+
+	await waitFor(() => expect(wInst1).toEqual(wInst2));
+};
