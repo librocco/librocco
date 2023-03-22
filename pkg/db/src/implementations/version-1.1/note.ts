@@ -261,6 +261,20 @@ class Note implements NoteInterface {
 		return this.update({ entries }, {});
 	}
 
+	removeTransactions(...transactions: Omit<VolumeStock, 'quantity'>[]): Promise<NoteInterface> {
+		const removeTransaction = (transaction: Omit<VolumeStock, 'quantity'>) => {
+			// If this is an inbound note, we infer the warehouse id from the note itself.
+			// If this is an outbound note, we read the transaction's warehouse id, or falling back to an empty string (warhehouse not assigned).
+			const wh = this.noteType === 'inbound' ? this.#w._id : transaction.warehouseId ? versionId(transaction.warehouseId) : '';
+
+			this.entries = this.entries.filter(({ isbn, warehouseId }) => isbn !== transaction.isbn || warehouseId !== wh);
+		};
+
+		transactions.forEach(removeTransaction);
+
+		return this.update(this, {});
+	}
+
 	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
