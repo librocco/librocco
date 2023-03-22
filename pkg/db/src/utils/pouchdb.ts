@@ -217,12 +217,12 @@ export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
 			.on('denied', (error) => {
 				// boo, something went wrong!
 				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
-				reject();
+				reject(error);
 			})
 			.on('error', (error) => {
 				// boo, something went wrong!
 				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
-				reject();
+				reject(error);
 			});
 	});
 
