@@ -109,7 +109,7 @@ class Database implements DatabaseInterface {
 		return {
 			warehouseList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
-				'list/warehouses',
+				'v1_list/warehouses',
 				{},
 				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
 				ctx
@@ -117,7 +117,7 @@ class Database implements DatabaseInterface {
 
 			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
-				'list/outbound',
+				'v1_list/outbound',
 				{},
 				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
 				ctx
@@ -125,7 +125,7 @@ class Database implements DatabaseInterface {
 
 			inNoteList: newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string } } }, InNoteList>(
 				this._pouch,
-				'list/inbound',
+				'v1_list/inbound',
 				{},
 				({ rows }) =>
 					rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
