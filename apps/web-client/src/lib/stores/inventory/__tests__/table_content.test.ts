@@ -72,7 +72,7 @@ describe('tableContentStore', () => {
 		const note = await db.warehouse().note('note-1').create();
 		await Promise.all([
 			// Only the transaction for book1 is present
-			note.addVolumes([book1.isbn, 12, `v1/jazz`]),
+			note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: 'jazz' }),
 			// Both books are present in the db
 			db.books().upsert([book1, book2])
 		]);
@@ -89,7 +89,10 @@ describe('tableContentStore', () => {
 		);
 
 		// Update the note (add additional transactions)
-		await note.addVolumes([book2.isbn, 10, `v1/jazz`], [book3.isbn, 5, `v1/jazz`]);
+		await note.addVolumes(
+			{ isbn: book2.isbn, quantity: 10, warehouseId: 'jazz' },
+			{ isbn: book3.isbn, quantity: 5, warehouseId: 'jazz' }
+		);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
 				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: 'not-found' },
