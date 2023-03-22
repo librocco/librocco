@@ -219,7 +219,7 @@ class Note implements NoteInterface {
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
-				const warehouseId = this.noteType === 'inbound' ? this.#w._id : update.warehouseId ? versionId(update.warehouseId) : '';
+				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === 'inbound' ? this.#w._id : '';
 
 				const matchIndex = this.entries.findIndex(
 					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
@@ -248,7 +248,7 @@ class Note implements NoteInterface {
 		const transaction = {
 			isbn,
 			quantity,
-			warehouseId: this.noteType === 'inbound' ? this.#w._id : warehouseId ? versionId(warehouseId) : ''
+			warehouseId: warehouseId ? versionId(warehouseId) : this.noteType === 'inbound' ? this.#w._id : ''
 		};
 
 		const i = entries.findIndex((e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId);
@@ -267,7 +267,7 @@ class Note implements NoteInterface {
 		const removeTransaction = (transaction: Omit<VolumeStock, 'quantity'>) => {
 			// If this is an inbound note, we infer the warehouse id from the note itself.
 			// If this is an outbound note, we read the transaction's warehouse id, or falling back to an empty string (warhehouse not assigned).
-			const wh = this.noteType === 'inbound' ? this.#w._id : transaction.warehouseId ? versionId(transaction.warehouseId) : '';
+			const wh = transaction.warehouseId ? versionId(transaction.warehouseId) : this.noteType === 'inbound' ? this.#w._id : '';
 
 			this.entries = this.entries.filter(({ isbn, warehouseId }) => isbn !== transaction.isbn || warehouseId !== wh);
 		};
