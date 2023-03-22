@@ -124,7 +124,7 @@ class Note implements NoteInterface {
 
 			const updatedAt = new Date().toISOString();
 
-			const sequentialNumber = (await this.#db._pouch.query('sequence/note')).rows[0];
+			const sequentialNumber = (await this.#db._pouch.query('v1_sequence/note')).rows[0];
 			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : '';
 
 			const initialValues = { ...this, displayName: `New Note${seqIndex}`, updatedAt };
