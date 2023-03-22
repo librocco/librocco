@@ -90,17 +90,28 @@ export const listDeisgnDocument: DesignDocument = {
 		},
 		outbound: {
 			map: function (doc: NoteData | WarehouseData) {
-				if (doc.docType === 'note' && (doc as NoteData).noteType === 'outbound') {
-					emit(doc._id, { displayName: doc.displayName });
+				if (doc.docType !== 'note' || (doc as NoteData).noteType !== 'outbound') {
+					return;
 				}
+
+				const note = doc as NoteData;
+
+				emit(doc._id, { displayName: doc.displayName, committed: note.committed });
 			}.toString()
 		},
 		inbound: {
 			map: function (doc: NoteData | WarehouseData) {
-				// Emit warehouse and inbound note documents
-				if (doc.docType === 'warehouse' || (doc.docType === 'note' && (doc as NoteData).noteType === 'inbound')) {
+				if (doc.docType === 'warehouse') {
 					emit(doc._id, { type: doc.docType, displayName: doc.displayName });
+					return;
 				}
+
+				const note = doc as NoteData;
+				if (note.docType !== 'note' || note.noteType !== 'inbound') {
+					return;
+				}
+
+				emit(doc._id, { type: doc.docType, displayName: doc.displayName, committed: note.committed });
 			}.toString()
 		}
 	}

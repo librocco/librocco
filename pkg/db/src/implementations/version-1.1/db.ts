@@ -13,6 +13,7 @@ import { newWarehouse } from './warehouse';
 
 import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
 import { newBooksInterface } from './books';
+import { replicationError } from './misc';
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -50,11 +51,20 @@ class Database implements DatabaseInterface {
 		const replication = (async () => {
 			if (params && params.remoteDb) {
 				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
-				// Pull data from the remote db (if provided)
-				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
-				debug.log(ctx, 'init_db:replication:initial_replication_done')({});
-				// Start live sync between local and remote db
-				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+
+				// We're wrapping the replication in a try/catch block to prevent the app from crashing
+				// if the remote db is not available.
+				try {
+					// Pull data from the remote db (if provided)
+					await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+					debug.log(ctx, 'init_db:replication:initial_replication_done')({});
+					// Start live sync between local and remote db
+					replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+				} catch (err) {
+					// If remote db is not available, log the error and continue.
+					console.error(err);
+					console.error(replicationError);
+				}
 			} else {
 				debug.log(ctx, 'init_db:replication:skipped')({});
 			}
@@ -115,22 +125,31 @@ class Database implements DatabaseInterface {
 				ctx
 			),
 
-			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
+			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string; committed?: boolean } } }, NavListEntry[]>(
 				this._pouch,
 				'v1_list/outbound',
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				({ rows }) =>
+					rows
+						.filter(({ value: { committed } }) => !committed)
+						.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
 				ctx
 			),
 
-			inNoteList: newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string } } }, InNoteList>(
+			inNoteList: newViewStream<
+				{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } },
+				InNoteList
+			>(
 				this._pouch,
 				'v1_list/inbound',
 				{},
 				({ rows }) =>
-					rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
+					rows.reduce((acc, { key, value: { type, displayName = '', committed } }) => {
 						if (type === 'warehouse') {
 							return [...acc, { id: key, displayName, notes: [] }];
+						}
+						if (committed) {
+							return acc;
 						}
 						// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
 						acc[0].notes.push({ id: key, displayName });
