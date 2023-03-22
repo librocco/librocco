@@ -51,7 +51,6 @@ const warehouseDesignDocument: DesignDocument = {
 						// Check if we should be incrementing or decrementing the overall quantity
 						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
-						// if the note is committed, warehouseId will definitely exist
 						emit([entry.warehouseId, entry.isbn], delta);
 					});
 				}
