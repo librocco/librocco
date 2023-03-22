@@ -4,7 +4,7 @@ import { debug } from '@librocco/shared';
 
 import { DocType, NoteState } from '@/enums';
 
-import { NoteType, VolumeStock, VolumeTransactionTuple, VersionedString } from '@/types';
+import { NoteType, VolumeStock, VersionedString, PickPartial } from '@/types';
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from './types';
 
 import { isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
@@ -211,46 +211,46 @@ class Note implements NoteInterface {
 	}
 
 	/**
-	 * Add volumes accepts a tuple update (isbn, quantity, warehouse) or an array of tuples (updates) for
+	 * Add volumes accepts an object or multiple objects of VolumeStock updates (isbn, quantity, warehouseId?) for
 	 * book quantities. If a volume with a given isbn is found, the quantity is aggregated, otherwise a new
 	 * entry is pushed to the list of entries.
 	 */
 	addVolumes(...params: Parameters<NoteInterface['addVolumes']>): Promise<NoteInterface> {
-		// A check to see if the update function should be ran once or multiple times
-		const isTuple = (params: Parameters<NoteInterface['addVolumes']>): params is VolumeTransactionTuple => {
-			return !Array.isArray(params[0]);
-		};
-
 		return runAfterCondition(async () => {
-			const updateQuantity = (isbn: string, quantity: number, warehouseId = this.#w._id) => {
-				const matchIndex = this.entries.findIndex((entry) => entry.isbn === isbn && entry.warehouseId === warehouseId);
+			params.forEach((update) => {
+				const warehouseId = this.noteType === 'inbound' ? this.#w._id : update.warehouseId ? versionId(update.warehouseId) : '';
+				const matchIndex = this.entries.findIndex(
+					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
+				);
 
 				if (matchIndex === -1) {
-					this.entries.push({ isbn, warehouseId, quantity });
+					this.entries.push({ isbn: update.isbn, warehouseId, quantity: update.quantity });
 					return;
 				}
 
 				this.entries[matchIndex] = {
-					isbn,
+					isbn: update.isbn,
 					warehouseId,
-					quantity: this.entries[matchIndex].quantity + quantity
+					quantity: this.entries[matchIndex].quantity + update.quantity
 				};
-			};
-
-			if (isTuple(params)) {
-				updateQuantity(params[0], params[1], params[2]);
-			} else {
-				params.forEach((update) => updateQuantity(update[0], update[1], update[2]));
-			}
+			});
 
 			return this.update(this, {});
 		}, this.#initialized);
 	}
 
-	updateTransaction(transaction: VolumeStock): Promise<NoteInterface> {
+	updateTransaction({ isbn, quantity, warehouseId }: PickPartial<VolumeStock, 'warehouseId'>): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
-		const i = entries.findIndex(({ isbn }) => isbn === transaction.isbn);
+
+		const transaction = {
+			isbn,
+			quantity,
+			warehouseId: this.noteType === 'inbound' ? this.#w._id : warehouseId ? versionId(warehouseId) : ''
+		};
+
+		const i = entries.findIndex((e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId);
+
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
 			entries[i] = transaction;

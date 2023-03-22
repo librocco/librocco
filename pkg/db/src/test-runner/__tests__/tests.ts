@@ -3,7 +3,7 @@ import { expect } from 'vitest';
 
 import { testUtils } from '@librocco/shared';
 
-import { DesignDocument, CouchDocument, VolumeStock, VolumeTransactionTuple, WarehouseInterface } from '@/types';
+import { DesignDocument, CouchDocument, VolumeStock, WarehouseInterface } from '@/types';
 import { TestFunction } from '../types';
 
 const { waitFor } = testUtils;
@@ -38,7 +38,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 		const warehouse = note.type === 'inbound' ? db.warehouse(note.books[0].warehouseId) : db.warehouse();
 
 		const n = await warehouse.note().create();
-		await n.addVolumes(...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple));
+		await n.addVolumes(...note.books);
 		await n.commit({});
 
 		const assertionTuples = [

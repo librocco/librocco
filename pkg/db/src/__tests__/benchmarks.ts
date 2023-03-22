@@ -1,8 +1,6 @@
 import { expect } from 'vitest';
 import { firstValueFrom } from 'rxjs';
 
-import { VolumeTransactionTuple } from '@/types';
-
 import { TestFunction } from '@test-runner/types';
 
 export const commit20Notes: TestFunction = async (db, version, getNotesAndWarehouses) => {
@@ -22,11 +20,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 	const noteUpdates = notes.map((note) =>
 		(note.type === 'inbound' ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
 			.then((w) => w.note().create())
-			.then((n) =>
-				n.addVolumes(
-					...note.books.map(({ isbn, quantity, warehouseId }) => [isbn, quantity, warehouseId] as VolumeTransactionTuple)
-				)
-			)
+			.then((n) => n.addVolumes(...note.books))
 			.then((n) => n.commit({}))
 	);
 	await Promise.all(noteUpdates);

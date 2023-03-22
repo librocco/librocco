@@ -35,7 +35,7 @@ export type DesignDocument = {
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
-	warehouseId: VersionedString;
+	warehouseId: string;
 }
 
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
@@ -84,11 +84,6 @@ export interface NoteStream {
 }
 
 /**
- * A tuple used as param(s) for adding volumes to a note: [isbn, quantity, warehouse?]
- */
-export type VolumeTransactionTuple = [string, number, VersionedString] | [string, number];
-
-/**
  * A standardized interface (interface of methods) for a note.
  * Different implementations might vary, but should always extend this interface.
  */
@@ -103,12 +98,15 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	/** Set name updates the `displayName` of the note. */
 	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**
-	 * Add volumes accepts an array of volume stock transactions and adds them to the note.
-	 * If any transactions (for a given isbn/warehouse) already exist, the quantity gets aggregated.
+	 * Add volumes accepts an array of volume stock entries and adds them to the note.
+	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
-	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
-	/** Explicitly update an existing transaction row. */
-	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
+	addVolumes: (...params: PickPartial<VolumeStock, 'warehouseId'>[]) => Promise<NoteInterface<A>>;
+	/**
+	 * Explicitly update an existing transaction row.
+	 * the transaction is matched with both isbn and warehouseId.
+	 */
+	updateTransaction: (transaction: PickPartial<VolumeStock, 'warehouseId'>) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**
