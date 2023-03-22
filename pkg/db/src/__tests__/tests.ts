@@ -97,7 +97,7 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	const [wh1, wh2] = await Promise.all([db.warehouse('wh1').create(), db.warehouse('wh2').create()]);
 	await Promise.all([wh1.setName('Warehouse 1', {}), wh2.setName('Warehouse 2', {})]);
 
-	// We're testing against an outbound note as it lets us test agains more robust functionality (different warehouses and such)
+	// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
 	const note = await db.warehouse().note().create();
 
 	// Subscribe to entries to receive updates
@@ -140,16 +140,26 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.updateTransaction({ isbn: '11111111', quantity: 3, warehouseId: wh1._id });
+	// Update transaction should not overwrite the existing warehouseId if it's empty
+	await note.updateTransaction({ isbn: '0123456789', quantity: 3 });
+
+	// Update transaction should overwrite the existing warehouseId
+	await note.updateTransaction({ isbn: '0123456789', quantity: 4, warehouseId: wh2._id });
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
+			{ isbn: '0123456789', quantity: 4, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
 			{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
 			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
 		]);
 	});
 
 	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
-	await note.removeTransactions({ isbn: '0123456789', warehouseId: 'wh1' }, { isbn: '11111111', warehouseId: 'wh2' });
+	await note.removeTransactions(
+		{ isbn: '0123456789', warehouseId: 'wh2' },
+		{ isbn: '11111111', warehouseId: 'wh2' },
+		{ isbn: '0123456789', warehouseId: '' }
+	);
 	await waitFor(() => {
 		expect(entries).toEqual([{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' }]);
 	});
