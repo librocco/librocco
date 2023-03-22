@@ -38,10 +38,10 @@ const sequenceNamingDesignDocument: DesignDocument = {
 	}
 };
 
-const warehouseDesignDocument: DesignDocument = {
-	_id: '_design/v1_warehouse',
+const stockDesignDocument: DesignDocument = {
+	_id: '_design/v1_stock',
 	views: {
-		stock: {
+		by_warehouse: {
 			map: function (doc: WarehouseData | NoteData) {
 				const { entries, committed } = doc as NoteData;
 
@@ -52,6 +52,22 @@ const warehouseDesignDocument: DesignDocument = {
 						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
 
 						emit([entry.warehouseId, entry.isbn], delta);
+					});
+				}
+			}.toString(),
+			reduce: '_sum'
+		},
+		by_isbn: {
+			map: function (doc: WarehouseData | NoteData) {
+				const { entries, committed } = doc as NoteData;
+
+				// Account for book transactions only if the note is committed
+				if (doc.docType === 'note' && entries && committed) {
+					entries.forEach((entry) => {
+						// Check if we should be incrementing or decrementing the overall quantity
+						const delta = (doc as NoteData).noteType === 'inbound' ? entry.quantity : -entry.quantity;
+
+						emit([entry.isbn, entry.warehouseId], delta);
 					});
 				}
 			}.toString(),
@@ -117,4 +133,4 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export default [warehouseDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
+export default [stockDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
