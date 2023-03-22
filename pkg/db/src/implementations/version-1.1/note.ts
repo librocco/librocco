@@ -251,7 +251,16 @@ class Note implements NoteInterface {
 			warehouseId: warehouseId ? versionId(warehouseId) : this.noteType === 'inbound' ? this.#w._id : ''
 		};
 
-		const i = entries.findIndex((e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId);
+		// inbound => matches both : match
+		// inbound => matches isbn only : no match
+
+		// outbound => matches both : match
+		// outbound => matches isbn only and a warehouseId is provided: match
+
+		const i = entries.findIndex(
+			(e) =>
+				e.isbn === transaction.isbn && (e.warehouseId === transaction.warehouseId || (warehouseId && this.noteType === 'outbound'))
+		);
 
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
