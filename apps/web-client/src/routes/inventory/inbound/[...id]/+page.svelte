@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -29,7 +30,6 @@
 
 	import { generateUpdatedAtString } from '$lib/utils/time';
 	import { readableFromStream } from '$lib/utils/streams';
-	import { get } from 'svelte/store';
 
 	export let data: PageData;
 
@@ -40,6 +40,17 @@
 
 	const inNoteListCtx = { name: '[IN_NOTE_LIST]', debug: false };
 	const inNoteList = readableFromStream(db?.stream(inNoteListCtx).inNoteList, [], inNoteListCtx);
+
+	/**
+	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse
+	 * the new inbound note should be added to.
+	 * _(The handler navigates to the newly created note page after the note has been created)_.
+	 */
+	const handleCreateNote = (warehousId: string) => async () => {
+		const note = db.warehouse(warehousId).note();
+		await note.create();
+		goto(`/inventory/inbound/${note._id}`);
+	};
 
 	$: note = data.note;
 	$: warehouse = data.warehouse;
@@ -72,7 +83,7 @@
 				}))}
 			>
 				<svelte:fragment slot="actions">
-					<NewEntitySideNavButton label="Create note" />
+					<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
 				</svelte:fragment>
 			</SidebarItemGroup>
 		{/each}
