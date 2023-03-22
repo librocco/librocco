@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	import {
 		InventoryPage,
@@ -40,6 +41,16 @@
 	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
 	const outNoteList = readableFromStream(db?.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateNote = async () => {
+		const note = db.warehouse().note();
+		await note.create();
+		goto(`/inventory/outbound/${note._id}`);
+	};
+
 	$: note = data.note;
 
 	$: noteStores = createNoteStores(note);
@@ -62,7 +73,7 @@
 			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
-			<NewEntitySideNavButton label="Create note" />
+			<NewEntitySideNavButton label="Create note" on:click={handleCreateNote} />
 		</svelte:fragment>
 	</SideBarNav>
 
