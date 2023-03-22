@@ -234,7 +234,7 @@ class Warehouse implements WarehouseInterface {
 			entries: combineLatest([
 				newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
 					this.#db._pouch,
-					'v1_warehouse/stock',
+					'v1_stock/by_warehouse',
 					{
 						group_level: 2,
 						...(this._id !== versionId('0-all') && {
