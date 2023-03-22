@@ -239,24 +239,23 @@ class Note implements NoteInterface {
 		}, this.#initialized);
 	}
 
-	updateTransaction(transaction: PickPartial<VolumeStock, 'warehouseId'>): Promise<NoteInterface> {
+	updateTransaction({ isbn, quantity, warehouseId }: PickPartial<VolumeStock, 'warehouseId'>): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
 
-		const versionedTransaction = { ...transaction, warehouseId: transaction.warehouseId ? versionId(transaction.warehouseId) : '' };
-		// handle edge case where we have multiple books with the same isbn, but belonging to different warehouses
-		// match isbn only in case entry has no whId but transaction does (not undefined or empty string)
-		const i = entries.findIndex(
-			({ isbn, warehouseId }) =>
-				isbn === versionedTransaction.isbn &&
-				(warehouseId === versionedTransaction.warehouseId || (!warehouseId && transaction.warehouseId))
-		);
+		const transaction = {
+			isbn,
+			quantity,
+			warehouseId: this.noteType === 'inbound' ? this.#w._id : warehouseId ? versionId(warehouseId) : ''
+		};
+
+		const i = entries.findIndex((e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId);
 
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
-			entries[i] = versionedTransaction;
+			entries[i] = transaction;
 		} else {
-			entries.push(versionedTransaction);
+			entries.push(transaction);
 		}
 		// Post an update, the local entries will be updated by the update function.
 		return this.update({ entries }, {});
@@ -302,7 +301,6 @@ class Note implements NoteInterface {
 				map(([entries, warehouses]) => {
 					// Create a record of warehouse ids and names for easy lookup
 					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-					// warehouseId always has a fallback value
 					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || 'not-found' }));
 				}),
 				tap(debug.log(ctx, 'note:entries:stream:output'))
