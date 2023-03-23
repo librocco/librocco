@@ -1,25 +1,8 @@
-const path = require('path');
-const { useTSConfig } = require('../scaffold/.eslint.utils.js');
+const path = require("path");
 
-module.exports = useTSConfig(
-	{
-		root: true,
-		parser: '@typescript-eslint/parser',
-		extends: ['eslint:recommended', 'plugin:@typescript-eslint/recommended', 'prettier'],
-		plugins: ['@typescript-eslint'],
-		ignorePatterns: ['*.cjs'],
-		settings: {
-			'import/resolver': {}
-		},
-		parserOptions: {
-			sourceType: 'module',
-			ecmaVersion: 2020
-		},
-		env: {
-			browser: true,
-			es2017: true,
-			node: true
-		}
-	},
-	[path.join(__dirname, 'tsconfig.json')]
-);
+const { useTSConfig } = require("../scaffold/.eslint.utils.js");
+const scaffoldConfig = require("../scaffold/.eslintrc.cjs");
+
+const tsPaths = [path.join(__dirname, "./tsconfig.json")];
+
+module.exports = useTSConfig(scaffoldConfig, tsPaths);

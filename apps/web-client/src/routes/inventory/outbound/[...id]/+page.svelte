@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { Search } from "lucide-svelte";
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
 
 	import {
 		InventoryPage,
@@ -17,20 +17,20 @@
 		SideBarNav,
 		SidebarItem,
 		NewEntitySideNavButton
-	} from '@librocco/ui';
+	} from "@librocco/ui";
 
-	import { noteStates, NoteTempState } from '$lib/enums/inventory';
-	import { NoteState } from '$lib/enums/db';
+	import { noteStates, NoteTempState } from "$lib/enums/inventory";
+	import { NoteState } from "$lib/enums/db";
 
-	import type { PageData } from './$types';
+	import type { PageData } from "./$types";
 
-	import { getDB } from '$lib/db';
+	import { getDB } from "$lib/db";
 
-	import { createNoteStores } from '$lib/stores/inventory';
+	import { createNoteStores } from "$lib/stores/inventory";
 
-	import { generateUpdatedAtString } from '$lib/utils/time';
-	import { readableFromStream } from '$lib/utils/streams';
-	import { inventoryLinks } from '$lib/data';
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
+	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
 
@@ -39,7 +39,7 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
+	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
 	const outNoteList = readableFromStream(db?.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
 
 	/**
@@ -95,10 +95,7 @@
 								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 							/>
 							{#if $updatedAt}
-								<Badge
-									label="Last updated: {generateUpdatedAtString($updatedAt)}"
-									color={BadgeColor.Success}
-								/>
+								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
 							{/if}
 						</div>
 					</div>

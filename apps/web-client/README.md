@@ -82,8 +82,8 @@ graph LR;
 To create a display name store, we use the factory function:
 
 ```typescript
-const warehouse = db.warehouse('warehouse-1');
-const note = wareshouse.note('note-1');
+const warehouse = db.warehouse("warehouse-1");
+const note = wareshouse.note("note-1");
 
 const wDisplayName = createDisplayNameStore(warehouse, null, {});
 const nDisplayName = createDisplayNameStore(note, null, {});
@@ -168,11 +168,11 @@ const state = createDisplayStateStore(note, internalStateStore, {});
 // Some handler updating different note properties has access
 // to the 'internalStateStore'
 function updateDisplayName(note, name, internalStateStore) {
-	// Set temp 'Saving' state to the store (signaling the UI that the update is taking place)
-	internalStateStore.set('Saving');
+    // Set temp 'Saving' state to the store (signaling the UI that the update is taking place)
+    internalStateStore.set("Saving");
 
-	// Perform the update
-	note.setName(name);
+    // Perform the update
+    note.setName(name);
 }
 ```
 
