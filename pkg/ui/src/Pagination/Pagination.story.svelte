@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import Pagination from './Pagination.svelte';
+	import Pagination from "./Pagination.svelte";
 
 	export let Hst: Hst;
 
@@ -9,15 +9,15 @@
 
 	const states = [2, 4, 9, 0, 11];
 	const stateLabels = [
-		'Current item near start',
-		'Current item at center',
-		'Current item near end',
-		'First (Previous button disabled)',
-		'Last (Next button disabled)'
+		"Current item near start",
+		"Current item at center",
+		"Current item near end",
+		"First (Previous button disabled)",
+		"Last (Next button disabled)"
 	];
 </script>
 
-<Hst.Story title="Pagination" layout={{ type: 'grid', width: 500 }}>
+<Hst.Story title="Pagination" layout={{ type: "grid", width: 500 }}>
 	<Hst.Variant title="Max Items: 5">
 		{#each states as currentPage, i}
 			<div class="mb-4">

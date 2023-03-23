@@ -1,7 +1,7 @@
 <script lang="ts">
-	import type { HTMLButtonAttributes } from 'svelte/elements';
-	import { ButtonColor, ButtonShape, ButtonSize } from './enums';
-	import { shapeRadiusLookup, textSizeLookup, shapeSpacingLookup, colorClassesLookup } from './styles';
+	import type { HTMLButtonAttributes } from "svelte/elements";
+	import { ButtonColor, ButtonShape, ButtonSize } from "./enums";
+	import { shapeRadiusLookup, textSizeLookup, shapeSpacingLookup, colorClassesLookup } from "./styles";
 
 	interface $$Props extends HTMLButtonAttributes {
 		class?: string;
@@ -10,7 +10,7 @@
 		color?: ButtonColor;
 	}
 
-	let className = '';
+	let className = "";
 	export { className as class };
 	/**
 	 * Size of the button component, applies the following styles with respect to size:
@@ -87,14 +87,13 @@
 	 */
 	export let color: ButtonColor = ButtonColor.Primary;
 
-	$: shapeClass = shape === ButtonShape.Circular ? 'rounded-full' : shapeRadiusLookup[shape][size];
+	$: shapeClass = shape === ButtonShape.Circular ? "rounded-full" : shapeRadiusLookup[shape][size];
 	$: textClasses = textSizeLookup[size];
 	$: spacingClasses = shapeSpacingLookup[shape][size];
-	$: sizeClasses = [textClasses, spacingClasses].join(' ');
+	$: sizeClasses = [textClasses, spacingClasses].join(" ");
 	$: colorClasses = colorClassesLookup[color];
-	const focusClasses =
-		'focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white';
-	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(' ');
+	const focusClasses = "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white";
+	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(" ");
 </script>
 
 <button class={containerClasses} on:click type="button" {...$$restProps}>

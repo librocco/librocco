@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { slide } from 'svelte/transition';
-	import { expoOut } from 'svelte/easing';
+	import { slide } from "svelte/transition";
+	import { expoOut } from "svelte/easing";
 
-	import SidebarItem from './SidebarItem.svelte';
+	import SidebarItem from "./SidebarItem.svelte";
 
 	interface SidebarItem {
 		name: string;
@@ -18,34 +18,34 @@
 	const controlId = `sub-menu-${index}`;
 
 	const buttonBaseClasses = [
-		'bg-white',
-		'text-gray-600',
-		'hover:bg-gray-50',
-		'hover:text-gray-900',
-		'w-full',
-		'flex',
-		'items-center',
-		'pr-2',
-		'py-3',
-		'text-left',
-		'text-sm',
-		'font-normal',
-		'focus:outline',
-		'focus:outline-teal-500'
-	].join(' ');
+		"bg-white",
+		"text-gray-600",
+		"hover:bg-gray-50",
+		"hover:text-gray-900",
+		"w-full",
+		"flex",
+		"items-center",
+		"pr-2",
+		"py-3",
+		"text-left",
+		"text-sm",
+		"font-normal",
+		"focus:outline",
+		"focus:outline-teal-500"
+	].join(" ");
 
-	$: iconExpandedClasses = expanded ? 'text-gray-400 rotate-90' : 'text-gray-300';
+	$: iconExpandedClasses = expanded ? "text-gray-400 rotate-90" : "text-gray-300";
 	$: iconBaseClasses = [
 		iconExpandedClasses,
-		'h-5',
-		'w-5',
-		'mr-2',
-		'flex-shrink-0',
-		'transform',
-		'transform-all',
-		'duration-150',
-		'ease-in-out'
-	].join(' ');
+		"h-5",
+		"w-5",
+		"mr-2",
+		"flex-shrink-0",
+		"transform",
+		"transform-all",
+		"duration-150",
+		"ease-in-out"
+	].join(" ");
 </script>
 
 <div>

@@ -38,7 +38,7 @@
 	 * creates a writable store and binds it to the component's `value` prop.
 	 * The said writable store is exported from the component.
 	 */
-	import { writable } from 'svelte/store';
+	import { writable } from "svelte/store";
 
 	/** A component we're testing. It should accept/expost the `value` property */
 	export let Component: any;
