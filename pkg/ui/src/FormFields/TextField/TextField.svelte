@@ -1,8 +1,8 @@
 <script lang="ts">
-	import type { Action } from 'svelte/action';
-	import type { HTMLInputAttributes } from 'svelte/elements';
+	import type { Action } from "svelte/action";
+	import type { HTMLInputAttributes } from "svelte/elements";
 
-	import { TextFieldSize } from '../enums';
+	import { TextFieldSize } from "../enums";
 
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
@@ -13,33 +13,33 @@
 	}
 
 	export let name: string;
-	export let label = '';
-	export let helpText = '';
+	export let label = "";
+	export let helpText = "";
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
 
-	const labelBaseClasses = ['block', 'text-sm', 'font-medium', 'text-gray-700'];
-	const helpTextBaseClasses = ['ml-[2px]', 'text-sm', 'min-h-[20px]'];
-	const inputBaseClasses = ['block', 'w-full', 'border-0', 'text-sm', 'focus:outline-0', 'focus:ring-0', variant];
+	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
+	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]"];
+	const inputBaseClasses = ["block", "w-full", "border-0", "text-sm", "focus:outline-0", "focus:ring-0", variant];
 
 	const containerBaseClasses = [
-		'flex',
-		'mx-[2px]',
-		'outline',
-		'rounded-md',
-		'shadow-sm',
-		'focus-within:outline-2',
-		'focus-within:outline-teal-500'
+		"flex",
+		"mx-[2px]",
+		"outline",
+		"rounded-md",
+		"shadow-sm",
+		"focus-within:outline-2",
+		"focus-within:outline-teal-500"
 	];
 
-	const helpTextColour = 'text-gray-500';
-	const containerBorderWidth = 'outline-1 shadow-sm';
-	const containerBorderColour = 'outline-gray-300';
+	const helpTextColour = "text-gray-500";
+	const containerBorderWidth = "outline-1 shadow-sm";
+	const containerBorderColour = "outline-gray-300";
 
-	const labelClasses = labelBaseClasses.join(' ');
-	const inputClasses = inputBaseClasses.join(' ');
-	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(' ');
-	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(' ');
+	const labelClasses = labelBaseClasses.join(" ");
+	const inputClasses = inputBaseClasses.join(" ");
+	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
+	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(" ");
 </script>
 
 <div class="my-[2px] {label ? 'space-y-2' : ''}">

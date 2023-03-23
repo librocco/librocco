@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DatabaseInterface, VolumeStock, NoteType, VersionedString, VersionString } from '@/types';
+import { DatabaseInterface, VolumeStock, NoteType, VersionedString, VersionString } from "@/types";
 
 // #region rawData
 interface IndustryIdentifier {
-	type: 'ISBN_10' | 'ISBN_13';
+	type: "ISBN_10" | "ISBN_13";
 	identifier: string;
 }
 
@@ -27,7 +27,7 @@ export interface RawBookStock extends RawBook {
 
 export interface RawNote {
 	id: string;
-	type: 'in-note' | 'out-note';
+	type: "in-note" | "out-note";
 	books: RawBookStock[];
 }
 

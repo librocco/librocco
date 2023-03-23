@@ -1,17 +1,17 @@
-import { describe } from 'vitest';
+import { describe } from "vitest";
 
-import { VersionString } from '@/types';
+import { VersionString } from "@/types";
 
-import { newTestRunner } from '@test-runner/runner';
+import { newTestRunner } from "@test-runner/runner";
 
-import * as testDataLoader from '@data-loaders/couchdb-image-loader';
+import * as testDataLoader from "@data-loaders/couchdb-image-loader";
 
-import * as implementations from '@/implementations';
-import * as tests from './benchmarks';
+import * as implementations from "@/implementations";
+import * as tests from "./benchmarks";
 
-import { processTestName, processVersionName } from '@/utils/misc';
+import { processTestName, processVersionName } from "@/utils/misc";
 
-describe('Datamodel benchmarks', async () => {
+describe("Datamodel benchmarks", async () => {
 	const runner = await newTestRunner(testDataLoader);
 
 	Object.entries(tests).forEach(([name, testFn]) => {

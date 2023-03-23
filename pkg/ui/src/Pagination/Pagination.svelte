@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
+	import { createEventDispatcher } from "svelte";
+	import { ChevronLeft, ChevronRight } from "lucide-svelte";
 
-	import { getItemsToRender } from './utils';
+	import { getItemsToRender } from "./utils";
 
 	/**
 	 * Maximum number of items to display, should be at least 5 and an odd number.
@@ -34,7 +34,7 @@
 		// Update current page and bound value (if any)
 		value = page;
 		// Trigger change event
-		dispatch('change', page);
+		dispatch("change", page);
 	}
 
 	$: itemsToRender = getItemsToRender(numPages, maxItems, value);
@@ -69,9 +69,7 @@
 		{/each}
 
 		<button
-			class="button button-inactive {value === itemsToRender[itemsToRender.length - 1]
-				? 'button-disabled'
-				: 'button-hover'}"
+			class="button button-inactive {value === itemsToRender[itemsToRender.length - 1] ? 'button-disabled' : 'button-hover'}"
 			disabled={value === itemsToRender[itemsToRender.length - 1]}
 			on:click={() => paginate(value + 1)}
 		>

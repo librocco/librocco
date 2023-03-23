@@ -1,12 +1,12 @@
-import { currentVersion } from './currentVersion';
+import { currentVersion } from "./currentVersion";
 
-import * as implementations from './implementations';
-import type { NewDatabase } from './types';
+import * as implementations from "./implementations";
+import type { NewDatabase } from "./types";
 
 const newDatabaseInterface = implementations[currentVersion] as NewDatabase;
 export { newDatabaseInterface };
 
-export * from './enums';
-export * from './types';
-export * from './constants';
-export * from './errors';
+export * from "./enums";
+export * from "./types";
+export * from "./constants";
+export * from "./errors";
