@@ -1,10 +1,10 @@
-import { VolumeStock } from './types';
+import { VolumeStock } from "./types";
 
 export class TransactionWarehouseMismatchError extends Error {
 	parentWarehouse: string;
-	invalidTransactions: Omit<VolumeStock, 'quantity'>[];
+	invalidTransactions: Omit<VolumeStock, "quantity">[];
 
-	constructor(parentWarehouse: string, invalidTransactions: Omit<VolumeStock, 'quantity'>[]) {
+	constructor(parentWarehouse: string, invalidTransactions: Omit<VolumeStock, "quantity">[]) {
 		const message = `Trying to commit a note containing transactions belonging to a different warehouse than the note itself.
     Note's parent warehouse: '${parentWarehouse}'
     Invalid transactions:

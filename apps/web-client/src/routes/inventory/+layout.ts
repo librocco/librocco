@@ -1,11 +1,11 @@
-import { redirect } from '@sveltejs/kit';
+import { redirect } from "@sveltejs/kit";
 
-import type { LayoutLoad } from './$types';
+import type { LayoutLoad } from "./$types";
 
 const redirects = {
-	outbound: '/inventory/outbound',
-	inbound: '/inventory/inbound',
-	stock: '/inventory/stock/0-all'
+	outbound: "/inventory/outbound",
+	inbound: "/inventory/inbound",
+	stock: "/inventory/stock/0-all"
 };
 
 export const load: LayoutLoad = async ({ route, params, parent }) => {
@@ -20,10 +20,10 @@ export const load: LayoutLoad = async ({ route, params, parent }) => {
 	// This should re-run on change to path, as far as I understand: https://kit.svelte.dev/docs/load#invalidation
 	const docId = params?.id;
 
-	const [, , location] = route.id.split('/'); // e.g [ '', 'inventory', 'stock', '[...id]' ]
+	const [, , location] = route.id.split("/"); // e.g [ '', 'inventory', 'stock', '[...id]' ]
 
 	// If we're on the stock page (warehouse view), we're only interested in the warehouse
-	if (location === 'stock' && docId) {
+	if (location === "stock" && docId) {
 		const warehouse = await db.warehouse(docId).get();
 		if (!warehouse) {
 			throw redirect(307, redirects[location]);

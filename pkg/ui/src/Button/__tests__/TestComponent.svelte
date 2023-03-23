@@ -24,9 +24,9 @@
 	 *
 	 */
 
-	import type { SvelteComponent } from 'svelte';
+	import type { SvelteComponent } from "svelte";
 
-	import Button from '../Button.svelte';
+	import Button from "../Button.svelte";
 
 	export let props = {};
 	export let slot: SvelteComponent | string;
@@ -35,7 +35,7 @@
 <Button {...props} on:click>
 	{#if !slot}
 		{null}
-	{:else if typeof slot === 'string'}
+	{:else if typeof slot === "string"}
 		{slot}
 	{:else}
 		<svelte:component this={slot} />
