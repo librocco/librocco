@@ -240,37 +240,28 @@ class Note implements NoteInterface {
 		}, this.#initialized);
 	}
 
-	updateTransaction({
-		match: { isbn, quantity, warehouseId },
-		update
-	}: {
-		match: PickPartial<VolumeStock, "warehouseId">;
-		update: VolumeStock;
-	}): Promise<NoteInterface> {
+	updateTransaction(match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
 
-		const transaction = {
-			isbn,
-			quantity,
-			warehouseId: warehouseId ? versionId(warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
+		const matchTr = {
+			...match,
+			warehouseId: match.warehouseId ? versionId(match.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
 		};
 
-		const updateTransaction = {
+		const updateTr = {
 			isbn: update.isbn,
 			quantity: update.quantity,
 			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
 		};
 
-		const i = entries.findIndex(
-			(e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId && e.quantity === transaction.quantity
-		);
+		const i = entries.findIndex((e) => e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId);
 
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
-			entries[i] = updateTransaction;
+			entries[i] = updateTr;
 		} else {
-			entries.push(transaction);
+			entries.push(updateTr);
 		}
 		// Post an update, the local entries will be updated by the update function.
 		return this.update({ entries }, {});

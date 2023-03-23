@@ -108,7 +108,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * Explicitly update an existing transaction row.
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
-	updateTransaction: (transaction: { match: PickPartial<VolumeStock, "warehouseId">; update: VolumeStock }) => Promise<NoteInterface<A>>;
+	updateTransaction: (match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock) => Promise<NoteInterface<A>>;
 	/**
 	 * Remove "row" from note transactions .
 	 * The transaction is matched by both isbn and warehouseId.
