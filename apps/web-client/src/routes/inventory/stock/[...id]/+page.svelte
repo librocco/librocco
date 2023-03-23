@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import {writable} from "svelte/store"
 
 	import {
 		InventoryPage,
 		TextField,
 		Pagination,
-		// InventoryTable,
-		// createTable,
+		InventoryTable,
+		createTable,
 		Header,
 		TextEditable,
 		SidebarItem,
@@ -38,9 +39,17 @@
 	$: warehouesStores = createWarehouseStores(warehouse);
 
 	$: displayName = warehouesStores.displayName;
-	$: entries = warehouesStores.entries;
 	$: currentPage = warehouesStores.currentPage;
 	$: paginationData = warehouesStores.paginationData;
+	$: entries = warehouesStores.entries;
+
+	const tableOptions = writable({ 
+		data: $entries
+	})
+
+	const table = createTable(tableOptions);
+	
+	$: tableOptions.update(({ data }) => ({ data: $entries }))
 </script>
 
 <InventoryPage>
@@ -72,7 +81,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if $entries.length}
-			<!-- <InventoryTable /> -->
+			<InventoryTable {table} />
 		{/if}
 	</svelte:fragment>
 
