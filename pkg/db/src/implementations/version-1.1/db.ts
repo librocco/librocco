@@ -1,8 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { BehaviorSubject, filter, firstValueFrom, Observable, ReplaySubject, share, tap } from "rxjs";
+
 import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
+import { BooksInterface, DBInitState, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
 import { DatabaseInterface, WarehouseInterface } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -16,10 +19,69 @@ import { replicationError } from "./misc";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
-	#initialised = false;
+
+	#initState = new BehaviorSubject<DBInitState>({ state: "void", withReplication: false });
+
+	// The nav list streams are open when the db is instantiated and kept alive throughout the
+	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
+	#warehouseListStream: Observable<NavListEntry[]>;
+	#outNoteListStream: Observable<NavListEntry[]>;
+	#inNoteListStream: Observable<InNoteList>;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+
+		const warehouseListCache = new ReplaySubject<NavListEntry[]>(1);
+		this.#warehouseListStream = newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
+			this._pouch,
+			"v1_list/warehouses",
+			{},
+			({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
+			{}
+		).pipe(
+			share({
+				connector: () => warehouseListCache
+			})
+		);
+
+		const outNoteListCache = new ReplaySubject<NavListEntry[]>(1);
+		this.#outNoteListStream = newViewStream<
+			{ rows: { key: string; value: { displayName?: string; committed?: boolean } } },
+			NavListEntry[]
+		>(
+			this._pouch,
+			"v1_list/outbound",
+			{},
+			({ rows }) =>
+				rows
+					.filter(({ value: { committed } }) => !committed)
+					.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
+			{}
+		).pipe(share({ connector: () => outNoteListCache }));
+
+		const inNoteListCache = new ReplaySubject<InNoteList>(1);
+		this.#inNoteListStream = newViewStream<
+			{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } },
+			InNoteList
+		>(
+			this._pouch,
+			"v1_list/inbound",
+			{},
+			({ rows }) =>
+				rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
+					if (type === "warehouse") {
+						return [...acc, { id: key, displayName, notes: [] }];
+					}
+					if (committed) {
+						return acc;
+					}
+					// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
+					acc[0].notes.push({ id: key, displayName });
+					acc[acc.length - 1].notes.push({ id: key, displayName });
+					return acc;
+				}, [] as InNoteList),
+			{}
+		).pipe(share({ connector: () => inNoteListCache }));
 
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
@@ -27,53 +89,76 @@ class Database implements DatabaseInterface {
 		this._pouch.setMaxListeners(30);
 	}
 
-	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
-		debug.log(ctx, "init_db:started")({});
-		if (this.#initialised) {
+	init({ remoteDb }: { remoteDb?: string }, ctx: debug.DebugCtx): DatabaseInterface {
+		// We're replicating only if a remote db is provided.
+		const withReplication = Boolean(remoteDb);
+
+		debug.log(ctx, "init_db:started")({ withReplication, remoteDb });
+		const initState = this.#initState.value.state;
+
+		// Take care of idempotency: don't allow any operations
+		// if initialised or initialisation in progress.
+		if (initState === "ready") {
 			debug.log(ctx, "init_db:already_initialised")({});
 			return this;
 		}
+		if (["initialising", "replicating"].includes(initState)) {
+			debug.log(ctx, "init_db:initialisation_in_progress")({});
+			return this;
+		}
 
-		const promises: Promise<any>[] = [];
+		// Start initialisation with db setup:
+		// - create the default warehouse (if it doesn't exist)
+		// - update design documents
+		const dbSetup: Promise<any>[] = [];
+
+		// create default warehouse
+		dbSetup.push(this.warehouse().create());
+
+		// Set initialisation state to 'initialising'
+		this.#initState.next({ state: "initialising", withReplication });
 
 		// Upload design documents if any
 		if (designDocs.length) {
 			designDocs.forEach((dd) => {
-				promises.push(this.updateDesignDoc(dd));
+				dbSetup.push(this.updateDesignDoc(dd));
 			});
 		}
 
-		// create default warehouse
-		const whPromise = this.warehouse().create();
-		promises.push(whPromise);
+		// Notice we're not awaiting the 'dbSetup' promises here as we want to
+		// return immediately and communicate with the called through db's initState stream
+		Promise.all(dbSetup).then(() => {
+			// If replication is not enabled, we're done with initialisation.
+			if (!remoteDb) {
+				debug.log(ctx, "init_db:initialisation_done")({ withReplication });
+				this.#initState.next({ state: "ready", withReplication });
+				return;
+			}
 
-		const replication = (async () => {
-			if (params && params.remoteDb) {
-				debug.log(ctx, "init_db:replication:started")({ remoteDb: params.remoteDb });
+			debug.log(ctx, "init_db:replication:started")({ remoteDb });
+			this.#initState.next({ state: "replicating", withReplication });
 
-				// We're wrapping the replication in a try/catch block to prevent the app from crashing
-				// if the remote db is not available.
-				try {
-					// Pull data from the remote db (if provided)
-					await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+			// Pull data from the remote db (if provided)
+			replicateFromRemote({ local: this._pouch, remote: remoteDb }, ctx)
+				.then(() =>
+					firstValueFrom(
+						this.stream()
+							.warehouseList({})
+							.pipe(filter((list) => list.length > 0))
+					)
+				)
+				.then(() => {
 					debug.log(ctx, "init_db:replication:initial_replication_done")({});
+					this.#initState.next({ state: "ready", withReplication });
 					// Start live sync between local and remote db
-					replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
-				} catch (err) {
+					replicateLive({ local: this._pouch, remote: remoteDb }, ctx);
+				})
+				.catch((err) => {
 					// If remote db is not available, log the error and continue.
 					console.error(err);
 					console.error(replicationError);
-				}
-			} else {
-				debug.log(ctx, "init_db:replication:skipped")({});
-			}
-			return;
-		})();
-		promises.push(replication);
-
-		// Wait for all the init operations to complete before returning
-		await Promise.all(promises);
-		this.#initialised = true;
+				});
+		});
 
 		return this;
 	}
@@ -116,47 +201,10 @@ class Database implements DatabaseInterface {
 
 	stream(): DbStream {
 		return {
-			warehouseList: (ctx: debug.DebugCtx) =>
-				newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
-					this._pouch,
-					"v1_list/warehouses",
-					{},
-					({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
-					ctx
-				),
-
-			outNoteList: (ctx: debug.DebugCtx) =>
-				newViewStream<{ rows: { key: string; value: { displayName?: string; committed?: boolean } } }, NavListEntry[]>(
-					this._pouch,
-					"v1_list/outbound",
-					{},
-					({ rows }) =>
-						rows
-							.filter(({ value: { committed } }) => !committed)
-							.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
-					ctx
-				),
-
-			inNoteList: (ctx: debug.DebugCtx) =>
-				newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } }, InNoteList>(
-					this._pouch,
-					"v1_list/inbound",
-					{},
-					({ rows }) =>
-						rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
-							if (type === "warehouse") {
-								return [...acc, { id: key, displayName, notes: [] }];
-							}
-							if (committed) {
-								return acc;
-							}
-							// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
-							acc[0].notes.push({ id: key, displayName });
-							acc[acc.length - 1].notes.push({ id: key, displayName });
-							return acc;
-						}, [] as InNoteList),
-					ctx
-				)
+			initState: (ctx: debug.DebugCtx) => this.#initState.pipe(tap(debug.log(ctx, "db:init_state:stream"))),
+			warehouseList: (ctx: debug.DebugCtx) => this.#warehouseListStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
+			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
 		};
 	}
 }
