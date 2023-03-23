@@ -1,29 +1,29 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Mail } from 'lucide-svelte';
+	import { Mail } from "lucide-svelte";
 
-	import SidebarNav from '../SidebarNav.svelte';
-	import SidebarItem from '../SidebarItem.svelte';
-	import SidebarItemGroup from '../SidebarItemGroup.svelte';
+	import SidebarNav from "../SidebarNav.svelte";
+	import SidebarItem from "../SidebarItem.svelte";
+	import SidebarItemGroup from "../SidebarItemGroup.svelte";
 
 	export let Hst: Hst;
 
-	const voidLink = 'javascript:void(0)';
+	const voidLink = "javascript:void(0)";
 
 	const items = [
 		{
-			name: 'All',
+			name: "All",
 			href: voidLink,
 			current: true
 		},
 		{
-			name: 'Scolastica 2021',
+			name: "Scolastica 2021",
 			href: voidLink,
 			current: false
 		},
 		{
-			name: 'Varia 2018',
+			name: "Varia 2018",
 			href: voidLink,
 			current: false
 		}
@@ -31,19 +31,19 @@
 
 	const folders = [
 		{
-			name: 'Warehouse 1',
+			name: "Warehouse 1",
 			expanded: true,
 			items
 		},
 		{
-			name: 'Warehouse 2',
+			name: "Warehouse 2",
 			expanded: false,
 			items
 		}
 	];
 </script>
 
-<Hst.Story title="Sidebar Navigation / Items" layout={{ type: 'grid', width: 400 }}>
+<Hst.Story title="Sidebar Navigation / Items" layout={{ type: "grid", width: 400 }}>
 	<Hst.Variant title="Item: Default">
 		<div class="space-y-2">
 			<SidebarItem name="Warehouse 1" href={voidLink} />

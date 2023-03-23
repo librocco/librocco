@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-	import type { Writable } from 'svelte/store';
+	import type { Writable } from "svelte/store";
 
 	export const TABS = Symbol();
 
@@ -15,11 +15,11 @@
 </script>
 
 <script lang="ts">
-	import { setContext } from 'svelte';
-	import { writable } from 'svelte/store';
+	import { setContext } from "svelte";
+	import { writable } from "svelte/store";
 
 	const tabs: Tabs = writable([]);
-	const currentTab: CurrentTab = writable('');
+	const currentTab: CurrentTab = writable("");
 
 	const registerTab = (tabName: string) => tabs.update((tabs) => [...tabs, tabName]);
 	const selectTab = (tabName: string) => currentTab.set(tabName);

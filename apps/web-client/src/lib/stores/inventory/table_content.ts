@@ -1,13 +1,13 @@
-import { derived, type Readable } from 'svelte/store';
-import { debug } from '@librocco/shared';
+import { derived, type Readable } from "svelte/store";
+import { debug } from "@librocco/shared";
 
-import type { BookEntry, DatabaseInterface, NoteInterface, WarehouseInterface } from '@librocco/db';
+import type { BookEntry, DatabaseInterface, NoteInterface, WarehouseInterface } from "@librocco/db";
 
-import type { PaginationData, DisplayRow } from '$lib/types/inventory';
+import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
-import { readableFromStream } from '$lib/utils/streams';
-import { map, Observable, switchMap } from 'rxjs';
-import type { DebugCtx } from '@librocco/shared/dist/debugger';
+import { readableFromStream } from "$lib/utils/streams";
+import { map, Observable, switchMap } from "rxjs";
+import type { DebugCtx } from "@librocco/shared/dist/debugger";
 
 interface CreateDisplayEntriesStore {
 	(
@@ -36,11 +36,7 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 			return db
 				.books()
 				.stream(isbns, ctx)
-				.pipe(
-					map((booksFromDb) =>
-						booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))
-					)
-				);
+				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
 		})
 	);
 
@@ -61,12 +57,12 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity,
 
 	// Create a derived store that streams the entries value from the content store
 	const displayEntries = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
-		debug.log(ctx, 'display_entries:derived:input')({ $entriesStore, $currentPageStore });
+		debug.log(ctx, "display_entries:derived:input")({ $entriesStore, $currentPageStore });
 		const start = $currentPageStore * 10;
 		const end = start + 10;
 
 		const res = $entriesStore.slice(start, end);
-		debug.log(ctx, 'display_entries:derived:res')(res);
+		debug.log(ctx, "display_entries:derived:res")(res);
 
 		return res;
 	});
@@ -87,7 +83,7 @@ export const createPaginationDataStore = (
 	const entriesStore = readableFromStream(entity?.stream(ctx).entries, [], ctx);
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
-		debug.log(ctx, 'pagination_data:derived:inputs')({ $entriesStore, $currentPageStore });
+		debug.log(ctx, "pagination_data:derived:inputs")({ $entriesStore, $currentPageStore });
 		const totalItems = $entriesStore.length;
 		const numPages = Math.ceil(totalItems / 10);
 		// If there are no items, (for one this won't be shown) we're returning 0 as first item
@@ -100,7 +96,7 @@ export const createPaginationDataStore = (
 			lastItem,
 			totalItems
 		};
-		debug.log(ctx, 'pagination_data:derived:res')(res);
+		debug.log(ctx, "pagination_data:derived:res")(res);
 		return res;
 	});
 
