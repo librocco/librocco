@@ -10,7 +10,7 @@
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
-	const { removeRows, table: tableAction, tableRow } = table;
+	const { resetRowSelection, table: tableAction, tableRow } = table;
 	$: ({ rows, selected } = $table);
 
 	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
@@ -35,7 +35,7 @@
 	<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 		{#if selected.length}
 			<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
-				<Button color={ButtonColor.White} on:click={() => removeRows(selected)}>
+				<Button color={ButtonColor.White} on:click={() => resetRowSelection()}>
 					Delete {selected.length}
 				</Button>
 			</div>
@@ -98,8 +98,6 @@
 			{#each rows as row (row.key)}
 				{@const { rowIx, isbn, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
 				<tr
-					in:fadeBgColor={{ duration: 200, easing: quadIn, color: 'rgb(220 252 231)' }}
-					out:fadeBgColor={{ duration: 150, easing: quadIn, color: 'rgb(254 226 226)' }}
 					use:tableRow={{
 						// Header row starts the count at 0
 						position: rowIx + 1,
