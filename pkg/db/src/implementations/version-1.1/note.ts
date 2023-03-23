@@ -241,7 +241,13 @@ class Note implements NoteInterface {
 		}, this.#initialized);
 	}
 
-	updateTransaction({ isbn, quantity, warehouseId }: PickPartial<VolumeStock, 'warehouseId'>): Promise<NoteInterface> {
+	updateTransaction({
+		match: { isbn, quantity, warehouseId },
+		update
+	}: {
+		match: PickPartial<VolumeStock, 'warehouseId'>;
+		update: VolumeStock;
+	}): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
 		const entries = [...this.entries];
 
@@ -251,20 +257,19 @@ class Note implements NoteInterface {
 			warehouseId: warehouseId ? versionId(warehouseId) : this.noteType === 'inbound' ? this.#w._id : ''
 		};
 
-		// inbound => matches both : match
-		// inbound => matches isbn only : no match
-
-		// outbound => matches both : match
-		// outbound => matches isbn only and a warehouseId is provided: match
+		const updateTransaction = {
+			isbn: update.isbn,
+			quantity: update.quantity,
+			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === 'inbound' ? this.#w._id : ''
+		};
 
 		const i = entries.findIndex(
-			(e) =>
-				e.isbn === transaction.isbn && (e.warehouseId === transaction.warehouseId || (warehouseId && this.noteType === 'outbound'))
+			(e) => e.isbn === transaction.isbn && e.warehouseId === transaction.warehouseId && e.quantity === transaction.quantity
 		);
 
 		// If the entry exists, update it, if not push it to the end of the list.
 		if (i !== -1) {
-			entries[i] = transaction;
+			entries[i] = updateTransaction;
 		} else {
 			entries.push(transaction);
 		}

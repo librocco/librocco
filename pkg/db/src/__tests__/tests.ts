@@ -139,18 +139,26 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	});
 
 	// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
-	await note.updateTransaction({ isbn: '11111111', quantity: 3, warehouseId: wh1._id });
-	// Update transaction should not overwrite the existing warehouseId if it's empty
-	await note.updateTransaction({ isbn: '0123456789', quantity: 3 });
+	await note.updateTransaction({
+		match: { isbn: '11111111', quantity: 7, warehouseId: wh1._id },
+		update: { isbn: '11111111', quantity: 8, warehouseId: wh2._id }
+	});
+	// Update transaction should update the existing warehouseId even if it's empty
+	await note.updateTransaction({
+		match: { isbn: '0123456789', quantity: 2, warehouseId: wh1._id },
+		update: { isbn: '0123456789', quantity: 3, warehouseId: '' }
+	});
 
 	// Update transaction should overwrite the existing warehouseId
-	await note.updateTransaction({ isbn: "11111111", quantity: 10, warehouseId: "warehouse-3" });
+	await note.updateTransaction({
+		match: { isbn: '11111111', quantity: 10, warehouseId: wh2._id },
+		update: { isbn: '11111111', quantity: 10, warehouseId: 'warehouse-3' }
+	});
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
-			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
 			{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' },
-			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
 		]);
 	});
 
