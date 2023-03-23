@@ -39,7 +39,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 		name: `[NOTE_UPDATED_AT::${note?._id}]`,
 		debug: false
 	};
-	const updatedAt = readableFromStream(note?.stream(updatedAtCtx).updatedAt, null, updatedAtCtx);
+	const updatedAt = readableFromStream(note?.stream().updatedAt(updatedAtCtx), null, updatedAtCtx);
 
 	const currentPage = writable(0);
 

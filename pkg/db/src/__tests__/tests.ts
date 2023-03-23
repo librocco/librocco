@@ -101,7 +101,9 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Subscribe to entries to receive updates
 	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
-	note.stream({}).entries.subscribe((e) => (entries = e));
+	note.stream()
+		.entries({})
+		.subscribe((e) => (entries = e));
 
 	// Initial stream should be empty
 	await waitFor(() => {
@@ -176,17 +178,17 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	const note = await db.warehouse("test-warehouse").note().create();
 
 	// Subscribe to note streams
-	const { displayName: dn$, entries: e$, state: s$, updatedAt: ua$ } = note.stream({});
+	const { displayName: displayNameStream, entries: entriesStream, state: stateStream, updatedAt: updatedAtStream } = note.stream();
 
 	let displayName: PossiblyEmpty<string> = EMPTY;
 	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
 	let state: PossiblyEmpty<NoteState> = EMPTY;
 	let updatedAt: PossiblyEmpty<Date | null> = EMPTY;
 
-	dn$.subscribe((dn) => (displayName = dn));
-	e$.subscribe((e) => (entries = e));
-	s$.subscribe((s) => (state = s));
-	ua$.subscribe((ua) => {
+	displayNameStream({}).subscribe((dn) => (displayName = dn));
+	entriesStream({}).subscribe((e) => (entries = e));
+	stateStream({}).subscribe((s) => (state = s));
+	updatedAtStream({}).subscribe((ua) => {
 		updatedAt = ua;
 	});
 
@@ -246,9 +248,18 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 	let defaultWarehouesStock: PossiblyEmpty<VolumeStock[]> = EMPTY;
 
 	// Subscribe to warehouse stock streams
-	warehouse1.stream({}).entries.subscribe((e) => (warehoues1Stock = e));
-	warehouse2.stream({}).entries.subscribe((e) => (warehoues2Stock = e));
-	defaultWarehouse.stream({}).entries.subscribe((e) => (defaultWarehouesStock = e));
+	warehouse1
+		.stream()
+		.entries({})
+		.subscribe((e) => (warehoues1Stock = e));
+	warehouse2
+		.stream()
+		.entries({})
+		.subscribe((e) => (warehoues2Stock = e));
+	defaultWarehouse
+		.stream()
+		.entries({})
+		.subscribe((e) => (defaultWarehouesStock = e));
 
 	// Check that the stream gets initialised with the current values
 	await waitFor(() => {
@@ -369,7 +380,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 };
 
 export const warehousesListStream: TestFunction = async (db) => {
-	const { warehouseList: wl$ } = db.stream({});
+	const wl$ = db.stream().warehouseList({});
 	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 	wl$.subscribe((wl) => (warehouseList = wl));
 
@@ -406,7 +417,7 @@ export const warehousesListStream: TestFunction = async (db) => {
 };
 
 export const inNotesStream: TestFunction = async (db) => {
-	const { inNoteList: inl$ } = db.stream({});
+	const inl$ = db.stream().inNoteList({});
 	let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
@@ -554,7 +565,7 @@ export const inNotesStream: TestFunction = async (db) => {
 };
 
 export const outNotesStream: TestFunction = async (db) => {
-	const { outNoteList: onl$ } = db.stream({});
+	const onl$ = db.stream().outNoteList({});
 	let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
@@ -664,9 +675,15 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 	let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 	let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
-	db.stream({}).inNoteList.subscribe((inl) => (inNoteList = inl));
-	db.stream({}).outNoteList.subscribe((onl) => (outNoteList = onl));
-	db.stream({}).warehouseList.subscribe((wl) => (warehouseList = wl));
+	db.stream()
+		.inNoteList({})
+		.subscribe((inl) => (inNoteList = inl));
+	db.stream()
+		.outNoteList({})
+		.subscribe((onl) => (outNoteList = onl));
+	db.stream()
+		.warehouseList({})
+		.subscribe((wl) => (warehouseList = wl));
 	// The default warehosue gets created automatically, so we will essentially
 	// always be receiving the default warehouse in the warehouse (and in-note) list
 	const defaultWarehouse = {
@@ -684,8 +701,14 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 	let w1entries: PossiblyEmpty<VolumeStockClient[]> = EMPTY;
 	let w1DisplayName: PossiblyEmpty<string> = EMPTY;
 	// Subscribing to the stream should not throw (even if the warehouse doesn't exist)
-	warehouse1.stream({}).entries.subscribe((w1e) => (w1entries = w1e));
-	warehouse1.stream({}).displayName.subscribe((w1dn) => (w1DisplayName = w1dn));
+	warehouse1
+		.stream()
+		.entries({})
+		.subscribe((w1e) => (w1entries = w1e));
+	warehouse1
+		.stream()
+		.displayName({})
+		.subscribe((w1dn) => (w1DisplayName = w1dn));
 	await waitFor(() => {
 		expect(w1entries).toEqual([]);
 		expect(w1DisplayName).toEqual("");
@@ -700,10 +723,22 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 	let n1UpdatedAt: PossiblyEmpty<Date | null> = EMPTY;
 	// Subscribing to the stream should not throw (even if the note doesn't exist)
 	// and the stream should be initialized with an empty array
-	note1.stream({}).entries.subscribe((n1e) => (n1entries = n1e));
-	note1.stream({}).displayName.subscribe((n1dn) => (n1DisplayName = n1dn));
-	note1.stream({}).state.subscribe((n1s) => (n1State = n1s));
-	note1.stream({}).updatedAt.subscribe((n1u) => (n1UpdatedAt = n1u));
+	note1
+		.stream()
+		.entries({})
+		.subscribe((n1e) => (n1entries = n1e));
+	note1
+		.stream()
+		.displayName({})
+		.subscribe((n1dn) => (n1DisplayName = n1dn));
+	note1
+		.stream()
+		.state({})
+		.subscribe((n1s) => (n1State = n1s));
+	note1
+		.stream()
+		.updatedAt({})
+		.subscribe((n1u) => (n1UpdatedAt = n1u));
 	await waitFor(() => {
 		expect(n1entries).toEqual([]);
 		expect(n1DisplayName).toEqual("");
@@ -881,37 +916,39 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	// Create and displayName "store" for the note
 	let ndn: PossiblyEmpty<string> = EMPTY;
 
-	const note = await db.warehouse().note('note-1').create();
-	note.stream({}).displayName.subscribe((dn$) => (ndn = dn$));
+	const note = await db.warehouse().note("note-1").create();
+	note.stream()
+		.displayName({})
+		.subscribe((dn$) => (ndn = dn$));
 
 	// Set the initial name for the note
-	note.setName('Note name', {});
+	note.setName("Note name", {});
 	await waitFor(() => {
-		expect(ndn).toEqual('Note name');
+		expect(ndn).toEqual("Note name");
 	});
 
 	// Update the name from a different instance, simulating an outside update
-	await db.warehouse().note('note-1').setName('Note name updated', {});
+	await db.warehouse().note("note-1").setName("Note name updated", {});
 	await waitFor(() => {
-		expect(ndn).toEqual('Note name updated');
+		expect(ndn).toEqual("Note name updated");
 	});
 
 	// Original instance should also be able to update the name (should have the correct _rev)
-	note.setName('Note name updated again', {});
+	note.setName("Note name updated again", {});
 	await waitFor(() => {
-		expect(ndn).toEqual('Note name updated again');
+		expect(ndn).toEqual("Note name updated again");
 	});
 
 	// The note interface should be in sync with the db
 	// We test this by instantianting a new note interface for the same note and checking equality after updates
-	const noteInst2 = db.warehouse().note('note-1');
-	await noteInst2.addVolumes({ isbn: '11111111', quantity: 2, warehouseId: versionId('warehouse-1') });
+	const noteInst2 = db.warehouse().note("note-1");
+	await noteInst2.addVolumes({ isbn: "11111111", quantity: 2, warehouseId: versionId("warehouse-1") });
 
 	await waitFor(() => expect(note).toEqual(noteInst2));
 
 	// Test the same behaviour for the warehouse interface
-	const wInst1 = db.warehouse('warehosue-1');
-	const wInst2 = db.warehouse('warehosue-1');
+	const wInst1 = db.warehouse("warehosue-1");
+	const wInst2 = db.warehouse("warehosue-1");
 
 	await wInst2.setName("Warehouse 1's name", {});
 

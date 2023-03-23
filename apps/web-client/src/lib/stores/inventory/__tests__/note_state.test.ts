@@ -61,7 +61,7 @@ describe("createDisplayStateStore", () => {
 		});
 
 		// Check that the note state in db has been updated
-		const noteState = await firstValueFrom(note.stream({}).state);
+		const noteState = await firstValueFrom(note.stream().state({}));
 		expect(noteState).toBe(NoteState.Committed);
 
 		// Close the dummy subscription after assertions

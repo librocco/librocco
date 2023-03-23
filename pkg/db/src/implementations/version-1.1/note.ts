@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
@@ -7,9 +7,9 @@ import { DocType, NoteState } from "@/enums";
 import { NoteType, VolumeStock, VersionedString, PickPartial } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
-import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from '@/utils/misc';
-import { newDocumentStream } from '@/utils/pouchdb';
-import { OutOfStockError, TransactionWarehouseMismatchError } from '@/errors';
+import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
+import { newDocumentStream } from "@/utils/pouchdb";
+import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -87,7 +87,7 @@ class Note implements NoteInterface {
 	/**
 	 * Update instance is a method for internal usage, used to update the instance with the data (doesn't update the DB)
 	 */
-	private updateInstance(data: Partial<Omit<NoteData, '_id'>>): NoteInterface {
+	private updateInstance(data: Partial<Omit<NoteData, "_id">>): NoteInterface {
 		// No-op if the data is empty
 		if (isEmpty(data)) {
 			return this;
@@ -331,66 +331,50 @@ class Note implements NoteInterface {
 	}
 
 	/**
-<<<<<<< HEAD
-	 * Create stream is a convenience method for internal usage, leveraging `newDocumentStream` to create a
-	 * pouchdb changes stream for a specific property on a note, while abstracting away the details of the subscription
-	 * such as the db and the note id as well as to abstract signature bolierplate (as document type is always `NoteData` and the
-	 * observable signature type is inferred from the selector callback)
-	 */
-	private createStream<S extends (doc?: NoteData) => any>(selector: S, ctx: debug.DebugCtx): Observable<ReturnType<S>> {
-		return newDocumentStream<NoteData, ReturnType<S>>(this.#db._pouch, this._id, selector, this, ctx);
-	}
-
-	/**
-=======
->>>>>>> 25d6e8a (Make the note/warehouse interface always in sync with the db state:)
 	 * Creates streams for the note data. The streams are hot in a way that they will
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
 	 * initiated only when the stream is subscribed to (and canceled on unsubscribe).
 	 */
-	stream(ctx: debug.DebugCtx) {
+	stream() {
 		return {
-<<<<<<< HEAD
-			displayName: this.createStream((doc) => {
-				return doc?.displayName || "";
-			}, ctx),
+			displayName: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: display_name: input")),
+					map(({ displayName }) => displayName || ""),
+					tap(debug.log(ctx, "note_streams: display_name: res"))
+				),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
-			entries: combineLatest([
-				this.createStream((doc) => (doc?.entries || []).map((e) => ({ ...e, warehouseName: "" })).sort(sortBooks), ctx),
-=======
-			displayName: this.#stream.pipe(
-				tap(debug.log(ctx, 'note_streams: display_name: input')),
-				map(({ displayName }) => displayName || ''),
-				tap(debug.log(ctx, 'note_streams: display_name: res'))
-			),
+			entries: (ctx: debug.DebugCtx) =>
+				combineLatest([
+					this.#stream.pipe(map(({ entries }) => (entries || []).map((e) => ({ ...e, warehouseName: "" })).sort(sortBooks))),
+					this.#db.stream().warehouseList(ctx)
+				]).pipe(
+					tap(debug.log(ctx, "note:entries:stream:input")),
+					map(([entries, warehouses]) => {
+						// Create a record of warehouse ids and names for easy lookup
+						const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
+						return entries.map((e) => ({
+							...e,
+							warehouseName: warehouseNames[e.warehouseId] || "not-found"
+						}));
+					}),
+					tap(debug.log(ctx, "note:entries:stream:output"))
+				),
 
-			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
-			entries: combineLatest([
-				this.#stream.pipe(map(({ entries }) => (entries || []).map((e) => ({ ...e, warehouseName: '' })).sort(sortBooks))),
->>>>>>> 25d6e8a (Make the note/warehouse interface always in sync with the db state:)
-				this.#db.stream(ctx).warehouseList
-			]).pipe(
-				tap(debug.log(ctx, "note:entries:stream:input")),
-				map(([entries, warehouses]) => {
-					// Create a record of warehouse ids and names for easy lookup
-					const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-					return entries.map((e) => ({ ...e, warehouseName: warehouseNames[e.warehouseId] || "not-found" }));
-				}),
-				tap(debug.log(ctx, "note:entries:stream:output"))
-			),
+			state: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: state: input")),
+					map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft)),
+					tap(debug.log(ctx, "note_streams: state: res"))
+				),
 
-			state: this.#stream.pipe(
-				tap(debug.log(ctx, 'note_streams: state: input')),
-				map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft)),
-				tap(debug.log(ctx, 'note_streams: state: res'))
-			),
-
-			updatedAt: this.#stream.pipe(
-				tap(debug.log(ctx, 'note_streams: updated_at: input')),
-				map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
-				tap(debug.log(ctx, 'note_streams: updated_at: res'))
-			)
+			updatedAt: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: updated_at: input")),
+					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
+					tap(debug.log(ctx, "note_streams: updated_at: res"))
+				)
 		};
 	}
 }
