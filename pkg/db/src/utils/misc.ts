@@ -95,3 +95,6 @@ export const versionId = (id: string): VersionedString => (isVersioned(id) ? id 
  * Returns true if the id is a versioned string.
  */
 export const isVersioned = (id: string): id is VersionedString => id.startsWith("v1/");
+
+/** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
+export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
