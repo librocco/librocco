@@ -96,7 +96,7 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 	await Promise.all([wh1.setName("Warehouse 1", {}), wh2.setName("Warehouse 2", {})]);
 
-	// We're testing against an outbound note as it lets us test agains more robust functionality (different warehouses and such)
+	// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
 	const note = await db.warehouse().note().create();
 
 	// Subscribe to entries to receive updates
@@ -138,25 +138,36 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	});
 
 	// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
-	await note.updateTransaction({ isbn: "11111111", quantity: 3, warehouseId: wh1._id });
+	await note.updateTransaction({ isbn: "11111111", warehouseId: wh1._id }, { isbn: "11111111", quantity: 8, warehouseId: wh1._id });
+
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 3, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
 			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
 		]);
 	});
 
-	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
-	await note.removeTransactions({ isbn: "0123456789", warehouseId: "wh1" }, { isbn: "11111111", warehouseId: "wh2" });
+	// Update transaction should be able to update warehouseId for a transaction
+	await note.updateTransaction({ isbn: "11111111", warehouseId: wh2._id }, { isbn: "11111111", quantity: 10, warehouseId: "wh3" });
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: "11111111", quantity: 3, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }]);
+		expect(entries).toEqual([
+			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 10, warehouseId: versionId("wh3"), warehouseName: "not-found" }
+		]);
+	});
+
+	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
+	await note.removeTransactions({ isbn: "0123456789", warehouseId: wh1._id }, { isbn: "11111111", warehouseId: "wh3" });
+	await waitFor(() => {
+		expect(entries).toEqual([{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }]);
 	});
 
 	// Running remove transaction should be a no-op if the transaction doesn't exist
-	await note.removeTransactions({ isbn: "12345678", warehouseId: versionId(wh2._id) });
+	await note.removeTransactions({ isbn: "12345678", warehouseId: versionId(wh1._id) });
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: "11111111", quantity: 3, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }]);
+		expect(entries).toEqual([{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }]);
 	});
 };
 
@@ -197,7 +208,12 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	await note.addVolumes({ isbn: "0123456789", quantity: 2 });
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("test-warehouse"), warehouseName: "New Warehouse" }
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("test-warehouse"),
+				warehouseName: "New Warehouse"
+			}
 		]);
 	});
 
@@ -267,10 +283,20 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 		]);
 		expect(defaultWarehouesStock).toEqual([
 			{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse" },
-			{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-2"), warehouseName: "New Warehouse (2)" }
+			{
+				isbn: "0123456789",
+				quantity: 3,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
 		]);
 		expect(warehoues2Stock).toEqual([
-			{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-2"), warehouseName: "New Warehouse (2)" }
+			{
+				isbn: "0123456789",
+				quantity: 3,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
 		]);
 	});
 
@@ -299,10 +325,20 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 		]);
 		expect(defaultWarehouesStock).toEqual([
 			{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse" },
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("warehouse-2"), warehouseName: "New Warehouse (2)" }
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
 		]);
 		expect(warehoues2Stock).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("warehouse-2"), warehouseName: "New Warehouse (2)" }
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
 		]);
 	});
 
@@ -314,7 +350,12 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 		]);
 		expect(defaultWarehouesStock).toEqual([
 			{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1" },
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("warehouse-2"), warehouseName: "New Warehouse (2)" }
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
 		]);
 	});
 
@@ -384,7 +425,11 @@ export const inNotesStream: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Note" }] },
-			{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [{ id: note1._id, displayName: "New Note" }] }
+			{
+				id: versionId("warehouse-1"),
+				displayName: "New Warehouse",
+				notes: [{ id: note1._id, displayName: "New Note" }]
+			}
 		]);
 	});
 
@@ -393,7 +438,11 @@ export const inNotesStream: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
-			{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [{ id: note1._id, displayName: "New Name" }] }
+			{
+				id: versionId("warehouse-1"),
+				displayName: "New Warehouse",
+				notes: [{ id: note1._id, displayName: "New Name" }]
+			}
 		]);
 	});
 
@@ -409,8 +458,16 @@ export const inNotesStream: TestFunction = async (db) => {
 					{ id: note2._id, displayName: "New Note" }
 				]
 			},
-			{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [{ id: note1._id, displayName: "New Name" }] },
-			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [{ id: note2._id, displayName: "New Note" }] }
+			{
+				id: versionId("warehouse-1"),
+				displayName: "New Warehouse",
+				notes: [{ id: note1._id, displayName: "New Name" }]
+			},
+			{
+				id: versionId("warehouse-2"),
+				displayName: "New Warehouse (2)",
+				notes: [{ id: note2._id, displayName: "New Note" }]
+			}
 		]);
 	});
 
@@ -419,7 +476,11 @@ export const inNotesStream: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
-			{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [{ id: note1._id, displayName: "New Name" }] },
+			{
+				id: versionId("warehouse-1"),
+				displayName: "New Warehouse",
+				notes: [{ id: note1._id, displayName: "New Name" }]
+			},
 			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
 		]);
 	});
@@ -432,7 +493,11 @@ export const inNotesStream: TestFunction = async (db) => {
 	await note1.setName("New Note - Updated", {});
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Note - Updated" }] },
+			{
+				id: versionId("0-all"),
+				displayName: "All",
+				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+			},
 			{
 				id: versionId("warehouse-1"),
 				displayName: "New Warehouse",
@@ -473,7 +538,11 @@ export const inNotesStream: TestFunction = async (db) => {
 	await note3.commit({});
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Note - Updated" }] },
+			{
+				id: versionId("0-all"),
+				displayName: "All",
+				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+			},
 			{
 				id: versionId("warehouse-1"),
 				displayName: "New Warehouse",
