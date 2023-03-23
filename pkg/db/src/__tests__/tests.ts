@@ -139,58 +139,58 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.updateTransaction({
-		match: { isbn: '11111111', quantity: 7, warehouseId: wh1._id },
-		update: { isbn: '11111111', quantity: 8, warehouseId: wh2._id }
+		match: { isbn: "11111111", quantity: 7, warehouseId: wh1._id },
+		update: { isbn: "11111111", quantity: 8, warehouseId: wh2._id }
 	});
 
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
-			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
-			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" },
+			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
 		]);
 	});
 
 	// Update transaction should update the existing warehouseId even if it's empty
 	await note.updateTransaction({
-		match: { isbn: '0123456789', quantity: 2, warehouseId: wh1._id },
-		update: { isbn: '0123456789', quantity: 3, warehouseId: '' }
+		match: { isbn: "0123456789", quantity: 2, warehouseId: wh1._id },
+		update: { isbn: "0123456789", quantity: 3, warehouseId: "" }
 	});
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
-			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
-			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+			{ isbn: "0123456789", quantity: 3, warehouseId: "", warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" },
+			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
 		]);
 	});
 
 	// Update transaction should overwrite the existing warehouseId
 	await note.updateTransaction({
-		match: { isbn: '11111111', quantity: 10, warehouseId: wh2._id },
-		update: { isbn: '11111111', quantity: 10, warehouseId: 'warehouse-3' }
+		match: { isbn: "11111111", quantity: 10, warehouseId: wh2._id },
+		update: { isbn: "11111111", quantity: 10, warehouseId: "warehouse-3" }
 	});
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
-			{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' },
-			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+			{ isbn: "0123456789", quantity: 3, warehouseId: "", warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 10, warehouseId: versionId("warehouse-3"), warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
 		]);
 	});
 
 	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.removeTransactions(
-		{ isbn: '0123456789', warehouseId: 'wh1' },
-		{ isbn: '11111111', warehouseId: 'wh2' },
-		{ isbn: '0123456789', warehouseId: '' }
+		{ isbn: "0123456789", warehouseId: "wh1" },
+		{ isbn: "11111111", warehouseId: "wh2" },
+		{ isbn: "0123456789", warehouseId: "" }
 	);
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' }]);
+		expect(entries).toEqual([{ isbn: "11111111", quantity: 10, warehouseId: versionId("warehouse-3"), warehouseName: "not-found" }]);
 	});
 
 	// Running remove transaction should be a no-op if the transaction doesn't exist
-	await note.removeTransactions({ isbn: '12345678', warehouseId: versionId(wh1._id) });
+	await note.removeTransactions({ isbn: "12345678", warehouseId: versionId(wh1._id) });
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' }]);
+		expect(entries).toEqual([{ isbn: "11111111", quantity: 10, warehouseId: versionId("warehouse-3"), warehouseName: "not-found" }]);
 	});
 };
 
