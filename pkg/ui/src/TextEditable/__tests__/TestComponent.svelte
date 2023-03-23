@@ -1,7 +1,7 @@
 <script lang="ts">
-	import TextEditable from '../TextEditable.svelte';
+	import TextEditable from "../TextEditable.svelte";
 
-	let value = '';
+	let value = "";
 	export let isEditing: boolean;
 </script>
 

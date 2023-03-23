@@ -5,7 +5,7 @@ import {
 	NoteInterface as NI,
 	NoteData as ND,
 	VolumeStock
-} from '@/types';
+} from "@/types";
 
 /** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
