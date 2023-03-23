@@ -27,18 +27,21 @@ interface CreateDisplayRowStream {
 }
 
 const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
-	const fullTableRow = entity?.stream(ctx).entries.pipe(
-		switchMap((valueFromEntryStream) => {
-			// map entry to just isbns
-			const isbns = valueFromEntryStream.map((entry) => entry.isbn);
+	const fullTableRow = entity
+		?.stream()
+		.entries(ctx)
+		.pipe(
+			switchMap((valueFromEntryStream) => {
+				// map entry to just isbns
+				const isbns = valueFromEntryStream.map((entry) => entry.isbn);
 
-			// return array of merged values of books and volume stock client
-			return db
-				.books()
-				.stream(isbns, ctx)
-				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
-		})
-	);
+				// return array of merged values of books and volume stock client
+				return db
+					.books()
+					.stream(isbns, ctx)
+					.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
+			})
+		);
 
 	return fullTableRow;
 };
@@ -80,7 +83,7 @@ export const createPaginationDataStore = (
 	currentPageStore: Readable<number>,
 	ctx: debug.DebugCtx
 ): Readable<PaginationData> => {
-	const entriesStore = readableFromStream(entity?.stream(ctx).entries, [], ctx);
+	const entriesStore = readableFromStream(entity?.stream().entries(ctx), [], ctx);
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
 		debug.log(ctx, "pagination_data:derived:inputs")({ $entriesStore, $currentPageStore });
