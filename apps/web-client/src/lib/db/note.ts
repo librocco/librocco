@@ -1,11 +1,11 @@
-import type { Writable } from 'svelte/store';
+import type { Writable } from "svelte/store";
 
-import { NoteState } from '$lib/enums/db';
+import { NoteState } from "$lib/enums/db";
 
-import type { NoteStore } from '$lib/types/inventory';
-import type { NoteInterface, NoteStream } from '$lib/types/db';
+import type { NoteStore } from "$lib/types/inventory";
+import type { NoteInterface, NoteStream } from "$lib/types/db";
 
-import { derivedObservable } from '$lib/utils/streams';
+import { derivedObservable } from "$lib/utils/streams";
 
 export const newNote =
 	(contentStore: Writable<NoteStore>) =>

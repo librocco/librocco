@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
-	import { page } from '$app/stores';
-	import { goto } from '$app/navigation';
+	import { Search } from "lucide-svelte";
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
 
 	import {
 		InventoryPage,
@@ -14,18 +14,18 @@
 		SidebarItem,
 		SideBarNav,
 		NewEntitySideNavButton
-	} from '@librocco/ui';
-	import { NEW_WAREHOUSE } from '@librocco/db';
+	} from "@librocco/ui";
+	import { NEW_WAREHOUSE } from "@librocco/db";
 
-	import type { PageData } from './$types';
+	import type { PageData } from "./$types";
 
-	import { getDB } from '$lib/db';
+	import { getDB } from "$lib/db";
 
-	import { createWarehouseStores } from '$lib/stores/inventory';
+	import { createWarehouseStores } from "$lib/stores/inventory";
 
-	import { readableFromStream } from '$lib/utils/streams';
+	import { readableFromStream } from "$lib/utils/streams";
 
-	import { inventoryLinks } from '$lib/data';
+	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
 
@@ -34,7 +34,7 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
+	const wareouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseList = readableFromStream(db?.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
 
 	/**

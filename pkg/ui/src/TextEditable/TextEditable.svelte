@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { tick } from 'svelte';
-	import { Pencil, Check, X } from 'lucide-svelte';
+	import { tick } from "svelte";
+	import { Pencil, Check, X } from "lucide-svelte";
 
 	/**
 	 * This is the exposed 'value' of the text/input element. This value accepts updates from the parent component, while
@@ -10,7 +10,7 @@
 	 * - the user edits the input - no change is propagated to the parent component
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
-	export let value = '';
+	export let value = "";
 
 	let input: HTMLElement;
 
@@ -53,10 +53,7 @@
 		>
 			<span class="inline-block align-middle text-lg font-medium leading-6">{text}</span>
 			{#if !disabled}
-				<button
-					class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block"
-					on:click={edit}
-				>
+				<button class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block" on:click={edit}>
 					<Pencil class="h-4 w-4 text-cyan-700" />
 				</button>
 			{/if}
@@ -67,7 +64,7 @@
 				class="h-[38px] w-full p-2 text-lg font-medium leading-6 focus:outline-none"
 				bind:this={input}
 				bind:value={text}
-				on:keydown={(e) => (e.key === 'Enter' ? save() : e.key === 'Escape' ? reset() : null)}
+				on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
 				on:change
 			/>
 			<button on:click={reset} class="h-8 w-8 flex-shrink-0 p-1"><X class="h-6 w-6 text-red-400" /></button>

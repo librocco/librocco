@@ -1,4 +1,4 @@
-import { ButtonShape, ButtonSize, ButtonColor } from './enums';
+import { ButtonShape, ButtonSize, ButtonColor } from "./enums";
 
 // #region sizeStyles
 /**
@@ -11,11 +11,11 @@ import { ButtonShape, ButtonSize, ButtonColor } from './enums';
  * ```
  */
 export const textSizeLookup: Record<ButtonSize, string> = {
-	[ButtonSize.XS]: 'text-xs leading-4',
-	[ButtonSize.SM]: 'text-sm leading-4',
-	[ButtonSize.Base]: 'text-sm leading-5',
-	[ButtonSize.LG]: 'text-base leading-6',
-	[ButtonSize.XL]: 'text-base leading-6'
+	[ButtonSize.XS]: "text-xs leading-4",
+	[ButtonSize.SM]: "text-sm leading-4",
+	[ButtonSize.Base]: "text-sm leading-5",
+	[ButtonSize.LG]: "text-base leading-6",
+	[ButtonSize.XL]: "text-base leading-6"
 };
 
 /**
@@ -44,25 +44,25 @@ export const textSizeLookup: Record<ButtonSize, string> = {
  */
 export const shapeSpacingLookup: Record<ButtonShape, Record<ButtonSize, string>> = {
 	[ButtonShape.Square]: {
-		[ButtonSize.XS]: 'px-[11px] py-1.75',
-		[ButtonSize.SM]: 'px-3.25 py-2.25',
-		[ButtonSize.Base]: 'px-4.25 py-2.25',
-		[ButtonSize.LG]: 'px-4.25 py-2.25',
-		[ButtonSize.XL]: 'px-6.25 py-3.25'
+		[ButtonSize.XS]: "px-[11px] py-1.75",
+		[ButtonSize.SM]: "px-3.25 py-2.25",
+		[ButtonSize.Base]: "px-4.25 py-2.25",
+		[ButtonSize.LG]: "px-4.25 py-2.25",
+		[ButtonSize.XL]: "px-6.25 py-3.25"
 	},
 	[ButtonShape.Rounded]: {
-		[ButtonSize.XS]: 'px-3.25 py-1.75',
-		[ButtonSize.SM]: 'px-[15px] py-2.25',
-		[ButtonSize.Base]: 'px-4.25 py-2.25',
-		[ButtonSize.LG]: 'px-[21px] py-2.25',
-		[ButtonSize.XL]: 'px-6.25 py-3.25'
+		[ButtonSize.XS]: "px-3.25 py-1.75",
+		[ButtonSize.SM]: "px-[15px] py-2.25",
+		[ButtonSize.Base]: "px-4.25 py-2.25",
+		[ButtonSize.LG]: "px-[21px] py-2.25",
+		[ButtonSize.XL]: "px-6.25 py-3.25"
 	},
 	[ButtonShape.Circular]: {
-		[ButtonSize.XS]: 'p-[5px]',
-		[ButtonSize.SM]: 'p-1.75',
-		[ButtonSize.Base]: 'p-2.25',
-		[ButtonSize.LG]: 'p-2.25',
-		[ButtonSize.XL]: 'p-3.25'
+		[ButtonSize.XS]: "p-[5px]",
+		[ButtonSize.SM]: "p-1.75",
+		[ButtonSize.Base]: "p-2.25",
+		[ButtonSize.LG]: "p-2.25",
+		[ButtonSize.XL]: "p-3.25"
 	}
 };
 // #region sizeStyles
@@ -87,18 +87,18 @@ export const shapeSpacingLookup: Record<ButtonShape, Record<ButtonSize, string>>
  */
 export const shapeRadiusLookup: Record<ButtonShape.Square | ButtonShape.Rounded, Record<ButtonSize, string>> = {
 	[ButtonShape.Square]: {
-		[ButtonSize.XS]: 'rounded',
-		[ButtonSize.SM]: 'rounded-md',
-		[ButtonSize.Base]: 'rounded-md',
-		[ButtonSize.LG]: 'rounded-md',
-		[ButtonSize.XL]: 'rounded-md'
+		[ButtonSize.XS]: "rounded",
+		[ButtonSize.SM]: "rounded-md",
+		[ButtonSize.Base]: "rounded-md",
+		[ButtonSize.LG]: "rounded-md",
+		[ButtonSize.XL]: "rounded-md"
 	},
 	[ButtonShape.Rounded]: {
-		[ButtonSize.XS]: 'rounded-[15px]',
-		[ButtonSize.SM]: 'rounded-[17px]',
-		[ButtonSize.Base]: 'rounded-[19px]',
-		[ButtonSize.LG]: 'rounded-[21px]',
-		[ButtonSize.XL]: 'rounded-[25px]'
+		[ButtonSize.XS]: "rounded-[15px]",
+		[ButtonSize.SM]: "rounded-[17px]",
+		[ButtonSize.Base]: "rounded-[19px]",
+		[ButtonSize.LG]: "rounded-[21px]",
+		[ButtonSize.XL]: "rounded-[25px]"
 	}
 };
 // #endregion shapeStyles
@@ -116,7 +116,7 @@ export const shapeRadiusLookup: Record<ButtonShape.Square | ButtonShape.Rounded,
  * ```
  */
 export const colorClassesLookup: Record<ButtonColor, string> = {
-	[ButtonColor.Primary]: 'text-white bg-teal-600 hover:bg-teal-700',
-	[ButtonColor.Secondary]: 'text-pink-700 bg-pink-50 hover:bg-pink-100',
-	[ButtonColor.White]: 'text-gray-700 bg-white border border-gray-300 hover:bg-gray-50'
+	[ButtonColor.Primary]: "text-white bg-teal-600 hover:bg-teal-700",
+	[ButtonColor.Secondary]: "text-pink-700 bg-pink-50 hover:bg-pink-100",
+	[ButtonColor.White]: "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
 };

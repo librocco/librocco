@@ -7,7 +7,6 @@
  */
 export const waitFor = (cb: () => void | Promise<void>, timeout = 2000) => {
 	return new Promise<void>((resolve, reject) => {
-		// eslint-disable-next-line @typescript-eslint/no-explicit-any
 		let error: any = null;
 
 		// Retry the assertion every 50ms

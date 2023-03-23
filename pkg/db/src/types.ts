@@ -1,14 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Observable } from 'rxjs';
-import PouchDB from 'pouchdb';
+import type { Observable } from "rxjs";
+import PouchDB from "pouchdb";
 
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import type { DocType, NoteState } from './enums';
+import type { DocType, NoteState } from "./enums";
 
-import { NEW_WAREHOUSE } from './constants';
+import { NEW_WAREHOUSE } from "./constants";
 
 // #region utils
 /**
@@ -61,7 +60,7 @@ export interface BookEntry {
 // #endregion books
 
 // #region note
-export type NoteType = 'inbound' | 'outbound';
+export type NoteType = "inbound" | "outbound";
 
 /**
  * Standardized data that should be present in any note
@@ -104,17 +103,17 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
-	addVolumes: (...params: PickPartial<VolumeStock, 'warehouseId'>[]) => Promise<NoteInterface<A>>;
+	addVolumes: (...params: PickPartial<VolumeStock, "warehouseId">[]) => Promise<NoteInterface<A>>;
 	/**
 	 * Explicitly update an existing transaction row.
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
-	updateTransaction: (transaction: PickPartial<VolumeStock, 'warehouseId'>) => Promise<NoteInterface<A>>;
+	updateTransaction: (transaction: PickPartial<VolumeStock, "warehouseId">) => Promise<NoteInterface<A>>;
 	/**
 	 * Remove "row" from note transactions .
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
-	removeTransactions: (...transactions: Omit<VolumeStock, 'quantity'>[]) => Promise<NoteInterface<A>>;
+	removeTransactions: (...transactions: Omit<VolumeStock, "quantity">[]) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**

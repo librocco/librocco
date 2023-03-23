@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { getContext } from 'svelte';
-	import { TABS, type TabContext } from './TabContext.svelte';
+	import { getContext } from "svelte";
+	import { TABS, type TabContext } from "./TabContext.svelte";
 
 	export let tabIx: number;
 

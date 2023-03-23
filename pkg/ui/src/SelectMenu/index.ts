@@ -1,1 +1,1 @@
-export { default as SelectMenu } from './SelectMenu.svelte';
+export { default as SelectMenu } from "./SelectMenu.svelte";

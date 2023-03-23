@@ -1,10 +1,10 @@
-import { firstValueFrom } from 'rxjs';
-import { expect } from 'vitest';
+import { firstValueFrom } from "rxjs";
+import { expect } from "vitest";
 
-import { testUtils } from '@librocco/shared';
+import { testUtils } from "@librocco/shared";
 
-import { DesignDocument, CouchDocument, VolumeStock, WarehouseInterface } from '@/types';
-import { TestFunction } from '../types';
+import { DesignDocument, CouchDocument, VolumeStock, WarehouseInterface } from "@/types";
+import { TestFunction } from "../types";
 
 const { waitFor } = testUtils;
 
@@ -35,7 +35,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 		const note = notes[curr];
 		// If note is an inbound note, all books should be in the same warehouse, therefore we infer the warehouse from the first book.
 		// If note is outbound, we use the default warehouse so the setup is trivial.
-		const warehouse = note.type === 'inbound' ? db.warehouse(note.books[0].warehouseId) : db.warehouse();
+		const warehouse = note.type === "inbound" ? db.warehouse(note.books[0].warehouseId) : db.warehouse();
 
 		const n = await warehouse.note().create();
 		await n.addVolumes(...note.books);
@@ -66,13 +66,13 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 const uploadDesignDocuments: TestFunction = async (db) => {
 	// The 'docs/count' is used as a smoke test to validate 'db.updateDesignDoc'
 	const docsCount: DesignDocument = {
-		_id: '_design/docs',
+		_id: "_design/docs",
 		views: {
 			count: {
 				map: function (doc: CouchDocument) {
 					emit(doc._id);
 				}.toString(),
-				reduce: '_count'
+				reduce: "_count"
 			}
 		}
 	};
@@ -83,7 +83,7 @@ const uploadDesignDocuments: TestFunction = async (db) => {
 	const defaulWarehouse = await db.warehouse().create();
 	await defaulWarehouse.note().create();
 
-	const res = await db._pouch.query('docs/count', { reduce: true });
+	const res = await db._pouch.query("docs/count", { reduce: true });
 	const nDocs = res.rows[0].value;
 
 	expect(nDocs).toEqual(2);

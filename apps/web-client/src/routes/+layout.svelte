@@ -1,6 +1,6 @@
 <script>
 	// Import main.css in order to generate tailwind classes used in the app
-	import '../main.css';
+	import "../main.css";
 
 	// TEMP
 	// import { db } from '$lib/db/temp';

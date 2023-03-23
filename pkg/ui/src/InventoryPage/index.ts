@@ -1,1 +1,1 @@
-export { default as InventoryPage } from './InventoryPage.svelte';
+export { default as InventoryPage } from "./InventoryPage.svelte";
