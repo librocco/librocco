@@ -244,7 +244,7 @@ class Note implements NoteInterface {
 		match: { isbn, quantity, warehouseId },
 		update
 	}: {
-		match: PickPartial<VolumeStock, 'warehouseId'>;
+		match: PickPartial<VolumeStock, "warehouseId">;
 		update: VolumeStock;
 	}): Promise<NoteInterface> {
 		// Create a safe copy of volume entries
@@ -259,7 +259,7 @@ class Note implements NoteInterface {
 		const updateTransaction = {
 			isbn: update.isbn,
 			quantity: update.quantity,
-			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === 'inbound' ? this.#w._id : ''
+			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
 		};
 
 		const i = entries.findIndex(
