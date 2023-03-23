@@ -11,7 +11,7 @@ const { waitFor } = testUtils;
 // A smoke test for the test runner
 const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses) => {
 	// Full stock should be empty to begin with
-	const fullStock = await firstValueFrom(db.warehouse().stream({}).entries);
+	const fullStock = await firstValueFrom(db.warehouse().stream().entries({}));
 	expect(fullStock).toEqual([]);
 
 	// Create warehouse documents and update displayNames
@@ -47,7 +47,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 		];
 		const assertions = assertionTuples.map(([warehouse, books]) =>
 			waitFor(async () => {
-				const stock = await firstValueFrom(warehouse.stream({}).entries);
+				const stock = await firstValueFrom(warehouse.stream().entries({}));
 				expect(stock).toEqual(books);
 			})
 		);

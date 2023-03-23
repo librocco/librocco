@@ -79,10 +79,10 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: Observable<NoteState>;
-	displayName: Observable<string>;
-	updatedAt: Observable<Date | null>;
-	entries: Observable<VolumeStockClient[]>;
+	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
+	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
 }
 
 /**
@@ -123,7 +123,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * - `updatedAt` - streams the note's `updatedAt`
 	 * - `entries` - streams the note's `entries` (volume transactions)
 	 */
-	stream: (ctx: debug.DebugCtx) => NoteStream;
+	stream: () => NoteStream;
 }
 
 /**
@@ -149,8 +149,8 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: Observable<string>;
-	entries: Observable<VolumeStockClient[]>;
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
 }
 
 /**
@@ -173,7 +173,7 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	 * - `displayName` - streams the warehouse's `displayName`
 	 * - `entries` - streams the warehouse's `entries` (stock)
 	 */
-	stream: (ctx: debug.DebugCtx) => WarehouseStream;
+	stream: () => WarehouseStream;
 }
 
 /**
@@ -206,9 +206,9 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseList: Observable<NavListEntry[]>;
-	outNoteList: Observable<NavListEntry[]>;
-	inNoteList: Observable<InNoteList>;
+	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
+	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
+	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
 }
 
 /**
@@ -243,7 +243,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * - `outNoteList` a stream of out note list entries (for navigation)
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
-	stream: (ctx: debug.DebugCtx) => DbStream;
+	stream: () => DbStream;
 	/**
 	 * Init initialises the db:
 	 * - creates the default warehouse
