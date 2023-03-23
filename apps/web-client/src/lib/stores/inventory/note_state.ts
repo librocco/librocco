@@ -28,10 +28,13 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
 		debug.log(ctx, "internal_state_store:opening_note_subscription")({});
-		noteSubscription = note?.stream(ctx).state.subscribe((content) => {
-			debug.log(ctx, "internal_state_store:update_from_db")(content);
-			state.set(content);
-		});
+		noteSubscription = note
+			?.stream()
+			.state(ctx)
+			.subscribe((content) => {
+				debug.log(ctx, "internal_state_store:update_from_db")(content);
+				state.set(content);
+			});
 	};
 
 	// Close note subscription closes the subscription to the note state

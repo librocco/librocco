@@ -34,8 +34,8 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const wareouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseList = readableFromStream(db?.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
+	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
+	const warehouseList = readableFromStream(db?.stream().warehouseList(warehouseListCtx), [], warehouseListCtx);
 
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
