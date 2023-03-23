@@ -144,30 +144,30 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	await note.updateTransaction({ isbn: '0123456789', quantity: 3 });
 
 	// Update transaction should overwrite the existing warehouseId
-	await note.updateTransaction({ isbn: '0123456789', quantity: 4, warehouseId: wh2._id });
+	await note.updateTransaction({ isbn: "11111111", quantity: 10, warehouseId: "warehouse-3" });
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
-			{ isbn: '0123456789', quantity: 4, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
-			{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' },
 			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
 		]);
 	});
 
 	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.removeTransactions(
-		{ isbn: '0123456789', warehouseId: 'wh2' },
+		{ isbn: '0123456789', warehouseId: 'wh1' },
 		{ isbn: '11111111', warehouseId: 'wh2' },
 		{ isbn: '0123456789', warehouseId: '' }
 	);
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' }]);
+		expect(entries).toEqual([{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' }]);
 	});
 
 	// Running remove transaction should be a no-op if the transaction doesn't exist
-	await note.removeTransactions({ isbn: '12345678', warehouseId: versionId(wh2._id) });
+	await note.removeTransactions({ isbn: '12345678', warehouseId: versionId(wh1._id) });
 	await waitFor(() => {
-		expect(entries).toEqual([{ isbn: '11111111', quantity: 3, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' }]);
+		expect(entries).toEqual([{ isbn: '11111111', quantity: 10, warehouseId: versionId('warehouse-3'), warehouseName: 'not-found' }]);
 	});
 };
 
