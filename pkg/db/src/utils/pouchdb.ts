@@ -184,7 +184,6 @@ export const newChangesStream = <Model extends Record<any, any>>(emitter: PouchD
 interface ReplicateFn<R = Promise<void>> {
 	(params: { local: PouchDB.Database; remote: string }, ctx: debug.DebugCtx): R;
 }
-
 /**
  * A helper function used to replicate a remote (PouchDB/CouchDB) db to a local PouchDB instance.
  * This is a one time, one way replication used to initialize the local db.
