@@ -83,7 +83,7 @@ describe("createDisplayNameStore", () => {
 		const mockEntity = {
 			setName: mockSetName,
 			stream: () => ({
-				displayName: new BehaviorSubject("temp")
+				displayName: () => new BehaviorSubject("temp")
 			})
 		} as any;
 
@@ -101,7 +101,7 @@ describe("createDisplayNameStore", () => {
 		const mockEntity = {
 			setName: mockSetName,
 			stream: () => ({
-				displayName: new BehaviorSubject("Current Name")
+				displayName: () => new BehaviorSubject("Current Name")
 			})
 		} as any;
 
@@ -119,7 +119,7 @@ describe("createDisplayNameStore", () => {
 		const mockEntity = {
 			setName: mockSetName,
 			stream: () => ({
-				displayName: new BehaviorSubject("Current Name")
+				displayName: () => new BehaviorSubject("Current Name")
 			})
 		} as any;
 
