@@ -1,1 +1,1 @@
-export { default as Slideover } from './Slideover.svelte';
+export { default as Slideover } from "./Slideover.svelte";

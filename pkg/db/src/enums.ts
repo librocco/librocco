@@ -1,10 +1,10 @@
 export enum DocType {
-	Note = 'note',
-	Warehouse = 'warehouse'
+	Note = "note",
+	Warehouse = "warehouse"
 }
 
 export enum NoteState {
-	Draft = 'draft',
-	Committed = 'committed',
-	Deleted = 'deleted'
+	Draft = "draft",
+	Committed = "committed",
+	Deleted = "deleted"
 }

@@ -1,9 +1,8 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
+import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import { CouchDocument } from '../types';
+import { CouchDocument } from "../types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -28,7 +27,7 @@ export const unwrapDocs = <T extends Record<string, any>>(res: PouchDB.Core.AllD
  * @param doc pouch db document (including `_rev` and `_id`)
  * @returns the provided document without the `_rev` field (including `_id`)
  */
-export const unwrapDoc = (doc: PouchDB.Core.IdMeta & PouchDB.Core.GetMeta): Omit<CouchDocument, '_rev'> => {
+export const unwrapDoc = (doc: PouchDB.Core.IdMeta & PouchDB.Core.GetMeta): Omit<CouchDocument, "_rev"> => {
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const { _rev, ...document } = doc;
 	return document;
@@ -47,7 +46,7 @@ export const sortById = ({ _id: id1 }: CouchDocument, { _id: id2 }: CouchDocumen
  */
 const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unknown>>(db: PouchDB.Database, id: string) =>
 	db.changes<M>({
-		since: 'now',
+		since: "now",
 		live: true,
 		include_docs: true,
 		filter: (doc) => doc._id === id
@@ -78,27 +77,27 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 		const initialPromise = db
 			.get<M>(id)
 			.then((res) => {
-				debug.log(ctx, 'document_stream:initial_query:result')(res);
+				debug.log(ctx, "document_stream:initial_query:result")(res);
 				return res;
 			})
 			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 			.catch((err) => {
-				debug.log(ctx, 'document_stream:initial_query:error')(err);
-				debug.log(ctx, 'document_stream:initial_query:error:fallback')(fallbackDoc);
+				debug.log(ctx, "document_stream:initial_query:error")(err);
+				debug.log(ctx, "document_stream:initial_query:error:fallback")(fallbackDoc);
 				return fallbackDoc;
 			});
 		const initialState = from(initialPromise);
 		const changeStream = newChangesStream<M>(emitter, ctx).pipe(
-			tap(debug.log(ctx, 'document_stream:change')),
+			tap(debug.log(ctx, "document_stream:change")),
 			map(({ doc }) => doc),
-			tap(debug.log(ctx, 'document_stream:change:transformed'))
+			tap(debug.log(ctx, "document_stream:change:transformed"))
 		);
 
 		concat(initialState, changeStream)
 			.pipe(
-				tap(debug.log(ctx, 'document_stream:result:raw')),
+				tap(debug.log(ctx, "document_stream:result:raw")),
 				map(selector),
-				tap(debug.log(ctx, 'document_stream:result:transformed'))
+				tap(debug.log(ctx, "document_stream:result:transformed"))
 			)
 			.subscribe((doc) => subscriber.next(doc));
 
@@ -118,9 +117,9 @@ export const newViewStream = <M extends Record<string, any>, R>(
 		// This allows us to isolate the change emitter to a single subscription and make sure all
 		// unused emitters are cancelled from.
 		const emitter = db.changes<M>({
-			since: 'now',
+			since: "now",
 			live: true,
-			filter: '_view',
+			filter: "_view",
 			view
 		});
 
@@ -130,28 +129,28 @@ export const newViewStream = <M extends Record<string, any>, R>(
 			.query<M>(view, query_params)
 			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
 			.catch((err) => {
-				debug.log(ctx, 'view_stream:initial_query:error')(err);
+				debug.log(ctx, "view_stream:initial_query:error")(err);
 				return { rows: [], total_rows: 0, offset: 0 } as PouchDB.Query.Response<M>;
 			})
 			.then((res) => {
-				debug.log(ctx, 'view_stream:initial_query:result')(res);
+				debug.log(ctx, "view_stream:initial_query:result")(res);
 				return res;
 			});
 		const initialQueryStream = from(initialQueryPromise);
 		// Create a stream for changes (happening after the subscription)
 		const updatesStream = newChangesStream<M>(emitter, ctx).pipe(
-			tap(debug.log(ctx, 'view_stream:change')),
+			tap(debug.log(ctx, "view_stream:change")),
 			// The change only triggers a new query (as changes are partial and we require the full view update)
 			switchMap(() =>
 				from(
 					new Promise<PouchDB.Query.Response<M>>((resolve) => {
 						db.query<M>(view, query_params)
 							.then((res) => {
-								debug.log(ctx, 'view_stream:change_query:result')(res);
+								debug.log(ctx, "view_stream:change_query:result")(res);
 								return resolve(res);
 							})
 							.catch((err) => {
-								debug.log(ctx, 'view_stream:change_query:error')(err);
+								debug.log(ctx, "view_stream:change_query:error")(err);
 							});
 					})
 				)
@@ -161,23 +160,23 @@ export const newViewStream = <M extends Record<string, any>, R>(
 		// Concatanate the two streams and transform the result
 		const resultStream = concat(initialQueryStream, updatesStream).pipe(
 			// Transform the result to the desired format
-			tap(debug.log(ctx, 'view_stream:result:raw')),
+			tap(debug.log(ctx, "view_stream:result:raw")),
 			map(transform),
-			tap(debug.log(ctx, 'view_stream:result:transformed'))
+			tap(debug.log(ctx, "view_stream:result:transformed"))
 		);
 
 		resultStream.subscribe(subscriber);
 
 		return () => {
-			debug.log(ctx, 'view_stream:cancel')({});
+			debug.log(ctx, "view_stream:cancel")({});
 			return emitter.cancel();
 		};
 	});
 
 export const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>, ctx: debug.DebugCtx) =>
 	new Observable<PouchDB.Core.ChangesResponseChange<Model>>((subscriber) => {
-		emitter.on('change', (change) => {
-			debug.log(ctx, 'changes_stream:change')(change);
+		emitter.on("change", (change) => {
+			debug.log(ctx, "changes_stream:change")(change);
 			subscriber.next(change);
 		});
 	});
@@ -201,27 +200,27 @@ export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
 
 		local.replicate
 			.from(remote)
-			.on('complete', (complete) => {
+			.on("complete", (complete) => {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
-				debug.log(ctx, 'replicate_from_remote:complete')({ ...info, complete });
+				debug.log(ctx, "replicate_from_remote:complete")({ ...info, complete });
 				resolve();
 			})
-			.on('paused', () => {
+			.on("paused", () => {
 				// replication paused (e.g. user went offline)
-				debug.log(ctx, 'replicate_live:paused')(info);
+				debug.log(ctx, "replicate_live:paused")(info);
 			})
-			.on('active', function () {
+			.on("active", function () {
 				// replicate resumed (e.g. user went back online)
-				debug.log(ctx, 'replicate_live:active')(info);
+				debug.log(ctx, "replicate_live:active")(info);
 			})
-			.on('denied', (error) => {
+			.on("denied", (error) => {
 				// boo, something went wrong!
-				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
+				debug.log(ctx, "replicate_from_remote:error")({ ...info, error });
 				reject(error);
 			})
-			.on('error', (error) => {
+			.on("error", (error) => {
 				// boo, something went wrong!
-				debug.log(ctx, 'replicate_from_remote:error')({ ...info, error });
+				debug.log(ctx, "replicate_from_remote:error")({ ...info, error });
 				reject(error);
 			});
 	});
@@ -238,26 +237,26 @@ export const replicateLive: ReplicateFn<void> = ({ remote, local }, ctx) => {
 
 	local
 		.sync(remote, { live: true, retry: true })
-		.on('change', (change) => {
+		.on("change", (change) => {
 			// handle change
-			debug.log(ctx, 'replicate_live:change')({ ...info, change });
+			debug.log(ctx, "replicate_live:change")({ ...info, change });
 		})
-		.on('paused', () => {
+		.on("paused", () => {
 			// replication paused (e.g. user went offline)
-			debug.log(ctx, 'replicate_live:paused')(info);
+			debug.log(ctx, "replicate_live:paused")(info);
 		})
-		.on('active', () => {
+		.on("active", () => {
 			// replicate resumed (e.g. user went back online)
-			debug.log(ctx, 'replicate_live:active')(info);
+			debug.log(ctx, "replicate_live:active")(info);
 		})
-		.on('denied', (error) => {
-			debug.log(ctx, 'replicate_live:denied')({ ...info, error });
+		.on("denied", (error) => {
+			debug.log(ctx, "replicate_live:denied")({ ...info, error });
 		})
-		.on('error', (error) => {
+		.on("error", (error) => {
 			// handle error
-			debug.log(ctx, 'replicate_live:error')({ ...info, error });
+			debug.log(ctx, "replicate_live:error")({ ...info, error });
 		})
-		.on('complete', (complete) => {
-			debug.log(ctx, 'replicate_live:error')({ ...info, complete });
+		.on("complete", (complete) => {
+			debug.log(ctx, "replicate_live:error")({ ...info, complete });
 		});
 };

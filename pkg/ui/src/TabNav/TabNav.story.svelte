@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { TabContext, TabList, TabPanel } from './index';
+	import { TabContext, TabList, TabPanel } from "./index";
 
-	const tabNames = ['Agglungi con codice', 'Cerca libri da caricare', 'Crea nuovo libro'];
+	const tabNames = ["Agglungi con codice", "Cerca libri da caricare", "Crea nuovo libro"];
 
 	export let Hst: Hst;
 </script>
 
-<Hst.Story title="TabNav" layout={{ type: 'grid', width: 600 }}>
+<Hst.Story title="TabNav" layout={{ type: "grid", width: 600 }}>
 	<TabContext>
 		<TabList {tabNames} />
 
