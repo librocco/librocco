@@ -143,10 +143,26 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 		match: { isbn: '11111111', quantity: 7, warehouseId: wh1._id },
 		update: { isbn: '11111111', quantity: 8, warehouseId: wh2._id }
 	});
+
+	await waitFor(() => {
+		expect(entries).toEqual([
+			{ isbn: '0123456789', quantity: 2, warehouseId: versionId(wh1._id), warehouseName: 'Warehouse 1' },
+			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
+			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+		]);
+	});
+
 	// Update transaction should update the existing warehouseId even if it's empty
 	await note.updateTransaction({
 		match: { isbn: '0123456789', quantity: 2, warehouseId: wh1._id },
 		update: { isbn: '0123456789', quantity: 3, warehouseId: '' }
+	});
+	await waitFor(() => {
+		expect(entries).toEqual([
+			{ isbn: '0123456789', quantity: 3, warehouseId: '', warehouseName: 'not-found' },
+			{ isbn: '11111111', quantity: 8, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' },
+			{ isbn: '11111111', quantity: 10, warehouseId: versionId(wh2._id), warehouseName: 'Warehouse 2' }
+		]);
 	});
 
 	// Update transaction should overwrite the existing warehouseId
