@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
+	import {writable} from "svelte/store"
 
 	import {
 		InventoryPage,
@@ -8,8 +9,8 @@
 		Pagination,
 		Badge,
 		BadgeColor,
-		// InventoryTable,
-		// createTable,
+		InventoryTable,
+		createTable,
 		Header,
 		SelectMenu,
 		TextEditable,
@@ -52,7 +53,14 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: entries.subscribe((e) => console.log(e));
+
+	const tableOptions = writable({ 
+		data: $entries
+	})
+
+	const table = createTable(tableOptions);
+
+	$: tableOptions.update(({ data }) => ({ data: $entries }))
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -120,9 +128,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $entries.length}
-			<!-- <InventoryTable /> -->
-		{/if}
+		<InventoryTable {table} />
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
