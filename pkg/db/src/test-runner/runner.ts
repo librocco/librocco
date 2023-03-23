@@ -1,9 +1,9 @@
-import PouchDB from 'pouchdb';
-import MemoryAdapter from 'pouchdb-adapter-memory';
+import PouchDB from "pouchdb";
+import MemoryAdapter from "pouchdb-adapter-memory";
 
-import { TestDataLoader, ImplementationSetup } from './types';
+import { TestDataLoader, ImplementationSetup } from "./types";
 
-import { newModel } from './test-setup';
+import { newModel } from "./test-setup";
 
 // Enable running of the tests against in-memory PouchDB
 PouchDB.plugin(MemoryAdapter);

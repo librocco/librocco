@@ -1,16 +1,16 @@
-import type { Stores, WarehouseInterface } from '$lib/types/db';
-import type { WarehouseStore } from '$lib/types/inventory';
+import type { Stores, WarehouseInterface } from "$lib/types/db";
+import type { WarehouseStore } from "$lib/types/inventory";
 
-import { newNote } from './note';
+import { newNote } from "./note";
 
-import { derivedObservable } from '$lib/utils/streams';
+import { derivedObservable } from "$lib/utils/streams";
 
 export const newWarehouse =
 	({ warehouseStore, inNoteStore, outNoteStore }: Stores) =>
-	(id = 'all'): WarehouseInterface => {
+	(id = "all"): WarehouseInterface => {
 		// If default warehouse (all) the notes are retrieved from outNoteStore
 		// else, the notes are retrieved from inNoteStore
-		const noteStore = id === 'all' ? outNoteStore : inNoteStore;
+		const noteStore = id === "all" ? outNoteStore : inNoteStore;
 
 		const update = (warehouse: Partial<WarehouseStore[keyof WarehouseStore]>) =>
 			new Promise<void>((resolve) => {

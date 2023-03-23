@@ -1,18 +1,18 @@
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import { DocType } from '@/enums';
+import { DocType } from "@/enums";
 
-import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
-import { DatabaseInterface, WarehouseInterface } from './types';
+import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
+import { DatabaseInterface, WarehouseInterface } from "./types";
 
-import { NEW_WAREHOUSE } from '@/constants';
+import { NEW_WAREHOUSE } from "@/constants";
 
-import designDocs from './designDocuments';
-import { newWarehouse } from './warehouse';
+import designDocs from "./designDocuments";
+import { newWarehouse } from "./warehouse";
 
-import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
-import { newBooksInterface } from './books';
-import { replicationError } from './misc';
+import { newViewStream, replicateFromRemote, replicateLive } from "@/utils/pouchdb";
+import { newBooksInterface } from "./books";
+import { replicationError } from "./misc";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -28,9 +28,9 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
-		debug.log(ctx, 'init_db:started')({});
+		debug.log(ctx, "init_db:started")({});
 		if (this.#initialised) {
-			debug.log(ctx, 'init_db:already_initialised')({});
+			debug.log(ctx, "init_db:already_initialised")({});
 			return this;
 		}
 
@@ -49,14 +49,14 @@ class Database implements DatabaseInterface {
 
 		const replication = (async () => {
 			if (params && params.remoteDb) {
-				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
+				debug.log(ctx, "init_db:replication:started")({ remoteDb: params.remoteDb });
 
 				// We're wrapping the replication in a try/catch block to prevent the app from crashing
 				// if the remote db is not available.
 				try {
 					// Pull data from the remote db (if provided)
 					await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
-					debug.log(ctx, 'init_db:replication:initial_replication_done')({});
+					debug.log(ctx, "init_db:replication:initial_replication_done")({});
 					// Start live sync between local and remote db
 					replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
 				} catch (err) {
@@ -65,7 +65,7 @@ class Database implements DatabaseInterface {
 					console.error(replicationError);
 				}
 			} else {
-				debug.log(ctx, 'init_db:replication:skipped')({});
+				debug.log(ctx, "init_db:replication:skipped")({});
 			}
 			return;
 		})();
@@ -99,7 +99,7 @@ class Database implements DatabaseInterface {
 
 	async findNote(id: string) {
 		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split('/');
+		const idSegments = id.split("/");
 
 		// Validate the id is correct
 		if (idSegments.length !== 4) {
@@ -118,20 +118,20 @@ class Database implements DatabaseInterface {
 		return {
 			warehouseList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
 				this._pouch,
-				'v1_list/warehouses',
+				"v1_list/warehouses",
 				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+				({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
 				ctx
 			),
 
 			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string; committed?: boolean } } }, NavListEntry[]>(
 				this._pouch,
-				'v1_list/outbound',
+				"v1_list/outbound",
 				{},
 				({ rows }) =>
 					rows
 						.filter(({ value: { committed } }) => !committed)
-						.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
+						.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
 				ctx
 			),
 
@@ -140,11 +140,11 @@ class Database implements DatabaseInterface {
 				InNoteList
 			>(
 				this._pouch,
-				'v1_list/inbound',
+				"v1_list/inbound",
 				{},
 				({ rows }) =>
-					rows.reduce((acc, { key, value: { type, displayName = '', committed } }) => {
-						if (type === 'warehouse') {
+					rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
+						if (type === "warehouse") {
 							return [...acc, { id: key, displayName, notes: [] }];
 						}
 						if (committed) {

@@ -1,15 +1,15 @@
 <script lang="ts">
 	const columnTitles: string[] = [
-		'ISBN',
-		'Title',
-		'Author',
-		'Editor',
-		'Quantity',
-		'Price',
-		'Year',
-		'Out Of Print',
-		'Edited By',
-		'Classification'
+		"ISBN",
+		"Title",
+		"Author",
+		"Editor",
+		"Quantity",
+		"Price",
+		"Year",
+		"Out Of Print",
+		"Edited By",
+		"Classification"
 	];
 </script>
 

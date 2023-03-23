@@ -1,25 +1,21 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Mail } from 'lucide-svelte';
+	import { Mail } from "lucide-svelte";
 
-	import { ButtonSize, ButtonShape, ButtonColor } from './enums';
-	import Button from './Button.svelte';
+	import { ButtonSize, ButtonShape, ButtonColor } from "./enums";
+	import Button from "./Button.svelte";
 
 	export let Hst: Hst;
 
-	const buttonText = 'Button Text';
+	const buttonText = "Button Text";
 
 	let color = ButtonColor.Primary;
 </script>
 
-<Hst.Story title="Button" layout={{ type: 'grid' }}>
+<Hst.Story title="Button" layout={{ type: "grid" }}>
 	<svelte:fragment slot="controls">
-		<Hst.Select
-			bind:value={color}
-			options={[ButtonColor.Primary, ButtonColor.Secondary, ButtonColor.White]}
-			title="Color"
-		/>
+		<Hst.Select bind:value={color} options={[ButtonColor.Primary, ButtonColor.Secondary, ButtonColor.White]} title="Color" />
 		<pre>{JSON.stringify({ color }, null, 2)}</pre>
 	</svelte:fragment>
 
