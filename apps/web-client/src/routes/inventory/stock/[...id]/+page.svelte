@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Search } from 'lucide-svelte';
 	import { page } from '$app/stores';
-	import {writable} from "svelte/store"
+	import { writable } from 'svelte/store';
 
 	import {
 		InventoryPage,
@@ -43,13 +43,13 @@
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
 
-	const tableOptions = writable({ 
+	const tableOptions = writable({
 		data: $entries
-	})
+	});
 
 	const table = createTable(tableOptions);
-	
-	$: tableOptions.update(({ data }) => ({ data: $entries }))
+
+	$: tableOptions.update(({ data }) => ({ data: $entries }));
 </script>
 
 <InventoryPage>
