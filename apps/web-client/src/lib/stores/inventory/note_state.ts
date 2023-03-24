@@ -12,15 +12,16 @@ import type { Subscription } from "rxjs";
 type NoteAppState = NoteState | NoteTempState | undefined;
 
 interface CreateInternalStateStore {
-	(note: NoteInterface | undefined, ctx: debug.DebugCtx): Writable<NoteAppState>;
+	(ctx: debug.DebugCtx, note: NoteInterface | undefined): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for internal usage:
  * - the store listens to updates to the note in the db and streams the value for the state to the UI
  * - the store allows for explicit updates (being a writable store) so that we can set temporary states until the update is confirmed by the db
+ * @param ctx Debug context
  * @param note Note interface for db communication
  */
-export const createInternalStateStore: CreateInternalStateStore = (note, ctx) => {
+export const createInternalStateStore: CreateInternalStateStore = (ctx, note) => {
 	const state = writable<NoteAppState>();
 
 	let noteSubscription: Subscription | undefined = undefined;
@@ -83,7 +84,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 };
 
 interface CreateDisplayStateStore {
-	(note: NoteInterface | undefined, internalStateStore: Writable<NoteAppState>, ctx: debug.DebugCtx): Writable<NoteAppState>;
+	(ctx: debug.DebugCtx, note: NoteInterface | undefined, internalStateStore: Writable<NoteAppState>): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for display purposes:
@@ -91,10 +92,11 @@ interface CreateDisplayStateStore {
  * - it streams the current value of the internal state store
  *   (either a definitive state of the note in the db, or temporary state, while the note in the database is being updated)
  * - it handles updates, comming from the UI, by updating the internal state store and the note in the db accordingly
+ * @param ctx debug context
  * @param note Note interface for db communication
  * @param internalStateStore a store in charge of internal state (this is used to set the temporary state while the note in the db is being updated)
  */
-export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore, ctx) => {
+export const createDisplayStateStore: CreateDisplayStateStore = (ctx, note, internalStateStore) => {
 	const set = (state: NoteState) => {
 		const internalState = get(internalStateStore);
 		debug.log(ctx, "display_state_store:set")({ state, internalState });

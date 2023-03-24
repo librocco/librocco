@@ -11,7 +11,7 @@
 	export let data: LayoutData;
 
 	$: db = data.db;
-	$: initState = readableFromStream(db?.stream().initState({}), { state: "void", withReplication: false }, {});
+	$: initState = readableFromStream({}, db?.stream().initState({}), { state: "void", withReplication: false });
 </script>
 
 <!-- We're returning <slot /> if db doesn't initialise (it's "void") in case of SSR env or if the db is fully initialised -->

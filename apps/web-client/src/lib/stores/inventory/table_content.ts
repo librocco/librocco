@@ -11,22 +11,22 @@ import type { DebugCtx } from "@librocco/shared/dist/debugger";
 
 interface CreateDisplayEntriesStore {
 	(
+		ctx: debug.DebugCtx,
 		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
-		currentPageStore: Readable<number>,
-		ctx: debug.DebugCtx
+		currentPageStore: Readable<number>
 	): Readable<DisplayRow[]>;
 }
 
 interface CreateDisplayRowStream {
 	(
+		ctx: DebugCtx,
 		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
-		entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>,
-		ctx: DebugCtx
+		entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>
 	): Observable<DisplayRow[]>;
 }
 
-const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
+const createDisplayRowStream: CreateDisplayRowStream = (ctx, db, entity) => {
 	const fullTableRow = entity
 		?.stream()
 		.entries(ctx)
@@ -38,7 +38,7 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 				// return array of merged values of books and volume stock client
 				return db
 					.books()
-					.stream(isbns, ctx)
+					.stream(ctx, isbns)
 					.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
 			})
 		);
@@ -48,15 +48,15 @@ const createDisplayRowStream: CreateDisplayRowStream = (db, entity, ctx) => {
 
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
+ * @param ctx debug context
  * @param db database interface
  * @param entity a note or warehouse interface
  * @param currentPageStore a store containing the current page index
- * @param ctx debug context
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity, currentPageStore, ctx) => {
-	const fullTableRowStream = createDisplayRowStream(db, entity, ctx);
-	const entriesStore = readableFromStream(fullTableRowStream, [], ctx);
+export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore) => {
+	const fullTableRowStream = createDisplayRowStream(ctx, db, entity);
+	const entriesStore = readableFromStream(ctx, fullTableRowStream, []);
 
 	// Create a derived store that streams the entries value from the content store
 	const displayEntries = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
@@ -74,16 +74,17 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (db, entity,
 
 /**
  * Creates a store that streams the pagination data derived from the entries and current page stores.
+ * @param ctx debug context
  * @param entity a note or warehouse interface
  * @param currentPageStore the store containing the current page index (set by pagination element)
  * @returns
  */
 export const createPaginationDataStore = (
+	ctx: debug.DebugCtx,
 	entity: NoteInterface | WarehouseInterface | undefined,
-	currentPageStore: Readable<number>,
-	ctx: debug.DebugCtx
+	currentPageStore: Readable<number>
 ): Readable<PaginationData> => {
-	const entriesStore = readableFromStream(entity?.stream().entries(ctx), [], ctx);
+	const entriesStore = readableFromStream(ctx, entity?.stream().entries(ctx), []);
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
 		debug.log(ctx, "pagination_data:derived:inputs")({ $entriesStore, $currentPageStore });
