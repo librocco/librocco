@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { HTMLButtonAttributes } from 'svelte/elements';
-	import { FilePlus } from 'lucide-svelte';
+	import type { HTMLButtonAttributes } from "svelte/elements";
+	import { FilePlus } from "lucide-svelte";
 
 	interface $$Props extends HTMLButtonAttributes {
 		label: string;

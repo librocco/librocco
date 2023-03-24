@@ -1,24 +1,19 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Mail, Search, Edit, QrCode } from 'lucide-svelte';
+	import { Mail, Search, Edit, QrCode } from "lucide-svelte";
 
-	import { Button, ButtonSize } from '../../Button';
-	import { TextFieldSize } from '../enums';
+	import { Button, ButtonSize } from "../../Button";
+	import { TextFieldSize } from "../enums";
 
-	import TextField from './TextField.svelte';
+	import TextField from "./TextField.svelte";
 
 	export let Hst: Hst;
 </script>
 
-<Hst.Story title="Form Fields / TextField" layout={{ type: 'grid', width: 700 }}>
+<Hst.Story title="Form Fields / TextField" layout={{ type: "grid", width: 700 }}>
 	<Hst.Variant title="Default">
-		<TextField
-			name="default-placeholder"
-			label="Default with placeholder"
-			placeholder="placeholder"
-			helpText="And some help text"
-		/>
+		<TextField name="default-placeholder" label="Default with placeholder" placeholder="placeholder" helpText="And some help text" />
 	</Hst.Variant>
 	<Hst.Variant title="Start Adornment">
 		<TextField name="start-adornment" placeholder="placeholderemail@gmail.com" label="Start Adornment">

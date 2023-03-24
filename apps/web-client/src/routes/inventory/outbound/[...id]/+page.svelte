@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
-	import { page } from '$app/stores';
-	import { writable } from 'svelte/store';
+	import { Search } from "lucide-svelte";
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
+	import { writable } from "svelte/store";
 
 	import {
 		InventoryPage,
@@ -17,19 +18,20 @@
 		SideBarNav,
 		SidebarItem,
 		NewEntitySideNavButton
-	} from '@librocco/ui';
+	} from "@librocco/ui";
 
-	import { noteStates, NoteTempState } from '$lib/enums/inventory';
-	import { NoteState } from '$lib/enums/db';
+	import { noteStates, NoteTempState } from "$lib/enums/inventory";
+	import { NoteState } from "$lib/enums/db";
 
-	import type { PageData } from './$types';
+	import type { PageData } from "./$types";
 
-	import { getDB } from '$lib/db';
+	import { getDB } from "$lib/db";
 
-	import { createNoteStores } from '$lib/stores/inventory';
+	import { createNoteStores } from "$lib/stores/inventory";
 
-	import { generateUpdatedAtString } from '$lib/utils/time';
-	import { readableFromStream } from '$lib/utils/streams';
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
+	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
 
@@ -38,8 +40,18 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const outNoteListCtx = { name: '[OUT_NOTE_LIST]', debug: false };
-	const outNoteList = readableFromStream(db?.stream(outNoteListCtx).outNoteList, [], outNoteListCtx);
+	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
+	const outNoteList = readableFromStream(db?.stream().outNoteList(outNoteListCtx), [], outNoteListCtx);
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateNote = async () => {
+		const note = db.warehouse().note();
+		await note.create();
+		goto(`/inventory/outbound/${note._id}`);
+	};
 
 	$: note = data.note;
 
@@ -63,7 +75,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header title="Outbound" currentLocation="/inventory/outbound" slot="header" />
+	<Header links={inventoryLinks} title="Outbound" currentLocation="/inventory/outbound" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
@@ -71,7 +83,7 @@
 			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
-			<NewEntitySideNavButton label="Create note" />
+			<NewEntitySideNavButton label="Create note" on:click={handleCreateNote} />
 		</svelte:fragment>
 	</SideBarNav>
 
@@ -92,10 +104,7 @@
 								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 							/>
 							{#if $updatedAt}
-								<Badge
-									label="Last updated: {generateUpdatedAtString($updatedAt)}"
-									color={BadgeColor.Success}
-								/>
+								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
 							{/if}
 						</div>
 					</div>

@@ -1,8 +1,8 @@
-import pouchdb from 'pouchdb';
+import pouchdb from "pouchdb";
 
-import { newDatabaseInterface, type DatabaseInterface } from '@librocco/db';
+import { newDatabaseInterface, type DatabaseInterface } from "@librocco/db";
 
-import { DB_NAME } from '$lib/constants';
+import { DB_NAME } from "$lib/constants";
 
 let db: DatabaseInterface | undefined = undefined;
 

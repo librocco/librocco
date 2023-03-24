@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Menu, MenuButton, MenuItems, Transition } from '@rgossiaux/svelte-headlessui';
-	import { ChevronDown, MoreVertical } from 'lucide-svelte';
+	import { Menu, MenuButton, MenuItems, Transition } from "@rgossiaux/svelte-headlessui";
+	import { ChevronDown, MoreVertical } from "lucide-svelte";
 
-	import { AlignContainerEdge } from './enums';
+	import { AlignContainerEdge } from "./enums";
 
 	export let buttonLabel: string;
 	export let alignItemsEdge: AlignContainerEdge = AlignContainerEdge.Right;

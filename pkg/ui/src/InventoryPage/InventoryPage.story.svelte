@@ -1,14 +1,14 @@
 <script lang="ts">
-	import { Search, Check, ChevronDown } from 'lucide-svelte';
-	import type { Hst } from '@histoire/plugin-svelte';
+	import { Search, Check, ChevronDown } from "lucide-svelte";
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Pagination } from '../Pagination';
-	import { TextField } from '../FormFields';
-	import { SidebarItem, SidebarItemGroup, NewEntitySideNavButton, SideBarNav } from '../Sidebar';
-	import { Badge, BadgeColor } from '../Badge';
-	import { Header } from '../Header';
+	import { Pagination } from "../Pagination";
+	import { TextField } from "../FormFields";
+	import { SidebarItem, SidebarItemGroup, NewEntitySideNavButton, SideBarNav } from "../Sidebar";
+	import { Badge, BadgeColor } from "../Badge";
+	import { Header } from "../Header";
 
-	import InventoryPage from './InventoryPage.svelte';
+	import InventoryPage from "./InventoryPage.svelte";
 
 	export let Hst: Hst;
 </script>
@@ -106,20 +106,15 @@
 			<SideBarNav slot="sidebar">
 				<SidebarItemGroup name="Nuovo 2022" index={0} items={[]} />
 				<NewEntitySideNavButton label="Create Note" />
-				<SidebarItemGroup
-					name="Scolastica 2021"
-					index={1}
-					items={[{ name: 'John', current: false, href: '' }]}
-					expanded
-				/>
+				<SidebarItemGroup name="Scolastica 2021" index={1} items={[{ name: "John", current: false, href: "" }]} expanded />
 				<NewEntitySideNavButton label="Create Note" />
 				<SidebarItemGroup
 					index={2}
 					name="Varia 2018"
 					items={[
-						{ name: 'Silvio', href: '', current: true },
-						{ name: 'Sandra', href: '', current: false },
-						{ name: 'Timo', href: '', current: false }
+						{ name: "Silvio", href: "", current: true },
+						{ name: "Sandra", href: "", current: false },
+						{ name: "Timo", href: "", current: false }
 					]}
 					expanded
 				/>
