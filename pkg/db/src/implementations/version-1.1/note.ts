@@ -57,7 +57,8 @@ class Note implements NoteInterface {
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const cache = new ReplaySubject<NoteData>(1);
-		this.#stream = newDocumentStream<NoteData, NoteData>(this.#db._pouch, this._id).pipe(
+		/** @TODO find a way to pass context here (and have it be subscriber specific) */
+		this.#stream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
@@ -153,7 +154,7 @@ class Note implements NoteInterface {
 	 * Update is private as it's here for internal usage, while all updates to warehouse document
 	 * from outside the instance have their own designated methods.
 	 */
-	private update(data: Partial<NoteInterface>, ctx: debug.DebugCtx) {
+	private update(ctx: debug.DebugCtx, data: Partial<NoteInterface>) {
 		return runAfterCondition(async () => {
 			debug.log(ctx, "note:update")({ data });
 
@@ -195,7 +196,7 @@ class Note implements NoteInterface {
 	/**
 	 * Update note display name.
 	 */
-	setName(displayName: string, ctx: debug.DebugCtx): Promise<NoteInterface> {
+	setName(ctx: debug.DebugCtx, displayName: string): Promise<NoteInterface> {
 		const currentDisplayName = this.displayName;
 		debug.log(ctx, "note:set_name")({ displayName, currentDisplayName });
 
@@ -205,7 +206,7 @@ class Note implements NoteInterface {
 		}
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
-		return this.update({ displayName }, ctx);
+		return this.update(ctx, { displayName });
 	}
 
 	/**
@@ -234,7 +235,7 @@ class Note implements NoteInterface {
 				};
 			});
 
-			return this.update(this, {});
+			return this.update({}, this);
 		}, this.#initialized);
 	}
 
@@ -262,7 +263,7 @@ class Note implements NoteInterface {
 			entries.push(updateTr);
 		}
 		// Post an update, the local entries will be updated by the update function.
-		return this.update({ entries }, {});
+		return this.update({}, { entries });
 	}
 
 	removeTransactions(...transactions: Omit<VolumeStock, "quantity">[]): Promise<NoteInterface> {
@@ -276,7 +277,7 @@ class Note implements NoteInterface {
 
 		transactions.forEach(removeTransaction);
 
-		return this.update(this, {});
+		return this.update({}, this);
 	}
 
 	private async getStockPerIsbn(isbns: string[]): Promise<Record<string, number>[]> {
@@ -327,7 +328,7 @@ class Note implements NoteInterface {
 		}
 		// Check transactions before committing
 
-		return this.update({ committed: true }, ctx);
+		return this.update(ctx, { committed: true });
 	}
 
 	/**

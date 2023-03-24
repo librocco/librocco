@@ -1,12 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, filter, firstValueFrom, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, filter, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { DocType } from "@/enums";
-
 import { BooksInterface, DBInitState, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
-import { DatabaseInterface, WarehouseInterface } from "./types";
+import { DatabaseInterface, NoteListViewResp, WarehouseInterface, WarehouseListViewResp } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -32,42 +30,24 @@ class Database implements DatabaseInterface {
 		this._pouch = db;
 
 		const warehouseListCache = new ReplaySubject<NavListEntry[]>(1);
-		this.#warehouseListStream = newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
-			this._pouch,
-			"v1_list/warehouses",
-			{},
-			({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
-			{}
-		).pipe(
-			share({
-				connector: () => warehouseListCache
-			})
+		this.#warehouseListStream = newViewStream<WarehouseListViewResp>({}, this._pouch, "v1_list/warehouses").pipe(
+			map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))),
+			share({ connector: () => warehouseListCache })
 		);
 
 		const outNoteListCache = new ReplaySubject<NavListEntry[]>(1);
-		this.#outNoteListStream = newViewStream<
-			{ rows: { key: string; value: { displayName?: string; committed?: boolean } } },
-			NavListEntry[]
-		>(
-			this._pouch,
-			"v1_list/outbound",
-			{},
-			({ rows }) =>
+		this.#outNoteListStream = newViewStream<NoteListViewResp>({}, this._pouch, "v1_list/outbound").pipe(
+			map(({ rows }) =>
 				rows
 					.filter(({ value: { committed } }) => !committed)
-					.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
-			{}
-		).pipe(share({ connector: () => outNoteListCache }));
+					.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))
+			),
+			share({ connector: () => outNoteListCache })
+		);
 
 		const inNoteListCache = new ReplaySubject<InNoteList>(1);
-		this.#inNoteListStream = newViewStream<
-			{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } },
-			InNoteList
-		>(
-			this._pouch,
-			"v1_list/inbound",
-			{},
-			({ rows }) =>
+		this.#inNoteListStream = newViewStream<NoteListViewResp>({}, this._pouch, "v1_list/inbound").pipe(
+			map(({ rows }) =>
 				rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
 					if (type === "warehouse") {
 						return [...acc, { id: key, displayName, notes: [] }];
@@ -79,9 +59,10 @@ class Database implements DatabaseInterface {
 					acc[0].notes.push({ id: key, displayName });
 					acc[acc.length - 1].notes.push({ id: key, displayName });
 					return acc;
-				}, [] as InNoteList),
-			{}
-		).pipe(share({ connector: () => inNoteListCache }));
+				}, [] as InNoteList)
+			),
+			share({ connector: () => inNoteListCache })
+		);
 
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
@@ -89,7 +70,7 @@ class Database implements DatabaseInterface {
 		this._pouch.setMaxListeners(30);
 	}
 
-	init({ remoteDb }: { remoteDb?: string }, ctx: debug.DebugCtx): DatabaseInterface {
+	init(ctx: debug.DebugCtx, { remoteDb }: { remoteDb?: string }): DatabaseInterface {
 		// We're replicating only if a remote db is provided.
 		const withReplication = Boolean(remoteDb);
 
@@ -139,7 +120,7 @@ class Database implements DatabaseInterface {
 			this.#initState.next({ state: "replicating", withReplication });
 
 			// Pull data from the remote db (if provided)
-			replicateFromRemote({ local: this._pouch, remote: remoteDb }, ctx)
+			replicateFromRemote(ctx, this._pouch, remoteDb)
 				.then(() =>
 					firstValueFrom(
 						this.stream()
@@ -151,7 +132,7 @@ class Database implements DatabaseInterface {
 					debug.log(ctx, "init_db:replication:initial_replication_done")({});
 					this.#initState.next({ state: "ready", withReplication });
 					// Start live sync between local and remote db
-					replicateLive({ local: this._pouch, remote: remoteDb }, ctx);
+					replicateLive(ctx, this._pouch, remoteDb);
 				})
 				.catch((err) => {
 					// If remote db is not available, log the error and continue.

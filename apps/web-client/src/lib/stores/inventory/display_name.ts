@@ -11,9 +11,9 @@ import { readableFromStream } from "$lib/utils/streams";
 
 interface CreateDisplayNameStore {
 	(
+		ctx: debug.DebugCtx,
 		entity: WarehouseInterface | NoteInterface | undefined,
-		internalStateStore: Writable<NoteAppState> | null,
-		ctx: debug.DebugCtx
+		internalStateStore: Writable<NoteAppState> | null
 	): Writable<string | undefined>;
 }
 
@@ -22,11 +22,12 @@ interface CreateDisplayNameStore {
  * - the store listens to updates in the database and streams the value for the displayName to the UI
  * - propagates the update of displayName (from the UI) to the database.
  *
+ * @param ctx Debug context
  * @param entity the note/warehouse interface
  * @param internalStateStore (optional) reference to the internal state store for the note. If provided, the store will be updated with the temp state while the content store updates.
  */
-export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalStateStore, ctx = {}) => {
-	const displayNameInternal = readableFromStream(entity?.stream().displayName(ctx), "", ctx);
+export const createDisplayNameStore: CreateDisplayNameStore = (ctx, entity, internalStateStore) => {
+	const displayNameInternal = readableFromStream(ctx, entity?.stream().displayName(ctx), "");
 
 	// Set method updates the displayName in the database and, if the internal state store is provided, sets the temp state
 	// if internal state store is provided (and set to temp state by this action), it will be updated to the non-temp state
@@ -44,7 +45,7 @@ export const createDisplayNameStore: CreateDisplayNameStore = (entity, internalS
 		}
 
 		internalStateStore?.set(NoteTempState.Saving);
-		entity?.setName(displayName, ctx);
+		entity?.setName(ctx, displayName);
 	};
 
 	// Update method updates the store using the set method, only providing the current value of the store to the update function

@@ -13,7 +13,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 			db
 				.warehouse(id)
 				.create()
-				.then((w) => w.setName(id, {}))
+				.then((w) => w.setName({}, id))
 		)
 	);
 

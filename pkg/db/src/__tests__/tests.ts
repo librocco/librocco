@@ -78,10 +78,10 @@ export const standardApi: TestFunction = async (db) => {
 	expect(nonExistingNote).toBeUndefined();
 
 	// Committed notes can't be updated nor deleted.
-	note1 = await note1.setName("Note 1", {});
+	note1 = await note1.setName({}, "Note 1");
 	expect(note1.displayName).toEqual("Note 1");
 	await note1.commit({});
-	note1 = await note1.setName("New name", {});
+	note1 = await note1.setName({}, "New name");
 	expect(note1.displayName).toEqual("Note 1");
 
 	// Notes on the default warehouse should atomatically be outbound, and on specific warehouses inbound.
@@ -94,7 +94,7 @@ export const standardApi: TestFunction = async (db) => {
 export const noteTransactionOperations: TestFunction = async (db) => {
 	// Set up two warehouses (with display names) and an outbound note
 	const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
-	await Promise.all([wh1.setName("Warehouse 1", {}), wh2.setName("Warehouse 2", {})]);
+	await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
 
 	// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
 	const note = await db.warehouse().note().create();
@@ -200,7 +200,7 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 		expect(updatedAt).toBeDefined();
 	});
 
-	await note.setName("test", {});
+	await note.setName({}, "test");
 	await waitFor(() => {
 		expect(displayName).toEqual("test");
 	});
@@ -354,7 +354,7 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 	});
 
 	// Updating a warehouse name should be reflected in the stock stream
-	await warehouse1.setName("Warehouse 1", {});
+	await warehouse1.setName({}, "Warehouse 1");
 	await waitFor(() => {
 		expect(warehoues1Stock).toEqual([
 			{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1" }
@@ -398,7 +398,7 @@ export const warehousesListStream: TestFunction = async (db) => {
 	});
 
 	// Updating a warehouse name, should be reflected in warehouseList stream as well
-	await warehouse.setName("New Name", {});
+	await warehouse.setName({}, "New Name");
 	await waitFor(() => {
 		expect(warehouseList).toEqual([
 			{ id: versionId("0-all"), displayName: "All" },
@@ -445,7 +445,7 @@ export const inNotesStream: TestFunction = async (db) => {
 	});
 
 	// Updating of the note name should be reflected in the stream
-	await note1.setName("New Name", {});
+	await note1.setName({}, "New Name");
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
@@ -501,7 +501,7 @@ export const inNotesStream: TestFunction = async (db) => {
 	// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
 	// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
 	// only the latter took place.
-	await note1.setName("New Note - Updated", {});
+	await note1.setName({}, "New Note - Updated");
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{
@@ -592,7 +592,7 @@ export const outNotesStream: TestFunction = async (db) => {
 	});
 
 	// Change of note display name should be reflected in the stream
-	await note1.setName("New Name", {});
+	await note1.setName({}, "New Name");
 	await waitFor(() => {
 		expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Name" }]);
 	});
@@ -602,7 +602,7 @@ export const outNotesStream: TestFunction = async (db) => {
 	// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
 	// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
 	// only the latter took place.
-	await note1.setName("New Note - Updated", {});
+	await note1.setName({}, "New Note - Updated");
 	await waitFor(() => {
 		expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note - Updated" }]);
 	});
@@ -632,14 +632,14 @@ export const sequenceWarehouseDesignDocument: TestFunction = async (db) => {
 	expect(wh2.displayName).toEqual("New Warehouse (2)");
 	expect(wh3.displayName).toEqual("New Warehouse (3)");
 
-	await wh1.setName("New Name1", {});
-	await wh2.setName("New Name2", {});
+	await wh1.setName({}, "New Name1");
+	await wh2.setName({}, "New Name2");
 
 	const wh4 = await db.warehouse("3").create(); // New Warehouse (4)
 	expect(wh4.displayName).toEqual("New Warehouse (4)");
 
-	await wh3.setName("New Name3", {});
-	await wh4.setName("New Name4", {});
+	await wh3.setName({}, "New Name3");
+	await wh4.setName({}, "New Name4");
 
 	const wh5 = await db.warehouse("4").create(); // New Warehouse
 	expect(wh5.displayName).toEqual("New Warehouse");
@@ -658,13 +658,13 @@ export const sequenceNoteDesignDocument: TestFunction = async (db) => {
 	expect(note2).toMatchObject({ displayName: "New Note (2)" });
 	expect(note3).toMatchObject({ displayName: "New Note (3)" });
 
-	await note1.setName("New Name", {});
-	await note2.setName("New Name2", {});
+	await note1.setName({}, "New Name");
+	await note2.setName({}, "New Name2");
 	const note4 = await defaultWarehouse.note().create(); // New Note
 	expect(note4).toMatchObject({ displayName: "New Note (4)" });
 
-	await note3.setName("New Name", {});
-	await note4.setName("New Name2", {});
+	await note3.setName({}, "New Name");
+	await note4.setName({}, "New Name2");
 
 	const note5 = await defaultWarehouse.note().create(); // New Note
 	expect(note5).toMatchObject({ displayName: "New Note" });
@@ -803,7 +803,7 @@ export const booksInterface: TestFunction = async (db) => {
 
 	let bookEntries: (BookEntry | undefined)[] = [];
 
-	booksInterface.stream([book1.isbn, book2.isbn, book3.isbn], {}).subscribe((stream) => {
+	booksInterface.stream({}, [book1.isbn, book2.isbn, book3.isbn]).subscribe((stream) => {
 		bookEntries = stream;
 	});
 
@@ -922,19 +922,19 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 		.subscribe((dn$) => (ndn = dn$));
 
 	// Set the initial name for the note
-	note.setName("Note name", {});
+	note.setName({}, "Note name");
 	await waitFor(() => {
 		expect(ndn).toEqual("Note name");
 	});
 
 	// Update the name from a different instance, simulating an outside update
-	await db.warehouse().note("note-1").setName("Note name updated", {});
+	await db.warehouse().note("note-1").setName({}, "Note name updated");
 	await waitFor(() => {
 		expect(ndn).toEqual("Note name updated");
 	});
 
 	// Original instance should also be able to update the name (should have the correct _rev)
-	note.setName("Note name updated again", {});
+	note.setName({}, "Note name updated again");
 	await waitFor(() => {
 		expect(ndn).toEqual("Note name updated again");
 	});
@@ -950,7 +950,7 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	const wInst1 = db.warehouse("warehosue-1");
 	const wInst2 = db.warehouse("warehosue-1");
 
-	await wInst2.setName("Warehouse 1's name", {});
+	await wInst2.setName({}, "Warehouse 1's name");
 
 	await waitFor(() => expect(wInst1).toEqual(wInst2));
 };

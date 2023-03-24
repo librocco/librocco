@@ -21,3 +21,12 @@ export type WarehouseData = WD;
 export type WarehouseInterface = WI<NoteInterface>;
 
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface>;
+
+export type WarehouseListViewResp = {
+	key: string;
+	value: { displayName?: string };
+};
+export type NoteListViewResp = {
+	key: string;
+	value: { displayName?: string; committed?: boolean };
+};
