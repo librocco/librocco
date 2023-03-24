@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/svelte';
 import html from 'svelte-htm';
-import { get } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { vi, expect, test, describe } from 'vitest';
 import userEvent from '@testing-library/user-event';
 
@@ -10,7 +10,11 @@ import { rows } from './data';
 import InventoryTable from '../InventoryTable.svelte';
 
 describe('Manages row data:', () => {
-	const table = createTable({ rows });
+	const tableOptions = writable({
+		data: rows
+	});
+
+	const table = createTable(tableOptions);
 
 	test('Adds `key` and `rowIx` to each row', () => {
 		const row1 = get(table).rows[0];
@@ -20,20 +24,24 @@ describe('Manages row data:', () => {
 	});
 
 	test('Adds new rows', () => {
-		table.addRows([rows[0]]);
+		tableOptions.update(({ data }) => ({ data: [...data, rows[0]] }));
 
 		expect(get(table).rows.length).toEqual(4);
 	});
 
 	test('Removes rows', () => {
-		table.removeRows(get(table).rows);
+		tableOptions.set({ data: [] });
 
 		expect(get(table).rows.length).toBe(0);
 	});
 });
 
 describe('Table row action:', () => {
-	const table = createTable({ rows });
+	const tableOptions = writable({
+		data: rows
+	});
+
+	const table = createTable(tableOptions);
 
 	test('Sets the row aria-rowindex attribute', () => {
 		render(
@@ -66,7 +74,11 @@ describe('Table row action:', () => {
 
 describe('Table action:', () => {
 	test('Sets the table aria-rowcount attribute', async () => {
-		const table = createTable({ rows });
+		const tableOptions = writable({
+			data: rows
+		});
+
+		const table = createTable(tableOptions);
 
 		const initialRowCount = rows.length;
 
@@ -83,7 +95,11 @@ describe('Table action:', () => {
 });
 
 test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", async () => {
-	const table = createTable({ rows });
+	const tableOptions = writable({
+		data: rows
+	});
+
+	const table = createTable(tableOptions);
 
 	render(html` <${InventoryTable} table=${table} /> `);
 
@@ -98,7 +114,12 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	// Remove data row 1
 	const dataRow1 = get(table).rows[0];
-	table.removeRows([dataRow1]);
+
+	tableOptions.update(({ data }) => {
+		const filtered = data.filter((row) => row.isbn !== dataRow1.isbn);
+
+		return { data: filtered };
+	});
 
 	await waitFor(() => {
 		expect(screen.getByRole('table')).toHaveAttribute('aria-rowcount', '3');
