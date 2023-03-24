@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
+	import { writable } from 'svelte/store';
 
 	import { Button, ButtonColor } from '../../Button';
 
@@ -11,13 +12,19 @@
 
 	export let Hst: Hst;
 
-	const defaultStockTable = createTable({ rows });
+	const tableOptions = writable({
+		data: rows
+	});
+
+	const defaultStockTable = createTable(tableOptions);
+
+	const addRows = () => tableOptions.update(({ data }) => ({ data: [...data, rows[0]] }));
 </script>
 
 <Hst.Story title="Tables / Inventory Table (Stock & In Note)">
 	<div class="flex flex-col gap-y-4">
 		<div class="w-24 p-1">
-			<Button color={ButtonColor.Primary} on:click={() => defaultStockTable.addRows([rows[0]])}>Add row</Button>
+			<Button color={ButtonColor.Primary} on:click={addRows}>Add row</Button>
 		</div>
 
 		<InventoryTable table={defaultStockTable} />
