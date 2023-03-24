@@ -1,14 +1,18 @@
 <script lang="ts">
 	import type { createTable } from "./table";
-	import type { InventoryTableData } from "./types";
+	import type { OutNoteTableData } from "./types";
 
 	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
+	import TdWarehouseSelect from "./TdWarehouseSelect.svelte";
+
+	import { quadIn } from "svelte/easing";
+	import { fadeBgColor } from "../lib/transitions";
 	import { thRowBaseStyles } from "./utils";
 
-	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
 
-	const { resetRowSelection, table: tableAction, tableRow } = table;
+	const { table: tableAction, tableRow, resetRowSelection } = table;
 	$: ({ rows, selected } = $table);
 
 	const isChecked = (event: Event) => (event?.target as HTMLInputElement)?.checked;
@@ -24,8 +28,7 @@
 		price: "Price",
 		publisher: "Publisher",
 		year: "Year",
-		editedBy: "Edited By",
-		outOfPrint: "Out of Print"
+		warehouses: "Warehouse"
 	};
 </script>
 
@@ -74,27 +77,20 @@
 					<span class="hidden lg:inline">{headers.quantity}</span>
 					<span class="inline lg:hidden">qty</span>
 				</th>
-				<th scope="col" class={thRowBaseStyles}>
+				<th scope="col" class="{thRowBaseStyles} hidden sm:table-cell">
 					{headers.price}
 				</th>
-				<th scope="col" class="{thRowBaseStyles} hidden sm:table-cell">
+				<th scope="col" class="{thRowBaseStyles} hidden md:table-cell">
 					{headers.year}
 				</th>
-				<th scope="col" class="{thRowBaseStyles} hidden md:table-cell">
-					{headers.publisher}
-				</th>
-				<th scope="col" class="{thRowBaseStyles} hidden xl:table-cell">
-					{headers.editedBy}
-				</th>
-				<th scope="col" class="{thRowBaseStyles} hidden xl:table-cell">
-					{headers.outOfPrint}
-				</th>
+
+				<th scope="col" class={thRowBaseStyles}> {headers.warehouses} </th>
 			</tr>
 		</thead>
 
 		<tbody>
 			{#each rows as row (row.key)}
-				{@const { rowIx, isbn, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
+				{@const { isbn, title, authors, year, quantity, price, rowIx } = row}
 				<tr
 					use:tableRow={{
 						// Header row starts the count at 0
@@ -116,8 +112,8 @@
 				>
 					<td
 						class={`px-2 text-center sm:align-middle border-l-4 
-						${selected.includes(row) ? "border-teal-500" : "border-transparent"}
-					`}
+                        ${selected.includes(row) ? "border-teal-500" : "border-transparent"}
+                    `}
 					>
 						<span class="inline-block">
 							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
@@ -130,8 +126,8 @@
 							<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
 							<dt class="sr-only">Authors:</dt>
 							<dd class="mt-1 truncate font-light text-gray-500 lg:hidden">{authors}</dd>
-							<dt class="sr-only">Year:</dt>
-							<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">{year}</dd>
+							<dt class="sr-only">Price:</dt>
+							<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">€{price}</dd>
 						</dl>
 					</th>
 					<td class="hidden px-3 py-4 lg:table-cell">
@@ -143,24 +139,14 @@
 					<td class="py-4 px-3 text-left">
 						<Badge label={`${quantity}`} size={BadgeSize.LG} />
 					</td>
-					<td class="py-4 px-3 text-left">
+					<td class="hidden py-4 px-3 text-left sm:table-cell">
 						{price}
 					</td>
-					<td class="hidden py-4 px-3 text-left sm:table-cell">
+					<td class="hidden py-4 px-3 text-left md:table-cell">
 						{year}
 					</td>
 
-					<td class="hidden py-4 px-3 md:table-cell">
-						{publisher}
-					</td>
-					<td class="hidden py-4 px-3 xl:table-cell">
-						{editedBy}
-					</td>
-					<td class="hidden py-4 px-3 text-center xl:table-cell">
-						<span class="inline-block">
-							<Checkbox name={`Row ${rowIx} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
-						</span>
-					</td>
+					<TdWarehouseSelect data={row} {rowIx} />
 				</tr>
 			{/each}
 		</tbody>
