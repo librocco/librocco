@@ -15,13 +15,15 @@
 </script>
 
 <Hst.Story title="Tables / Combobox Table">
-	<div class="relative">
-		<TextField
-			name="search-books"
-			placeholder="Search for books"
-			inputAction={combobox.input}
-			value={$combobox.selected?.title}
-		/>
-		<ComboboxTable rows={[xeroQuantityRow, ...rows]} {combobox} on:select={(e) => console.log(e)} />
+	<div class="h-96 overflow-hidden">
+		<div class="relative">
+			<TextField
+				name="search-books"
+				placeholder="Search for books"
+				inputAction={combobox.input}
+				value={$combobox.selected?.title}
+			/>
+			<ComboboxTable rows={[xeroQuantityRow, ...rows]} {combobox} on:select={(e) => console.log(e)} />
+		</div>
 	</div>
 </Hst.Story>

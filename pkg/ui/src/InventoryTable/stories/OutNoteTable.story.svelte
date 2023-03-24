@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Hst } from '@histoire/plugin-svelte';
+	import { writable } from 'svelte/store';
 
 	import OutNoteTable from '../OutNoteTable.svelte';
 	import TdWarehouseSelect from '../TdWarehouseSelect.svelte';
@@ -11,14 +12,20 @@
 	export let Hst: Hst;
 
 	const multipleWarehouses = ['Varia 2018', 'Nuovo 2021'];
-	const singleWarehouse = ['Varia 2018'];
+	const singleWarehouse = 'Varia 2018';
 
 	const outNoteRows = [
-		{ ...rows[0], warehouses: multipleWarehouses },
-		{ ...rows[1], warehouses: singleWarehouse }
+		{ ...rows[0], warehouseName: multipleWarehouses },
+		{ ...rows[1], warehouseName: singleWarehouse }
 	];
 
-	const outNoteTable = createTable({ rows: outNoteRows });
+	const tableOptions = writable({
+		data: outNoteRows
+	});
+
+	const outNoteTable = createTable(tableOptions);
+
+	const addRows = () => tableOptions.update(({ data }) => ({ data: [...data, outNoteRows[0]] }));
 </script>
 
 <Hst.Story title="Tables / Out Note Table">
@@ -27,11 +34,13 @@
 	</Hst.Variant>
 
 	<Hst.Variant title="Warehouse Select (Table Data)">
-		<table>
-			<tbody>
-				<TdWarehouseSelect rowIx={1} data={outNoteRows[0]} />
-				<TdWarehouseSelect rowIx={0} data={outNoteRows[1]} />
-			</tbody>
-		</table>
+		<div class="h-40">
+			<table>
+				<tbody>
+					<TdWarehouseSelect rowIx={1} data={outNoteRows[0]} />
+					<TdWarehouseSelect rowIx={0} data={outNoteRows[1]} />
+				</tbody>
+			</table>
+		</div>
 	</Hst.Variant>
 </Hst.Story>
