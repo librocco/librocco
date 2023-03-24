@@ -25,7 +25,7 @@ export interface BookStore {
 }
 
 /** The properties of a book + quantity row shown in the note/warehouse table. */
-export type DisplayRow = VolumeStockClient & Partial<BookEntry>;
+export type DisplayRow = VolumeStockClient & BookEntry;
 
 /** A structure of the warehouse store: `readable<WarehouseStore>()`. */
 export interface WarehouseStore {
