@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { createTable } from './table';
-	import type { OutNoteTableData } from './types';
+	import type { createTable } from "./table";
+	import type { OutNoteTableData } from "./types";
 
-	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from '../';
+	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
-	import TdWarehouseSelect from './TdWarehouseSelect.svelte';
+	import TdWarehouseSelect from "./TdWarehouseSelect.svelte";
 
-	import { quadIn } from 'svelte/easing';
-	import { fadeBgColor } from '../lib/transitions';
-	import { thRowBaseStyles } from './utils';
+	import { quadIn } from "svelte/easing";
+	import { fadeBgColor } from "../lib/transitions";
+	import { thRowBaseStyles } from "./utils";
 
 	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
 
@@ -21,14 +21,14 @@
 	$: rowCount = rows.length + 1;
 
 	const headers = {
-		isbn: 'ISBN',
-		title: 'Title',
-		authors: 'Authors',
-		quantity: 'Quantity',
-		price: 'Price',
-		publisher: 'Publisher',
-		year: 'Year',
-		warehouses: 'Warehouse'
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		quantity: "Quantity",
+		price: "Price",
+		publisher: "Publisher",
+		year: "Year",
+		warehouses: "Warehouse"
 	};
 </script>
 
@@ -46,7 +46,7 @@
 				class="whitespace-nowrap"
 				use:tableRow={{
 					position: 0,
-					on: 'change',
+					on: "change",
 					handleSelect: (event, selected) => {
 						const isSelected = isChecked(event);
 
@@ -95,7 +95,7 @@
 					use:tableRow={{
 						// Header row starts the count at 0
 						position: rowIx + 1,
-						on: 'change',
+						on: "change",
 						handleSelect: (event, selected) => {
 							const isSelected = isChecked(event);
 
@@ -107,12 +107,12 @@
 						}
 					}}
 					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
-						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
+						selected.includes(row) ? "bg-gray-100" : "even:bg-gray-50"
 					}`}
 				>
 					<td
 						class={`px-2 text-center sm:align-middle border-l-4 
-                        ${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+                        ${selected.includes(row) ? "border-teal-500" : "border-transparent"}
                     `}
 					>
 						<span class="inline-block">

@@ -1,20 +1,20 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from 'rxjs';
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import { DocType } from '@/enums';
+import { DocType } from "@/enums";
 
-import { VersionedString, VolumeStockClient } from '@/types';
+import { VersionedString, VolumeStockClient } from "@/types";
 
-import { NEW_WAREHOUSE } from '@/constants';
+import { NEW_WAREHOUSE } from "@/constants";
 
-import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from './types';
+import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
 
-import { newNote } from './note';
-import { WarehouseStockEntry } from './designDocuments';
+import { newNote } from "./note";
+import { WarehouseStockEntry } from "./designDocuments";
 
-import { runAfterCondition, sortBooks, uniqueTimestamp, versionId, isEmpty } from '@/utils/misc';
-import { newDocumentStream, newViewStream } from '@/utils/pouchdb';
+import { runAfterCondition, sortBooks, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
+import { newDocumentStream, newViewStream } from "@/utils/pouchdb";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -29,14 +29,14 @@ class Warehouse implements WarehouseInterface {
 	docType = DocType.Warehouse;
 	_rev?: string;
 
-	displayName = '';
+	displayName = "";
 
 	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
 
 		this._id = !id
 			? // If id not provided, we're accessing the default warehouse
-			  versionId('0-all')
+			  versionId("0-all")
 			: // If NEW_WAREHOUSE sentinel provided, generate a new id
 			id === NEW_WAREHOUSE
 			? versionId(uniqueTimestamp())
@@ -73,15 +73,15 @@ class Warehouse implements WarehouseInterface {
 	/**
 	 * Update instance is a method for internal usage, used to update the instance with the data (doesn't update the DB)
 	 */
-	private updateInstance(data: Partial<Omit<WarehouseData, '_id'>>) {
+	private updateInstance(data: Partial<Omit<WarehouseData, "_id">>) {
 		// No-op if the data is empty
 		if (isEmpty(data)) {
 			return this;
 		}
 
 		// Update the data with provided fields
-		this.updateField('_rev', data._rev);
-		this.updateField('displayName', data.displayName);
+		this.updateField("_rev", data._rev);
+		this.updateField("displayName", data.displayName);
 
 		this.#exists = true;
 
@@ -100,17 +100,17 @@ class Warehouse implements WarehouseInterface {
 
 			let sequentialNumber = 0;
 			try {
-				const sequenceQuery = await this.#db._pouch.query('v1_sequence/warehouse');
+				const sequenceQuery = await this.#db._pouch.query("v1_sequence/warehouse");
 				sequentialNumber = sequenceQuery.rows[0].value.max;
 			} catch {
 				//
 			}
-			const seqIndex = sequentialNumber ? ` (${sequentialNumber + 1})` : '';
+			const seqIndex = sequentialNumber ? ` (${sequentialNumber + 1})` : "";
 
 			const initialValues = {
 				...this,
 				// If creating a default warehouse, we're initialising the 'displayName' as "All"
-				displayName: this._id === versionId('0-all') ? 'All' : `New Warehouse${seqIndex}`
+				displayName: this._id === versionId("0-all") ? "All" : `New Warehouse${seqIndex}`
 			};
 			// Try and store the warehouse in the db
 			try {
@@ -186,14 +186,14 @@ class Warehouse implements WarehouseInterface {
 	 */
 	setName(displayName: string, ctx: debug.DebugCtx): Promise<WarehouseInterface> {
 		const currentDisplayName = this.displayName;
-		debug.log(ctx, 'note:set_name')({ displayName, currentDisplayName });
+		debug.log(ctx, "note:set_name")({ displayName, currentDisplayName });
 
 		if (displayName === currentDisplayName || !displayName) {
-			debug.log(ctx, 'note:set_name:noop')({ displayName, currentDisplayName });
+			debug.log(ctx, "note:set_name:noop")({ displayName, currentDisplayName });
 			return Promise.resolve(this);
 		}
 
-		debug.log(ctx, 'note:set_name:updating')({ displayName });
+		debug.log(ctx, "note:set_name:updating")({ displayName });
 		return this.update({ displayName });
 	}
 
@@ -206,19 +206,19 @@ class Warehouse implements WarehouseInterface {
 		return {
 			displayName: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, 'streams: display_name: input')),
-					map(({ displayName }) => displayName || ''),
-					tap(debug.log(ctx, 'streams: display_name: res'))
+					tap(debug.log(ctx, "streams: display_name: input")),
+					map(({ displayName }) => displayName || ""),
+					tap(debug.log(ctx, "streams: display_name: res"))
 				),
 
 			entries: (ctx: debug.DebugCtx) =>
 				combineLatest([
 					newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
 						this.#db._pouch,
-						'v1_stock/by_warehouse',
+						"v1_stock/by_warehouse",
 						{
 							group_level: 2,
-							...(this._id !== versionId('0-all') && {
+							...(this._id !== versionId("0-all") && {
 								startkey: [this._id],
 								endkey: [this._id, {}],
 								include_end: true
@@ -230,7 +230,7 @@ class Warehouse implements WarehouseInterface {
 									isbn,
 									quantity,
 									warehouseId,
-									warehouseName: ''
+									warehouseName: ""
 								}))
 								.filter(({ quantity }) => quantity > 0)
 								.sort(sortBooks),
@@ -238,24 +238,20 @@ class Warehouse implements WarehouseInterface {
 					),
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(
-					tap(debug.log(ctx, 'warehouse_entries:stream:input')),
+					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(([entries, warehouses]) => {
 						// Create a record of warehouse ids and names for easy lookup
-						const warehouseNames = warehouses.reduce(
-							(acc, { id, displayName }) => ({ ...acc, [id]: displayName }),
-							{}
-						);
+						const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
 						const res = entries.map((e) => ({
 							...e,
-							warehouseName: warehouseNames[e.warehouseId] || 'not-found'
+							warehouseName: warehouseNames[e.warehouseId] || "not-found"
 						}));
 						return res;
 					}),
-					tap(debug.log(ctx, 'warehouse_entries:stream:output'))
+					tap(debug.log(ctx, "warehouse_entries:stream:output"))
 				)
 		};
 	}
 }
 
-export const newWarehouse = (db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface =>
-	new Warehouse(db, id);
+export const newWarehouse = (db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface => new Warehouse(db, id);

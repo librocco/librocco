@@ -2,7 +2,7 @@
 	import { Search } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
-	import { writable } from 'svelte/store';
+	import { writable } from "svelte/store";
 
 	import {
 		InventoryPage,

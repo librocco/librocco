@@ -1,11 +1,11 @@
 <script lang="ts">
-	import { createCombobox } from 'svelte-headlessui';
-	import { ChevronsUpDown } from 'lucide-svelte';
+	import { createCombobox } from "svelte-headlessui";
+	import { ChevronsUpDown } from "lucide-svelte";
 
-	import type { OutNoteTableData } from './types';
+	import type { OutNoteTableData } from "./types";
 
-	import { ComboboxMenu } from '../Menus';
-	import { TextField } from '../FormFields';
+	import { ComboboxMenu } from "../Menus";
+	import { TextField } from "../FormFields";
 
 	export let data: OutNoteTableData;
 	export let rowIx: number;
@@ -16,7 +16,7 @@
 </script>
 
 <td class="py-4 px-1.5">
-	{#if typeof warehouseName !== 'string'}
+	{#if typeof warehouseName !== "string"}
 		<TextField
 			name={`Row ${rowIx} warehouse`}
 			inputAction={combobox.input}

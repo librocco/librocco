@@ -1,1 +1,1 @@
-export { fadeBgColor } from '../transitions/fadeBgColor';
+export { fadeBgColor } from "../transitions/fadeBgColor";
