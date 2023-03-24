@@ -1,4 +1,4 @@
-import type { TransitionConfig, EasingFunction } from 'svelte/transition';
+import type { TransitionConfig, EasingFunction } from "svelte/transition";
 
 interface Params {
 	duration?: number;

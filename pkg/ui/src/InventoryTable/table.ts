@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from 'uuid';
-import { derived, writable, type Writable } from 'svelte/store';
-import type { Action } from 'svelte/action';
+import { v4 as uuidv4 } from "uuid";
+import { derived, writable, type Writable } from "svelte/store";
+import type { Action } from "svelte/action";
 
 /**
  * Table factory options
@@ -17,7 +17,7 @@ type Options<T> = WritableOrValue<TableOptions<T>>;
 export function createTable<T = object[]>(options: Options<T>) {
 	let optionsStore: Writable<TableOptions<T>>;
 
-	if ('subscribe' in options) {
+	if ("subscribe" in options) {
 		optionsStore = options;
 	} else {
 		optionsStore = writable(options);
@@ -61,12 +61,12 @@ export function createTable<T = object[]>(options: Options<T>) {
 	 * Table action
 	 */
 	const table: Action<HTMLTableElement> = (node, { rowCount }: { rowCount: number }) => {
-		node.setAttribute('aria-rowcount', `${rowCount}`);
+		node.setAttribute("aria-rowcount", `${rowCount}`);
 
 		return {
 			// Update row-count if rows length changes
 			update({ rowCount }: { rowCount: number }) {
-				node.setAttribute('aria-rowcount', `${rowCount}`);
+				node.setAttribute("aria-rowcount", `${rowCount}`);
 			},
 			destroy() {
 				return;
@@ -82,7 +82,7 @@ export function createTable<T = object[]>(options: Options<T>) {
 	const tableRow = (
 		node: HTMLTableRowElement,
 		{
-			on = 'click',
+			on = "click",
 			handleSelect = () => ({}),
 			position
 		}: {
@@ -100,14 +100,14 @@ export function createTable<T = object[]>(options: Options<T>) {
 		if (position !== undefined) {
 			// rows array is xero indexed while aria rowIx's start at 1
 			// https://www.w3.org/WAI/ARIA/apg/practices/grid-and-table-properties/#usingaria-rowcountandaria-rowindex
-			node.setAttribute('aria-rowindex', `${position + 1}`);
+			node.setAttribute("aria-rowindex", `${position + 1}`);
 		}
 
 		return {
 			// Update row-index if position changes
 			update({ position }: { position?: number }) {
 				if (position !== undefined) {
-					node.setAttribute('aria-rowindex', `${position + 1}`);
+					node.setAttribute("aria-rowindex", `${position + 1}`);
 				}
 			},
 			destroy() {

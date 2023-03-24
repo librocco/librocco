@@ -1,11 +1,11 @@
 <script lang="ts">
-	import Transition from 'svelte-transition';
-	import type { createCombobox } from 'svelte-headlessui';
+	import Transition from "svelte-transition";
+	import type { createCombobox } from "svelte-headlessui";
 
-	import { Badge, BadgeColor, BadgeSize } from '../Badge';
+	import { Badge, BadgeColor, BadgeSize } from "../Badge";
 
-	import type { BookCoreRowData } from './types';
-	import { thRowBaseStyles } from './utils';
+	import type { BookCoreRowData } from "./types";
+	import { thRowBaseStyles } from "./utils";
 
 	export let combobox: ReturnType<typeof createCombobox>;
 	export let rows: BookCoreRowData[];
@@ -38,7 +38,7 @@
 					<tr
 						use:combobox.item={{ value: row }}
 						class={`whitespace-nowrap text-sm font-light text-gray-500 ${
-							active || selected ? 'bg-gray-100' : 'even:bg-gray-50'
+							active || selected ? "bg-gray-100" : "even:bg-gray-50"
 						}`}
 					>
 						<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800">
@@ -54,7 +54,7 @@
 						</th>
 						<td class="py-4 px-3 text-left">
 							<Badge
-								label={hasCopies ? `${quantity} copy(s)` : 'No copies'}
+								label={hasCopies ? `${quantity} copy(s)` : "No copies"}
 								color={hasCopies ? BadgeColor.Success : BadgeColor.Neutral}
 								size={BadgeSize.LG}
 							/>

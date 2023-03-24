@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
-	import { writable } from 'svelte/store';
+	import type { Hst } from "@histoire/plugin-svelte";
+	import { writable } from "svelte/store";
 
-	import { Button, ButtonColor } from '../../Button';
+	import { Button, ButtonColor } from "../../Button";
 
-	import InventoryTable from '../InventoryTable.svelte';
+	import InventoryTable from "../InventoryTable.svelte";
 
-	import { createTable } from '../table';
+	import { createTable } from "../table";
 
-	import { rows } from '../__tests__/data';
+	import { rows } from "../__tests__/data";
 
 	export let Hst: Hst;
 

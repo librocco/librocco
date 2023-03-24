@@ -1,18 +1,18 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
-	import { writable } from 'svelte/store';
+	import type { Hst } from "@histoire/plugin-svelte";
+	import { writable } from "svelte/store";
 
-	import OutNoteTable from '../OutNoteTable.svelte';
-	import TdWarehouseSelect from '../TdWarehouseSelect.svelte';
+	import OutNoteTable from "../OutNoteTable.svelte";
+	import TdWarehouseSelect from "../TdWarehouseSelect.svelte";
 
-	import { createTable } from '../table';
+	import { createTable } from "../table";
 
-	import { rows } from '../__tests__/data';
+	import { rows } from "../__tests__/data";
 
 	export let Hst: Hst;
 
-	const multipleWarehouses = ['Varia 2018', 'Nuovo 2021'];
-	const singleWarehouse = 'Varia 2018';
+	const multipleWarehouses = ["Varia 2018", "Nuovo 2021"];
+	const singleWarehouse = "Varia 2018";
 
 	const outNoteRows = [
 		{ ...rows[0], warehouseName: multipleWarehouses },
