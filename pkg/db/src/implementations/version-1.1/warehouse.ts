@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString, VolumeStockClient } from "@/types";
+import { VersionedString } from "@/types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -45,7 +45,8 @@ class Warehouse implements WarehouseInterface {
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const cache = new ReplaySubject<WarehouseData>(1);
-		this.#stream = newDocumentStream<WarehouseData, WarehouseData>(this.#db._pouch, this._id).pipe(
+		/** @TODO find a way to pass context here (and have it be subscriber specific) */
+		this.#stream = newDocumentStream<WarehouseData>({}, this.#db._pouch, this._id).pipe(
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
@@ -153,7 +154,7 @@ class Warehouse implements WarehouseInterface {
 	 * Update is private as it's here for internal usage, while all updates to warehouse document
 	 * from outside the instance have their own designated methods.
 	 */
-	private update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
+	private update(ctx: debug.DebugCtx, data: Partial<WarehouseData>): Promise<WarehouseInterface> {
 		return runAfterCondition(async () => {
 			const updatedData = { ...this, ...data };
 			const { rev } = await this.#db._pouch.put(updatedData);
@@ -184,7 +185,7 @@ class Warehouse implements WarehouseInterface {
 	/**
 	 * Update warehouse display name.
 	 */
-	setName(displayName: string, ctx: debug.DebugCtx): Promise<WarehouseInterface> {
+	setName(ctx: debug.DebugCtx, displayName: string): Promise<WarehouseInterface> {
 		const currentDisplayName = this.displayName;
 		debug.log(ctx, "note:set_name")({ displayName, currentDisplayName });
 
@@ -194,7 +195,7 @@ class Warehouse implements WarehouseInterface {
 		}
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
-		return this.update({ displayName });
+		return this.update({}, { displayName });
 	}
 
 	/**
@@ -213,18 +214,15 @@ class Warehouse implements WarehouseInterface {
 
 			entries: (ctx: debug.DebugCtx) =>
 				combineLatest([
-					newViewStream<{ rows: WarehouseStockEntry }, VolumeStockClient[]>(
-						this.#db._pouch,
-						"v1_stock/by_warehouse",
-						{
-							group_level: 2,
-							...(this._id !== versionId("0-all") && {
-								startkey: [this._id],
-								endkey: [this._id, {}],
-								include_end: true
-							})
-						},
-						({ rows }) =>
+					newViewStream<{ rows: WarehouseStockEntry }>(ctx, this.#db._pouch, "v1_stock/by_warehouse", {
+						group_level: 2,
+						...(this._id !== versionId("0-all") && {
+							startkey: [this._id],
+							endkey: [this._id, {}],
+							include_end: true
+						})
+					}).pipe(
+						map(({ rows }) =>
 							rows
 								.map(({ key: [warehouseId, isbn], value: quantity }) => ({
 									isbn,
@@ -233,8 +231,8 @@ class Warehouse implements WarehouseInterface {
 									warehouseName: ""
 								}))
 								.filter(({ quantity }) => quantity > 0)
-								.sort(sortBooks),
-						ctx
+								.sort(sortBooks)
+						)
 					),
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(

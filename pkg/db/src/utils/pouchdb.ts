@@ -60,14 +60,13 @@ const newChangeEmitter = <M extends Record<string, unknown> = Record<string, unk
  * @param id document id
  * @param selector optional selector function
  */
-export const newDocumentStream = <M extends Record<string, unknown>, R>(
+export const newDocumentStream = <M extends Record<string, any>>(
+	ctx: debug.DebugCtx,
 	db: PouchDB.Database,
 	id: string,
-	selector: (doc?: M) => R = (doc) => doc as R,
-	fallbackDoc: M = {} as M,
-	ctx: debug.DebugCtx = {}
+	fallbackDoc: M = {} as M
 ) =>
-	new Observable<R>((subscriber) => {
+	new Observable<M>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
 		// so that we can cancel the emitter when the subscription is cancelled.
 		// This allows us to isolate the change emitter to a single subscription and make sure all
@@ -87,31 +86,26 @@ export const newDocumentStream = <M extends Record<string, unknown>, R>(
 				return fallbackDoc;
 			});
 		const initialState = from(initialPromise);
-		const changeStream = newChangesStream<M>(emitter, ctx).pipe(
+		const changeStream = newChangesStream<M>(ctx, emitter).pipe(
 			tap(debug.log(ctx, "document_stream:change")),
 			map(({ doc }) => doc),
 			tap(debug.log(ctx, "document_stream:change:transformed"))
 		);
 
 		concat(initialState, changeStream)
-			.pipe(
-				tap(debug.log(ctx, "document_stream:result:raw")),
-				map(selector),
-				tap(debug.log(ctx, "document_stream:result:transformed"))
-			)
+			.pipe(tap(debug.log(ctx, "document_stream:result")))
 			.subscribe((doc) => subscriber.next(doc));
 
 		return () => emitter.cancel();
 	});
 
-export const newViewStream = <M extends Record<string, any>, R>(
+export const newViewStream = <M extends Record<string, any>>(
+	ctx: debug.DebugCtx,
 	db: PouchDB.Database,
 	view: string,
-	query_params: PouchDB.Query.Options<Record<string, unknown>, M> = {},
-	transform: (doc: PouchDB.Query.Response<M>) => R = (rows) => rows as any,
-	ctx: debug.DebugCtx
+	query_params: PouchDB.Query.Options<Record<string, unknown>, M> = {}
 ) =>
-	new Observable<R>((subscriber) => {
+	new Observable<PouchDB.Query.Response<M>>((subscriber) => {
 		// Each subscription creates a new pouchdb change emitter
 		// so that we can cancel the emitter when the subscription is cancelled.
 		// This allows us to isolate the change emitter to a single subscription and make sure all
@@ -138,7 +132,7 @@ export const newViewStream = <M extends Record<string, any>, R>(
 			});
 		const initialQueryStream = from(initialQueryPromise);
 		// Create a stream for changes (happening after the subscription)
-		const updatesStream = newChangesStream<M>(emitter, ctx).pipe(
+		const updatesStream = newChangesStream(ctx, emitter).pipe(
 			tap(debug.log(ctx, "view_stream:change")),
 			// The change only triggers a new query (as changes are partial and we require the full view update)
 			switchMap(() =>
@@ -158,12 +152,7 @@ export const newViewStream = <M extends Record<string, any>, R>(
 		);
 
 		// Concatanate the two streams and transform the result
-		const resultStream = concat(initialQueryStream, updatesStream).pipe(
-			// Transform the result to the desired format
-			tap(debug.log(ctx, "view_stream:result:raw")),
-			map(transform),
-			tap(debug.log(ctx, "view_stream:result:transformed"))
-		);
+		const resultStream = concat(initialQueryStream, updatesStream).pipe(tap(debug.log(ctx, "view_stream:result")));
 
 		resultStream.subscribe(subscriber);
 
@@ -173,7 +162,7 @@ export const newViewStream = <M extends Record<string, any>, R>(
 		};
 	});
 
-export const newChangesStream = <Model extends Record<any, any>>(emitter: PouchDB.Core.Changes<Model>, ctx: debug.DebugCtx) =>
+export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.DebugCtx, emitter: PouchDB.Core.Changes<Model>) =>
 	new Observable<PouchDB.Core.ChangesResponseChange<Model>>((subscriber) => {
 		emitter.on("change", (change) => {
 			debug.log(ctx, "changes_stream:change")(change);
@@ -181,8 +170,8 @@ export const newChangesStream = <Model extends Record<any, any>>(emitter: PouchD
 		});
 	});
 
-interface ReplicateFn<R = Promise<void>> {
-	(params: { local: PouchDB.Database; remote: string }, ctx: debug.DebugCtx): R;
+interface ReplicateFn<R> {
+	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string): R;
 }
 /**
  * A helper function used to replicate a remote (PouchDB/CouchDB) db to a local PouchDB instance.
@@ -193,7 +182,7 @@ interface ReplicateFn<R = Promise<void>> {
  * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
  * @returns
  */
-export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
+export const replicateFromRemote: ReplicateFn<Promise<void>> = (ctx, local, remote) =>
 	new Promise<void>((resolve, reject) => {
 		const info = { local: local.name, remote };
 
@@ -231,7 +220,7 @@ export const replicateFromRemote: ReplicateFn = ({ remote, local }, ctx) =>
  * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
  * @returns
  */
-export const replicateLive: ReplicateFn<void> = ({ remote, local }, ctx) => {
+export const replicateLive: ReplicateFn<void> = (ctx, local, remote) => {
 	const info = { local: local.name, remote };
 
 	local

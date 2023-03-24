@@ -42,7 +42,7 @@ export const derivedObservable = <T, U>(store: Readable<T>, fn: (value: T) => U)
  * @param observable observable stream
  * @returns readable store
  */
-export const readableFromStream = <T>(observable: Observable<T> | undefined, fallback: T, ctx: debug.DebugCtx): Readable<T> => {
+export const readableFromStream = <T>(ctx: debug.DebugCtx, observable: Observable<T> | undefined, fallback: T): Readable<T> => {
 	return readable<T>(fallback, (set) => {
 		if (!observable) {
 			debug.log(ctx, "readable_from_stream: stream not provided:fallback:")(fallback);
