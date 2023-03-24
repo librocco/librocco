@@ -12,11 +12,11 @@
 
 	const combobox = createCombobox({ label: `Select ${rowIx} warehouse` });
 
-	$: ({ warehouses } = data);
+	$: ({ warehouseName } = data);
 </script>
 
 <td class="py-4 px-1.5">
-	{#if warehouses.length > 1}
+	{#if typeof warehouseName !== 'string'}
 		<TextField
 			name={`Row ${rowIx} warehouse`}
 			inputAction={combobox.input}
@@ -31,12 +31,12 @@
 			</svelte:fragment>
 		</TextField>
 		<div class="relative">
-			<ComboboxMenu {combobox} options={warehouses} />
+			<ComboboxMenu {combobox} options={warehouseName} />
 		</div>
 	{:else}
 		<div class="flex items-center rounded-md bg-gray-100 shadow-sm">
 			<span class="ml-3 rounded-full bg-teal-400 p-1" />
-			<input disabled type="text" value={warehouses[0]} class="border-0 bg-gray-100 text-sm text-gray-500" />
+			<input disabled type="text" value={warehouseName} class="border-0 bg-gray-100 text-sm text-gray-500" />
 		</div>
 	{/if}
 </td>
