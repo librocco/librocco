@@ -1,16 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import { DocType } from '@/enums';
+import { DocType } from "@/enums";
 
-import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from '@/types';
+import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
+import { DatabaseInterface, WarehouseInterface } from "./types";
 
-import { DatabaseInterface, WarehouseInterface } from './types';
-import designDocs from './designDocuments';
-import { newWarehouse } from './warehouse';
+import { NEW_WAREHOUSE } from "@/constants";
 
-import { newViewStream, replicateFromRemote, replicateLive } from '@/utils/pouchdb';
-import { newBooksInterface } from './books';
+import designDocs from "./designDocuments";
+import { newWarehouse } from "./warehouse";
+
+import { newViewStream, replicateFromRemote, replicateLive } from "@/utils/pouchdb";
+import { newBooksInterface } from "./books";
+import { replicationError } from "./misc";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -26,9 +28,9 @@ class Database implements DatabaseInterface {
 	}
 
 	async init(params: { remoteDb?: string }, ctx: debug.DebugCtx): Promise<DatabaseInterface> {
-		debug.log(ctx, 'init_db:started')({});
+		debug.log(ctx, "init_db:started")({});
 		if (this.#initialised) {
-			debug.log(ctx, 'init_db:already_initialised')({});
+			debug.log(ctx, "init_db:already_initialised")({});
 			return this;
 		}
 
@@ -47,14 +49,23 @@ class Database implements DatabaseInterface {
 
 		const replication = (async () => {
 			if (params && params.remoteDb) {
-				debug.log(ctx, 'init_db:replication:started')({ remoteDb: params.remoteDb });
-				// Pull data from the remote db (if provided)
-				await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
-				debug.log(ctx, 'init_db:replication:initial_replication_done')({});
-				// Start live sync between local and remote db
-				replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+				debug.log(ctx, "init_db:replication:started")({ remoteDb: params.remoteDb });
+
+				// We're wrapping the replication in a try/catch block to prevent the app from crashing
+				// if the remote db is not available.
+				try {
+					// Pull data from the remote db (if provided)
+					await replicateFromRemote({ local: this._pouch, remote: params.remoteDb }, ctx);
+					debug.log(ctx, "init_db:replication:initial_replication_done")({});
+					// Start live sync between local and remote db
+					replicateLive({ local: this._pouch, remote: params.remoteDb }, ctx);
+				} catch (err) {
+					// If remote db is not available, log the error and continue.
+					console.error(err);
+					console.error(replicationError);
+				}
 			} else {
-				debug.log(ctx, 'init_db:replication:skipped')({});
+				debug.log(ctx, "init_db:replication:skipped")({});
 			}
 			return;
 		})();
@@ -71,7 +82,7 @@ class Database implements DatabaseInterface {
 		return newBooksInterface(this);
 	}
 
-	warehouse(id?: string): WarehouseInterface {
+	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {
 		return newWarehouse(this, id);
 	}
 
@@ -88,7 +99,7 @@ class Database implements DatabaseInterface {
 
 	async findNote(id: string) {
 		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split('/');
+		const idSegments = id.split("/");
 
 		// Validate the id is correct
 		if (idSegments.length !== 4) {
@@ -103,40 +114,49 @@ class Database implements DatabaseInterface {
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
-	stream(ctx: debug.DebugCtx): DbStream {
+	stream(): DbStream {
 		return {
-			warehouseList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
-				this._pouch,
-				'list/warehouses',
-				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
-				ctx
-			),
+			warehouseList: (ctx: debug.DebugCtx) =>
+				newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
+					this._pouch,
+					"v1_list/warehouses",
+					{},
+					({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
+					ctx
+				),
 
-			outNoteList: newViewStream<{ rows: { key: string; value: { displayName?: string } } }, NavListEntry[]>(
-				this._pouch,
-				'list/outbound',
-				{},
-				({ rows }) => rows.map(({ key: id, value: { displayName = '' } }) => ({ id, displayName })),
-				ctx
-			),
+			outNoteList: (ctx: debug.DebugCtx) =>
+				newViewStream<{ rows: { key: string; value: { displayName?: string; committed?: boolean } } }, NavListEntry[]>(
+					this._pouch,
+					"v1_list/outbound",
+					{},
+					({ rows }) =>
+						rows
+							.filter(({ value: { committed } }) => !committed)
+							.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })),
+					ctx
+				),
 
-			inNoteList: newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string } } }, InNoteList>(
-				this._pouch,
-				'list/inbound',
-				{},
-				({ rows }) =>
-					rows.reduce((acc, { key, value: { type, displayName = '' } }) => {
-						if (type === 'warehouse') {
-							return [...acc, { id: key, displayName, notes: [] }];
-						}
-						// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
-						acc[0].notes.push({ id: key, displayName });
-						acc[acc.length - 1].notes.push({ id: key, displayName });
-						return acc;
-					}, [] as InNoteList),
-				ctx
-			)
+			inNoteList: (ctx: debug.DebugCtx) =>
+				newViewStream<{ rows: { key: string; value: { type: DocType; displayName?: string; committed?: boolean } } }, InNoteList>(
+					this._pouch,
+					"v1_list/inbound",
+					{},
+					({ rows }) =>
+						rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
+							if (type === "warehouse") {
+								return [...acc, { id: key, displayName, notes: [] }];
+							}
+							if (committed) {
+								return acc;
+							}
+							// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
+							acc[0].notes.push({ id: key, displayName });
+							acc[acc.length - 1].notes.push({ id: key, displayName });
+							return acc;
+						}, [] as InNoteList),
+					ctx
+				)
 		};
 	}
 }

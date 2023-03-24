@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { X } from 'lucide-svelte';
-	import type { MouseEventHandler } from 'svelte/elements';
+	import { X } from "lucide-svelte";
+	import type { MouseEventHandler } from "svelte/elements";
 
 	export let title: string;
 	export let description: string;
@@ -17,12 +17,7 @@
 				{description}
 			</p>
 		</div>
-		<button
-			class="text-gray-400 hover:text-gray-800"
-			type="button"
-			aria-label={`Close dialog ${title}`}
-			on:click={handleClose}
-		>
+		<button class="text-gray-400 hover:text-gray-800" type="button" aria-label={`Close dialog ${title}`} on:click={handleClose}>
 			<span aria-hidden="true">
 				<X />
 			</span>

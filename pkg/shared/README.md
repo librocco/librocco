@@ -18,18 +18,18 @@ Debug context is a simple, yet powerful structure used to get logs for specific 
 Somethimes we want to debug the entire flow of data, being, for instance an RxJS pipeline. If we had single, clear, data flow from source to destination, the debugging would be trivial: We could simply `.pipe(tap(console.log))`, like so:
 
 ```typescript
-import { from, map } from 'rxjs';
+import { from, map } from "rxjs";
 
 // Source observable
 const source = from(someEventSource).pipe(
-	tap((val) => console.log('source_stream:input_value: ', val)),
-	map(someMappingFunction),
-	tap((val) => console.log('source_stream:mapped_value: ', val))
+    tap((val) => console.log("source_stream:input_value: ", val)),
+    map(someMappingFunction),
+    tap((val) => console.log("source_stream:mapped_value: ", val))
 );
 
 // Destination
-source.pipe(tap((val) => console.log('subscriber:received_value: ', val))).subscribe(() => {
-	/* Do something */
+source.pipe(tap((val) => console.log("subscriber:received_value: ", val))).subscribe(() => {
+    /* Do something */
 });
 ```
 
@@ -39,19 +39,19 @@ This would be tiring as it is, but it's not the main problem.
 Imagine a second case where we use functions to construct parts of the pipeline (the example is purposefully trivial, but it's an oversimplification of a flow we use in production):
 
 ```typescript
-import { Observable, tap } from 'rxjs';
+import { Observable, tap } from "rxjs";
 
 // Creates observable stream from an even emitter (emitting numbers in this case).
 function observableFromEvent(e: EventEmitter<number>) {
-	return new Observable((s) => {
-		e.on('event', (val) => s.next(val));
-	});
+    return new Observable((s) => {
+        e.on("event", (val) => s.next(val));
+    });
 }
 
 // Takes in an observable stream, streaming numbers, pipes it
 // through a map function adding 1 to each value and returns the resulting stream.
 function mapAddOne(o: Observable<number>) {
-	return o.pipe(map((v) => v + 1));
+    return o.pipe(map((v) => v + 1));
 }
 ```
 
@@ -73,9 +73,7 @@ const fibonacciStream = observableFromEvent(fibonacciEmitter);
 const fibPlusOneStream = mapAddOne(fibonacciStream);
 
 // Combine the two streams
-const primePlusFibPlusOneStream = combineLatest(primeNumberStream, fibPlusOneStream).pipe(
-	map(([prime, fib]) => prime + fib)
-);
+const primePlusFibPlusOneStream = combineLatest(primeNumberStream, fibPlusOneStream).pipe(map(([prime, fib]) => prime + fib));
 ```
 
 If something fails in the `resultStream`, we can debug the flow by adding `console.log` to each step of the way, both in functions, as well as in the result stream, like so:
@@ -122,12 +120,12 @@ If we wanted to debug this, we could set up our `console.log`s like before. Now,
 
 ```typescript
 function observableFromEvent(e: EventEmitter<number>) {
-	return new Observable((s) => {
-		e.on('event', (val) => {
-			console.log('observable_from_event:event: ', val);
-			s.next(val);
-		});
-	});
+    return new Observable((s) => {
+        e.on("event", (val) => {
+            console.log("observable_from_event:event: ", val);
+            s.next(val);
+        });
+    });
 }
 ```
 
@@ -158,12 +156,12 @@ First we pass the debug context object to all of the functions, and have that co
 ```typescript
 // Accepts and event emitter and debug context object, and starts the stream from the events emitted by the emitter.
 function streamFromEvent(e: EventEmitter, ctx: debug.DebugCtx) {
-	return someStream;
+    return someStream;
 }
 
 // Accepts an event emitter and the context, and passes both to `streamFromEvent`
 function streamEventWithMappedValue(e: EventEmitter, ctx: debug.DebugCtx) {
-	return streamFromEvent(ctx).pipe(map(someManipulation));
+    return streamFromEvent(ctx).pipe(map(someManipulation));
 }
 
 // Start the new stream with the context of { debug: false }
@@ -188,30 +186,30 @@ Next, we need to add logging itself. For that we have the `log` method.
 The `debug.log` method takes in the context and the "step" (a string name for the step in the data flow), and returns a logger: a function curried with `ctx` and `step` which takes in any value, constructs the message (from the context and the step) and logs the message + (the value accepted as paremeter) to the console **only if debug: true**:
 
 ```typescript
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
 function streamFromEvent(e: EventEmitter, ctx: debug.DebugCtx) {
-	return new Observable((s) => {
-		e.on('event', (val) => {
-			// Maybe log to the console (if ctx.debug:true)
-			// The log will look like this:
-			// stream_from_event:event: <val>
-			debug.log(ctx, 'stream_from_event:event: ')(val);
-			// Stream the value
-			s.next(val);
-		});
-	});
+    return new Observable((s) => {
+        e.on("event", (val) => {
+            // Maybe log to the console (if ctx.debug:true)
+            // The log will look like this:
+            // stream_from_event:event: <val>
+            debug.log(ctx, "stream_from_event:event: ")(val);
+            // Stream the value
+            s.next(val);
+        });
+    });
 }
 
 function streamEventWithMappedValue(e: EventEmitter, ctx: debug.DebugCtx) {
-	return streamFromEvent(ctx).pipe(
-		// Maybe log the value received from the stream
-		tap(debug.log(ctx, 'stream_map:input: ')),
-		// Manipulate the stream
-		map(someManipulation),
-		// Log the result
-		tap(debug.log(ctx, 'stream_map:res: '))
-	);
+    return streamFromEvent(ctx).pipe(
+        // Maybe log the value received from the stream
+        tap(debug.log(ctx, "stream_map:input: ")),
+        // Manipulate the stream
+        map(someManipulation),
+        // Log the result
+        tap(debug.log(ctx, "stream_map:res: "))
+    );
 }
 
 const stream = streamEventWithMappedValue({ debug: true });
@@ -229,8 +227,8 @@ stream_map:res: <mapped value>
 Finally, the debug context object also accepts the `name` property, so we can identify the data flow more easily (in case of debugging the relationship between two, somewhat, connected data flows):
 
 ```typescript
-const stream = streamEventWithMappedValue({ name: '[STREAM_1]', debug: true });
-const anotherStream = streamEventWithMappedValue({ name: '[STREAM_2]', debug: false });
+const stream = streamEventWithMappedValue({ name: "[STREAM_1]", debug: true });
+const anotherStream = streamEventWithMappedValue({ name: "[STREAM_2]", debug: false });
 ```
 
 Will print the following to the console:
@@ -263,7 +261,7 @@ const stream = createStream();
 let testValue;
 // Update the 'testValue' on each stream.
 stream.subscribe((val) => {
-	testValue = val;
+    testValue = val;
 });
 // Do an update, which should trigger a new value to be streamed.
 await updateWhichTriggersAStream();
@@ -271,7 +269,7 @@ await updateWhichTriggersAStream();
 // some logic might do something in the background and stream the value we're expecting, AT SOME point...
 // So we use our 'waitFor' to assert the value was streamd in a reasonable amount of time:
 await waitFor(() => {
-	expect(testValue).toEqual(wantValue);
+    expect(testValue).toEqual(wantValue);
 });
 ```
 

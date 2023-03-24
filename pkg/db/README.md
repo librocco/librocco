@@ -101,13 +101,13 @@ The db interface is created to satisfy our client app's needs. Being a book inve
 As mentioned above, the package exports a function used to crate a new db interface instance, e.g.:
 
 ```typescript
-import { newDatabaseInterface } from '@librocco/db';
+import { newDatabaseInterface } from "@librocco/db";
 
 // Currently, as we're using CouchDB/PouchDB, the implementation
 // accepts a PouchDB.Database instance and builds an interface around it.
-import PouchDB from 'pouchdb';
+import PouchDB from "pouchdb";
 
-const pouch = new PouchDB('some-db-name');
+const pouch = new PouchDB("some-db-name");
 const db = newDatabaseInterface(pouch);
 ```
 
@@ -151,7 +151,7 @@ To include the replication setup in the `db.init` method, we simply pass the add
 ```typescript
 const db = newDatabaseInterface(pouch);
 
-const remoteDb = 'http://user:password@127.0.0.1:5000/dev';
+const remoteDb = "http://user:password@127.0.0.1:5000/dev";
 
 db.init({ remoteDb }, {});
 ```
@@ -171,21 +171,21 @@ _Note: Even if the database itself was initialised (if this is not the first tim
 The `db.init` method is idempotent in a way that it initialises only once, after which it sets an internal flag (`initialised`) to true, so each subsequent call to `db.init` resolved immediately (with no-op). This is convenient when we're running a load function on for each route or something like that (where the db can be initialised only once). A simplified example:
 
 ```typescript
-import PouchDB from 'pouchdb';
-import { newDatabaseInterface } from '@librocco/db';
+import PouchDB from "pouchdb";
+import { newDatabaseInterface } from "@librocco/db";
 
-const pouch = new PouchDB('dev');
+const pouch = new PouchDB("dev");
 const db = newDatabaseInterface(pouch);
 
-const remoteDb = 'http://some:remote@db:1234/name';
+const remoteDb = "http://some:remote@db:1234/name";
 
 // This function is ran on each route (params) change
 async function load({ params }) {
-	// This is ran on each function run, but, in effect, the initialisation is ran only once.
-	// Every subsequent run simply returns the db
-	await db.init({ remoteDb }, {});
+    // This is ran on each function run, but, in effect, the initialisation is ran only once.
+    // Every subsequent run simply returns the db
+    await db.init({ remoteDb }, {});
 
-	return db.note(params.id);
+    return db.note(params.id);
 }
 ```
 
@@ -206,11 +206,11 @@ The stream object contains three observable streams (all to be used for navigati
 Accessing nested structures (warehouses/notes) can be done by chaining after db interface:
 
 ```typescript
-const wh1 = db.warehouse('warehouse-1');
-const note1 = wh1.note('note-1');
+const wh1 = db.warehouse("warehouse-1");
+const note1 = wh1.note("note-1");
 
 // Naturally, note1 could also be reached like this
-const note1 = db.warehouse('warehouse-1').note('note-1');
+const note1 = db.warehouse("warehouse-1").note("note-1");
 ```
 
 More on initialising note/warehouse later.
@@ -231,15 +231,15 @@ There are a couple of additional methods on the db interface, but those exist mo
 Before diving into note and warehouse interface, we should explain some concepts shared among the two. We wanted the nested structures to be chainable, like so:
 
 ```typescript
-const wh1 = db.warehouse('warehouse-1');
-const note1 = db.warehouse('warehouse-1').note('note-1');
+const wh1 = db.warehouse("warehouse-1");
+const note1 = db.warehouse("warehouse-1").note("note-1");
 ```
 
 This was a bit of a challenge as both `warehouse` and `note` need to pull the data from the db, and we didn't want to have to await each time as that kinda messes up the chainability - we would have to do something like this each time:
 
 ```typescript
-const wh1 = await db.warehouse('warehouse-1');
-const note1 = await wh1.note('note-1');
+const wh1 = await db.warehouse("warehouse-1");
+const note1 = await wh1.note("note-1");
 ```
 
 Additionally, there's an asymetry in the way the existing notes/warehouses would be handled vs how the new ones are crated.
@@ -255,7 +255,7 @@ The solution for "getters" is a simple fact that this isn't a problem at all: In
 Finally, there's an imperative method `.get` (as in `note.get()` or `warehouse.get()`). It returns a promise, which, when awaited, guarantees we will have a deterministic solution: if the structure exists in db, an appropriate interface (note/warheouse) will be created from it, if not, it will resolve to `undefined`.
 
 ```typescript
-const note1 = await db.warehouse('warehouse-1').note('note-1').get();
+const note1 = await db.warehouse("warehouse-1").note("note-1").get();
 // Note 1 is either 'undefined' or NoteInterface populated with the up-to-date data
 ```
 
@@ -267,7 +267,7 @@ Other way in which notes/warehouses are chainable is on update methods. These ar
 const note = await db.warehouse().note().get();
 console.log(note.displayName); // Let's say the display name is "New Note"
 
-const updatedNote = await note.setName('Another Name');
+const updatedNote = await note.setName("Another Name");
 console.log(updatedNote.displayName); // "Another Name"
 console.log(note.displayName); // also prints out "Another Name"
 // What's more...
@@ -280,7 +280,7 @@ Warehouse interface is used for warehouse related operations against the db and 
 
 ```typescript
 const db = newDatabaseInterface(pouch);
-const wh1 = db.warehouse('warehouse-1');
+const wh1 = db.warehouse("warehouse-1");
 ```
 
 _Note: the default warehouse ("0-all") is instantiated if no id is passed, like so:_
@@ -289,7 +289,16 @@ _Note: the default warehouse ("0-all") is instantiated if no id is passed, like 
 const db = newDatabaseInterface(pouch);
 const defaultWarehouse = db.warehouse();
 // This is equivalent to running
-const defaultWarehouse = db.warehouse('0-all');
+const defaultWarehouse = db.warehouse("0-all");
+```
+
+_Note: when creating a new warehouse, the preferred way would be to have the db generate a new unique string. We do this by passing a special
+`NEW_WAREHOUSE` value, like so:_
+
+```typescript
+import { NEW_WAREHOUSE } from "@librocco/db";
+
+const warehouse = db.warehouse(NEW_WAREHOUSE).create();
 ```
 
 #### 2.3.1. CRUD
@@ -299,7 +308,7 @@ const defaultWarehouse = db.warehouse('0-all');
 To create a warehouse, we first instantiate the local instance and run `.create()`, like so:
 
 ```typescript
-const wh1 = await db.warehouse('warehouse-1').create();
+const wh1 = await db.warehouse("warehouse-1").create();
 ```
 
 _Note: Create function is idempotent: if the warehouse already exists, it will simply return the warehouse interface._
@@ -310,7 +319,7 @@ As mentioned above, when the warehouse interface is instantiated, it will pull t
 If we want to explicitly await the instance to be populated with the data from db (or check if it exists). We can do:
 
 ```typescript
-const wh1 = await db.warehouse('warehouse-1').get();
+const wh1 = await db.warehouse("warehouse-1").get();
 ```
 
 However, most of the data we'll need to receive from the warehouse will be streamed, making the explicit await unnecessary and this (`warehouse.get()`) should be used to check if the warehouse exists in the db, or for debugging/explicit control during unit/integration tests.
@@ -322,8 +331,8 @@ _Note that running warehouse.get() on an already initialised instance will resol
 As for update, there's no public method `warehouse.update`. Instead, all of the updates can be achieved using more fine grained methods (in case of warehouse, there's only `warehouse.setName`):
 
 ```typescript
-const w = db.warehouse('warehouse-1');
-await w.setName('Custome name'); // Sets the warehouse 'displayName' to "Custom name"
+const w = db.warehouse("warehouse-1");
+await w.setName("Custome name"); // Sets the warehouse 'displayName' to "Custom name"
 ```
 
 ##### Delete
@@ -331,7 +340,7 @@ await w.setName('Custome name'); // Sets the warehouse 'displayName' to "Custom 
 To delete the warehouse, in theory, we can run:
 
 ```typescript
-const w = db.warehouse('warehouse-1');
+const w = db.warehouse("warehouse-1");
 await w.delete();
 ```
 
@@ -342,17 +351,17 @@ and it will delete the warehouse document (if it exists in the db), but we're st
 The warehouse interface has a `.stream` method which returns a stream object, containing observable streams, streaming the `displayName` and `entries`:
 
 ```typescript
-const stream = db.warehouse('warehouse-1').stream();
+const stream = db.warehouse("warehouse-1").stream();
 const { displayName, entries } = stream;
 
 // Streams the display name (updated in real time)
 displayName.subscribe((dn) => {
-	/* Do something with the 'displayName' */
+    /* Do something with the 'displayName' */
 });
 
 // Streams the warehouse stock (updated in real time)
 entries.subscribe((entries) => {
-	/* Do something with the 'entries' (warehouse stock) */
+    /* Do something with the 'entries' (warehouse stock) */
 });
 ```
 
@@ -368,7 +377,7 @@ Note interface is used for note related operations against the db and is instant
 
 ```typescript
 const db = newDatabaseInterface(pouch);
-const wh1 = db.warehouse('warehouse-1').note('note-1');
+const wh1 = db.warehouse("warehouse-1").note("note-1");
 ```
 
 #### 2.4.1. Inbound/outbound
@@ -384,10 +393,10 @@ Inbound notes are accessed (or created) by explicitly specifying a warehouse:
 
 ```typescript
 // Access a (possibly) existing inbound note, belonging to "warehouse-1" with the id of "note-1"
-const existingInNote = db.warehouse('warehouse-1').note('note-1');
+const existingInNote = db.warehouse("warehouse-1").note("note-1");
 
 // Instantiate a (new) inbound note with generated id, belonging to "warehouse-1"
-const newInNote = db.warehouse('warehouse-1').note();
+const newInNote = db.warehouse("warehouse-1").note();
 ```
 
 ##### Outbound notes:
@@ -401,7 +410,7 @@ Outbound notes are accessed (or created) by not specifying a warehouse, or expli
 
 ```typescript
 // Access a (possibly) existing outbound note with the id of "note-1"
-const existingOutNote = db.warehouse().note('note-1');
+const existingOutNote = db.warehouse().note("note-1");
 
 // Instantiate a (new) outbound note with generated id
 const newOutNote = db.warehouse().note();
@@ -424,19 +433,19 @@ To create a note, we first instantiate the local instance and run `.create()`, l
 ```typescript
 // Inbound note in "warehouse-1"
 // "note-1" doesn't yet exist, but is instantiated (with default values) locally
-const note1 = await db.warehouse('warehouse-1').note('note-1');
+const note1 = await db.warehouse("warehouse-1").note("note-1");
 // Create a new "note-1" document in the db
 await note1.create();
 
 // Outbound note
-const note2 = await db.warehouse().note('note-2').create();
+const note2 = await db.warehouse().note("note-2").create();
 ```
 
 When creating a note, we can also instantiate the note interface without passing the id. This is actually a prefered way of creating a note in production as the new id is generated using `uniqueTimestamp` helper function. The id created is a uuid-like string created from the timestamp, which gives us the ability to sort the notes by time created, using the id.
 
 ```typescript
 // Inbound note in "warehouse-1"
-const note1 = await db.warehouse('warehouse-1').note().create();
+const note1 = await db.warehouse("warehouse-1").note().create();
 
 // And the same for outbound note
 const note2 = await db.warehouse().note().create();
@@ -446,13 +455,13 @@ If note warehouse doesn't exist, it will be created when creating the note, e.g.
 
 ```typescript
 // Say "warehouse-1" doesn't exist in the db
-let w1 = await db.warehouse('warehouse-1').get();
+let w1 = await db.warehouse("warehouse-1").get();
 console.log(w1); // Prints out 'undefined'
 
-const n1 = await db.warehouse('warehouse-1').note().create(); // Creates a note, but also a warehouse
+const n1 = await db.warehouse("warehouse-1").note().create(); // Creates a note, but also a warehouse
 
 // In the process of creating the note, the "warehouse-1" has been created
-w1 = await db.warehouse('warehouse-1').get();
+w1 = await db.warehouse("warehouse-1").get();
 console.log(w1); // Prints out warehouse interface with id "warehouse-1" and default fields
 ```
 
@@ -464,7 +473,7 @@ As mentioned above, when the note interface is instantiated, it will pull the da
 If we want to explicitly await the instance to be populated with the data from db (or check if it exists). We can do:
 
 ```typescript
-const n1 = await db.warehouse('warehouse-1').note('note-1').get();
+const n1 = await db.warehouse("warehouse-1").note("note-1").get();
 ```
 
 However, most of the data we'll need to receive from the note will be streamed, making the explicit await unnecessary and this (`note.get()`) should be used to check if the note exists in the db, or for debugging/explicit control during unit/integration tests.
@@ -478,8 +487,8 @@ As for update, there's no public method `note.update`. Instead, all of the updat
 **Set name:**
 
 ```typescript
-const n1 = db.warehouse('warehouse-1').note('note-1');
-await w.setName('Custome name'); // Sets the note 'displayName' to "Custom name"
+const n1 = db.warehouse("warehouse-1").note("note-1");
+await w.setName("Custome name"); // Sets the note 'displayName' to "Custom name"
 ```
 
 **Add volumes:**
@@ -499,20 +508,20 @@ To add volume transactions, we can run `note.addVolumes` in two ways:
 // '12345678' being an isbn
 // 2 being the quantity
 // warehouse-1 being the warehouse id
-note.addVolumes('12345678', 2, 'warehouse-1');
+note.addVolumes("12345678", 2, "warehouse-1");
 
 // Adding multiple entries (passing any number of volume quantity tuples, in a ...rest params fashion)
-note.addVolumes(['12345678', 2, 'warehouse-1'], ['11111111', 5, 'warehouse-1'], ['00000001', 3, 'warehouse-1']);
+note.addVolumes(["12345678", 2, "warehouse-1"], ["11111111", 5, "warehouse-1"], ["00000001", 3, "warehouse-1"]);
 ```
 
 When adding a transaction with an isbn and warehouse id matching an existing transaction in the note, the quantity is compounded:
 
 ```typescript
-await note1.addVolumes('12345678', 2);
+await note1.addVolumes("12345678", 2);
 console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
 // Add another transaction with the same isbn and warehouse id
-await note1.addVolumes('12345678', 3);
+await note1.addVolumes("12345678", 3);
 console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
 ```
 
@@ -521,20 +530,20 @@ console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "ware
 When the transaction already exists, we can run `note.updateTransaction` to update the transaction (either set new quantity, change warehouse or so, e.g.)
 
 ```typescript
-const note1 = db.warehouse('warehouse-1').note().create();
-await note1.addVolumes('12345678', 5);
+const note1 = db.warehouse("warehouse-1").note().create();
+await note1.addVolumes("12345678", 5);
 console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
 
 // Update the transaction row (for "12345678") to have the quantity of 2 (instead of 5)
-await note.updateTransaction({ isbn: '12345678', warehouseId: 'warehouse-1', quantity: 2 });
+await note.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-1", quantity: 2 });
 console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
 // This can also be applied to change a warehouse in an outbound note
 const note2 = db.warehouse().note().create();
-await note2.addVolumes('12345678', 2, 'warehouse-1');
+await note2.addVolumes("12345678", 2, "warehouse-1");
 console.log(note2.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
-await note.updateTransaction({ isbn: '12345678', warehouseId: 'warehouse-2', quantity: 5 });
+await note.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-2", quantity: 5 });
 console.log(note2.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-2", quantity: 5}]
 ```
 
@@ -545,8 +554,71 @@ Running `note.updateTransaction` with the transaction which doesn't exist in the
 const note1 = db.warehouse().create().get();
 
 // A valid operation, simply adds the transaction to the note
-await note1.updateTransaction({ isbn: '12345678', warehouseId: 'warehouse-1', quantity: 5 });
+await note1.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-1", quantity: 5 });
 ```
+
+**Remove transactions:**
+
+To remove the transaction row from the note, we run `note.removeTransactions`, passing to it the `isbn` and `warehouseId`, like so:
+
+```typescript
+const note = await db.warehouse("warehouse-1").note().create();
+// Add a volume transaction
+await note.addVolumes("12345678", 2);
+
+// The note contains the transaction for isbn = "12345678", of quantity = 2, in warehouse = "warehouse-1"
+
+// Remove "12345678" for "warehouse-1"
+await note.removeTransactions({ isbn: "12345678" }); // In case of inbound note, the warehouseId is inferred from the note
+```
+
+In practice, if running against inbound notes, only isbn should suffice (as all transactions belong to the same warehouse), but in case of outbound notes, we might have a situation where we have multiple transactions for the same book (same isbn), but against different warehouses. Therefore, it's always a good idea to explicitly pass the `warehouseId`.
+
+In the example above we didn't provide the warehouse id as it can be inferred from the note (being an inbound note), while in an outbound note, the `warehouseId` falls back to empty string, in case we want to match the transaction with no `warehouseId` being assigned.
+
+```typescript
+// Create an outbound note
+const note = await db.warehouse().note().create();
+
+// Add two transactions with the same isbn, but different warehouses
+await note.addVolumes(
+    ["12345678", 2, "warehouse-1"],
+    // It's perfectly legal to not specify the warehouseId the first time around
+    // as it can be provided anytime before the note is committed
+    ["12345678", 3]
+);
+
+// The following operation would delete the first entry
+await note.removeTransactions({ isbn: "12345678", warehouseId: "warehouse-1" });
+
+// Both of the following operations would delete the second (warehouse unassigned) transaction
+await note.removeTransactions({ isbn: "12345678", warehouseId: "" });
+await note.removeTransactions({ isbn: "12345678" }); // In case of outbound note, warehouseId falls back to ''
+```
+
+Finally, we can remove multiple transactions at once, like so:
+
+```typescript
+const note = await db.warehouse().note().create();
+
+await note.addVolumes(
+    ["00000000", 2, "warehouse-1"],
+    ["12345678", 2, "warehouse-1"],
+    ["12345678", 3, "warehouse-2"],
+    ["11111111", 5, "warehouse-1"]
+);
+
+// This is the same as running removeTransactions for each transaction
+await note.removeTransactions(
+    { isbn: "00000000", warehouseId: "warehouse-1" },
+    { isbn: "12345678", warehouseId: "warehouse-2" },
+    { isbn: "11111111", warehouseId: "warehouse-1" }
+);
+
+// This leaves us with only one transaction left in the note: isbn = "12345678", quantity = 2, warheouseId = "warehouse-1"
+```
+
+_Note: if no transaction is matched by isbn/warehouseId pair, the action is a no-op._
 
 ##### Delete
 
@@ -567,22 +639,22 @@ const { displayName, entries, state, updatedAt } = stream;
 
 // Streams the display name (updated in real time)
 displayName.subscribe((dn) => {
-	/* Do something with the 'displayName' */
+    /* Do something with the 'displayName' */
 });
 
 // Streams the transactions in the note (updated in real time)
 entries.subscribe((entries) => {
-	/* Do something with the 'entries' (note transactions) */
+    /* Do something with the 'entries' (note transactions) */
 });
 
 // Streams the note state ('draft' or 'committed', updated in real time)
 state.subscribe((state) => {
-	/* Do something with note 'state' */
+    /* Do something with note 'state' */
 });
 
 // Streams the time the note was last updated (updated in real time)
 state.subscribe((state) => {
-	/* Do something with note 'state' */
+    /* Do something with note 'state' */
 });
 ```
 

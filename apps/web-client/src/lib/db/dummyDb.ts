@@ -3,17 +3,17 @@
  * This file is here only so the current app doesn't break.
  */
 
-import { derived } from 'svelte/store';
+import { derived } from "svelte/store";
 
-import { NoteState } from '$lib/enums/db';
+import { NoteState } from "$lib/enums/db";
 
-import type { DbInterface, DbStream, NavListEntry, Stores } from '$lib/types/db';
+import type { DbInterface, DbStream, NavListEntry, Stores } from "$lib/types/db";
 
-import { newWarehouse } from './warehouse';
+import { newWarehouse } from "./warehouse";
 
-import { derivedObservable, observableFromStore } from '$lib/utils/streams';
+import { derivedObservable, observableFromStore } from "$lib/utils/streams";
 
-import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from './data';
+import { warehouseStore, inNoteStore, outNoteStore, noteLookup } from "./data";
 
 const defaultStores = {
 	warehouseStore,
@@ -32,7 +32,7 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 
 	const { warehouseStore } = stores;
 
-	const warehouse = (id = 'all') => newWarehouse(stores)(id);
+	const warehouse = (id = "all") => newWarehouse(stores)(id);
 
 	const stream = (): DbStream => ({
 		warehouseList: derivedObservable(warehouseStore, ($warehouseStore) =>
@@ -43,12 +43,12 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 			derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
 				// Filter out outbound and deleted notes
 				const filteredNotes = Object.values($noteLookup).filter(
-					({ state, type }) => state !== NoteState.Deleted && type === 'inbound'
+					({ state, type }) => state !== NoteState.Deleted && type === "inbound"
 				);
 				// Group notes by warehouse adding each note to 'all' warehouse
 				const groupedNotes = filteredNotes.reduce((acc, note) => {
 					const { warehouse, id, displayName } = note;
-					const warehouseIds = ['all', warehouse];
+					const warehouseIds = ["all", warehouse];
 
 					warehouseIds.forEach((warehouse) => {
 						if (!acc[warehouse]) acc[warehouse] = [];
@@ -69,7 +69,7 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 		outNoteList: derivedObservable(noteLookup, ($noteLookup) =>
 			Object.values($noteLookup)
 				// Pluck non-deleted outbound notes
-				.filter(({ state, type }) => state !== NoteState.Deleted && type === 'outbound')
+				.filter(({ state, type }) => state !== NoteState.Deleted && type === "outbound")
 				// Get id and displayName
 				.map(({ id, displayName }) => ({ id, displayName }))
 		),

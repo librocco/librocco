@@ -1,15 +1,15 @@
-import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from 'rxjs';
+import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from "rxjs";
 
-import { VersionedString, VolumeStock } from '../types';
+import { VersionedString, VolumeStock } from "../types";
 
 export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
 	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
 
 /** Replaces JS friendly version name ('version_1_1') with a human friendly version name ('version 1.1') */
-export const processVersionName = (s: string): string => s.replace('_', ' ').replace('_', '.');
+export const processVersionName = (s: string): string => s.replace("_", " ").replace("_", ".");
 
 /** Replaces JS friendly test function name ('commitNotes') with a human friendly test name ('commit notes') */
-export const processTestName = (s: string): string => s.replaceAll(/([A-Z]|[0-9]+)/g, (c) => ' ' + c.toLowerCase());
+export const processTestName = (s: string): string => s.replaceAll(/([A-Z]|[0-9]+)/g, (c) => " " + c.toLowerCase());
 
 /**
  * A util used to generate a timestamped unique string.
@@ -29,12 +29,12 @@ export const uniqueTimestamp = (i = 0) => {
 	// Able to represent 1296 numbers and it's safe to assume no more
 	// then that will be processed under the same timestamp (in single millisecond)
 	const iStr = (i % 1296).toString(36);
-	const index = ['0'.repeat(2 - iStr.length), iStr].join('');
+	const index = ["0".repeat(2 - iStr.length), iStr].join("");
 
 	// Additional two characters for uniqueness buffer
 	const additional = Math.floor(Math.random() * 1296).toString(36);
 
-	return [hexTimestamp, index, additional].join('');
+	return [hexTimestamp, index, additional].join("");
 };
 
 export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Observable<boolean>): Promise<R> => {
@@ -94,4 +94,7 @@ export const versionId = (id: string): VersionedString => (isVersioned(id) ? id 
 /**
  * Returns true if the id is a versioned string.
  */
-export const isVersioned = (id: string): id is VersionedString => id.startsWith('v1/');
+export const isVersioned = (id: string): id is VersionedString => id.startsWith("v1/");
+
+/** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
+export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;

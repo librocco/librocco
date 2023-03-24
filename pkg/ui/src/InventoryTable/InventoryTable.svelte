@@ -1,12 +1,10 @@
 <script lang="ts">
-	import type { createTable } from './table';
-	import type { InventoryTableData } from './types';
+	import type { createTable } from "./table";
+	import type { InventoryTableData } from "./types";
 
-	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from '../';
+	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
-	import { quadIn } from 'svelte/easing';
-	import { fadeBgColor } from '../lib/transitions';
-	import { thRowBaseStyles } from './utils';
+	import { thRowBaseStyles } from "./utils";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -19,15 +17,15 @@
 	$: rowCount = rows.length + 1;
 
 	const headers = {
-		isbn: 'ISBN',
-		title: 'Title',
-		authors: 'Authors',
-		quantity: 'Quantity',
-		price: 'Price',
-		publisher: 'Publisher',
-		year: 'Year',
-		editedBy: 'Edited By',
-		outOfPrint: 'Out of Print'
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		quantity: "Quantity",
+		price: "Price",
+		publisher: "Publisher",
+		year: "Year",
+		editedBy: "Edited By",
+		outOfPrint: "Out of Print"
 	};
 </script>
 
@@ -45,7 +43,7 @@
 				class="whitespace-nowrap"
 				use:tableRow={{
 					position: 0,
-					on: 'change',
+					on: "change",
 					handleSelect: (event, selected) => {
 						const isSelected = isChecked(event);
 
@@ -101,7 +99,7 @@
 					use:tableRow={{
 						// Header row starts the count at 0
 						position: rowIx + 1,
-						on: 'change',
+						on: "change",
 						handleSelect: (event, selected) => {
 							const isSelected = isChecked(event);
 
@@ -113,12 +111,12 @@
 						}
 					}}
 					class={`whitespace-nowrap text-sm font-light text-gray-500 ${
-						selected.includes(row) ? 'bg-gray-100' : 'even:bg-gray-50'
+						selected.includes(row) ? "bg-gray-100" : "even:bg-gray-50"
 					}`}
 				>
 					<td
 						class={`px-2 text-center sm:align-middle border-l-4 
-						${selected.includes(row) ? 'border-teal-500' : 'border-transparent'}
+						${selected.includes(row) ? "border-teal-500" : "border-transparent"}
 					`}
 					>
 						<span class="inline-block">
@@ -160,11 +158,7 @@
 					</td>
 					<td class="hidden py-4 px-3 text-center xl:table-cell">
 						<span class="inline-block">
-							<Checkbox
-								name={`Row ${rowIx} is out of print: ${outOfPrint}`}
-								checked={outOfPrint}
-								disabled
-							/>
+							<Checkbox name={`Row ${rowIx} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
 						</span>
 					</td>
 				</tr>

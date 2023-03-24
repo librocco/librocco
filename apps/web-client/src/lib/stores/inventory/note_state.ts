@@ -1,12 +1,12 @@
-import { get, writable, type Writable } from 'svelte/store';
+import { get, writable, type Writable } from "svelte/store";
 
-import type { NoteInterface } from '@librocco/db';
-import { debug } from '@librocco/shared';
+import type { NoteInterface } from "@librocco/db";
+import { debug } from "@librocco/shared";
 
-import { noteStateLookup, type NoteTempState } from '$lib/enums/inventory';
-import { NoteState } from '$lib/enums/db';
+import { noteStateLookup, type NoteTempState } from "$lib/enums/inventory";
+import { NoteState } from "$lib/enums/db";
 
-import type { Subscription } from 'rxjs';
+import type { Subscription } from "rxjs";
 
 /** A union type for note states used in the client app */
 type NoteAppState = NoteState | NoteTempState | undefined;
@@ -27,16 +27,19 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
-		debug.log(ctx, 'internal_state_store:opening_note_subscription')({});
-		noteSubscription = note?.stream(ctx).state.subscribe((content) => {
-			debug.log(ctx, 'internal_state_store:update_from_db')(content);
-			state.set(content);
-		});
+		debug.log(ctx, "internal_state_store:opening_note_subscription")({});
+		noteSubscription = note
+			?.stream()
+			.state(ctx)
+			.subscribe((content) => {
+				debug.log(ctx, "internal_state_store:update_from_db")(content);
+				state.set(content);
+			});
 	};
 
 	// Close note subscription closes the subscription to the note state
 	const closeNoteSubscription = () => {
-		debug.log(ctx, 'internal_state_store:closing_note_subscription')({});
+		debug.log(ctx, "internal_state_store:closing_note_subscription")({});
 		noteSubscription?.unsubscribe();
 	};
 
@@ -61,7 +64,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 
 		const unsubInternal = state.subscribe((value) => {
 			// Log for debugging
-			debug.log(ctx, 'internal_state_store:updated')(value);
+			debug.log(ctx, "internal_state_store:updated")(value);
 			// Notify the actual subscriber with appropriate value
 			notify(value);
 		}, invalidate);
@@ -80,11 +83,7 @@ export const createInternalStateStore: CreateInternalStateStore = (note, ctx) =>
 };
 
 interface CreateDisplayStateStore {
-	(
-		note: NoteInterface | undefined,
-		internalStateStore: Writable<NoteAppState>,
-		ctx: debug.DebugCtx
-	): Writable<NoteAppState>;
+	(note: NoteInterface | undefined, internalStateStore: Writable<NoteAppState>, ctx: debug.DebugCtx): Writable<NoteAppState>;
 }
 /**
  * Creates a note state store for display purposes:
@@ -98,7 +97,7 @@ interface CreateDisplayStateStore {
 export const createDisplayStateStore: CreateDisplayStateStore = (note, internalStateStore, ctx) => {
 	const set = (state: NoteState) => {
 		const internalState = get(internalStateStore);
-		debug.log(ctx, 'display_state_store:set')({ state, internalState });
+		debug.log(ctx, "display_state_store:set")({ state, internalState });
 
 		// If state is the same as the internal (current) state, we're not doing anything.
 		//
@@ -114,17 +113,11 @@ export const createDisplayStateStore: CreateDisplayStateStore = (note, internalS
 		// and draft state is the only state from which this function can be called, so updating the 'draft' state to 'draft' state is a no-op.
 		switch (state) {
 			case NoteState.Committed:
-				debug.log(
-					ctx,
-					'display_state_store:setting_temp_state'
-				)({ state, tempState: noteStateLookup[state].tempState });
+				debug.log(ctx, "display_state_store:setting_temp_state")({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
 				return note?.commit(ctx);
 			case NoteState.Deleted:
-				debug.log(
-					ctx,
-					'display_state_store:setting_temp_state'
-				)({ state, tempState: noteStateLookup[state].tempState });
+				debug.log(ctx, "display_state_store:setting_temp_state")({ state, tempState: noteStateLookup[state].tempState });
 				internalStateStore.set(noteStateLookup[state].tempState);
 				return note?.delete(ctx);
 			default:

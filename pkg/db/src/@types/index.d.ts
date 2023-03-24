@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * We're using this to create a global type declarations
  * for PouchDB global variables and such
