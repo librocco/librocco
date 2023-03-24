@@ -1,15 +1,15 @@
-import { writable, type Readable, type Writable } from 'svelte/store';
+import { writable, type Readable, type Writable } from "svelte/store";
 
-import type { NoteInterface, WarehouseInterface } from '@librocco/db';
+import type { NoteInterface, WarehouseInterface } from "@librocco/db";
 
-import type { DisplayRow, NoteAppState, PaginationData } from '$lib/types/inventory';
+import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
 
-import { createDisplayNameStore } from './display_name';
-import { createDisplayStateStore, createInternalStateStore } from './note_state';
-import { createDisplayEntriesStore, createPaginationDataStore } from './table_content';
+import { createDisplayNameStore } from "./display_name";
+import { createDisplayStateStore, createInternalStateStore } from "./note_state";
+import { createDisplayEntriesStore, createPaginationDataStore } from "./table_content";
 
-import { readableFromStream } from '$lib/utils/streams';
-import { getDB } from '$lib/db';
+import { readableFromStream } from "$lib/utils/streams";
+import { getDB } from "$lib/db";
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -39,7 +39,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 		name: `[NOTE_UPDATED_AT::${note?._id}]`,
 		debug: false
 	};
-	const updatedAt = readableFromStream(note?.stream(updatedAtCtx).updatedAt, null, updatedAtCtx);
+	const updatedAt = readableFromStream(note?.stream().updatedAt(updatedAtCtx), null, updatedAtCtx);
 
 	const currentPage = writable(0);
 

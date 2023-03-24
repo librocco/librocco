@@ -1,4 +1,4 @@
-const positionClasses = ['static', 'relative', 'absolute', 'fixed', 'sticky'];
+const positionClasses = ["static", "relative", "absolute", "fixed", "sticky"];
 
 /**
  * Checks input classes for position class, if provided, filters the position class from
@@ -8,7 +8,7 @@ const positionClasses = ['static', 'relative', 'absolute', 'fixed', 'sticky'];
  * @returns base classes with position class filtered out (if needed)
  */
 export const filterPositionClass = (inputClasses: string, baseClasses: string[]): string[] => {
-	inputClasses.split(' ').forEach((className) => {
+	inputClasses.split(" ").forEach((className) => {
 		if (positionClasses.includes(className)) {
 			baseClasses = baseClasses.filter((baseClass) => !positionClasses.includes(baseClass));
 		}
@@ -22,4 +22,4 @@ export const filterPositionClass = (inputClasses: string, baseClasses: string[])
  * @param classes - Class name args
  * @returns
  */
-export const classNames = (...classes: string[]) => classes.filter(Boolean).join(' ');
+export const classNames = (...classes: string[]) => classes.filter(Boolean).join(" ");

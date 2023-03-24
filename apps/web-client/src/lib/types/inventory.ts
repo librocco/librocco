@@ -1,9 +1,9 @@
-import type { VolumeStockClient, BookEntry } from '@librocco/db';
+import type { VolumeStockClient, BookEntry } from "@librocco/db";
 
-import type { NoteTempState } from '$lib/enums/inventory';
-import type { NoteState } from '$lib/enums/db';
+import type { NoteTempState } from "$lib/enums/inventory";
+import type { NoteState } from "$lib/enums/db";
 
-import type { VolumeQuantity } from './db';
+import type { VolumeQuantity } from "./db";
 
 /**
  * An interface for a full book entry, used to type the entries in books store and

@@ -1,8 +1,8 @@
-import type { Writable } from 'svelte/store';
-import type { Observable } from 'rxjs';
+import type { Writable } from "svelte/store";
+import type { Observable } from "rxjs";
 
-import type { NoteStore, WarehouseStore } from './inventory';
-import type { NoteState } from '$lib/enums/db';
+import type { NoteStore, WarehouseStore } from "./inventory";
+import type { NoteState } from "$lib/enums/db";
 
 // #region misc
 /** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
@@ -58,7 +58,7 @@ export type InNoteList = Array<NavListEntry & { notes: NavListEntry[] }>;
 export interface NoteLookupResult {
 	id: string;
 	warehouse: string;
-	type: 'inbound' | 'outbound';
+	type: "inbound" | "outbound";
 	state: NoteState;
 	displayName?: string;
 }

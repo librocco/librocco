@@ -1,22 +1,22 @@
-import { describe, test, expect } from 'vitest';
-import { get } from 'svelte/store';
-import { firstValueFrom } from 'rxjs';
+import { describe, test, expect } from "vitest";
+import { get } from "svelte/store";
+import { firstValueFrom } from "rxjs";
 
-import { testUtils } from '@librocco/shared';
+import { testUtils } from "@librocco/shared";
 
-import { NoteTempState } from '$lib/enums/inventory';
-import { NoteState } from '$lib/enums/db';
+import { NoteTempState } from "$lib/enums/inventory";
+import { NoteState } from "$lib/enums/db";
 
-import { createInternalStateStore, createDisplayStateStore } from '../note_state';
+import { createInternalStateStore, createDisplayStateStore } from "../note_state";
 
-import { newTestDB } from '$lib/__testUtils__/db';
+import { newTestDB } from "$lib/__testUtils__/db";
 
 const { waitFor } = testUtils;
 
-describe('createDisplayStateStore', () => {
-	test('should stream the internal note state to be displayed', async () => {
+describe("createDisplayStateStore", () => {
+	test("should stream the internal note state to be displayed", async () => {
 		const db = await newTestDB();
-		const note = await db.warehouse().note('note-1').create();
+		const note = await db.warehouse().note("note-1").create();
 
 		const internalStateStore = createInternalStateStore(note, {});
 		const displayStateStore = createDisplayStateStore(note, internalStateStore, {});
@@ -43,9 +43,9 @@ describe('createDisplayStateStore', () => {
 		cleanupSubscription();
 	});
 
-	test('should set the temp state to the internal store and update the content store', async () => {
+	test("should set the temp state to the internal store and update the content store", async () => {
 		const db = await newTestDB();
-		const note = await db.warehouse().note('note-1').create();
+		const note = await db.warehouse().note("note-1").create();
 
 		const internalStateStore = createInternalStateStore(note, {});
 		const displayStateStore = createDisplayStateStore(note, internalStateStore, {});
@@ -61,16 +61,16 @@ describe('createDisplayStateStore', () => {
 		});
 
 		// Check that the note state in db has been updated
-		const noteState = await firstValueFrom(note.stream({}).state);
+		const noteState = await firstValueFrom(note.stream().state({}));
 		expect(noteState).toBe(NoteState.Committed);
 
 		// Close the dummy subscription after assertions
 		cleanupSubscription();
 	});
 
-	test('should short circuit updates if the updated state is the same as the current state', async () => {
+	test("should short circuit updates if the updated state is the same as the current state", async () => {
 		const db = await newTestDB();
-		const note = await db.warehouse().note('note-1').create();
+		const note = await db.warehouse().note("note-1").create();
 
 		// In production this is the most common case of setting the state to the same value.
 		// On init the state picker's bind:value runs an update with the initial state, which is the same as the current state.

@@ -1,12 +1,12 @@
 <script lang="ts">
-	import { getContext, onMount } from 'svelte';
+	import { getContext, onMount } from "svelte";
 
-	import { TABS, type TabContext } from './TabContext.svelte';
-	import Tab from './Tab.svelte';
+	import { TABS, type TabContext } from "./TabContext.svelte";
+	import Tab from "./Tab.svelte";
 
 	export let tabNames: string[];
 	export let initialTabIx = 0;
-	export let ariaLabel = 'Select a tab';
+	export let ariaLabel = "Select a tab";
 
 	const { selectTab, registerTab, currentTab } = getContext<TabContext>(TABS);
 
@@ -21,17 +21,17 @@
 	};
 
 	const selectClasses = [
-		'block',
-		'w-full',
-		'rounded-md',
-		'border-gray-300',
-		'focus:border-0',
-		'focus:ring-0',
-		'focus:outline-2',
-		'focus:outline-teal-500'
-	].join(' ');
+		"block",
+		"w-full",
+		"rounded-md",
+		"border-gray-300",
+		"focus:border-0",
+		"focus:ring-0",
+		"focus:outline-2",
+		"focus:outline-teal-500"
+	].join(" ");
 
-	const navClasses = ['isolate', 'flex', 'divide-x', 'divide-gray-200', 'rounded-lg', 'shadow'].join(' ');
+	const navClasses = ["isolate", "flex", "divide-x", "divide-gray-200", "rounded-lg", "shadow"].join(" ");
 </script>
 
 <!-- Small screens = Select > Option (Tab.svelte) -->
