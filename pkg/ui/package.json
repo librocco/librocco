@@ -4,6 +4,7 @@
 	"main": "./dist/index.js",
 	"scripts": {
 		"build": "svelte-package",
+		"build:watch": "svelte-package -w",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",

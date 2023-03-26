@@ -1,11 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-types */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import type { Observable } from 'rxjs';
-import PouchDB from 'pouchdb';
+import type { Observable } from "rxjs";
+import PouchDB from "pouchdb";
 
-import type { DocType, NoteState } from './enums';
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
+
+import type { DocType, NoteState } from "./enums";
+
+import { NEW_WAREHOUSE } from "./constants";
 
 // #region utils
 /**
@@ -35,7 +37,7 @@ export type DesignDocument = {
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
-	warehouseId: VersionedString;
+	warehouseId: string;
 }
 
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
@@ -58,7 +60,7 @@ export interface BookEntry {
 // #endregion books
 
 // #region note
-export type NoteType = 'inbound' | 'outbound';
+export type NoteType = "inbound" | "outbound";
 
 /**
  * Standardized data that should be present in any note
@@ -77,16 +79,11 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: Observable<NoteState>;
-	displayName: Observable<string>;
-	updatedAt: Observable<Date | null>;
-	entries: Observable<VolumeStockClient[]>;
+	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
+	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
 }
-
-/**
- * A tuple used as param(s) for adding volumes to a note: [isbn, quantity, warehouse?]
- */
-export type VolumeTransactionTuple = [string, number, VersionedString] | [string, number];
 
 /**
  * A standardized interface (interface of methods) for a note.
@@ -101,14 +98,22 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
-	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
 	/**
-	 * Add volumes accepts an array of volume stock transactions and adds them to the note.
-	 * If any transactions (for a given isbn/warehouse) already exist, the quantity gets aggregated.
+	 * Add volumes accepts an array of volume stock entries and adds them to the note.
+	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
-	addVolumes: (...params: VolumeTransactionTuple | VolumeTransactionTuple[]) => Promise<NoteInterface<A>>;
-	/** Explicitly update an existing transaction row. */
-	updateTransaction: (transaction: VolumeStock) => Promise<NoteInterface<A>>;
+	addVolumes: (...params: PickPartial<VolumeStock, "warehouseId">[]) => Promise<NoteInterface<A>>;
+	/**
+	 * Explicitly update an existing transaction row.
+	 * The transaction is matched by both isbn and warehouseId.
+	 */
+	updateTransaction: (match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock) => Promise<NoteInterface<A>>;
+	/**
+	 * Remove "row" from note transactions .
+	 * The transaction is matched by both isbn and warehouseId.
+	 */
+	removeTransactions: (...transactions: Omit<VolumeStock, "quantity">[]) => Promise<NoteInterface<A>>;
 	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
 	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 	/**
@@ -118,7 +123,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * - `updatedAt` - streams the note's `updatedAt`
 	 * - `entries` - streams the note's `entries` (volume transactions)
 	 */
-	stream: (ctx: debug.DebugCtx) => NoteStream;
+	stream: () => NoteStream;
 }
 
 /**
@@ -144,8 +149,8 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: Observable<string>;
-	entries: Observable<VolumeStockClient[]>;
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
 }
 
 /**
@@ -162,13 +167,13 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	/** Note constructs a note interface for the note with the provided id. If ommitted, a new (timestamped) id is generated (for note creation). */
 	note: (id?: string) => N;
 	/** Set name udpates the `displayName` of the warehouse */
-	setName: (name: string, ctx: debug.DebugCtx) => Promise<WarehouseInterface<N, A>>;
+	setName: (ctx: debug.DebugCtx, name: string) => Promise<WarehouseInterface<N, A>>;
 	/**
 	 * Stream returns an object containing observable streams for the warehouse:
 	 * - `displayName` - streams the warehouse's `displayName`
 	 * - `entries` - streams the warehouse's `entries` (stock)
 	 */
-	stream: (ctx: debug.DebugCtx) => WarehouseStream;
+	stream: () => WarehouseStream;
 }
 
 /**
@@ -197,13 +202,19 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
+export interface DBInitState {
+	state: "void" | "initialising" | "replicating" | "ready";
+	withReplication: boolean;
+}
+
 /**
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseList: Observable<NavListEntry[]>;
-	outNoteList: Observable<NavListEntry[]>;
-	inNoteList: Observable<InNoteList>;
+	initState: (ctx: debug.DebugCtx) => Observable<DBInitState>;
+	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
+	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
+	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
 }
 
 /**
@@ -214,8 +225,18 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	_pouch: PouchDB.Database;
 	/** Update design doc is here more for internal usage and, shouldn't really be called explicitly (call `db.init` instead). */
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
-	/** Warehouse returns a warehouse interface for a given warehouse id. If no id is provided, it falls back to the default (`0-all`) warehouse. */
-	warehouse: (id?: string) => W;
+	/**
+	 * Warehouse returns a warehouse interface for a given warehouse id.
+	 * If no id is provided, it falls back to the default (`0-all`) warehouse.
+	 *
+	 * To assign a new unique id to the warehouse, use `NEW_WAREHOUSE` as the id.
+	 * @example
+	 * ```ts
+	 * import { NEW_WAREHOUSE } from '@librocco/db';
+	 * const newWarehouse = db.warehouse(NEW_WAREHOUSE);
+	 * ```
+	 */
+	warehouse: (id?: string | typeof NEW_WAREHOUSE) => W;
 	/**
 	 * Find note accepts a note id and returns:
 	 * - if note exists: the note interface and warehouse interface for its parent warehouse
@@ -228,7 +249,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * - `outNoteList` a stream of out note list entries (for navigation)
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
-	stream: (ctx: debug.DebugCtx) => DbStream;
+	stream: () => DbStream;
 	/**
 	 * Init initialises the db:
 	 * - creates the default warehouse
@@ -238,7 +259,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
-	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
+	init: (ctx: debug.DebugCtx, params: { remoteDb?: string }) => DatabaseInterface;
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
@@ -273,7 +294,7 @@ export interface BooksInterface {
 	 * as the results being in the same order as the input array: a book data at index 'i' will correspond to the isbn at
 	 * index 'i' of the request array, if the book data doesn't exist in the db, `undefined` will be found at its place._
 	 */
-	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<(BookEntry | undefined)[]>;
+	stream: (ctx: debug.DebugCtx, isbns: string[]) => Observable<(BookEntry | undefined)[]>;
 }
 
 export interface NewDatabase {

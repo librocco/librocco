@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
-	import { fade } from 'svelte/transition';
+	import { createEventDispatcher } from "svelte";
+	import { fade } from "svelte/transition";
 
-	import { X } from 'lucide-svelte';
+	import { X } from "lucide-svelte";
 
-	import { ToastType } from './enums';
+	import { ToastType } from "./enums";
 
 	const dispatch = createEventDispatcher();
 
@@ -12,8 +12,8 @@
 	export let dismissible = true;
 
 	const colourLookup = {
-		[ToastType.Error]: 'bg-red-50 text-red-900',
-		[ToastType.Success]: 'bg-green-50 text-green-900'
+		[ToastType.Error]: "bg-red-50 text-red-900",
+		[ToastType.Success]: "bg-green-50 text-green-900"
 	};
 </script>
 
@@ -30,7 +30,7 @@
 			type="button"
 			aria-label="Close toast"
 			class="rounded-lg p-1 text-gray-400 hover:text-gray-800 focus:outline-none focus:outline-gray-700"
-			on:click={() => dispatch('dismiss')}
+			on:click={() => dispatch("dismiss")}
 		>
 			<X />
 		</button>

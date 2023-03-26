@@ -11,15 +11,15 @@
  * 		- Self hosted (configurable through env variables) couchdb (for production)
  */
 
-import { derived, readable, writable } from 'svelte/store';
+import { derived, readable, writable } from "svelte/store";
 
-import type { BookStore, WarehouseStore, NoteStore } from '$lib/types/inventory';
-import type { NoteLookupResult } from '$lib/types/db';
+import type { BookStore, WarehouseStore, NoteStore } from "$lib/types/inventory";
+import type { NoteLookupResult } from "$lib/types/db";
 
-import allBooks from './books';
-import allWarehouse from './warehouses';
-import allInbound from './notes/inbound';
-import allOutbound from './notes/outbound';
+import allBooks from "./books";
+import allWarehouse from "./warehouses";
+import allInbound from "./notes/inbound";
+import allOutbound from "./notes/outbound";
 
 // #region main_stores
 /**
@@ -39,43 +39,40 @@ export const inNoteStore = writable<NoteStore>(allInbound);
 export const outNoteStore = writable<NoteStore>(allOutbound);
 
 /** A derived store used to look up the note state, type, warehouse and displayName */
-export const noteLookup = derived(
-	[inNoteStore, outNoteStore, warehouseStore],
-	([$inNoteStore, $outNoteStore, $warehouseStore]) => {
-		const lookup: Record<string, NoteLookupResult> = {};
+export const noteLookup = derived([inNoteStore, outNoteStore, warehouseStore], ([$inNoteStore, $outNoteStore, $warehouseStore]) => {
+	const lookup: Record<string, NoteLookupResult> = {};
 
-		// Add in notes to the lookup
-		for (const [warehouse, { inNotes }] of Object.entries($warehouseStore)) {
-			if (inNotes) {
-				for (const noteId of inNotes) {
-					const note = $inNoteStore[noteId];
-					if (note) {
-						lookup[noteId] = {
-							id: noteId,
-							state: note.state,
-							type: 'inbound',
-							warehouse,
-							displayName: note.displayName
-						};
-					}
+	// Add in notes to the lookup
+	for (const [warehouse, { inNotes }] of Object.entries($warehouseStore)) {
+		if (inNotes) {
+			for (const noteId of inNotes) {
+				const note = $inNoteStore[noteId];
+				if (note) {
+					lookup[noteId] = {
+						id: noteId,
+						state: note.state,
+						type: "inbound",
+						warehouse,
+						displayName: note.displayName
+					};
 				}
 			}
 		}
-
-		// Add out notes to the lookup
-		for (const [noteId, { state, displayName }] of Object.entries($outNoteStore)) {
-			lookup[noteId] = {
-				id: noteId,
-				state,
-				type: 'outbound',
-				warehouse: 'all',
-				displayName
-			};
-		}
-
-		return lookup;
 	}
-);
+
+	// Add out notes to the lookup
+	for (const [noteId, { state, displayName }] of Object.entries($outNoteStore)) {
+		lookup[noteId] = {
+			id: noteId,
+			state,
+			type: "outbound",
+			warehouse: "all",
+			displayName
+		};
+	}
+
+	return lookup;
+});
 
 /** A lookup table for the content stores, used to get the correct content for a given view (stock/inbound/outbound). */
 export const contentStoreLookup = {

@@ -1,23 +1,14 @@
 <script lang="ts">
-	import Logo from './Logo.svelte';
+	import Logo from "./Logo.svelte";
 
-	export let title = 'Stock';
+	interface HeaderLink {
+		label: string;
+		href: string;
+	}
+
+	export let title = "Stock";
 	export let currentLocation: string;
-
-	const links = [
-		{
-			label: 'Stock',
-			href: '/inventory/stock'
-		},
-		{
-			label: 'Inbound',
-			href: '/inventory/inbound'
-		},
-		{
-			label: 'Outbound',
-			href: '/inventory/outbound'
-		}
-	];
+	export let links = [] as HeaderLink[];
 </script>
 
 <header class="w-full bg-gray-900 px-[70px]">
@@ -33,7 +24,7 @@
 					class="rounded-md px-3 py-2 text-sm {currentLocation === href
 						? 'bg-teal-500 text-gray-900'
 						: 'text-white hover:text-teal-500'}"
-					aria-current={currentLocation === href ? 'page' : 'false'}
+					aria-current={currentLocation === href ? "page" : "false"}
 				>
 					<span>{label}</span>
 				</a>

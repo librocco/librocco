@@ -1,24 +1,24 @@
-import { describe } from 'vitest';
+import { describe } from "vitest";
 
-import { VersionString } from '@/types';
+import { VersionString } from "@/types";
 
-import { newTestRunner } from '../runner';
+import { newTestRunner } from "../runner";
 
-import * as testDataLoader from '@data-loaders/fs-data-loader';
+import * as testDataLoader from "@data-loaders/fs-data-loader";
 
-import { v1 as newDatabase } from '@/implementations';
-import * as tests from './tests';
+import { v1 as newDatabase } from "@/implementations";
+import * as tests from "./tests";
 
-import { processTestName } from '@/utils/misc';
+import { processTestName } from "@/utils/misc";
 
-describe('Datamodel tests', async () => {
+describe("Datamodel tests", async () => {
 	// We're currently using the `testDataLoader` for unit tests,
 	const runner = await newTestRunner(testDataLoader);
 
 	// We're runnint smokte tests against the default implementation as we're testing the test runner itself
 	// not the implementations.
-	describe('Test runner smoke tests', () => {
-		const defaultImplementation = { version: 'v1' as VersionString, newDatabase };
+	describe("Test runner smoke tests", () => {
+		const defaultImplementation = { version: "v1" as VersionString, newDatabase };
 		const setup = runner.setup(defaultImplementation);
 
 		Object.entries(tests).forEach(([name, testFn]) => {

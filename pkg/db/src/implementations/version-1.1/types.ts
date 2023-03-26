@@ -5,7 +5,7 @@ import {
 	NoteInterface as NI,
 	NoteData as ND,
 	VolumeStock
-} from '@/types';
+} from "@/types";
 
 /** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
@@ -17,7 +17,16 @@ export type NoteData = ND<AdditionalData>;
 export type NoteInterface = NI<AdditionalData>;
 
 /** Warehouse data (extended with additional fields) for internal implementation usage. */
-export type WarehouseData = WD<AdditionalData>;
-export type WarehouseInterface = WI<NoteInterface, AdditionalData>;
+export type WarehouseData = WD;
+export type WarehouseInterface = WI<NoteInterface>;
 
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface>;
+
+export type WarehouseListViewResp = {
+	key: string;
+	value: { displayName?: string };
+};
+export type NoteListViewResp = {
+	key: string;
+	value: { displayName?: string; committed?: boolean };
+};

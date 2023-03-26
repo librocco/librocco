@@ -1,14 +1,14 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Mail } from 'lucide-svelte';
+	import { Mail } from "lucide-svelte";
 
-	import SideNavButton from './SideNavButton.svelte';
+	import SideNavButton from "./SideNavButton.svelte";
 
 	export let Hst: Hst;
 </script>
 
-<Hst.Story title="Side Navigation: Button" layout={{ type: 'grid', width: 300 }}>
+<Hst.Story title="Side Navigation: Button" layout={{ type: "grid", width: 300 }}>
 	<Hst.Variant title="Inactive">
 		<SideNavButton>
 			<Mail />

@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { DatabaseInterface, VolumeStock, NoteType, VersionString } from '@/types';
+import { DatabaseInterface, VolumeStock, NoteType, VersionString } from "@/types";
 
 // #region rawData
 export interface RawNote {

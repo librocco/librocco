@@ -1,19 +1,18 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-import PouchDB from 'pouchdb';
+import PouchDB from "pouchdb";
 
-import { RawNote, RawSnap } from '@test-runner/types';
+import { RawNote, RawSnap } from "@test-runner/types";
 
-import { unwrapDocs } from '@/utils/pouchdb';
+import { unwrapDocs } from "@/utils/pouchdb";
 
 export const getNotes = async () => {
-	const notesDB = new PouchDB('http://admin:admin@localhost:5000/notes');
+	const notesDB = new PouchDB("http://admin:admin@localhost:5000/notes");
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const res = await retry(() => notesDB.allDocs<RawNote>({ include_docs: true }), 15, 200);
 	return unwrapDocs(res).filter((n) => n !== undefined) as RawNote[];
 };
 
 export const getSnaps = async () => {
-	const snapsDB = new PouchDB('http://admin:admin@localhost:5000/snaps');
+	const snapsDB = new PouchDB("http://admin:admin@localhost:5000/snaps");
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const res = await retry(() => snapsDB.allDocs<RawSnap>({ include_docs: true }), 15, 500);
 	return unwrapDocs(res).filter((n) => n !== undefined) as RawSnap[];
@@ -32,7 +31,7 @@ const retry = async <CB extends () => Promise<any>>(cb: CB, retries: number, bac
 		return res;
 	} catch (err) {
 		if (!retries) {
-			throw 'max number of retries exceeded: ' + err;
+			throw "max number of retries exceeded: " + err;
 		}
 
 		await wait(backoff);
