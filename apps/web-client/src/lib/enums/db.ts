@@ -1,5 +1,5 @@
 export enum NoteState {
-	Draft = 'draft',
-	Committed = 'committed',
-	Deleted = 'deleted'
+	Draft = "draft",
+	Committed = "committed",
+	Deleted = "deleted"
 }

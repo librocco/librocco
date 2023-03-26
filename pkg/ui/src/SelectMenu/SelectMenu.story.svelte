@@ -1,25 +1,25 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
-	import { SelectMenu } from './index';
+	import type { Hst } from "@histoire/plugin-svelte";
+	import { SelectMenu } from "./index";
 
 	export let Hst: Hst;
 
 	const options = [
-		{ value: 'draft', description: 'This note will save automatically as a draft transaction.' },
+		{ value: "draft", description: "This note will save automatically as a draft transaction." },
 		{
-			action: 'Publish',
-			value: 'published',
-			description: 'This note will be commited to the warehouse. Requires confirmation.'
+			action: "Publish",
+			value: "published",
+			description: "This note will be commited to the warehouse. Requires confirmation."
 		},
 		{
-			title: 'Delete',
-			value: 'deleted',
-			description: 'This note will be permenantly deleted. Requires confirmation.'
+			title: "Delete",
+			value: "deleted",
+			description: "This note will be permenantly deleted. Requires confirmation."
 		}
 	];
 </script>
 
-<Hst.Story title="SelectMenu" layout={{ type: 'grid', width: 500 }}>
+<Hst.Story title="SelectMenu" layout={{ type: "grid", width: 500 }}>
 	<Hst.Variant title="Default">
 		<SelectMenu class="mb-[260px]" {options} />
 	</Hst.Variant>
