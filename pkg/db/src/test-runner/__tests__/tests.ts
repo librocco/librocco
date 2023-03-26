@@ -22,7 +22,7 @@ const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses
 				.create()
 				// For the purose of testing, we set the displayName to the warehouse id
 				// correct default displayNames are tested in the unit tests
-				.then((w) => w.setName(id, {}));
+				.then((w) => w.setName({}, id));
 		})
 	);
 
