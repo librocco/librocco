@@ -1,25 +1,25 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { BookDetailForm } from '../Forms';
+	import { BookDetailForm } from "../Forms";
 
-	import Slideover from './Slideover.svelte';
+	import Slideover from "./Slideover.svelte";
 
 	export let Hst: Hst;
 
 	const book = {
-		isbn: '',
-		title: '',
-		authors: '',
-		publisher: '',
-		year: '',
+		isbn: "",
+		title: "",
+		authors: "",
+		publisher: "",
+		year: "",
 		price: 0
 	};
 
-	const publisherList = ['TCK Publishing', 'Reed Elsevier', 'Penguin Random House', 'Harper Collins', 'Bloomsbury'];
+	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
 </script>
 
-<Hst.Story title="Slideover" layout={{ type: 'grid', width: 700 }}>
+<Hst.Story title="Slideover" layout={{ type: "grid", width: 700 }}>
 	<Hst.Variant title="Prototype: Create new book">
 		<div class="m-4">
 			<Slideover

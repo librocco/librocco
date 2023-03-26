@@ -1,6 +1,8 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
-	import { page } from '$app/stores';
+	import { Search } from "lucide-svelte";
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
+	import { writable } from "svelte/store";
 
 	import {
 		InventoryPage,
@@ -9,27 +11,28 @@
 		Badge,
 		BadgeColor,
 		InventoryTable,
-		InventoryTableRow,
+		createTable,
 		Header,
 		SelectMenu,
 		TextEditable,
 		SideBarNav,
 		SidebarItemGroup,
 		NewEntitySideNavButton
-	} from '@librocco/ui';
+	} from "@librocco/ui";
 
-	import { noteStates, NoteTempState } from '$lib/enums/inventory';
-	import { NoteState } from '$lib/enums/db';
+	import { noteStates, NoteTempState } from "$lib/enums/inventory";
+	import { NoteState } from "$lib/enums/db";
 
-	import type { PageData } from './$types';
+	import type { PageData } from "./$types";
 
-	import { getDB } from '$lib/db';
+	import { getDB } from "$lib/db";
 
-	import { createNoteStores } from '$lib/stores/inventory';
+	import { createNoteStores } from "$lib/stores/inventory";
 
-	import { generateUpdatedAtString } from '$lib/utils/time';
-	import { readableFromStream } from '$lib/utils/streams';
-	import { get } from 'svelte/store';
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
+
+	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
 
@@ -38,8 +41,19 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const inNoteListCtx = { name: '[IN_NOTE_LIST]', debug: false };
-	const inNoteList = readableFromStream(db?.stream(inNoteListCtx).inNoteList, [], inNoteListCtx);
+	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
+	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
+
+	/**
+	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse
+	 * the new inbound note should be added to.
+	 * _(The handler navigates to the newly created note page after the note has been created)_.
+	 */
+	const handleCreateNote = (warehousId: string) => async () => {
+		const note = db.warehouse(warehousId).note();
+		await note.create();
+		goto(`/inventory/inbound/${note._id}`);
+	};
 
 	$: note = data.note;
 	$: warehouse = data.warehouse;
@@ -52,13 +66,20 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: entries.subscribe((e) => console.log(e));
+
+	const tableOptions = writable({
+		data: $entries
+	});
+
+	const table = createTable(tableOptions);
+
+	$: tableOptions.update(({ data }) => ({ data: $entries }));
 </script>
 
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header title="Inbound" currentLocation="/inventory/inbound" slot="header" />
+	<Header links={inventoryLinks} title="Inbound" currentLocation="/inventory/inbound" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
@@ -73,7 +94,7 @@
 				}))}
 			>
 				<svelte:fragment slot="actions">
-					<NewEntitySideNavButton label="Create note" />
+					<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
 				</svelte:fragment>
 			</SidebarItemGroup>
 		{/each}
@@ -85,15 +106,9 @@
 			<div class="flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
-						<TextEditable
-							class="inline-block"
-							bind:value={$displayName}
-							disabled={$state === NoteState.Committed}
-						/>
+						<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
 						{#if warehouse}
-							<span class="align-middle text-sm font-normal text-gray-500"
-								>in {warehouse.displayName}</span
-							>
+							<span class="align-middle text-sm font-normal text-gray-500">in {warehouse.displayName}</span>
 						{/if}
 					</h2>
 					<div class="flex items-center gap-1.5 whitespace-nowrap">
@@ -104,10 +119,7 @@
 							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
 						/>
 						{#if $updatedAt}
-							<Badge
-								label="Last updated: {generateUpdatedAtString($updatedAt)}"
-								color={BadgeColor.Success}
-							/>
+							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
 						{/if}
 					</div>
 				</div>
@@ -120,13 +132,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $entries.length}
-			<InventoryTable>
-				{#each $entries as data}
-					<InventoryTableRow {data} />
-				{/each}
-			</InventoryTable>
-		{/if}
+		<InventoryTable {table} />
 	</svelte:fragment>
 
 	<!-- Table footer slot -->

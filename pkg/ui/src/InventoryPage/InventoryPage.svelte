@@ -1,5 +1,5 @@
 <script>
-	import { compute_slots } from 'svelte/internal';
+	import { compute_slots } from "svelte/internal";
 </script>
 
 <body class="flex h-screen flex-col">

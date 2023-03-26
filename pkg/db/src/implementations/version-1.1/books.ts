@@ -1,10 +1,10 @@
-import { concat, from, map, Observable, switchMap, tap } from 'rxjs';
+import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
-import { debug } from '@librocco/shared';
+import { debug } from "@librocco/shared";
 
-import { BookEntry, BooksInterface, DatabaseInterface } from '@/types';
+import { BookEntry, BooksInterface, DatabaseInterface } from "@/types";
 
-import { newChangesStream, unwrapDocs } from '@/utils/pouchdb';
+import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
@@ -43,13 +43,13 @@ class Books implements BooksInterface {
 		return unwrapDocs(rawBooks);
 	}
 
-	stream(isbns: string[], ctx: debug.DebugCtx) {
+	stream(ctx: debug.DebugCtx, isbns: string[]) {
 		return new Observable<(BookEntry | undefined)[]>((subscriber) => {
 			const emitter = this.#db._pouch.changes<BookEntry[]>({
-				since: 'now',
+				since: "now",
 				live: true,
 				include_docs: true,
-				filter: (doc) => isbns.includes(doc._id.replace('books/', ''))
+				filter: (doc) => isbns.includes(doc._id.replace("books/", ""))
 			});
 
 			const initialState = from(
@@ -57,14 +57,14 @@ class Books implements BooksInterface {
 					this.#db._pouch
 						.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 						.then((res) => {
-							debug.log(ctx, 'books_stream:initial_query:result')(res);
+							debug.log(ctx, "books_stream:initial_query:result")(res);
 							return resolve(res);
 						})
-						.catch(debug.log(ctx, 'books_stream:initial_query:error'));
+						.catch(debug.log(ctx, "books_stream:initial_query:error"));
 				})
 			);
 
-			const changeStream = newChangesStream<BookEntry[]>(emitter, ctx).pipe(
+			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() =>
 					from(
@@ -72,10 +72,10 @@ class Books implements BooksInterface {
 							this.#db._pouch
 								.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 								.then((res) => {
-									debug.log(ctx, 'books_stream:change_query:res')(res);
+									debug.log(ctx, "books_stream:change_query:res")(res);
 									return resolve(res);
 								})
-								.catch(debug.log(ctx, 'books_stream:change_query:error'));
+								.catch(debug.log(ctx, "books_stream:change_query:error"));
 						})
 					)
 				)
@@ -83,9 +83,9 @@ class Books implements BooksInterface {
 
 			concat(initialState, changeStream)
 				.pipe(
-					tap(debug.log(ctx, 'books_stream:result:raw')),
+					tap(debug.log(ctx, "books_stream:result:raw")),
 					map(unwrapDocs),
-					tap(debug.log(ctx, 'books_stream:result:transformed'))
+					tap(debug.log(ctx, "books_stream:result:transformed"))
 				)
 				.subscribe((doc) => subscriber.next(doc));
 

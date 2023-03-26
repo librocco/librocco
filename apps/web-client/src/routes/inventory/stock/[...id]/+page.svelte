@@ -1,27 +1,32 @@
 <script lang="ts">
-	import { Search } from 'lucide-svelte';
-	import { page } from '$app/stores';
+	import { Search } from "lucide-svelte";
+	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
+	import { writable } from "svelte/store";
 
 	import {
 		InventoryPage,
 		TextField,
 		Pagination,
 		InventoryTable,
-		InventoryTableRow,
+		createTable,
 		Header,
 		TextEditable,
 		SidebarItem,
 		SideBarNav,
 		NewEntitySideNavButton
-	} from '@librocco/ui';
+	} from "@librocco/ui";
+	import { NEW_WAREHOUSE } from "@librocco/db";
 
-	import type { PageData } from './$types';
+	import type { PageData } from "./$types";
 
-	import { getDB } from '$lib/db';
+	import { getDB } from "$lib/db";
 
-	import { createWarehouseStores } from '$lib/stores/inventory';
+	import { createWarehouseStores } from "$lib/stores/inventory";
 
-	import { readableFromStream } from '$lib/utils/streams';
+	import { readableFromStream } from "$lib/utils/streams";
+
+	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
 
@@ -30,22 +35,40 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const wareouseListCtx = { name: '[WAREHOUSE_LIST]', debug: false };
-	const warehouseList = readableFromStream(db?.stream(wareouseListCtx).warehouseList, [], wareouseListCtx);
+	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
+	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList(warehouseListCtx), []);
+
+	/**
+	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
+		await warehouse.create();
+		goto(`/inventory/stock/${warehouse._id}`);
+	};
 
 	$: warehouse = data.warehouse;
 
 	$: warehouesStores = createWarehouseStores(warehouse);
 
 	$: displayName = warehouesStores.displayName;
-	$: entries = warehouesStores.entries;
 	$: currentPage = warehouesStores.currentPage;
 	$: paginationData = warehouesStores.paginationData;
+	$: entries = warehouesStores.entries;
+
+	const tableOptions = writable({
+		data: $entries
+	});
+
+	const table = createTable(tableOptions);
+
+	$: tableOptions.update(({ data }) => ({ data: $entries }));
 </script>
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header title="Stock" currentLocation="/inventory/stock" slot="header" />
+	<Header links={inventoryLinks} title="Stock" currentLocation="/inventory/stock" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
@@ -53,7 +76,7 @@
 			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
-			<NewEntitySideNavButton label="Create warehouse" />
+			<NewEntitySideNavButton label="Create warehouse" on:click={handleCreateWarehouse} />
 		</svelte:fragment>
 	</SideBarNav>
 
@@ -72,11 +95,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if $entries.length}
-			<InventoryTable>
-				{#each $entries as data}
-					<InventoryTableRow {data} />
-				{/each}
-			</InventoryTable>
+			<InventoryTable {table} />
 		{/if}
 	</svelte:fragment>
 

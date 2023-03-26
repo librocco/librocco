@@ -1,13 +1,13 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { test as t, bench as b } from 'vitest';
-import PouchDB from 'pouchdb';
+import { test as t, bench as b } from "vitest";
+import PouchDB from "pouchdb";
 
-import { __withDocker__ } from './env';
+import { __withDocker__ } from "./env";
 
-import { DatabaseInterface } from '@/types';
-import { RawSnap, RawNote, GetNotesAndWarehouses, TestTask, TestStock, MapWarehouses, ImplementationSetup } from './types';
+import { DatabaseInterface } from "@/types";
+import { RawSnap, RawNote, GetNotesAndWarehouses, TestTask, TestStock, MapWarehouses, ImplementationSetup } from "./types";
 
-import { sortBooks } from '@/utils/misc';
+import { sortBooks } from "@/utils/misc";
 
 // #region types
 interface RawData {
@@ -29,15 +29,15 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 
 	const taskSetup = async (): Promise<DatabaseInterface> => {
 		// Get new db per test basis
-		const dbName = new Date().toISOString().replaceAll(/[.:]/g, '-').toLowerCase();
-		const pouchInstance = new PouchDB(dbName, { adapter: 'memory' });
+		const dbName = new Date().toISOString().replaceAll(/[.:]/g, "-").toLowerCase();
+		const pouchInstance = new PouchDB(dbName, { adapter: "memory" });
 
 		const db = config.newDatabase(pouchInstance);
 
 		// If testing with docker support, we're using the remote db to replicate to/from
-		const remoteDb = __withDocker__ ? ['http://admin:admin@127.0.0.1:5001', `test-${dbName}`].join('/') : undefined;
+		const remoteDb = __withDocker__ ? ["http://admin:admin@127.0.0.1:5001", `test-${dbName}`].join("/") : undefined;
 
-		return db.init({ remoteDb }, {});
+		return db.init({}, { remoteDb });
 	};
 
 	const test: TestTask = (name, cb) => {

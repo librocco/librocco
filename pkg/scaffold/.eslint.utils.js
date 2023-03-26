@@ -5,29 +5,36 @@
  * @param {Array<string>} tsPaths a non-empty string array of tsconfig paths
  */
 exports.useTSConfig = (config, tsPaths) => {
-  if (!config) {
-    throw new Error(
-      "[useTSPaths] No config received. Config should be a valid eslint config object"
-    );
-  }
-  if (!(tsPaths instanceof Array) || !tsPaths.length) {
-    throw new Error(
-      "[useTSPaths] tsPaths shoud be a non-empty array of string paths"
-    );
-  }
+	if (!config) {
+		throw new Error(
+			"[useTSPaths] No config received. Config should be a valid eslint config object"
+		);
+	}
+	if (!(tsPaths instanceof Array) || !tsPaths.length) {
+		throw new Error("[useTSPaths] tsPaths shoud be a non-empty array of string paths");
+	}
 
-  return {
-    ...config,
-    parserOptions: { ...config.parserOptions, project: tsPaths },
-    settings: {
-      ...config.settings,
-      "import/resolver": {
-        ...config.settings["import/resolver"],
-        typescript: {
-          ...config.settings["import/resolver"]?.typescript,
-          project: tsPaths,
-        },
-      },
-    },
-  };
+	// Extract parserOptions and settings from base config
+	const { parserOptions: baseParserOptions = {}, settings: baseSettings = {} } = config;
+
+	// Add typescript paths to parserOptions
+	const parserOptions = { ...baseParserOptions, project: tsPaths };
+
+	// Add typescript paths to 'settings["import/resolver"].typescript', creating
+	// 'settings', 'import/resolver', 'typescript' segments if they don't exist
+	const { baseImportResolver = {} } = baseSettings;
+	const { typescriptResolver = {} } = baseImportResolver;
+	const settings = {
+		...baseSettings,
+		"import/resolver": {
+			...baseImportResolver,
+			typescript: { ...typescriptResolver, project: tsPaths },
+		},
+	};
+
+	return {
+		...config,
+		parserOptions,
+		settings,
+	};
 };

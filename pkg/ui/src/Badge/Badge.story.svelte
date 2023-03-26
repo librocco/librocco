@@ -1,13 +1,13 @@
 <script lang="ts">
-	import type { Hst } from '@histoire/plugin-svelte';
+	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { BadgeColor, BadgeSize } from './enums';
-	import Badge from './Badge.svelte';
+	import { BadgeColor, BadgeSize } from "./enums";
+	import Badge from "./Badge.svelte";
 
 	export let Hst: Hst;
 </script>
 
-<Hst.Story title="Badge" layout={{ type: 'grid' }}>
+<Hst.Story title="Badge" layout={{ type: "grid" }}>
 	<Hst.Variant title="Sizes">
 		{#each Object.values(BadgeSize) as size}
 			<div class="p-2">

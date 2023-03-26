@@ -1,14 +1,7 @@
 <script lang="ts">
-	import {
-		Listbox,
-		ListboxLabel,
-		ListboxButton,
-		ListboxOptions,
-		ListboxOption,
-		Transition
-	} from '@rgossiaux/svelte-headlessui';
-	import { Check, ChevronDown } from 'lucide-svelte';
-	import { createEventDispatcher } from 'svelte';
+	import { Listbox, ListboxLabel, ListboxButton, ListboxOptions, ListboxOption, Transition } from "@rgossiaux/svelte-headlessui";
+	import { Check, ChevronDown } from "lucide-svelte";
+	import { createEventDispatcher } from "svelte";
 
 	interface Option {
 		value: string;
@@ -17,7 +10,7 @@
 	}
 
 	export let options: Option[];
-	export let align: 'left' | 'right' = 'left';
+	export let align: "left" | "right" = "left";
 
 	export let value = options[0].value;
 
@@ -26,7 +19,7 @@
 	const dispatch = createEventDispatcher();
 	const handleChange = (e: CustomEvent) => {
 		value = e.detail;
-		dispatch('change', e.detail.value);
+		dispatch("change", e.detail.value);
 	};
 </script>
 
@@ -62,11 +55,7 @@
 			>
 				{#each options as option (option.value)}
 					<ListboxOption value={option.value} let:selected let:active>
-						<div
-							class="group whitespace-normal py-[10px] px-4 hover:bg-teal-500 {active
-								? 'bg-teal-500'
-								: 'bg-white'}"
-						>
+						<div class="group whitespace-normal py-[10px] px-4 hover:bg-teal-500 {active ? 'bg-teal-500' : 'bg-white'}">
 							<div class="flex justify-between">
 								<p
 									class="capitalize group-hover:text-white
@@ -76,18 +65,11 @@
 									{option.action || option.value}
 								</p>
 								{#if selected}
-									<Check
-										aria-hidden="true"
-										class="group-hover:text-white {active ? 'text-white' : 'text-teal-500'}"
-									/>
+									<Check aria-hidden="true" class="group-hover:text-white {active ? 'text-white' : 'text-teal-500'}" />
 								{/if}
 							</div>
 							{#if option.description}
-								<p
-									class="{active
-										? 'text-white'
-										: 'text-gray-500'} group-hover:text-white group-active:text-white"
-								>
+								<p class="{active ? 'text-white' : 'text-gray-500'} group-hover:text-white group-active:text-white">
 									{option.description}
 								</p>
 							{/if}

@@ -37,13 +37,13 @@ The test runner we came up with does exactly that, it allows us to take multiple
 To start implementing the test suite, we would first load the test runner, like so:
 
 ```typescript
-import { describe } from 'vitest';
+import { describe } from "vitest";
 
-import { newTestRunner } from '@test-runner/runner';
+import { newTestRunner } from "@test-runner/runner";
 
 // Notice the async callback of the describe block
-describe('Datamodel tests', async () => {
-	const runner = await newTestRunner(dataLoader);
+describe("Datamodel tests", async () => {
+    const runner = await newTestRunner(dataLoader);
 });
 ```
 
@@ -60,17 +60,17 @@ _Note: the `newTestRunner` is `async` as the data loader performs a couple of as
 To create a test setup for a specific implementation, after initialising the runner, we use the `runner.setup` method, like so:
 
 ```typescript
-import { describe } from 'vitest';
-import { newTestRunner } from '@test-runner/runner';
-import { v1 as newDatabase } from '@/implementations';
+import { describe } from "vitest";
+import { newTestRunner } from "@test-runner/runner";
+import { v1 as newDatabase } from "@/implementations";
 
-describe('Datamodel tests', async () => {
-	const runner = await newTestRunner(dataLoader);
+describe("Datamodel tests", async () => {
+    const runner = await newTestRunner(dataLoader);
 
-	// Setup tests for v1 implementation
-	const setup = runner.setup({ version: 'v1', newDatabase });
+    // Setup tests for v1 implementation
+    const setup = runner.setup({ version: "v1", newDatabase });
 
-	// ...run the tests
+    // ...run the tests
 });
 ```
 
@@ -86,19 +86,19 @@ Under the hood, when we've initialised the `runner`, we've passed in the data lo
 With the setup object (a test setup for a particular implementation) we can simply run `setup.test`, like so:
 
 ```typescript
-import { describe } from 'vitest';
-import { newTestRunner } from '@test-runner/runner';
-import { v1 as newDatabase } from '@/implementations';
+import { describe } from "vitest";
+import { newTestRunner } from "@test-runner/runner";
+import { v1 as newDatabase } from "@/implementations";
 
-describe('Datamodel tests', async () => {
-	const runner = await newTestRunner(dataLoader);
+describe("Datamodel tests", async () => {
+    const runner = await newTestRunner(dataLoader);
 
-	const setup = runner.setup({ version: 'v1', newDatabase });
+    const setup = runner.setup({ version: "v1", newDatabase });
 
-	// Run the test against the db interface set up by the runner
-	setup.test('should do something', async (db, version, getNotesAndWarehouses) => {
-		// Make assertions
-	});
+    // Run the test against the db interface set up by the runner
+    setup.test("should do something", async (db, version, getNotesAndWarehouses) => {
+        // Make assertions
+    });
 });
 ```
 
@@ -117,43 +117,43 @@ Let's refactor our example to run the tests against multiple implementations.
 One note: The db package is structured in such a way that each implementation exports a `newDatabase` function (for the interface to be instantiated), as a default export. Implementations are then collected in `index.ts` of `implementations` folder and exported as named exports (named after the implementation version), like so:
 
 ```typescript
-export { default as v1 } from './version1.1';
-export { default as v2 } from './version1.2';
+export { default as v1 } from "./version1.1";
+export { default as v2 } from "./version1.2";
 ```
 
 We utilise that organisation to get both the name and the implementation factory function and pass that data to the tests, like so:
 
 ```typescript
-import { describe } from 'vitest';
-import { newTestRunner } from '@test-runner/runner';
+import { describe } from "vitest";
+import { newTestRunner } from "@test-runner/runner";
 
 // Remember, implementations can be treated as a key/value object,
 // - key being the implementation version string (e.g. "v1")
 // - the value is the implementation's default export (i.e. 'newDatabase' function)
-import * as implementations from '@/implementations';
+import * as implementations from "@/implementations";
 
-describe('Datamodel tests', async () => {
-	// We initialise the test runner on the same test data
-	const runner = await newTestRunner(dataLoader);
+describe("Datamodel tests", async () => {
+    // We initialise the test runner on the same test data
+    const runner = await newTestRunner(dataLoader);
 
-	// Loop over the implementations and get a test setup for each
-	Object.entries(implementations).forEach(([version, newDatabase]) => {
-		// Let's add additional describe block for nicer test reporting
-		describe(`Test ${version} implementation`, () => {
-			// Setup has to be ran for each specific version
-			// (passing in the version string and 'newDatabase' function)
-			const setup = runner.setup({ version, newDatabase });
+    // Loop over the implementations and get a test setup for each
+    Object.entries(implementations).forEach(([version, newDatabase]) => {
+        // Let's add additional describe block for nicer test reporting
+        describe(`Test ${version} implementation`, () => {
+            // Setup has to be ran for each specific version
+            // (passing in the version string and 'newDatabase' function)
+            const setup = runner.setup({ version, newDatabase });
 
-			// Run the test against the db interface set up for specific implementation
-			setup.test('should do something', async (db) => {
-				// Make assertions
-			});
+            // Run the test against the db interface set up for specific implementation
+            setup.test("should do something", async (db) => {
+                // Make assertions
+            });
 
-			setup.test('should do something else', async (db) => {
-				// Make assertions
-			});
-		});
-	});
+            setup.test("should do something else", async (db) => {
+                // Make assertions
+            });
+        });
+    });
 });
 ```
 
@@ -242,21 +242,21 @@ As mentioned above, in the test runner example, our actual tests are set up in a
 Since we want to reuse some or all of the test cases across different suites (test/bench), we're not using the standard vitest-like api for tests, but are rather writing tests as named exported functions, like so:
 
 ```typescript
-import { TestFunction } from '@/test-runner/types';
+import { TestFunction } from "@/test-runner/types";
 
 export const standardApi: TestFunction = async (db, version) => {
-	// ...make assertions
+    // ...make assertions
 };
 
 export const stressTest: TestFunction = async (db, version, getNotesAndWarehouses) => {
-	// ...make assertions
+    // ...make assertions
 };
 ```
 
 It is important to stick to this structure when writing tests as the test suites (main and bench files) are written in such a way that they import all tests from the test file as key-value objects, like so:
 
 ```typescript
-import * as tests from './tests.ts';
+import * as tests from "./tests.ts";
 ```
 
 therefore, it's important that all of the exports from the `test.ts` file (in this example) are named exports of test functions. The test functions are handled (inside the test suite) something like this:
@@ -264,26 +264,26 @@ therefore, it's important that all of the exports from the `test.ts` file (in th
 ```typescript
 // tests.ts
 export const standardApi: TestFunction = async (db) => {
-	expect(foo).toEqual(bar);
+    expect(foo).toEqual(bar);
 };
 
 // main.test.ts
-import * as tests from './tests';
+import * as tests from "./tests";
 
 // ...runner and implementation setup
 
 Object.entries(tests).forEach(([name, testFn]) => {
-	// Notice how the test name is the name of the exported function (in this example: 'standardApi')
-	// and the test callback is the exported function itself
-	setup.test(name, testFn);
+    // Notice how the test name is the name of the exported function (in this example: 'standardApi')
+    // and the test callback is the exported function itself
+    setup.test(name, testFn);
 });
 ```
 
 The result of this iteration (in this example, containing only one test) would evaluate to something like this:
 
 ```typescript
-test('standardApi', async () => {
-	expect(foo).toEqual(bar);
+test("standardApi", async () => {
+    expect(foo).toEqual(bar);
 });
 ```
 
