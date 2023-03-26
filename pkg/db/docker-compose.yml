@@ -13,7 +13,3 @@ services:
         ports:
             - 5001:5984
             - 8081:9100
-
-        environment:
-            - COUCHDB_USER=admin
-            - COUCHDB_PASSWORD=admin
