@@ -41,7 +41,7 @@
 	const db = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(db?.stream().outNoteList(outNoteListCtx), [], outNoteListCtx);
+	const outNoteList = readableFromStream(outNoteListCtx, db?.stream().outNoteList(outNoteListCtx), []);
 
 	/**
 	 * Handle create note is an `on:click` handler used to create a new outbound note

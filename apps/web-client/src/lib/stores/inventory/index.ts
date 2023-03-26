@@ -29,33 +29,24 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (note) => {
-	const noteStateCtx = {
-		name: `[NOTE_STATE::${note?._id}]`,
-		debug: false
-	};
-	const internalState = createInternalStateStore(note, noteStateCtx);
+	const noteStateCtx = { name: `[NOTE_STATE::${note?._id}]`, debug: false };
+	const internalState = createInternalStateStore(noteStateCtx, note);
 
-	const updatedAtCtx = {
-		name: `[NOTE_UPDATED_AT::${note?._id}]`,
-		debug: false
-	};
-	const updatedAt = readableFromStream(note?.stream().updatedAt(updatedAtCtx), null, updatedAtCtx);
+	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?._id}]`, debug: false };
+	const updatedAt = readableFromStream(updatedAtCtx, note?.stream().updatedAt(updatedAtCtx), null);
 
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(note, undefined, {
-		name: `[NOTE_DISPLAY_NAME::${note?._id}]`,
-		debug: false
-	});
-	const state = createDisplayStateStore(note, internalState, noteStateCtx);
-	const entries = createDisplayEntriesStore(getDB(), note, currentPage, {
-		name: `[NOTE_ENTRIES::${note?._id}]`,
-		debug: false
-	});
-	const paginationData = createPaginationDataStore(note, currentPage, {
-		name: `[NOTE_PAGINATION::${note?._id}]`,
-		debug: false
-	});
+	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?._id}]`, debug: false };
+	const displayName = createDisplayNameStore(displayNameCtx, note, undefined);
+
+	const state = createDisplayStateStore(noteStateCtx, note, internalState);
+
+	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
+	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
+
+	const paginationCtx = { name: `[NOTE_PAGINATION::${note?._id}]`, debug: false };
+	const paginationData = createPaginationDataStore(paginationCtx, note, currentPage);
 
 	return {
 		displayName,
@@ -79,25 +70,20 @@ interface CreateWarehouseStores {
 
 /**
  * Creates all the stores needed to display a warehouse view.
- * @param db db interface
- * @param warehouseId
+ * @param warehouse WarehouseInterface object
  * @returns
  */
 export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const currentPage = writable(0);
 
-	const displayName = createDisplayNameStore(warehouse, null, {
-		name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`,
-		debug: false
-	});
-	const entries = createDisplayEntriesStore(getDB(), warehouse, currentPage, {
-		name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`,
-		debug: false
-	});
-	const paginationData = createPaginationDataStore(warehouse, currentPage, {
-		name: `[WAREHOUSE_PAGINATION::${warehouse?._id}]`,
-		debug: false
-	});
+	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
+	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
+
+	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
+	const entries = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
+
+	const paginationDataCtx = { name: `[WAREHOUSE_PAGINATION::${warehouse?._id}]`, debug: false };
+	const paginationData = createPaginationDataStore(paginationDataCtx, warehouse, currentPage);
 
 	return {
 		displayName,

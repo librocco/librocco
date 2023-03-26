@@ -42,7 +42,7 @@
 	const db = getDB();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteList = readableFromStream(db?.stream().inNoteList(inNoteListCtx), [], inNoteListCtx);
+	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
 
 	/**
 	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse

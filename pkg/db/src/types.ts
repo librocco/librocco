@@ -98,7 +98,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
-	setName: (name: string, ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
 	/**
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
@@ -167,7 +167,7 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	/** Note constructs a note interface for the note with the provided id. If ommitted, a new (timestamped) id is generated (for note creation). */
 	note: (id?: string) => N;
 	/** Set name udpates the `displayName` of the warehouse */
-	setName: (name: string, ctx: debug.DebugCtx) => Promise<WarehouseInterface<N, A>>;
+	setName: (ctx: debug.DebugCtx, name: string) => Promise<WarehouseInterface<N, A>>;
 	/**
 	 * Stream returns an object containing observable streams for the warehouse:
 	 * - `displayName` - streams the warehouse's `displayName`
@@ -202,10 +202,16 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
+export interface DBInitState {
+	state: "void" | "initialising" | "replicating" | "ready";
+	withReplication: boolean;
+}
+
 /**
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
+	initState: (ctx: debug.DebugCtx) => Observable<DBInitState>;
 	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
@@ -253,7 +259,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
-	init: (params: { remoteDb?: string }, ctx: debug.DebugCtx) => Promise<DatabaseInterface>;
+	init: (ctx: debug.DebugCtx, params: { remoteDb?: string }) => DatabaseInterface;
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
@@ -288,7 +294,7 @@ export interface BooksInterface {
 	 * as the results being in the same order as the input array: a book data at index 'i' will correspond to the isbn at
 	 * index 'i' of the request array, if the book data doesn't exist in the db, `undefined` will be found at its place._
 	 */
-	stream: (isbns: string[], ctx: debug.DebugCtx) => Observable<(BookEntry | undefined)[]>;
+	stream: (ctx: debug.DebugCtx, isbns: string[]) => Observable<(BookEntry | undefined)[]>;
 }
 
 export interface NewDatabase {

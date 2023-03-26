@@ -1,5 +1,7 @@
 import { describe, test, expect, vi } from "vitest";
 import { writable, get } from "svelte/store";
+import { BehaviorSubject } from "rxjs";
+
 import { testUtils } from "@librocco/shared";
 
 import { NoteTempState } from "$lib/enums/inventory";
@@ -10,20 +12,19 @@ import type { NoteAppState } from "$lib/types/inventory";
 import { createDisplayNameStore } from "../display_name";
 
 import { newTestDB } from "$lib/__testUtils__/db";
-import { BehaviorSubject } from "rxjs";
 
 const { waitFor } = testUtils;
 
 describe("createDisplayNameStore", () => {
 	test("should stream the display name from the db for given note/warehouse id", async () => {
-		const db = await newTestDB();
+		const db = newTestDB();
 		const warehouse = await db.warehouse("warehouse-1").create();
 		const note = await warehouse.note().create();
 
 		// Test for note
-		await note.setName("Note 1", {});
+		await note.setName({}, "Note 1");
 
-		const ndn$ = createDisplayNameStore(note, null, {});
+		const ndn$ = createDisplayNameStore({}, note, null);
 		let noteDisplayName: string | undefined;
 		ndn$.subscribe((ndn) => (noteDisplayName = ndn));
 
@@ -37,9 +38,9 @@ describe("createDisplayNameStore", () => {
 		});
 
 		// Test for warehouse
-		await warehouse.setName("Warehouse 1", {});
+		await warehouse.setName({}, "Warehouse 1");
 
-		const wdn$ = createDisplayNameStore(warehouse, null, {});
+		const wdn$ = createDisplayNameStore({}, warehouse, null);
 		let warehouseDisplayName: string | undefined;
 		wdn$.subscribe((wdn) => (warehouseDisplayName = wdn));
 
@@ -56,7 +57,7 @@ describe("createDisplayNameStore", () => {
 	test("should propagate the update to the db itself", async () => {
 		const db = await newTestDB();
 		const note = await db.warehouse().note().create();
-		const ndn$ = createDisplayNameStore(note, null, {});
+		const ndn$ = createDisplayNameStore({}, note, null);
 
 		// Update to the displayName store should get propagated to the db
 		ndn$.set("Note 1 updated");
@@ -70,7 +71,7 @@ describe("createDisplayNameStore", () => {
 		const db = await newTestDB();
 		const note = await db.warehouse().note().create();
 		const is$ = writable<NoteAppState>(NoteState.Draft);
-		const ndn$ = createDisplayNameStore(note, is$, {});
+		const ndn$ = createDisplayNameStore({}, note, is$);
 
 		// Update to the displayName store should get propagated to the db
 		ndn$.set("Note 1 updated");
@@ -88,7 +89,7 @@ describe("createDisplayNameStore", () => {
 		} as any;
 
 		const mockInternalStateStore = writable<NoteAppState>(NoteState.Draft);
-		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		const dn$ = createDisplayNameStore({}, mockEntity, mockInternalStateStore);
 		dn$.set("");
 
 		expect(mockSetName).not.toHaveBeenCalled();
@@ -106,7 +107,7 @@ describe("createDisplayNameStore", () => {
 		} as any;
 
 		const mockInternalStateStore = writable<NoteAppState>(NoteState.Draft);
-		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		const dn$ = createDisplayNameStore({}, mockEntity, mockInternalStateStore);
 		dn$.set("Current Name");
 
 		expect(mockSetName).not.toHaveBeenCalled();
@@ -124,7 +125,7 @@ describe("createDisplayNameStore", () => {
 		} as any;
 
 		const mockInternalStateStore = writable<NoteAppState>(NoteState.Committed);
-		const dn$ = createDisplayNameStore(mockEntity, mockInternalStateStore, {});
+		const dn$ = createDisplayNameStore({}, mockEntity, mockInternalStateStore);
 		dn$.set("New Name");
 
 		expect(mockSetName).not.toHaveBeenCalled();
@@ -132,7 +133,7 @@ describe("createDisplayNameStore", () => {
 	});
 
 	test("should not explode if 'entity' is not provided", async () => {
-		const ndn$ = createDisplayNameStore(undefined, null, {});
+		const ndn$ = createDisplayNameStore({}, undefined, null);
 		let noteDisplayName: string | undefined;
 		ndn$.subscribe((ndn) => (noteDisplayName = ndn));
 		expect(noteDisplayName).toEqual("");

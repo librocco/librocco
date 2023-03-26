@@ -15,7 +15,7 @@ describe("tableContentStore", () => {
 		let displayEntries: VolumeQuantity[] | undefined;
 
 		// Both db and entity are undefined (this will happen at build time, as db is instantiated only in browser)
-		let de$ = createDisplayEntriesStore(undefined, undefined, readable(0), {});
+		let de$ = createDisplayEntriesStore({}, undefined, undefined, readable(0));
 		de$.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
@@ -24,12 +24,12 @@ describe("tableContentStore", () => {
 
 		// Should also work if db is defined but entity is undefined (this might happen if the entity id is not specified)
 		const db = await newTestDB();
-		de$ = createDisplayEntriesStore(db, undefined, readable(0), {});
+		de$ = createDisplayEntriesStore({}, db, undefined, readable(0));
 		de$.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
 		// Same check for pagination
-		const pd$ = createPaginationDataStore(undefined, readable(0), {});
+		const pd$ = createPaginationDataStore({}, undefined, readable(0));
 		let paginationData: PaginationData | undefined;
 		pd$.subscribe((pd) => (paginationData = pd));
 		expect(paginationData).toEqual({
@@ -77,7 +77,7 @@ describe("tableContentStore", () => {
 			db.books().upsert([book1, book2])
 		]);
 
-		const de$ = createDisplayEntriesStore(db, note, readable(0), {});
+		const de$ = createDisplayEntriesStore({}, db, note, readable(0));
 		let displayEntries: DisplayRow[];
 		de$.subscribe((de) => (displayEntries = de));
 
