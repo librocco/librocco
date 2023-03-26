@@ -22,7 +22,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		const remoteDb = COUCHDB_HOST ? `http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}` : undefined;
 
 		return {
-			db: await createDB().init({ remoteDb }, { name: "[DB_INIT]", debug: false })
+			db: await createDB().init({ name: "[DB_INIT]", debug: false }, { remoteDb })
 		};
 	}
 

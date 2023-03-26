@@ -43,7 +43,7 @@ class Books implements BooksInterface {
 		return unwrapDocs(rawBooks);
 	}
 
-	stream(isbns: string[], ctx: debug.DebugCtx) {
+	stream(ctx: debug.DebugCtx, isbns: string[]) {
 		return new Observable<(BookEntry | undefined)[]>((subscriber) => {
 			const emitter = this.#db._pouch.changes<BookEntry[]>({
 				since: "now",
@@ -64,7 +64,7 @@ class Books implements BooksInterface {
 				})
 			);
 
-			const changeStream = newChangesStream<BookEntry[]>(emitter, ctx).pipe(
+			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() =>
 					from(

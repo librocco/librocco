@@ -36,7 +36,7 @@
 	const db = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseList = readableFromStream(db?.stream().warehouseList(warehouseListCtx), [], warehouseListCtx);
+	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList(warehouseListCtx), []);
 
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
