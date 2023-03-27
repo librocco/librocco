@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
+	import { Edit, QrCode, Search } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
@@ -17,7 +17,10 @@
 		TextEditable,
 		SideBarNav,
 		SidebarItem,
-		NewEntitySideNavButton
+		NewEntitySideNavButton,
+		TextFieldSize,
+		ButtonSize,
+		Button
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -71,6 +74,8 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
+
+	const handleAddTransaction = (isbn: string) => () => note.addVolumes({ isbn, quantity: 1 });
 </script>
 
 <InventoryPage>
@@ -90,29 +95,39 @@
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
 		{#if $state && $state !== NoteState.Deleted}
-			<div class="flex w-full items-end justify-between">
-				{#if $state}
-					<div>
-						<h2 class="mb-4 text-gray-900">
-							<TextEditable bind:value={$displayName} disabled={$state === NoteState.Committed} />
-						</h2>
-						<div class="flex items-center gap-1.5 whitespace-nowrap">
-							<SelectMenu
-								class="w-[138px]"
-								options={noteStates}
-								bind:value={$state}
-								disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-							/>
-							{#if $updatedAt}
-								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
-							{/if}
+			<div class="mb-10 flex w-full items-end justify-between">
+				<div>
+					<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
+						<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
+					</h2>
+					{#if $updatedAt}
+						<div>
+							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
 						</div>
-					</div>
-				{/if}
-				<TextField name="search" placeholder="Serach">
-					<Search slot="startAdornment" class="h-5 w-5" />
-				</TextField>
+					{/if}
+				</div>
+				<SelectMenu
+					class="w-[138px]"
+					options={noteStates}
+					bind:value={$state}
+					disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+					align="right"
+				/>
 			</div>
+			<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+				<svelte:fragment slot="startAdornment">
+					<QrCode />
+				</svelte:fragment>
+				<div let:value slot="endAdornment" class="flex gap-x-2">
+					<!-- @TODO: no validation is implemented here -->
+					<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
+						<svelte:fragment slot="startAdornment">
+							<Edit size={16} />
+						</svelte:fragment>
+						Create
+					</Button>
+				</div>
+			</TextField>
 		{/if}
 	</svelte:fragment>
 
