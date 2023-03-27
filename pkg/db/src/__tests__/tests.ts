@@ -115,27 +115,28 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 		{ isbn: "0123456789", quantity: 2, warehouseId: wh1._id },
 		// Having the same isbn for different warehouses will come in handy when testing update/remove transaction
 		{ isbn: "11111111", quantity: 4, warehouseId: wh1._id },
-		{ isbn: "11111111", quantity: 3, warehouseId: wh2._id }
+		{ isbn: "11111111", quantity: 3 }
 	);
 	await waitFor(() => {
 		expect(entries).toEqual([
 			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 4, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 3, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
+			{ isbn: "11111111", quantity: 3, warehouseId: "", warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 4, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }
 		]);
 	});
 
 	// Adding volumes to the same ISBN/warheouseId pair should simply aggregate the quantities
 	await note.addVolumes(
 		// The add volumes operation should not confuse the transaction with the same isbn, but different warehouse
-		{ isbn: "11111111", quantity: 3, warehouseId: wh1._id },
-		{ isbn: "11111111", quantity: 7, warehouseId: wh2._id }
+		{ isbn: "0123456789", quantity: 3, warehouseId: wh1._id },
+		// This should also wor if warehouse is not provided (falls back to "", in case of outbound note)
+		{ isbn: "11111111", quantity: 7 }
 	);
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 7, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
+			{ isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 10, warehouseId: "", warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 4, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }
 		]);
 	});
 
@@ -144,17 +145,17 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
-			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh2._id), warehouseName: "Warehouse 2" }
+			{ isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "11111111", quantity: 10, warehouseId: "", warehouseName: "not-found" },
+			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" }
 		]);
 	});
 
 	// Update transaction should be able to update warehouseId for a transaction
-	await note.updateTransaction({ isbn: "11111111", warehouseId: wh2._id }, { isbn: "11111111", quantity: 10, warehouseId: "wh3" });
+	await note.updateTransaction({ isbn: "11111111" }, { isbn: "11111111", quantity: 10, warehouseId: "wh3" });
 	await waitFor(() => {
 		expect(entries).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
+			{ isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
 			{ isbn: "11111111", quantity: 8, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1" },
 			{ isbn: "11111111", quantity: 10, warehouseId: versionId("wh3"), warehouseName: "not-found" }
 		]);
