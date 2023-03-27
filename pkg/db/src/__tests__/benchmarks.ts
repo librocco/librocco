@@ -4,7 +4,7 @@ import { firstValueFrom } from "rxjs";
 import { TestFunction } from "@test-runner/types";
 
 export const commit20Notes: TestFunction = async (db, version, getNotesAndWarehouses) => {
-	const { fullStock, notes, warehouses } = getNotesAndWarehouses(version)(20);
+	const { fullStock, notes, warehouses } = getNotesAndWarehouses(20);
 
 	// Create warehouses and set displayNames to avoid sequential warehouse names (default values)
 	// as they're hard to keep track of during banchmark/stress tests
@@ -27,5 +27,13 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 
 	const stock = await firstValueFrom(db.warehouse().stream().entries({}));
 
-	expect(stock).toEqual(fullStock.books);
+	expect(stock).toEqual(
+		fullStock.books.map(({ warehouseId, ...volumeStock }) =>
+			expect.objectContaining({
+				...volumeStock,
+				// We're versioning the warehouseId at assertions, rather than at data generation
+				warehouseId: `${version}/${warehouseId}`
+			})
+		)
+	);
 };

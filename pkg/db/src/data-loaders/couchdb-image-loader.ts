@@ -5,16 +5,16 @@ import { RawNote, RawSnap } from "@test-runner/types";
 import { unwrapDocs } from "@/utils/pouchdb";
 
 export const getNotes = async () => {
-	const notesDB = new PouchDB("http://admin:admin@127.0.0.1:5000/raw_notes");
+	const notesDB = new PouchDB("http://admin:admin@localhost:5000/notes");
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const res = await retry(() => notesDB.allDocs<RawNote>({ include_docs: true }), 15, 200);
 	return unwrapDocs(res).filter((n) => n !== undefined) as RawNote[];
 };
 
 export const getSnaps = async () => {
-	const snapsDB = new PouchDB("http://admin:admin@127.0.0.1:5000/raw_snaps");
+	const snapsDB = new PouchDB("http://admin:admin@localhost:5000/snaps");
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const res = await retry(() => snapsDB.allDocs<RawSnap>({ include_docs: true }), 15, 200);
+	const res = await retry(() => snapsDB.allDocs<RawSnap>({ include_docs: true }), 15, 500);
 	return unwrapDocs(res).filter((n) => n !== undefined) as RawSnap[];
 };
 
