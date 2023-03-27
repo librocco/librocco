@@ -1,39 +1,18 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DatabaseInterface, VolumeStock, NoteType, VersionedString, VersionString } from "@/types";
+import { DatabaseInterface, VolumeStock, NoteType, VersionString } from "@/types";
 
 // #region rawData
-interface IndustryIdentifier {
-	type: "ISBN_10" | "ISBN_13";
-	identifier: string;
-}
-
-export interface RawBook {
-	volumeInfo: {
-		title: string;
-		authors: string[];
-		publisher: string;
-		publishedDate: string;
-		industryIdentifiers: IndustryIdentifier[];
-		categories: string[];
-		language: string;
-	};
-}
-export interface RawBookStock extends RawBook {
-	warehouseId: string;
-	quantity: number;
-}
-
 export interface RawNote {
 	id: string;
-	type: "in-note" | "out-note";
-	books: RawBookStock[];
+	type: NoteType;
+	books: VolumeStock[];
 }
 
 export interface RawSnap {
 	id: string;
-	books: RawBookStock[];
+	books: VolumeStock[];
 }
 // #endregion rawData
 
@@ -46,28 +25,22 @@ export interface TestDataLoader {
 
 // #region testSetup
 interface TestNote {
-	id: VersionedString;
+	id: string;
 	type: NoteType;
 	books: VolumeStock[];
-}
-export interface TransformNote {
-	(version: VersionString): (note: RawNote) => TestNote;
 }
 
 export interface TestStock {
 	id: string;
 	books: VolumeStock[];
 }
-export interface TransformStock {
-	(version: VersionString): (db: RawSnap) => TestStock;
-}
 
 export interface MapWarehouses {
-	(version: VersionString): (books: RawBookStock[]) => TestStock[];
+	(books: VolumeStock[]): TestStock[];
 }
 
 export interface GetNotesAndWarehouses {
-	(version: VersionString): (n: number) => {
+	(n: number): {
 		notes: TestNote[];
 		fullStock: TestStock;
 		warehouses: TestStock[];

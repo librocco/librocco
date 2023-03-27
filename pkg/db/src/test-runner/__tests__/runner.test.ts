@@ -7,7 +7,7 @@ import { newTestRunner } from "../runner";
 import * as testDataLoader from "@data-loaders/fs-data-loader";
 
 import { v1 as newDatabase } from "@/implementations";
-import tests from "./tests";
+import * as tests from "./tests";
 
 import { processTestName } from "@/utils/misc";
 
