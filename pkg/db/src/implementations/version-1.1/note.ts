@@ -219,9 +219,7 @@ class Note implements NoteInterface {
 			params.forEach((update) => {
 				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
 
-				const matchIndex = this.entries.findIndex(
-					(entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId
-				);
+				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
 
 				if (matchIndex === -1) {
 					this.entries.push({ isbn: update.isbn, warehouseId, quantity: update.quantity });
