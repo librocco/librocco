@@ -204,7 +204,6 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 
 export interface DBInitState {
 	state: "void" | "initialising" | "replicating" | "ready";
-	withReplication: boolean;
 }
 
 /**
@@ -254,12 +253,32 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * Init initialises the db:
 	 * - creates the default warehouse
 	 * - uploads the design docs
-	 * - opens the db replication (if remote db address provided)
 	 *
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
-	init: (ctx: debug.DebugCtx, params: { remoteDb?: string }) => DatabaseInterface;
+	init: (ctx: debug.DebugCtx) => void;
+	/**
+	 * Sets up replication by returning four methods that enable the client to schedule the init stages more explicitly
+	 */
+	replicate: (ctx: debug.DebugCtx) => {
+		/**
+		 * a transient replication to the remote db (from the local db) - should resolve on done
+		 */
+		to: (url: string) => void;
+		/**
+		 * a transient replication to the remote db (from the local db) - should resolve on done
+		 */
+		from: (url: string) => void;
+		/**
+		 * a transient, two way replication - this would be really handy for initial db setup (each time the UI starts)
+		 */
+		sync: (url: string) => void;
+		/**
+		 * a live replication (used in the app, to, at least, replicate to one couch node)
+		 */
+		live: (url: string) => void;
+	};
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
