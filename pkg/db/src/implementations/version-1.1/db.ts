@@ -11,14 +11,14 @@ import { NEW_WAREHOUSE } from "@/constants";
 import designDocs from "./designDocuments";
 import { newWarehouse } from "./warehouse";
 
-import { newViewStream, replicateFromRemote, replicateLive } from "@/utils/pouchdb";
+import { newViewStream, replicateRemote, syncWithRemote } from "@/utils/pouchdb";
 import { newBooksInterface } from "./books";
 import { replicationError } from "./misc";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
 
-	#initState = new BehaviorSubject<DBInitState>({ state: "void", withReplication: false });
+	#initState = new BehaviorSubject<DBInitState>({ state: "void" });
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
@@ -70,22 +70,92 @@ class Database implements DatabaseInterface {
 		this._pouch.setMaxListeners(30);
 	}
 
-	init(ctx: debug.DebugCtx, { remoteDb }: { remoteDb?: string }): DatabaseInterface {
-		// We're replicating only if a remote db is provided.
-		const withReplication = Boolean(remoteDb);
+	replicate(ctx: debug.DebugCtx) {
+		/**
+		 * a transient replication to the remote db (from the local db) - should resolve on done
+		 */
+		const to = (url: string) => {
+			// Pull data from the remote db (if provided)
+			replicateRemote(ctx, this._pouch, url, true)
+				.then(() =>
+					firstValueFrom(
+						this.stream()
+							.warehouseList({})
+							.pipe(filter((list) => list.length > 0))
+					)
+				)
+				.catch((err) => {
+					// If remote db is not available, log the error and continue.
+					console.error(err);
+					console.error(replicationError);
+				});
+		};
+		/**
+		 * a transient replication from the remote db (to the local db)
+		 */
 
-		debug.log(ctx, "init_db:started")({ withReplication, remoteDb });
+		const from = (url: string) => {
+			// Pull data from the remote db (if provided)
+			replicateRemote(ctx, this._pouch, url)
+				.then(() =>
+					firstValueFrom(
+						this.stream()
+							.warehouseList({})
+							.pipe(filter((list) => list.length > 0))
+					)
+				)
+				.catch((err) => {
+					// If remote db is not available, log the error and continue.
+					console.error(err);
+					console.error(replicationError);
+				});
+		};
+		/**
+		 * a transient, two way replication - this would be really handy for initial db setup (each time the UI starts)
+		 */
+		const sync = (url: string) => {
+			try {
+				// Start live sync between local and remote db
+				syncWithRemote(ctx, this._pouch, url);
+			} catch (err) {
+				// If remote db is not available, log the error and continue.
+				console.error(err);
+				console.error(replicationError);
+			}
+		};
+		/**
+		 * a live replication (used in the app, to, at least, replicate to one couch node)
+		 */
+		const live = (url: string) => {
+			try {
+				// Start live sync between local and remote db
+				syncWithRemote(ctx, this._pouch, url, true);
+			} catch (err) {
+				// If remote db is not available, log the error and continue.
+				console.error(err);
+				console.error(replicationError);
+			}
+		};
+
+		return {
+			to,
+			from,
+			sync,
+			live
+		};
+	}
+
+	init(ctx: debug.DebugCtx): void {
+		debug.log(ctx, "init_db:started")({});
 		const initState = this.#initState.value.state;
 
 		// Take care of idempotency: don't allow any operations
 		// if initialised or initialisation in progress.
 		if (initState === "ready") {
 			debug.log(ctx, "init_db:already_initialised")({});
-			return this;
 		}
-		if (["initialising", "replicating"].includes(initState)) {
+		if (["initialising"].includes(initState)) {
 			debug.log(ctx, "init_db:initialisation_in_progress")({});
-			return this;
 		}
 
 		// Start initialisation with db setup:
@@ -97,7 +167,7 @@ class Database implements DatabaseInterface {
 		dbSetup.push(this.warehouse().create());
 
 		// Set initialisation state to 'initialising'
-		this.#initState.next({ state: "initialising", withReplication });
+		this.#initState.next({ state: "initialising" });
 
 		// Upload design documents if any
 		if (designDocs.length) {
@@ -109,39 +179,9 @@ class Database implements DatabaseInterface {
 		// Notice we're not awaiting the 'dbSetup' promises here as we want to
 		// return immediately and communicate with the called through db's initState stream
 		Promise.all(dbSetup).then(() => {
-			// If replication is not enabled, we're done with initialisation.
-			if (!remoteDb) {
-				debug.log(ctx, "init_db:initialisation_done")({ withReplication });
-				this.#initState.next({ state: "ready", withReplication });
-				return;
-			}
-
-			debug.log(ctx, "init_db:replication:started")({ remoteDb });
-			this.#initState.next({ state: "replicating", withReplication });
-
-			// Pull data from the remote db (if provided)
-			replicateFromRemote(ctx, this._pouch, remoteDb)
-				.then(() =>
-					firstValueFrom(
-						this.stream()
-							.warehouseList({})
-							.pipe(filter((list) => list.length > 0))
-					)
-				)
-				.then(() => {
-					debug.log(ctx, "init_db:replication:initial_replication_done")({});
-					this.#initState.next({ state: "ready", withReplication });
-					// Start live sync between local and remote db
-					replicateLive(ctx, this._pouch, remoteDb);
-				})
-				.catch((err) => {
-					// If remote db is not available, log the error and continue.
-					console.error(err);
-					console.error(replicationError);
-				});
+			debug.log(ctx, "init_db:initialisation_done")({});
+			this.#initState.next({ state: "ready" });
 		});
-
-		return this;
 	}
 
 	books(): BooksInterface {

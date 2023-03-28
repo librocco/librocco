@@ -171,23 +171,24 @@ export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.Debu
 	});
 
 interface ReplicateFn<R> {
-	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string): R;
+	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string, to?: boolean): R;
 }
 /**
- * A helper function used to replicate a remote (PouchDB/CouchDB) db to a local PouchDB instance.
+ * A helper function used to replicate a remote (PouchDB/CouchDB) db to or from a local PouchDB instance.
  * This is a one time, one way replication used to initialize the local db.
  * It wraps the PouchDB replication API in a promise, resolving when the replication is complete.
  * @param params
- * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
- * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to/from
+ * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from/to (e.g. 'http://localhost:5984/mydb')
+ * @param {string} params.to whether or not to replicate to remote (default is false, aka from remote)
  * @returns
  */
-export const replicateFromRemote: ReplicateFn<Promise<void>> = (ctx, local, remote) =>
+export const replicateRemote: ReplicateFn<Promise<void>> = (ctx, local, remote, to = false) =>
 	new Promise<void>((resolve, reject) => {
 		const info = { local: local.name, remote };
 
-		local.replicate
-			.from(remote)
+		const replicateFn = to ? local.replicate.to(remote) : local.replicate.from(remote);
+		replicateFn
 			.on("complete", (complete) => {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
 				debug.log(ctx, "replicate_from_remote:complete")({ ...info, complete });
@@ -213,18 +214,22 @@ export const replicateFromRemote: ReplicateFn<Promise<void>> = (ctx, local, remo
 			});
 	});
 
+interface SyncFn<R> {
+	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string, live?: boolean): R;
+}
 /**
  * Open a continuous, bidirectional synchronisation (replication) between a local PouchDB instance and a remote (PouchDB/CouchDB) db.
  * @param params
  * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
  * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
+ * @param {boolean} params.live synching is live or not
  * @returns
  */
-export const replicateLive: ReplicateFn<void> = (ctx, local, remote) => {
-	const info = { local: local.name, remote };
+export const syncWithRemote: SyncFn<void> = (ctx, local, remote, live = false) => {
+	const info = { local: local.name, remote, live };
 
 	local
-		.sync(remote, { live: true, retry: true })
+		.sync(remote, { live, retry: true })
 		.on("change", (change) => {
 			// handle change
 			debug.log(ctx, "replicate_live:change")({ ...info, change });
