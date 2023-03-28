@@ -1,4 +1,4 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
@@ -23,6 +23,14 @@ class Warehouse implements WarehouseInterface {
 
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
+
+	// Update stream receives the latest document (update) stream from the db. It's multicasted using plain RxJS Subject (no repeat or anything).
+	// This stream is used to signal the update has happened (and has been streamed to update the instance). Subscribers needing to be notified when
+	// and update happens should subscribe to this stream.
+	#updateStream: Observable<WarehouseData>;
+	// The stream is piped from the update stream, only it's multicasted using a ReplaySubject, which will cache the last value emitted by the stream,
+	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
+	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
 
 	_id: VersionedString;
@@ -43,10 +51,14 @@ class Warehouse implements WarehouseInterface {
 			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
 			  versionId(id);
 
+		const updateSubject = new Subject<WarehouseData>();
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const cache = new ReplaySubject<WarehouseData>(1);
 		/** @TODO find a way to pass context here (and have it be subscriber specific) */
-		this.#stream = newDocumentStream<WarehouseData>({}, this.#db._pouch, this._id).pipe(
+		this.#updateStream = newDocumentStream<WarehouseData>({}, this.#db._pouch, this._id).pipe(
+			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+		);
+		this.#stream = this.#updateStream.pipe(
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
@@ -157,8 +169,12 @@ class Warehouse implements WarehouseInterface {
 	private update(ctx: debug.DebugCtx, data: Partial<WarehouseData>): Promise<WarehouseInterface> {
 		return runAfterCondition(async () => {
 			const updatedData = { ...this, ...data };
-			const { rev } = await this.#db._pouch.put(updatedData);
-			return this.updateInstance({ ...this, _rev: rev });
+			this.#db._pouch.put(updatedData);
+
+			// We're waiting for the first value from stream (updating local instance) before resolving the
+			// update promise.
+			await firstValueFrom(this.#updateStream);
+			return this;
 		}, this.#initialized);
 	}
 
