@@ -11,12 +11,15 @@
 
 	export let Hst: Hst;
 
-	const multipleWarehouses = ["Varia 2018", "Nuovo 2021"];
-	const singleWarehouse = "Varia 2018";
+	const multipleWarehouses = [
+		{ label: "Varia 2018", value: "varia-2018" },
+		{ label: "Nuovo 2021", value: "nuovo-2021" }
+	];
+	const singleWarehouse = [{ label: "Varia 2018", value: "varia-2018" }];
 
 	const outNoteRows = [
-		{ ...rows[0], warehouseName: multipleWarehouses },
-		{ ...rows[1], warehouseName: singleWarehouse }
+		{ ...rows[0], warehouseId: "", warehouseName: "", availableWarehouses: multipleWarehouses },
+		{ ...rows[1], warehouseId: singleWarehouse[0].value, warehouseName: singleWarehouse[0].label, availableWarehouses: singleWarehouse }
 	];
 
 	const tableOptions = writable({
