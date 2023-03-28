@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { createTable } from "./table";
-	import type { OutNoteTableData } from "./types";
+	import type { OutNoteTableData, TransactionUpdateDetail, WarehouseChangeDetail } from "./types";
 
 	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
@@ -9,6 +9,7 @@
 	import { quadIn } from "svelte/easing";
 	import { fadeBgColor } from "../lib/transitions";
 	import { thRowBaseStyles } from "./utils";
+	import { createEventDispatcher } from "svelte";
 
 	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
 
@@ -29,6 +30,19 @@
 		publisher: "Publisher",
 		year: "Year",
 		warehouses: "Warehouse"
+	};
+
+	/** @TODO mvp quick integration */
+	const dispatch = createEventDispatcher<{ transactionupdate: TransactionUpdateDetail }>();
+	const handleWarehouseChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<WarehouseChangeDetail>) => {
+		const { warehouseId } = e.detail;
+		const updateTxn = { ...matchTxn, warehouseId };
+
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (warehouseId === matchTxn.warehouseId) {
+			return;
+		}
+		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
 </script>
 
@@ -90,7 +104,7 @@
 
 		<tbody>
 			{#each rows as row (row.key)}
-				{@const { isbn, title, authors, year, quantity, price, rowIx } = row}
+				{@const { isbn, title, authors, year, quantity, price, rowIx, warehouseId } = row}
 				<tr
 					use:tableRow={{
 						// Header row starts the count at 0
@@ -146,7 +160,7 @@
 						{year}
 					</td>
 
-					<TdWarehouseSelect data={row} {rowIx} />
+					<TdWarehouseSelect on:change={handleWarehouseChange({ isbn, warehouseId, quantity })} data={row} {rowIx} />
 				</tr>
 			{/each}
 		</tbody>
