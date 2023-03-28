@@ -1,10 +1,10 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
 import { DocType, NoteState } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial } from "@/types";
+import { NoteType, VolumeStock, VersionedString, PickPartial, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
@@ -19,6 +19,14 @@ class Note implements NoteInterface {
 
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
+
+	// Update stream receives the latest document (update) stream from the db. It's multicasted using plain RxJS Subject (no repeat or anything).
+	// This stream is used to signal the update has happened (and has been streamed to update the instance). Subscribers needing to be notified when
+	// and update happens should subscribe to this stream.
+	#updateStream: Observable<NoteData>;
+	// The stream is piped from the update stream, only it's multicasted using a ReplaySubject, which will cache the last value emitted by the stream,
+	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
+	// subscribe to this stream.
 	#stream: Observable<NoteData>;
 
 	_id: VersionedString;
@@ -56,9 +64,13 @@ class Note implements NoteInterface {
 			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
+		const updateSubject = new Subject<NoteData>();
 		const cache = new ReplaySubject<NoteData>(1);
 		/** @TODO find a way to pass context here (and have it be subscriber specific) */
-		this.#stream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
+		this.#updateStream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
+			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+		);
+		this.#stream = this.#updateStream.pipe(
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
@@ -174,8 +186,10 @@ class Note implements NoteInterface {
 			const { rev } = await this.#db._pouch.put<NoteData>(updatedData);
 			debug.log(ctx, "note:updated")({ updatedData, rev });
 
-			// Update note itself
-			return this.updateInstance({ ...updatedData, _rev: rev });
+			// We're waiting for the first value from stream (updating local instance) before resolving the
+			// update promise.
+			await firstValueFrom(this.#updateStream);
+			return this;
 		}, this.#initialized);
 	}
 
@@ -346,17 +360,31 @@ class Note implements NoteInterface {
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx) =>
 				combineLatest([
-					this.#stream.pipe(map(({ entries }) => (entries || []).map((e) => ({ ...e, warehouseName: "" })).sort(sortBooks))),
+					this.#stream.pipe(map(({ entries }) => (entries || []).sort(sortBooks))),
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
 					map(([entries, warehouses]) => {
 						// Create a record of warehouse ids and names for easy lookup
-						const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-						return entries.map((e) => ({
-							...e,
-							warehouseName: warehouseNames[e.warehouseId] || "not-found"
-						}));
+						const warehouseNames = warehouses.reduce(
+							(acc, { id, displayName }) => ({ ...acc, [id]: displayName }),
+							{} as Record<string, string>
+						);
+						const warehouseSelection = Object.entries(warehouseNames)
+							.filter(([id]) => id !== versionId("0-all"))
+							.map(([value, label]) => ({ value, label }));
+
+						return entries.map((e) => {
+							const entry = { ...e } as VolumeStockClient;
+
+							entry.warehouseName = warehouseNames[e.warehouseId] || "not-found";
+
+							if (this.noteType === "outbound") {
+								entry.availableWarehouses = warehouseSelection;
+							}
+
+							return entry;
+						});
 					}),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				),
