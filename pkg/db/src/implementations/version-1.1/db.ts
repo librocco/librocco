@@ -71,10 +71,14 @@ class Database implements DatabaseInterface {
 	}
 
 	replicate(ctx: debug.DebugCtx) {
+
 		/**
 		 * a transient replication to the remote db (from the local db) - should resolve on done
 		 */
 		const to = (url: string) => {
+			debug.log(ctx, "init_db:replication:started");
+			this.#initState.next({ state: "replicating" });
+
 			// Pull data from the remote db (if provided)
 			replicateRemote(ctx, this._pouch, url, true)
 				.then(() =>
@@ -84,17 +88,25 @@ class Database implements DatabaseInterface {
 							.pipe(filter((list) => list.length > 0))
 					)
 				)
+				.then(() => {
+					debug.log(ctx, "init_db:replication:initial_replication_done")({});
+					this.#initState.next({ state: "ready" });
+				})
 				.catch((err) => {
 					// If remote db is not available, log the error and continue.
 					console.error(err);
 					console.error(replicationError);
 				});
 		};
+
 		/**
 		 * a transient replication from the remote db (to the local db)
 		 */
 
 		const from = (url: string) => {
+			debug.log(ctx, "init_db:replication:started");
+			this.#initState.next({ state: "replicating" });
+
 			// Pull data from the remote db (if provided)
 			replicateRemote(ctx, this._pouch, url)
 				.then(() =>
@@ -104,12 +116,17 @@ class Database implements DatabaseInterface {
 							.pipe(filter((list) => list.length > 0))
 					)
 				)
+				.then(() => {
+					debug.log(ctx, "init_db:replication:initial_replication_done")({});
+					this.#initState.next({ state: "ready" });
+				})
 				.catch((err) => {
 					// If remote db is not available, log the error and continue.
 					console.error(err);
 					console.error(replicationError);
 				});
 		};
+
 		/**
 		 * a transient, two way replication - this would be really handy for initial db setup (each time the UI starts)
 		 */
@@ -123,6 +140,7 @@ class Database implements DatabaseInterface {
 				console.error(replicationError);
 			}
 		};
+
 		/**
 		 * a live replication (used in the app, to, at least, replicate to one couch node)
 		 */

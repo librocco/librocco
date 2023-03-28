@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { readableFromStream } from "$lib/utils/streams";
-	import type { DBInitState } from "@librocco/db";
 	import { Header, InventoryPage } from "@librocco/ui";
 
 	// Import main.css in order to generate tailwind classes used in the app
@@ -11,7 +10,7 @@
 	export let data: LayoutData;
 
 	$: db = data.db;
-	$: initState = readableFromStream({}, db?.stream().initState({}), { state: "void", withReplication: false });
+	$: initState = readableFromStream({}, db?.stream().initState({}), { state: "void" });
 </script>
 
 <!-- We're returning <slot /> if db doesn't initialise (it's "void") in case of SSR env or if the db is fully initialised -->
