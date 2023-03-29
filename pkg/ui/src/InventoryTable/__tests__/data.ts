@@ -10,7 +10,9 @@ export const rows: InventoryTableData[] = [
 		publisher: "Mondadori",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	},
 	{
 		isbn: "917289012381",
@@ -21,7 +23,9 @@ export const rows: InventoryTableData[] = [
 		publisher: "Penguin",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	},
 
 	{
@@ -33,7 +37,9 @@ export const rows: InventoryTableData[] = [
 		publisher: "Penguin",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	}
 ];
 

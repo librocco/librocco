@@ -9,8 +9,6 @@ export type InventoryTableData = BookCoreRowData & {
 // VolumeStockClient has warehouseName as a string, but it should expect an array where
 // a volume in an Out Note can potentially come out of multiple warehouses
 export type OutNoteTableData = BookCoreRowData & {
-	warehouseId: string;
-	warehouseName: string;
 	availableWarehouses?: { value: string; label: string }[];
 };
 
@@ -19,6 +17,8 @@ export type BookCoreRowData = {
 	title: string;
 	price: number;
 	quantity: number;
+	warehouseId: string;
+	warehouseName: string;
 	authors?: string;
 	year?: string;
 };
