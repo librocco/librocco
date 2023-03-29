@@ -1,8 +1,11 @@
 <script lang="ts">
-	import type { createTable } from "./table";
-	import type { InventoryTableData } from "./types";
+	import { createEventDispatcher } from "svelte";
 
-	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
+	import type { createTable } from "./table";
+	import type { InventoryTableData, TransactionUpdateDetail } from "./types";
+
+	import { Checkbox, Button, ButtonColor } from "../";
+	import QuantityInput from "./QuantityInput.svelte";
 
 	import { thRowBaseStyles } from "./utils";
 
@@ -26,6 +29,19 @@
 		year: "Year",
 		editedBy: "Edited By",
 		outOfPrint: "Out of Print"
+	};
+
+	/** @TODO mvp quick integration */
+	const dispatch = createEventDispatcher<{ transactionupdate: TransactionUpdateDetail }>();
+	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
+		const quantity = e.detail;
+		const updateTxn = { ...matchTxn, quantity };
+
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (quantity === matchTxn.quantity) {
+			return;
+		}
+		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
 </script>
 
@@ -93,7 +109,7 @@
 
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { rowIx, isbn, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
+			{@const { rowIx, isbn, warehouseId, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
 			<tr
 				use:tableRow={{
 					// Header row starts the count at 0
@@ -138,7 +154,7 @@
 					{authors}
 				</td>
 				<td class="py-4 px-3 text-left">
-					<Badge label={`${quantity}`} size={BadgeSize.LG} />
+					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
 				</td>
 				<td class="py-4 px-3 text-left">
 					{price}
