@@ -4,4 +4,4 @@ export { default as ComboboxTable } from "./ComboboxTable.svelte";
 
 export { createTable } from "./table";
 
-export type { WarehouseChangeDetail, TransactionUpdateDetail } from "./types";
+export type { WarehouseChangeDetail, TransactionUpdateDetail, RemoveTransactionsDetail } from "./types";

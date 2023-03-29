@@ -2,7 +2,7 @@
 	import { createEventDispatcher } from "svelte";
 
 	import type { createTable } from "./table";
-	import type { InventoryTableData, TransactionUpdateDetail } from "./types";
+	import type { InventoryTableData, RemoveTransactionsDetail, TransactionUpdateDetail } from "./types";
 
 	import { Checkbox, Button, ButtonColor } from "../";
 	import QuantityInput from "./QuantityInput.svelte";
@@ -32,7 +32,11 @@
 	};
 
 	/** @TODO mvp quick integration */
-	const dispatch = createEventDispatcher<{ transactionupdate: TransactionUpdateDetail }>();
+	interface EventMap {
+		transactionupdate: TransactionUpdateDetail;
+		removetransactions: RemoveTransactionsDetail;
+	}
+	const dispatch = createEventDispatcher<EventMap>();
 	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
 		const quantity = e.detail;
 		const updateTxn = { ...matchTxn, quantity };
@@ -43,14 +47,18 @@
 		}
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
+
+	$: handleRemoveTransactions = () => {
+		const transactions = selected.map(({ isbn, warehouseId }) => ({ isbn, warehouseId }));
+		dispatch("removetransactions", transactions);
+		resetRowSelection();
+	};
 </script>
 
 <table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 	{#if selected.length}
 		<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
-			<Button color={ButtonColor.White} on:click={() => resetRowSelection()}>
-				Delete {selected.length}
-			</Button>
+			<Button color={ButtonColor.White} on:click={handleRemoveTransactions}>Delete {selected.length}</Button>
 		</div>
 	{/if}
 	<thead>
