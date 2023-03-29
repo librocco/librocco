@@ -5,6 +5,7 @@
 	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
 	import TdWarehouseSelect from "./TdWarehouseSelect.svelte";
+	import QuantityInput from "./QuantityInput.svelte";
 
 	import { quadIn } from "svelte/easing";
 	import { fadeBgColor } from "../lib/transitions";
@@ -40,6 +41,16 @@
 
 		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
 		if (warehouseId === matchTxn.warehouseId) {
+			return;
+		}
+		dispatch("transactionupdate", { matchTxn, updateTxn });
+	};
+	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
+		const quantity = e.detail;
+		const updateTxn = { ...matchTxn, quantity };
+
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (quantity === matchTxn.quantity) {
 			return;
 		}
 		dispatch("transactionupdate", { matchTxn, updateTxn });
@@ -148,7 +159,7 @@
 					{authors}
 				</td>
 				<td class="py-4 px-3 text-left">
-					<Badge label={`${quantity}`} size={BadgeSize.LG} />
+					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, warehouseId, quantity })} />
 				</td>
 				<td class="hidden py-4 px-3 text-left sm:table-cell">
 					{price}

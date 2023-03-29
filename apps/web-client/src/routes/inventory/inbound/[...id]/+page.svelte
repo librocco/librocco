@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Edit, QrCode, Search } from "lucide-svelte";
+	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
@@ -20,7 +20,8 @@
 		NewEntitySideNavButton,
 		Button,
 		ButtonSize,
-		TextFieldSize
+		TextFieldSize,
+		type TransactionUpdateDetail
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -79,6 +80,14 @@
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
 	const handleAddTransaction = (isbn: string) => () => note.addVolumes({ isbn, quantity: 1 });
+
+	const handleTransactionUpdate = ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
+		console.log("Bump");
+		const { matchTxn, updateTxn } = detail;
+		const { isbn, warehouseId, quantity = matchTxn.quantity } = updateTxn;
+
+		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+	};
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -149,7 +158,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<InventoryTable {table} />
+		<InventoryTable {table} on:transactionupdate={handleTransactionUpdate} />
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
