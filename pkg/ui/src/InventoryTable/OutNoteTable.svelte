@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { createTable } from "./table";
-	import type { OutNoteTableData, TransactionUpdateDetail, WarehouseChangeDetail } from "./types";
+	import type { OutNoteTableData, RemoveTransactionsDetail, TransactionUpdateDetail, WarehouseChangeDetail } from "./types";
 
 	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
 
@@ -34,7 +34,11 @@
 	};
 
 	/** @TODO mvp quick integration */
-	const dispatch = createEventDispatcher<{ transactionupdate: TransactionUpdateDetail }>();
+	interface EventMap {
+		transactionupdate: TransactionUpdateDetail;
+		removetransactions: RemoveTransactionsDetail;
+	}
+	const dispatch = createEventDispatcher<EventMap>();
 	const handleWarehouseChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<WarehouseChangeDetail>) => {
 		const { warehouseId } = e.detail;
 		const updateTxn = { ...matchTxn, warehouseId };
@@ -45,6 +49,7 @@
 		}
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
+
 	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
 		const quantity = e.detail;
 		const updateTxn = { ...matchTxn, quantity };
@@ -55,12 +60,18 @@
 		}
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
+
+	$: handleRemoveTransactions = () => {
+		const transactions = selected.map(({ isbn, warehouseId }) => ({ isbn, warehouseId }));
+		dispatch("removetransactions", transactions);
+		resetRowSelection();
+	};
 </script>
 
 <table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 	{#if selected.length}
 		<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
-			<Button color={ButtonColor.White} on:click={() => resetRowSelection()}>
+			<Button color={ButtonColor.White} on:click={handleRemoveTransactions}>
 				Delete {selected.length}
 			</Button>
 		</div>

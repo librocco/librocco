@@ -21,7 +21,8 @@
 		Button,
 		ButtonSize,
 		TextFieldSize,
-		type TransactionUpdateDetail
+		type TransactionUpdateDetail,
+		type RemoveTransactionsDetail
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -88,6 +89,8 @@
 
 		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
 	};
+
+	const handleRemoveTransactions = (e: CustomEvent<RemoveTransactionsDetail>) => note.removeTransactions(...e.detail);
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -158,7 +161,7 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<InventoryTable {table} on:transactionupdate={handleTransactionUpdate} />
+		<InventoryTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
