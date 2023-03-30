@@ -1,4 +1,4 @@
-import { describe, test, vi, expect, beforeEach } from "vitest";
+import { describe, test, vi, expect } from "vitest";
 import { screen, render, act } from "@testing-library/svelte";
 import { writable } from "svelte/store";
 import userEvent from "@testing-library/user-event";
