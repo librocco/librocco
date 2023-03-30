@@ -31,15 +31,15 @@ const createDisplayRowStream: CreateDisplayRowStream = (ctx, db, entity) => {
 		?.stream()
 		.entries(ctx)
 		.pipe(
-			switchMap((valueFromEntryStream) => {
+			switchMap(({ rows }) => {
 				// map entry to just isbns
-				const isbns = valueFromEntryStream.map((entry) => entry.isbn);
+				const isbns = rows.map((entry) => entry.isbn);
 
 				// return array of merged values of books and volume stock client
 				return db
 					.books()
 					.stream(ctx, isbns)
-					.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...valueFromEntryStream[i] }))));
+					.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))));
 			})
 		);
 
@@ -84,11 +84,11 @@ export const createPaginationDataStore = (
 	entity: NoteInterface | WarehouseInterface | undefined,
 	currentPageStore: Readable<number>
 ): Readable<PaginationData> => {
-	const entriesStore = readableFromStream(ctx, entity?.stream().entries(ctx), []);
+	const entriesStore = readableFromStream(ctx, entity?.stream().entries(ctx), { rows: [], total: 0, totalPages: 0 });
 	// Create a derived store that streams the pagination data derived from the entries and current page stores
 	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
 		debug.log(ctx, "pagination_data:derived:inputs")({ $entriesStore, $currentPageStore });
-		const totalItems = $entriesStore.length;
+		const totalItems = $entriesStore.rows.length;
 		const numPages = Math.ceil(totalItems / 10);
 		// If there are no items, (for one this won't be shown) we're returning 0 as first item
 		const firstItem = totalItems ? $currentPageStore * 10 + 1 : 0;
