@@ -45,6 +45,12 @@ export interface VolumeStockClient extends VolumeStock {
 	warehouseName: string;
 	availableWarehouses?: { value: string; label: string }[];
 }
+
+export interface EntriesStreamResult {
+	rows: VolumeStockClient[];
+	total: number;
+	totalPages: number;
+}
 // #endregion misc
 
 // #region books
@@ -83,7 +89,7 @@ export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
-	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
+	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
 
 /**
@@ -151,7 +157,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  */
 export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
-	entries: (ctx: debug.DebugCtx) => Observable<VolumeStockClient[]>;
+	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
 
 /**
