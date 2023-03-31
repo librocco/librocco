@@ -1,13 +1,12 @@
-import { derived, type Readable } from "svelte/store";
-import { debug } from "@librocco/shared";
+import { get, type Readable } from "svelte/store";
+import { map, Observable, share, Subject, switchMap } from "rxjs";
 
-import type { BookEntry, DatabaseInterface, NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { debug } from "@librocco/shared";
+import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, WarehouseInterface } from "@librocco/db";
 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
-import { readableFromStream } from "$lib/utils/streams";
-import { map, Observable, switchMap } from "rxjs";
-import type { DebugCtx } from "@librocco/shared/dist/debugger";
+import { observableFromStore, readableFromStream } from "$lib/utils/streams";
 
 interface CreateDisplayEntriesStore {
 	(
@@ -15,36 +14,11 @@ interface CreateDisplayEntriesStore {
 		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>
-	): Readable<DisplayRow[]>;
+	): {
+		entries: Readable<DisplayRow[]>;
+		paginationData: Readable<PaginationData>;
+	};
 }
-
-interface CreateDisplayRowStream {
-	(
-		ctx: DebugCtx,
-		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
-		entity: NoteInterface<object> | WarehouseInterface<NoteInterface<object>, object>
-	): Observable<DisplayRow[]>;
-}
-
-const createDisplayRowStream: CreateDisplayRowStream = (ctx, db, entity) => {
-	const fullTableRow = entity
-		?.stream()
-		.entries(ctx)
-		.pipe(
-			switchMap(({ rows }) => {
-				// map entry to just isbns
-				const isbns = rows.map((entry) => entry.isbn);
-
-				// return array of merged values of books and volume stock client
-				return db
-					.books()
-					.stream(ctx, isbns)
-					.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))));
-			})
-		);
-
-	return fullTableRow;
-};
 
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
@@ -55,54 +29,43 @@ const createDisplayRowStream: CreateDisplayRowStream = (ctx, db, entity) => {
  * @returns
  */
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore) => {
-	const fullTableRowStream = createDisplayRowStream(ctx, db, entity);
-	const entriesStore = readableFromStream(ctx, fullTableRowStream, []);
+	const itemsPerPage = 10;
 
-	// Create a derived store that streams the entries value from the content store
-	const displayEntries = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
-		debug.log(ctx, "display_entries:derived:input")({ $entriesStore, $currentPageStore });
-		const start = $currentPageStore * 10;
-		const end = start + 10;
+	const shareSubject = new Subject<EntriesStreamResult>();
+	// Create a stream from the current page store
+	const entriesStream = observableFromStore(currentPageStore).pipe(
+		// Each time current page changes, update the paginated stream (from the db)
+		switchMap((page) => entity?.stream().entries(ctx, page, itemsPerPage) || new Observable<EntriesStreamResult>()),
+		// Multicast the stream (for both the table and pagination stores)
+		share({ connector: () => shareSubject })
+	);
 
-		const res = $entriesStore.slice(start, end);
-		debug.log(ctx, "display_entries:derived:res")(res);
+	// Process the data received from the paginated stream, "ziping" the data with the book data
+	// and returning pagination data.
+	const tableData = entriesStream.pipe(
+		switchMap(({ rows }) => {
+			// Map rows to just isbns
+			const isbns = rows.map((entry) => entry.isbn);
 
-		return res;
-	});
-	return displayEntries;
-};
+			// Return array of merged values of books and volume stock client
+			return db
+				.books()
+				.stream(ctx, isbns)
+				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))));
+		})
+	);
 
-/**
- * Creates a store that streams the pagination data derived from the entries and current page stores.
- * @param ctx debug context
- * @param entity a note or warehouse interface
- * @param currentPageStore the store containing the current page index (set by pagination element)
- * @returns
- */
-export const createPaginationDataStore = (
-	ctx: debug.DebugCtx,
-	entity: NoteInterface | WarehouseInterface | undefined,
-	currentPageStore: Readable<number>
-): Readable<PaginationData> => {
-	const entriesStore = readableFromStream(ctx, entity?.stream().entries(ctx), { rows: [], total: 0, totalPages: 0 });
-	// Create a derived store that streams the pagination data derived from the entries and current page stores
-	const paginationData = derived([entriesStore, currentPageStore], ([$entriesStore, $currentPageStore]) => {
-		debug.log(ctx, "pagination_data:derived:inputs")({ $entriesStore, $currentPageStore });
-		const totalItems = $entriesStore.rows.length;
-		const numPages = Math.ceil(totalItems / 10);
-		// If there are no items, (for one this won't be shown) we're returning 0 as first item
-		const firstItem = totalItems ? $currentPageStore * 10 + 1 : 0;
-		const lastItem = Math.min(firstItem + 9, totalItems);
+	const paginationData: Observable<PaginationData> = entriesStream.pipe(
+		map(({ total: totalItems, totalPages: numPages }): PaginationData => {
+			const firstItem = itemsPerPage * get(currentPageStore) + 1;
+			const lastItem = Math.min(firstItem + itemsPerPage - 1, totalItems);
 
-		const res = {
-			numPages,
-			firstItem,
-			lastItem,
-			totalItems
-		};
-		debug.log(ctx, "pagination_data:derived:res")(res);
-		return res;
-	});
+			return { totalItems, numPages, firstItem, lastItem };
+		})
+	);
 
-	return paginationData;
+	return {
+		entries: readableFromStream(ctx, tableData, []),
+		paginationData: readableFromStream(ctx, paginationData, { totalItems: 0, numPages: 0, firstItem: 0, lastItem: 0 })
+	};
 };
