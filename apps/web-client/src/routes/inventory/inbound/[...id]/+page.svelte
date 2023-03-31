@@ -38,6 +38,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { inventoryLinks } from "$lib/data";
+	import { base } from '$app/paths';
 
 	export let data: PageData;
 
@@ -106,7 +107,7 @@
 				{index}
 				items={notes?.map(({ id, displayName }) => ({
 					name: displayName || id,
-					href: `/inventory/inbound/${id}`,
+					href: `${base}/inventory/inbound/${id}`,
 					current: id === $page.params.id
 				}))}
 			>

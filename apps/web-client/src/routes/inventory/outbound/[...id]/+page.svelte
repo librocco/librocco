@@ -2,6 +2,8 @@
 	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
+	import { base } from '$app/paths';
+
 	import { writable } from "svelte/store";
 
 	import {
@@ -96,7 +98,7 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $outNoteList as { displayName, id }}
-			<SidebarItem name={displayName || id} href="/inventory/outbound/{id}" current={id === $page.params.id} />
+			<SidebarItem name={displayName || id} href="{base}/inventory/outbound/{id}" current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
 			<NewEntitySideNavButton label="Create note" on:click={handleCreateNote} />
