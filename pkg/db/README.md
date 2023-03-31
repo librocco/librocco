@@ -191,15 +191,14 @@ async function load({ params }) {
 
 #### 2.1.5. Stream
 
-Running `db.stream({})` an object containing db streams is returned.
-The stream object contains three observable streams (all to be used for navigation list for the specific view):
+Running `db.stream()` returns an object with methods used to construct a particular stream:
 
--   warehouseList - used to stream a list of warehouse `id`s with their respective `displayName`s (to be used as navigation in stock view)
+-   warehouseList - creates a stream, streaming a list of warehouse `id`s with their respective `displayName`s (to be used as navigation in stock view)
 -   inNoteList:
-    -   used to stream a list of warehouse `id`s, their respective `displayName`s and all inbound notes (their `id`s and `displayName`s) belonging to the respective warehouse
+    -   creates a stream, streaming a list of warehouse `id`s, their respective `displayName`s and all inbound notes (their `id`s and `displayName`s) belonging to the respective warehouse
     -   _note: The notes under the default ("All") warehouse are **not outbound** notes (as this is an inbound note list), but rather a list of all inbound notes (regardless of warehouse, they belong to)_
 -   outNoteList:
-    -   used to stream a list of outbound note `id`s with their respective `displayName`s
+    -   creates a stream streaming a list of outbound note `id`s with their respective `displayName`s
 
 #### 2.1.6. Accessing other structures
 
@@ -348,28 +347,29 @@ and it will delete the warehouse document (if it exists in the db), but we're st
 
 #### 2.3.2. Stream
 
-The warehouse interface has a `.stream` method which returns a stream object, containing observable streams, streaming the `displayName` and `entries`:
+The warehouse interface has a `.stream` method which returns a stream object, containing methods used to create a particular observable stream (`displayName` or `entries`).
 
 ```typescript
-const stream = db.warehouse("warehouse-1").stream();
-const { displayName, entries } = stream;
+const streams = db.warehouse("warehouse-1").stream();
+const displayNameStream = streams.displayName({});
+const entriesStream = streams.entries({}, page, itemsPerPage);
 
 // Streams the display name (updated in real time)
-displayName.subscribe((dn) => {
+displayNameStream.subscribe((dn) => {
     /* Do something with the 'displayName' */
 });
 
 // Streams the warehouse stock (updated in real time)
-entries.subscribe((entries) => {
+entriesStream.subscribe((entries) => {
     /* Do something with the 'entries' (warehouse stock) */
 });
 ```
 
-While the `displayName` stream is self-explanatory, `entries` streams the stock of book inventory for a warehouse. This is a snapshot of all the books in the warehouse at current time. The quantities (per book), are the result of all **committed** inbound/outbound notes (and their transactions).
+While the `displayName` stream is self-explanatory, `entries` streams the stock of book inventory for a warehouse, for a current `page`, containing `itemsPerPage` number of items, as well as pagination data (`total` => total number of entries, `totalPages`). Each stream is a subset (`itemsPerPage` long) of a snapshot of all the books in the warehouse at current time. The quantities (per book), are the result of all **committed** inbound/outbound notes (and their transactions).
 
 _Note: Each named warehouse will stream its own stock, while the default warehouse ("All") will display the entirety of the inventory (with books, quantities and the warehouse to which those books belong)._
 
-The values streamed are entries of `isbn`, `quantity`, `warehouseId`, `warehouseName` (for each entry) and for display purposes they should be merged with book data (retrieved from different part of the db, using `db.getBooks`).
+The values streamed are entries of `isbn`, `quantity`, `warehouseId`, `warehouseName` (for each entry) and for display purposes they should be merged with book data (retrieved from different part of the db, using `db.books().stream()`).
 
 ### 2.4. Note interface
 
@@ -493,36 +493,38 @@ await w.setName("Custome name"); // Sets the note 'displayName' to "Custom name"
 
 **Add volumes:**
 
-To add volumes to the note (by scanning books, or manually adding the book and quantity), we use `note.addVolumes` method. It accepts a volume transaction tuple:
+To add volumes to the note (by scanning books, or manually adding the book and quantity), we use `note.addVolumes` method, like so:
 
 ```typescript
-// Values representing [note id, quantity, warehouse id]
-type VolumeTransactionTuple = [string, number, string];
+note.addVolumes({ isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" });
 ```
 
-Warehouse id :point_up: is optional (as for inbound notes, the warehouse for transaction is the same as the warehouse the inbound note belongs to), however, it's a recommended to always pass it in.
+Warehouse id :point_up: is optional and, if not provided, the default value will be applied with respect to the note type:
 
-To add volume transactions, we can run `note.addVolumes` in two ways:
+-   `inbound` note - `warehouseId` is the id of the warehouse parent to the note
+-   `outbound` note - `warehouseId` (if not provided) defaults to `""`, signaling that no warehouse has yet been selected _(in that case, the warehouse id has to be selected later on, before committing the note)_.
+
+We can also add multiple transactions at once, like so:
 
 ```typescript
-// '12345678' being an isbn
-// 2 being the quantity
-// warehouse-1 being the warehouse id
-note.addVolumes("12345678", 2, "warehouse-1");
-
-// Adding multiple entries (passing any number of volume quantity tuples, in a ...rest params fashion)
-note.addVolumes(["12345678", 2, "warehouse-1"], ["11111111", 5, "warehouse-1"], ["00000001", 3, "warehouse-1"]);
+note.addVolumes(
+    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
+    { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" },
+    { isbn: "00000001", quantity: 3, warehouseId: "warehouse-1" }
+);
 ```
 
 When adding a transaction with an isbn and warehouse id matching an existing transaction in the note, the quantity is compounded:
 
 ```typescript
-await note1.addVolumes("12345678", 2);
-console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
+await note1.addVolumes({ isbn: "12345678", quantity: 2 });
+const entries = await firstValueFrom(note1.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
 // Add another transaction with the same isbn and warehouse id
-await note1.addVolumes("12345678", 3);
-console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
+await note1.addVolumes({ isbn: "12345678", quantity: 3 });
+const entries = await firstValueFrom(note1.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
 ```
 
 **Update transaction:**
@@ -531,30 +533,30 @@ When the transaction already exists, we can run `note.updateTransaction` to upda
 
 ```typescript
 const note1 = db.warehouse("warehouse-1").note().create();
-await note1.addVolumes("12345678", 5);
-console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
+await note1.addVolumes({ isbn: "12345678", quantity: 5 });
+const entries = await firstValueFrom(note1.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 5}]
 
-// Update the transaction row (for "12345678") to have the quantity of 2 (instead of 5)
-await note.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-1", quantity: 2 });
-console.log(note1.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
+// Update the transaction row (isbn: "12345678", warehouseId: "warehouse-1") to have the quantity of 2 (instead of 5)
+await note.updateTransaction(
+    { isbn: "12345678", warehouseId: "warehouse-1" },
+    { isbn: "12345678", warehouseId: "warehouse-1", quantity: 2 }
+);
+entries = await firstValueFrom(note1.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
 // This can also be applied to change a warehouse in an outbound note
 const note2 = db.warehouse().note().create();
-await note2.addVolumes("12345678", 2, "warehouse-1");
-console.log(note2.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
+await note2.addVolumes({ isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" });
+entries = await firstValueFrom(note2.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
-await note.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-2", quantity: 5 });
-console.log(note2.entries); // Prints out [{isbn: "12345678", warehouseId: "warehouse-2", quantity: 5}]
-```
-
-Running `note.updateTransaction` with the transaction which doesn't exist in the note will simply add it to the note:
-
-```typescript
-// Create a new (empty) note
-const note1 = db.warehouse().create().get();
-
-// A valid operation, simply adds the transaction to the note
-await note1.updateTransaction({ isbn: "12345678", warehouseId: "warehouse-1", quantity: 5 });
+await note.updateTransaction(
+    { isbn: "12345678", warehouseId: "warehouse-1" },
+    { isbn: "12345678", warehouseId: "warehouse-2", quantity: 2 }
+);
+entries = await firstValueFrom(note2.stream().entries({}));
+console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-2", quantity: 2}]
 ```
 
 **Remove transactions:**
@@ -564,7 +566,7 @@ To remove the transaction row from the note, we run `note.removeTransactions`, p
 ```typescript
 const note = await db.warehouse("warehouse-1").note().create();
 // Add a volume transaction
-await note.addVolumes("12345678", 2);
+await note.addVolumes({ isbn: "12345678", quantity: 2 });
 
 // The note contains the transaction for isbn = "12345678", of quantity = 2, in warehouse = "warehouse-1"
 
@@ -582,10 +584,10 @@ const note = await db.warehouse().note().create();
 
 // Add two transactions with the same isbn, but different warehouses
 await note.addVolumes(
-    ["12345678", 2, "warehouse-1"],
+    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
     // It's perfectly legal to not specify the warehouseId the first time around
     // as it can be provided anytime before the note is committed
-    ["12345678", 3]
+    { isbn: "12345678", quantity: 3 }
 );
 
 // The following operation would delete the first entry
@@ -602,10 +604,10 @@ Finally, we can remove multiple transactions at once, like so:
 const note = await db.warehouse().note().create();
 
 await note.addVolumes(
-    ["00000000", 2, "warehouse-1"],
-    ["12345678", 2, "warehouse-1"],
-    ["12345678", 3, "warehouse-2"],
-    ["11111111", 5, "warehouse-1"]
+    { isbn: "00000000", quantity: 2, warehouseId: "warehouse-1" },
+    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
+    { isbn: "12345678", quantity: 3, warehouseId: "warehouse-2" },
+    { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" }
 );
 
 // This is the same as running removeTransactions for each transaction
@@ -630,36 +632,43 @@ await note1.delete();
 
 #### 2.4.4. Stream
 
-The note interface has a `.stream` method which returns a stream object, containing observable streams, streaming the `displayName`, `entries`, `state` and `updatedAt`:
+The note interface has a `.stream` method which returns an object containing methods to create a particular observable stream. available methods are: `displayName`, `entries`, `state` and `updatedAt`:
 
 ```typescript
 // Outbound note is used, but streaming functionality exactly the same for inbound notes.
-const stream = db.warehouse().note().stream();
-const { displayName, entries, state, updatedAt } = stream;
+const streams = db.warehouse().note().stream();
+
+const displayNameStream = streams.displayName({});
+const entriesStream = stream.entries({}, page, itemsPerPage);
+const stateStream = stream.state({});
+const updatedAtStream = stream.updatedAt({});
 
 // Streams the display name (updated in real time)
-displayName.subscribe((dn) => {
+displayNameStream.subscribe((dn) => {
     /* Do something with the 'displayName' */
 });
 
 // Streams the transactions in the note (updated in real time)
-entries.subscribe((entries) => {
+entriesStream.subscribe((entries) => {
     /* Do something with the 'entries' (note transactions) */
 });
 
 // Streams the note state ('draft' or 'committed', updated in real time)
-state.subscribe((state) => {
+stateStream.subscribe((state) => {
     /* Do something with note 'state' */
 });
 
 // Streams the time the note was last updated (updated in real time)
-state.subscribe((state) => {
+updatedAtStream.subscribe((state) => {
     /* Do something with note 'state' */
 });
 ```
 
-While the `displayName` stream is self-explanatory, `entries` streams volume transactions in the note, `state` streams the note state: "open" notes are marked as 'draft', while "closed" notes are 'committed', `updatedAt` is self explanatory: the last time the note was updated (in any way).
+While the `displayName` stream is self-explanatory, `entries` streams volume transactions in the note (for the provided `page`, containing `itemsPerPage` number of items) and some pagination data (`total` => total entries, `totalPages`), `state` streams the note state: "open" notes are marked as 'draft', while "closed" notes are 'committed', `updatedAt` is self explanatory: the last time the note was updated (in any way).
 
 #### 2.4.5. Additional methods
 
--   `note.commit` - Commit the note, making its transactions affect the stock, locking it for updates (in transactions, or name changes)
+-   `note.commit` - Commit the note, making its transactions affect the stock, locking it for updates (in transactions, or name changes):
+    -   there are two guards, disallowing the committing of note containing invalid transactions:
+    1. If inbound note contains a transaction with `warehouseId` different than the parent warehouse of the note, an error is thrown (reporting all invalid transactions)
+    2. If an outbound note contains a transaction where the quantity of the book provided is greater than the quantity available in a particular warehouse, an error is thrown, reporting all invalid transactions, their quantity and quantity available for a particular book in a particular warehouse _(this is also aplicable if no warehouseId is provided for a transaction, reporting the quantity in stock as 0)_
