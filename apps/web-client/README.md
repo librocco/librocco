@@ -85,8 +85,8 @@ To create a display name store, we use the factory function:
 const warehouse = db.warehouse("warehouse-1");
 const note = wareshouse.note("note-1");
 
-const wDisplayName = createDisplayNameStore(warehouse, null, {});
-const nDisplayName = createDisplayNameStore(note, null, {});
+const wDisplayName = createDisplayNameStore({}, warehouse, null);
+const nDisplayName = createDisplayNameStore({}, note, null);
 ```
 
 The second param (`null` in the example) is used to pass in the internal state store, more on that below.
@@ -159,11 +159,11 @@ Since the `internalStateStore` is defined outside the `createDisplayStateStore`,
 ```typescript
 // Create a store, subscribed to note state
 // (to be used as 'internalStateStore')
-const internalStateStore = createInternalStateStore(note, {});
+const internalStateStore = createInternalStateStore({}, note);
 
 // Create 'state' store, as a wrapper around 'internalStateStore',
 // handling note state updates and used for state displayed in the UI
-const state = createDisplayStateStore(note, internalStateStore, {});
+const state = createDisplayStateStore({}, note, internalStateStore);
 
 // Some handler updating different note properties has access
 // to the 'internalStateStore'
@@ -207,19 +207,17 @@ graph RL;
 As mentioned in [display name store](#displayname-store), to connect the `displayName` store and `state` store, we pass the `internalStateStore` to `createDisplayNameStore` like so:
 
 ```typescript
-const internalStateStore = createInternalStateStore(note, {});
-const displayNameStore = createDisplayNameStore(note, internalStateStore, {});
+const internalStateStore = createInternalStateStore({}, note);
+const displayNameStore = createDisplayNameStore({}, note, internalStateStore);
 ```
 
 ##### Table content store(s)
 
 The table content, displayed in each view of `/inventory` dashboard is created by combining multiple stores to get display rows (`entries` store) and pagination data.
 
-The `entries` themselves are received from a `(note|warehouse).stream({}).entries` stream and merged with the book data (matching isbn) received from `books.stream().data`. More on [warehouse entries](../../pkg/db/README.md#232-stream) and [note entries](../../pkg/db/README.md#244) streams.
+The `entries` themselves are received from a `(note|warehouse).stream().entries()` stream and merged with the book data (matching isbn) received from `books.stream()`. More on [warehouse entries](../../pkg/db/README.md#232-stream) and [note entries](../../pkg/db/README.md#244-stream) streams.
 
-The `currentPage` store is used to control pagination (display a subset of entries with respect to the `currentPage`), as well as to construct `paginationData` - data displayed in pagination element.
-
-The `paginationData` store constructs the, aforementioned, pagination data from `currentPage` and `entries` stores: `numPages`, `firstItem` (displayed), `lastItem` (displayed) and `totalItems`.
+The `currentPage` store is used to control pagination where we pass the value for `currentPage` to `note.stream().entries()`. The rest of the pagination data (`totalItems`, `firstItem`, `lastItem`, `numPages`) is calculated from the total number of items from the db stream, current page and number of items displayed per page.
 
 Finally, the entries (being `VolumeStockClient`) are merged with book data (from `Books` stream) to construct the rows being displayed in the UI.
 
@@ -232,9 +230,14 @@ graph RL;
         books
     end;
 
-    entity -->|"(note|warehouse).stream().entries"| entries['entries' store]
+    subgraph DisplayEntries:
+        currentPage['currentPage' store]
+        node[" "]-->|"entries on page"| entries
+        node[" "]-->|"pagination data"| paginationStore
+    end;
+
+    entity -->|"(note|warehouse).stream().entries(ctx, currentPage, itemsPerPage)"| node
     books -->|"books.stream()"| entries
-    currentPage['currentPage' store] --> entries
 
     subgraph Table
         rows[Table rows]
@@ -243,8 +246,8 @@ graph RL;
 
     entries-->|"full display rows (paginated)"| rows
 
-    currentPage --> paginationStore[Pagination data store]
     paginationStore -->|pagination data| paginationData["Pagination data in the table"]
+    paginationStore --> paginationElement
 
     currentPage -->|bind:subscribe| paginationElement[Pagination element]
     paginationElement -->|bind:set| currentPage
@@ -255,9 +258,9 @@ These stores are created using factory functions, with `currentPage` being a reg
 ```typescript
 const currentPage = writable<number>(0);
 
-const entries = createDisplayEntriesStore(warehouse, currentPage, bookStore, {});
+const { entries, paginationData } = createDisplayEntriesStore({}, warehouse, currentPage, bookStore);
 
-const paginationData = createPaginationDataStore(warehouse, currentPage, {});
+const paginationData = createPaginationDataStore({}, warehouse, currentPage);
 ```
 
 ##### Context
