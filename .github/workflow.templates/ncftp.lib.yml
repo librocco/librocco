@@ -1,0 +1,13 @@
+#@ def install_ncftp():
+name: Install ncftp
+run: |
+   sudo apt-get update
+   sudo apt-get install ncftp
+#@ end
+
+#@ def ncftp_bunny_copy(name, src, dst):
+name: #@ "Copy %s to bunny storage zone" % name
+run: #@ "ncftpput -R -v -u librocco -p \"${BUNNY_STORAGE_PASSWORD}\" -m storage.bunnycdn.com %s %s" % (dst, src)
+env:
+  BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+#@ end

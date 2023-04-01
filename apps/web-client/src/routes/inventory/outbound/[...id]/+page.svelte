@@ -2,7 +2,7 @@
 	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
-	import { base } from '$app/paths';
+	import { base } from "$app/paths";
 
 	import { writable } from "svelte/store";
 

@@ -3,6 +3,7 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
+#@ load("web-client_deploy.lib.yml", "deploy")
 
 name: Checks
 
@@ -56,3 +57,5 @@ jobs:
             -  #@ rush_build()
             - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
               run: rush check-workspace-projects
+    deploy-production: #@ deploy()
+        
