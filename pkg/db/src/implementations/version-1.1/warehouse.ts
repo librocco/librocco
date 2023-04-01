@@ -252,7 +252,6 @@ class Warehouse implements WarehouseInterface {
 				const entries = warehouseStock.pipe(
 					map((rows) =>
 						rows
-							.slice(startIx, endIx)
 							.map(({ key: [warehouseId, isbn], value: quantity }) => ({
 								isbn,
 								quantity,
@@ -260,6 +259,7 @@ class Warehouse implements WarehouseInterface {
 								warehouseName: ""
 							}))
 							.sort(sortBooks)
+							.slice(startIx, endIx)
 					)
 				);
 				const stats = warehouseStock.pipe(
