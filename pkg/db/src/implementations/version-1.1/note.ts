@@ -367,9 +367,9 @@ class Note implements NoteInterface {
 					this.#stream.pipe(
 						map(({ entries = [] }) =>
 							entries
-								.slice(startIx, endIx)
 								.map((e) => ({ ...e, warehouseName: "" }))
 								.sort(sortBooks)
+								.slice(startIx, endIx)
 						)
 					),
 					this.#stream.pipe(
