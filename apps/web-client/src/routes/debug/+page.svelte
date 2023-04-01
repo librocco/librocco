@@ -4,7 +4,7 @@
 	import { Button, ButtonColor, Header, InventoryPage } from "@librocco/ui";
 
 	import { createDB, destroyDB } from "$lib/db";
-	import { base } from '$app/paths';
+	import { base } from "$app/paths";
 
 	let destroying = false;
 
