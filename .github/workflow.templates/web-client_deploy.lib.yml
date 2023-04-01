@@ -1,0 +1,26 @@
+#@ load("github.lib.yml", "checkout", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path", "rush_install", "rush_build")
+#@ load("ncftp.lib.yml", "install_ncftp", "ncftp_bunny_copy")
+
+#@ def deploy():
+name: Deploy web-client app to bunny cdn
+runs-on: ubuntu-latest
+steps:
+  - uses: actions/setup-node@v2
+    with:
+        node-version: "16"
+  -  #@ checkout()
+  -  #@ cache_node()
+  -  #@ rush_add_path()
+  -  #@ rush_install()
+  -  #@ rush_build()
+  - name: Build web-client app
+    run: cd apps/web-client && rushx build:prod
+
+    env:
+      BASE_PATH: ""
+  -  #@ install_ncftp()
+  -  #@ ncftp_bunny_copy(name="built app", src="apps/web-client/build/*", dst="${GITHUB_REF#refs/heads/}")
+  - name: Output link to deployed app
+    run: echo You can view the app on https://librocco.b-cdn.net/${GITHUB_REF#refs/heads/} | tee -a $GITHUB_STEP_SUMMARY
+#@ end
