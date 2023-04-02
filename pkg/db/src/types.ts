@@ -257,27 +257,27 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
-	init: (ctx: debug.DebugCtx) => void;
+	init: () => DatabaseInterface;
 	/**
 	 * Sets up replication by returning four methods that enable the client to schedule the init stages more explicitly
 	 */
-	replicate: (ctx: debug.DebugCtx) => {
+	replicate: () => {
 		/**
 		 * a transient replication to the remote db (from the local db) - should resolve on done
 		 */
-		to: (url: string) => void;
+		to: (url: string, ctx: debug.DebugCtx) => Promise<void>;
 		/**
-		 * a transient replication to the remote db (from the local db) - should resolve on done
+		 * a transient replication from the remote db (from the local db) - should resolve on done
 		 */
-		from: (url: string) => void;
+		from: (url: string, ctx: debug.DebugCtx) => Promise<void>;
 		/**
-		 * a transient, two way replication - this would be really handy for initial db setup (each time the UI starts)
+		 * a transient, two way replication - this is used for initiel db setup
 		 */
-		sync: (url: string) => void;
+		sync: (url: string, ctx: debug.DebugCtx) => Promise<void>;
 		/**
-		 * a live replication (used in the app, to, at least, replicate to one couch node)
+		 * a live replication
 		 */
-		live: (url: string) => void;
+		live: (url: string, ctx: debug.DebugCtx) => void;
 	};
 	/**
 	 * Books constructs an interface used for book operations agains the db:

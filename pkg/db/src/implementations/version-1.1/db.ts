@@ -70,67 +70,58 @@ class Database implements DatabaseInterface {
 		this._pouch.setMaxListeners(30);
 	}
 
-	replicate(ctx: debug.DebugCtx) {
-
+	replicate() {
 		/**
 		 * a transient replication to the remote db (from the local db) - should resolve on done
 		 */
-		const to = (url: string) => {
+		const to = async (url: string, ctx: debug.DebugCtx) => {
 			debug.log(ctx, "init_db:replication:started");
-			this.#initState.next({ state: "replicating" });
 
 			// Pull data from the remote db (if provided)
-			replicateRemote(ctx, this._pouch, url, true)
-				.then(() =>
-					firstValueFrom(
-						this.stream()
-							.warehouseList({})
-							.pipe(filter((list) => list.length > 0))
-					)
-				)
-				.then(() => {
-					debug.log(ctx, "init_db:replication:initial_replication_done")({});
-					this.#initState.next({ state: "ready" });
-				})
-				.catch((err) => {
-					// If remote db is not available, log the error and continue.
-					console.error(err);
-					console.error(replicationError);
-				});
+			try {
+				await replicateRemote(ctx, this._pouch, url, true);
+				debug.log(ctx, "init_db:replication:initial_replication_done")({});
+			} catch (err) {
+				// If remote db is not available, log the error and continue.
+				console.error(err);
+				console.error(replicationError);
+			}
+
+			await firstValueFrom(
+				this.stream()
+					.warehouseList({})
+					.pipe(filter((list) => list.length > 0))
+			);
 		};
 
 		/**
 		 * a transient replication from the remote db (to the local db)
 		 */
 
-		const from = (url: string) => {
+		const from = async (url: string, ctx: debug.DebugCtx) => {
 			debug.log(ctx, "init_db:replication:started");
-			this.#initState.next({ state: "replicating" });
 
 			// Pull data from the remote db (if provided)
-			replicateRemote(ctx, this._pouch, url)
-				.then(() =>
-					firstValueFrom(
-						this.stream()
-							.warehouseList({})
-							.pipe(filter((list) => list.length > 0))
-					)
-				)
-				.then(() => {
-					debug.log(ctx, "init_db:replication:initial_replication_done")({});
-					this.#initState.next({ state: "ready" });
-				})
-				.catch((err) => {
-					// If remote db is not available, log the error and continue.
-					console.error(err);
-					console.error(replicationError);
-				});
+			try {
+				await replicateRemote(ctx, this._pouch, url);
+				debug.log(ctx, "init_db:replication:initial_replication_done")({});
+			} catch (err) {
+				// If remote db is not available, log the error and continue.
+				console.error(err);
+				console.error(replicationError);
+			}
+
+			await firstValueFrom(
+				this.stream()
+					.warehouseList({})
+					.pipe(filter((list) => list.length > 0))
+			);
 		};
 
 		/**
-		 * a transient, two way replication - this would be really handy for initial db setup (each time the UI starts)
+		 * a transient, two way replication - this is used for initiel db setup
 		 */
-		const sync = (url: string) => {
+		const sync = async (url: string, ctx: debug.DebugCtx) => {
 			try {
 				// Start live sync between local and remote db
 				syncWithRemote(ctx, this._pouch, url);
@@ -142,9 +133,9 @@ class Database implements DatabaseInterface {
 		};
 
 		/**
-		 * a live replication (used in the app, to, at least, replicate to one couch node)
+		 * a live replication
 		 */
-		const live = (url: string) => {
+		const live = (url: string, ctx: debug.DebugCtx) => {
 			try {
 				// Start live sync between local and remote db
 				syncWithRemote(ctx, this._pouch, url, true);
@@ -163,19 +154,7 @@ class Database implements DatabaseInterface {
 		};
 	}
 
-	init(ctx: debug.DebugCtx): void {
-		debug.log(ctx, "init_db:started")({});
-		const initState = this.#initState.value.state;
-
-		// Take care of idempotency: don't allow any operations
-		// if initialised or initialisation in progress.
-		if (initState === "ready") {
-			debug.log(ctx, "init_db:already_initialised")({});
-		}
-		if (["initialising"].includes(initState)) {
-			debug.log(ctx, "init_db:initialisation_in_progress")({});
-		}
-
+	init(): DatabaseInterface {
 		// Start initialisation with db setup:
 		// - create the default warehouse (if it doesn't exist)
 		// - update design documents
@@ -184,9 +163,6 @@ class Database implements DatabaseInterface {
 		// create default warehouse
 		dbSetup.push(this.warehouse().create());
 
-		// Set initialisation state to 'initialising'
-		this.#initState.next({ state: "initialising" });
-
 		// Upload design documents if any
 		if (designDocs.length) {
 			designDocs.forEach((dd) => {
@@ -194,12 +170,8 @@ class Database implements DatabaseInterface {
 			});
 		}
 
-		// Notice we're not awaiting the 'dbSetup' promises here as we want to
-		// return immediately and communicate with the called through db's initState stream
-		Promise.all(dbSetup).then(() => {
-			debug.log(ctx, "init_db:initialisation_done")({});
-			this.#initState.next({ state: "ready" });
-		});
+		Promise.all(dbSetup);
+		return this;
 	}
 
 	books(): BooksInterface {
