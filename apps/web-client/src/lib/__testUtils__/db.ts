@@ -10,7 +10,5 @@ PouchDB.plugin(MemoryAdapter);
 /** Creates a new db interface using pouchdb with unique id and memory adapter */
 export const newTestDB = () => {
 	const db = new PouchDB(uuid(), { adapter: "memory" });
-	const dbInterface = newDatabaseInterface(db);
-	dbInterface.init({});
-	return dbInterface;
+	return newDatabaseInterface(db).init();
 };

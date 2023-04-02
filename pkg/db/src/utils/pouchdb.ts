@@ -225,31 +225,36 @@ interface SyncFn<R> {
  * @param {boolean} params.live synching is live or not
  * @returns
  */
-export const syncWithRemote: SyncFn<void> = (ctx, local, remote, live = false) => {
-	const info = { local: local.name, remote, live };
+export const syncWithRemote: SyncFn<Promise<void>> = (ctx, local, remote, live = false) => {
+	return new Promise<void>((resolve, reject) => {
+		const info = { local: local.name, remote, live };
 
-	local
-		.sync(remote, { live, retry: true })
-		.on("change", (change) => {
-			// handle change
-			debug.log(ctx, "replicate_live:change")({ ...info, change });
-		})
-		.on("paused", () => {
-			// replication paused (e.g. user went offline)
-			debug.log(ctx, "replicate_live:paused")(info);
-		})
-		.on("active", () => {
-			// replicate resumed (e.g. user went back online)
-			debug.log(ctx, "replicate_live:active")(info);
-		})
-		.on("denied", (error) => {
-			debug.log(ctx, "replicate_live:denied")({ ...info, error });
-		})
-		.on("error", (error) => {
-			// handle error
-			debug.log(ctx, "replicate_live:error")({ ...info, error });
-		})
-		.on("complete", (complete) => {
-			debug.log(ctx, "replicate_live:error")({ ...info, complete });
-		});
+		local
+			.sync(remote, { live, retry: true })
+			.on("change", (change) => {
+				// handle change
+				debug.log(ctx, "replicate_live:change")({ ...info, change });
+			})
+			.on("paused", () => {
+				// replication paused (e.g. user went offline)
+				debug.log(ctx, "replicate_live:paused")(info);
+			})
+			.on("active", () => {
+				// replicate resumed (e.g. user went back online)
+				debug.log(ctx, "replicate_live:active")(info);
+			})
+			.on("denied", (error) => {
+				debug.log(ctx, "replicate_live:denied")({ ...info, error });
+				reject(error);
+			})
+			.on("error", (error) => {
+				// handle error
+				debug.log(ctx, "replicate_live:error")({ ...info, error });
+				reject(error);
+			})
+			.on("complete", (complete) => {
+				debug.log(ctx, "replicate_live:error")({ ...info, complete });
+				resolve();
+			});
+	});
 };
