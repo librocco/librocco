@@ -32,3 +32,10 @@ export const createDB = (): DatabaseInterface => {
 export const getDB = (): DatabaseInterface | undefined => {
 	return db;
 };
+
+export const destroyDB = async () => {
+	if (db) {
+		await db._pouch.destroy();
+		db = undefined;
+	}
+};
