@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
+	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
@@ -17,7 +17,12 @@
 		TextEditable,
 		SideBarNav,
 		SidebarItemGroup,
-		NewEntitySideNavButton
+		NewEntitySideNavButton,
+		Button,
+		ButtonSize,
+		TextFieldSize,
+		type TransactionUpdateDetail,
+		type RemoveTransactionsDetail
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -74,6 +79,18 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
+
+	const handleAddTransaction = (isbn: string) => () => note.addVolumes({ isbn, quantity: 1 });
+
+	const handleTransactionUpdate = ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
+		console.log("Bump");
+		const { matchTxn, updateTxn } = detail;
+		const { isbn, warehouseId, quantity = matchTxn.quantity } = updateTxn;
+
+		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+	};
+
+	const handleRemoveTransactions = (e: CustomEvent<RemoveTransactionsDetail>) => note.removeTransactions(...e.detail);
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -103,36 +120,48 @@
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
 		{#if $state && $state !== NoteState.Deleted}
-			<div class="flex w-full items-end justify-between">
+			<div class="mb-10 flex w-full items-end justify-between">
 				<div>
-					<h2 class="cursor-normal mb-4 select-none text-lg font-medium text-gray-900">
+					<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
 						<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
 						{#if warehouse}
 							<span class="align-middle text-sm font-normal text-gray-500">in {warehouse.displayName}</span>
 						{/if}
 					</h2>
-					<div class="flex items-center gap-1.5 whitespace-nowrap">
-						<SelectMenu
-							class="w-[138px]"
-							options={noteStates}
-							bind:value={$state}
-							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-						/>
-						{#if $updatedAt}
+					{#if $updatedAt}
+						<div>
 							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
-						{/if}
-					</div>
+						</div>
+					{/if}
 				</div>
-				<TextField name="search" placeholder="Serach">
-					<Search slot="startAdornment" class="h-5 w-5" />
-				</TextField>
+				<SelectMenu
+					class="w-[138px]"
+					options={noteStates}
+					bind:value={$state}
+					disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+					align="right"
+				/>
 			</div>
+			<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+				<svelte:fragment slot="startAdornment">
+					<QrCode />
+				</svelte:fragment>
+				<div let:value slot="endAdornment" class="flex gap-x-2">
+					<!-- @TODO: no validation is implemented here -->
+					<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
+						<svelte:fragment slot="startAdornment">
+							<Edit size={16} />
+						</svelte:fragment>
+						Create
+					</Button>
+				</div>
+			</TextField>
 		{/if}
 	</svelte:fragment>
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<InventoryTable {table} />
+		<InventoryTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
 	</svelte:fragment>
 
 	<!-- Table footer slot -->

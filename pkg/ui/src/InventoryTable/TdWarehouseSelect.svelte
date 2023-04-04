@@ -2,7 +2,7 @@
 	import { createCombobox } from "svelte-headlessui";
 	import { ChevronsUpDown } from "lucide-svelte";
 
-	import type { OutNoteTableData } from "./types";
+	import type { OutNoteTableData, WarehouseChangeDetail } from "./types";
 
 	import { ComboboxMenu } from "../Menus";
 	import { TextField } from "../FormFields";
@@ -10,19 +10,23 @@
 	export let data: OutNoteTableData;
 	export let rowIx: number;
 
-	const combobox = createCombobox({ label: `Select ${rowIx} warehouse` });
+	/** @TODO mvp quick integration */
+	import { createEventDispatcher } from "svelte";
+	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
+	const dispatchChange = (warehouseId: string) => dispatch("change", { warehouseId });
 
-	$: ({ warehouseName } = data);
+	const combobox = createCombobox({ label: `Select ${rowIx} warehouse`, selected: data.warehouseId });
+
+	$: dispatchChange($combobox.selected);
+
+	$: ({ warehouseName, availableWarehouses = [] } = data);
+
+	$: selectedLabel = availableWarehouses.find(({ value }) => value === $combobox.selected)?.label;
 </script>
 
 <td class="py-4 px-1.5">
-	{#if typeof warehouseName !== "string"}
-		<TextField
-			name={`Row ${rowIx} warehouse`}
-			inputAction={combobox.input}
-			value={$combobox.selected}
-			placeholder="Select warehouse..."
-		>
+	{#if availableWarehouses?.length > 1}
+		<TextField name={`Row ${rowIx} warehouse`} inputAction={combobox.input} value={selectedLabel} placeholder="Select warehouse...">
 			<span slot="startAdornment" class="rounded-full p-1 {$combobox.selected ? 'bg-teal-400' : 'bg-red-400'}" />
 			<svelte:fragment slot="endAdornment">
 				<button use:combobox.button type="button" class="flex items-center">
@@ -31,7 +35,7 @@
 			</svelte:fragment>
 		</TextField>
 		<div class="relative">
-			<ComboboxMenu {combobox} options={warehouseName} />
+			<ComboboxMenu {combobox} options={availableWarehouses} />
 		</div>
 	{:else}
 		<div class="flex items-center rounded-md bg-gray-100 shadow-sm">
