@@ -17,7 +17,7 @@ const { waitFor } = testUtils;
 
 describe("createDisplayNameStore", () => {
 	test("should stream the display name from the db for given note/warehouse id", async () => {
-		const db = newTestDB();
+		const db = await newTestDB();
 		const warehouse = await db.warehouse("warehouse-1").create();
 		const note = await warehouse.note().create();
 
@@ -55,7 +55,7 @@ describe("createDisplayNameStore", () => {
 	});
 
 	test("should propagate the update to the db itself", async () => {
-		const db = await newTestDB();
+		const db = await await newTestDB();
 		const note = await db.warehouse().note().create();
 		const ndn$ = createDisplayNameStore({}, note, null);
 
@@ -68,7 +68,7 @@ describe("createDisplayNameStore", () => {
 	});
 
 	test("should update the 'internalStateStore' (if provided) with the temp 'saving' state", async () => {
-		const db = await newTestDB();
+		const db = await await newTestDB();
 		const note = await db.warehouse().note().create();
 		const is$ = writable<NoteAppState>(NoteState.Draft);
 		const ndn$ = createDisplayNameStore({}, note, is$);

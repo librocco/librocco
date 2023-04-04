@@ -35,9 +35,11 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		const db = config.newDatabase(pouchInstance);
 
 		// If testing with docker support, we're using the remote db to replicate to/from
-		const remoteDb = __withDocker__ ? ["http://admin:admin@127.0.0.1:5001", `test-${dbName}`].join("/") : undefined;
+		if (__withDocker__) {
+			db.replicate().live({}, `http://admin:admin@127.0.0.1:5001/test-${dbName}`);
+		}
 
-		return db.init({}, { remoteDb });
+		return db.init();
 	};
 
 	const test: TestTask = (name, cb) => {
