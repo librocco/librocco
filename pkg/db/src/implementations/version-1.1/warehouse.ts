@@ -271,7 +271,7 @@ class Warehouse implements WarehouseInterface {
 
 				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
-					map(combineTransactionsWarehouses),
+					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
 				);
 			}
