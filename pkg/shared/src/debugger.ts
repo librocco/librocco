@@ -7,10 +7,11 @@ export const log =
 	<T>(ctx: DebugCtx, step?: string) =>
 	(payload: T) => {
 		if (ctx.debug) {
-			const message = [];
+			const message = [`[${Date.now()}]`];
 			if (ctx.name) message.push(ctx.name);
 			if (step) message.push(step);
-			if (message.length) console.log(message.join("::"));
+
+			console.log(message.join("::"));
 
 			console.log(payload);
 		}

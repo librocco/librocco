@@ -3,7 +3,6 @@ import { redirect } from "@sveltejs/kit";
 import type { LayoutLoad } from "./$types";
 
 import { browser } from "$app/environment";
-import { DB_NAME, COUCHDB_HOST, COUCHDB_PORT, COUCHDB_USER, COUCHDB_PASSWORD } from "$lib/constants";
 
 import { createDB } from "$lib/db";
 
@@ -18,11 +17,8 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
-		// If COUCHDB_HOST port is defined, we can assume the "remote" CouchDB is running and we should connect to it.
-		const remoteDb = COUCHDB_HOST ? `http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}` : undefined;
-
 		return {
-			db: await createDB().init({ name: "[DB_INIT]", debug: false }, { remoteDb })
+			db: await createDB().init()
 		};
 	}
 
