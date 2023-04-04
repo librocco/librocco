@@ -185,6 +185,47 @@ export type WarehouseInterface<N extends NoteInterface = NoteInterface, A extend
 	WarehouseData<A>;
 // #endregion warehouse
 
+// #region replication
+// eslint-disable-next-line @typescript-eslint/ban-types
+export type Replication = PouchDB.Replication.ReplicationEventEmitter<any, any, any>;
+
+export interface ReplicatorRes {
+	replication: Replication;
+	promise: () => Promise<void>;
+}
+
+export interface Replicator {
+	/**
+	 * To sets up a transient replcation from the local db (to the remote db). It returns the `replication`
+	 * object and a `promise` method that resolves when the replication is done and the first value from db is updated.
+	 * @param ctx debug context
+	 * @param url remote db url
+	 */
+	to: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	/**
+	 * From sets up a transient replication from the remote db (to the local db). It returns the `replication`
+	 * object and a `promise` method that resolves when the replication is done and the first value from db is updated.
+	 * @param ctx debug context
+	 * @param url remote db url
+	 */
+	from: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	/**
+	 * Sync sets up a bidirectional, transient replication between two db instances. It returns the `replication`
+	 * object and a `promise` method that resolves when the replication is done and the first value from db is updated.
+	 * @param ctx debug context
+	 * @param url remote db url
+	 */
+	sync: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	/**
+	 * Live sets up a live, bidirectional replication between two db instances. It returns the `replication`
+	 * object and a `promise` method that resolves immediately (as the replication is ongoing).
+	 * @param ctx debug context
+	 * @param url remote db url
+	 */
+	live: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+}
+// #endregion replication
+
 // #region db
 export interface NavListEntry {
 	id: string;
@@ -202,16 +243,10 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
-export interface DBInitState {
-	state: "void" | "initialising" | "replicating" | "ready";
-	withReplication: boolean;
-}
-
 /**
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	initState: (ctx: debug.DebugCtx) => Observable<DBInitState>;
 	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
@@ -254,12 +289,15 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * Init initialises the db:
 	 * - creates the default warehouse
 	 * - uploads the design docs
-	 * - opens the db replication (if remote db address provided)
 	 *
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
-	init: (ctx: debug.DebugCtx, params: { remoteDb?: string }) => DatabaseInterface;
+	init: () => Promise<DatabaseInterface>;
+	/**
+	 * Sets up replication by returning four methods that enable the client to schedule the init stages more explicitly
+	 */
+	replicate: () => Replicator;
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
