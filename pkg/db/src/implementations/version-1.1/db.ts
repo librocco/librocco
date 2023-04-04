@@ -1,19 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, filter, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { BooksInterface, DBInitState, DbStream, DesignDocument, InNoteList, NavListEntry } from "@/types";
+import { BooksInterface, DBInitState, DbStream, DesignDocument, InNoteList, NavListEntry, Replicator } from "@/types";
 import { DatabaseInterface, NoteListViewResp, WarehouseInterface, WarehouseListViewResp } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
 import designDocs from "./designDocuments";
 import { newWarehouse } from "./warehouse";
-
-import { newViewStream, replicateRemote, syncWithRemote } from "@/utils/pouchdb";
 import { newBooksInterface } from "./books";
-import { replicationError } from "./misc";
+import { newDbReplicator } from "./replicator";
+
+import { newViewStream } from "@/utils/pouchdb";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -68,93 +68,15 @@ class Database implements DatabaseInterface {
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
 		// but will still show a warning if that number gets unexpectedly high (memory leak).
 		this._pouch.setMaxListeners(30);
+
+		return this;
 	}
 
-	replicate() {
-		/**
-		 * a transient replication to the remote db (from the local db) - should resolve on done
-		 */
-		const to = async (url: string, ctx: debug.DebugCtx) => {
-			debug.log(ctx, "init_db:replication:started");
-
-			// Pull data from the remote db (if provided)
-			try {
-				await replicateRemote(ctx, this._pouch, url, true);
-				debug.log(ctx, "init_db:replication:initial_replication_done")({});
-			} catch (err) {
-				// If remote db is not available, log the error and continue.
-				console.error(err);
-				console.error(replicationError);
-			}
-
-			await firstValueFrom(
-				this.stream()
-					.warehouseList({})
-					.pipe(filter((list) => list.length > 0))
-			);
-		};
-
-		/**
-		 * a transient replication from the remote db (to the local db)
-		 */
-
-		const from = async (url: string, ctx: debug.DebugCtx) => {
-			debug.log(ctx, "init_db:replication:started");
-
-			// Pull data from the remote db (if provided)
-			try {
-				await replicateRemote(ctx, this._pouch, url);
-				debug.log(ctx, "init_db:replication:initial_replication_done")({});
-			} catch (err) {
-				// If remote db is not available, log the error and continue.
-				console.error(err);
-				console.error(replicationError);
-			}
-
-			await firstValueFrom(
-				this.stream()
-					.warehouseList({})
-					.pipe(filter((list) => list.length > 0))
-			);
-		};
-
-		/**
-		 * a transient, two way replication - this is used for initiel db setup
-		 */
-		const sync = async (url: string, ctx: debug.DebugCtx) => {
-			try {
-				// Start live sync between local and remote db
-				syncWithRemote(ctx, this._pouch, url);
-			} catch (err) {
-				// If remote db is not available, log the error and continue.
-				console.error(err);
-				console.error(replicationError);
-			}
-		};
-
-		/**
-		 * a live replication
-		 */
-		const live = (url: string, ctx: debug.DebugCtx) => {
-			try {
-				// Start live sync between local and remote db
-				syncWithRemote(ctx, this._pouch, url, true);
-			} catch (err) {
-				// If remote db is not available, log the error and continue.
-				console.error(err);
-				console.error(replicationError);
-			}
-		};
-
-		return {
-			to,
-			from,
-			sync,
-			live
-		};
+	replicate(): Replicator {
+		return newDbReplicator(this);
 	}
 
-	init(): DatabaseInterface {
+	async init(): Promise<DatabaseInterface> {
 		// Start initialisation with db setup:
 		// - create the default warehouse (if it doesn't exist)
 		// - update design documents
@@ -170,7 +92,7 @@ class Database implements DatabaseInterface {
 			});
 		}
 
-		Promise.all(dbSetup);
+		await Promise.all(dbSetup);
 		return this;
 	}
 
@@ -220,6 +142,6 @@ class Database implements DatabaseInterface {
 	}
 }
 
-export const newDatabase = (db: PouchDB.Database): Database => {
+export const newDatabase = (db: PouchDB.Database): DatabaseInterface => {
 	return new Database(db);
 };

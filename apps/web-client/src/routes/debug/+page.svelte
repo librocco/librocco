@@ -3,9 +3,17 @@
 
 	import { Button, ButtonColor, Header, InventoryPage } from "@librocco/ui";
 
-	import { getDB } from "$lib/db";
+	import { createDB, destroyDB } from "$lib/db";
 
-	const destroyDB = () => getDB()._pouch.destroy();
+	let destroying = false;
+
+	const handleDestroyDB = () => {
+		destroying = true;
+		destroyDB().then(() => {
+			destroying = false;
+			createDB().init();
+		});
+	};
 </script>
 
 <InventoryPage>
@@ -27,7 +35,9 @@
 				click "Back to inventory" button). This will initialise the new instance of the db and, if the docker dev db is running, populate
 				the db with the data pulled from the remote db.
 			</p>
-			<Button on:click={destroyDB}>Destroy IndexedDB</Button>
+			<Button disabled={destroying} class={destroying ? "bg-gray-200 hover:bg-gray-200" : ""} on:click={handleDestroyDB}
+				>Destroy IndexedDB</Button
+			>
 		</div>
 	</section>
 </InventoryPage>
