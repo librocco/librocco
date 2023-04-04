@@ -243,15 +243,10 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 	(noteId: string): Promise<NoteLookupResult<N, W> | undefined>;
 }
 
-export interface DBInitState {
-	state: "void" | "initialising" | "replicating" | "ready";
-}
-
 /**
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	initState: (ctx: debug.DebugCtx) => Observable<DBInitState>;
 	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
