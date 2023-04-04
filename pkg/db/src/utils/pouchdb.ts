@@ -2,7 +2,7 @@ import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { CouchDocument } from "../types";
+import { CouchDocument, Replication } from "@/types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -170,91 +170,74 @@ export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.Debu
 		});
 	});
 
-interface ReplicateFn<R> {
-	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string, to?: boolean): R;
-}
 /**
- * A helper function used to replicate a remote (PouchDB/CouchDB) db to or from a local PouchDB instance.
- * This is a one time, one way replication used to initialize the local db.
- * It wraps the PouchDB replication API in a promise, resolving when the replication is complete.
- * @param params
- * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to/from
- * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from/to (e.g. 'http://localhost:5984/mydb')
- * @param {string} params.to whether or not to replicate to remote (default is false, aka from remote)
+ * Log replication is a HOF returning a wrapper around a replication (or sync) object, used to
+ * separate the logging from the replication logic.
+ *
+ * All params passed to the HOF are used for logging purposes.
+ *
+ * The returned function wraps the replication object: it takes in a replication object and returns it.
+ *
+ * @param ctx debug context
+ * @param local local db name
+ * @param remote remote db url
  * @returns
  */
-export const replicateRemote: ReplicateFn<Promise<void>> = (ctx, local, remote, to = false) =>
-	new Promise<void>((resolve, reject) => {
-		const info = { local: local.name, remote };
-
-		const replicateFn = to ? local.replicate.to(remote) : local.replicate.from(remote);
-		replicateFn
+export const logReplication =
+	(ctx: debug.DebugCtx, local: string, remote: string) =>
+	(replication: Replication): Replication => {
+		const info = { local, remote };
+		replication
+			.on("change", (change) => {
+				// handle change
+				debug.log(ctx, "replication:change")({ ...info, change });
+			})
 			.on("complete", (complete) => {
 				// after unidirectional replication is done, initiate live syncing (bidirectional)
-				debug.log(ctx, "replicate_from_remote:complete")({ ...info, complete });
-				resolve();
+				debug.log(ctx, `replication:complete`)({ ...info, complete });
 			})
 			.on("paused", () => {
 				// replication paused (e.g. user went offline)
-				debug.log(ctx, "replicate_live:paused")(info);
+				debug.log(ctx, `replication:paused`)(info);
 			})
 			.on("active", function () {
 				// replicate resumed (e.g. user went back online)
-				debug.log(ctx, "replicate_live:active")(info);
+				debug.log(ctx, `replication:active`)(info);
 			})
 			.on("denied", (error) => {
 				// boo, something went wrong!
-				debug.log(ctx, "replicate_from_remote:error")({ ...info, error });
-				reject(error);
+				debug.log(ctx, `replication:error`)({ ...info, error });
 			})
 			.on("error", (error) => {
 				// boo, something went wrong!
-				debug.log(ctx, "replicate_from_remote:error")({ ...info, error });
-				reject(error);
+				debug.log(ctx, `replication:error`)({ ...info, error });
 			});
-	});
 
-interface SyncFn<R> {
-	(ctx: debug.DebugCtx, local: PouchDB.Database, remote: string, live?: boolean): R;
-}
+		return replication;
+	};
+
 /**
- * Open a continuous, bidirectional synchronisation (replication) between a local PouchDB instance and a remote (PouchDB/CouchDB) db.
- * @param params
- * @param {PouchDB.Database} params.local (local) PouchDB instance we're replicating to
- * @param {string} params.remote address of remote (PouchDB/CouchDB) db we're replicating from (e.g. 'http://localhost:5984/mydb')
- * @param {boolean} params.live synching is live or not
+ * Promisify replication takes in a replication object and constructs a promise which resolves when the replication is done
+ * and the (optional) resolver function resolves (if provided).
+ *
+ * _(the resolver function is an additional step, like waiting for the first update to db stream after the replication os complete)_
+ * @param replication
+ * @param resolver
  * @returns
  */
-export const syncWithRemote: SyncFn<Promise<void>> = (ctx, local, remote, live = false) => {
-	return new Promise<void>((resolve, reject) => {
-		const info = { local: local.name, remote, live };
-
-		local
-			.sync(remote, { live, retry: true })
-			.on("change", (change) => {
-				// handle change
-				debug.log(ctx, "replicate_live:change")({ ...info, change });
+export const promisifyReplication = (
+	ctx: debug.DebugCtx,
+	replication: Replication,
+	resolver: (replication: Replication) => Promise<any> = () => Promise.resolve()
+) =>
+	new Promise<void>((resolve) => {
+		replication
+			.on("error", (err) => {
+				console.error(err);
 			})
-			.on("paused", () => {
-				// replication paused (e.g. user went offline)
-				debug.log(ctx, "replicate_live:paused")(info);
-			})
-			.on("active", () => {
-				// replicate resumed (e.g. user went back online)
-				debug.log(ctx, "replicate_live:active")(info);
-			})
-			.on("denied", (error) => {
-				debug.log(ctx, "replicate_live:denied")({ ...info, error });
-				reject(error);
-			})
-			.on("error", (error) => {
-				// handle error
-				debug.log(ctx, "replicate_live:error")({ ...info, error });
-				reject(error);
-			})
-			.on("complete", (complete) => {
-				debug.log(ctx, "replicate_live:error")({ ...info, complete });
-				resolve();
+			.on("complete", () => {
+				debug.log(ctx, "replication_promise:complete")({});
+				resolver(replication).then(resolve);
+				debug.log(ctx, "replication_promise:resolver:complete")({});
 			});
 	});
-};
