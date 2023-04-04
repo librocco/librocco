@@ -29,7 +29,7 @@ describe("OutNoteTable", () => {
 		// Update the warehouse of the first row (wh1 -> wh2)
 		screen.getAllByRole("combobox")[0].click();
 		await act(() => {
-			// Even though other comboboxes are closed, the selection is merely hidden my CSS (so still in the DOM),
+			// Even though other comboboxes are closed, the selection is merely hidden by CSS (so still in the DOM),
 			// therefore, we're selecting the first out of "all" to update the correct transaction (first row).
 			screen.getAllByText("Warehouse 2")[0].click();
 		});

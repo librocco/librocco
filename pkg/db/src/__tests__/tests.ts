@@ -133,7 +133,7 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	await note.addVolumes(
 		// The add volumes operation should not confuse the transaction with the same isbn, but different warehouse
 		{ isbn: "0123456789", quantity: 3, warehouseId: wh1._id },
-		// This should also wor if warehouse is not provided (falls back to "", in case of outbound note)
+		// This should also work if warehouse is not provided (falls back to "", in case of outbound note)
 		{ isbn: "11111111", quantity: 7 }
 	);
 	await waitFor(() => {

@@ -26,7 +26,7 @@ class Warehouse implements WarehouseInterface {
 
 	// Update stream receives the latest document (update) stream from the db. It's multicasted using plain RxJS Subject (no repeat or anything).
 	// This stream is used to signal the update has happened (and has been streamed to update the instance). Subscribers needing to be notified when
-	// and update happens should subscribe to this stream.
+	// an update happens should subscribe to this stream.
 	#updateStream: Observable<WarehouseData>;
 	// The stream is piped from the update stream, only it's multicasted using a ReplaySubject, which will cache the last value emitted by the stream,
 	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
