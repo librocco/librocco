@@ -378,7 +378,7 @@ class Note implements NoteInterface {
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses),
+					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				);
 			},

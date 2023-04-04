@@ -83,7 +83,9 @@ describe("tableContentStore", () => {
 
 		// Should receive the initial state (only book1 transaction in the note)
 		await waitFor(() =>
-			expect(displayEntries).toEqual([{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found" }])
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
+			])
 		);
 
 		// Update the note (add additional transactions)
@@ -93,11 +95,11 @@ describe("tableContentStore", () => {
 		);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found" },
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
 				// Book data for book2 is already available in the db
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found" },
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
 				// Book data for book3 is not available in the db - only the transaction data is shown
-				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found" }
+				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
 			]);
 		});
 
@@ -105,10 +107,10 @@ describe("tableContentStore", () => {
 		await db.books().upsert([book3]);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found" },
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found" },
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
 				// Full book3 data should be displayed
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found" }
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
 			]);
 		});
 
@@ -122,10 +124,11 @@ describe("tableContentStore", () => {
 					title: "The Age of Wonder (updated)",
 					quantity: 12,
 					warehouseId: `v1/jazz`,
-					warehouseName: "not-found"
+					warehouseName: "not-found",
+					availableWarehouses: []
 				},
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found" },
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found" }
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
 			]);
 		});
 	});
