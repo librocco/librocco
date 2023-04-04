@@ -1,4 +1,4 @@
-import type { InventoryTableData } from "../types";
+import type { InventoryTableData, OutNoteTableData } from "../types";
 
 export const rows: InventoryTableData[] = [
 	{
@@ -10,7 +10,9 @@ export const rows: InventoryTableData[] = [
 		publisher: "Mondadori",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	},
 	{
 		isbn: "917289012381",
@@ -21,7 +23,9 @@ export const rows: InventoryTableData[] = [
 		publisher: "Penguin",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	},
 
 	{
@@ -33,6 +37,27 @@ export const rows: InventoryTableData[] = [
 		publisher: "Penguin",
 		year: "2017",
 		editedBy: "",
-		outOfPrint: false
+		outOfPrint: false,
+		warehouseId: "wh1",
+		warehouseName: "Warehouse 1"
 	}
 ];
+
+export const availableWarehouses = [
+	{
+		label: "Warehouse 1",
+		value: "wh1"
+	},
+	{
+		label: "Warehouse 2",
+		value: "wh2"
+	}
+];
+
+/**
+ * Includes three rows, with the first and the second row having the warehouse set up and third having it empty
+ */
+export const outNoteRows = rows.map((r, i) => {
+	const { label: warehouseName, value: warehouseId } = availableWarehouses[i] || { label: "", value: "" };
+	return { ...r, warehouseName, warehouseId, availableWarehouses } as OutNoteTableData;
+});

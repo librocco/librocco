@@ -43,6 +43,7 @@ export interface VolumeStock {
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
 export interface VolumeStockClient extends VolumeStock {
 	warehouseName: string;
+	availableWarehouses?: { value: string; label: string }[];
 }
 // #endregion misc
 
