@@ -32,12 +32,14 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		const dbName = new Date().toISOString().replaceAll(/[.:]/g, "-").toLowerCase();
 		const pouchInstance = new PouchDB(dbName, { adapter: "memory" });
 
-		const db = config.newDatabase(pouchInstance).init();
+		const db = config.newDatabase(pouchInstance);
 
 		// If testing with docker support, we're using the remote db to replicate to/from
-		if (__withDocker__) db.replicate().from(["http://admin:admin@127.0.0.1:5001", `test-${dbName}`].join("/"), {});
+		if (__withDocker__) {
+			db.replicate().live({}, `http://admin:admin@127.0.0.1:5001/test-${dbName}`);
+		}
 
-		return db;
+		return db.init();
 	};
 
 	const test: TestTask = (name, cb) => {
