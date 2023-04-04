@@ -1,9 +1,11 @@
 <script lang="ts">
-	import { Header, InventoryPage } from "@librocco/ui";
-	import { DB_NAME, COUCHDB_HOST, COUCHDB_PORT, COUCHDB_USER, COUCHDB_PASSWORD } from "$lib/constants";
-
 	// Import main.css in order to generate tailwind classes used in the app
 	import "../main.css";
+
+	import { onMount } from "svelte";
+
+	import { Header, InventoryPage } from "@librocco/ui";
+	import { DB_NAME, COUCHDB_HOST, COUCHDB_PORT, COUCHDB_USER, COUCHDB_PASSWORD } from "$lib/constants";
 
 	import type { LayoutData } from "./$types";
 
@@ -12,19 +14,39 @@
 	$: db = data.db;
 	let replicating = db ? true : false;
 
-	db.replicate()
-		.sync(`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`, { name: "[DB_INIT]", debug: false })
-		.then(() => {
-			replicating = false;
-			db.replicate().live(`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`, {
-				name: "[DB_INIT]",
-				debug: false
+	onMount(() => {
+		// If COUCHDB_HOST is provided, we can assume the remote db is there and at least try to replicate.
+		// No point otherwise.
+		//
+		// TODO: This will be set by the user in the future (probably read from local storage).
+		if (!COUCHDB_HOST) {
+			return;
+		}
+
+		replicating = true;
+
+		db.replicate()
+			// Do a db sync first
+			.sync(
+				{ name: "[INITIAL_SYNC]", debug: false },
+				`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`
+			)
+			.promise()
+			.then(() => {
+				replicating = false;
+				db.replicate().live(
+					{
+						name: "[LIVE_SYNC]",
+						debug: false
+					},
+					`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`
+				);
 			});
-		});
+	});
 </script>
 
 <!-- We're returning <slot /> if db doesn't initialise (it's "void") in case of SSR env or if the db is fully initialised -->
-{#if replicating}
+{#if !replicating}
 	<slot />
 {:else}
 	<InventoryPage>
