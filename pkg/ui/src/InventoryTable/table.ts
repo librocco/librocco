@@ -14,7 +14,7 @@ type WritableOrValue<T> = T | Writable<T>;
 type Options<T> = WritableOrValue<TableOptions<T>>;
 
 // eslint-disable-next-line
-export function createTable<T = object[]>(options: Options<T>) {
+export function createTable<T = object>(options: Options<T>) {
 	let optionsStore: Writable<TableOptions<T>>;
 
 	if ("subscribe" in options) {
@@ -26,7 +26,7 @@ export function createTable<T = object[]>(options: Options<T>) {
 	/**
 	 * Type extends generic table data T with unique `key` and `rowIx`
 	 */
-	type KeyedRows = T & { key: string; rowIx: number };
+	type KeyedRow = T & { key: string; rowIx: number };
 
 	/**
 	 * Store of table rows with unique keys & rowIx
@@ -40,7 +40,7 @@ export function createTable<T = object[]>(options: Options<T>) {
 	/**
 	 * Store of selected table rows
 	 */
-	const selectedData = writable<KeyedRows[]>([]);
+	const selectedData = writable<KeyedRow[]>([]);
 
 	/**
 	 * Derived store of table state - combining data & selectedData stores
