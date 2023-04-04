@@ -234,6 +234,8 @@ export const promisifyReplication = (
 		replication
 			.on("error", (err) => {
 				console.error(err);
+				resolve();
+				debug.log(ctx, "replication_promise:resolved_with_error")(err);
 			})
 			.on("complete", () => {
 				debug.log(ctx, "replication_promise:complete")({});
