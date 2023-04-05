@@ -121,8 +121,13 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
 	removeTransactions: (...transactions: Omit<VolumeStock, "quantity">[]) => Promise<NoteInterface<A>>;
-	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
-	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	/**
+	 * Commit the note, no updates to the note (except updates to `displayName`) can be performed after this.
+	 * @param ctx debug context
+	 * @param options object
+	 * @param options.force force commit, even if the note is empty (this should be used only in tests)
+	 */
+	commit: (ctx: debug.DebugCtx, options?: { force: true }) => Promise<NoteInterface<A>>;
 	/**
 	 * Stream returns an object containing observable streams for the note:
 	 * - `state` - streams the note's `state`

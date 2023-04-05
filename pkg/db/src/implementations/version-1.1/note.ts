@@ -9,7 +9,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 import { combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
@@ -310,11 +310,19 @@ class Note implements NoteInterface {
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
-	async commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
+	async commit(ctx: debug.DebugCtx, options?: { force: boolean }): Promise<NoteInterface> {
 		debug.log(ctx, "note:commit")({});
 
+		// Don't allow for committing of empty notes.
+		// We're allowing commit if 'force === true' (this should only be used in tests)
+		if (this.entries.length === 0 && !options?.force) {
+			throw new EmptyNoteError();
+		}
+
+		// Check transactions before committing
 		switch (this.noteType) {
 			case "inbound": {
+				// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
 				const invalidTransactions = this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
 				if (invalidTransactions.length) {
 					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
@@ -339,7 +347,6 @@ class Note implements NoteInterface {
 				}
 			}
 		}
-		// Check transactions before committing
 
 		return this.update(ctx, { committed: true });
 	}
