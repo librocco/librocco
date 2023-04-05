@@ -56,7 +56,7 @@ const runCommonTests = (TableComponent: typeof OutNoteTable | typeof InventoryTa
 
 		const table = createTable(tableOptions);
 
-		const { component } = render(TableComponent, { table });
+		const { component } = render(TableComponent, { interactive: true, table });
 		component.$on("transactionupdate", (e) => mockOnUpdate(e.detail));
 
 		// Update the quantity of the first row (3 -> 2)
@@ -95,7 +95,7 @@ const runCommonTests = (TableComponent: typeof OutNoteTable | typeof InventoryTa
 
 		const table = createTable(tableOptions);
 
-		const { component } = render(TableComponent, { table });
+		const { component } = render(TableComponent, { interactive: true, table });
 		component.$on("removetransactions", (e) => mockOnRemove(e.detail));
 
 		// Select the first two transactions

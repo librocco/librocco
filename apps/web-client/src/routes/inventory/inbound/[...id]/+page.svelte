@@ -161,7 +161,12 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<InventoryTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+		<InventoryTable
+			{table}
+			on:transactionupdate={handleTransactionUpdate}
+			on:removetransactions={handleRemoveTransactions}
+			interactive
+		/>
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
