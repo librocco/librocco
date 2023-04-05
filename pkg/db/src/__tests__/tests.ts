@@ -1,5 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { expect } from "vitest";
+import { BehaviorSubject, switchMap } from "rxjs";
 
 import { testUtils } from "@librocco/shared";
 
@@ -9,8 +10,8 @@ import { BookEntry, InNoteList, NavListEntry, VersionedString, VolumeStock, Volu
 import { TestFunction } from "@/test-runner/types";
 
 import { versionId } from "@/utils/misc";
-import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
-import { BehaviorSubject, switchMap } from "rxjs";
+
+import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 import { fiftyEntries } from "./data";
 
 const { waitFor } = testUtils;
@@ -82,7 +83,7 @@ export const standardApi: TestFunction = async (db) => {
 	// Committed notes can't be updated nor deleted.
 	note1 = await note1.setName({}, "Note 1");
 	expect(note1.displayName).toEqual("Note 1");
-	await note1.commit({});
+	await note1.commit({}, { force: true });
 	note1 = await note1.setName({}, "New name");
 	expect(note1.displayName).toEqual("Note 1");
 
@@ -687,7 +688,7 @@ export const inNotesStream: TestFunction = async (db) => {
 		]);
 	});
 
-	await note3.commit({});
+	await note3.commit({}, { force: true });
 	await waitFor(() => {
 		expect(inNoteList).toEqual([
 			{
@@ -758,7 +759,7 @@ export const outNotesStream: TestFunction = async (db) => {
 		]);
 	});
 
-	await note3.commit({});
+	await note3.commit({}, { force: true });
 	await waitFor(() => {
 		expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note - Updated" }]);
 	});
@@ -1049,6 +1050,15 @@ export const dbGuards: TestFunction = async (db) => {
 			.then((n) => n.addVolumes({ isbn: "11111111", quantity: 2 }))
 			.then((n) => n.commit({}))
 	).rejects.toThrow(new OutOfStockError([{ isbn: "11111111", warehouseId: "" as VersionedString, quantity: 2, available: 0 }]));
+
+	// The db should not allow the committing of empty notes
+	await expect(
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.commit({}))
+	).rejects.toThrow(new EmptyNoteError());
 };
 
 export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) => {
