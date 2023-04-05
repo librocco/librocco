@@ -1,7 +1,7 @@
 import { get, type Readable } from "svelte/store";
-import { map, Observable, share, Subject, switchMap } from "rxjs";
+import { map, Observable, share, ReplaySubject, switchMap, tap } from "rxjs";
 
-import type { debug } from "@librocco/shared";
+import { debug } from "@librocco/shared";
 import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, WarehouseInterface } from "@librocco/db";
 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
@@ -31,7 +31,7 @@ interface CreateDisplayEntriesStore {
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore) => {
 	const itemsPerPage = 10;
 
-	const shareSubject = new Subject<EntriesStreamResult>();
+	const shareSubject = new ReplaySubject<EntriesStreamResult>(1);
 	// Create a stream from the current page store
 	const entriesStream = observableFromStore(currentPageStore).pipe(
 		// Each time current page changes, update the paginated stream (from the db)
@@ -47,11 +47,17 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 			// Map rows to just isbns
 			const isbns = rows.map((entry) => entry.isbn);
 
+			debug.log(ctx, "display_entries_store:table_data:retrieving_books")({ isbns });
+
 			// Return array of merged values of books and volume stock client
 			return db
 				.books()
 				.stream(ctx, isbns)
-				.pipe(map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))));
+				.pipe(
+					tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
+					map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))),
+					tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
+				);
 		})
 	);
 
