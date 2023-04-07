@@ -1,7 +1,8 @@
 import adapter from "@sveltejs/adapter-static";
 import preprocess from "svelte-preprocess";
+import { execSync } from "child_process";
 
-const base = "main";
+const base = execSync("git symbolic-ref --short HEAD").toString().trim();
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
