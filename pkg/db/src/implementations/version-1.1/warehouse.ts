@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString } from "@/types";
+import { EntriesStreamResult, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -33,6 +33,8 @@ class Warehouse implements WarehouseInterface {
 	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
 	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
+
+	#stock: Observable<VolumeStockClient[]>;
 
 	_id: VersionedString;
 	docType = DocType.Warehouse;
@@ -64,6 +66,31 @@ class Warehouse implements WarehouseInterface {
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+		);
+
+		const stockCache = new ReplaySubject<VolumeStockClient[]>(1);
+		this.#stock = newViewStream<{ rows: WarehouseStockEntry[] }>({}, this.#db._pouch, "v1_stock/by_warehouse", {
+			group_level: 2,
+			...(this._id !== versionId("0-all") && {
+				startkey: [this._id],
+				endkey: [this._id, {}],
+				include_end: true
+			})
+		}).pipe(
+			map(({ rows }) =>
+				rows
+					.filter(({ value: quantity }) => quantity > 0)
+					.map(({ key: [warehouseId, isbn], value: quantity }) => ({
+						isbn,
+						quantity,
+						warehouseId,
+						warehouseName: ""
+					}))
+					.sort(sortBooks)
+			),
+			share({
+				connector: () => stockCache
+			})
 		);
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
@@ -230,39 +257,12 @@ class Warehouse implements WarehouseInterface {
 				),
 
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
-				const shareSubject = new Subject<WarehouseStockEntry[]>();
-
-				const warehouseStock = newViewStream<{ rows: WarehouseStockEntry }>(ctx, this.#db._pouch, "v1_stock/by_warehouse", {
-					group_level: 2,
-					...(this._id !== versionId("0-all") && {
-						startkey: [this._id],
-						endkey: [this._id, {}],
-						include_end: true
-					})
-				}).pipe(
-					map(({ rows }) => rows.filter(({ value: quantity }) => quantity > 0)),
-					share({
-						connector: () => shareSubject
-					})
-				);
-
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = warehouseStock.pipe(
-					map((rows) =>
-						rows
-							.map(({ key: [warehouseId, isbn], value: quantity }) => ({
-								isbn,
-								quantity,
-								warehouseId,
-								warehouseName: ""
-							}))
-							.sort(sortBooks)
-							.slice(startIx, endIx)
-					)
-				);
-				const stats = warehouseStock.pipe(
+				const entries = this.#stock.pipe(map((rows) => rows.slice(startIx, endIx)));
+
+				const stats = this.#stock.pipe(
 					map((rows) => ({
 						total: rows.length,
 						totalPages: Math.ceil(rows.length / itemsPerPage)
