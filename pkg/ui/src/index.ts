@@ -16,3 +16,4 @@ export * from "./TextEditable";
 export * from "./Forms";
 export * from "./Slideover";
 export * from "./Toast";
+export * from "./ProgressBar";
