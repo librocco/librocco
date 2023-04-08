@@ -2,7 +2,7 @@ import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { CouchDocument, Replication } from "@/types";
+import { CouchDocument, DesignDocument, Replication } from "@/types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -243,3 +243,12 @@ export const promisifyReplication = (
 				debug.log(ctx, "replication_promise:resolver:complete")({});
 			});
 	});
+
+export const scanDesignDocuments = (docs: DesignDocument[]) => {
+	return docs.flatMap(({ _id, views }) => {
+		// Remove the "_design/" prefix from the id (the rest is used to prefix each view)
+		const prefix = _id.replace(/_design\//, "");
+		const view_names = Object.keys(views).map((view_name) => `${prefix}/${view_name}`);
+		return view_names;
+	});
+};
