@@ -311,6 +311,12 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 */
 	replicate: () => Replicator;
 	/**
+	 * Perform initial query for each of the views as the initial query also builds the index. After that, the update us quite cheap.
+	 *
+	 * This should be ran after the initial replication to build local views with the data received from the replication.
+	 */
+	buildIndexes: () => Promise<void>;
+	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
 	 * - `upsert` - accepts an array of book data and upserts them into the db. If a book data already exists, it will be
