@@ -13,7 +13,7 @@ import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 
-import { newViewStream } from "@/utils/pouchdb";
+import { newViewStream, scanDesignDocuments } from "@/utils/pouchdb";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -72,6 +72,12 @@ class Database implements DatabaseInterface {
 
 	replicate(): Replicator {
 		return newDbReplicator(this);
+	}
+
+	async buildIndexes() {
+		const indexes = scanDesignDocuments(designDocs);
+		console.log(indexes);
+		await Promise.all(indexes.map((view) => this._pouch.query(view)));
 	}
 
 	async init(): Promise<DatabaseInterface> {
