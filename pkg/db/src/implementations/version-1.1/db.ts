@@ -3,7 +3,7 @@ import { map, Observable, ReplaySubject, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry, Replicator } from "@/types";
+import { BooksInterface, CouchDocument, DbStream, DesignDocument, InNoteList, MapReduceRow, NavListEntry, Replicator } from "@/types";
 import { DatabaseInterface, NoteListViewResp, WarehouseInterface, WarehouseListViewResp } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -14,6 +14,7 @@ import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 
 import { newViewStream, scanDesignDocuments } from "@/utils/pouchdb";
+import { newView } from "./view";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -98,6 +99,10 @@ class Database implements DatabaseInterface {
 
 		await Promise.all(dbSetup);
 		return this;
+	}
+
+	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string) {
+		return newView<R, M>(this._pouch, view);
 	}
 
 	books(): BooksInterface {
