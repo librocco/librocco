@@ -22,7 +22,8 @@
 		ButtonSize,
 		TextFieldSize,
 		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail
+		type RemoveTransactionsDetail,
+		ProgressBar
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -55,10 +56,15 @@
 	 * _(The handler navigates to the newly created note page after the note has been created)_.
 	 */
 	const handleCreateNote = (warehousId: string) => async () => {
+		loading = true;
 		const note = db.warehouse(warehousId).note();
 		await note.create();
 		goto(`/inventory/inbound/${note._id}`);
 	};
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	$: loading = !data;
 
 	$: note = data.note;
 	$: warehouse = data.warehouse;
@@ -119,66 +125,74 @@
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if $state && $state !== NoteState.Deleted}
-			<div class="mb-10 flex w-full items-end justify-between">
-				<div>
-					<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
-						<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
-						{#if warehouse}
-							<span class="align-middle text-sm font-normal text-gray-500">in {warehouse.displayName}</span>
+		{#if !loading}
+			{#if $state && $state !== NoteState.Deleted}
+				<div class="mb-10 flex w-full items-end justify-between">
+					<div>
+						<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
+							<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
+							{#if warehouse}
+								<span class="align-middle text-sm font-normal text-gray-500">in {warehouse.displayName}</span>
+							{/if}
+						</h2>
+						{#if $updatedAt}
+							<div>
+								<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+							</div>
 						{/if}
-					</h2>
-					{#if $updatedAt}
-						<div>
-							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
-						</div>
-					{/if}
+					</div>
+					<SelectMenu
+						class="w-[138px]"
+						options={noteStates}
+						bind:value={$state}
+						disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+						align="right"
+					/>
 				</div>
-				<SelectMenu
-					class="w-[138px]"
-					options={noteStates}
-					bind:value={$state}
-					disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-					align="right"
-				/>
-			</div>
-			<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
-				<svelte:fragment slot="startAdornment">
-					<QrCode />
-				</svelte:fragment>
-				<div let:value slot="endAdornment" class="flex gap-x-2">
-					<!-- @TODO: no validation is implemented here -->
-					<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
-						<svelte:fragment slot="startAdornment">
-							<Edit size={16} />
-						</svelte:fragment>
-						Create
-					</Button>
-				</div>
-			</TextField>
+				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+					<svelte:fragment slot="startAdornment">
+						<QrCode />
+					</svelte:fragment>
+					<div let:value slot="endAdornment" class="flex gap-x-2">
+						<!-- @TODO: no validation is implemented here -->
+						<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
+							<svelte:fragment slot="startAdornment">
+								<Edit size={16} />
+							</svelte:fragment>
+							Create
+						</Button>
+					</div>
+				</TextField>
+			{/if}
 		{/if}
 	</svelte:fragment>
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<InventoryTable
-			{table}
-			on:transactionupdate={handleTransactionUpdate}
-			on:removetransactions={handleRemoveTransactions}
-			interactive
-		/>
+		{#if !loading}
+			<InventoryTable
+				{table}
+				on:transactionupdate={handleTransactionUpdate}
+				on:removetransactions={handleRemoveTransactions}
+				interactive
+			/>
+		{:else}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+		{/if}
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if $paginationData.totalItems}
-			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
-				<strong>{$paginationData.totalItems}</strong> results
-			</p>
-		{/if}
-		{#if $paginationData.numPages > 1}
-			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{#if !loading}
+			{#if $paginationData.totalItems}
+				<p class="cursor-normal select-none text-sm font-medium leading-5">
+					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+					<strong>{$paginationData.totalItems}</strong> results
+				</p>
+			{/if}
+			{#if $paginationData.numPages > 1}
+				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+			{/if}
 		{/if}
 	</div>
 </InventoryPage>
