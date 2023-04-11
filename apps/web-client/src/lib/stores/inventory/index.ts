@@ -6,7 +6,7 @@ import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/invent
 
 import { createDisplayNameStore } from "./display_name";
 import { createDisplayStateStore, createInternalStateStore } from "./note_state";
-import { createDisplayEntriesStore, createPaginationDataStore } from "./table_content";
+import { createDisplayEntriesStore } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
@@ -43,10 +43,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
-
-	const paginationCtx = { name: `[NOTE_PAGINATION::${note?._id}]`, debug: false };
-	const paginationData = createPaginationDataStore(paginationCtx, note, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
 
 	return {
 		displayName,
@@ -80,10 +77,7 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
 
 	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
-	const entries = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
-
-	const paginationDataCtx = { name: `[WAREHOUSE_PAGINATION::${warehouse?._id}]`, debug: false };
-	const paginationData = createPaginationDataStore(paginationDataCtx, warehouse, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
 
 	return {
 		displayName,

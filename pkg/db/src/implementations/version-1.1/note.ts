@@ -4,12 +4,13 @@ import { debug } from "@librocco/shared";
 
 import { DocType, NoteState } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial, VolumeStockClient } from "@/types";
+import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -358,36 +359,29 @@ class Note implements NoteInterface {
 				),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
-			entries: (ctx: debug.DebugCtx) =>
-				combineLatest([
-					this.#stream.pipe(map(({ entries }) => (entries || []).sort(sortBooks))),
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+				const startIx = page * itemsPerPage;
+				const endIx = startIx + itemsPerPage;
+
+				return combineLatest([
+					this.#stream.pipe(
+						map(({ entries = [] }) =>
+							entries
+								.map((e) => ({ ...e, warehouseName: "" }))
+								.sort(sortBooks)
+								.slice(startIx, endIx)
+						)
+					),
+					this.#stream.pipe(
+						map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))
+					),
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(([entries, warehouses]) => {
-						// Create a record of warehouse ids and names for easy lookup
-						const warehouseNames = warehouses.reduce(
-							(acc, { id, displayName }) => ({ ...acc, [id]: displayName }),
-							{} as Record<string, string>
-						);
-						const warehouseSelection = Object.entries(warehouseNames)
-							.filter(([id]) => id !== versionId("0-all"))
-							.map(([value, label]) => ({ value, label }));
-
-						return entries.map((e) => {
-							const entry = { ...e } as VolumeStockClient;
-
-							entry.warehouseName = warehouseNames[e.warehouseId] || "not-found";
-
-							if (this.noteType === "outbound") {
-								entry.availableWarehouses = warehouseSelection;
-							}
-
-							return entry;
-						});
-					}),
+					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
 					tap(debug.log(ctx, "note:entries:stream:output"))
-				),
+				);
+			},
 
 			state: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
