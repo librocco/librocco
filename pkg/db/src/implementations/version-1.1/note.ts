@@ -67,7 +67,6 @@ class Note implements NoteInterface {
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<NoteData>();
 		const cache = new ReplaySubject<NoteData>(1);
-		/** @TODO find a way to pass context here (and have it be subscriber specific) */
 		this.#updateStream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
 			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
