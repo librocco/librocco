@@ -110,12 +110,7 @@ export const newViewStream = <M extends Record<string, any>>(
 		// so that we can cancel the emitter when the subscription is cancelled.
 		// This allows us to isolate the change emitter to a single subscription and make sure all
 		// unused emitters are cancelled from.
-		const emitter = db.changes<M>({
-			since: "now",
-			live: true,
-			filter: "_view",
-			view
-		});
+		const emitter = newViewChangesEmitter(db, view);
 
 		// Create an initial query to get the initial data
 		// (without this, the data would get updated only by changes happening after the subscription)
@@ -160,6 +155,14 @@ export const newViewStream = <M extends Record<string, any>>(
 			debug.log(ctx, "view_stream:cancel")({});
 			return emitter.cancel();
 		};
+	});
+
+export const newViewChangesEmitter = <Model extends Record<any, any>>(db: PouchDB.Database, view: string) =>
+	db.changes<Model>({
+		since: "now",
+		live: true,
+		filter: "_view",
+		view
 	});
 
 export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.DebugCtx, emitter: PouchDB.Core.Changes<Model>) =>
