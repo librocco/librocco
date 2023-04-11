@@ -22,7 +22,8 @@
 		ButtonSize,
 		Button,
 		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail
+		type RemoveTransactionsDetail,
+		ProgressBar
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -53,10 +54,15 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
+		loading = true;
 		const note = db.warehouse().note();
 		await note.create();
 		goto(`/inventory/outbound/${note._id}`);
 	};
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	$: loading = !data;
 
 	$: note = data.note;
 
@@ -144,19 +150,25 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+		{#if !loading}
+			<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+		{:else}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+		{/if}
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if $paginationData.totalItems}
-			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
-				<strong>{$paginationData.totalItems}</strong> results
-			</p>
-		{/if}
-		{#if $paginationData.numPages > 1}
-			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{#if !loading}
+			{#if $paginationData.totalItems}
+				<p class="cursor-normal select-none text-sm font-medium leading-5">
+					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+					<strong>{$paginationData.totalItems}</strong> results
+				</p>
+			{/if}
+			{#if $paginationData.numPages > 1}
+				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+			{/if}
 		{/if}
 	</div>
 </InventoryPage>

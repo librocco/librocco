@@ -14,7 +14,8 @@
 		TextEditable,
 		SidebarItem,
 		SideBarNav,
-		NewEntitySideNavButton
+		NewEntitySideNavButton,
+		ProgressBar
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE } from "@librocco/db";
 
@@ -43,10 +44,15 @@
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
 	const handleCreateWarehouse = async () => {
+		loading = true;
 		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
 		await warehouse.create();
 		goto(`/inventory/stock/${warehouse._id}`);
 	};
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	$: loading = !data;
 
 	$: warehouse = data.warehouse;
 
@@ -82,34 +88,42 @@
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		<h2 class="mb-4 text-gray-900">
-			<TextEditable bind:value={$displayName} />
-		</h2>
-		<TextField name="search" placeholder="Serach">
-			<svelte:fragment slot="startAdornment">
-				<Search class="h-5 w-5" />
-			</svelte:fragment>
-		</TextField>
+		{#if !loading}
+			<h2 class="mb-4 text-gray-900">
+				<TextEditable bind:value={$displayName} />
+			</h2>
+			<TextField name="search" placeholder="Serach">
+				<svelte:fragment slot="startAdornment">
+					<Search class="h-5 w-5" />
+				</svelte:fragment>
+			</TextField>
+		{/if}
 	</div>
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		{#if $entries.length}
-			<InventoryTable {table} />
+		{#if !loading}
+			{#if $entries.length}
+				<InventoryTable {table} />
+			{/if}
+		{:else}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
 		{/if}
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if $paginationData.totalItems}
-			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong>
-				of
-				<strong>{$paginationData.totalItems}</strong> results
-			</p>
-		{/if}
-		{#if $paginationData.numPages > 1}
-			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{#if !loading}
+			{#if $paginationData.totalItems}
+				<p class="cursor-normal select-none text-sm font-medium leading-5">
+					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong>
+					of
+					<strong>{$paginationData.totalItems}</strong> results
+				</p>
+			{/if}
+			{#if $paginationData.numPages > 1}
+				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+			{/if}
 		{/if}
 	</div>
 </InventoryPage>
