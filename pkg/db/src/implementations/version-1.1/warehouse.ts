@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString } from "@/types";
+import { EntriesStreamResult, VersionedString } from "@/types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -15,6 +15,7 @@ import { WarehouseStockEntry } from "./designDocuments";
 
 import { runAfterCondition, sortBooks, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
 import { newDocumentStream, newViewStream } from "@/utils/pouchdb";
+import { combineTransactionsWarehouses } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -228,42 +229,52 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "streams: display_name: res"))
 				),
 
-			entries: (ctx: debug.DebugCtx) =>
-				combineLatest([
-					newViewStream<{ rows: WarehouseStockEntry }>(ctx, this.#db._pouch, "v1_stock/by_warehouse", {
-						group_level: 2,
-						...(this._id !== versionId("0-all") && {
-							startkey: [this._id],
-							endkey: [this._id, {}],
-							include_end: true
-						})
-					}).pipe(
-						map(({ rows }) =>
-							rows
-								.map(({ key: [warehouseId, isbn], value: quantity }) => ({
-									isbn,
-									quantity,
-									warehouseId,
-									warehouseName: ""
-								}))
-								.filter(({ quantity }) => quantity > 0)
-								.sort(sortBooks)
-						)
-					),
-					this.#db.stream().warehouseList(ctx)
-				]).pipe(
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+				const shareSubject = new Subject<WarehouseStockEntry[]>();
+
+				const warehouseStock = newViewStream<{ rows: WarehouseStockEntry }>(ctx, this.#db._pouch, "v1_stock/by_warehouse", {
+					group_level: 2,
+					...(this._id !== versionId("0-all") && {
+						startkey: [this._id],
+						endkey: [this._id, {}],
+						include_end: true
+					})
+				}).pipe(
+					map(({ rows }) => rows.filter(({ value: quantity }) => quantity > 0)),
+					share({
+						connector: () => shareSubject
+					})
+				);
+
+				const startIx = page * itemsPerPage;
+				const endIx = startIx + itemsPerPage;
+
+				const entries = warehouseStock.pipe(
+					map((rows) =>
+						rows
+							.map(({ key: [warehouseId, isbn], value: quantity }) => ({
+								isbn,
+								quantity,
+								warehouseId,
+								warehouseName: ""
+							}))
+							.sort(sortBooks)
+							.slice(startIx, endIx)
+					)
+				);
+				const stats = warehouseStock.pipe(
+					map((rows) => ({
+						total: rows.length,
+						totalPages: Math.ceil(rows.length / itemsPerPage)
+					}))
+				);
+
+				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
-					map(([entries, warehouses]) => {
-						// Create a record of warehouse ids and names for easy lookup
-						const warehouseNames = warehouses.reduce((acc, { id, displayName }) => ({ ...acc, [id]: displayName }), {});
-						const res = entries.map((e) => ({
-							...e,
-							warehouseName: warehouseNames[e.warehouseId] || "not-found"
-						}));
-						return res;
-					}),
+					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
-				)
+				);
+			}
 		};
 	}
 }
