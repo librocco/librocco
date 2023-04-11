@@ -33,6 +33,17 @@ export type DesignDocument = {
 	views: Record<string, { map: string; filter?: string; reduce?: string }>;
 };
 
+/** A utility type used to construct a response we get from the map/reduce (view) query */
+export type MapReduceRow<K = any, V = any> = {
+	id: string;
+	key: K;
+	value: V;
+};
+
+export type MapReduceRes<R extends MapReduceRow, M extends CouchDocument> = {
+	rows: Array<R & { doc?: M }>;
+};
+
 /** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
 export interface VolumeStock {
 	isbn: string;
