@@ -75,7 +75,6 @@ class Database implements DatabaseInterface {
 
 	async buildIndexes() {
 		const indexes = scanDesignDocuments(designDocs);
-		console.log(indexes);
 		await Promise.all(indexes.map((view) => this._pouch.query(view)));
 	}
 
