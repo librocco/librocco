@@ -33,6 +33,7 @@ class Note implements NoteInterface {
 	_id: VersionedString;
 	docType = DocType.Note;
 	_rev?: string;
+	_deleted?: boolean;
 
 	noteType: NoteType;
 
@@ -392,7 +393,7 @@ class Note implements NoteInterface {
 			state: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
 					tap(debug.log(ctx, "note_streams: state: input")),
-					map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft)),
+					map(({ committed, _deleted }) => (_deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft)),
 					tap(debug.log(ctx, "note_streams: state: res"))
 				),
 

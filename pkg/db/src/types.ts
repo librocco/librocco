@@ -25,6 +25,7 @@ export type CouchDocument<Doc extends Record<string, any> = Record<string, any>>
 	_id: VersionedString;
 	docType: DocType;
 	_rev?: string | undefined;
+	_deleted?: boolean;
 } & Doc;
 
 export type DesignDocument = {

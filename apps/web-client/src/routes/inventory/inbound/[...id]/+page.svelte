@@ -78,6 +78,13 @@
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
 
+	// When the note is committed or deleted, automatically redirect to 'inbound' page.
+	$: {
+		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
+			goto("/inventory/inbound");
+		}
+	}
+
 	const tableOptions = writable({
 		data: $entries
 	});
