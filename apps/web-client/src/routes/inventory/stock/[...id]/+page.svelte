@@ -88,7 +88,7 @@
 
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
-		{#if !loading}
+		{#if !loading && warehouse}
 			<h2 class="mb-4 text-gray-900">
 				<TextEditable bind:value={$displayName} />
 			</h2>
@@ -103,7 +103,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if !loading}
-			{#if $entries.length}
+			{#if warehouse}
 				<InventoryTable {table} />
 			{/if}
 		{:else}
@@ -113,7 +113,7 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if !loading}
+		{#if !loading && warehouse}
 			{#if $paginationData.totalItems}
 				<p class="cursor-normal select-none text-sm font-medium leading-5">
 					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong>

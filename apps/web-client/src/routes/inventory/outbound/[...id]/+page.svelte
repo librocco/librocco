@@ -37,6 +37,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+
 	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
@@ -111,7 +112,7 @@
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if $state && $state !== NoteState.Deleted}
+		{#if !loading && note}
 			<div class="mb-10 flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
@@ -151,7 +152,9 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if !loading}
-			<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+			{#if note}
+				<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+			{/if}
 		{:else}
 			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
 		{/if}
@@ -159,7 +162,7 @@
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if !loading}
+		{#if !loading && note}
 			{#if $paginationData.totalItems}
 				<p class="cursor-normal select-none text-sm font-medium leading-5">
 					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
