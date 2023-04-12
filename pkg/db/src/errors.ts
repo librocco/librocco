@@ -36,3 +36,9 @@ export class OutOfStockError extends Error {
 		this.invalidTransactions = invalidTransactions;
 	}
 }
+
+export class EmptyNoteError extends Error {
+	constructor() {
+		super("Trying to commit an empty note");
+	}
+}

@@ -1,8 +1,8 @@
-import { concat, from, map, Observable, switchMap, tap } from "rxjs";
+import { concat, from, map, Observable, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { CouchDocument, Replication } from "@/types";
+import { CouchDocument, DesignDocument, Replication } from "@/types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -98,68 +98,12 @@ export const newDocumentStream = <M extends Record<string, any>>(
 
 		return () => emitter.cancel();
 	});
-
-export const newViewStream = <M extends Record<string, any>>(
-	ctx: debug.DebugCtx,
-	db: PouchDB.Database,
-	view: string,
-	query_params: PouchDB.Query.Options<Record<string, unknown>, M> = {}
-) =>
-	new Observable<PouchDB.Query.Response<M>>((subscriber) => {
-		// Each subscription creates a new pouchdb change emitter
-		// so that we can cancel the emitter when the subscription is cancelled.
-		// This allows us to isolate the change emitter to a single subscription and make sure all
-		// unused emitters are cancelled from.
-		const emitter = db.changes<M>({
-			since: "now",
-			live: true,
-			filter: "_view",
-			view
-		});
-
-		// Create an initial query to get the initial data
-		// (without this, the data would get updated only by changes happening after the subscription)
-		const initialQueryPromise = db
-			.query<M>(view, query_params)
-			// This shouldn't really happen, but as an edge case, we don't want to break the entire app
-			.catch((err) => {
-				debug.log(ctx, "view_stream:initial_query:error")(err);
-				return { rows: [], total_rows: 0, offset: 0 } as PouchDB.Query.Response<M>;
-			})
-			.then((res) => {
-				debug.log(ctx, "view_stream:initial_query:result")(res);
-				return res;
-			});
-		const initialQueryStream = from(initialQueryPromise);
-		// Create a stream for changes (happening after the subscription)
-		const updatesStream = newChangesStream(ctx, emitter).pipe(
-			tap(debug.log(ctx, "view_stream:change")),
-			// The change only triggers a new query (as changes are partial and we require the full view update)
-			switchMap(() =>
-				from(
-					new Promise<PouchDB.Query.Response<M>>((resolve) => {
-						db.query<M>(view, query_params)
-							.then((res) => {
-								debug.log(ctx, "view_stream:change_query:result")(res);
-								return resolve(res);
-							})
-							.catch((err) => {
-								debug.log(ctx, "view_stream:change_query:error")(err);
-							});
-					})
-				)
-			)
-		);
-
-		// Concatanate the two streams and transform the result
-		const resultStream = concat(initialQueryStream, updatesStream).pipe(tap(debug.log(ctx, "view_stream:result")));
-
-		resultStream.subscribe(subscriber);
-
-		return () => {
-			debug.log(ctx, "view_stream:cancel")({});
-			return emitter.cancel();
-		};
+export const newViewChangesEmitter = <Model extends Record<any, any>>(db: PouchDB.Database, view: string) =>
+	db.changes<Model>({
+		since: "now",
+		live: true,
+		filter: "_view",
+		view
 	});
 
 export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.DebugCtx, emitter: PouchDB.Core.Changes<Model>) =>
@@ -243,3 +187,12 @@ export const promisifyReplication = (
 				debug.log(ctx, "replication_promise:resolver:complete")({});
 			});
 	});
+
+export const scanDesignDocuments = (docs: DesignDocument[]) => {
+	return docs.flatMap(({ _id, views }) => {
+		// Remove the "_design/" prefix from the id (the rest is used to prefix each view)
+		const prefix = _id.replace(/_design\//, "");
+		const view_names = Object.keys(views).map((view_name) => `${prefix}/${view_name}`);
+		return view_names;
+	});
+};

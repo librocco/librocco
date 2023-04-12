@@ -9,7 +9,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 import { combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
@@ -33,6 +33,7 @@ class Note implements NoteInterface {
 	_id: VersionedString;
 	docType = DocType.Note;
 	_rev?: string;
+	_deleted?: boolean;
 
 	noteType: NoteType;
 
@@ -67,7 +68,6 @@ class Note implements NoteInterface {
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<NoteData>();
 		const cache = new ReplaySubject<NoteData>(1);
-		/** @TODO find a way to pass context here (and have it be subscriber specific) */
 		this.#updateStream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
 			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
@@ -310,11 +310,19 @@ class Note implements NoteInterface {
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
-	async commit(ctx: debug.DebugCtx): Promise<NoteInterface> {
+	async commit(ctx: debug.DebugCtx, options?: { force: boolean }): Promise<NoteInterface> {
 		debug.log(ctx, "note:commit")({});
 
+		// Don't allow for committing of empty notes.
+		// We're allowing commit if 'force === true' (this should only be used in tests)
+		if (this.entries.length === 0 && !options?.force) {
+			throw new EmptyNoteError();
+		}
+
+		// Check transactions before committing
 		switch (this.noteType) {
 			case "inbound": {
+				// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
 				const invalidTransactions = this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
 				if (invalidTransactions.length) {
 					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
@@ -339,7 +347,6 @@ class Note implements NoteInterface {
 				}
 			}
 		}
-		// Check transactions before committing
 
 		return this.update(ctx, { committed: true });
 	}
@@ -386,7 +393,7 @@ class Note implements NoteInterface {
 			state: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
 					tap(debug.log(ctx, "note_streams: state: input")),
-					map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft)),
+					map(({ committed, _deleted }) => (_deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft)),
 					tap(debug.log(ctx, "note_streams: state: res"))
 				),
 

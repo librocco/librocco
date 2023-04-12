@@ -4,17 +4,15 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString } from "@/types";
+import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
+import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData, WarehouseStockRow } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
-import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
-
 import { newNote } from "./note";
-import { WarehouseStockEntry } from "./designDocuments";
 
-import { runAfterCondition, sortBooks, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
-import { newDocumentStream, newViewStream } from "@/utils/pouchdb";
+import { runAfterCondition, uniqueTimestamp, versionId, isEmpty, sortBooks } from "@/utils/misc";
+import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses } from "./utils";
 
 class Warehouse implements WarehouseInterface {
@@ -34,9 +32,12 @@ class Warehouse implements WarehouseInterface {
 	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
 
+	#stock: Observable<VolumeStockClient[]>;
+
 	_id: VersionedString;
 	docType = DocType.Warehouse;
 	_rev?: string;
+	_deleted?: boolean;
 
 	displayName = "";
 
@@ -55,7 +56,6 @@ class Warehouse implements WarehouseInterface {
 		const updateSubject = new Subject<WarehouseData>();
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const cache = new ReplaySubject<WarehouseData>(1);
-		/** @TODO find a way to pass context here (and have it be subscriber specific) */
 		this.#updateStream = newDocumentStream<WarehouseData>({}, this.#db._pouch, this._id).pipe(
 			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
@@ -66,11 +66,34 @@ class Warehouse implements WarehouseInterface {
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
+		const stockCache = new ReplaySubject<VolumeStockClient[]>(1);
+		const stockStreamParams =
+			this._id === versionId("0-all")
+				? { group_level: 2 }
+				: { group_level: 2, startkey: [this._id], endkey: [this._id, {}], include_end: true };
+		this.#stock = this.#db
+			.view<WarehouseStockRow>("v1_stock/by_warehouse")
+			.stream({}, stockStreamParams)
+			.pipe(
+				map(({ rows }) =>
+					rows
+						.filter(({ value: quantity }) => quantity > 0)
+						.map(({ key: [warehouseId, isbn], value: quantity }) => ({
+							isbn,
+							quantity,
+							warehouseId,
+							warehouseName: ""
+						}))
+						.sort(sortBooks)
+				),
+				share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+			);
+
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
 		// This is enough to signal that the warehouse intsance is initialised.
 		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
 		// If data is not empty (warehouse exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
-		this.#stream.subscribe((w) => this.updateInstance(w));
+		this.#updateStream.subscribe((w) => this.updateInstance(w));
 	}
 
 	/**
@@ -230,39 +253,12 @@ class Warehouse implements WarehouseInterface {
 				),
 
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
-				const shareSubject = new Subject<WarehouseStockEntry[]>();
-
-				const warehouseStock = newViewStream<{ rows: WarehouseStockEntry }>(ctx, this.#db._pouch, "v1_stock/by_warehouse", {
-					group_level: 2,
-					...(this._id !== versionId("0-all") && {
-						startkey: [this._id],
-						endkey: [this._id, {}],
-						include_end: true
-					})
-				}).pipe(
-					map(({ rows }) => rows.filter(({ value: quantity }) => quantity > 0)),
-					share({
-						connector: () => shareSubject
-					})
-				);
-
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = warehouseStock.pipe(
-					map((rows) =>
-						rows
-							.map(({ key: [warehouseId, isbn], value: quantity }) => ({
-								isbn,
-								quantity,
-								warehouseId,
-								warehouseName: ""
-							}))
-							.sort(sortBooks)
-							.slice(startIx, endIx)
-					)
-				);
-				const stats = warehouseStock.pipe(
+				const entries = this.#stock.pipe(map((rows) => rows.slice(startIx, endIx)));
+
+				const stats = this.#stock.pipe(
 					map((rows) => ({
 						total: rows.length,
 						totalPages: Math.ceil(rows.length / itemsPerPage)

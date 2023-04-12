@@ -94,7 +94,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	const table = createTable(tableOptions);
 
-	render(html` <${InventoryTable} table=${table} /> `);
+	render(html` <${InventoryTable} interactive table=${table} /> `);
 
 	const row2 = rows[1];
 	// TODO: Fix table data row aria labels
