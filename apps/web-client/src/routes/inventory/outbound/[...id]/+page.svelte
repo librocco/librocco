@@ -22,7 +22,8 @@
 		ButtonSize,
 		Button,
 		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail
+		type RemoveTransactionsDetail,
+		ProgressBar
 	} from "@librocco/ui";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
@@ -36,6 +37,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+
 	import { inventoryLinks } from "$lib/data";
 
 	export let data: PageData;
@@ -53,10 +55,15 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
+		loading = true;
 		const note = db.warehouse().note();
 		await note.create();
 		goto(`/inventory/outbound/${note._id}`);
 	};
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	$: loading = !data;
 
 	$: note = data.note;
 
@@ -68,6 +75,13 @@
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
 	$: entries = noteStores.entries;
+
+	// When the note is committed or deleted, automatically redirect to 'outbound' page.
+	$: {
+		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
+			goto("/inventory/outbound");
+		}
+	}
 
 	const tableOptions = writable({
 		data: $entries
@@ -105,7 +119,7 @@
 
 	<!-- Table header slot -->
 	<svelte:fragment slot="tableHeader">
-		{#if $state && $state !== NoteState.Deleted}
+		{#if !loading && note}
 			<div class="mb-10 flex w-full items-end justify-between">
 				<div>
 					<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
@@ -144,19 +158,27 @@
 
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
-		<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+		{#if !loading}
+			{#if note}
+				<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+			{/if}
+		{:else}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+		{/if}
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
 	<div class="flex h-full items-center justify-between" slot="tableFooter">
-		{#if $paginationData.totalItems}
-			<p class="cursor-normal select-none text-sm font-medium leading-5">
-				Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
-				<strong>{$paginationData.totalItems}</strong> results
-			</p>
-		{/if}
-		{#if $paginationData.numPages > 1}
-			<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+		{#if !loading && note}
+			{#if $paginationData.totalItems}
+				<p class="cursor-normal select-none text-sm font-medium leading-5">
+					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
+					<strong>{$paginationData.totalItems}</strong> results
+				</p>
+			{/if}
+			{#if $paginationData.numPages > 1}
+				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+			{/if}
 		{/if}
 	</div>
 </InventoryPage>

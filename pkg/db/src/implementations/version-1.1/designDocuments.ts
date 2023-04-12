@@ -76,24 +76,6 @@ const stockDesignDocument: DesignDocument = {
 	}
 };
 
-/**
- * A row in `_design/v1_warehouse/_view/stock` query reponse.
- * The rows are sorted by warehouse and isbn. There might be multiple entries
- * for each [warehouse, isbn] pair so the results should be aggregated to show real quantity.
- */
-export type WarehouseStockEntry = {
-	/**
-	 * A map key in form of [warehouse, isbn]
-	 */
-	key: [string, string];
-	/**
-	 * A map value for transaction delta:
-	 * - quantity increment for "inbound" transaction
-	 * - quantity decrement for "outbound" transaction
-	 */
-	value: number;
-};
-
 export const listDeisgnDocument: DesignDocument = {
 	_id: "_design/v1_list",
 	views: {

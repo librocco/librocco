@@ -5,12 +5,11 @@
 
 	import { createDB, destroyDB } from "$lib/db";
 
-	let destroying = false;
-
+	let destroyingDb = false;
 	const handleDestroyDB = () => {
-		destroying = true;
+		destroyingDb = true;
 		destroyDB().then(() => {
-			destroying = false;
+			destroyingDb = false;
 			createDB().init();
 		});
 	};
@@ -26,6 +25,7 @@
 				<Button color={ButtonColor.White}><SA slot="startAdornment" />Back to inventory</Button>
 			</a>
 		</div>
+
 		<div class="mb-5 w-3/4 py-5">
 			<h2 class="mb-6 text-2xl">Destroy IndexedDB</h2>
 			<p class="mb-6 text-gray-500">
@@ -35,9 +35,15 @@
 				click "Back to inventory" button). This will initialise the new instance of the db and, if the docker dev db is running, populate
 				the db with the data pulled from the remote db.
 			</p>
-			<Button disabled={destroying} class={destroying ? "bg-gray-200 hover:bg-gray-200" : ""} on:click={handleDestroyDB}
-				>Destroy IndexedDB</Button
-			>
+			<Button disabled={destroyingDb} class={destroyingDb ? "!bg-gray-200" : ""} on:click={handleDestroyDB}>Destroy IndexedDB</Button>
 		</div>
+
+		<div class="separator" />
 	</section>
 </InventoryPage>
+
+<style>
+	.separator {
+		@apply mt-6 mb-10 h-px w-[80%] bg-gray-200;
+	}
+</style>

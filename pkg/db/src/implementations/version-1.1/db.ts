@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { map, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { BooksInterface, DbStream, DesignDocument, InNoteList, NavListEntry, Replicator } from "@/types";
-import { DatabaseInterface, NoteListViewResp, WarehouseInterface, WarehouseListViewResp } from "./types";
+import { BooksInterface, CouchDocument, DbStream, DesignDocument, InNoteList, MapReduceRow, NavListEntry, Replicator } from "@/types";
+import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -12,8 +12,9 @@ import designDocs from "./designDocuments";
 import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
+import { newView } from "./view";
 
-import { newViewStream } from "@/utils/pouchdb";
+import { scanDesignDocuments } from "@/utils/pouchdb";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -27,51 +28,54 @@ class Database implements DatabaseInterface {
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
 
-		const warehouseListCache = new ReplaySubject<NavListEntry[]>(1);
-		this.#warehouseListStream = newViewStream<WarehouseListViewResp>({}, this._pouch, "v1_list/warehouses").pipe(
-			map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))),
-			share({ connector: () => warehouseListCache })
-		);
+		const warehouseListCache = new BehaviorSubject<NavListEntry[]>([]);
+		this.#warehouseListStream = this.view<WarehouseListRow>("v1_list/warehouses")
+			.stream({})
+			.pipe(
+				map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))),
+				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
+			);
 
-		const outNoteListCache = new ReplaySubject<NavListEntry[]>(1);
-		this.#outNoteListStream = newViewStream<NoteListViewResp>({}, this._pouch, "v1_list/outbound").pipe(
-			map(({ rows }) =>
-				rows
-					.filter(({ value: { committed } }) => !committed)
-					.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))
-			),
-			share({ connector: () => outNoteListCache })
-		);
+		const outNoteListCache = new BehaviorSubject<NavListEntry[]>([]);
+		this.#outNoteListStream = this.view<OutNoteListRow>("v1_list/outbound")
+			.stream({})
+			.pipe(
+				map(({ rows }) =>
+					rows
+						.filter(({ value: { committed } }) => !committed)
+						.map(({ key: id, value: { displayName = "not-found" } }) => ({ id, displayName }))
+				),
+				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
+			);
 
-		const inNoteListCache = new ReplaySubject<InNoteList>(1);
-		this.#inNoteListStream = newViewStream<NoteListViewResp>({}, this._pouch, "v1_list/inbound").pipe(
-			map(({ rows }) =>
-				rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
-					if (type === "warehouse") {
-						return [...acc, { id: key, displayName, notes: [] }];
-					}
-					if (committed) {
-						return acc;
-					}
-					// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
-					acc[0].notes.push({ id: key, displayName });
-					acc[acc.length - 1].notes.push({ id: key, displayName });
-					return acc;
-				}, [] as InNoteList)
-			),
-			share({ connector: () => inNoteListCache })
-		);
+		const inNoteListCache = new BehaviorSubject<InNoteList>([]);
+		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
+			.stream({})
+			.pipe(
+				map(({ rows }) => aggregateInNoteList(rows)),
+				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
+			);
 
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
 		// but will still show a warning if that number gets unexpectedly high (memory leak).
 		this._pouch.setMaxListeners(30);
 
+		// Initialise the streams
+		firstValueFrom(this.#warehouseListStream);
+		firstValueFrom(this.#inNoteListStream);
+		firstValueFrom(this.#outNoteListStream);
+
 		return this;
 	}
 
 	replicate(): Replicator {
 		return newDbReplicator(this);
+	}
+
+	async buildIndexes() {
+		const indexes = scanDesignDocuments(designDocs);
+		await Promise.all(indexes.map((view) => this._pouch.query(view)));
 	}
 
 	async init(): Promise<DatabaseInterface> {
@@ -92,6 +96,10 @@ class Database implements DatabaseInterface {
 
 		await Promise.all(dbSetup);
 		return this;
+	}
+
+	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string) {
+		return newView<R, M>(this._pouch, view);
 	}
 
 	books(): BooksInterface {
@@ -142,3 +150,22 @@ class Database implements DatabaseInterface {
 export const newDatabase = (db: PouchDB.Database): DatabaseInterface => {
 	return new Database(db);
 };
+
+// #region helpers
+const aggregateInNoteList = (rows: InNoteListRow[]): InNoteList =>
+	rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
+		if (type === "warehouse") {
+			return [...acc, { id: key, displayName, notes: [] }];
+		}
+
+		// We're not displaying committed notes in the list
+		if (committed) {
+			return acc;
+		}
+
+		// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
+		acc[0].notes.push({ id: key, displayName });
+		acc[acc.length - 1].notes.push({ id: key, displayName });
+		return acc;
+	}, [] as InNoteList);
+// #endregion helpers
