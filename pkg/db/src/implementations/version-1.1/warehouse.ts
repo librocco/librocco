@@ -37,6 +37,7 @@ class Warehouse implements WarehouseInterface {
 	_id: VersionedString;
 	docType = DocType.Warehouse;
 	_rev?: string;
+	_deleted?: boolean;
 
 	displayName = "";
 

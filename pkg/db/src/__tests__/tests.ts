@@ -287,7 +287,6 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(state).toEqual(NoteState.Committed);
 	});
-
 	// Check for updatedAt stream
 	const ts1 = note.updatedAt;
 	// Perform any update
@@ -297,6 +296,21 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	// Wait for the stream to update
 	await waitFor(() => {
 		expect((updatedAt as Date).toISOString()).toEqual(ts2);
+	});
+
+	// Deleting a note should stream deleted state
+	//
+	// We're using a different note as the previous one has already been committed.
+	let note2State: PossiblyEmpty<NoteState> = EMPTY;
+	const note2 = await db.warehouse("test-warehouse").note().create();
+	note2
+		.stream()
+		.state({})
+		.subscribe((s) => (note2State = s));
+
+	await note2.delete({});
+	await waitFor(() => {
+		expect(note2State).toEqual(NoteState.Deleted);
 	});
 };
 
