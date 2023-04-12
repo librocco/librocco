@@ -76,6 +76,13 @@
 	$: paginationData = noteStores.paginationData;
 	$: entries = noteStores.entries;
 
+	// When the note is committed or deleted, automatically redirect to 'outbound' page.
+	$: {
+		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
+			goto("/inventory/outbound");
+		}
+	}
+
 	const tableOptions = writable({
 		data: $entries
 	});
