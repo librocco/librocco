@@ -45,13 +45,16 @@ describe("createDisplayStateStore", () => {
 
 	test("should set the temp state to the internal store and update the content store", async () => {
 		const db = await newTestDB();
-		const note = await db.warehouse().note("note-1").create();
+		const note = await db.warehouse("wh1").note("note-1").create();
 
 		const internalStateStore = createInternalStateStore({}, note);
 		const displayStateStore = createDisplayStateStore({}, note, internalStateStore);
 
 		// See dummy subscription in the previous test ^^
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
+
+		// Add a transaction to the note, so we can test committing (would throw if there are no transactions)
+		await note.addVolumes({ isbn: "12345678", quantity: 1 });
 
 		displayStateStore.set(NoteState.Committed);
 		// The internal state is streamed back to the display state store, so we can test the display store for temp state
@@ -70,11 +73,11 @@ describe("createDisplayStateStore", () => {
 
 	test("should short circuit updates if the updated state is the same as the current state", async () => {
 		const db = await newTestDB();
-		const note = await db.warehouse().note("note-1").create();
+		const note = await db.warehouse("wh1").note("note-1").create();
 
 		// In production this is the most common case of setting the state to the same value.
 		// On init the state picker's bind:value runs an update with the initial state, which is the same as the current state.
-		await note.commit({});
+		await note.commit({}, { force: true }); // force the commit, without checking for transactions (would fail otherwise -> no transactions)
 
 		const internalStateStore = createInternalStateStore({}, note);
 		const displayStateStore = createDisplayStateStore({}, note, internalStateStore);

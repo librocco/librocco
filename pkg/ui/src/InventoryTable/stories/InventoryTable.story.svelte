@@ -22,11 +22,17 @@
 </script>
 
 <Hst.Story title="Tables / Inventory Table (Stock & In Note)">
-	<div class="flex flex-col gap-y-4">
-		<div class="w-24 p-1">
-			<Button color={ButtonColor.Primary} on:click={addRows}>Add row</Button>
-		</div>
-
+	<Hst.Variant title="Default">
 		<InventoryTable table={defaultStockTable} />
-	</div>
+	</Hst.Variant>
+
+	<Hst.Variant title="Interactive">
+		<div class="flex flex-col gap-y-4">
+			<div class="w-24 p-1">
+				<Button color={ButtonColor.Primary} on:click={addRows}>Add row</Button>
+			</div>
+
+			<InventoryTable table={defaultStockTable} interactive />
+		</div>
+	</Hst.Variant>
 </Hst.Story>

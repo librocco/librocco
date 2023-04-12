@@ -25,12 +25,24 @@ export type CouchDocument<Doc extends Record<string, any> = Record<string, any>>
 	_id: VersionedString;
 	docType: DocType;
 	_rev?: string | undefined;
+	_deleted?: boolean;
 } & Doc;
 
 export type DesignDocument = {
 	_id: `_design/${string}`;
 	filters?: Record<string, string>;
 	views: Record<string, { map: string; filter?: string; reduce?: string }>;
+};
+
+/** A utility type used to construct a response we get from the map/reduce (view) query */
+export type MapReduceRow<K = any, V = any> = {
+	id: string;
+	key: K;
+	value: V;
+};
+
+export type MapReduceRes<R extends MapReduceRow, M extends CouchDocument> = {
+	rows: Array<R & { doc?: M }>;
 };
 
 /** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
@@ -121,8 +133,13 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
 	removeTransactions: (...transactions: Omit<VolumeStock, "quantity">[]) => Promise<NoteInterface<A>>;
-	/** Commit the note, no updates to the note (except updates to `displayName`) can be performed after this. */
-	commit: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	/**
+	 * Commit the note, no updates to the note (except updates to `displayName`) can be performed after this.
+	 * @param ctx debug context
+	 * @param options object
+	 * @param options.force force commit, even if the note is empty (this should be used only in tests)
+	 */
+	commit: (ctx: debug.DebugCtx, options?: { force: true }) => Promise<NoteInterface<A>>;
 	/**
 	 * Stream returns an object containing observable streams for the note:
 	 * - `state` - streams the note's `state`
@@ -305,6 +322,12 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * Sets up replication by returning four methods that enable the client to schedule the init stages more explicitly
 	 */
 	replicate: () => Replicator;
+	/**
+	 * Perform initial query for each of the views as the initial query also builds the index. After that, the update us quite cheap.
+	 *
+	 * This should be ran after the initial replication to build local views with the data received from the replication.
+	 */
+	buildIndexes: () => Promise<void>;
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.

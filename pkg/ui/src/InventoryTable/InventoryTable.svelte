@@ -4,12 +4,15 @@
 	import type { createTable } from "./table";
 	import type { InventoryTableData, RemoveTransactionsDetail, TransactionUpdateDetail } from "./types";
 
-	import { Checkbox, Button, ButtonColor } from "../";
+	import { Checkbox, Button, ButtonColor, BadgeSize } from "../";
 	import QuantityInput from "./QuantityInput.svelte";
+	import Badge from "../Badge/Badge.svelte";
 
 	import { thRowBaseStyles } from "./utils";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+
+	export let interactive = false;
 
 	const { resetRowSelection, table: tableAction, tableRow } = table;
 	$: ({ rows, selected } = $table);
@@ -78,12 +81,16 @@
 				}
 			}}
 		>
-			<th scope="col" class="px-2 text-center">
-				<span class="inline-block">
-					<Checkbox name="Select all" checked={selected.length ? true : false} />
-				</span>
-			</th>
-			<th scope="col" class={thRowBaseStyles}>
+			<!-- Show chackbox/row selection only on interactive variant -->
+			{#if interactive}
+				<th scope="col" class="px-2 text-center">
+					<span class="inline-block">
+						<Checkbox name="Select all" checked={selected.length ? true : false} />
+					</span>
+				</th>
+			{/if}
+
+			<th scope="col" class="{thRowBaseStyles} {interactive ? '' : 'pl-8'}">
 				<span class="hidden lg:inline">{headers.isbn}</span>
 				<span class="inline lg:hidden">book</span>
 			</th>
@@ -135,16 +142,20 @@
 				}}
 				class={`whitespace-nowrap text-sm font-light text-gray-500 ${selected.includes(row) ? "bg-gray-100" : "even:bg-gray-50"}`}
 			>
-				<td
-					class={`px-2 text-center sm:align-middle border-l-4 
-						${selected.includes(row) ? "border-teal-500" : "border-transparent"}
-					`}
-				>
-					<span class="inline-block">
-						<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
-					</span>
-				</td>
-				<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
+				<!-- Show chackbox/row selection only on interactive variant -->
+				{#if interactive}
+					<td
+						class="border-l-4 px-2 text-center sm:align-middle {selected.includes(row)
+							? 'border-teal-500'
+							: 'border-transparent'}"
+					>
+						<span class="inline-block">
+							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
+						</span>
+					</td>
+				{/if}
+
+				<th scope="row" class="px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
 					{isbn}
 					<dl class="font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
@@ -162,7 +173,13 @@
 					{authors}
 				</td>
 				<td class="py-4 px-3 text-left">
-					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
+					{#if interactive}
+						<!-- For interactive variant, show the quantity input element -->
+						<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
+					{:else}
+						<!-- For non interactive variant, show only the (non-interative) badge element -->
+						<Badge label={quantity.toString()} size={BadgeSize.LG} />
+					{/if}
 				</td>
 				<td class="py-4 px-3 text-left">
 					{price}
