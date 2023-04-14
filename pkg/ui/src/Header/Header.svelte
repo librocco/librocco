@@ -10,13 +10,13 @@
 	export let links = [] as HeaderLink[];
 </script>
 
-<header class="w-full bg-gray-900 px-[70px]">
-	<div class="flex h-[4.5rem] items-center border-b border-sky-900 ">
-		<div class="mr-4">
+<header class="w-full bg-gray-900">
+	<div class="flex gap-x-4 h-[4.5rem] items-center border-b border-sky-900 px-16">
+		<div>
 			<Logo />
 		</div>
 
-		<nav class="flex space-x-4">
+		<nav class="flex gap-x-4">
 			{#each links as { label, href }}
 				<a
 					{href}

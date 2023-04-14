@@ -112,7 +112,7 @@
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
-	<div class="flex h-full items-center justify-between" slot="tableFooter">
+	<div class="flex h-full items-center justify-between flex-col lg:flex-row gap-y-2" slot="tableFooter">
 		{#if !loading && warehouse}
 			{#if $paginationData.totalItems}
 				<p class="cursor-normal select-none text-sm font-medium leading-5">

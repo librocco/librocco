@@ -4,3 +4,12 @@
 </script>
 
 <slot />
+
+<style global>
+	:global(body) {
+		height: 100%;
+		padding: 0;
+		margin: 0;
+		overflow-y: hidden;
+	}
+</style>
