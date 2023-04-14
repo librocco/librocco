@@ -1,5 +1,5 @@
 <nav aria-label="Sidebar">
-	<div class="flex flex-1 flex-col divide-y-2">
+	<div class="flex flex-col divide-y-2">
 		<slot />
 	</div>
 	{#if $$slots.actions}
