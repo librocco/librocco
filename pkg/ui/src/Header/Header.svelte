@@ -6,13 +6,12 @@
 		href: string;
 	}
 
-	export let title = "Stock";
 	export let currentLocation: string;
 	export let links = [] as HeaderLink[];
 </script>
 
 <header class="w-full bg-gray-900 px-[70px]">
-	<div class="flex h-16 items-center border-b border-sky-900 ">
+	<div class="flex h-[4.5rem] items-center border-b border-sky-900 ">
 		<div class="mr-4">
 			<Logo />
 		</div>
@@ -30,12 +29,5 @@
 				</a>
 			{/each}
 		</nav>
-	</div>
-	<div class="flex h-24 items-center justify-between">
-		<h1 class="text-3xl font-bold leading-7 text-white">
-			{title}
-		</h1>
-
-		<slot name="actionButton" />
 	</div>
 </header>

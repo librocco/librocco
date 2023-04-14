@@ -74,7 +74,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} title="Stock" currentLocation="/inventory/stock" slot="header" />
+	<Header links={inventoryLinks} currentLocation="/inventory/stock" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
