@@ -10,7 +10,7 @@
 			</section>
 		{/if}
 
-		<section class="w-full justify-between h-full flex gap-y-8 flex-col overflow-auto py-8">
+		<section class="w-full justify-start h-full flex gap-y-8 flex-col overflow-auto py-8">
 			{#if $$slots.tableHeader}
 				<div class="px-8">
 					<slot name="tableHeader" />
@@ -18,7 +18,7 @@
 			{/if}
 
 			{#if $$slots.table}
-				<div class="">
+				<div class="grow">
 					<slot name="table" />
 				</div>
 			{/if}
