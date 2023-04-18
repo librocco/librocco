@@ -212,17 +212,18 @@ jobs:
       run: rush update
     - name: Build packages
       run: rush build
-    - name: Build web-client app using prefix ${{ github.ref }}
-      run: cd apps/web-client && BASE_PATH=${GITHUB_REF#refs/heads/} rushx build:prod
+    - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
+      run: cd apps/web-client && rushx build:prod
       env:
         NODE_ENV: deployment
+        BASE_PATH: ${{ github.head_ref || github.ref_name }}
     - name: Install ncftp
       run: |
         sudo apt-get update
         sudo apt-get install ncftp
     - name: Copy built app to bunny storage zone
-      run: ncftpput -R -v -u librocco -p "${BUNNY_STORAGE_PASSWORD}" -m storage.bunnycdn.com ${GITHUB_REF#refs/heads/} apps/web-client/build/*
+      run: ncftpput -R -v -u librocco -p "${BUNNY_STORAGE_PASSWORD}" -m storage.bunnycdn.com ${{ github.head_ref || github.ref_name }} apps/web-client/build/*
       env:
         BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
     - name: Output link to deployed app
-      run: echo You can view the app on https://librocco.b-cdn.net/${GITHUB_REF#refs/heads/}/index.html | tee -a $GITHUB_STEP_SUMMARY
+      run: echo You can view the app on https://librocco.b-cdn.net/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
