@@ -2,6 +2,8 @@
 	import { Search } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
+
 	import { writable } from "svelte/store";
 
 	import {
@@ -79,7 +81,7 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $warehouseList as { displayName, id }}
-			<SidebarItem href="/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
+			<SidebarItem href="{base}/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
 			<NewEntitySideNavButton label="Create warehouse" on:click={handleCreateWarehouse} />

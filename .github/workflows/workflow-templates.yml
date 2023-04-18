@@ -13,7 +13,7 @@ jobs:
     - name: Run script to generate Github Actions
       run: ./.github/build-workflows.sh
     - name: Check if there are any changes
-      run: |-
+      run: |
         git status
         git diff
-        git status | grep "working tree clean" || false
+        git status | grep "working tree clean" || false && echo Did you forget to run build-workflows.sh?

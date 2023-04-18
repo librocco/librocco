@@ -3,6 +3,7 @@
 ytt_path=$(which ytt)
 
 enure_ytt () {
+    echo checking
     if [ -z "$ytt_path" ] ; then
         mkdir -p ~/.local/bin/
         ytt_path=~/.local/bin/ytt
@@ -21,6 +22,8 @@ enure_ytt () {
             echo Not ytt installed. Downloading ${url} into ${ytt_path}
             ${dl_bin} ${url} > ${ytt_path}
             chmod 755 ${ytt_path}
+        else
+            export PATH=$PATH:~/.local/bin/
         fi
     fi
 }
