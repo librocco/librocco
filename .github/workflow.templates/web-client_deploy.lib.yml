@@ -22,5 +22,5 @@ steps:
   -  #@ install_ncftp()
   -  #@ ncftp_bunny_copy(name="built app", src="apps/web-client/build/*", dst="${{ github.head_ref || github.ref_name }}")
   - name: Output link to deployed app
-    run: echo You can view the app on https://librocco.b-cdn.net/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
+    run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
 #@ end
