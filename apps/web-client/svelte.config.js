@@ -13,7 +13,7 @@ const config = {
 			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug"]
 		},
 		paths: {
-			base: process.env.NODE_ENV === "deployment" ? "/" + process.env.BASE_PATH : ""
+			base: process.env.NODE_ENV === "production" ? "/" + process.env.BASE_PATH : ""
 		},
 		typescript: {
 			config: (config) => ({
