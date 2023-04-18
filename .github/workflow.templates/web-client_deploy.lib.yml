@@ -6,7 +6,7 @@
 name: Deploy web-client app to bunny cdn
 runs-on: ubuntu-latest
 steps:
-  - uses: actions/setup-node@v2
+  - uses: actions/setup-node@v3
     with:
         node-version: "16"
   -  #@ checkout()
