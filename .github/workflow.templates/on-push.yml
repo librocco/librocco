@@ -58,4 +58,3 @@ jobs:
             - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
               run: rush check-workspace-projects
     deploy-production: #@ deploy()
-        

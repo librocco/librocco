@@ -18,6 +18,7 @@ steps:
     run: cd apps/web-client && rushx build:prod
     env:
       BASE_PATH: ${{ github.ref }}
+      NODE_ENV: deployment
   -  #@ install_ncftp()
   -  #@ ncftp_bunny_copy(name="built app", src="apps/web-client/build/*", dst="${GITHUB_REF#refs/heads/}")
   - name: Output link to deployed app
