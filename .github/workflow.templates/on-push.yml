@@ -3,6 +3,7 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
+#@ load("web-client_deploy.lib.yml", "deploy")
 
 name: Checks
 
@@ -27,7 +28,7 @@ jobs:
             checks: write
         steps:
             - uses: actions/checkout@v2
-            - uses: actions/setup-node@v2
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             -  #@ cache_node()
@@ -47,7 +48,7 @@ jobs:
             - uses: actions/checkout@v2
               with:
                   fetch-depth: 0
-            - uses: actions/setup-node@v2
+            - uses: actions/setup-node@v3
               with:
                   node-version: "16"
             -  #@ cache_node()
@@ -56,3 +57,4 @@ jobs:
             -  #@ rush_build()
             - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
               run: rush check-workspace-projects
+    deploy-production: #@ deploy()
