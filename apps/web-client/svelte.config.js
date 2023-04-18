@@ -8,9 +8,12 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter(),
+		adapter: adapter({ fallback: "index.html" }),
 		prerender: {
-			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound"]
+			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug"]
+		},
+		paths: {
+			base: process.env.NODE_ENV === "production" ? "/" + process.env.BASE_PATH : ""
 		},
 		typescript: {
 			config: (config) => ({

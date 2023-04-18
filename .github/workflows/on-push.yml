@@ -12,11 +12,11 @@ jobs:
       checks: write
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -49,11 +49,11 @@ jobs:
       checks: write
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -79,11 +79,11 @@ jobs:
       checks: write
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -109,11 +109,11 @@ jobs:
       checks: write
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -138,11 +138,11 @@ jobs:
       checks: write
     steps:
     - uses: actions/checkout@v2
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -168,11 +168,11 @@ jobs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-    - uses: actions/setup-node@v2
+    - uses: actions/setup-node@v3
       with:
         node-version: "16"
     - name: Cache node modules
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: |
           ~/.rush
@@ -188,3 +188,45 @@ jobs:
       run: rush build
     - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
       run: rush check-workspace-projects
+  deploy-production:
+    name: Deploy web-client app to bunny cdn
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "16"
+    - name: Checkout repository
+      uses: actions/checkout@v3
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
+      run: cd apps/web-client && rushx build:prod
+      env:
+        BASE_PATH: ${{ github.head_ref || github.ref_name }}
+    - name: Install ncftp
+      run: |
+        sudo apt-get update
+        sudo apt-get install ncftp
+    - name: Copy built app to bunny storage zone
+      run: ncftpput -R -v -u librocco -p "${BUNNY_STORAGE_PASSWORD}" -m storage.bunnycdn.com ${{ github.head_ref || github.ref_name }} apps/web-client/build/*
+      env:
+        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+    - name: Purge bunny cache
+      run: 'curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"'
+      env:
+        BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+    - name: Output link to deployed app
+      run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
