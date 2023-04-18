@@ -42,3 +42,9 @@ export class EmptyNoteError extends Error {
 		super("Trying to commit an empty note");
 	}
 }
+
+export class EmptyTransactionError extends Error {
+	constructor() {
+		super("Trying to emter an empty transaction");
+	}
+}
