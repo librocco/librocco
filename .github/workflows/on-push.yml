@@ -225,5 +225,9 @@ jobs:
       run: ncftpput -R -v -u librocco -p "${BUNNY_STORAGE_PASSWORD}" -m storage.bunnycdn.com ${{ github.head_ref || github.ref_name }} apps/web-client/build/*
       env:
         BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+    - name: Purge bunny cache
+      run: 'curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"'
+      env:
+        BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
     - name: Output link to deployed app
       run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
