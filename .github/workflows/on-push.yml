@@ -213,9 +213,8 @@ jobs:
     - name: Build packages
       run: rush build
     - name: Build web-client app using prefix ${{ github.ref }}
-      run: cd apps/web-client && rushx build:prod
+      run: cd apps/web-client && BASE_PATH=${GITHUB_REF#refs/heads/} rushx build:prod
       env:
-        BASE_PATH: ${{ github.ref }}
         NODE_ENV: deployment
     - name: Install ncftp
       run: |
@@ -226,4 +225,4 @@ jobs:
       env:
         BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
     - name: Output link to deployed app
-      run: echo You can view the app on https://librocco.b-cdn.net/${GITHUB_REF#refs/heads/} | tee -a $GITHUB_STEP_SUMMARY
+      run: echo You can view the app on https://librocco.b-cdn.net/${GITHUB_REF#refs/heads/}/index.html | tee -a $GITHUB_STEP_SUMMARY
