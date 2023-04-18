@@ -212,10 +212,11 @@ jobs:
       run: rush update
     - name: Build packages
       run: rush build
-    - name: Build web-client app
+    - name: Build web-client app using prefix ${{ github.ref }}
       run: cd apps/web-client && rushx build:prod
       env:
-        BASE_PATH: ""
+        BASE_PATH: ${{ github.ref }}
+        NODE_ENV: deployment
     - name: Install ncftp
       run: |
         sudo apt-get update
