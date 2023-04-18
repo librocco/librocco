@@ -215,7 +215,6 @@ jobs:
     - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
       run: cd apps/web-client && rushx build:prod
       env:
-        NODE_ENV: deployment
         BASE_PATH: ${{ github.head_ref || github.ref_name }}
     - name: Install ncftp
       run: |
