@@ -1,7 +1,6 @@
 import adapter from "@sveltejs/adapter-static";
 import preprocess from "svelte-preprocess";
 
-
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
@@ -14,7 +13,7 @@ const config = {
 			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug"]
 		},
 		paths: {
-			base: process.env.NODE_ENV === "deployment" ? '/' + process.env.BASE_PATH : ""
+			base: process.env.NODE_ENV === "deployment" ? "/" + process.env.BASE_PATH : ""
 		},
 		typescript: {
 			config: (config) => ({
