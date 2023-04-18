@@ -1,10 +1,9 @@
 #@ def checkout(fetch_depth=None):
 name: Checkout repository
-uses: actions/checkout@v2
+uses: actions/checkout@v3
 #@ if fetch_depth != None:
 with:
   fetch-depth: #@ fetch_depth
-  node_version: "16"
 #@ end
 #@ end
 
