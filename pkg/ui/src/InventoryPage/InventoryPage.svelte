@@ -3,14 +3,14 @@
 		<slot name="header" />
 	</div>
 
-	<main class="basis-[95%] flex divide-x divide-gray-300 items-stretch overflow-y-auto">
+	<main class="flex basis-[95%] items-stretch divide-x divide-gray-300 overflow-y-auto">
 		{#if $$slots.sidebar}
-			<section class="shrink-0 basis-32 sm:basis-56 h-full bg-gray-50 overflow-y-auto overflow-x-hidden whitespace-nowrap">
+			<section class="h-full shrink-0 basis-32 overflow-y-auto overflow-x-hidden whitespace-nowrap bg-gray-50 sm:basis-56">
 				<slot name="sidebar" />
 			</section>
 		{/if}
 
-		<section class="w-full justify-start h-full flex gap-y-8 flex-col overflow-auto py-8">
+		<section class="flex h-full w-full flex-col justify-start gap-y-8 overflow-auto py-8">
 			{#if $$slots.tableHeader}
 				<div class="px-8">
 					<slot name="tableHeader" />

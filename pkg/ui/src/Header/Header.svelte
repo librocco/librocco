@@ -11,7 +11,7 @@
 </script>
 
 <header class="w-full bg-gray-900">
-	<div class="flex gap-x-4 h-[4.5rem] items-center border-b border-sky-900 px-16">
+	<div class="flex h-[4.5rem] items-center gap-x-4 border-b border-sky-900 px-16">
 		<div>
 			<Logo />
 		</div>
