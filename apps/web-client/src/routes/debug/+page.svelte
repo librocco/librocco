@@ -4,6 +4,7 @@
 	import { Button, ButtonColor, Header, InventoryPage } from "@librocco/ui";
 
 	import { createDB, destroyDB } from "$lib/db";
+	import { base } from "$app/paths";
 
 	let destroyingDb = false;
 	const handleDestroyDB = () => {
@@ -21,7 +22,7 @@
 
 	<section class="px-48 pt-14" slot="table">
 		<div class="mb-12">
-			<a href="/inventory/stock">
+			<a href="{base}/inventory/stock">
 				<Button color={ButtonColor.White}><SA slot="startAdornment" />Back to inventory</Button>
 			</a>
 		</div>
