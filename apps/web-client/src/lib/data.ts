@@ -1,14 +1,15 @@
+import { base } from "$app/paths";
 export const inventoryLinks = [
 	{
 		label: "Stock",
-		href: "/inventory/stock"
+		href: `${base}/inventory/stock`
 	},
 	{
 		label: "Inbound",
-		href: "/inventory/inbound"
+		href: `${base}/inventory/inbound`
 	},
 	{
 		label: "Outbound",
-		href: "/inventory/outbound"
+		href: `${base}/inventory/outbound`
 	}
 ];
