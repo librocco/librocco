@@ -155,9 +155,9 @@
 					</td>
 				{/if}
 
-				<th scope="row" class="px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
+				<th scope="row" class="p-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
 					{isbn}
-					<dl class="font-normal lg:hidden">
+					<dl class="max-w-[15rem] truncate font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
 						<dt class="sr-only">Authors:</dt>
@@ -167,7 +167,7 @@
 					</dl>
 				</th>
 				<td class="hidden px-3 py-4 lg:table-cell">
-					{title}
+					<span class="inline-block max-w-[15rem] truncate">{title}</span>
 				</td>
 				<td class="hidden py-4 px-3 lg:table-cell">
 					{authors}

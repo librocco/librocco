@@ -1,35 +1,33 @@
-<script>
-	import { compute_slots } from "svelte/internal";
-</script>
+<div class="flex h-screen flex-col">
+	<div class="basis-[5%]">
+		<slot name="header" />
+	</div>
 
-<body class="flex h-screen flex-col">
-	<slot name="header" />
-
-	<main class="flex h-full divide-x divide-gray-300 border border-gray-300">
+	<main class="flex basis-[95%] items-stretch divide-x divide-gray-300 overflow-y-auto">
 		{#if $$slots.sidebar}
-			<section class="w-[280px] bg-gray-50">
+			<section class="h-full shrink-0 basis-32 overflow-y-auto overflow-x-hidden whitespace-nowrap bg-gray-50 sm:basis-56">
 				<slot name="sidebar" />
 			</section>
 		{/if}
 
-		<section class="flex w-full flex-col">
+		<section class="flex h-full w-full flex-col justify-start gap-y-8 overflow-auto py-8">
 			{#if $$slots.tableHeader}
-				<div class="min-h-[100px] flex-shrink-0 p-10 pt-6">
+				<div class="px-8">
 					<slot name="tableHeader" />
 				</div>
 			{/if}
 
 			{#if $$slots.table}
-				<div class="h-full">
+				<div class="grow">
 					<slot name="table" />
 				</div>
 			{/if}
 
 			{#if $$slots.tableFooter}
-				<div class="mt-auto min-h-[140px] p-10">
+				<div class="px-8">
 					<slot name="tableFooter" />
 				</div>
 			{/if}
 		</section>
 	</main>
-</body>
+</div>
