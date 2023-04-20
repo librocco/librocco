@@ -70,7 +70,7 @@
 
 	<Hst.Variant title="Prototype: Stock">
 		<InventoryPage>
-			<Header currentLocation="/inventory/stock" title="Stock" slot="header" />
+			<Header currentLocation="/inventory/stock" slot="header" />
 			<SideBarNav slot="sidebar">
 				<SidebarItem href="#" name="All" current />
 				<SidebarItem href="#" name="Varia 2018" />
@@ -102,7 +102,7 @@
 
 	<Hst.Variant title="Prototype: Inbound">
 		<InventoryPage>
-			<Header currentLocation="/inventory/inbound" title="Inbound" slot="header" />
+			<Header currentLocation="/inventory/inbound" slot="header" />
 			<SideBarNav slot="sidebar">
 				<SidebarItemGroup name="Nuovo 2022" index={0} items={[]} />
 				<NewEntitySideNavButton label="Create Note" />
@@ -152,7 +152,7 @@
 
 	<Hst.Variant title="Prototype: Outbound">
 		<InventoryPage>
-			<Header currentLocation="/inventory/outbound" title="Outbound" slot="header" />
+			<Header currentLocation="/inventory/outbound" slot="header" />
 			<SideBarNav slot="sidebar">
 				<SidebarItem name="Silvio" href="" current />
 				<SidebarItem name="Sandra" href="" />
