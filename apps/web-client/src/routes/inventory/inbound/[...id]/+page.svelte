@@ -110,7 +110,7 @@
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} title="Inbound" currentLocation="/inventory/inbound" slot="header" />
+	<Header links={inventoryLinks} currentLocation="/inventory/inbound" slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
@@ -192,7 +192,7 @@
 	</svelte:fragment>
 
 	<!-- Table footer slot -->
-	<div class="flex h-full items-center justify-between" slot="tableFooter">
+	<div class="flex h-full flex-col items-center justify-between gap-y-2 lg:flex-row" slot="tableFooter">
 		{#if !loading && note}
 			{#if $paginationData.totalItems}
 				<p class="cursor-normal select-none text-sm font-medium leading-5">
