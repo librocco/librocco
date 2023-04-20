@@ -1,11 +1,12 @@
 import { redirect } from "@sveltejs/kit";
+import { base } from "$app/paths";
 
 import type { LayoutLoad } from "./$types";
 
 const redirects = {
-	outbound: "/inventory/outbound",
-	inbound: "/inventory/inbound",
-	stock: "/inventory/stock/0-all"
+	outbound: `${base}/inventory/outbound`,
+	inbound: `${base}/inventory/inbound`,
+	stock: `${base}/inventory/stock/0-all`
 };
 
 export const load: LayoutLoad = async ({ route, params, parent }) => {
