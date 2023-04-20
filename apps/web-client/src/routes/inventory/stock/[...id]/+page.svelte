@@ -49,7 +49,7 @@
 		loading = true;
 		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
 		await warehouse.create();
-		goto(`/inventory/stock/${warehouse._id}`);
+		goto(`${base}/inventory/stock/${warehouse._id}`);
 	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
