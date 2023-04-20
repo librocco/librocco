@@ -107,7 +107,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation="/inventory/outbound" slot="header" />
+	<Header links={inventoryLinks} currentLocation={`${base}/inventory/outbound`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
