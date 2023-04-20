@@ -60,7 +60,7 @@
 		loading = true;
 		const note = db.warehouse().note();
 		await note.create();
-		goto(`/inventory/outbound/${note._id}`);
+		goto(`${base}/inventory/outbound/${note._id}`);
 	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
@@ -81,7 +81,7 @@
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto("/inventory/outbound");
+			goto(`${base}/inventory/outbound`);
 		}
 	}
 
