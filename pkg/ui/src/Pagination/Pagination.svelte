@@ -80,7 +80,7 @@
 	</nav>
 {/if}
 
-<style>
+<style lang="postcss">
 	.button {
 		@apply flex h-[38px] w-10 items-center justify-center border text-sm font-medium leading-5;
 	}

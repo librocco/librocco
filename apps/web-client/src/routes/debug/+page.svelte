@@ -18,7 +18,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header currentLocation="/" title="Debug" slot="header" />
+	<Header currentLocation="/" slot="header" />
 
 	<section class="px-48 pt-14" slot="table">
 		<div class="mb-12">
@@ -43,7 +43,7 @@
 	</section>
 </InventoryPage>
 
-<style>
+<style lang="postcss">
 	.separator {
 		@apply mt-6 mb-10 h-px w-[80%] bg-gray-200;
 	}
