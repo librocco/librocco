@@ -3,8 +3,8 @@
 	"version": "0.0.1",
 	"main": "./dist/index.js",
 	"scripts": {
-		"build": "svelte-package",
-		"build:watch": "svelte-package -w",
+		"build": "svelte-package -o dist",
+		"build:watch": "svelte-package -o dist -w",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning --diagnostic-sources js,svelte",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
@@ -19,7 +19,7 @@
 	"devDependencies": {
 		"@sveltejs/adapter-auto": "^2.0.0",
 		"@sveltejs/kit": "~1.15.7",
-		"@sveltejs/package": "^2.0.2",
+		"@sveltejs/package": "^2.0.0",
 		"@tailwindcss/forms": "~0.5.3",
 		"@testing-library/svelte": "~3.1.3",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
@@ -66,5 +66,515 @@
 	"dependencies": {
 		"uuid": "~9.0.0"
 	},
-	"type": "module"
+	"type": "module",
+	"exports": {
+		"./package.json": "./package.json",
+		"./Badge/Badge.svelte": {
+			"types": "./dist/Badge/Badge.svelte.d.ts",
+			"svelte": "./dist/Badge/Badge.svelte",
+			"default": "./dist/Badge/Badge.svelte"
+		},
+		"./Badge/enums": {
+			"types": "./dist/Badge/enums.d.ts",
+			"default": "./dist/Badge/enums.js"
+		},
+		"./Badge": {
+			"types": "./dist/Badge/index.d.ts",
+			"svelte": "./dist/Badge/index.js",
+			"default": "./dist/Badge/index.js"
+		},
+		"./Button/Button.svelte": {
+			"types": "./dist/Button/Button.svelte.d.ts",
+			"svelte": "./dist/Button/Button.svelte",
+			"default": "./dist/Button/Button.svelte"
+		},
+		"./Button/enums": {
+			"types": "./dist/Button/enums.d.ts",
+			"default": "./dist/Button/enums.js"
+		},
+		"./Button": {
+			"types": "./dist/Button/index.d.ts",
+			"svelte": "./dist/Button/index.js",
+			"default": "./dist/Button/index.js"
+		},
+		"./Button/styles": {
+			"types": "./dist/Button/styles.d.ts",
+			"default": "./dist/Button/styles.js"
+		},
+		"./Dropdown/Dropdown.svelte": {
+			"types": "./dist/Dropdown/Dropdown.svelte.d.ts",
+			"svelte": "./dist/Dropdown/Dropdown.svelte",
+			"default": "./dist/Dropdown/Dropdown.svelte"
+		},
+		"./Dropdown/DropdownItem.svelte": {
+			"types": "./dist/Dropdown/DropdownItem.svelte.d.ts",
+			"svelte": "./dist/Dropdown/DropdownItem.svelte",
+			"default": "./dist/Dropdown/DropdownItem.svelte"
+		},
+		"./Dropdown/enums": {
+			"types": "./dist/Dropdown/enums.d.ts",
+			"default": "./dist/Dropdown/enums.js"
+		},
+		"./Dropdown": {
+			"types": "./dist/Dropdown/index.d.ts",
+			"svelte": "./dist/Dropdown/index.js",
+			"default": "./dist/Dropdown/index.js"
+		},
+		"./FormFields/Checkbox/Checkbox.svelte": {
+			"types": "./dist/FormFields/Checkbox/Checkbox.svelte.d.ts",
+			"svelte": "./dist/FormFields/Checkbox/Checkbox.svelte",
+			"default": "./dist/FormFields/Checkbox/Checkbox.svelte"
+		},
+		"./FormFields/Checkbox": {
+			"types": "./dist/FormFields/Checkbox/index.d.ts",
+			"svelte": "./dist/FormFields/Checkbox/index.js",
+			"default": "./dist/FormFields/Checkbox/index.js"
+		},
+		"./FormFields/TextArea/Textarea.svelte": {
+			"types": "./dist/FormFields/TextArea/Textarea.svelte.d.ts",
+			"svelte": "./dist/FormFields/TextArea/Textarea.svelte",
+			"default": "./dist/FormFields/TextArea/Textarea.svelte"
+		},
+		"./FormFields/TextArea": {
+			"types": "./dist/FormFields/TextArea/index.d.ts",
+			"svelte": "./dist/FormFields/TextArea/index.js",
+			"default": "./dist/FormFields/TextArea/index.js"
+		},
+		"./FormFields/TextField/TextField.svelte": {
+			"types": "./dist/FormFields/TextField/TextField.svelte.d.ts",
+			"svelte": "./dist/FormFields/TextField/TextField.svelte",
+			"default": "./dist/FormFields/TextField/TextField.svelte"
+		},
+		"./FormFields/TextField": {
+			"types": "./dist/FormFields/TextField/index.d.ts",
+			"svelte": "./dist/FormFields/TextField/index.js",
+			"default": "./dist/FormFields/TextField/index.js"
+		},
+		"./FormFields/enums": {
+			"types": "./dist/FormFields/enums.d.ts",
+			"default": "./dist/FormFields/enums.js"
+		},
+		"./FormFields": {
+			"types": "./dist/FormFields/index.d.ts",
+			"svelte": "./dist/FormFields/index.js",
+			"default": "./dist/FormFields/index.js"
+		},
+		"./Forms/BookDetailForm.svelte": {
+			"types": "./dist/Forms/BookDetailForm.svelte.d.ts",
+			"svelte": "./dist/Forms/BookDetailForm.svelte",
+			"default": "./dist/Forms/BookDetailForm.svelte"
+		},
+		"./Forms": {
+			"types": "./dist/Forms/index.d.ts",
+			"svelte": "./dist/Forms/index.js",
+			"default": "./dist/Forms/index.js"
+		},
+		"./Forms/schema/book-detail.schema.json": "./dist/Forms/schema/book-detail.schema.json",
+		"./Forms/types": {
+			"types": "./dist/Forms/types.d.ts",
+			"default": "./dist/Forms/types.js"
+		},
+		"./Header/Header.svelte": {
+			"types": "./dist/Header/Header.svelte.d.ts",
+			"svelte": "./dist/Header/Header.svelte",
+			"default": "./dist/Header/Header.svelte"
+		},
+		"./Header/Logo.svelte": {
+			"types": "./dist/Header/Logo.svelte.d.ts",
+			"svelte": "./dist/Header/Logo.svelte",
+			"default": "./dist/Header/Logo.svelte"
+		},
+		"./Header": {
+			"types": "./dist/Header/index.d.ts",
+			"svelte": "./dist/Header/index.js",
+			"default": "./dist/Header/index.js"
+		},
+		"./InventoryPage/InventoryPage.svelte": {
+			"types": "./dist/InventoryPage/InventoryPage.svelte.d.ts",
+			"svelte": "./dist/InventoryPage/InventoryPage.svelte",
+			"default": "./dist/InventoryPage/InventoryPage.svelte"
+		},
+		"./InventoryPage": {
+			"types": "./dist/InventoryPage/index.d.ts",
+			"svelte": "./dist/InventoryPage/index.js",
+			"default": "./dist/InventoryPage/index.js"
+		},
+		"./InventoryTable/ComboboxTable.svelte": {
+			"types": "./dist/InventoryTable/ComboboxTable.svelte.d.ts",
+			"svelte": "./dist/InventoryTable/ComboboxTable.svelte",
+			"default": "./dist/InventoryTable/ComboboxTable.svelte"
+		},
+		"./InventoryTable/InventoryTable.svelte": {
+			"types": "./dist/InventoryTable/InventoryTable.svelte.d.ts",
+			"svelte": "./dist/InventoryTable/InventoryTable.svelte",
+			"default": "./dist/InventoryTable/InventoryTable.svelte"
+		},
+		"./InventoryTable/OutNoteTable.svelte": {
+			"types": "./dist/InventoryTable/OutNoteTable.svelte.d.ts",
+			"svelte": "./dist/InventoryTable/OutNoteTable.svelte",
+			"default": "./dist/InventoryTable/OutNoteTable.svelte"
+		},
+		"./InventoryTable/QuantityInput.svelte": {
+			"types": "./dist/InventoryTable/QuantityInput.svelte.d.ts",
+			"svelte": "./dist/InventoryTable/QuantityInput.svelte",
+			"default": "./dist/InventoryTable/QuantityInput.svelte"
+		},
+		"./InventoryTable/TdWarehouseSelect.svelte": {
+			"types": "./dist/InventoryTable/TdWarehouseSelect.svelte.d.ts",
+			"svelte": "./dist/InventoryTable/TdWarehouseSelect.svelte",
+			"default": "./dist/InventoryTable/TdWarehouseSelect.svelte"
+		},
+		"./InventoryTable": {
+			"types": "./dist/InventoryTable/index.d.ts",
+			"svelte": "./dist/InventoryTable/index.js",
+			"default": "./dist/InventoryTable/index.js"
+		},
+		"./InventoryTable/table": {
+			"types": "./dist/InventoryTable/table.d.ts",
+			"default": "./dist/InventoryTable/table.js"
+		},
+		"./InventoryTable/types": {
+			"types": "./dist/InventoryTable/types.d.ts",
+			"default": "./dist/InventoryTable/types.js"
+		},
+		"./InventoryTable/utils": {
+			"types": "./dist/InventoryTable/utils.d.ts",
+			"default": "./dist/InventoryTable/utils.js"
+		},
+		"./Menus/ComboboxMenu.svelte": {
+			"types": "./dist/Menus/ComboboxMenu.svelte.d.ts",
+			"svelte": "./dist/Menus/ComboboxMenu.svelte",
+			"default": "./dist/Menus/ComboboxMenu.svelte"
+		},
+		"./Menus": {
+			"types": "./dist/Menus/index.d.ts",
+			"svelte": "./dist/Menus/index.js",
+			"default": "./dist/Menus/index.js"
+		},
+		"./Pagination/Pagination.svelte": {
+			"types": "./dist/Pagination/Pagination.svelte.d.ts",
+			"svelte": "./dist/Pagination/Pagination.svelte",
+			"default": "./dist/Pagination/Pagination.svelte"
+		},
+		"./Pagination": {
+			"types": "./dist/Pagination/index.d.ts",
+			"svelte": "./dist/Pagination/index.js",
+			"default": "./dist/Pagination/index.js"
+		},
+		"./Pagination/types": {
+			"types": "./dist/Pagination/types.d.ts",
+			"default": "./dist/Pagination/types.js"
+		},
+		"./Pagination/utils": {
+			"types": "./dist/Pagination/utils.d.ts",
+			"default": "./dist/Pagination/utils.js"
+		},
+		"./ProgressBar/ProgressBar.svelte": {
+			"types": "./dist/ProgressBar/ProgressBar.svelte.d.ts",
+			"svelte": "./dist/ProgressBar/ProgressBar.svelte",
+			"default": "./dist/ProgressBar/ProgressBar.svelte"
+		},
+		"./ProgressBar": {
+			"types": "./dist/ProgressBar/index.d.ts",
+			"svelte": "./dist/ProgressBar/index.js",
+			"default": "./dist/ProgressBar/index.js"
+		},
+		"./SelectMenu/SelectMenu.svelte": {
+			"types": "./dist/SelectMenu/SelectMenu.svelte.d.ts",
+			"svelte": "./dist/SelectMenu/SelectMenu.svelte",
+			"default": "./dist/SelectMenu/SelectMenu.svelte"
+		},
+		"./SelectMenu": {
+			"types": "./dist/SelectMenu/index.d.ts",
+			"svelte": "./dist/SelectMenu/index.js",
+			"default": "./dist/SelectMenu/index.js"
+		},
+		"./Sidebar/NewEntitySideNavButton.svelte": {
+			"types": "./dist/Sidebar/NewEntitySideNavButton.svelte.d.ts",
+			"svelte": "./dist/Sidebar/NewEntitySideNavButton.svelte",
+			"default": "./dist/Sidebar/NewEntitySideNavButton.svelte"
+		},
+		"./Sidebar/SidebarItem.svelte": {
+			"types": "./dist/Sidebar/SidebarItem.svelte.d.ts",
+			"svelte": "./dist/Sidebar/SidebarItem.svelte",
+			"default": "./dist/Sidebar/SidebarItem.svelte"
+		},
+		"./Sidebar/SidebarItemGroup.svelte": {
+			"types": "./dist/Sidebar/SidebarItemGroup.svelte.d.ts",
+			"svelte": "./dist/Sidebar/SidebarItemGroup.svelte",
+			"default": "./dist/Sidebar/SidebarItemGroup.svelte"
+		},
+		"./Sidebar/SidebarNav.svelte": {
+			"types": "./dist/Sidebar/SidebarNav.svelte.d.ts",
+			"svelte": "./dist/Sidebar/SidebarNav.svelte",
+			"default": "./dist/Sidebar/SidebarNav.svelte"
+		},
+		"./Sidebar": {
+			"types": "./dist/Sidebar/index.d.ts",
+			"svelte": "./dist/Sidebar/index.js",
+			"default": "./dist/Sidebar/index.js"
+		},
+		"./Slideover/Slideover.svelte": {
+			"types": "./dist/Slideover/Slideover.svelte.d.ts",
+			"svelte": "./dist/Slideover/Slideover.svelte",
+			"default": "./dist/Slideover/Slideover.svelte"
+		},
+		"./Slideover": {
+			"types": "./dist/Slideover/index.d.ts",
+			"svelte": "./dist/Slideover/index.js",
+			"default": "./dist/Slideover/index.js"
+		},
+		"./TextEditable/TextEditable.svelte": {
+			"types": "./dist/TextEditable/TextEditable.svelte.d.ts",
+			"svelte": "./dist/TextEditable/TextEditable.svelte",
+			"default": "./dist/TextEditable/TextEditable.svelte"
+		},
+		"./TextEditable": {
+			"types": "./dist/TextEditable/index.d.ts",
+			"svelte": "./dist/TextEditable/index.js",
+			"default": "./dist/TextEditable/index.js"
+		},
+		"./Toast/Toast.story.svelte": {
+			"types": "./dist/Toast/Toast.story.svelte.d.ts",
+			"svelte": "./dist/Toast/Toast.story.svelte",
+			"default": "./dist/Toast/Toast.story.svelte"
+		},
+		"./Toast/Toast.svelte": {
+			"types": "./dist/Toast/Toast.svelte.d.ts",
+			"svelte": "./dist/Toast/Toast.svelte",
+			"default": "./dist/Toast/Toast.svelte"
+		},
+		"./Toast/enums": {
+			"types": "./dist/Toast/enums.d.ts",
+			"default": "./dist/Toast/enums.js"
+		},
+		"./Toast": {
+			"types": "./dist/Toast/index.d.ts",
+			"svelte": "./dist/Toast/index.js",
+			"default": "./dist/Toast/index.js"
+		},
+		"./histoire.setup": {
+			"types": "./dist/histoire.setup.d.ts",
+			"default": "./dist/histoire.setup.js"
+		},
+		".": {
+			"types": "./dist/index.d.ts",
+			"svelte": "./dist/index.js",
+			"default": "./dist/index.js"
+		},
+		"./lib/transitions/fadeBgColor": {
+			"types": "./dist/lib/transitions/fadeBgColor.d.ts",
+			"default": "./dist/lib/transitions/fadeBgColor.js"
+		},
+		"./lib/transitions": {
+			"types": "./dist/lib/transitions/index.d.ts",
+			"svelte": "./dist/lib/transitions/index.js",
+			"default": "./dist/lib/transitions/index.js"
+		},
+		"./main.css": "./dist/main.css",
+		"./utils/styles": {
+			"types": "./dist/utils/styles.d.ts",
+			"default": "./dist/utils/styles.js"
+		}
+	},
+	"files": [
+		"dist"
+	],
+	"svelte": "./dist/index.js",
+	"typesVersions": {
+		">4.0": {
+			"Badge/Badge.svelte": [
+				"./dist/Badge/Badge.svelte.d.ts"
+			],
+			"Badge/enums": [
+				"./dist/Badge/enums.d.ts"
+			],
+			"Badge": [
+				"./dist/Badge/index.d.ts"
+			],
+			"Button/Button.svelte": [
+				"./dist/Button/Button.svelte.d.ts"
+			],
+			"Button/enums": [
+				"./dist/Button/enums.d.ts"
+			],
+			"Button": [
+				"./dist/Button/index.d.ts"
+			],
+			"Button/styles": [
+				"./dist/Button/styles.d.ts"
+			],
+			"Dropdown/Dropdown.svelte": [
+				"./dist/Dropdown/Dropdown.svelte.d.ts"
+			],
+			"Dropdown/DropdownItem.svelte": [
+				"./dist/Dropdown/DropdownItem.svelte.d.ts"
+			],
+			"Dropdown/enums": [
+				"./dist/Dropdown/enums.d.ts"
+			],
+			"Dropdown": [
+				"./dist/Dropdown/index.d.ts"
+			],
+			"FormFields/Checkbox/Checkbox.svelte": [
+				"./dist/FormFields/Checkbox/Checkbox.svelte.d.ts"
+			],
+			"FormFields/Checkbox": [
+				"./dist/FormFields/Checkbox/index.d.ts"
+			],
+			"FormFields/TextArea/Textarea.svelte": [
+				"./dist/FormFields/TextArea/Textarea.svelte.d.ts"
+			],
+			"FormFields/TextArea": [
+				"./dist/FormFields/TextArea/index.d.ts"
+			],
+			"FormFields/TextField/TextField.svelte": [
+				"./dist/FormFields/TextField/TextField.svelte.d.ts"
+			],
+			"FormFields/TextField": [
+				"./dist/FormFields/TextField/index.d.ts"
+			],
+			"FormFields/enums": [
+				"./dist/FormFields/enums.d.ts"
+			],
+			"FormFields": [
+				"./dist/FormFields/index.d.ts"
+			],
+			"Forms/BookDetailForm.svelte": [
+				"./dist/Forms/BookDetailForm.svelte.d.ts"
+			],
+			"Forms": [
+				"./dist/Forms/index.d.ts"
+			],
+			"Forms/tests/BookDetailForm.spec": [
+				"./dist/Forms/tests/BookDetailForm.spec.d.ts"
+			],
+			"Forms/types": [
+				"./dist/Forms/types.d.ts"
+			],
+			"Header/Header.svelte": [
+				"./dist/Header/Header.svelte.d.ts"
+			],
+			"Header/Logo.svelte": [
+				"./dist/Header/Logo.svelte.d.ts"
+			],
+			"Header": [
+				"./dist/Header/index.d.ts"
+			],
+			"InventoryPage/InventoryPage.svelte": [
+				"./dist/InventoryPage/InventoryPage.svelte.d.ts"
+			],
+			"InventoryPage": [
+				"./dist/InventoryPage/index.d.ts"
+			],
+			"InventoryTable/ComboboxTable.svelte": [
+				"./dist/InventoryTable/ComboboxTable.svelte.d.ts"
+			],
+			"InventoryTable/InventoryTable.svelte": [
+				"./dist/InventoryTable/InventoryTable.svelte.d.ts"
+			],
+			"InventoryTable/OutNoteTable.svelte": [
+				"./dist/InventoryTable/OutNoteTable.svelte.d.ts"
+			],
+			"InventoryTable/QuantityInput.svelte": [
+				"./dist/InventoryTable/QuantityInput.svelte.d.ts"
+			],
+			"InventoryTable/TdWarehouseSelect.svelte": [
+				"./dist/InventoryTable/TdWarehouseSelect.svelte.d.ts"
+			],
+			"InventoryTable": [
+				"./dist/InventoryTable/index.d.ts"
+			],
+			"InventoryTable/table": [
+				"./dist/InventoryTable/table.d.ts"
+			],
+			"InventoryTable/types": [
+				"./dist/InventoryTable/types.d.ts"
+			],
+			"InventoryTable/utils": [
+				"./dist/InventoryTable/utils.d.ts"
+			],
+			"Menus/ComboboxMenu.svelte": [
+				"./dist/Menus/ComboboxMenu.svelte.d.ts"
+			],
+			"Menus": [
+				"./dist/Menus/index.d.ts"
+			],
+			"Pagination/Pagination.svelte": [
+				"./dist/Pagination/Pagination.svelte.d.ts"
+			],
+			"Pagination": [
+				"./dist/Pagination/index.d.ts"
+			],
+			"Pagination/types": [
+				"./dist/Pagination/types.d.ts"
+			],
+			"Pagination/utils": [
+				"./dist/Pagination/utils.d.ts"
+			],
+			"ProgressBar/ProgressBar.svelte": [
+				"./dist/ProgressBar/ProgressBar.svelte.d.ts"
+			],
+			"ProgressBar": [
+				"./dist/ProgressBar/index.d.ts"
+			],
+			"SelectMenu/SelectMenu.svelte": [
+				"./dist/SelectMenu/SelectMenu.svelte.d.ts"
+			],
+			"SelectMenu": [
+				"./dist/SelectMenu/index.d.ts"
+			],
+			"Sidebar/NewEntitySideNavButton.svelte": [
+				"./dist/Sidebar/NewEntitySideNavButton.svelte.d.ts"
+			],
+			"Sidebar/SidebarItem.svelte": [
+				"./dist/Sidebar/SidebarItem.svelte.d.ts"
+			],
+			"Sidebar/SidebarItemGroup.svelte": [
+				"./dist/Sidebar/SidebarItemGroup.svelte.d.ts"
+			],
+			"Sidebar/SidebarNav.svelte": [
+				"./dist/Sidebar/SidebarNav.svelte.d.ts"
+			],
+			"Sidebar": [
+				"./dist/Sidebar/index.d.ts"
+			],
+			"Slideover/Slideover.svelte": [
+				"./dist/Slideover/Slideover.svelte.d.ts"
+			],
+			"Slideover": [
+				"./dist/Slideover/index.d.ts"
+			],
+			"TextEditable/TextEditable.svelte": [
+				"./dist/TextEditable/TextEditable.svelte.d.ts"
+			],
+			"TextEditable": [
+				"./dist/TextEditable/index.d.ts"
+			],
+			"Toast/Toast.svelte": [
+				"./dist/Toast/Toast.svelte.d.ts"
+			],
+			"Toast/enums": [
+				"./dist/Toast/enums.d.ts"
+			],
+			"Toast": [
+				"./dist/Toast/index.d.ts"
+			],
+			"histoire.setup": [
+				"./dist/histoire.setup.d.ts"
+			],
+			"index": [
+				"./dist/index.d.ts"
+			],
+			"lib/transitions/fadeBgColor": [
+				"./dist/lib/transitions/fadeBgColor.d.ts"
+			],
+			"lib/transitions": [
+				"./dist/lib/transitions/index.d.ts"
+			],
+			"utils/styles": [
+				"./dist/utils/styles.d.ts"
+			]
+		}
+	}
 }
