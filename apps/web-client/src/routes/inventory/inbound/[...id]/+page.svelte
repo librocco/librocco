@@ -125,7 +125,9 @@
 				}))}
 			>
 				<svelte:fragment slot="actions">
-					<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
+					{#if !id.includes("0-all")}
+						<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
+					{/if}
 				</svelte:fragment>
 			</SidebarItemGroup>
 		{/each}
