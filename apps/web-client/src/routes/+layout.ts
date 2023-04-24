@@ -14,7 +14,9 @@ export const load: LayoutLoad = async ({ url }) => {
 	const { pathname } = url;
 
 	if (redirectPaths.includes(pathname)) {
-		throw redirect(307, `${base}/inventory/stock/0-all`);
+		// * Important: trailing slash is required here
+		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
+		throw redirect(307, `${base}/inventory/stock/0-all/`);
 	}
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
