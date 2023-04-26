@@ -60,7 +60,7 @@
 		loading = true;
 		const note = db.warehouse(warehousId).note();
 		await note.create();
-		goto(`/inventory/inbound/${note._id}`);
+		goto(`${base}/inventory/inbound/${note._id}`);
 	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
@@ -82,7 +82,7 @@
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto("/inventory/inbound");
+			goto(`${base}/inventory/inbound`);
 		}
 	}
 
@@ -110,7 +110,7 @@
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation="/inventory/inbound" slot="header" />
+	<Header links={inventoryLinks} currentLocation={`${base}/inventory/inbound`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
