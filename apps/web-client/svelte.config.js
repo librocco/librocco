@@ -1,6 +1,18 @@
 import adapter from "@sveltejs/adapter-static";
 import preprocess from "svelte-preprocess";
 
+export const DEFAULT_BASE_PATH = "/preview";
+
+const dev = process.env.NODE_ENV === "development";
+const CURRENT_SHA = process.env.CURRENT_SHA;
+let BASE_PATH = process.env.BASE_PATH;
+
+if (typeof BASE_PATH === "undefined") {
+	// If no BASE_PATH was passed as environment variable, we default to either
+	// `/preview` or (if CURRENT_SHA is defined) to `/preview/<CURRENT_SHA>`
+	BASE_PATH = dev || !CURRENT_SHA ? DEFAULT_BASE_PATH : `${DEFAULT_BASE_PATH}/${CURRENT_SHA}`;
+}
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
@@ -10,10 +22,10 @@ const config = {
 	kit: {
 		adapter: adapter({ fallback: "index.html" }),
 		prerender: {
-			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug"]
+			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug", "*"]
 		},
 		paths: {
-			base: process.env.NODE_ENV === "production" ? "/" + process.env.BASE_PATH : ""
+			base: BASE_PATH
 		},
 		typescript: {
 			config: (config) => ({

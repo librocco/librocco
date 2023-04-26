@@ -49,7 +49,7 @@
 		loading = true;
 		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
 		await warehouse.create();
-		goto(`/inventory/stock/${warehouse._id}`);
+		goto(`${base}/inventory/stock/${warehouse._id}`);
 	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
@@ -76,7 +76,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation="/inventory/stock" slot="header" />
+	<Header links={inventoryLinks} currentLocation={`${base}/inventory/stock`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
