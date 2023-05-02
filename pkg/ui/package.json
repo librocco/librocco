@@ -47,7 +47,7 @@
 		"autoprefixer": "~10.4.12",
 		"lucide-svelte": "^0.160.0",
 		"@rgossiaux/svelte-headlessui": "~1.0.2",
-		"jsdom": "20.0.0",
+		"jsdom": "~21.1.1",
 		"felte": "~1.2.7",
 		"@testing-library/dom": "~8.20.0",
 		"@testing-library/jest-dom": "~5.16.5",
