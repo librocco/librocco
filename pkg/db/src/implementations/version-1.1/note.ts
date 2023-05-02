@@ -9,7 +9,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
 import { combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
@@ -232,6 +232,7 @@ class Note implements NoteInterface {
 	addVolumes(...params: Parameters<NoteInterface["addVolumes"]>): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
+				if (!update.isbn) throw new EmptyTransactionError();
 				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
 
 				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
