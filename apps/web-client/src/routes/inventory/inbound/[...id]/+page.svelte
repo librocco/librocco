@@ -64,7 +64,7 @@
 	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
-	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
 	$: loading = !data;
 
 	$: note = data.note;
@@ -78,6 +78,7 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
+	$: emptyISBNInput = false;
 
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
@@ -94,7 +95,15 @@
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = (isbn: string) => () => note.addVolumes({ isbn, quantity: 1 });
+	const handleAddTransaction = (isbn: string) => async () => {
+		if (!isbn) {
+			emptyISBNInput = true;
+			return;
+		}
+		emptyISBNInput = false;
+
+		return note.addVolumes({ isbn, quantity: 1 });
+	};
 
 	const handleTransactionUpdate = ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
 		console.log("Bump");
@@ -157,12 +166,17 @@
 						align="right"
 					/>
 				</div>
-				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+				<TextField
+					name="scan-input"
+					placeholder="Scan to add books..."
+					variant={TextFieldSize.LG}
+					error={emptyISBNInput}
+					helpText={emptyISBNInput ? "ISBN cannot be empty" : ""}
+				>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
 					</svelte:fragment>
 					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<!-- @TODO: no validation is implemented here -->
 						<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
 							<svelte:fragment slot="startAdornment">
 								<Edit size={16} />

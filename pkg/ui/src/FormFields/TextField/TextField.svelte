@@ -10,6 +10,7 @@
 		helpText?: string;
 		inputAction?: Action | (() => void);
 		variant?: TextFieldSize;
+		error?: boolean;
 	}
 
 	export let name: string;
@@ -17,30 +18,26 @@
 	export let helpText = "";
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
+	export let error = false;
+	$: error = error;
 	let value = "";
 
 	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
 	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]"];
 	const inputBaseClasses = ["block", "w-full", "border-0", "text-sm", "focus:outline-0", "focus:ring-0", variant];
 
-	const containerBaseClasses = [
-		"flex",
-		"mx-[2px]",
-		"outline",
-		"rounded-md",
-		"shadow-sm",
-		"focus-within:outline-2",
-		"focus-within:outline-teal-500"
-	];
+	const containerBaseClasses = ["flex", "mx-[2px]", "outline", "rounded-md", "shadow-sm", "focus-within:outline-2"];
 
-	const helpTextColour = "text-gray-500";
+	$: containerFocusColor = error ? "focus-within:outline-red-500" : "focus-within:outline-teal-500";
+
+	$: helpTextColour = error ? "text-red-500" : "text-gray-500";
 	const containerBorderWidth = "outline-1 shadow-sm";
 	const containerBorderColour = "outline-gray-300";
 
 	const labelClasses = labelBaseClasses.join(" ");
 	const inputClasses = inputBaseClasses.join(" ");
-	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
-	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(" ");
+	$: helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
+	$: containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth, containerFocusColor).join(" ");
 </script>
 
 <div class="my-[2px] {label ? 'space-y-2' : ''}">
