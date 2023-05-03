@@ -4,9 +4,9 @@ import { base } from "$app/paths";
 import type { LayoutLoad } from "./$types";
 
 const redirects = {
-	outbound: "/inventory/outbound",
-	inbound: "/inventory/inbound",
-	stock: "/inventory/stock"
+	outbound: "/inventory/outbound/",
+	inbound: "/inventory/inbound/",
+	stock: "/inventory/stock/"
 };
 
 export const load: LayoutLoad = async ({ route, params, parent }) => {
@@ -37,7 +37,7 @@ export const load: LayoutLoad = async ({ route, params, parent }) => {
 		const warehouse = await db.warehouse(warehouseId).get();
 
 		if (!warehouse) {
-			throw redirect(307, `${base}${redirects[location]}/`);
+			throw redirect(307, `${base}${redirects[location]}`);
 		}
 
 		return { warehouse };
@@ -47,7 +47,7 @@ export const load: LayoutLoad = async ({ route, params, parent }) => {
 	if (docId) {
 		const findNoteRes = await db.findNote(docId);
 		if (!findNoteRes) {
-			throw redirect(307, `${base}${redirects[location]}/`);
+			throw redirect(307, `${base}${redirects[location]}`);
 		}
 		return findNoteRes;
 	}
