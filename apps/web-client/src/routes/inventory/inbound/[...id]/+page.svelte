@@ -119,7 +119,7 @@
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation={`${base}/inventory/inbound`} slot="header" />
+	<Header links={inventoryLinks} currentLocation={`${base}/inventory/inbound/`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
