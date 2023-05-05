@@ -20,12 +20,22 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
-		adapter: adapter({ fallback: "index.html" }),
+		adapter: adapter(),
 		prerender: {
-			entries: ["/inventory/stock", "/inventory/inbound", "/inventory/outbound", "/debug", "*"]
+			entries: [
+				"/",
+				"/inventory",
+				"/inventory/",
+				"/inventory/stock",
+				"/inventory/stock/",
+				"/inventory/inbound/",
+				"/inventory/outbound/",
+				"/debug"
+			]
 		},
 		paths: {
-			base: BASE_PATH
+			base: BASE_PATH,
+			relative: false
 		},
 		typescript: {
 			config: (config) => ({
