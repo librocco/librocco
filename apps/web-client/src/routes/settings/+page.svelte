@@ -8,14 +8,22 @@
 
 	import type { EventHandler } from "svelte/elements";
 
+	let errors = {
+		"couch-url": ""
+	};
+
 	const handleSubmit: EventHandler<Event & { readonly submitter: HTMLElement }, HTMLFormElement> = (event) => {
 		const formData = new FormData(event.target as HTMLFormElement);
 
 		const couchURL = formData.get("couch-url") as string;
 
-		// TODO: Validate url with regex
-		if (couchURL) {
+		const urlRegex = new RegExp("^(.+):(.+)@(.+):(.+)/(.+)$");
+
+		if (couchURL && urlRegex.test(couchURL)) {
+			errors["couch-url"] = "";
 			settingStore.update((settings) => ({ ...settings, couchURL }));
+		} else {
+			errors["couch-url"] = "URL should have format <COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/<DB_NAME>";
 		}
 	};
 </script>
@@ -35,6 +43,8 @@
 						label="Remote CouchDB URL"
 						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/<DB_NAME>"
 						value={$settingStore?.couchURL}
+						error={errors?.["couch-url"] ? true : false}
+						helpText={errors?.["couch-url"] || ""}
 					>
 						<span
 							slot="startAdornment"
