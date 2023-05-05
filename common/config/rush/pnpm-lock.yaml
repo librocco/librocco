@@ -22,7 +22,7 @@ importers:
       eslint: ^8.16.0
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
-      lucide-svelte: ^0.160.0
+      lucide-svelte: ^0.210.0
       postcss: ~8.4.13
       pouchdb: ~7.3.0
       pouchdb-adapter-memory: ~7.3.0
@@ -42,7 +42,7 @@ importers:
     dependencies:
       '@librocco/db': link:../../pkg/db
       '@librocco/ui': link:../../pkg/ui
-      lucide-svelte: 0.160.0_svelte@3.58.0
+      lucide-svelte: 0.210.0_svelte@3.58.0
       pouchdb: 7.3.1
       rxjs: 7.8.0
       uuid: 9.0.0
@@ -212,7 +212,7 @@ importers:
       felte: ~1.2.7
       histoire: ~0.15.8
       jsdom: ~21.1.1
-      lucide-svelte: ^0.160.0
+      lucide-svelte: ^0.210.0
       postcss: ~8.4.13
       prettier: ^2.6.2
       prettier-plugin-svelte: ^2.7.0
@@ -256,7 +256,7 @@ importers:
       felte: 1.2.7_svelte@3.58.0
       histoire: 0.15.8_vite@4.0.4
       jsdom: 21.1.1
-      lucide-svelte: 0.160.0_svelte@3.58.0
+      lucide-svelte: 0.210.0_svelte@3.58.0
       postcss: 8.4.21
       prettier: 2.8.3
       prettier-plugin-svelte: 2.9.0_prettier@2.8.3+svelte@3.58.0
@@ -6828,8 +6828,8 @@ packages:
   /ltgt/2.2.1:
     resolution: {integrity: sha512-AI2r85+4MquTw9ZYqabu4nMwy9Oftlfa/e/52t9IjtfG+mGBbTNdAoZ3RQKLHR6r0wQnwZnPIEh/Ya6XTWAKNA==}
 
-  /lucide-svelte/0.160.0_svelte@3.58.0:
-    resolution: {integrity: sha512-ihAGAcXjflDOLy7trc4LnExBZGL7Q0VTEY7LQIT8B74kr5GCxt4BnY2ymlCh3l22Bomh1plLGoLe3MTpDW/cGw==}
+  /lucide-svelte/0.210.0_svelte@3.58.0:
+    resolution: {integrity: sha512-Li4CnihfRbe70rvCC+/x7zPP1LWs55wX1fTfrdVHvLU4P/qx5FJR8Wb4LpI18L3yW+Lhf9stsw3u+KrFbRwECw==}
     peerDependencies:
       svelte: ^3.49.0
     dependencies:
