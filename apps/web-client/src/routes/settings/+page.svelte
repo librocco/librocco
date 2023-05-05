@@ -4,7 +4,20 @@
 
 	import { links } from "$lib/data";
 
-	function handleSubmit() {}
+	import { settingStore } from "$lib/stores/settings";
+
+	import type { EventHandler } from "svelte/elements";
+
+	const handleSubmit: EventHandler<Event & { readonly submitter: HTMLElement }, HTMLFormElement> = (event) => {
+		const formData = new FormData(event.target as HTMLFormElement);
+
+		const couchURL = formData.get("couch-url") as string;
+
+		// TODO: Validate url with regex
+		if (couchURL) {
+			settingStore.update((settings) => ({ ...settings, couchURL }));
+		}
+	};
 </script>
 
 <InventoryPage>
@@ -17,9 +30,11 @@
 			<form method="POST" on:submit|preventDefault={handleSubmit}>
 				<div class="flex flex-col gap-y-4">
 					<TextField
-						name="remote-db-url"
+						name="couch-url"
+						id="couch-url"
 						label="Remote CouchDB URL"
 						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/<DB_NAME>"
+						value={$settingStore?.couchURL}
 					>
 						<span
 							slot="startAdornment"
