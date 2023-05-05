@@ -1,5 +1,5 @@
 <script lang="ts">
-	import Logo from "./Logo.svelte";
+	import { BookCopy } from "lucide-svelte";
 
 	interface HeaderLink {
 		label: string;
@@ -11,9 +11,9 @@
 </script>
 
 <header class="w-full bg-gray-900">
-	<div class="flex h-[4.5rem] items-center gap-x-4 border-b border-sky-900 px-16">
+	<div class="flex h-[4.5rem] items-center justify-start gap-x-4 border-b border-sky-900 px-16">
 		<div>
-			<Logo />
+			<BookCopy color="white" strokeWidth={2} size={36} />
 		</div>
 
 		<nav class="flex gap-x-4">
@@ -29,5 +29,9 @@
 				</a>
 			{/each}
 		</nav>
+
+		<div class="ml-auto">
+			<slot />
+		</div>
 	</div>
 </header>
