@@ -40,7 +40,8 @@
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
 		"rollup-plugin-node-polyfills": "~0.2.1",
 		"autoprefixer": "~10.4.13",
-		"@types/uuid": "~9.0.0"
+		"@types/uuid": "~9.0.0",
+		"vite-plugin-pwa": "~0.14.7"
 	},
 	"type": "module",
 	"dependencies": {
