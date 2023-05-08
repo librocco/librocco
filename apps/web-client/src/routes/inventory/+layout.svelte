@@ -2,8 +2,8 @@
 	import { onMount } from "svelte";
 
 	import { Header, InventoryPage, ProgressBar } from "@librocco/ui";
-	import { DB_NAME, COUCHDB_HOST, COUCHDB_PORT, COUCHDB_USER, COUCHDB_PASSWORD } from "$lib/constants";
 
+	import { remoteCouchConfigStore } from "$lib/stores/settings";
 	import { getDB } from "$lib/db";
 
 	const db = getDB();
@@ -13,24 +13,22 @@
 
 	let progress = 0;
 
+	let COUCH_URL = $remoteCouchConfigStore?.couchUrl;
+
 	onMount(() => {
-		// If COUCHDB_HOST is provided, we can assume the remote db is there and at least try to replicate.
-		// No point otherwise.
-		//
-		// TODO: This will be set by the user in the future (probably read from local storage).
-		if (!COUCHDB_HOST) {
+		// There is not remote CouchDB instance
+		if (!COUCH_URL) {
 			return;
 		}
+
+		const url = `http://${COUCH_URL}`;
 
 		replicating = true;
 
 		const r = db
 			.replicate()
 			// Do a db sync first
-			.sync(
-				{ name: "[INITIAL_SYNC]", debug: false },
-				`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`
-			);
+			.sync({ name: "[INITIAL_SYNC]", debug: false }, url);
 
 		// Track replication progress
 		r.replication.on("change", ({ change: { docs_written: written, pending } }) => {
@@ -55,7 +53,7 @@
 						name: "[LIVE_SYNC]",
 						debug: false
 					},
-					`http://${COUCHDB_USER}:${COUCHDB_PASSWORD}@${COUCHDB_HOST}:${COUCHDB_PORT}/${DB_NAME}`
+					url
 				);
 			});
 	});

@@ -1,3 +1,3 @@
-export interface LocalStorageSettings {
-	couchURL?: string;
+export interface RemoteCouchConfig {
+	couchUrl?: string;
 }
