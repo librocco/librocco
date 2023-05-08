@@ -1,12 +1,11 @@
 <script lang="ts">
+	import type { EventHandler } from "svelte/elements";
 	import { base } from "$app/paths";
+
 	import { Button, TextField, Header, InventoryPage } from "@librocco/ui";
 
 	import { links } from "$lib/data";
-
-	import { settingStore } from "$lib/stores/settings";
-
-	import type { EventHandler } from "svelte/elements";
+	import { remoteCouchConfigStore } from "$lib/stores/settings";
 
 	let errors = {
 		"couch-url": ""
@@ -15,15 +14,17 @@
 	const handleSubmit: EventHandler<Event & { readonly submitter: HTMLElement }, HTMLFormElement> = (event) => {
 		const formData = new FormData(event.target as HTMLFormElement);
 
-		const couchURL = formData.get("couch-url") as string;
+		const couchUrl = formData.get("couch-url") as string;
 
-		const urlRegex = new RegExp("^(.+):(.+)@(.+):(.+)/(.+)$");
+		const urlRegex = new RegExp("^(.+):(.+)@(.+):(.+)$");
 
-		if (couchURL && urlRegex.test(couchURL)) {
+		if (couchUrl && urlRegex.test(couchUrl)) {
 			errors["couch-url"] = "";
-			settingStore.update((settings) => ({ ...settings, couchURL }));
+			remoteCouchConfigStore.set({ couchUrl });
+
+			// TODO: invalidate root `+layout.ts`, createDb(dbName)
 		} else {
-			errors["couch-url"] = "URL should have format <COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/<DB_NAME>";
+			errors["couch-url"] = "URL should have format <COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
 		}
 	};
 </script>
@@ -41,10 +42,11 @@
 						name="couch-url"
 						id="couch-url"
 						label="Remote CouchDB URL"
-						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/<DB_NAME>"
-						value={$settingStore?.couchURL}
+						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/"
+						value={$remoteCouchConfigStore?.couchUrl}
 						error={errors?.["couch-url"] ? true : false}
 						helpText={errors?.["couch-url"] || ""}
+						required
 					>
 						<span
 							slot="startAdornment"
