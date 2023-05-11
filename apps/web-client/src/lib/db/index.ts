@@ -2,6 +2,8 @@ import pouchdb from "pouchdb";
 
 import { newDatabaseInterface, type DatabaseInterface } from "@librocco/db";
 
+import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
+
 let db: DatabaseInterface | undefined = undefined;
 
 /**
@@ -12,12 +14,12 @@ let db: DatabaseInterface | undefined = undefined;
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = (dbName): DatabaseInterface => {
+export const createDB = (): DatabaseInterface => {
 	if (db) {
 		return db;
 	}
 
-	const pouch = new pouchdb(dbName);
+	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
 	db = newDatabaseInterface(pouch);
 
 	return db;
