@@ -1,5 +1,4 @@
 import { redirect } from "@sveltejs/kit";
-import { get } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
@@ -30,11 +29,10 @@ export const load: LayoutLoad = async ({ url }) => {
 			remoteCouchConfigStore.set({ couchUrl: DEV_COUCH_URL });
 		}
 
-		// This is derived from `couchUrl`
-		const dbName = get(remoteCouchConfigStore).dbName;
+		const db = await createDB().init();
 
 		return {
-			db: await createDB(dbName).init()
+			db
 		};
 	}
 
