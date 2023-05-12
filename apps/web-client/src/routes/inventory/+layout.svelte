@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
 	import { onMount } from "svelte";
 
 	import { Header, InventoryPage, ProgressBar } from "@librocco/ui";
@@ -13,6 +13,7 @@
 
 	let progress = 0;
 
+	// let COUCH_URL: string;
 	let COUCH_URL = $remoteCouchConfigStore?.couchUrl;
 
 	onMount(() => {
@@ -55,6 +56,12 @@
 					},
 					url
 				);
+
+				// TODO: if live replication fails we should also handle it
+			})
+			.catch(() => {
+				r.replication.cancel();
+				replicating = false;
 			});
 	});
 </script>
