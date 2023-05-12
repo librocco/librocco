@@ -21,8 +21,6 @@
 		if (couchUrl && urlRegex.test(couchUrl)) {
 			errors["couch-url"] = "";
 			remoteCouchConfigStore.set({ couchUrl });
-
-			// TODO: invalidate root `+layout.ts`, createDb(dbName)
 		} else {
 			errors["couch-url"] = "URL should have format <COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
 		}
