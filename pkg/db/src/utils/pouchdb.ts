@@ -174,11 +174,10 @@ export const promisifyReplication = (
 	replication: Replication,
 	resolver: (replication: Replication) => Promise<any> = () => Promise.resolve()
 ) =>
-	new Promise<void>((resolve) => {
+	new Promise<void>((resolve, reject) => {
 		replication
 			.on("error", (err) => {
-				console.error(err);
-				resolve();
+				reject(err);
 				debug.log(ctx, "replication_promise:resolved_with_error")(err);
 			})
 			.on("complete", () => {
