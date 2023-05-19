@@ -20,6 +20,9 @@ const config = {
 	preprocess: preprocess(),
 
 	kit: {
+		serviceWorker: {
+			register: false
+		},
 		adapter: adapter(),
 		prerender: {
 			entries: [

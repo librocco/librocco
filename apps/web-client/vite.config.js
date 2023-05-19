@@ -1,5 +1,7 @@
 import { sveltekit } from "@sveltejs/kit/vite";
 import path from "path";
+// import { SvelteKitPWA } from "@vite-pwa/sveltekit";
+import { SvelteKitPWA } from "../../../pwa-sveltekit/src/index.ts";
 
 import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
@@ -7,7 +9,32 @@ const rushDir = path.join(__dirname, "..", "..", "common");
 
 /** @type {import('vite').UserConfig} */
 const config = {
-	plugins: [sveltekit()],
+	plugins: [
+		sveltekit(),
+		SvelteKitPWA({
+			buildBase: "/preview/",
+			manifest: {
+				name: "Librocco",
+				short_name: "Librocco",
+				icons: [
+					{
+						src: "android-chrome-192x192.png",
+						sizes: "192x192",
+						type: "image/png"
+					},
+					{
+						src: "android-chrome-512x512.png",
+						sizes: "512x512",
+						type: "image/png"
+					}
+				],
+				theme_color: "#ffffff",
+				background_color: "#ffffff",
+				display: "standalone",
+				start_url: "/preview/"
+			}
+		})
+	],
 	resolve: {
 		alias: {
 			// Alias events module to use rollup-plugin-node-polyfills as node modules (such as 'events' get externalized by vite build)
