@@ -1,7 +1,6 @@
 import { sveltekit } from "@sveltejs/kit/vite";
 import path from "path";
-// import { SvelteKitPWA } from "@vite-pwa/sveltekit";
-import { SvelteKitPWA } from "../../../pwa-sveltekit/src/index.ts";
+import { SvelteKitPWA } from "@vite-pwa/sveltekit";
 
 import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
