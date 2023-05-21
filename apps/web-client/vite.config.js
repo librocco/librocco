@@ -12,12 +12,15 @@ const config = {
 		sveltekit(),
 		SvelteKitPWA({
 			buildBase: "/preview/",
-
-			// workbox: {
-			// modifyURLPrefix: {
-			// 	"/preview/": "/"
-			// 	// "": "/preview"
-			// }
+			workbox: {
+				// modifyURLPrefix: {
+				// 	"/preview/": "/"
+				// 	// "": "/preview"
+				// },
+				additionalManifestEntries: ["/preview/"]
+			},
+			// kit: {
+			// 	trailingSlash: "always"
 			// },
 			manifest: {
 				name: "Librocco",
@@ -37,7 +40,7 @@ const config = {
 				theme_color: "#ffffff",
 				background_color: "#ffffff",
 				display: "standalone",
-				start_url: "/preview/",
+				start_url: "/preview/inventory/stock/0-all/",
 				scope: "/preview/"
 			}
 			// outDir: "build",
