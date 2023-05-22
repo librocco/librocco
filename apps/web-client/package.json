@@ -4,7 +4,7 @@
 	"scripts": {
 		"start": "vite dev",
 		"build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
-		"build:prod": "vite build",
+		"build:prod": "vite build && workbox injectManifest workbox-config.cjs",
 		"preview": "vite preview",
 		"test": "vitest --",
 		"test:ci": "vitest --",
@@ -40,7 +40,9 @@
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
 		"rollup-plugin-node-polyfills": "~0.2.1",
 		"autoprefixer": "~10.4.13",
-		"@types/uuid": "~9.0.0"
+		"@types/uuid": "~9.0.0",
+		"workbox-cli": "~6.5.4",
+		"workbox-precaching": "~6.5.4"
 	},
 	"type": "module",
 	"dependencies": {
