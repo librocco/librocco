@@ -6,17 +6,29 @@ import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
 const rushDir = path.join(__dirname, "..", "..", "common");
 
+export const DEFAULT_BASE_PATH = "/preview";
+
+const dev = process.env.NODE_ENV === "development";
+const CURRENT_SHA = process.env.CURRENT_SHA;
+let BASE_PATH = process.env.BASE_PATH;
+
+if (typeof BASE_PATH === "undefined") {
+	// If no BASE_PATH was passed as environment variable, we default to either
+	// `/preview` or (if CURRENT_SHA is defined) to `/preview/<CURRENT_SHA>`
+	BASE_PATH = dev || !CURRENT_SHA ? DEFAULT_BASE_PATH : `${DEFAULT_BASE_PATH}/${CURRENT_SHA}`;
+	process.env.BASE_PATH = BASE_PATH;
+}
+
 /** @type {import('vite').UserConfig} */
 const config = {
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
-			buildBase: "/preview/",
+			buildBase: `${BASE_PATH}/`,
 			// workbox: {
-			// modifyURLPrefix: {
-			// 	// "/preview/": "/"
-			// 	"": "/preview"
-			// },
+			// 	modifyURLPrefix: {
+			// "": "/preview"
+			// }
 			// additionalManifestEntries: ["/preview/"]
 			// },
 			kit: {
@@ -40,10 +52,9 @@ const config = {
 				theme_color: "#ffffff",
 				background_color: "#ffffff",
 				display: "standalone",
-				start_url: "/preview/inventory/stock/0-all",
-				scope: "/preview"
+				start_url: `${BASE_PATH}/inventory/stock/0-all`,
+				scope: `${BASE_PATH}/`
 			}
-			// outDir: "build",
 		})
 	],
 	resolve: {
