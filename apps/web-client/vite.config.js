@@ -8,6 +8,8 @@ const rushDir = path.join(__dirname, "..", "..", "common");
 
 export const DEFAULT_BASE_PATH = "/preview";
 
+// base path logic is written here because it needs to be communicated to both
+// the svelteKitPWA plugin and svelte.config
 const dev = process.env.NODE_ENV === "development";
 const CURRENT_SHA = process.env.CURRENT_SHA;
 let BASE_PATH = process.env.BASE_PATH;
