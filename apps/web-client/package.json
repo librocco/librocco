@@ -43,7 +43,8 @@
 		"@types/uuid": "~9.0.0",
 		"vite-plugin-pwa": "~0.14.7",
 		"@vite-pwa/sveltekit": "~0.2.2",
-		"workbox-window": "~6.5.4"
+		"workbox-window": "~6.5.4",
+		"fast-glob": "~3.2.12"
 	},
 	"type": "module",
 	"dependencies": {
