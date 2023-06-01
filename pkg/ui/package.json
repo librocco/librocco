@@ -45,7 +45,7 @@
 		"@histoire/plugin-svelte": "~0.15.8",
 		"@histoire/controls": "~0.11.3",
 		"autoprefixer": "~10.4.12",
-		"lucide-svelte": "^0.160.0",
+		"lucide-svelte": "^0.210.0",
 		"@rgossiaux/svelte-headlessui": "~1.0.2",
 		"jsdom": "~21.1.1",
 		"felte": "~1.2.7",
@@ -59,7 +59,7 @@
 		"svelte-transition": "~0.0.7"
 	},
 	"peerDependencies": {
-		"lucide-svelte": "^0.160.0",
+		"lucide-svelte": "^0.210.0",
 		"svelte": "^3.44.0",
 		"felte": "~1.2.7"
 	},

@@ -38,7 +38,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { inventoryLinks } from "$lib/data";
+	import { links } from "$lib/data";
 	import { base } from "$app/paths";
 
 	export let data: PageData;
@@ -119,7 +119,7 @@
 <!-- svelte-ignore missing-declaration -->
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation={`${base}/inventory/inbound/`} slot="header" />
+	<Header {links} currentLocation={`${base}/inventory/inbound/`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
