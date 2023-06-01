@@ -46,9 +46,10 @@
 	"dependencies": {
 		"@librocco/db": "workspace:*",
 		"@librocco/ui": "workspace:*",
-		"lucide-svelte": "^0.160.0",
+		"lucide-svelte": "^0.210.0",
 		"pouchdb": "~7.3.0",
 		"rxjs": "~7.8.0",
-		"uuid": "~9.0.0"
+		"uuid": "~9.0.0",
+		"svelte-local-storage-store": "~0.4.0"
 	}
 }
