@@ -40,7 +40,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { inventoryLinks } from "$lib/data";
+	import { links } from "$lib/data";
 
 	export let data: PageData;
 
@@ -107,7 +107,7 @@
 
 <InventoryPage>
 	<!-- Header slot -->
-	<Header links={inventoryLinks} currentLocation={`${base}/inventory/outbound/`} slot="header" />
+	<Header {links} currentLocation={`${base}/inventory/outbound/`} slot="header" />
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
