@@ -19,6 +19,7 @@
 	onMount(() => {
 		// There is not remote CouchDB instance
 		if (!COUCH_URL) {
+			replicating = false;
 			return;
 		}
 
