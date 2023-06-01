@@ -25,12 +25,6 @@ const config = {
 		sveltekit(),
 		SvelteKitPWA({
 			buildBase: `${BASE_PATH}/`,
-			// workbox: {
-			// 	modifyURLPrefix: {
-			// "": "/preview"
-			// }
-			// additionalManifestEntries: ["/preview/"]
-			// },
 			kit: {
 				trailingSlash: "always"
 			},
