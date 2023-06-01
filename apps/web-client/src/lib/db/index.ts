@@ -2,7 +2,7 @@ import pouchdb from "pouchdb";
 
 import { newDatabaseInterface, type DatabaseInterface } from "@librocco/db";
 
-import { DB_NAME } from "$lib/constants";
+import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 
 let db: DatabaseInterface | undefined = undefined;
 
@@ -19,7 +19,7 @@ export const createDB = (): DatabaseInterface => {
 		return db;
 	}
 
-	const pouch = new pouchdb(DB_NAME);
+	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
 	db = newDatabaseInterface(pouch);
 
 	return db;
