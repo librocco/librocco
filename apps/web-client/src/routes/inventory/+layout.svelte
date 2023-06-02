@@ -23,14 +23,12 @@
 			return;
 		}
 
-		const url = `http://${COUCH_URL}`;
-
 		replicating = true;
 
 		const r = db
 			.replicate()
 			// Do a db sync first
-			.sync({ name: "[INITIAL_SYNC]", debug: false }, url);
+			.sync({ name: "[INITIAL_SYNC]", debug: false }, COUCH_URL);
 
 		// Track replication progress
 		r.replication.on("change", ({ change: { docs_written: written, pending } }) => {
@@ -55,7 +53,7 @@
 						name: "[LIVE_SYNC]",
 						debug: false
 					},
-					url
+					COUCH_URL
 				);
 
 				// TODO: if live replication fails we should also handle it

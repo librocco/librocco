@@ -16,13 +16,16 @@
 
 		const couchUrl = formData.get("couch-url") as string;
 
-		const urlRegex = new RegExp("^(.+):(.+)@(.+):(.+)$");
+		const urlRegex = new RegExp("^(https?://)(.+):(.+)@(.+):(.+)$");
+
+		console.info("testing", couchUrl, urlRegex.test(couchUrl));
 
 		if (couchUrl && urlRegex.test(couchUrl)) {
 			errors["couch-url"] = "";
 			remoteCouchConfigStore.set({ couchUrl });
 		} else {
-			errors["couch-url"] = "URL should have format <COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
+			errors["couch-url"] =
+				"URL should have format https://<COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
 		}
 	};
 </script>
@@ -45,14 +48,7 @@
 						error={errors?.["couch-url"] ? true : false}
 						helpText={errors?.["couch-url"] || ""}
 						required
-					>
-						<span
-							slot="startAdornment"
-							class="inline-flex h-full select-none items-center rounded-l-md border-r-2 border-gray-100 pr-3 text-gray-500 sm:text-sm"
-						>
-							http://
-						</span>
-					</TextField>
+					/>
 					<div class="self-end">
 						<Button type="submit">Save settings</Button>
 					</div>
