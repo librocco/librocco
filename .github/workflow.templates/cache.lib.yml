@@ -7,5 +7,5 @@ with:
         ~/.pnpm-store
         common/temp
         **/node_modules
-    key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
+    key: ${{ runner.os }}-modules-node18-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
 #@ end
