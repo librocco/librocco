@@ -16,7 +16,9 @@
 
 	const { form } = createForm({
 		initialValues: book,
-		onSubmit
+		onSubmit: (values) => {
+			onSubmit(values);
+		}
 	});
 
 	const publisherCombo = createCombobox({ label: "publisher" });
@@ -26,7 +28,7 @@
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<TextField name="isbn" label="ISBN" required />
+				<TextField name="isbn" label="ISBN" required={book.isbn === ""} disabled={book.isbn !== ""} />
 			</div>
 			<div class="basis-full">
 				<TextField name="title" label="Title" required />
