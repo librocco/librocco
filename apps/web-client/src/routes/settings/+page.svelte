@@ -18,8 +18,6 @@
 
 		const urlRegex = new RegExp("^(https?://)(.+):(.+)@(.+):(.+)$");
 
-		console.info("testing", couchUrl, urlRegex.test(couchUrl));
-
 		if (couchUrl && urlRegex.test(couchUrl)) {
 			errors["couch-url"] = "";
 			remoteCouchConfigStore.set({ couchUrl });
