@@ -143,9 +143,11 @@ class Database implements DatabaseInterface {
 		});
 	}
 
-	async findNote(id: string) {
+	async findNote(noteId: string) {
+		// Remove trailing slash if any
+		const id = noteId.replace(/\/$/, "");
 		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split("/");
+		const idSegments = id.split("/").filter(Boolean);
 
 		// Validate the id is correct
 		if (idSegments.length !== 4) {
