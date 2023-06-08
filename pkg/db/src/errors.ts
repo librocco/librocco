@@ -45,6 +45,6 @@ export class EmptyNoteError extends Error {
 
 export class EmptyTransactionError extends Error {
 	constructor() {
-		super("Trying to emter an empty transaction");
+		super("Trying to enter an empty transaction");
 	}
 }
