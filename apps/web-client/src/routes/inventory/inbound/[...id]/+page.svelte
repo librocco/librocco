@@ -75,6 +75,8 @@
 		price: 0
 	};
 
+	$: bookFormHeader = { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
+
 	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
@@ -141,7 +143,10 @@
 	};
 
 	const handleEditBookEntry = (book: BookEntry) => {
-		// showModal = true;
+		bookFormHeader = book.isbn
+			? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
+			: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
+
 		bookForm.update((store) => {
 			store.book = book;
 			store.modalOpen = true;
@@ -267,11 +272,7 @@
 
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.modalOpen}
-			<Slideover
-				title="Create a new book"
-				description="Use this form to manually add a new book to your inbound note"
-				handleClose={handleCloseBookForm}
-			>
+			<Slideover title={bookFormHeader.title} description={bookFormHeader.description} handleClose={handleCloseBookForm}>
 				<BookDetailForm book={$bookForm.book} {publisherList} onSubmit={handleAddTransaction} onCancel={handleCloseBookForm} />
 			</Slideover>
 		{/if}
