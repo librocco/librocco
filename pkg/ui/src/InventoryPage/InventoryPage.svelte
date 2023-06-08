@@ -30,4 +30,10 @@
 			{/if}
 		</section>
 	</main>
+
+	{#if $$slots.slideOver}
+		<section class="fixed right-0 h-auto bg-gray-50 shadow-lg">
+			<slot name="slideOver" />
+		</section>
+	{/if}
 </div>
