@@ -221,6 +221,7 @@
 					variant={TextFieldSize.LG}
 					error={emptyISBNInput}
 					helpText={emptyISBNInput ? "ISBN cannot be empty" : ""}
+					bind:value={$bookForm.book.isbn}
 				>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
