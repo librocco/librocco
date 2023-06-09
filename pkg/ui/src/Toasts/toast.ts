@@ -53,20 +53,54 @@ export const createToastStore = (toasterStore) => (_toast) => {
 export const createToastAction = (toastStore) => (node) => {
 	const next = 1;
 
-	toastStore.setProgress(next);
-	node.setAttribute("role", "alert");
-
 	let toast;
+	let prev = next;
+	let paused = false;
+
+	node.setAttribute("role", "alert");
+	toastStore.setProgress(next);
+
 	const unsubscribe = toastStore.subscribe((t) => {
 		toast = t;
+		prev = t.progress;
 
 		if (toast.progress === 1) {
 			toastStore.close();
 		}
 	});
 
+	// `pause` and `resume` are borrowed from
+	// https://github.com/zerodevx/svelte-toast/blob/7bc9d10d5597624c391aa5893cca6311cd9551d5/src/lib/ToastItem.svelte#L28
+	// TODO: tests only currently cover that they call setProgress, not what they should do
+	const pause = () => {
+		if (!paused && toast.progress !== next) {
+			toastStore.setProgress(toast.progress, { duration: 0 });
+			paused = true;
+		}
+	};
+
+	const resume = () => {
+		if (paused) {
+			const d = toast.duration;
+			const duration = d - d * ((toast.progress - prev) / (next - prev));
+
+			toastStore.setProgress(next, { duration });
+			paused = false;
+		}
+	};
+
+	if (toast.pausable) {
+		node.addEventListener("mouseenter", pause);
+		node.addEventListener("mouseleave", resume);
+	}
+
 	return {
 		destroy() {
+			if (toast.pausable) {
+				node.removeEventListener("mouseenter", pause);
+				node.removeEventListener("mouseleave", resume);
+			}
+
 			unsubscribe();
 		}
 	};
