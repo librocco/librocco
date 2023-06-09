@@ -1,5 +1,5 @@
 import { test, describe, expect, afterEach } from "vitest";
-import { screen, cleanup, render } from "@testing-library/svelte";
+import { cleanup, render } from "@testing-library/svelte";
 import Fragment from "svelte-fragment-component";
 import html from "svelte-htm";
 
