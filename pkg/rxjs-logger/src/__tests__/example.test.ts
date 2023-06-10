@@ -6,18 +6,18 @@ import { Logs, ValueWithMeta } from "../types";
 import { newLogger } from "../logger";
 
 describe("Logging", () => {
-	test("should keep the logs for instrumented streams", async () => {
+	test("should keep the logs for instrumented transmissions", async () => {
 		const logger = newLogger();
 		const { start, log } = logger;
 
 		const pipelineId = "pipeline-1";
 
-		let streamIx = 0;
+		let transmissionIx = 0;
 
 		const origin = interval(100).pipe(
 			take(3),
-			// We use 'start' transformer to mark the start of the new stream on a given pipeline
-			start(pipelineId, () => (streamIx++).toString())
+			// We use 'start' transformer to mark the start of the new transmission on a given pipeline
+			start(pipelineId, () => (transmissionIx++).toString())
 		);
 
 		const pipeline = origin.pipe(
@@ -38,13 +38,13 @@ describe("Logging", () => {
 		// Wait for the observable to complete
 		await firstValueFrom(pipeline.pipe(bufferCount(3)));
 
-		// Explicitly check for logs for the first stream (starting with the value of 0)
-		const stream0Logs = logger.pipeline(pipelineId).stream("0").get();
-		expect(stream0Logs).toEqual([
+		// Explicitly check for logs for the first transmission (starting with the value of 0)
+		const transmission0Logs = logger.pipeline(pipelineId).transmission("0").get();
+		expect(transmission0Logs).toEqual([
 			// Initial step (start of the pipeline)
 			expect.objectContaining({
 				pipelineId,
-				streamId: "0",
+				transmissionId: "0",
 				// "start" is always the value of the first step
 				stepId: "start",
 				// Time diff should be 0 as it's the start of the pipeline
@@ -56,35 +56,35 @@ describe("Logging", () => {
 			// in the pipeline as we can't control them
 			expect.objectContaining({
 				pipelineId,
-				streamId: "0",
+				transmissionId: "0",
 				stepId: "step_1",
 				// First operator adds 1 to the value
 				value: 1
 			} as Logs),
 			expect.objectContaining({
 				pipelineId,
-				streamId: "0",
+				transmissionId: "0",
 				stepId: "step_2",
 				// Second operator raises the value to the power of 2 (1^1=1)
 				value: 1
 			} as Logs),
 			expect.objectContaining({
 				pipelineId,
-				streamId: "0",
+				transmissionId: "0",
 				stepId: "step_3",
 				// Third operator converts the value to string
 				value: "1"
 			} as Logs)
 		]);
 
-		// Check for the rest of the logs (streams "1" and "2")
+		// Check for the rest of the logs (transmissions "1" and "2")
 		//
-		// Initial values of stream "1" and "2" (the same value as stream id, only of type number)
+		// Initial values of transmission "1" and "2" (the same value as transmission id, only of type number)
 		const initialValues = [1, 2];
 		// Construct the "want" logs
-		const [stream1Logs, stream2Logs] = initialValues.map((initialValue) => {
-			// Stream "1" will have the initial value of 1, and so...
-			const streamId = initialValue.toString();
+		const [transmission1Logs, transmission2Logs] = initialValues.map((initialValue) => {
+			// transmission "1" will have the initial value of 1, and so...
+			const transmissionId = initialValue.toString();
 
 			// First step adds 1 to the value
 			const step1Value = initialValue + 1;
@@ -96,7 +96,7 @@ describe("Logging", () => {
 			return [initialValue, step1Value, step2Value, step3Value].map((value, i) =>
 				expect.objectContaining({
 					pipelineId,
-					streamId,
+					transmissionId,
 					// First step is always "start", others are numbered with 1-based index
 					stepId: i === 0 ? "start" : `step_${i}`,
 					value
@@ -105,21 +105,21 @@ describe("Logging", () => {
 			);
 		});
 
-		expect(logger.pipeline(pipelineId).stream("1").get()).toEqual(stream1Logs);
-		expect(logger.pipeline(pipelineId).stream("2").get()).toEqual(stream2Logs);
+		expect(logger.pipeline(pipelineId).transmission("1").get()).toEqual(transmission1Logs);
+		expect(logger.pipeline(pipelineId).transmission("2").get()).toEqual(transmission2Logs);
 	});
 
 	test("should keep track of forked pipelines", async () => {
 		const logger = newLogger();
 		const { start, log, fork } = logger;
 
-		let streamIx = 0;
+		let transmissionIx = 0;
 
 		const origin = interval(100).pipe(take(2));
 
 		const connector = new ReplaySubject<ValueWithMeta<number>>(1);
 		const pipeline1 = origin.pipe(
-			start("pipeline-1", () => (streamIx++).toString()),
+			start("pipeline-1", () => (transmissionIx++).toString()),
 			log(
 				"step_1.1",
 				map((value) => value + 1)
@@ -154,28 +154,28 @@ describe("Logging", () => {
 		const wantPipeline1Logs = [
 			// First transmission
 			[
-				expect.objectContaining({ pipelineId: "pipeline-1", streamId: "0", stepId: "start", value: 0 }),
+				expect.objectContaining({ pipelineId: "pipeline-1", transmissionId: "0", stepId: "start", value: 0 }),
 				expect.objectContaining({
 					pipelineId: "pipeline-1",
-					streamId: "0",
+					transmissionId: "0",
 					stepId: "step_1.1",
 					value: 1
 				})
 			],
 			// Second transmission
 			[
-				expect.objectContaining({ pipelineId: "pipeline-1", streamId: "1", stepId: "start", value: 1 }),
+				expect.objectContaining({ pipelineId: "pipeline-1", transmissionId: "1", stepId: "start", value: 1 }),
 				expect.objectContaining({
 					pipelineId: "pipeline-1",
-					streamId: "1",
+					transmissionId: "1",
 					stepId: "step_1.1",
 					value: 2
 				})
 			]
 		];
 
-		const pipeline1Logs = [...logger.pipeline("pipeline-1").streams()].map((streamId) =>
-			logger.pipeline("pipeline-1").stream(streamId).get()
+		const pipeline1Logs = [...logger.pipeline("pipeline-1").transmissions()].map((transmissionId) =>
+			logger.pipeline("pipeline-1").transmission(transmissionId).get()
 		);
 		expect(pipeline1Logs).toEqual(wantPipeline1Logs);
 
@@ -185,13 +185,13 @@ describe("Logging", () => {
 				...pipeline1Logs[0],
 				expect.objectContaining({
 					pipelineId: "pipeline-2",
-					streamId: "0",
+					transmissionId: "0",
 					stepId: "fork",
 					value: 1
 				}),
 				expect.objectContaining({
 					pipelineId: "pipeline-2",
-					streamId: "0",
+					transmissionId: "0",
 					stepId: "step_2.1",
 					value: 1
 				})
@@ -200,20 +200,20 @@ describe("Logging", () => {
 				...pipeline1Logs[1],
 				expect.objectContaining({
 					pipelineId: "pipeline-2",
-					streamId: "1",
+					transmissionId: "1",
 					stepId: "fork",
 					value: 2
 				}),
 				expect.objectContaining({
 					pipelineId: "pipeline-2",
-					streamId: "1",
+					transmissionId: "1",
 					stepId: "step_2.1",
 					value: 4
 				})
 			]
 		];
-		const pipeline2Logs = [...logger.pipeline("pipeline-2").streams()].map((streamId) =>
-			logger.pipeline("pipeline-2").stream(streamId).get()
+		const pipeline2Logs = [...logger.pipeline("pipeline-2").transmissions()].map((transmissionId) =>
+			logger.pipeline("pipeline-2").transmission(transmissionId).get()
 		);
 		expect(pipeline2Logs).toEqual(wantPipeline2Logs);
 
@@ -222,13 +222,13 @@ describe("Logging", () => {
 				...pipeline1Logs[0],
 				expect.objectContaining({
 					pipelineId: "pipeline-3",
-					streamId: "0",
+					transmissionId: "0",
 					stepId: "fork",
 					value: 1
 				}),
 				expect.objectContaining({
 					pipelineId: "pipeline-3",
-					streamId: "0",
+					transmissionId: "0",
 					stepId: "step_3.1",
 					value: "value: 1"
 				})
@@ -237,20 +237,20 @@ describe("Logging", () => {
 				...pipeline1Logs[1],
 				expect.objectContaining({
 					pipelineId: "pipeline-3",
-					streamId: "1",
+					transmissionId: "1",
 					stepId: "fork",
 					value: 2
 				}),
 				expect.objectContaining({
 					pipelineId: "pipeline-3",
-					streamId: "1",
+					transmissionId: "1",
 					stepId: "step_3.1",
 					value: "value: 2"
 				})
 			]
 		];
-		const pipeline3Logs = [...logger.pipeline("pipeline-3").streams()].map((streamId) =>
-			logger.pipeline("pipeline-3").stream(streamId).get()
+		const pipeline3Logs = [...logger.pipeline("pipeline-3").transmissions()].map((transmissionId) =>
+			logger.pipeline("pipeline-3").transmission(transmissionId).get()
 		);
 		expect(pipeline3Logs).toEqual(wantPipeline3Logs);
 	});

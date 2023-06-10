@@ -2,7 +2,7 @@ import { DateTime } from "luxon";
 
 export interface LogsMeta {
 	pipelineId: string;
-	streamId: string;
+	transmissionId: string;
 }
 
 export interface ValueWithMeta<V = any> extends LogsMeta {

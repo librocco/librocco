@@ -12,8 +12,8 @@ class Logger {
 		(input) =>
 			input.pipe(
 				map((value) => {
-					const streamId = generateId(value as V);
-					return this._internal.start({ pipelineId, streamId, value });
+					const transmissionId = generateId(value as V);
+					return this._internal.start({ pipelineId, transmissionId, value });
 				})
 			);
 
@@ -23,8 +23,8 @@ class Logger {
 			let meta: LogsMeta;
 			return input.pipe(
 				// Tap into the value with meta, storing the meta to the outer scope
-				tap(({ streamId, pipelineId }) => {
-					meta = { streamId, pipelineId };
+				tap(({ transmissionId, pipelineId }) => {
+					meta = { transmissionId, pipelineId };
 				}),
 				// Unwrap the value from the value with meta
 				map(({ value }) => value),
@@ -44,8 +44,11 @@ class Logger {
 		(input) =>
 			input.pipe(
 				map(
-					({ pipelineId: sourceId, streamId, value }) =>
-						this.pipeline(sourceId).fork(forkId).stream(streamId).start({ pipelineId: forkId, value, streamId }) as V
+					({ pipelineId: sourceId, transmissionId, value }) =>
+						this.pipeline(sourceId)
+							.fork(forkId)
+							.transmission(transmissionId)
+							.start({ pipelineId: forkId, value, transmissionId }) as V
 				)
 			);
 

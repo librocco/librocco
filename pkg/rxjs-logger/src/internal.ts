@@ -2,12 +2,12 @@ import { DateTime } from "luxon";
 
 import { ValueWithMeta, Logs } from "./types";
 
-export class Stream {
+export class Transmission {
 	#pipeline: Pipeline;
 
 	id: string;
 
-	private _sourceStream?: Stream;
+	private _sourceTransmission?: Transmission;
 
 	private steps: Logs[] = [];
 
@@ -15,9 +15,9 @@ export class Stream {
 		this.#pipeline = pipeline;
 		this.id = id;
 
-		// If the pipeline this stream belongs to is a fork, the source pipeline will have the
-		// previous steps of the stream saved as a Stream with the same id as this one
-		this._sourceStream = this.#pipeline.sourcePipeline()?.stream(this.id);
+		// If the pipeline this transmission belongs to is a fork, the source pipeline will have the
+		// previous steps of the transmission saved as a Transmission with the same id as this one
+		this._sourceTransmission = this.#pipeline.sourcePipeline()?.transmission(this.id);
 	}
 
 	start<V extends ValueWithMeta>(valueWithMeta: V): V {
@@ -26,11 +26,11 @@ export class Stream {
 		if (this.steps.length) {
 			const startTime = this.steps[0].timestamp;
 			const currentTime = timestamp;
-			warn(`Trying to run 'stream.start' on an already started stream.\n`, { ...valueWithMeta, startTime, currentTime });
+			warn(`Trying to run 'transmission.start' on an already started transmission.\n`, { ...valueWithMeta, startTime, currentTime });
 			return valueWithMeta;
 		}
 
-		const stepId = this._sourceStream ? "fork" : "start";
+		const stepId = this._sourceTransmission ? "fork" : "start";
 
 		this.steps = [
 			{
@@ -46,11 +46,11 @@ export class Stream {
 
 	private getLastStep(): Logs | undefined {
 		const numSteps = this.steps.length;
-		return numSteps ? this.steps[numSteps - 1] : this._sourceStream?.getLastStep();
+		return numSteps ? this.steps[numSteps - 1] : this._sourceTransmission?.getLastStep();
 	}
 
 	private getsourceSteps() {
-		return this._sourceStream?.get() || [];
+		return this._sourceTransmission?.get() || [];
 	}
 
 	log<V extends ValueWithMeta>(valueWithMeta: V, stepId: string): V {
@@ -59,7 +59,7 @@ export class Stream {
 		if (this.steps.length === 0) {
 			const startTime = null;
 			const currentTime = timestamp;
-			warn(`Trying to write logs for a non existing stream: Did you forget to run 'stream.start()'?`, {
+			warn(`Trying to write logs for a non existing transmission: Did you forget to run 'transmission.start()'?`, {
 				...valueWithMeta,
 				startTime,
 				currentTime
@@ -67,9 +67,9 @@ export class Stream {
 			return valueWithMeta;
 		}
 
-		// If there already are steps logged for this stream, get the latest (as previous step)
-		// if not, we check if this stream belongs to a forked pipeline. If so, get the last step of the
-		// root stream. Finally, resort to undefined.
+		// If there already are steps logged for this transmission, get the latest (as previous step)
+		// if not, we check if this transmission belongs to a forked pipeline. If so, get the last step of the
+		// root transmission. Finally, resort to undefined.
 		const prevStep = this.getLastStep();
 
 		const timeDiff = prevStep ? timestamp.diff(prevStep.timestamp, "milliseconds").milliseconds : 0;
@@ -97,7 +97,7 @@ export class Pipeline {
 	private _sourcePipeline?: Pipeline;
 	private _forks = new Map<string, Pipeline>();
 
-	private _streams = new Map<string, Stream>();
+	private _transmissions = new Map<string, Transmission>();
 
 	constructor(logger: LoggerInternal, id: string, sourcePipeline?: Pipeline) {
 		this.#logger = logger;
@@ -110,14 +110,14 @@ export class Pipeline {
 		}
 	}
 
-	stream = (streamId: string) => {
-		if (!this._streams.has(streamId)) {
-			this._streams.set(streamId, new Stream(this, streamId));
+	transmission = (transmissionId: string) => {
+		if (!this._transmissions.has(transmissionId)) {
+			this._transmissions.set(transmissionId, new Transmission(this, transmissionId));
 		}
-		return this._streams.get(streamId) as Stream;
+		return this._transmissions.get(transmissionId) as Transmission;
 	};
 
-	streams = () => this._streams.keys();
+	transmissions = () => this._transmissions.keys();
 
 	sourcePipeline = () => this._sourcePipeline;
 
@@ -132,8 +132,8 @@ export class Pipeline {
 
 /**
  * Internal logger instance:
- * - keeps record of registered pipelines and their corresponding streams
- * - exposes an API to store/retrieve the logs per pipeline/stream, etc
+ * - keeps record of registered pipelines and their corresponding transmissions
+ * - exposes an API to store/retrieve the logs per pipeline/transmission, etc
  */
 export class LoggerInternal {
 	private _pipelines = new Map<string, Pipeline>();
@@ -148,13 +148,13 @@ export class LoggerInternal {
 	pipelines = () => this._pipelines.keys();
 
 	start = <V extends ValueWithMeta>(logs: V): V => {
-		const { pipelineId, streamId } = logs;
-		return this.pipeline(pipelineId).stream(streamId).start(logs);
+		const { pipelineId, transmissionId } = logs;
+		return this.pipeline(pipelineId).transmission(transmissionId).start(logs);
 	};
 
 	log = <V extends ValueWithMeta>(meta: V, stepId: string): V => {
-		const { pipelineId, streamId } = meta;
-		return this.pipeline(pipelineId).stream(streamId).log(meta, stepId);
+		const { pipelineId, transmissionId } = meta;
+		return this.pipeline(pipelineId).transmission(transmissionId).log(meta, stepId);
 	};
 }
 
@@ -162,15 +162,15 @@ const warn = (
 	message: string,
 	{
 		pipelineId,
-		streamId,
+		transmissionId,
 		startTime,
 		currentTime
-	}: { pipelineId: string; streamId: string; startTime: DateTime | null; currentTime: DateTime }
+	}: { pipelineId: string; transmissionId: string; startTime: DateTime | null; currentTime: DateTime }
 ) => {
 	console.warn(
 		`${message}:\n`,
 		`  Pipeline id: ${pipelineId}\n`,
-		`  Stream id: ${streamId}\n`,
+		`  Transmission id: ${transmissionId}\n`,
 		`  Started at: ${startTime?.toISO() || "null"}\n`,
 		`  Current time: ${currentTime.toISO()}`
 	);
