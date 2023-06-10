@@ -3,6 +3,7 @@ import { map, OperatorFunction, tap } from "rxjs";
 import { LogsMeta, ValueWithMeta } from "./types";
 
 import { LoggerInternal } from "./internal";
+import { registerClient } from "./client";
 
 class Logger {
 	private _internal = new LoggerInternal();
@@ -52,9 +53,11 @@ class Logger {
 				)
 			);
 
+	registerClient = () => registerClient(this._internal);
+
 	// Expose 'pipeline' and 'pipelines' methods of the internal logger instance
 	pipeline = this._internal.pipeline;
 	pipelines = this._internal.pipelines;
 }
-10;
+
 export const newLogger = () => new Logger();
