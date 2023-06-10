@@ -1,27 +1,27 @@
-import { map, Observable, OperatorFunction, tap } from "rxjs";
+import { map, OperatorFunction, tap } from "rxjs";
 
 import { LogsMeta, ValueWithMeta } from "./types";
 
-import { LoggerInternal, Pipeline, Stream } from "./internal";
+import { LoggerInternal } from "./internal";
 
 class Logger {
 	private _internal = new LoggerInternal();
 
-	startStream =
-		<V>(pipelineId: string, generateId: (value: V) => string) =>
-		(input: Observable<V>): Observable<ValueWithMeta<V>> =>
-			map((value) => {
-				const streamId = generateId(value as V);
-				const valueWithMeta = { pipelineId, streamId, value } as ValueWithMeta<V>;
-				this._internal.log(valueWithMeta);
-				return valueWithMeta;
-			})(input);
+	start =
+		<V>(pipelineId: string, generateId: (value: V) => string): OperatorFunction<V, ValueWithMeta<V>> =>
+		(input) =>
+			input.pipe(
+				map((value) => {
+					const streamId = generateId(value as V);
+					return this._internal.start({ pipelineId, streamId, value });
+				})
+			);
 
 	log =
 		<V, R>(stepId: string, transformer: OperatorFunction<V, R>): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<R>> =>
 		(input) => {
 			let meta: LogsMeta;
-			return (input as Observable<ValueWithMeta>).pipe(
+			return input.pipe(
 				// Tap into the value with meta, storing the meta to the outer scope
 				tap(({ streamId, pipelineId }) => {
 					meta = { streamId, pipelineId };
@@ -39,9 +39,19 @@ class Logger {
 			);
 		};
 
+	fork =
+		<V extends ValueWithMeta>(forkId: string): OperatorFunction<V, V> =>
+		(input) =>
+			input.pipe(
+				map(
+					({ pipelineId: sourceId, streamId, value }) =>
+						this.pipeline(sourceId).fork(forkId).stream(streamId).start({ pipelineId: forkId, value, streamId }) as V
+				)
+			);
+
 	// Expose 'pipeline' and 'pipelines' methods of the internal logger instance
 	pipeline = this._internal.pipeline;
 	pipelines = this._internal.pipelines;
 }
-
+10;
 export const newLogger = () => new Logger();
