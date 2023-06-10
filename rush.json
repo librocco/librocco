@@ -398,6 +398,10 @@
 		{
 			"packageName": "@librocco/shared",
 			"projectFolder": "pkg/shared"
+		},
+		{
+			"packageName": "@librocco/rxjs-logger",
+			"projectFolder": "pkg/rxjs-logger"
 		}
 	]
 }

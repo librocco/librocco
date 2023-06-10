@@ -164,6 +164,38 @@ importers:
       typescript: 4.9.4
       vite: 4.0.4
 
+  ../../pkg/rxjs-logger:
+    specifiers:
+      '@librocco/shared': workspace:*
+      '@types/luxon': ~3.3.0
+      '@types/uuid': ~8.3.4
+      '@typescript-eslint/eslint-plugin': ^5.27.0
+      '@typescript-eslint/parser': ^5.27.0
+      eslint: ^8.16.0
+      eslint-config-prettier: ^8.3.0
+      luxon: ~3.3.0
+      prettier: ^2.6.2
+      rxjs: ~7.8.0
+      typescript: ^4.8.4
+      uuid: ~8.3.2
+      vite: ~4.0.0
+      vitest: ~0.28.5
+    devDependencies:
+      '@librocco/shared': link:../shared
+      '@types/luxon': 3.3.0
+      '@types/uuid': 8.3.4
+      '@typescript-eslint/eslint-plugin': 5.48.2_101cdf21de94ccf8fd79d46613915786
+      '@typescript-eslint/parser': 5.48.2_eslint@8.32.0+typescript@4.9.4
+      eslint: 8.32.0
+      eslint-config-prettier: 8.6.0_eslint@8.32.0
+      luxon: 3.3.0
+      prettier: 2.8.3
+      rxjs: 7.8.0
+      typescript: 4.9.4
+      uuid: 8.3.2
+      vite: 4.0.4
+      vitest: 0.28.5
+
   ../../pkg/scaffold:
     specifiers:
       '@tailwindcss/forms': ~0.5.3
@@ -2716,6 +2748,10 @@ packages:
 
   /@types/linkify-it/3.0.2:
     resolution: {integrity: sha512-HZQYqbiFVWufzCwexrvh694SOim8z2d+xJl5UNamcvQFejLY/2YUtzXHYi3cHdI7PMlS8ejH2slRAOJQ32aNbA==}
+    dev: true
+
+  /@types/luxon/3.3.0:
+    resolution: {integrity: sha512-uKRI5QORDnrGFYgcdAVnHvEIvEZ8noTpP/Bg+HeUzZghwinDlIS87DEenV5r1YoOF9G4x600YsUXLWZ19rmTmg==}
     dev: true
 
   /@types/markdown-it/12.2.3:
@@ -7114,6 +7150,11 @@ packages:
       svelte: ^3.49.0
     dependencies:
       svelte: 3.58.0
+
+  /luxon/3.3.0:
+    resolution: {integrity: sha512-An0UCfG/rSiqtAIiBPO0Y9/zAnHUZxAMiCpTd5h2smgsj7GGmcenvrvww2cqNA8/4A5ZrD1gJpHN2mIHZQF+Mg==}
+    engines: {node: '>=12'}
+    dev: true
 
   /lz-string/1.4.4:
     resolution: {integrity: sha512-0ckx7ZHRPqb0oUm8zNr+90mtf9DQB60H1wMCjBtfi62Kl3a7JbHob6gA2bC+xRvZoOL+1hzUK8jeuEIQE8svEQ==}
