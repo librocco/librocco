@@ -5,10 +5,11 @@ import { Logs } from "../types";
 
 import { newLogger } from "../logger";
 
-const { logger, startStream, log } = newLogger();
+const logger = newLogger();
+const { startStream, log } = logger;
 
-describe("Example of logger usage", () => {
-	test("example", async () => {
+describe("Logging", () => {
+	test("should keep the logs for instrumented streams", async () => {
 		const pipelineId = "pipeline-1";
 
 		let streamIx = 0;
@@ -77,7 +78,7 @@ describe("Example of logger usage", () => {
 		]);
 
 		// Check for the rest of the logs (streams "1" and "2")
-
+		//
 		// Initial values of stream "1" and "2" (the same value as stream id, only of type number)
 		const initialValues = [1, 2];
 		// Construct the "want" logs
