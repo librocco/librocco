@@ -4,12 +4,17 @@ import { LogsMeta, ValueWithMeta } from "./types";
 
 import { LoggerInternal } from "./internal";
 import { registerClient } from "./client";
+import { unwrap, wrap } from "./operators";
+
+const timestampId = () => Date.now().toString();
 
 class Logger {
 	private _internal = new LoggerInternal();
 
+	getLogger = () => this._internal;
+
 	start =
-		<V>(pipelineId: string, generateId: (value: V) => string): OperatorFunction<V, ValueWithMeta<V>> =>
+		<V>(pipelineId: string, generateId: (value: V) => string = timestampId): OperatorFunction<V, ValueWithMeta<V>> =>
 		(input) =>
 			input.pipe(
 				map((value) => {
@@ -21,18 +26,18 @@ class Logger {
 	log =
 		<V, R>(stepId: string, transformer: OperatorFunction<V, R>): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<R>> =>
 		(input) => {
-			let meta: LogsMeta;
+			let meta = {} as LogsMeta;
 			return input.pipe(
 				// Tap into the value with meta, storing the meta to the outer scope
 				tap(({ transmissionId, pipelineId }) => {
 					meta = { transmissionId, pipelineId };
 				}),
 				// Unwrap the value from the value with meta
-				map(({ value }) => value),
+				unwrap(),
 				// Run the transformer with the value
 				transformer,
 				// Wrap the value with meta back up
-				map((value) => ({ value, ...meta } as ValueWithMeta<R>)),
+				wrap(() => meta),
 				// Log the (transformed) value with meta
 				tap((valueWithMeta) => {
 					this._internal.log(valueWithMeta, stepId);

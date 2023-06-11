@@ -20,7 +20,6 @@
 		"typecheck": "tsc --noEmit"
 	},
 	"peerDependencies": {
-		"pouchdb": "~7.3.0",
 		"rxjs": "~7.8.0"
 	},
 	"devDependencies": {
