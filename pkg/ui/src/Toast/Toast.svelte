@@ -1,38 +1,36 @@
 <script lang="ts">
-	import { createEventDispatcher } from "svelte";
 	import { fade } from "svelte/transition";
-
 	import { X } from "lucide-svelte";
 
-	import { ToastType } from "./enums";
+	import { consume } from "../Toasts/index";
 
-	const dispatch = createEventDispatcher();
+	import { ToastType, type Toast } from "./enums";
 
-	export let type: ToastType;
-	export let dismissible = true;
+	export let toast: Toast;
 
 	const colourLookup = {
 		[ToastType.Error]: "bg-red-50 text-red-900",
 		[ToastType.Success]: "bg-green-50 text-green-900"
 	};
+
+	const t = consume(toast);
 </script>
 
 <div
-	class="flex max-w-fit items-center justify-between gap-x-4 rounded-lg px-4 py-2 shadow-md {colourLookup[type]}"
+	class="flex max-w-fit items-center justify-between gap-x-4 rounded-lg px-4 py-2 shadow-md {colourLookup[toast.type]}"
 	role="alert"
-	transition:fade
+	transition:fade={{ duration: 200 }}
+	use:t.toast
 >
 	<p class="text-left text-base font-normal">
-		<slot />
+		{$t.message}
 	</p>
-	{#if dismissible}
-		<button
-			type="button"
-			aria-label="Close toast"
-			class="rounded-lg p-1 text-gray-400 hover:text-gray-800 focus:outline-none focus:outline-gray-700"
-			on:click={() => dispatch("dismiss")}
-		>
-			<X />
-		</button>
-	{/if}
+	<button
+		type="button"
+		aria-label="Close toast"
+		class="rounded-lg p-1 text-gray-400 hover:text-gray-800 focus:outline-none focus:outline-gray-700"
+		on:click={() => t.close()}
+	>
+		<X />
+	</button>
 </div>

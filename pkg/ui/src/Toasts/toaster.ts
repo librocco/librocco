@@ -3,6 +3,7 @@ import { setContext } from "svelte";
 
 export const TOASTER_CONTEXT_PREFIX = "TOASTER";
 
+// TODO: start with initial[] of toasts
 /**
  * Sets up toaster store and adds it to toaster context
  */
@@ -13,6 +14,8 @@ export const createToaster = (target = "default") => {
 
 	return toasterStore;
 };
+
+// TODO: type toast store. Should require certain properties but allow extension with e.g type
 
 /**
  * Creates a toaster store to hold and manage toasts
