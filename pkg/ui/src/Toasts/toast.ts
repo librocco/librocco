@@ -5,12 +5,15 @@ import { tweened } from "svelte/motion";
 import { linear } from "svelte/easing";
 
 import type { ToasterContext } from "./types";
+import { TOASTER_CONTEXT_PREFIX } from "./toaster";
+
+// TODO: what if toast shouldn't disappear automatically?
 
 /**
  * Sets up toast store and action
  */
 export const consume = (_toast, target = "default") => {
-	const { toaster: toasterStore } = getContext<ToasterContext>(target);
+	const { toaster: toasterStore } = getContext<ToasterContext>(`${TOASTER_CONTEXT_PREFIX}-${target}`);
 
 	// TODO: no toaster context found...
 
