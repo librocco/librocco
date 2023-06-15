@@ -2,15 +2,28 @@
 	import type { Hst } from "@histoire/plugin-svelte";
 
 	import Toast from "./Toast.svelte";
-	import { ToastType } from "./enums";
+	import { ToastType } from "./types";
 
-	import { createToaster } from "../Toasts/index";
+	import { createToaster } from "../Toasts";
 
 	export let Hst: Hst;
 
-	const toaster = createToaster();
+	/**
+	 * Originally I was using context to share the toasterStore between producer and consumer
+	 * but updated this to a map so that toasters could be created outside of components...
+	 *
+	 * This broke the original version of this story, which had dummy buttons and toasts to
+	 * simulate toast action. There is an error with Histoire and all I could gather quickly is
+	 * that it is proxying data to the component and it cannot clone the toaster function stored in the map properly.
+	 *
+	 * The tests still pass and the functionality still works in the app, so I have reduced this story to a dumb
+	 * rendering of Toasts: they will not timeout and cannot be closed... but still, they require a toasterStore to
+	 * render properly, so we call...
+	 */
+	createToaster();
 
 	const toastCore = {
+		id: 1,
 		duration: 2000,
 		pausable: true
 	};
@@ -30,12 +43,7 @@
 
 <Hst.Story title="Toast" layout={{ type: "grid", width: 500 }}>
 	<div class="m-4 flex flex-col gap-y-6">
-		{#each $toaster as toast (toast.id)}
-			<Toast {toast} />
-		{/each}
-	</div>
-	<div class="flex gap-x-2">
-		<button class="rounded bg-green-100 p-3" on:click={() => toaster.push(successToast)}>Toast Success :)</button>
-		<button class="rounded bg-red-100 p-3" on:click={() => toaster.push(errorToast)}>Toast Error :(</button>
+		<Toast toast={successToast} />
+		<Toast toast={errorToast} />
 	</div>
 </Hst.Story>

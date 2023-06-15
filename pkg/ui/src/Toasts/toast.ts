@@ -1,11 +1,9 @@
 import { writable, derived } from "svelte/store";
-import { getContext } from "svelte";
 
 import { tweened } from "svelte/motion";
 import { linear } from "svelte/easing";
 
-import type { ToasterContext } from "./types";
-import { TOASTER_CONTEXT_PREFIX } from "./toaster";
+import { toasters } from "./toaster";
 
 // TODO: what if toast shouldn't disappear automatically?
 
@@ -13,9 +11,9 @@ import { TOASTER_CONTEXT_PREFIX } from "./toaster";
  * Sets up toast store and action
  */
 export const consume = (_toast, target = "default") => {
-	const { toaster: toasterStore } = getContext<ToasterContext>(`${TOASTER_CONTEXT_PREFIX}-${target}`);
+	const { toaster: toasterStore } = toasters.get(target);
 
-	// TODO: no toaster context found...
+	// TODO: no toaster found in map...
 
 	const toastStore = createToastStore(toasterStore)(_toast);
 
@@ -68,7 +66,11 @@ export const createToastAction = (toastStore) => (node) => {
 		prev = t.progress;
 
 		if (toast.progress === 1) {
-			toastStore.close();
+			try {
+				toastStore.close();
+			} catch (e) {
+				console.log(e);
+			}
 		}
 	});
 

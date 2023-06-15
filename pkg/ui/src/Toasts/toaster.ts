@@ -1,7 +1,7 @@
 import { writable } from "svelte/store";
-import { setContext } from "svelte";
+import type { Toaster } from "./types";
 
-export const TOASTER_CONTEXT_PREFIX = "TOASTER";
+export const toasters = new Map<string, Toaster>();
 
 // TODO: start with initial[] of toasts
 /**
@@ -10,7 +10,8 @@ export const TOASTER_CONTEXT_PREFIX = "TOASTER";
 export const createToaster = (target = "default") => {
 	const toasterStore = createToasterStore();
 
-	setContext(`${TOASTER_CONTEXT_PREFIX}-${target}`, { toaster: toasterStore });
+	// TODO: overriding old toaster
+	toasters.set(target, { toaster: toasterStore });
 
 	return toasterStore;
 };

@@ -2,9 +2,9 @@
 	import { fade } from "svelte/transition";
 	import { X } from "lucide-svelte";
 
-	import { consume } from "../Toasts/index";
+	import { consume } from "../Toasts";
 
-	import { ToastType, type Toast } from "./enums";
+	import { ToastType, type Toast } from "./types";
 
 	export let toast: Toast;
 
