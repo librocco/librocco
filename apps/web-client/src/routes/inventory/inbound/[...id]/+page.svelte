@@ -23,8 +23,11 @@
 		TextFieldSize,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
-		ProgressBar
+		ProgressBar,
+		BookDetailForm,
+		Slideover
 	} from "@librocco/ui";
+	import type { BookEntry } from "@librocco/db";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -52,6 +55,19 @@
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
+
+	const emptyBook = {
+		isbn: "",
+		title: "",
+		authors: "",
+		publisher: "",
+		year: "",
+		price: 0
+	};
+
+	$: bookFormHeader = { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
+
+	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
@@ -101,20 +117,33 @@
 		data: $entries
 	});
 
+	const bookForm = writable<{ book: BookEntry; modalOpen: boolean }>({
+		book: emptyBook,
+		modalOpen: false
+	});
+
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = (isbn: string) => async () => {
-		if (!isbn) {
+	const handleAddTransaction = async (bookEntry: BookEntry) => {
+		if (!bookEntry.isbn) {
 			emptyISBNInput = true;
 			return;
 		}
 		emptyISBNInput = false;
 
-		await note.addVolumes({ isbn, quantity: 1 });
+		const booksInterface = db.books();
 
-		toastSuccess(toasts.volumeAdded(isbn));
+		booksInterface.upsert([bookEntry]);
+		bookForm.set({
+			book: emptyBook,
+			modalOpen: false
+		});
+
+		await note.addVolumes({ isbn: bookEntry.isbn, quantity: 1 });
+
+		toastSuccess(toasts.volumeAdded(bookEntry.isbn));
 	};
 
 	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
@@ -132,6 +161,24 @@
 		await toastSuccess(toasts.volumeRemoved(e.detail.length));
 		note.removeTransactions(...e.detail);
 	};
+
+	const handleEditBookEntry = (book: BookEntry) => {
+		bookFormHeader = book.isbn
+			? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
+			: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
+
+		bookForm.update((store) => {
+			store.book = book;
+			store.modalOpen = true;
+			return store;
+		});
+	};
+
+	const handleCloseBookForm = () =>
+		bookForm.set({
+			book: emptyBook,
+			modalOpen: false
+		});
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -192,12 +239,13 @@
 					variant={TextFieldSize.LG}
 					error={emptyISBNInput}
 					helpText={emptyISBNInput ? "ISBN cannot be empty" : ""}
+					bind:value={$bookForm.book.isbn}
 				>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
 					</svelte:fragment>
 					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
+						<Button on:click={() => handleEditBookEntry($bookForm.book)} size={ButtonSize.SM}>
 							<svelte:fragment slot="startAdornment">
 								<Edit size={16} />
 							</svelte:fragment>
@@ -217,6 +265,7 @@
 					{table}
 					on:transactionupdate={handleTransactionUpdate}
 					on:removetransactions={handleRemoveTransactions}
+					onEdit={handleEditBookEntry}
 					interactive
 				/>
 			{/if}
@@ -239,4 +288,12 @@
 			{/if}
 		{/if}
 	</div>
+
+	<svelte:fragment slot="slideOver">
+		{#if $bookForm.modalOpen}
+			<Slideover title={bookFormHeader.title} description={bookFormHeader.description} handleClose={handleCloseBookForm}>
+				<BookDetailForm book={$bookForm.book} {publisherList} onSubmit={handleAddTransaction} onCancel={handleCloseBookForm} />
+			</Slideover>
+		{/if}
+	</svelte:fragment>
 </InventoryPage>
