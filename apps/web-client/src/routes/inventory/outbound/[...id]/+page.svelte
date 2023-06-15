@@ -41,6 +41,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { links } from "$lib/data";
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
 	export let data: PageData;
 
@@ -51,17 +52,6 @@
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
 	const outNoteList = readableFromStream(outNoteListCtx, db?.stream().outNoteList(outNoteListCtx), []);
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateNote = async () => {
-		loading = true;
-		const note = db.warehouse().note();
-		await note.create();
-		goto(`${base}/inventory/outbound/${note._id}`);
-	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -78,12 +68,31 @@
 	$: paginationData = noteStores.paginationData;
 	$: entries = noteStores.entries;
 
+	$: toasts = noteToastMessages(note?.displayName);
+
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(`${base}/inventory/outbound`);
+
+			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
+
+			toastSuccess(message);
 		}
 	}
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateNote = async () => {
+		loading = true;
+		const note = db.warehouse().note();
+		await note.create();
+		await goto(`${base}/inventory/outbound/${note._id}`);
+
+		toastSuccess(toasts.outNoteCreated);
+	};
 
 	const tableOptions = writable({
 		data: $entries
@@ -93,16 +102,26 @@
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = (isbn: string) => () => note.addVolumes({ isbn, quantity: 1 });
+	const handleAddTransaction = (isbn: string) => () => {
+		note.addVolumes({ isbn, quantity: 1 });
 
-	const handleTransactionUpdate = ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
+		toastSuccess(toasts.volumeAdded(isbn));
+	};
+
+	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
 		const { matchTxn, updateTxn } = detail;
 		const { isbn, warehouseId = "", quantity = matchTxn.quantity } = updateTxn;
 
-		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+		await note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+
+		// TODO: This doesn't seem to work / get called?
+		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
-	const handleRemoveTransactions = (e: CustomEvent<RemoveTransactionsDetail>) => note.removeTransactions(...e.detail);
+	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
+		await note.removeTransactions(...e.detail);
+		toastSuccess(toasts.volumeRemoved(e.detail.length));
+	};
 </script>
 
 <InventoryPage>

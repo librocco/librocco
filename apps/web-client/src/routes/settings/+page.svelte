@@ -6,6 +6,7 @@
 
 	import { links } from "$lib/data";
 	import { remoteCouchConfigStore } from "$lib/stores/settings";
+	import { toastSuccess } from "$lib/toasts";
 
 	let errors = {
 		"couch-url": ""
@@ -21,6 +22,8 @@
 		if (couchUrl && urlRegex.test(couchUrl)) {
 			errors["couch-url"] = "";
 			remoteCouchConfigStore.set({ couchUrl });
+
+			toastSuccess("Remote CouchDB URL updated");
 		} else {
 			errors["couch-url"] =
 				"URL should have format https://<COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
