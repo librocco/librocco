@@ -11,6 +11,7 @@
 		inputAction?: Action | (() => void);
 		variant?: TextFieldSize;
 		error?: boolean;
+		onHelpTextClick?: () => void;
 	}
 
 	export let name: string;
@@ -20,11 +21,13 @@
 	export let variant: TextFieldSize = TextFieldSize.Base;
 	export let error = false;
 	export let value = "";
+	export let onHelpTextClick = () => {};
 	$: error = error;
 
 	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
 	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]"];
 	const inputBaseClasses = ["block", "w-full", "border-0", "text-sm", "focus:outline-0", "focus:ring-0", variant];
+	const clickableHelpText = onHelpTextClick ? "cursor-pointer underline" : "";
 
 	const containerBaseClasses = ["flex", "mx-[2px]", "outline", "rounded-md", "shadow-sm", "focus-within:outline-2"];
 
@@ -36,7 +39,7 @@
 
 	const labelClasses = labelBaseClasses.join(" ");
 	const inputClasses = inputBaseClasses.join(" ");
-	$: helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
+	$: helpTextClasses = helpTextBaseClasses.concat(helpTextColour, clickableHelpText).join(" ");
 	$: containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth, containerFocusColor).join(" ");
 </script>
 
@@ -61,6 +64,6 @@
 		{/if}
 	</div>
 	{#if helpText}
-		<p class={helpTextClasses}>{helpText}</p>
+		<p on:keypress={onHelpTextClick} on:click={onHelpTextClick} class={helpTextClasses}>{helpText}</p>
 	{/if}
 </div>

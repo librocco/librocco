@@ -118,5 +118,6 @@ export const shapeRadiusLookup: Record<ButtonShape.Square | ButtonShape.Rounded,
 export const colorClassesLookup: Record<ButtonColor, string> = {
 	[ButtonColor.Primary]: "text-white bg-teal-600 hover:bg-teal-700",
 	[ButtonColor.Secondary]: "text-pink-700 bg-pink-50 hover:bg-pink-100",
-	[ButtonColor.White]: "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+	[ButtonColor.White]: "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50",
+	[ButtonColor.Disabled]: "text-gray-700 bg-gray-100 border border-gray-300"
 };

@@ -27,7 +27,7 @@
 		BookDetailForm,
 		Slideover
 	} from "@librocco/ui";
-	import type { BookEntry } from "@librocco/db";
+	import type { BookEntry, DatabaseInterface } from "@librocco/db";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -50,6 +50,8 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
+
+	const findBook = (db: DatabaseInterface) => (isbn: string) => db.books().get([isbn]);
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
@@ -75,8 +77,6 @@
 		price: 0
 	};
 
-	$: bookFormHeader = { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
-
 	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
@@ -95,6 +95,9 @@
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
 	$: emptyISBNInput = false;
+	$: formHeader = $bookForm.editMode
+		? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
+		: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
 
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
@@ -107,16 +110,19 @@
 		data: $entries
 	});
 
-	const bookForm = writable<{ book: BookEntry; modalOpen: boolean }>({
+	const bookForm = writable<{ book: BookEntry; modalOpen: boolean; editMode?: boolean }>({
 		book: emptyBook,
-		modalOpen: false
+		modalOpen: false,
+		editMode: false
 	});
+
+	const openEditMode = () => bookForm.update((store) => ({ ...store, editMode: true }));
 
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = async (bookEntry: BookEntry) => {
+	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
 		if (!bookEntry.isbn) {
 			emptyISBNInput = true;
 			return;
@@ -143,13 +149,11 @@
 	};
 
 	const handleEditBookEntry = (book: BookEntry) => {
-		bookFormHeader = book.isbn
-			? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
-			: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
-
 		bookForm.update((store) => {
 			store.book = book;
 			store.modalOpen = true;
+
+			store.editMode = book.isbn !== "" && true;
 			return store;
 		});
 	};
@@ -159,7 +163,8 @@
 	const handleCloseBookForm = () =>
 		bookForm.set({
 			book: emptyBook,
-			modalOpen: false
+			modalOpen: false,
+			editMode: false
 		});
 </script>
 
@@ -273,8 +278,16 @@
 
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.modalOpen}
-			<Slideover title={bookFormHeader.title} description={bookFormHeader.description} handleClose={handleCloseBookForm}>
-				<BookDetailForm book={$bookForm.book} {publisherList} onSubmit={handleAddTransaction} onCancel={handleCloseBookForm} />
+			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+				<BookDetailForm
+					editMode={$bookForm.editMode}
+					{openEditMode}
+					book={$bookForm.book}
+					{publisherList}
+					onISBNField={findBook(db)}
+					onSubmit={handleAddTransaction(db)}
+					onCancel={handleCloseBookForm}
+				/>
 			</Slideover>
 		{/if}
 	</svelte:fragment>
