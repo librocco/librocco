@@ -41,6 +41,8 @@
 	import { links } from "$lib/data";
 	import { base } from "$app/paths";
 
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -50,18 +52,6 @@
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
-
-	/**
-	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse
-	 * the new inbound note should be added to.
-	 * _(The handler navigates to the newly created note page after the note has been created)_.
-	 */
-	const handleCreateNote = (warehousId: string) => async () => {
-		loading = true;
-		const note = db.warehouse(warehousId).note();
-		await note.create();
-		goto(`${base}/inventory/inbound/${note._id}`);
-	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
@@ -80,12 +70,32 @@
 	$: paginationData = noteStores.paginationData;
 	$: emptyISBNInput = false;
 
+	$: toasts = noteToastMessages(note?.displayName, warehouse?.displayName);
+
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(`${base}/inventory/inbound`);
+
+			const message = $state === NoteState.Committed ? toasts.inNoteCommited : toasts.noteDeleted;
+
+			toastSuccess(message);
 		}
 	}
+
+	/**
+	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse
+	 * the new inbound note should be added to.
+	 * _(The handler navigates to the newly created note page after the note has been created)_.
+	 */
+	const handleCreateNote = (warehousId: string) => async () => {
+		loading = true;
+		const note = db.warehouse(warehousId).note();
+		await note.create();
+		await goto(`${base}/inventory/inbound/${note._id}`);
+
+		toastSuccess(toasts.inNoteCreated);
+	};
 
 	const tableOptions = writable({
 		data: $entries
@@ -102,18 +112,26 @@
 		}
 		emptyISBNInput = false;
 
-		return note.addVolumes({ isbn, quantity: 1 });
+		await note.addVolumes({ isbn, quantity: 1 });
+
+		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const handleTransactionUpdate = ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
+	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
 		console.log("Bump");
 		const { matchTxn, updateTxn } = detail;
 		const { isbn, warehouseId, quantity = matchTxn.quantity } = updateTxn;
 
-		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+		await note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+
+		// TODO: This doesn't seem to work / get called?
+		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
-	const handleRemoveTransactions = (e: CustomEvent<RemoveTransactionsDetail>) => note.removeTransactions(...e.detail);
+	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
+		await toastSuccess(toasts.volumeRemoved(e.detail.length));
+		note.removeTransactions(...e.detail);
+	};
 </script>
 
 <!-- svelte-ignore missing-declaration -->

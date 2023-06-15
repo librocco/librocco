@@ -15,3 +15,5 @@ export * from "./Forms";
 export * from "./Slideover";
 export * from "./Toast";
 export * from "./ProgressBar";
+
+export * from "./Toasts";
