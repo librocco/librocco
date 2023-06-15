@@ -4,7 +4,7 @@
 	import type { createTable } from "./table";
 	import type { InventoryTableData, RemoveTransactionsDetail, TransactionUpdateDetail } from "./types";
 
-	import { Checkbox, Button, ButtonColor, BadgeSize } from "../";
+	import { Checkbox, Button, ButtonColor, BadgeSize, type BookEntry } from "../";
 	import QuantityInput from "./QuantityInput.svelte";
 	import Badge from "../Badge/Badge.svelte";
 
@@ -13,6 +13,8 @@
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
 	export let interactive = false;
+
+	export let onEdit: (bookEntry: BookEntry) => void = () => {};
 
 	const { resetRowSelection, table: tableAction, tableRow } = table;
 	$: ({ rows, selected } = $table);
@@ -31,13 +33,15 @@
 		publisher: "Publisher",
 		year: "Year",
 		editedBy: "Edited By",
-		outOfPrint: "Out of Print"
+		outOfPrint: "Out of Print",
+		edit: "Edit"
 	};
 
 	/** @TODO mvp quick integration */
 	interface EventMap {
 		transactionupdate: TransactionUpdateDetail;
 		removetransactions: RemoveTransactionsDetail;
+		edit: RemoveTransactionsDetail;
 	}
 	const dispatch = createEventDispatcher<EventMap>();
 	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
@@ -81,7 +85,7 @@
 				}
 			}}
 		>
-			<!-- Show chackbox/row selection only on interactive variant -->
+			<!-- Show checkbox/row selection only on interactive variant -->
 			{#if interactive}
 				<th scope="col" class="px-2 text-center">
 					<span class="inline-block">
@@ -115,6 +119,9 @@
 			</th>
 			<th scope="col" class="{thRowBaseStyles} hidden xl:table-cell">
 				{headers.editedBy}
+			</th>
+			<th scope="col" class="{thRowBaseStyles} hidden lg:table-cell">
+				{headers.edit}
 			</th>
 			<th scope="col" class="{thRowBaseStyles} hidden xl:table-cell">
 				{headers.outOfPrint}
@@ -193,6 +200,11 @@
 				</td>
 				<td class="hidden py-4 px-3 xl:table-cell">
 					{editedBy}
+				</td>
+				<td class="py-4 px-3 text-left">
+					<div class="flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
+						<Button color={ButtonColor.White} on:click={() => onEdit(row)}>Edit</Button>
+					</div>
 				</td>
 				<td class="hidden py-4 px-3 text-center xl:table-cell">
 					<span class="inline-block">
