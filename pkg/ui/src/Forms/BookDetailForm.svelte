@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createForm } from "felte";
+	import { createForm, getValue } from "felte";
 	import { createCombobox } from "svelte-headlessui";
 	import { ChevronsUpDown } from "lucide-svelte";
 
@@ -12,14 +12,86 @@
 	export let book: BookEntry;
 	export let publisherList: string[] = [];
 	export let onSubmit: (values: BookEntry) => void = () => {};
+	export let editMode: boolean = false;
+	export let openEditMode = () => {};
 	export let onCancel = () => {};
+	export let onISBNField: (isbn: string) => Promise<BookEntry[]> | undefined = () => undefined;
 
-	const { form } = createForm({
+	interface BookCache {
+		[key: string]: BookEntry;
+	}
+
+	// book store which can  be set
+	const bookCache: BookCache = {};
+
+	// reactive declaration for instant error feedback (felte returns stores on blur i think)
+	$: isbnExistsError = "";
+
+	const { form, data, setFields, setTouched, interacted } = createForm({
 		initialValues: book,
 		onSubmit: (values) => {
 			onSubmit(values);
+		},
+		debounced: {
+			// defaults to 300
+
+			timeout: 1000,
+			validate: async (values) => {
+				const errors: {
+					isbn?: string;
+					title?: string;
+					price?: string;
+					year?: string;
+					authors?: string;
+					publisher?: string;
+					editedBy?: string;
+					outOfPrint?: string;
+				} = { isbn: isbnExistsError };
+				const isbnError = "ISBN already exists, would you like to Edit it?";
+
+				if (values.isbn.trim() === "" || $interacted !== "isbn") return errors;
+
+				// reset isbn error if isbn field interacted with
+				isbnExistsError = "";
+
+				if (bookCache[values.isbn]) {
+					errors.isbn = isbnError;
+					isbnExistsError = isbnError;
+				} else {
+					const res = await onISBNField(values.isbn);
+
+					if (res[0] !== undefined) {
+						isbnExistsError = isbnError;
+
+						errors.isbn = isbnError;
+					}
+
+					bookCache[values.isbn] = res[0];
+				}
+
+				return errors;
+			}
 		}
 	});
+
+	const onEdit = () => {
+		openEditMode();
+
+		// reset isbn error on edit
+		isbnExistsError = "";
+
+		setFields({ year: "", authors: "", publisher: "", editedBy: "", outOfPrint: false, ...bookCache[getValue($data, "isbn")] });
+		setTouched({
+			isbn: false,
+			title: false,
+			price: false,
+			year: false,
+			authors: false,
+			publisher: false,
+			editedBy: false,
+			outOfPrint: false
+		});
+	};
 
 	const publisherCombo = createCombobox({ label: "publisher" });
 </script>
@@ -28,7 +100,15 @@
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<TextField name="isbn" label="ISBN" required={book.isbn === ""} disabled={book.isbn !== ""} />
+				<TextField
+					name="isbn"
+					label="ISBN"
+					required={getValue($data, "isbn") === ""}
+					disabled={editMode}
+					error={Boolean(isbnExistsError)}
+					helpText={isbnExistsError}
+					onHelpTextClick={onEdit}
+				/>
 			</div>
 			<div class="basis-full">
 				<TextField name="title" label="Title" required />
@@ -62,6 +142,10 @@
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
 		<Button color={ButtonColor.White} on:click={onCancel}>Cancel</Button>
-		<Button type="submit">Save</Button>
+		<Button
+			type="submit"
+			color={bookCache[$data.isbn] !== undefined && !editMode ? ButtonColor.Disabled : ButtonColor.Primary}
+			disabled={bookCache[$data.isbn] !== undefined && !editMode}>Save</Button
+		>
 	</div>
 </form>
