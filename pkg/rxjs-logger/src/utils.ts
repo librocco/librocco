@@ -1,3 +1,5 @@
+import { ValueWithMeta } from "./types";
+
 export function reduce<T>(iterable: Iterable<T>, cb: (acc: T, curr: T, i: number) => T, initial?: T): T;
 export function reduce<T, I>(iterable: Iterable<T>, cb: (acc: I, curr: T, i: number) => I, initial: I): I;
 
@@ -24,3 +26,12 @@ export const avg = (iterable: Iterable<number>) => {
 	const [sum, total] = reduce(iterable, (acc, curr, i) => [acc[0] + curr, i + 1], [0, 0]);
 	return sum / total;
 };
+
+/**
+ * A helper function, used to check whether or not the valueWithMeta object
+ * contains the required properties to be logged.
+ * @param valueWithMeta
+ * @returns
+ */
+export const shouldLog = (valueWithMeta: ValueWithMeta): valueWithMeta is Required<ValueWithMeta> =>
+	Boolean(valueWithMeta.pipelineId && valueWithMeta.transmissionId);

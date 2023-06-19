@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DatabaseInterface, VolumeStock, NoteType, VersionString } from "@/types";
+import { DatabaseInterface, VolumeStock, NoteType, VersionString, NewDatabase } from "@/types";
 
 // #region rawData
 export interface RawNote {
@@ -57,6 +57,6 @@ export interface TestTask {
 
 export interface ImplementationSetup {
 	version: VersionString;
-	newDatabase: (db: PouchDB.Database) => DatabaseInterface;
+	newDatabase: NewDatabase;
 }
 // #endregion testSetup

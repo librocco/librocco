@@ -6,15 +6,16 @@ import { LoggerInternal } from "./internal";
 import { registerClient } from "./client";
 import { unwrap, wrap } from "./operators";
 import { DateTime } from "luxon";
+import { shouldLog } from "./utils";
+
+type ValueWithMetaTuple<A> = {
+	[K in keyof A]: ValueWithMeta<A[K]>;
+};
 
 const timestampId = () => Date.now().toString();
 
-class Logger {
+export class Logger {
 	private _internal = new LoggerInternal();
-
-	constructor() {
-		this.join = this.join.bind(this);
-	}
 
 	getLogger = () => this._internal;
 
@@ -29,39 +30,8 @@ class Logger {
 				})
 			);
 
-	logOnce = <V, R>(stepId: string, transformer: OperatorFunction<V, R>): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<R>> => {
-		let logged = false;
-
-		return (input) => {
-			let meta = {} as LogsMeta;
-			let start: DateTime;
-			return input.pipe(
-				// Tap into the value with meta, storing the meta to the outer scope
-				tap(({ transmissionId, pipelineId }) => {
-					meta = { transmissionId, pipelineId };
-					start = DateTime.now();
-				}),
-				// Unwrap the value from the value with meta
-				unwrap(),
-				// Run the transformer with the value
-				transformer,
-				// Wrap the value with meta back up
-				wrap(() => meta),
-				// Log the (transformed) value with meta only on first transmission
-				tap((valueWithMeta) => {
-					if (logged) {
-						return;
-					}
-					const took = DateTime.now().diff(start, "milliseconds").milliseconds;
-					this._internal.log(valueWithMeta, stepId, took);
-					logged = true;
-				})
-			);
-		};
-	};
-
-	log =
-		<V, R>(stepId: string, transformer: OperatorFunction<V, R>): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<R>> =>
+	private _log =
+		<V, R>(stepId: string, transformer: OperatorFunction<V, R>, doLog: boolean): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<R>> =>
 		(input) => {
 			let meta = {} as LogsMeta;
 			let start: DateTime;
@@ -79,48 +49,62 @@ class Logger {
 				wrap(() => meta),
 				// Log the (transformed) value with meta
 				tap((valueWithMeta) => {
+					if (!doLog) {
+						return;
+					}
+					// Don't log if the pipelineId or transmissionId is missing
+					// (to allow for empty values as defaults, but not produce incomplete logs)
+					if (!shouldLog(valueWithMeta)) {
+						return;
+					}
 					const took = DateTime.now().diff(start, "milliseconds").milliseconds;
 					this._internal.log(valueWithMeta, stepId, took);
 				})
 			);
 		};
 
+	log = <V, R>(stepId: string, transformer: OperatorFunction<V, R>) => this._log(stepId, transformer, true);
+	logOnce = <V, R>(stepId: string, transformer: OperatorFunction<V, R>) => {
+		let logged = false;
+		if (logged) {
+			return this._log(stepId, transformer, false);
+		}
+		logged = true;
+		return this._log(stepId, transformer, true);
+	};
+	logSkip = <V, R>(stepId: string, transformer: OperatorFunction<V, R>) => this._log(stepId, transformer, false);
+
 	fork =
-		<V extends ValueWithMeta>(newPipelineId: string): OperatorFunction<V, V> =>
+		<V>(newPipelineId: string): OperatorFunction<ValueWithMeta<V>, ValueWithMeta<V>> =>
 		(input) =>
 			input.pipe(
-				map(
-					({ pipelineId: sourcePipeline, transmissionId, value }) =>
-						this.pipeline(sourcePipeline)
-							.transmission(transmissionId)
-							.newFork(this.pipeline(newPipelineId))
-							.start({ pipelineId: newPipelineId, transmissionId, value }) as V
-				)
+				map((valueWithMeta) => {
+					// Don't log if the pipelineId or transmissionId is missing
+					// (to allow for empty values as defaults, but not produce incomplete logs)
+					if (!shouldLog(valueWithMeta)) {
+						return valueWithMeta;
+					}
+					const { pipelineId: sourcePipeline, transmissionId, value } = valueWithMeta;
+					return this.pipeline(sourcePipeline).transmission(transmissionId).newFork(this.pipeline(newPipelineId)).start(value);
+				})
 			);
 
-	join<A, B>(pipelineId: string): OperatorFunction<[ValueWithMeta<A>, ValueWithMeta<B>], ValueWithMeta<[A, B]>>;
-	join<A, B, C>(pipelineId: string): OperatorFunction<[ValueWithMeta<A>, ValueWithMeta<B>, ValueWithMeta<C>], ValueWithMeta<[A, B, C]>>;
-	join<A, B, C, D>(
-		pipelineId: string
-	): OperatorFunction<[ValueWithMeta<A>, ValueWithMeta<B>, ValueWithMeta<C>, ValueWithMeta<D>], ValueWithMeta<[A, B, C, D]>>;
-	join<A, B, C, D, E>(
-		pipelineId: string
-	): OperatorFunction<
-		[ValueWithMeta<A>, ValueWithMeta<B>, ValueWithMeta<C>, ValueWithMeta<D>, ValueWithMeta<E>],
-		ValueWithMeta<[A, B, C, D, E]>
-	>;
-	join<A, B, C, D, E, F>(
-		pipelineId: string
-	): OperatorFunction<
-		[ValueWithMeta<A>, ValueWithMeta<B>, ValueWithMeta<C>, ValueWithMeta<D>, ValueWithMeta<E>, ValueWithMeta<F>],
-		ValueWithMeta<[A, B, C, D, E, F]>
-	>;
-	join(pipelineId: string): OperatorFunction<ValueWithMeta[], ValueWithMeta> {
+	join = <A extends readonly unknown[]>(pipelineId: string): OperatorFunction<[...ValueWithMetaTuple<A>], ValueWithMeta<A>> => {
 		return (input) =>
 			input.pipe(
 				map((inputs) => {
+					// If any of the source's metadata is not defined, join without logging
+					// (merely unwrap the values)
+					if (!inputs.every((valueWithMeta) => shouldLog(valueWithMeta))) {
+						return {
+							value: inputs.map(({ value }) => value)
+						};
+					}
 					// Get all source transmissions
-					const sources = inputs.map(({ pipelineId, transmissionId }) => this.pipeline(pipelineId).transmission(transmissionId));
+					const sources = inputs.map(({ pipelineId, transmissionId }) =>
+						// eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+						this.pipeline(pipelineId!).transmission(transmissionId!)
+					);
 
 					// Find the id of the latest transmission from joined pipelines
 					const { id } = sources.reduce((acc, curr) => {
@@ -130,7 +114,7 @@ class Logger {
 					});
 
 					// Combine the values from all the joined transmissions
-					const value = inputs.flatMap(({ value }) => [value]);
+					const value = inputs.map(({ value }) => value);
 
 					// Create a new transmission with the same id as the latest transmission from joined pipelines,
 					// marking all the joined transmissions as sources
@@ -140,10 +124,10 @@ class Logger {
 					sources.forEach((source) => source.addFork(transmission));
 
 					// Mark the start of the new transmission
-					return transmission.start(value);
+					return transmission.start(value as unknown) as any;
 				})
 			);
-	}
+	};
 
 	registerClient = () => registerClient(this._internal);
 

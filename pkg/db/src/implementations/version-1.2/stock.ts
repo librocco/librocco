@@ -1,5 +1,6 @@
 import { concat, filter, firstValueFrom, from, map, mergeMap, Observable, reduce, switchMap } from "rxjs";
 
+import { Logger, ValueWithMeta } from "@librocco/rxjs-logger";
 import { debug } from "@librocco/shared";
 
 import { VolumeStock } from "@/types";
@@ -11,7 +12,7 @@ import { sortBooks, versionId } from "@/utils/misc";
 export interface StockInterface {
 	changes: () => PouchDB.Core.Changes<any>;
 	query: () => Promise<any>;
-	stream: (ctx: debug.DebugCtx) => Observable<VolumeStock[]>;
+	stream: (ctx: debug.DebugCtx) => Observable<ValueWithMeta<VolumeStock[]>>;
 }
 
 type Doc = NoteData | WarehouseData;
@@ -19,11 +20,15 @@ type Doc = NoteData | WarehouseData;
 class Stock implements StockInterface {
 	#db: DatabaseInterface;
 
+	#logger: Logger;
+
 	_id: string;
 	options: Parameters<PouchDB.Database["allDocs"]>[0];
 
-	constructor(db: DatabaseInterface, id: string) {
+	constructor(db: DatabaseInterface, id: string, logger: Logger) {
 		this.#db = db;
+
+		this.#logger = logger;
 
 		this._id = id;
 		// Start from "v1/" (to collect the outbound notes, belonging to the default warehouse)
@@ -65,7 +70,13 @@ class Stock implements StockInterface {
 
 	stream(ctx: debug.DebugCtx) {
 		const trigger = concat(from(Promise.resolve()), this.changesStream(ctx));
-		const pipeline = trigger.pipe(switchMap(() => this.query()));
+		const pipeline = trigger.pipe(
+			this.#logger.start(ctx.name),
+			this.#logger.log(
+				"stock_query",
+				switchMap(() => this.query())
+			)
+		);
 		return pipeline;
 	}
 }
@@ -107,4 +118,4 @@ class MapAggregator extends Map<string, VolumeStock> {
 	}
 }
 
-export const newStock = (db: DatabaseInterface, id: string) => new Stock(db, id);
+export const newStock = (db: DatabaseInterface, id: string, logger: Logger) => new Stock(db, id, logger);

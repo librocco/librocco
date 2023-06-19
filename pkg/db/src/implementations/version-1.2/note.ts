@@ -1,6 +1,7 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject } from "rxjs";
 
 import { debug } from "@librocco/shared";
+import { ValueWithMeta, Logger, unwrap } from "@librocco/rxjs-logger";
 
 import { DocType, NoteState } from "@/enums";
 
@@ -18,6 +19,8 @@ class Note implements NoteInterface {
 	#w: WarehouseInterface;
 	#db: DatabaseInterface;
 
+	#logger: Logger;
+
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
 
@@ -28,7 +31,7 @@ class Note implements NoteInterface {
 	// The stream is piped from the update stream, only it's multicasted using a ReplaySubject, which will cache the last value emitted by the stream,
 	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
 	// subscribe to this stream.
-	#stream: Observable<NoteData>;
+	#stream: Observable<ValueWithMeta<NoteData>>;
 
 	_id: VersionedString;
 	docType = DocType.Note;
@@ -42,9 +45,11 @@ class Note implements NoteInterface {
 	displayName = "";
 	updatedAt: string | null = null;
 
-	constructor(warehouse: WarehouseInterface, db: DatabaseInterface, id?: string) {
+	constructor(warehouse: WarehouseInterface, db: DatabaseInterface, logger: Logger, id?: string) {
 		this.#w = warehouse;
 		this.#db = db;
+
+		this.#logger = logger;
 
 		// Outbound notes are assigned to the default warehouse, while inbound notes are assigned to a non-default warehouse
 		this.noteType = warehouse._id === versionId("0-all") ? "outbound" : "inbound";
@@ -67,11 +72,12 @@ class Note implements NoteInterface {
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<NoteData>();
-		const cache = new ReplaySubject<NoteData>(1);
-		this.#updateStream = newDocumentStream<NoteData>({}, this.#db._pouch, this._id).pipe(
+		const cache = new ReplaySubject<ValueWithMeta<NoteData>>(1);
+		this.#updateStream = newDocumentStream<NoteData>({ name: `Note(${this._id})` }, this.#db._pouch, this._id).pipe(
 			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 		this.#stream = this.#updateStream.pipe(
+			this.#logger.start(`Note(${this._id})::internal`),
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
@@ -82,7 +88,7 @@ class Note implements NoteInterface {
 		// This is enough to signal that the note intsance is initialised.
 		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
 		// If data is not empty (note exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
-		this.#stream.subscribe((w) => this.updateInstance(w));
+		this.#stream.pipe(unwrap()).subscribe((w) => this.updateInstance(w));
 
 		return this;
 	}
@@ -249,7 +255,7 @@ class Note implements NoteInterface {
 				};
 			});
 
-			return this.update({}, this);
+			return this.update({ name: `Note(${this._id})` }, this);
 		}, this.#initialized);
 	}
 
@@ -277,7 +283,7 @@ class Note implements NoteInterface {
 			entries.push(updateTr);
 		}
 		// Post an update, the local entries will be updated by the update function.
-		return this.update({}, { entries });
+		return this.update({ name: `Note(${this._id})` }, { entries });
 	}
 
 	removeTransactions(...transactions: Omit<VolumeStock, "quantity">[]): Promise<NoteInterface> {
@@ -291,7 +297,7 @@ class Note implements NoteInterface {
 
 		transactions.forEach(removeTransaction);
 
-		return this.update({}, this);
+		return this.update({ name: `Note(${this._id})` }, this);
 	}
 
 	private async getStockPerIsbn(isbns: string[]): Promise<Record<string, number>[]> {
@@ -361,53 +367,67 @@ class Note implements NoteInterface {
 		return {
 			displayName: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "note_streams: display_name: input")),
-					map(({ displayName }) => displayName || ""),
-					tap(debug.log(ctx, "note_streams: display_name: res"))
+					this.#logger.fork(ctx.name),
+					this.#logger.log(
+						"map::extract_display_name",
+						map(({ displayName }) => displayName || "")
+					)
 				),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
-			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<ValueWithMeta<EntriesStreamResult>> => {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
 				return combineLatest([
 					this.#stream.pipe(
-						map(({ entries = [] }) =>
-							entries
-								.map((e) => ({ ...e, warehouseName: "" }))
-								.sort(sortBooks)
-								.slice(startIx, endIx)
+						this.#logger.logSkip(
+							"map::rows_slice",
+							map(({ entries = [] }) =>
+								entries
+									.map((e) => ({ ...e, warehouseName: "" }))
+									.sort(sortBooks)
+									.slice(startIx, endIx)
+							)
 						)
 					),
 					this.#stream.pipe(
-						map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))
+						this.#logger.logSkip(
+							"map::entries_to_stats",
+							map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))
+						)
 					),
-					this.#db.stream().warehouseList(ctx)
+					this.#db.stream().warehouseList()
 				]).pipe(
-					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
-					tap(debug.log(ctx, "note:entries:stream:output"))
+					this.#logger.join(ctx.name),
+					this.#logger.log(
+						"map::combine_transactions_and_warehouses",
+						map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" }))
+					)
 				);
 			},
 
 			state: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "note_streams: state: input")),
-					map(({ committed, _deleted }) => (_deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft)),
-					tap(debug.log(ctx, "note_streams: state: res"))
+					this.#logger.fork(ctx.name),
+					this.#logger.log(
+						"map::committed_state_to_display_state",
+						map(({ committed, _deleted }) => (_deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft))
+					)
 				),
 
 			updatedAt: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "note_streams: updated_at: input")),
-					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
-					tap(debug.log(ctx, "note_streams: updated_at: res"))
+					this.#logger.fork(ctx.name),
+					this.#logger.log(
+						"map::extract_updated_at",
+						map(({ updatedAt: ua }) => (ua ? new Date(ua) : null))
+					)
 				)
 		};
 	}
 }
 
-export const newNote = (w: WarehouseInterface, db: DatabaseInterface, id?: string): NoteInterface => {
-	return new Note(w, db, id);
+export const newNote = (w: WarehouseInterface, db: DatabaseInterface, logger: Logger, id?: string): NoteInterface => {
+	return new Note(w, db, logger, id);
 };

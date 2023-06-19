@@ -2,6 +2,7 @@ import { expect } from "vitest";
 import { firstValueFrom } from "rxjs";
 
 import { TestFunction } from "@test-runner/types";
+import { unwrap } from "@librocco/rxjs-logger";
 
 export const commit20Notes: TestFunction = async (db, version, getNotesAndWarehouses) => {
 	const { fullStock, notes, warehouses } = getNotesAndWarehouses(20);
@@ -13,7 +14,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 			db
 				.warehouse(id)
 				.create()
-				.then((w) => w.setName({}, id))
+				.then((w) => w.setName({ name: "" }, id))
 		)
 	);
 
@@ -21,7 +22,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 		(note.type === "inbound" ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
 			.then((w) => w.note(note.id).create())
 			.then((n) => n.addVolumes(...note.books))
-			.then((n) => n.commit({}))
+			.then((n) => n.commit({ name: "" }))
 	);
 	await Promise.all(noteUpdates);
 
@@ -34,7 +35,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 
 	await Promise.all(
 		stockPerPage.map(async (stock, page) => {
-			const { rows } = await firstValueFrom(db.warehouse().stream().entries({}, page));
+			const { rows } = await firstValueFrom(db.warehouse().stream().entries({ name: "" }, page).pipe(unwrap()));
 
 			expect(rows).toEqual(
 				stock.map(({ warehouseId, ...volumeStock }) =>

@@ -11,7 +11,7 @@ const { waitFor } = testUtils;
 // A smoke test for the test runner
 export const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWarehouses) => {
 	// Full stock should be empty to begin with
-	const fullStock = await firstValueFrom(db.warehouse().stream().entries({}));
+	const fullStock = await firstValueFrom(db.warehouse().stream().entries({ name: "" }));
 	expect(fullStock).toEqual([]);
 
 	// Create warehouse documents and update displayNames
@@ -22,7 +22,7 @@ export const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWar
 				.create()
 				// For the purose of testing, we set the displayName to the warehouse id
 				// correct default displayNames are tested in the unit tests
-				.then((w) => w.setName({}, id));
+				.then((w) => w.setName({ name: "" }, id));
 		})
 	);
 
@@ -39,7 +39,7 @@ export const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWar
 
 		const n = await warehouse.note().create();
 		await n.addVolumes(...note.books);
-		await n.commit({});
+		await n.commit({ name: "" });
 
 		const assertionTuples = [
 			[db.warehouse(), fullStock.books] as [WarehouseInterface, VolumeStock[]],
@@ -47,7 +47,7 @@ export const runnerSmokeTests: TestFunction = async (db, version, getNotesAndWar
 		];
 		const assertions = assertionTuples.map(([warehouse, books]) =>
 			waitFor(async () => {
-				const stock = await firstValueFrom(warehouse.stream().entries({}));
+				const stock = await firstValueFrom(warehouse.stream().entries({ name: "" }));
 				expect(stock).toEqual(
 					books.map(({ warehouseId, ...volumeStock }) =>
 						expect.objectContaining({ ...volumeStock, warehouseId: `${version}/${warehouseId}` })

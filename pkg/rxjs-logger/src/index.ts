@@ -1,6 +1,8 @@
-import { newLogger } from "./logger";
+import { newLogger, type Logger } from "./logger";
 
-const logger = newLogger();
+export type { Logger };
+
+export const logger = newLogger();
 
 /**
  * This operator should be called at the very beginning of the pipeline (if we want to capture it in its entirety), it:
@@ -99,6 +101,8 @@ export const log = logger.log;
  * result stream, but rather keeping track of the pipeline initiating the new stream using 'switchMap'._
  */
 export const logOnce = logger.logOnce;
+
+export const logSkip = logger.logSkip;
 
 /**
  * Register the rxjs logger instance to the window object to make it accessible from

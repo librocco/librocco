@@ -29,3 +29,45 @@ export const combineTransactionsWarehouses =
 
 		return { ...stats, rows };
 	};
+
+export type IterableTransformer<T, R> = (iterable: Iterable<T>) => Iterable<R>;
+export type Reducer<T, R> = (iterable: Iterable<T>) => R;
+
+export function* filter<T>(iterable: Iterable<T>, cb: (v: T) => boolean): Iterable<T> {
+	for (const v of iterable) {
+		if (cb(v)) {
+			yield v;
+		}
+	}
+}
+
+export function* map<T, R>(iterable: Iterable<T>, cb: (v: T) => R): Iterable<R> {
+	for (const v of iterable) {
+		yield cb(v);
+	}
+}
+
+export function* flatMap<T, R>(iterable: Iterable<T>, cb: (v: T) => Iterable<R>): Iterable<R> {
+	for (const v of iterable) {
+		yield* cb(v);
+	}
+}
+
+export function reduce<T>(iterable: Iterable<T>, cb: (acc: T, curr: T) => T, seed?: T): T;
+export function reduce<T, R>(iterable: Iterable<T>, cb: (acc: R, curr: T) => R, seed: R): R;
+export function reduce<T, R>(iterable: Iterable<T>, cb: (acc: R, curr: T) => R, seed?: R): R {
+	const iterator = iterable[Symbol.iterator]();
+
+	let acc = seed || iterator.next().value;
+
+	// eslint-disable-next-line no-constant-condition
+	while (true) {
+		const curr = iterator.next();
+		if (curr.done && curr.value === undefined) {
+			break;
+		}
+		acc = cb(acc, curr.value);
+	}
+
+	return acc;
+}

@@ -1,6 +1,7 @@
 import { concat, from, switchMap } from "rxjs";
 
 import { debug } from "@librocco/shared";
+import { Logger } from "@librocco/rxjs-logger";
 
 import type { ViewInterface } from "./types";
 import { CouchDocument, MapReduceRes, MapReduceRow } from "@/types";
@@ -9,10 +10,16 @@ import { newChangesStream } from "@/utils/pouchdb";
 
 class View<R extends MapReduceRow, M extends CouchDocument = CouchDocument> implements ViewInterface<R, M> {
 	#db: PouchDB.Database;
+
+	#logger: Logger;
+
 	name: string;
 
-	constructor(db: PouchDB.Database, name: string) {
+	constructor(db: PouchDB.Database, logger: Logger, name: string) {
 		this.#db = db;
+
+		this.#logger = logger;
+
 		this.name = name;
 	}
 
@@ -42,13 +49,18 @@ class View<R extends MapReduceRow, M extends CouchDocument = CouchDocument> impl
 			// Stream on change
 			this.changesStream(ctx, opts)
 		).pipe(
+			this.#logger.start(ctx.name),
 			// Each stream (from above) serves as a trigger to query the view again (to stream the entire updated state).
-			switchMap(() => this.query(opts))
+			this.#logger.log(
+				"view_query",
+				switchMap(() => this.query(opts))
+			)
 		);
 	}
 }
 
 export const newView = <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(
 	db: PouchDB.Database,
+	logger: Logger,
 	name: string
-): ViewInterface<R, M> => new View<R, M>(db, name);
+): ViewInterface<R, M> => new View<R, M>(db, logger, name);

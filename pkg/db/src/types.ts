@@ -8,6 +8,7 @@ import { debug } from "@librocco/shared";
 import type { DocType, NoteState } from "./enums";
 
 import { NEW_WAREHOUSE } from "./constants";
+import { Logger, ValueWithMeta } from "@librocco/rxjs-logger";
 
 // #region utils
 /**
@@ -98,10 +99,10 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
-	displayName: (ctx: debug.DebugCtx) => Observable<string>;
-	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
+	state: (ctx: debug.DebugCtx) => Observable<ValueWithMeta<NoteState>>;
+	displayName: (ctx: debug.DebugCtx) => Observable<ValueWithMeta<string>>;
+	updatedAt: (ctx: debug.DebugCtx) => Observable<ValueWithMeta<Date | null>>;
+	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<ValueWithMeta<EntriesStreamResult>>;
 }
 
 /**
@@ -173,8 +174,8 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: (ctx: debug.DebugCtx) => Observable<string>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
+	displayName: (ctx: debug.DebugCtx) => Observable<ValueWithMeta<string>>;
+	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<ValueWithMeta<EntriesStreamResult>>;
 }
 
 /**
@@ -271,9 +272,9 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
-	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
-	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
+	warehouseList: () => Observable<ValueWithMeta<NavListEntry[]>>;
+	outNoteList: () => Observable<ValueWithMeta<NavListEntry[]>>;
+	inNoteList: () => Observable<ValueWithMeta<InNoteList>>;
 }
 
 /**
@@ -366,6 +367,6 @@ export interface BooksInterface {
 }
 
 export interface NewDatabase {
-	(db: PouchDB.Database): DatabaseInterface;
+	(db: PouchDB.Database, logger: Logger): DatabaseInterface;
 }
 // #endregion db

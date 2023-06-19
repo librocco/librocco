@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, share, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, share } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { Logger, ValueWithMeta } from "@librocco/rxjs-logger";
 
 import { BooksInterface, CouchDocument, DbStream, DesignDocument, InNoteList, MapReduceRow, NavListEntry, Replicator } from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
@@ -19,40 +19,56 @@ import { scanDesignDocuments } from "@/utils/pouchdb";
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
 
+	#logger: Logger;
+
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
-	#warehouseListStream: Observable<NavListEntry[]>;
-	#outNoteListStream: Observable<NavListEntry[]>;
-	#inNoteListStream: Observable<InNoteList>;
+	#warehouseListStream: Observable<ValueWithMeta<NavListEntry[]>>;
+	#outNoteListStream: Observable<ValueWithMeta<NavListEntry[]>>;
+	#inNoteListStream: Observable<ValueWithMeta<InNoteList>>;
 
-	constructor(db: PouchDB.Database) {
+	constructor(db: PouchDB.Database, logger: Logger) {
 		this._pouch = db;
 
-		const warehouseListCache = new BehaviorSubject<NavListEntry[]>([]);
+		this.#logger = logger;
+
+		const warehouseListCache = new BehaviorSubject<ValueWithMeta<NavListEntry[]>>({ value: [] });
+		const warehouseListCtx = { name: "warehouse_list_internal" };
 		this.#warehouseListStream = this.view<WarehouseListRow>("v1_list/warehouses")
-			.stream({})
+			.stream(warehouseListCtx)
 			.pipe(
-				map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))),
+				this.#logger.log(
+					"map::rows_to_nav_list",
+					map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })))
+				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
 
-		const outNoteListCache = new BehaviorSubject<NavListEntry[]>([]);
+		const outNoteListCache = new BehaviorSubject<ValueWithMeta<NavListEntry[]>>({ value: [] });
+		const outNoteListCtx = { name: "out_note_list_internal" };
 		this.#outNoteListStream = this.view<OutNoteListRow>("v1_list/outbound")
-			.stream({})
+			.stream(outNoteListCtx)
 			.pipe(
-				map(({ rows }) =>
-					rows
-						.filter(({ value: { committed } }) => !committed)
-						.map(({ key: id, value: { displayName = "not-found" } }) => ({ id, displayName }))
+				this.#logger.log(
+					"map::rows_to_nav_list",
+					map(({ rows }) =>
+						rows
+							.filter(({ value: { committed } }) => !committed)
+							.map(({ key: id, value: { displayName = "not-found" } }) => ({ id, displayName }))
+					)
 				),
 				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
 			);
 
-		const inNoteListCache = new BehaviorSubject<InNoteList>([]);
+		const inNoteListCache = new BehaviorSubject<ValueWithMeta<InNoteList>>({ value: [] });
+		const inNoteListCtx = { name: "in_note_list_internal" };
 		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
-			.stream({})
+			.stream(inNoteListCtx)
 			.pipe(
-				map(({ rows }) => aggregateInNoteList(rows)),
+				this.#logger.log(
+					"map::rows_to_in_note_list",
+					map(({ rows }) => aggregateInNoteList(rows))
+				),
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
@@ -99,7 +115,7 @@ class Database implements DatabaseInterface {
 	}
 
 	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string) {
-		return newView<R, M>(this._pouch, view);
+		return newView<R, M>(this._pouch, this.#logger, view);
 	}
 
 	books(): BooksInterface {
@@ -107,23 +123,25 @@ class Database implements DatabaseInterface {
 	}
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {
-		return newWarehouse(this, id);
+		return newWarehouse(this, this.#logger, id);
 	}
 
-	updateDesignDoc(doc: DesignDocument) {
+	updateDesignDoc(doc: DesignDocument): Promise<any> {
 		return this._pouch.put(doc).catch((err) => {
 			// If error is not a conflict, throw it back
 			if (err.status != 409) {
 				throw err;
 			}
 			// If the error was a conflict (document exists), update the document
-			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
+			return; // this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
 
-	async findNote(id: string) {
+	async findNote(noteId: string) {
+		// Remove trailing slash if any
+		const id = noteId.replace(/\/$/, "");
 		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split("/");
+		const idSegments = id.split("/").filter(Boolean);
 
 		// Validate the id is correct
 		if (idSegments.length !== 4) {
@@ -140,15 +158,15 @@ class Database implements DatabaseInterface {
 
 	stream(): DbStream {
 		return {
-			warehouseList: (ctx: debug.DebugCtx) => this.#warehouseListStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
-			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
+			warehouseList: () => this.#warehouseListStream,
+			outNoteList: () => this.#outNoteListStream,
+			inNoteList: () => this.#inNoteListStream
 		};
 	}
 }
 
-export const newDatabase = (db: PouchDB.Database): DatabaseInterface => {
-	return new Database(db);
+export const newDatabase = (db: PouchDB.Database, logger: Logger): DatabaseInterface => {
+	return new Database(db, logger);
 };
 
 // #region helpers

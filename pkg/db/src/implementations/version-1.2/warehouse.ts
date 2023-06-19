@@ -1,6 +1,7 @@
-import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject } from "rxjs";
 
 import { debug } from "@librocco/shared";
+import { Logger, ValueWithMeta } from "@librocco/rxjs-logger";
 
 import { DocType } from "@/enums";
 
@@ -21,6 +22,8 @@ class Warehouse implements WarehouseInterface {
 	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
 	#db: DatabaseInterface;
 
+	#logger: Logger;
+
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
 
@@ -31,9 +34,9 @@ class Warehouse implements WarehouseInterface {
 	// The stream is piped from the update stream, only it's multicasted using a ReplaySubject, which will cache the last value emitted by the stream,
 	// for all new subscribers. Subscribers needing the latest (up-to-date) data and not needing to be notified when the NEXT update happened, should
 	// subscribe to this stream.
-	#stream: Observable<WarehouseData>;
+	#stream: Observable<ValueWithMeta<WarehouseData>>;
 
-	#stock: Observable<VolumeStock[]>;
+	#stock: Observable<ValueWithMeta<VolumeStock[]>>;
 
 	_id: VersionedString;
 	docType = DocType.Warehouse;
@@ -42,8 +45,10 @@ class Warehouse implements WarehouseInterface {
 
 	displayName = "";
 
-	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
+	constructor(db: DatabaseInterface, logger: Logger, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
+
+		this.#logger = logger;
 
 		this._id = !id
 			? // If id not provided, we're accessing the default warehouse
@@ -54,22 +59,26 @@ class Warehouse implements WarehouseInterface {
 			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
 			  versionId(id);
 
+		const ctx = { name: `Warehouse(${this._id})` };
+
 		const updateSubject = new Subject<WarehouseData>();
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
-		const cache = new ReplaySubject<WarehouseData>(1);
-		this.#updateStream = newDocumentStream<WarehouseData>({}, this.#db._pouch, this._id).pipe(
+		const cache = new ReplaySubject<ValueWithMeta<WarehouseData>>(1);
+		this.#updateStream = newDocumentStream<WarehouseData>(ctx, this.#db._pouch, this._id).pipe(
 			share({ connector: () => updateSubject, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 		this.#stream = this.#updateStream.pipe(
+			this.#logger.start(`Warehouse(${this._id})::stream`),
 			// We're connecting the stream to a ReplaySubject as a multicast object: this enables us to share the internal stream
 			// with the exposed streams (displayName) and to cache the last value emitted by the stream: so that each subscriber to the stream
 			// will get the 'initialValue' (repeated value from the latest stream).
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
-		const stockCache = new ReplaySubject<VolumeStock[]>(1);
+		const stockCache = new ReplaySubject<ValueWithMeta<VolumeStock[]>>(1);
+		const stockCtx = { name: `Warehouse(${this._id})::stock_internal` };
 		this.#stock = this.stock()
-			.stream({})
+			.stream(stockCtx)
 			.pipe(share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false }));
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
@@ -80,7 +89,7 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	private stock() {
-		return newStock(this.#db, this._id);
+		return newStock(this.#db, this._id, this.#logger);
 	}
 
 	/**
@@ -206,7 +215,7 @@ class Warehouse implements WarehouseInterface {
 	 * Instantiate a new note instance, with the provided id (used for both existing notes as well as new notes).
 	 */
 	note(id?: string): NoteInterface {
-		return newNote(this, this.#db, id);
+		return newNote(this, this.#db, this.#logger, id);
 	}
 
 	/**
@@ -222,7 +231,7 @@ class Warehouse implements WarehouseInterface {
 		}
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
-		return this.update({}, { displayName });
+		return this.update(ctx, { displayName });
 	}
 
 	/**
@@ -234,32 +243,45 @@ class Warehouse implements WarehouseInterface {
 		return {
 			displayName: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "streams: display_name: input")),
-					map(({ displayName }) => displayName || ""),
-					tap(debug.log(ctx, "streams: display_name: res"))
+					this.#logger.fork(ctx.name),
+					this.#logger.log(
+						"map::extract_display_name",
+						map(({ displayName }) => displayName || "")
+					)
 				),
 
-			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<ValueWithMeta<EntriesStreamResult>> => {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = this.#stock.pipe(map((rows) => rows.slice(startIx, endIx)));
-
-				const stats = this.#stock.pipe(
-					map((rows) => ({
-						total: rows.length,
-						totalPages: Math.ceil(rows.length / itemsPerPage)
-					}))
+				const entries = this.#stock.pipe(
+					this.#logger.logSkip(
+						"map::rows_slice",
+						map((rows) => rows.slice(startIx, endIx))
+					)
 				);
 
-				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(
-					tap(debug.log(ctx, "warehouse_entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
-					tap(debug.log(ctx, "warehouse_entries:stream:output"))
+				const stats = this.#stock.pipe(
+					this.#logger.logSkip(
+						"map::entries_to_stats",
+						map((rows) => ({
+							total: rows.length,
+							totalPages: Math.ceil(rows.length / itemsPerPage)
+						}))
+					)
+				);
+
+				return combineLatest([entries, stats, this.#db.stream().warehouseList()]).pipe(
+					this.#logger.join(ctx.name),
+					this.#logger.log(
+						"map::combine_transactions_and_warehouses",
+						map(combineTransactionsWarehouses({ includeAvailableWarehouses: false }))
+					)
 				);
 			}
 		};
 	}
 }
 
-export const newWarehouse = (db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface => new Warehouse(db, id);
+export const newWarehouse = (db: DatabaseInterface, logger: Logger, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface =>
+	new Warehouse(db, logger, id);

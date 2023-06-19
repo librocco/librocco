@@ -1,5 +1,5 @@
 export interface DebugCtx {
-	name?: string;
+	name: string;
 	debug?: boolean;
 }
 

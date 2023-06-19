@@ -2,6 +2,8 @@
 import { test as t, bench as b } from "vitest";
 import PouchDB from "pouchdb";
 
+import { logger } from "@librocco/rxjs-logger";
+
 import { __withDocker__ } from "./env";
 
 import { DatabaseInterface } from "@/types";
@@ -32,11 +34,11 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 		const dbName = new Date().toISOString().replaceAll(/[.:]/g, "-").toLowerCase();
 		const pouchInstance = new PouchDB(dbName, { adapter: "memory" });
 
-		const db = config.newDatabase(pouchInstance);
+		const db = config.newDatabase(pouchInstance, logger);
 
 		// If testing with docker support, we're using the remote db to replicate to/from
 		if (__withDocker__) {
-			db.replicate().live({}, `http://admin:admin@127.0.0.1:5001/test-${dbName}`);
+			db.replicate().live({ name: "" }, `http://admin:admin@127.0.0.1:5001/test-${dbName}`);
 		}
 
 		return db.init();

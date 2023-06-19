@@ -2,8 +2,8 @@ import { DateTime } from "luxon";
 import { Pipeline, Transmission } from "./internal";
 
 export interface LogsMeta {
-	pipelineId: string;
-	transmissionId: string;
+	pipelineId?: string;
+	transmissionId?: string;
 }
 
 export interface ValueWithMeta<V = any> extends LogsMeta {

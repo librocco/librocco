@@ -5,6 +5,8 @@ import { Logs, ValueWithMeta } from "../types";
 
 import { newLogger } from "../logger";
 
+import { wrap } from "../operators";
+
 describe("Logging", () => {
 	test("should keep the logs for instrumented transmissions", async () => {
 		const logger = newLogger();
@@ -221,6 +223,25 @@ describe("Forking of pipelines", () => {
 		const forks = [...logger.pipeline("pipeline-1").forks()].sort(([a], [b]) => (a > b ? 1 : -1));
 		expect(forks).toEqual(wantForks);
 	});
+
+	test("fork should pass the value to the new pipeline, with the same transmission id and appropriate pipeline id", async () => {
+		const logger = newLogger();
+		const { start, fork } = logger;
+
+		const origin = of(1);
+
+		const pipeline1 = origin.pipe(start("pipeline-1", () => "transmission-1"));
+		const pipeline2 = pipeline1.pipe(fork("pipeline-2"));
+
+		const want = {
+			pipelineId: "pipeline-2",
+			transmissionId: "transmission-1",
+			value: 1
+		};
+		const got = await firstValueFrom(pipeline2);
+
+		expect(got).toEqual(want);
+	});
 });
 
 describe("Joining", () => {
@@ -304,5 +325,38 @@ describe("Joining", () => {
 		const sourcePipelines = [...logger.pipeline("joined").sources()].sort(([a], [b]) => (a > b ? 1 : -1));
 
 		expect(sourcePipelines).toEqual(wantSourcePipelines);
+	});
+
+	test("should join 'value' of all sources into a single 'value' array", async () => {
+		const logger = newLogger();
+		const { start, join } = logger;
+
+		const string = of("string");
+		const number = of(1);
+
+		const loggedString = string.pipe(start("string", () => "transmission-1"));
+		const loggedNumber = number.pipe(start("number", () => "transmission-1"));
+
+		const loggedJoined = combineLatest([loggedString, loggedNumber]).pipe(join("joined"));
+
+		const wantJoined = {
+			pipelineId: "joined",
+			transmissionId: "transmission-1",
+			value: ["string", 1]
+		};
+		const gotJoined = await firstValueFrom(loggedJoined);
+		expect(gotJoined).toEqual(wantJoined);
+
+		// Should join the 'value' of all sources into a single 'value' array even if not logging (e.g. if transmission id or pipeline id is missing)
+		// (We're wrapping the value with empty meta => no logging)
+		const unloggedString = string.pipe(wrap(() => ({})));
+		const unloggedNumber = number.pipe(wrap(() => ({})));
+		const unloggedJoined = combineLatest([unloggedString, unloggedNumber]).pipe(join("joined"));
+
+		const wantUnloggedJoined = {
+			value: ["string", 1]
+		};
+		const gotUnloggedJoined = await firstValueFrom(unloggedJoined);
+		expect(gotUnloggedJoined).toEqual(wantUnloggedJoined);
 	});
 });

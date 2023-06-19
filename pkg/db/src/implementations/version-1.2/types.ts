@@ -15,6 +15,7 @@ import {
 	MapReduceRes
 } from "@/types";
 import { DocType } from "@/enums";
+import { ValueWithMeta } from "@librocco/rxjs-logger";
 
 /** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
@@ -37,7 +38,7 @@ export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> 
 	query: (opts?: PouchDB.Query.Options<M, R>) => Promise<MapReduceRes<R, M>>;
 	changes: () => PouchDB.Core.Changes<M>;
 	changesStream: (ctx: debug.DebugCtx, opts?: PouchDB.Core.ChangesOptions) => Observable<PouchDB.Core.ChangesResponseChange<M>>;
-	stream: (ctx: debug.DebugCtx, opts?: PouchDB.Query.Options<M, R>) => Observable<MapReduceRes<R, M>>;
+	stream: (ctx: debug.DebugCtx, opts?: PouchDB.Query.Options<M, R>) => Observable<ValueWithMeta<MapReduceRes<R, M>>>;
 }
 
 // View response types

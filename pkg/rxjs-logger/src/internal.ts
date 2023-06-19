@@ -1,7 +1,8 @@
 import { DateTime } from "luxon";
 
 import { ValueWithMeta, Logs } from "./types";
-import { map } from "./utils";
+
+import { map, shouldLog } from "./utils";
 
 export class Transmission {
 	#pipeline: Pipeline;
@@ -58,7 +59,7 @@ export class Transmission {
 		return [...this._steps.values()][numSteps - 1];
 	}
 
-	log<V extends ValueWithMeta>(valueWithMeta: V, stepId: string, took: number): V {
+	log<V extends Required<ValueWithMeta>>(valueWithMeta: V, stepId: string, took: number): V {
 		const timestamp = DateTime.now();
 
 		if (this._steps.size === 0) {
@@ -175,13 +176,22 @@ export class LoggerInternal {
 
 	pipelines = () => this._pipelines;
 
-	start = <V>({ pipelineId, transmissionId, value }: ValueWithMeta<V>): ValueWithMeta<V> => {
+	start = <V>(valueWithMeta: ValueWithMeta<V>): ValueWithMeta<V> => {
+		/** Skip logging if valueWithMeta is incomplete */
+		if (!shouldLog(valueWithMeta)) {
+			return valueWithMeta;
+		}
+		const { pipelineId, transmissionId, value } = valueWithMeta;
 		return this.pipeline(pipelineId).transmission(transmissionId).start(value);
 	};
 
-	log = <V extends ValueWithMeta>(meta: V, stepId: string, took: number): V => {
-		const { pipelineId, transmissionId } = meta;
-		return this.pipeline(pipelineId).transmission(transmissionId).log(meta, stepId, took);
+	log = <V extends ValueWithMeta>(valueWithMeta: V, stepId: string, took: number): V => {
+		/** Skip logging if valueWithMeta is incomplete */
+		if (!shouldLog(valueWithMeta)) {
+			return valueWithMeta;
+		}
+		const { pipelineId, transmissionId } = valueWithMeta;
+		return this.pipeline(pipelineId).transmission(transmissionId).log(valueWithMeta, stepId, took);
 	};
 }
 
