@@ -10,7 +10,7 @@ import { ValueWithMeta, LogsMeta } from "./types";
  * This is useful when continuing an existing pipeline, only we're changing the observable (e.g. through switch map)
  * and we want to wrap the value transmitted from the switched observable, keeping the value with meta structure transmitted
  * further down the pipeline.
- * @param meta
+ * @param getMeta A function used to get the logs meta
  * @returns
  */
 export const wrap = <V>(getMeta: () => LogsMeta): OperatorFunction<V, ValueWithMeta<V>> => map((value) => ({ ...getMeta(), value }));

@@ -1,5 +1,5 @@
-import { LoggerInternal, Pipeline } from "./internal";
-import { Logs } from "./types";
+import { LoggerInternal, Pipeline, Transmission } from "./internal";
+import { Logs, Stats } from "./types";
 
 import { map, reduce, avg } from "./utils";
 
@@ -13,7 +13,7 @@ export class PipelineReporter {
 	id = () => this._internal.id;
 
 	/** Prints all of the transmissions logged for a given pipeline */
-	transmissions = () => {
+	transmissions = (): Map<string, { [transmissionId: string]: number }> => {
 		// Create a map of { transmissionId => transmissionStats }
 		const iterators = new Map(
 			map(this._internal.transmissions(), ([transmissionId, transmission]) => [
@@ -35,10 +35,10 @@ export class PipelineReporter {
 							return acc;
 						}
 
-						const [stepId, { timeDiff }] = value;
+						const [stepId, { took }] = value;
 						const [, durations] = acc;
 
-						return [stepId, { ...durations, [transmissionId]: timeDiff }];
+						return [stepId, { ...durations, [transmissionId]: took }];
 					},
 					["", {}] as [string, Record<string, number>]
 				);
@@ -57,16 +57,28 @@ export class PipelineReporter {
 	};
 
 	/** Prints the stats (steps and times for each respective step) for a given transmission in the pipeline */
-	transmission = (transmissionId: string) => {
-		const steps = this._internal.transmission(transmissionId).steps();
-		return new Map<string, number>(map(steps, ([stepId, { timeDiff: took }]) => [stepId, took])).set(
+	transmission = (transmissionId: string): Stats<Transmission> => {
+		const transmission = this._internal.transmission(transmissionId);
+
+		const sources = transmission.sources();
+		const forks = transmission.forks();
+
+		const _steps = transmission.steps();
+		const steps = new Map<string, number>(map(_steps, ([stepId, { took }]) => [stepId, took])).set(
 			"Total",
-			reduce(steps.values(), (acc, { timeDiff: took }) => acc + took, 0)
+			reduce(_steps.values(), (acc, { took }) => acc + took, 0)
 		);
+
+		return { sources, steps, forks };
 	};
 
-	stats(): Map<string, number> {
-		return new Map(map(this.transmissions(), ([stepId, durations]) => [stepId, avg(Object.values(durations))]));
+	stats(): Stats<Pipeline> {
+		const sources = this._internal.sources();
+		const forks = this._internal.forks();
+
+		const steps = new Map(map(this.transmissions(), ([stepId, durations]) => [stepId, avg(Object.values(durations))]));
+
+		return { sources, steps, forks };
 	}
 }
 

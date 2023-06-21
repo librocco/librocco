@@ -16,15 +16,21 @@ const logger = newLogger();
 export const start = logger.start;
 
 /**
- * This operator should be called whenever we're starting a new pipeline, from the existing pipeline (the source pipeline would usually end with a 'share' operator).
- * By using fork, we're starting a new pipeline, but keeping reference to the source pipeline in the forked pipeline and vice versa.
+ * This operator should be called whenever we're starting a new pipeline from the existing pipeline (the source pipeline would usually end with a 'share' operator).
+ * By using fork, we're starting a new pipeline, but keeping reference to the source pipeline in the forked pipeline and vice versa
+ * (actually we're keeping reference to source transmissions and forked transmissions, but the pipeline can use its transmissions to calculate
+ * all of the sources and forks for the entire pipeline).
+ *
+ * _Note: When a transmission passes through a fork, a new transmission is created (in the forked pipeline), but the new transmission keeps track of its source transmission
+ * and has the same id.
+ *
  * @example
  * ```ts
  * const connector = new ReplaySubject(1) // Replay subject used as a multicast connector for the source pipeline
  * const sourcePipeline = origin.pipe(
  * 	start("pipeline-1"),
  * 	...someOperators,
- * 	share({ connector })
+ * 	share({ connector: () => connector })
  * )
  *
  * const forkedPipeline1 = connector.pipe(
@@ -41,6 +47,30 @@ export const start = logger.start;
  * @returns
  */
 export const fork = logger.fork;
+
+/**
+ * This operator should be called when, instead of forking a single transmission, we're starting a new pipeline by combining multiple pipelines (e.g. through 'combineLatest').
+ * This way, the newly created pipeline is added to all of source pipelines' forks and the source pipelines are added as sources to the newly created pipeline.
+ * (actually we're keeping reference to source transmissions and forked transmissions, but the pipeline can use its transmissions to calculate
+ * all of the sources and forks for the entire pipeline).
+ *
+ * _Note: The transmission started by joining the pipelines keeps track of all of the source transmissions influencing the currently transmitted value
+ * and has the same id as the latest transmission to arrive to the join operator.
+ *
+ * @example
+ * ```ts
+ * const origin1 = origin.pipe(start("pipeline-1")
+ * const origin2 = origin.pipe(start("pipeline-2")
+ *
+ * const joinedPipeline = combineLatest([origin1, origin2]).pipe(
+ *     join("joined-pipeline"),
+ *    ...someOperators
+ * )
+ * ```
+ * @param newPipelineId pipeline id for the pipeline created at join
+ * @returns
+ */
+export const join = logger.join;
 
 /**
  * Log should be called with each operator in the pipeline to instrument the pipeline for logging.
@@ -61,13 +91,22 @@ export const fork = logger.fork;
  * ```
  */
 export const log = logger.log;
+
+/**
+ * LogOnce behaves the same way as log, only it logs only the first transmission to pass through the operator.
+ *
+ * _Note: This isn't used very often and is mostly used with combination with 'switchMap' when we're not logging the updates from the
+ * result stream, but rather keeping track of the pipeline initiating the new stream using 'switchMap'._
+ */
+export const logOnce = logger.logOnce;
+
 /**
  * Register the rxjs logger instance to the window object to make it accessible from
  * the console.
  * This should be ran only once, when the app is initialised.
  *
- * Note: This will cause errors if ran in any environment outside the browser, where the window object
- * is not defined
+ * _Note: This will cause errors if ran in any environment outside the browser, where the window object
+ * is not defined_
  */
 export const registerClient = logger.registerClient;
 

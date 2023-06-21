@@ -1,62 +1,64 @@
 import { DateTime } from "luxon";
 
 import { ValueWithMeta, Logs } from "./types";
+import { map } from "./utils";
 
 export class Transmission {
 	#pipeline: Pipeline;
 
 	id: string;
 
-	private _sourceTransmission?: Transmission;
+	// Both sources and forks keep track of respective transmissions through a map of { pipelineId => transmission }
+	private _sources = new Map<string, Transmission>();
+	private _forks = new Map<string, Transmission>();
 
 	private _steps = new Map<string, Logs>();
 
-	constructor(pipeline: Pipeline, id: string) {
+	constructor(pipeline: Pipeline, id: string, sourceTransmissions?: Transmission[]) {
 		this.#pipeline = pipeline;
 		this.id = id;
-
-		// If the pipeline this transmission belongs to is a fork, the source pipeline will have the
-		// previous steps of the transmission saved as a Transmission with the same id as this one
-		this._sourceTransmission = this.#pipeline.sourcePipeline()?.transmission(this.id);
+		this._sources = new Map(sourceTransmissions?.map((t) => [t.#pipeline.id, t]));
 	}
 
-	start<V extends ValueWithMeta>(valueWithMeta: V): V {
+	start<V>(value: V): ValueWithMeta<V> {
 		const timestamp = DateTime.now();
+
+		const meta = {
+			transmissionId: this.id,
+			pipelineId: this.#pipeline.id
+		};
+		const valueWithMeta = { ...meta, value };
 
 		const firstStep = this.getFirstStep();
 		if (firstStep) {
 			const startTime = firstStep.timestamp;
 			const currentTime = timestamp;
-			warn(`Trying to run 'transmission.start' on an already started transmission.\n`, { ...valueWithMeta, startTime, currentTime });
+			warn(`Trying to run 'transmission.start' on an already started transmission.\n`, { ...meta, startTime, currentTime });
 			return valueWithMeta;
 		}
 
-		const stepId = this._sourceTransmission ? "fork" : "start";
+		const stepId = this._sources.size ? "fork" : "start";
 
 		this._steps.set(stepId, {
 			stepId,
 			timestamp,
-			timeDiff: 0,
+			took: 0,
 			...valueWithMeta
 		});
 
 		return valueWithMeta;
 	}
 
-	private getFirstStep(): Logs | undefined {
+	getFirstStep(): Logs | undefined {
 		return this._steps.get("start");
 	}
 
-	private getLastStep(): Logs | undefined {
+	getLastStep(): Logs | undefined {
 		const numSteps = this._steps.size;
-		return numSteps ? [...this._steps.values()][numSteps - 1] : this._sourceTransmission?.getLastStep();
+		return [...this._steps.values()][numSteps - 1];
 	}
 
-	private getSourceSteps(): Map<string, Logs> {
-		return this._sourceTransmission?.steps() || new Map<string, Logs>();
-	}
-
-	log<V extends ValueWithMeta>(valueWithMeta: V, stepId: string): V {
+	log<V extends ValueWithMeta>(valueWithMeta: V, stepId: string, took: number): V {
 		const timestamp = DateTime.now();
 
 		if (this._steps.size === 0) {
@@ -70,26 +72,38 @@ export class Transmission {
 			return valueWithMeta;
 		}
 
-		// If there already are steps logged for this transmission, get the latest (as previous step)
-		// if not, we check if this transmission belongs to a forked pipeline. If so, get the last step of the
-		// root transmission. Finally, resort to undefined.
-		const prevStep = this.getLastStep();
-
-		const timeDiff = prevStep ? timestamp.diff(prevStep.timestamp, "milliseconds").milliseconds : 0;
-
 		this._steps.set(stepId, {
 			...valueWithMeta,
 			stepId,
 			timestamp,
-			timeDiff
+			took
 		});
 
 		return valueWithMeta;
 	}
 
-	steps(): Map<string, Logs> {
-		return mergedMap(this.getSourceSteps(), this._steps);
-	}
+	steps = () => this._steps;
+
+	sources = () => this._sources;
+
+	addSource = (source: Transmission) => {
+		this._sources.set(source.#pipeline.id, source);
+		return this;
+	};
+
+	newFork = (pipeline: Pipeline) => {
+		const transmission = pipeline.transmission(this.id, [this]);
+		this._forks.set(pipeline.id, transmission);
+		return transmission;
+	};
+
+	addFork = (transmission: Transmission) => {
+		const pipeline = transmission.#pipeline;
+		transmission.addSource(this);
+		this._forks.set(pipeline.id, transmission);
+	};
+
+	forks = () => this._forks;
 }
 
 export class Pipeline {
@@ -97,40 +111,51 @@ export class Pipeline {
 
 	id: string;
 
-	private _sourcePipeline?: Pipeline;
-	private _forks = new Map<string, Pipeline>();
-
 	private _transmissions = new Map<string, Transmission>();
 
-	constructor(logger: LoggerInternal, id: string, sourcePipeline?: Pipeline) {
+	constructor(logger: LoggerInternal, id: string) {
 		this.#logger = logger;
 
 		this.id = id;
-
-		// If this is a forked pipeline, keep the reference to the pipeline for lookups
-		if (sourcePipeline) {
-			this._sourcePipeline = sourcePipeline;
-		}
 	}
 
-	transmission = (transmissionId: string) => {
+	transmission = (transmissionId: string, sourceTransmissions?: Transmission[]) => {
+		// If transmission doesn't exist, create it
 		if (!this._transmissions.has(transmissionId)) {
-			this._transmissions.set(transmissionId, new Transmission(this, transmissionId));
+			this._transmissions.set(transmissionId, new Transmission(this, transmissionId, sourceTransmissions));
 		}
 		return this._transmissions.get(transmissionId) as Transmission;
 	};
 
 	transmissions = () => this._transmissions;
 
-	sourcePipeline = () => this._sourcePipeline;
-
-	fork = (forkId: string): Pipeline => {
-		const forkedPipeline = this.#logger.pipeline(forkId, this);
-		this._forks.set(forkId, forkedPipeline);
-		return forkedPipeline;
+	sources = () => {
+		// Go through the transmissions and create a map ({ pipelineId => pipeline }) of all pipelines
+		// this pipeline is a fork/join of
+		const getSources = (logger: LoggerInternal, transmissions: Map<string, Transmission>) =>
+			new Map(
+				(function* () {
+					for (const t of transmissions.values()) {
+						yield* map(t.sources().keys(), (pipelineId) => [pipelineId, logger.pipeline(pipelineId)]);
+					}
+				})()
+			);
+		return getSources(this.#logger, this.transmissions());
 	};
 
-	forks = () => this._forks.keys();
+	forks = () => {
+		// Go through the transmissions and create a map ({ pipelineId => pipeline }) of all pipelines
+		// forked from this pipeline's transmissions
+		const getForks = (logger: LoggerInternal, transmissions: Map<string, Transmission>) =>
+			new Map(
+				(function* () {
+					for (const t of transmissions.values()) {
+						yield* map(t.forks().keys(), (pipelineId) => [pipelineId, logger.pipeline(pipelineId)]);
+					}
+				})()
+			);
+		return getForks(this.#logger, this.transmissions());
+	};
 }
 
 /**
@@ -141,23 +166,22 @@ export class Pipeline {
 export class LoggerInternal {
 	private _pipelines = new Map<string, Pipeline>();
 
-	pipeline = (pipelineId: string, srcPipeline?: Pipeline) => {
+	pipeline = (pipelineId: string) => {
 		if (!this._pipelines.has(pipelineId)) {
-			this._pipelines.set(pipelineId, new Pipeline(this, pipelineId, srcPipeline));
+			this._pipelines.set(pipelineId, new Pipeline(this, pipelineId));
 		}
 		return this._pipelines.get(pipelineId) as Pipeline;
 	};
 
 	pipelines = () => this._pipelines;
 
-	start = <V extends ValueWithMeta>(logs: V): V => {
-		const { pipelineId, transmissionId } = logs;
-		return this.pipeline(pipelineId).transmission(transmissionId).start(logs);
+	start = <V>({ pipelineId, transmissionId, value }: ValueWithMeta<V>): ValueWithMeta<V> => {
+		return this.pipeline(pipelineId).transmission(transmissionId).start(value);
 	};
 
-	log = <V extends ValueWithMeta>(meta: V, stepId: string): V => {
+	log = <V extends ValueWithMeta>(meta: V, stepId: string, took: number): V => {
 		const { pipelineId, transmissionId } = meta;
-		return this.pipeline(pipelineId).transmission(transmissionId).log(meta, stepId);
+		return this.pipeline(pipelineId).transmission(transmissionId).log(meta, stepId, took);
 	};
 }
 
@@ -178,12 +202,3 @@ const warn = (
 		`  Current time: ${currentTime.toISO()}`
 	);
 };
-
-const mergedMap = <M extends Map<any, any>>(...maps: M[]): M =>
-	new Map(
-		(function* () {
-			for (const m of maps) {
-				yield* m;
-			}
-		})()
-	) as M;

@@ -1,5 +1,8 @@
+import { Stats } from "./types";
+
 import { LoggerInternal } from "./internal";
 import { LogReporter, newLogReporter, PipelineReporter } from "./reporter";
+
 import { map } from "./utils";
 
 declare global {
@@ -13,9 +16,11 @@ class PipelinePrinter {
 		this._reporter = reporter;
 	}
 
-	id = () => this._reporter.id();
+	private id = () => this._reporter.id();
 
-	/** Prints all of the transmissions logged for a given pipeline */
+	/**
+	 * Prints a table of transmission steps and times for each respective step for each transmission in the pipeline
+	 */
 	transmissions = () => {
 		console.group(`Pipeline "${this.id()}" transmissions:`);
 
@@ -32,21 +37,31 @@ class PipelinePrinter {
 		console.groupEnd();
 	};
 
-	/** Prints the stats (steps and times for each respective step) for a given transmission in the pipeline */
-	transmission = (transmissionId: string) => {
-		console.group();
-		for (const [stepId, timeDiff] of this._reporter.transmission(transmissionId)) {
+	/**
+	 * Prints the stats:
+	 * - sources (pipelines or transmisisons, depending of the stats type)
+	 * - steps steps and times for each respective step (steps for a transmission, step averages for a pipeline)
+	 * - forks (pipelines or transmissions, depending of the stats type)
+	 */
+	private printStats({ sources, steps, forks }: Stats<any>, title: string) {
+		console.group(title);
+
+		console.log("Sources:", [...sources.keys()]);
+		for (const [stepId, timeDiff] of steps) {
 			console.log(`${stepId} (${timeDiff}ms)`);
 		}
+		console.log("Forks:", [...forks.keys()]);
+
 		console.groupEnd();
+	}
+
+	transmission = (transmissionId: string) => {
+		const transmission = this._reporter.transmission(transmissionId);
+		this.printStats(transmission, `Transmission ${transmissionId} stats:`);
 	};
 
 	stats = () => {
-		console.group(`Pipeline ${this.id()} stats:`);
-		for (const [stepId, took] of this._reporter.stats()) {
-			console.log(`${stepId} (${took}ms)`);
-		}
-		console.groupEnd();
+		this.printStats(this._reporter.stats(), `Pipeline "${this.id()}" stats:`);
 	};
 }
 
