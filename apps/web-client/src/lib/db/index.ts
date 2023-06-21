@@ -21,7 +21,7 @@ export const createDB = async (): Promise<DatabaseInterface> => {
 
 	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
 	db = newDatabaseInterface(pouch);
-	await db.init()
+	await db.init();
 
 	return db;
 };
