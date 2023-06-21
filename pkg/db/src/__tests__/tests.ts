@@ -452,6 +452,39 @@ export const streamWarehouseStock: TestFunction = async (db) => {
 	await note5.commit({});
 	await waitFor(() => {
 		expect(warehouse1Stock).toEqual([]);
+		expect(defaultWarehouseStock).toEqual([
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			}
+		]);
+	});
+
+	// Note transactions with zero quantity should not affect the stock
+	const note6 = warehouse1.note();
+	await note6.addVolumes(
+		{ isbn: "0123456789", quantity: 0, warehouseId: "warehouse-1" },
+		// Other transaction is here to:
+		// - check that it is taken into account (only 0-quantity transactions are ignored, not the entire note)
+		// - to confirm an update has happened (as testing for something not being applied will pass immeditealy, due to async nature)
+		{ isbn: "11111111", quantity: 1, warehouseId: "warehouse-1" }
+	);
+	await note6.commit({});
+	await waitFor(() => {
+		expect(warehouse1Stock).toEqual([
+			{ isbn: "11111111", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1" }
+		]);
+		expect(defaultWarehouseStock).toEqual([
+			{
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("warehouse-2"),
+				warehouseName: "New Warehouse (2)"
+			},
+			{ isbn: "11111111", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1" }
+		]);
 	});
 };
 
