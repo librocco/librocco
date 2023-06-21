@@ -8,6 +8,7 @@ import { newLogger } from "../logger";
 describe("Logging", () => {
 	test("should keep the logs for instrumented transmissions", async () => {
 		const logger = newLogger();
+
 		const { start, log } = logger;
 
 		const pipelineId = "pipeline-1";
@@ -39,7 +40,7 @@ describe("Logging", () => {
 		await firstValueFrom(pipeline.pipe(bufferCount(3)));
 
 		// Explicitly check for logs for the first transmission (starting with the value of 0)
-		const transmission0Logs = logger.pipeline(pipelineId).transmission("0").get();
+		const transmission0Logs = [...logger.pipeline(pipelineId).transmission("0").steps().values()];
 		expect(transmission0Logs).toEqual([
 			// Initial step (start of the pipeline)
 			expect.objectContaining({
@@ -105,12 +106,13 @@ describe("Logging", () => {
 			);
 		});
 
-		expect(logger.pipeline(pipelineId).transmission("1").get()).toEqual(transmission1Logs);
-		expect(logger.pipeline(pipelineId).transmission("2").get()).toEqual(transmission2Logs);
+		expect([...logger.pipeline(pipelineId).transmission("1").steps().values()]).toEqual(transmission1Logs);
+		expect([...logger.pipeline(pipelineId).transmission("2").steps().values()]).toEqual(transmission2Logs);
 	});
 
 	test("should keep track of forked pipelines", async () => {
 		const logger = newLogger();
+
 		const { start, log, fork } = logger;
 
 		let transmissionIx = 0;
@@ -174,9 +176,10 @@ describe("Logging", () => {
 			]
 		];
 
-		const pipeline1Logs = [...logger.pipeline("pipeline-1").transmissions()].map((transmissionId) =>
-			logger.pipeline("pipeline-1").transmission(transmissionId).get()
-		);
+		const pipeline1Logs = [...logger.pipeline("pipeline-1").transmissions().values()].map((transmission) => [
+			...transmission.steps().values()
+		]);
+
 		expect(pipeline1Logs).toEqual(wantPipeline1Logs);
 
 		// Logs for pipeline 2 and 3 should also contain the pipeline-1 logs
@@ -212,9 +215,9 @@ describe("Logging", () => {
 				})
 			]
 		];
-		const pipeline2Logs = [...logger.pipeline("pipeline-2").transmissions()].map((transmissionId) =>
-			logger.pipeline("pipeline-2").transmission(transmissionId).get()
-		);
+		const pipeline2Logs = [...logger.pipeline("pipeline-2").transmissions().values()].map((transmission) => [
+			...transmission.steps().values()
+		]);
 		expect(pipeline2Logs).toEqual(wantPipeline2Logs);
 
 		const wantPipeline3Logs = [
@@ -249,9 +252,9 @@ describe("Logging", () => {
 				})
 			]
 		];
-		const pipeline3Logs = [...logger.pipeline("pipeline-3").transmissions()].map((transmissionId) =>
-			logger.pipeline("pipeline-3").transmission(transmissionId).get()
-		);
+		const pipeline3Logs = [...logger.pipeline("pipeline-3").transmissions().values()].map((transmission) => [
+			...transmission.steps().values()
+		]);
 		expect(pipeline3Logs).toEqual(wantPipeline3Logs);
 	});
 });

@@ -1,53 +1,73 @@
-import { LoggerInternal, Pipeline } from "./internal";
+import { LoggerInternal } from "./internal";
+import { LogReporter, newLogReporter, PipelineReporter } from "./reporter";
+import { map } from "./utils";
 
 declare global {
 	const window: any;
 }
 
 class PipelinePrinter {
-	private _internal: Pipeline;
+	private _reporter: PipelineReporter;
 
-	constructor(pipeline: Pipeline) {
-		this._internal = pipeline;
+	constructor(reporter: PipelineReporter) {
+		this._reporter = reporter;
 	}
+
+	id = () => this._reporter.id();
 
 	/** Prints all of the transmissions logged for a given pipeline */
 	transmissions = () => {
-		console.group(`Pipeline "${this._internal.id}" transmissions:`);
-		for (const transmissionId of this._internal.transmissions()) {
-			console.log(transmissionId);
-		}
+		console.group(`Pipeline "${this.id()}" transmissions:`);
+
+		const transmissions = new Map(
+			map(this._reporter.transmissions(), ([stepId, stats]) => [
+				stepId,
+				Object.entries(stats).reduce((acc, [transmissionId, took]) => ({ ...acc, [transmissionId]: `${took}ms` }), {})
+			])
+		);
+		const transmissionsTableObj = Object.fromEntries(transmissions);
+
+		console.table(transmissionsTableObj);
+
 		console.groupEnd();
 	};
 
 	/** Prints the stats (steps and times for each respective step) for a given transmission in the pipeline */
 	transmission = (transmissionId: string) => {
 		console.group();
-		for (const { stepId, timeDiff } of this._internal.transmission(transmissionId).get()) {
+		for (const [stepId, timeDiff] of this._reporter.transmission(transmissionId)) {
 			console.log(`${stepId} (${timeDiff}ms)`);
+		}
+		console.groupEnd();
+	};
+
+	stats = () => {
+		console.group(`Pipeline ${this.id()} stats:`);
+		for (const [stepId, took] of this._reporter.stats()) {
+			console.log(`${stepId} (${took}ms)`);
 		}
 		console.groupEnd();
 	};
 }
 
 class LogPrinter {
-	private _internal: LoggerInternal;
+	private _reporter: LogReporter;
 
 	constructor(logger: LoggerInternal) {
-		this._internal = logger;
+		this._reporter = newLogReporter(logger);
 	}
 
 	/** Prints all of the pipelines for which we keep the logs */
 	pipelines = () => {
 		console.group("Pipelines");
-		for (const pipelineId of this._internal.pipelines()) {
+		for (const pipelineId of this._reporter.pipelines()) {
 			console.log(pipelineId);
 		}
 		console.groupEnd();
 	};
 
 	/** Access the reports for the given pipeline */
-	pipeline = (pipelineId: string) => new PipelinePrinter(this._internal.pipeline(pipelineId));
+	pipeline = (pipelineId: string) => new PipelinePrinter(this._reporter.pipeline(pipelineId));
 }
 
 /**

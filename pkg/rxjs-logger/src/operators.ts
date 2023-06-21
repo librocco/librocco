@@ -13,7 +13,7 @@ import { ValueWithMeta, LogsMeta } from "./types";
  * @param meta
  * @returns
  */
-export const wrap = <V>(meta: LogsMeta): OperatorFunction<V, ValueWithMeta<V>> => map((value) => ({ ...meta, value }));
+export const wrap = <V>(getMeta: () => LogsMeta): OperatorFunction<V, ValueWithMeta<V>> => map((value) => ({ ...getMeta(), value }));
 
 /**
  * This method merely unwraps the 'value' field from the value with meta structure and should be used at the very end of the pipeline.

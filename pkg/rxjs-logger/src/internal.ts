@@ -9,7 +9,7 @@ export class Transmission {
 
 	private _sourceTransmission?: Transmission;
 
-	private steps: Logs[] = [];
+	private _steps = new Map<string, Logs>();
 
 	constructor(pipeline: Pipeline, id: string) {
 		this.#pipeline = pipeline;
@@ -23,8 +23,9 @@ export class Transmission {
 	start<V extends ValueWithMeta>(valueWithMeta: V): V {
 		const timestamp = DateTime.now();
 
-		if (this.steps.length) {
-			const startTime = this.steps[0].timestamp;
+		const firstStep = this.getFirstStep();
+		if (firstStep) {
+			const startTime = firstStep.timestamp;
 			const currentTime = timestamp;
 			warn(`Trying to run 'transmission.start' on an already started transmission.\n`, { ...valueWithMeta, startTime, currentTime });
 			return valueWithMeta;
@@ -32,31 +33,33 @@ export class Transmission {
 
 		const stepId = this._sourceTransmission ? "fork" : "start";
 
-		this.steps = [
-			{
-				stepId,
-				timestamp,
-				timeDiff: 0,
-				...valueWithMeta
-			}
-		];
+		this._steps.set(stepId, {
+			stepId,
+			timestamp,
+			timeDiff: 0,
+			...valueWithMeta
+		});
 
 		return valueWithMeta;
 	}
 
-	private getLastStep(): Logs | undefined {
-		const numSteps = this.steps.length;
-		return numSteps ? this.steps[numSteps - 1] : this._sourceTransmission?.getLastStep();
+	private getFirstStep(): Logs | undefined {
+		return this._steps.get("start");
 	}
 
-	private getsourceSteps() {
-		return this._sourceTransmission?.get() || [];
+	private getLastStep(): Logs | undefined {
+		const numSteps = this._steps.size;
+		return numSteps ? [...this._steps.values()][numSteps - 1] : this._sourceTransmission?.getLastStep();
+	}
+
+	private getSourceSteps(): Map<string, Logs> {
+		return this._sourceTransmission?.steps() || new Map<string, Logs>();
 	}
 
 	log<V extends ValueWithMeta>(valueWithMeta: V, stepId: string): V {
 		const timestamp = DateTime.now();
 
-		if (this.steps.length === 0) {
+		if (this._steps.size === 0) {
 			const startTime = null;
 			const currentTime = timestamp;
 			warn(`Trying to write logs for a non existing transmission: Did you forget to run 'transmission.start()'?`, {
@@ -74,7 +77,7 @@ export class Transmission {
 
 		const timeDiff = prevStep ? timestamp.diff(prevStep.timestamp, "milliseconds").milliseconds : 0;
 
-		this.steps.push({
+		this._steps.set(stepId, {
 			...valueWithMeta,
 			stepId,
 			timestamp,
@@ -84,8 +87,8 @@ export class Transmission {
 		return valueWithMeta;
 	}
 
-	get(): Logs[] {
-		return this.getsourceSteps().concat(this.steps);
+	steps(): Map<string, Logs> {
+		return mergedMap(this.getSourceSteps(), this._steps);
 	}
 }
 
@@ -117,7 +120,7 @@ export class Pipeline {
 		return this._transmissions.get(transmissionId) as Transmission;
 	};
 
-	transmissions = () => this._transmissions.keys();
+	transmissions = () => this._transmissions;
 
 	sourcePipeline = () => this._sourcePipeline;
 
@@ -145,7 +148,7 @@ export class LoggerInternal {
 		return this._pipelines.get(pipelineId) as Pipeline;
 	};
 
-	pipelines = () => this._pipelines.keys();
+	pipelines = () => this._pipelines;
 
 	start = <V extends ValueWithMeta>(logs: V): V => {
 		const { pipelineId, transmissionId } = logs;
@@ -175,3 +178,12 @@ const warn = (
 		`  Current time: ${currentTime.toISO()}`
 	);
 };
+
+const mergedMap = <M extends Map<any, any>>(...maps: M[]): M =>
+	new Map(
+		(function* () {
+			for (const m of maps) {
+				yield* m;
+			}
+		})()
+	) as M;
