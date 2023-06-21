@@ -4,16 +4,17 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData, WarehouseStockRow } from "./types";
+import { EntriesStreamResult, VersionedString, VolumeStock } from "@/types";
+import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
 import { newNote } from "./note";
 
-import { runAfterCondition, uniqueTimestamp, versionId, isEmpty, sortBooks } from "@/utils/misc";
+import { runAfterCondition, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses } from "./utils";
+import { newStock } from "./stock";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -32,7 +33,7 @@ class Warehouse implements WarehouseInterface {
 	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
 
-	#stock: Observable<VolumeStockClient[]>;
+	#stock: Observable<VolumeStock[]>;
 
 	_id: VersionedString;
 	docType = DocType.Warehouse;
@@ -66,34 +67,20 @@ class Warehouse implements WarehouseInterface {
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
-		const stockCache = new ReplaySubject<VolumeStockClient[]>(1);
-		const stockStreamParams =
-			this._id === versionId("0-all")
-				? { group_level: 2 }
-				: { group_level: 2, startkey: [this._id], endkey: [this._id, {}], include_end: true };
-		this.#stock = this.#db
-			.view<WarehouseStockRow>("v1_stock/by_warehouse")
-			.stream({}, stockStreamParams)
-			.pipe(
-				map(({ rows }) =>
-					rows
-						.filter(({ value: quantity }) => quantity > 0)
-						.map(({ key: [warehouseId, isbn], value: quantity }) => ({
-							isbn,
-							quantity,
-							warehouseId,
-							warehouseName: ""
-						}))
-						.sort(sortBooks)
-				),
-				share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
-			);
+		const stockCache = new ReplaySubject<VolumeStock[]>(1);
+		this.#stock = this.stock()
+			.stream({})
+			.pipe(share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false }));
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
 		// This is enough to signal that the warehouse intsance is initialised.
 		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
 		// If data is not empty (warehouse exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
 		this.#updateStream.subscribe((w) => this.updateInstance(w));
+	}
+
+	private stock() {
+		return newStock(this.#db, this._id);
 	}
 
 	/**

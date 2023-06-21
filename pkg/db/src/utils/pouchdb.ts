@@ -112,7 +112,7 @@ export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.Debu
 			debug.log(ctx, "changes_stream:change")(change);
 			subscriber.next(change);
 		});
-		return () => emitter.cancel()
+		return () => emitter.cancel();
 	});
 
 /**
