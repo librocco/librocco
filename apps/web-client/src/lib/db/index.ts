@@ -14,13 +14,14 @@ let db: DatabaseInterface | undefined = undefined;
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = (): DatabaseInterface => {
+export const createDB = async (): Promise<DatabaseInterface> => {
 	if (db) {
 		return db;
 	}
 
 	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
 	db = newDatabaseInterface(pouch);
+	await db.init()
 
 	return db;
 };
