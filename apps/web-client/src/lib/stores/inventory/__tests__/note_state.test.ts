@@ -18,8 +18,8 @@ describe("createDisplayStateStore", () => {
 		const db = await newTestDB();
 		const note = await db.warehouse().note("note-1").create();
 
-		const internalStateStore = createInternalStateStore({}, note);
-		const displayStateStore = createDisplayStateStore({}, note, internalStateStore);
+		const internalStateStore = createInternalStateStore({ name: "" }, note);
+		const displayStateStore = createDisplayStateStore({ name: "" }, note, internalStateStore);
 
 		// The display state store subscribes to the internal state store and the note store (in db). When the first subscriber is subscribed to the
 		// display state store, the subscription to note state is opened. When the last subscriber unsubscribes from the display state store, the
@@ -47,8 +47,8 @@ describe("createDisplayStateStore", () => {
 		const db = await newTestDB();
 		const note = await db.warehouse("wh1").note("note-1").create();
 
-		const internalStateStore = createInternalStateStore({}, note);
-		const displayStateStore = createDisplayStateStore({}, note, internalStateStore);
+		const internalStateStore = createInternalStateStore({ name: "" }, note);
+		const displayStateStore = createDisplayStateStore({ name: "" }, note, internalStateStore);
 
 		// See dummy subscription in the previous test ^^
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
@@ -64,7 +64,7 @@ describe("createDisplayStateStore", () => {
 		});
 
 		// Check that the note state in db has been updated
-		const noteState = await firstValueFrom(note.stream().state({}));
+		const noteState = await firstValueFrom(note.stream().state({ name: "" }));
 		expect(noteState).toBe(NoteState.Committed);
 
 		// Close the dummy subscription after assertions
@@ -77,10 +77,10 @@ describe("createDisplayStateStore", () => {
 
 		// In production this is the most common case of setting the state to the same value.
 		// On init the state picker's bind:value runs an update with the initial state, which is the same as the current state.
-		await note.commit({}, { force: true }); // force the commit, without checking for transactions (would fail otherwise -> no transactions)
+		await note.commit({ name: "" }, { force: true }); // force the commit, without checking for transactions (would fail otherwise -> no transactions)
 
-		const internalStateStore = createInternalStateStore({}, note);
-		const displayStateStore = createDisplayStateStore({}, note, internalStateStore);
+		const internalStateStore = createInternalStateStore({ name: "" }, note);
+		const displayStateStore = createDisplayStateStore({ name: "" }, note, internalStateStore);
 
 		// See dummy subscription in the previous test ^^
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
@@ -103,8 +103,8 @@ describe("createDisplayStateStore", () => {
 
 	test("should stream 'undefined' if no note provided", () => {
 		// Check for both internal state store as well as display state store
-		const internalStateStore = createInternalStateStore({}, undefined);
-		const displayStateStore = createDisplayStateStore({}, undefined, internalStateStore);
+		const internalStateStore = createInternalStateStore({ name: "" }, undefined);
+		const displayStateStore = createDisplayStateStore({ name: "" }, undefined, internalStateStore);
 		expect(get(displayStateStore)).toEqual(undefined);
 	});
 });

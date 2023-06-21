@@ -28,6 +28,7 @@
 		Slideover
 	} from "@librocco/ui";
 	import type { BookEntry } from "@librocco/db";
+	import { unwrap } from "@librocco/rxjs-logger";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -52,7 +53,7 @@
 	const db = getDB();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
+	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList().pipe(unwrap()), []);
 
 	/**
 	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse

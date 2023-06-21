@@ -1,5 +1,6 @@
 import { writable, type Readable, type Writable } from "svelte/store";
 
+import { logger, unwrap } from "@librocco/rxjs-logger";
 import type { NoteInterface, WarehouseInterface } from "@librocco/db";
 
 import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
@@ -29,21 +30,26 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (note) => {
-	const noteStateCtx = { name: `[NOTE_STATE::${note?._id}]`, debug: false };
-	const internalState = createInternalStateStore(noteStateCtx, note);
+	const ctx = { name: note ? `Note(${note._id})` : "Note(unkonwn)" };
 
-	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?._id}]`, debug: false };
-	const updatedAt = readableFromStream(updatedAtCtx, note?.stream().updatedAt(updatedAtCtx), null);
+	const internalState = createInternalStateStore(ctx, note);
+
+	const updatedAt = readableFromStream(
+		{ ...ctx, debug: false },
+		note
+			?.stream()
+			.updatedAt(ctx)
+			.pipe(logger.fork(`${ctx.name}::updated_at`), unwrap()),
+		null
+	);
 
 	const currentPage = writable(0);
 
-	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?._id}]`, debug: false };
-	const displayName = createDisplayNameStore(displayNameCtx, note, undefined);
+	const displayName = createDisplayNameStore({ ...ctx, debug: false }, note, undefined);
 
-	const state = createDisplayStateStore(noteStateCtx, note, internalState);
+	const state = createDisplayStateStore({ ...ctx, debug: false }, note, internalState);
 
-	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore({ ...ctx, debug: false }, getDB(), note, currentPage);
 
 	return {
 		displayName,
@@ -71,13 +77,15 @@ interface CreateWarehouseStores {
  * @returns
  */
 export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
+	const ctx = {
+		name: warehouse ? `Warehouse(${warehouse._id})` : "Warehouse(unknown)"
+	};
+
 	const currentPage = writable(0);
 
-	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
-	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
+	const displayName = createDisplayNameStore(ctx, warehouse, null);
 
-	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPage);
 
 	return {
 		displayName,

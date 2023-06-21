@@ -4,7 +4,11 @@
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
+	import { logger } from "@librocco/rxjs-logger";
+
 	onMount(async () => {
+		logger.registerClient();
+
 		if (pwaInfo) {
 			const { registerSW } = await import("virtual:pwa-register");
 			registerSW({

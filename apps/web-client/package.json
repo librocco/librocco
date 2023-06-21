@@ -15,6 +15,7 @@
 		"postinstall": "svelte-kit sync"
 	},
 	"devDependencies": {
+		"@librocco/rxjs-logger": "workspace:*",
 		"@librocco/shared": "workspace:*",
 		"@types/pouchdb": "~6.4.0",
 		"@sveltejs/kit": "~1.15.7",

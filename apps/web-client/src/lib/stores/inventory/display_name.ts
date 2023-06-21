@@ -8,6 +8,7 @@ import { NoteTempState } from "$lib/enums/inventory";
 import type { NoteAppState } from "$lib/types/inventory";
 
 import { readableFromStream } from "$lib/utils/streams";
+import { unwrap, logger } from "@librocco/rxjs-logger";
 
 interface CreateDisplayNameStore {
 	(
@@ -27,7 +28,14 @@ interface CreateDisplayNameStore {
  * @param internalStateStore (optional) reference to the internal state store for the note. If provided, the store will be updated with the temp state while the content store updates.
  */
 export const createDisplayNameStore: CreateDisplayNameStore = (ctx, entity, internalStateStore) => {
-	const displayNameInternal = readableFromStream(ctx, entity?.stream().displayName(ctx), "");
+	const displayNameInternal = readableFromStream(
+		ctx,
+		entity
+			?.stream()
+			.displayName(ctx)
+			.pipe(logger.fork(`${ctx.name}::display_name`), unwrap()),
+		""
+	);
 
 	// Set method updates the displayName in the database and, if the internal state store is provided, sets the temp state
 	// if internal state store is provided (and set to temp state by this action), it will be updated to the non-temp state

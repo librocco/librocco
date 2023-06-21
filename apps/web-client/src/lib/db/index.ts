@@ -1,6 +1,7 @@
 import pouchdb from "pouchdb";
 
 import { newDatabaseInterface, type DatabaseInterface } from "@librocco/db";
+import { logger } from "@librocco/rxjs-logger";
 
 import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 
@@ -20,7 +21,7 @@ export const createDB = async (): Promise<DatabaseInterface> => {
 	}
 
 	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
-	db = newDatabaseInterface(pouch);
+	db = newDatabaseInterface(pouch, logger);
 	await db.init();
 
 	return db;

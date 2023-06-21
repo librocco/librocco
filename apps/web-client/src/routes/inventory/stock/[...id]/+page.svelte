@@ -20,6 +20,7 @@
 		ProgressBar
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE } from "@librocco/db";
+	import { unwrap } from "@librocco/rxjs-logger";
 
 	import type { PageData } from "./$types";
 
@@ -39,7 +40,7 @@
 	const db = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList(warehouseListCtx), []);
+	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList().pipe(unwrap()), []);
 
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse

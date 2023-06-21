@@ -2,6 +2,7 @@ import { get, writable, type Writable } from "svelte/store";
 
 import type { NoteInterface } from "@librocco/db";
 import { debug } from "@librocco/shared";
+import { logger, unwrap } from "@librocco/rxjs-logger";
 
 import { noteStateLookup, type NoteTempState } from "$lib/enums/inventory";
 import { NoteState } from "$lib/enums/db";
@@ -28,10 +29,10 @@ export const createInternalStateStore: CreateInternalStateStore = (ctx, note) =>
 
 	// Open note subscription opens a subscription to the note state which updates the internal store on change
 	const openNoteSubscription = () => {
-		debug.log(ctx, "internal_state_store:opening_note_subscription")({});
 		noteSubscription = note
 			?.stream()
 			.state(ctx)
+			.pipe(logger.fork(`${ctx.name}::internal_state_store`), unwrap())
 			.subscribe((content) => {
 				debug.log(ctx, "internal_state_store:update_from_db")(content);
 				state.set(content);

@@ -16,7 +16,7 @@ describe("tableContentStore", () => {
 		let displayEntries: VolumeQuantity[] | undefined;
 
 		// Both db and entity are undefined (this will happen at build time, as db is instantiated only in browser)
-		let tableData = createDisplayEntriesStore({}, undefined, undefined, readable(0));
+		let tableData = createDisplayEntriesStore({ name: "" }, undefined, undefined, readable(0));
 		tableData.entries.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
@@ -25,7 +25,7 @@ describe("tableContentStore", () => {
 
 		// Should also work if db is defined but entity is undefined (this might happen if the entity id is not specified)
 		const db = await newTestDB();
-		tableData = createDisplayEntriesStore({}, db, undefined, readable(0));
+		tableData = createDisplayEntriesStore({ name: "" }, db, undefined, readable(0));
 		tableData.entries.subscribe((de) => (displayEntries = de));
 		expect(displayEntries).toEqual([]);
 
@@ -77,7 +77,7 @@ describe("tableContentStore", () => {
 			db.books().upsert([book1, book2])
 		]);
 
-		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
+		const tableData = createDisplayEntriesStore({ name: "" }, db, note, readable(0));
 		let displayEntries: DisplayRow[];
 		tableData.entries.subscribe((de) => (displayEntries = de));
 

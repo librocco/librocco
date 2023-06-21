@@ -27,6 +27,7 @@
 		type RemoveTransactionsDetail,
 		ProgressBar
 	} from "@librocco/ui";
+	import { unwrap } from "@librocco/rxjs-logger";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -50,7 +51,7 @@
 	const db = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(outNoteListCtx, db?.stream().outNoteList(outNoteListCtx), []);
+	const outNoteList = readableFromStream(outNoteListCtx, db?.stream().outNoteList().pipe(unwrap()), []);
 
 	/**
 	 * Handle create note is an `on:click` handler used to create a new outbound note
