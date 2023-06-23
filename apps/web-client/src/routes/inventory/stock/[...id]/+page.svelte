@@ -105,7 +105,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if !loading}
-			{#if warehouse}
+			{#if Boolean($entries.length)}
 				<InventoryTable {table} />
 			{/if}
 		{:else}
