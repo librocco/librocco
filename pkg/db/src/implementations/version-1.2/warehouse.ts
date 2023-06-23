@@ -14,7 +14,6 @@ import { newNote } from "./note";
 import { runAfterCondition, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses } from "./utils";
-import { newStock } from "./stock";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -68,19 +67,21 @@ class Warehouse implements WarehouseInterface {
 		);
 
 		const stockCache = new ReplaySubject<VolumeStock[]>(1);
-		this.#stock = this.stock()
-			.stream({})
-			.pipe(share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false }));
+		this.#stock =
+			this._id === versionId("0-all")
+				? // The stock cached inside the db instance is the stock of the default warehouse (entire stock)
+				  this.#db.stock()
+				: // If this is a non-default warehouse, pick out only the stock for this warehouse
+				  this.#db.stock().pipe(
+						map((rows) => rows.filter(({ warehouseId }) => this._id === warehouseId)),
+						share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+				  );
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
 		// This is enough to signal that the warehouse intsance is initialised.
 		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
 		// If data is not empty (warehouse exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
 		this.#updateStream.subscribe((w) => this.updateInstance(w));
-	}
-
-	private stock() {
-		return newStock(this.#db, this._id);
 	}
 
 	/**

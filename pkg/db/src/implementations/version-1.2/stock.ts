@@ -19,13 +19,11 @@ type Doc = NoteData | WarehouseData;
 class Stock implements StockInterface {
 	#db: DatabaseInterface;
 
-	_id: string;
 	options: Parameters<PouchDB.Database["allDocs"]>[0];
 
-	constructor(db: DatabaseInterface, id: string) {
+	constructor(db: DatabaseInterface) {
 		this.#db = db;
 
-		this._id = id;
 		// Start from "v1/" (to collect the outbound notes, belonging to the default warehouse)
 		const startkey = versionId("");
 		// End with "v10" (as '0' is the next lexical character after '/'), ending the 'v1/' namespace
@@ -57,7 +55,7 @@ class Stock implements StockInterface {
 			filter((doc): doc is NoteData => doc?.docType === "note"),
 			filter(({ committed, entries }) => Boolean(committed && entries?.length)),
 			mergeMap(({ entries, noteType }) => from(entries).pipe(map((entry) => ({ ...entry, noteType })))),
-			reduce((acc, curr) => acc.aggregate(curr), new MapAggregator(this._id))
+			reduce((acc, curr) => acc.aggregate(curr), new MapAggregator())
 		);
 		const res = await firstValueFrom(pipeline);
 		return [...res.values()].sort(sortBooks);
@@ -71,17 +69,8 @@ class Stock implements StockInterface {
 }
 
 class MapAggregator extends Map<string, VolumeStock> {
-	_id: string;
-
-	constructor(id: string) {
-		super();
-		this._id = id;
-	}
-
 	aggregate({ isbn, quantity, noteType, warehouseId }: VolumeStock & Pick<NoteData, "noteType">) {
 		if (
-			// Skip notes not belonging to this warehouse
-			![versionId(warehouseId), versionId("0-all")].includes(versionId(this._id)) ||
 			// Skip entries with zero quantity
 			quantity === 0
 		) {
@@ -107,4 +96,4 @@ class MapAggregator extends Map<string, VolumeStock> {
 	}
 }
 
-export const newStock = (db: DatabaseInterface, id: string) => new Stock(db, id);
+export const newStock = (db: DatabaseInterface) => new Stock(db);
