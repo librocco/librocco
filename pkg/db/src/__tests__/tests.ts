@@ -87,11 +87,22 @@ export const standardApi: TestFunction = async (db) => {
 	note1 = await note1.setName({}, "New name");
 	expect(note1.displayName).toEqual("Note 1");
 
-	// Notes on the default warehouse should atomatically be outbound, and on specific warehouses inbound.
+	// Notes on the default warehouse should automatically be outbound, and on specific warehouses inbound.
 	const outboundNote = db.warehouse().note();
 	const inboundNote = db.warehouse("wh1").note();
 	expect(outboundNote.noteType).toEqual("outbound");
 	expect(inboundNote.noteType).toEqual("inbound");
+
+	// Trying to access a note belonging to a different warehouse should throw an error.
+	const wh1Note = db.warehouse("wh1").note("wh1-note");
+	const wh1NoteFullId = wh1Note._id;
+	let err;
+	try {
+		db.warehouse("wh2").note(wh1NoteFullId);
+	} catch (e) {
+		err = e;
+	}
+	expect(err).toBeDefined();
 };
 
 export const noteTransactionOperations: TestFunction = async (db) => {
