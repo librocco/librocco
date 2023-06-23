@@ -1,9 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, share, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { BooksInterface, CouchDocument, DbStream, DesignDocument, InNoteList, MapReduceRow, NavListEntry, Replicator } from "@/types";
+import {
+	BooksInterface,
+	CouchDocument,
+	DbStream,
+	DesignDocument,
+	InNoteList,
+	MapReduceRow,
+	NavListEntry,
+	Replicator,
+	VolumeStock
+} from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -15,6 +25,7 @@ import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
+import { newStock } from "./stock";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -24,6 +35,8 @@ class Database implements DatabaseInterface {
 	#warehouseListStream: Observable<NavListEntry[]>;
 	#outNoteListStream: Observable<NavListEntry[]>;
 	#inNoteListStream: Observable<InNoteList>;
+
+	#stockStream: Observable<VolumeStock[]>;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
@@ -56,6 +69,11 @@ class Database implements DatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
+		const stockCache = new ReplaySubject<VolumeStock[]>(1);
+		this.#stockStream = newStock(this)
+			.stream({})
+			.pipe(share({ connector: () => stockCache, resetOnRefCountZero: false }));
+
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
 		// but will still show a warning if that number gets unexpectedly high (memory leak).
@@ -71,6 +89,10 @@ class Database implements DatabaseInterface {
 
 	replicate(): Replicator {
 		return newDbReplicator(this);
+	}
+
+	stock(): Observable<VolumeStock[]> {
+		return this.#stockStream;
 	}
 
 	async buildIndexes() {
