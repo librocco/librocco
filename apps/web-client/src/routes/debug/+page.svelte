@@ -9,10 +9,11 @@
 	let destroyingDb = false;
 	const handleDestroyDB = () => {
 		destroyingDb = true;
-		destroyDB().then(() => {
-			destroyingDb = false;
-			createDB().init();
-		});
+		destroyDB()
+			.then(() => createDB())
+			.then(() => {
+				destroyingDb = false;
+			});
 	};
 </script>
 

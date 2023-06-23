@@ -24,7 +24,7 @@ importers:
       eslint-config-prettier: ^8.3.0
       eslint-plugin-svelte3: ^4.0.0
       fast-glob: ~3.2.12
-      lucide-svelte: ^0.160.0
+      lucide-svelte: ^0.210.0
       postcss: ~8.4.13
       pouchdb: ~7.3.0
       pouchdb-adapter-memory: ~7.3.0
