@@ -49,11 +49,29 @@ class Note implements NoteInterface {
 		// Outbound notes are assigned to the default warehouse, while inbound notes are assigned to a non-default warehouse
 		this.noteType = warehouse._id === versionId("0-all") ? "outbound" : "inbound";
 
+		const idSegments = id?.split("/").filter(Boolean) || [];
+
 		// If id provided, validate it:
 		// - it should either be a full id - 'v1/<warehouse-id>/<note-type>/<note-id>'
 		// - or a single segment id - '<note-id>'
-		if (id && ![1, 4].includes(id.split("/").length)) {
+		if (id && ![1, 4].includes(idSegments.length)) {
 			throw new Error("Invalid note id: " + id);
+		}
+
+		// If warehouse provided as part of the id, verify there's
+		// no mismatch between backreferenced warehouse and the provided one.
+		if (idSegments.length === 4 && idSegments[1] !== warehouse._id) {
+			const wId = versionId(idSegments[1]);
+			const refWId = versionId(warehouse._id);
+			if (wId !== refWId) {
+				throw new Error(
+					"Warehouse referenced in the note and one provided in note id mismatch:" +
+						"\n		referenced: " +
+						refWId +
+						"\n		provided: " +
+						wId
+				);
+			}
 		}
 
 		// Store the id internally:
