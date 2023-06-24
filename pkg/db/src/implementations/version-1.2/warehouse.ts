@@ -4,16 +4,17 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString, VolumeStock } from "@/types";
+import { EntriesStreamResult, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
 import { newNote } from "./note";
+import { newStock } from "./stock";
 
 import { runAfterCondition, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { combineTransactionsWarehouses } from "./utils";
+import { combineTransactionsWarehouses, addWarehouseNames } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -224,6 +225,12 @@ class Warehouse implements WarehouseInterface {
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
 		return this.update({}, { displayName });
+	}
+
+	async getEntries(): Promise<VolumeStockClient[]> {
+		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
+		const entries = queryRes.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+		return addWarehouseNames(entries, warehouses);
 	}
 
 	/**
