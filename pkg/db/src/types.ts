@@ -63,6 +63,8 @@ export interface EntriesStreamResult {
 	total: number;
 	totalPages: number;
 }
+
+export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<VolumeStockClient[]>;
 // #endregion misc
 
 // #region books
@@ -148,6 +150,10 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * - `entries` - streams the note's `entries` (volume transactions)
 	 */
 	stream: () => NoteStream;
+	/**
+	 * An imperative query (single response) of note's transactions (as opposed to the entries stream - an observable stream).
+	 */
+	getEntries: EntriesQuery;
 }
 
 /**
@@ -198,6 +204,10 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	 * - `entries` - streams the warehouse's `entries` (stock)
 	 */
 	stream: () => WarehouseStream;
+	/**
+	 * An imperative query (single response) of warehouse stock (as opposed to the entries stream - an observable stream).
+	 */
+	getEntries: EntriesQuery;
 }
 
 /**

@@ -4,13 +4,13 @@ import { debug } from "@librocco/shared";
 
 import { DocType, NoteState } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult } from "@/types";
+import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
-import { combineTransactionsWarehouses } from "./utils";
+import { addWarehouseNames, combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -368,6 +368,12 @@ class Note implements NoteInterface {
 		}
 
 		return this.update(ctx, { committed: true });
+	}
+
+	async getEntries(): Promise<VolumeStockClient[]> {
+		const entries = await this.get().then((note) => note?.entries || []);
+		const warehouses = await this.#db.getWarehouseList();
+		return addWarehouseNames(entries, warehouses);
 	}
 
 	/**
