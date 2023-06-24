@@ -1,29 +1,32 @@
-export function map<T>(iterable: Iterable<T>, mapper: (value: T) => T): Iterable<T>;
-export function map<T, R>(iterable: Iterable<T>, mapper: (value: T) => R): Iterable<R> {
-	return iterableFromGenerator(function* () {
-		for (const value of iterable) {
-			yield mapper(value);
-		}
-	});
-}
+type GeneratorTransformer<T, A> = (iterable: Iterable<T>) => Iterable<A>;
 
-export function flatMap<T>(iterable: Iterable<T>, mapper: (value: T) => Iterable<T>): Iterable<T>;
-export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Iterable<R>): Iterable<R> {
-	return iterableFromGenerator(function* () {
-		for (const value of iterable) {
-			yield* mapper(value);
-		}
-	});
-}
-
-export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): Iterable<T> {
-	return iterableFromGenerator(function* () {
-		for (const value of iterable) {
-			if (predicate(value)) {
-				yield value;
+export function map<T, R>(mapper: (value: T) => R): GeneratorTransformer<T, R> {
+	return (iterable: Iterable<T>) =>
+		iterableFromGenerator(function* () {
+			for (const value of iterable) {
+				yield mapper(value);
 			}
-		}
-	});
+		});
+}
+
+export function flatMap<T, R>(mapper: (value: T) => Iterable<R>): GeneratorTransformer<T, R> {
+	return (iterable: Iterable<T>) =>
+		iterableFromGenerator(function* () {
+			for (const value of iterable) {
+				yield* mapper(value);
+			}
+		});
+}
+
+export function filter<T>(predicate: (value: T) => boolean): GeneratorTransformer<T, T> {
+	return (iterable: Iterable<T>) =>
+		iterableFromGenerator(function* () {
+			for (const value of iterable) {
+				if (predicate(value)) {
+					yield value;
+				}
+			}
+		});
 }
 
 export function reduce<T>(iterable: Iterable<T>, reducer: (accumulator: T, value: T) => T): T;
@@ -42,6 +45,43 @@ export function reduce<T, R>(iterable: Iterable<T>, reducer: (accumulator: R, va
 	}
 
 	return accumulator;
+}
+
+export function transform<T, A>(iterable: Iterable<T>, tr1: GeneratorTransformer<T, A>): Iterable<A>;
+export function transform<T, A, B>(iterable: Iterable<T>, tr1: GeneratorTransformer<T, A>, tr2: GeneratorTransformer<A, B>): Iterable<B>;
+export function transform<T, A, B, C>(
+	iterable: Iterable<T>,
+	tr1: GeneratorTransformer<T, A>,
+	tr2: GeneratorTransformer<A, B>,
+	tr3: GeneratorTransformer<B, C>
+): Iterable<C>;
+export function transform<T, A, B, C, D>(
+	iterable: Iterable<T>,
+	tr1: GeneratorTransformer<T, A>,
+	tr2: GeneratorTransformer<A, B>,
+	tr3: GeneratorTransformer<B, C>,
+	tr4: GeneratorTransformer<C, D>
+): Iterable<D>;
+export function transform<T, A, B, C, D, E>(
+	iterable: Iterable<T>,
+	tr1: GeneratorTransformer<T, A>,
+	tr2: GeneratorTransformer<A, B>,
+	tr3: GeneratorTransformer<B, C>,
+	tr4: GeneratorTransformer<C, D>,
+	tr5: GeneratorTransformer<D, E>
+): Iterable<E>;
+export function transform<T, A, B, C, D, E, F>(
+	iterable: Iterable<T>,
+	tr1: GeneratorTransformer<T, A>,
+	tr2: GeneratorTransformer<A, B>,
+	tr3: GeneratorTransformer<B, C>,
+	tr4: GeneratorTransformer<C, D>,
+	tr5: GeneratorTransformer<D, E>,
+	tr6: GeneratorTransformer<E, F>
+): Iterable<F>;
+export function transform(iterable: Iterable<any>, ...transformers: GeneratorTransformer<any, any>[]): Iterable<any>;
+export function transform<T>(iterable: Iterable<T>, ...transformers: GeneratorTransformer<any, any>[]): Iterable<any> {
+	return transformers.reduce((iterable, transformer) => transformer(iterable), iterable);
 }
 
 /**
