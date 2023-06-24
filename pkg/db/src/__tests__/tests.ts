@@ -105,6 +105,42 @@ export const standardApi: TestFunction = async (db) => {
 	expect(err).toBeDefined();
 };
 
+export const getEntriesQueries: TestFunction = async (db) => {
+	// Set up warehouses
+	const defaultWh = await db.warehouse().create();
+	const wh1 = await db
+		.warehouse("wh1")
+		.create()
+		.then((w) => w.setName({}, "Warehouse 1"));
+
+	// Check for note
+	const note = await wh1.note().create();
+	await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
+	const entries = await note.getEntries({});
+	expect(entries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Check for warehouse
+	// Note is not yet committed, so no entries should be returned.
+	let wh1Entries = await wh1.getEntries({});
+	expect(wh1Entries).toEqual([]);
+	await note.commit({});
+	wh1Entries = await wh1.getEntries({});
+	expect(wh1Entries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Should work all the same for the default warehouse
+	const defaultWhEntries = await defaultWh.getEntries({});
+	expect(defaultWhEntries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+};
+
 export const noteTransactionOperations: TestFunction = async (db) => {
 	// Set up two warehouses (with display names) and an outbound note
 	const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
