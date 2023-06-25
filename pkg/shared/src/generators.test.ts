@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { filter, flatMap, iterableFromGenerator, map, transform } from "./generators";
+import { iterableFromGenerator, wrapIter } from "./generators";
 
 describe("iterableFromGenerator", () => {
 	test("should allow for multiple iterations over the same generator", () => {
@@ -25,13 +25,11 @@ describe("Composition with 'transform'", () => {
 			{ step: "3", rows: [5, 6] }
 		];
 
-		const result = transform(
-			iterable,
-			flatMap(({ rows }) => rows), // Iterable { 1, 2, 3, 4, 5, 6 }
-			map((value) => value + 1), // Iterable { 2, 3, 4, 5, 6, 7 }
-			filter((value) => value % 2 === 0), // Iterable { 2, 4, 6 }
-			map((value) => value.toString()) // Iterable { "2", "4", "6" }
-		);
+		const result = wrapIter(iterable)
+			.flatMap(({ rows }) => rows) // Iterable { 1, 2, 3, 4, 5, 6 }
+			.map((value) => value + 1) // Iterable { 2, 3, 4, 5, 6, 7 }
+			.filter((value) => value % 2 === 0) // Iterable { 2, 4, 6 }
+			.map((value) => value.toString()); // Iterable { "2", "4", "6" }
 
 		expect([...result]).toEqual(["2", "4", "6"]);
 	});
