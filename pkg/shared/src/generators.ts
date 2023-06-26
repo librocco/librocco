@@ -24,10 +24,28 @@ export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolea
 	});
 }
 
+export class EmptyIterableError extends Error {
+	constructor() {
+		super("Cannot reduce empty iterable without seed");
+	}
+}
+
+export function reduce<T, R>(iterable: Iterable<T>, reducer: (accumulator: R, value: T) => R, seed: R): R;
 export function reduce<T>(iterable: Iterable<T>, reducer: (accumulator: T, value: T) => T, seed?: T): T;
-export function reduce<T, R>(iterable: Iterable<T>, reducer: (accumulator: R, value: T) => R, seed: R): R {
+export function reduce<T>(iterable: Iterable<T>, reducer: (accumulator: T, value: T) => T, seed: T): T {
 	const iterator = iterable[Symbol.iterator]();
-	let accumulator = seed || iterator.next().value;
+
+	// If iterable empty, fall back to seed (if provided), if no seed throw an error
+	// Note: We're acquring a new iterator here, not to mess with the one used for processing
+	const { done: isEmpty } = iterable[Symbol.iterator]().next();
+	if (isEmpty) {
+		if (seed === undefined) {
+			throw new EmptyIterableError();
+		}
+		return seed;
+	}
+
+	let accumulator = seed ?? iterator.next().value;
 
 	// eslint-disable-next-line no-constant-condition
 	while (true) {
@@ -35,7 +53,7 @@ export function reduce<T, R>(iterable: Iterable<T>, reducer: (accumulator: R, va
 		if (done && value === undefined) {
 			break;
 		}
-		accumulator = reducer(accumulator, iterator.next().value);
+		accumulator = reducer(accumulator, value);
 	}
 
 	return accumulator;
@@ -61,8 +79,8 @@ interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
+	reduce<R>(reducer: (accumulator: R, value: T) => R, seed: R): R;
 	reduce(reducer: (accumulator: T, value: T) => T, seed?: T): T;
-	reduce<R>(reducer: (accumulator: R, value: T) => T, seed: R): R;
 }
 
 /**
