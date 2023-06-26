@@ -7,8 +7,7 @@ export enum ButtonShape {
 export enum ButtonColor {
 	Primary = "primary",
 	White = "white",
-	Secondary = "secondary",
-	Disabled = "disabled"
+	Secondary = "secondary"
 }
 
 export enum ButtonSize {

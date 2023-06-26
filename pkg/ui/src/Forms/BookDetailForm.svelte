@@ -15,82 +15,56 @@
 	export let editMode: boolean = false;
 	export let openEditMode = () => {};
 	export let onCancel = () => {};
-	export let onISBNField: (isbn: string) => Promise<BookEntry[]> | undefined = () => undefined;
+	export let onValidate: (values: BookEntry) => Promise<BookEntry[]> | undefined = () => undefined;
 
 	interface BookCache {
 		[key: string]: BookEntry;
 	}
 
-	// book store which can  be set
 	const bookCache: BookCache = {};
 
-	// reactive declaration for instant error feedback (felte returns stores on blur i think)
-	$: isbnExistsError = "";
-
-	const { form, data, setFields, setTouched, interacted } = createForm({
+	const { form, data, setFields, interacted, setInteracted, errors, setTouched, setErrors } = createForm({
 		initialValues: book,
 		onSubmit: (values) => {
 			onSubmit(values);
 		},
 		debounced: {
-			// defaults to 300
-
 			timeout: 1000,
 			validate: async (values) => {
-				const errors: {
-					isbn?: string;
-					title?: string;
-					price?: string;
-					year?: string;
-					authors?: string;
-					publisher?: string;
-					editedBy?: string;
-					outOfPrint?: string;
-				} = { isbn: isbnExistsError };
+				const errorsObj: Partial<Record<keyof BookEntry, string>> = { isbn: $errors.isbn ? $errors.isbn[0] : "" };
 				const isbnError = "ISBN already exists, would you like to Edit it?";
 
-				if (values.isbn.trim() === "" || $interacted !== "isbn") return errors;
+				if (values.isbn.trim() === "" || $interacted !== "isbn") return errorsObj;
 
-				// reset isbn error if isbn field interacted with
-				isbnExistsError = "";
+				errorsObj.isbn = "";
 
 				if (bookCache[values.isbn]) {
-					errors.isbn = isbnError;
-					isbnExistsError = isbnError;
+					errorsObj.isbn = isbnError;
+					setTouched("isbn", true);
 				} else {
-					const res = await onISBNField(values.isbn);
+					const res = await onValidate(values);
 
 					if (res[0] !== undefined) {
-						isbnExistsError = isbnError;
-
-						errors.isbn = isbnError;
+						errorsObj.isbn = isbnError;
+						setTouched("isbn", true);
 					}
 
 					bookCache[values.isbn] = res[0];
 				}
 
-				return errors;
+				return errorsObj;
 			}
 		}
 	});
 
-	const onEdit = () => {
+	const handleEdit = () => {
 		openEditMode();
 
 		// reset isbn error on edit
-		isbnExistsError = "";
+		setErrors("isbn", "");
 
-		setFields({ year: "", authors: "", publisher: "", editedBy: "", outOfPrint: false, ...bookCache[getValue($data, "isbn")] });
-		setTouched({
-			isbn: false,
-			title: false,
-			price: false,
-			year: false,
-			authors: false,
-			publisher: false,
-			editedBy: false,
-			outOfPrint: false
-		});
+		setFields({ year: "", authors: "", publisher: "", editedBy: "", outOfPrint: false, ...bookCache[$data.isbn] });
+		setInteracted(null);
 	};
 
 	const publisherCombo = createCombobox({ label: "publisher" });
@@ -105,10 +79,16 @@
 					label="ISBN"
 					required={getValue($data, "isbn") === ""}
 					disabled={editMode}
-					error={Boolean(isbnExistsError)}
-					helpText={isbnExistsError}
-					onHelpTextClick={onEdit}
-				/>
+					isValid={Boolean($errors.isbn && $errors.isbn[0])}
+				>
+					<svelte:fragment slot="helpText">
+						{#if Boolean($errors.isbn && $errors.isbn[0])}
+							<p aria-live="polite" class="cursor-pointer underline" on:keypress={handleEdit} on:click={handleEdit}>
+								{$errors.isbn && $errors.isbn[0]}
+							</p>
+						{/if}
+					</svelte:fragment>
+				</TextField>
 			</div>
 			<div class="basis-full">
 				<TextField name="title" label="Title" required />
@@ -142,10 +122,6 @@
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
 		<Button color={ButtonColor.White} on:click={onCancel}>Cancel</Button>
-		<Button
-			type="submit"
-			color={bookCache[$data.isbn] !== undefined && !editMode ? ButtonColor.Disabled : ButtonColor.Primary}
-			disabled={bookCache[$data.isbn] !== undefined && !editMode}>Save</Button
-		>
+		<Button type="submit" color={ButtonColor.Primary} disabled={bookCache[$data.isbn] !== undefined && !editMode}>Save</Button>
 	</div>
 </form>
