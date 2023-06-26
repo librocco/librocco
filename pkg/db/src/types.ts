@@ -55,7 +55,7 @@ export interface VolumeStock {
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
 export interface VolumeStockClient extends VolumeStock {
 	warehouseName: string;
-	availableWarehouses?: { value: string; label: string }[];
+	availableWarehouses?: NavMap;
 }
 
 export interface EntriesStreamResult {
@@ -64,7 +64,7 @@ export interface EntriesStreamResult {
 	totalPages: number;
 }
 
-export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<VolumeStockClient[]>;
+export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
 // #endregion misc
 
 // #region books
@@ -261,12 +261,19 @@ export interface Replicator {
 // #endregion replication
 
 // #region db
-export interface NavListEntry {
-	id: string;
+export type NavEntry<A = {}> = {
 	displayName: string;
-}
+} & A;
 
-export type InNoteList = Array<NavListEntry & { notes: NavListEntry[] }>;
+/**
+ * A map of navigation entries: { noteId => { displayName } }
+ */
+export type NavMap<A = {}> = Map<string, NavEntry<A>>;
+
+/**
+ * A map of inbound note entries: { warehouseId => { displayName, notes: NavMap } }
+ */
+export type InNoteMap = NavMap<{ notes: NavMap }>;
 
 export interface NoteLookupResult<N extends NoteInterface, W extends WarehouseInterface> {
 	note: N;
@@ -281,9 +288,9 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
-	outNoteList: (ctx: debug.DebugCtx) => Observable<NavListEntry[]>;
-	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteList>;
+	warehouseList: (ctx: debug.DebugCtx) => Observable<NavMap>;
+	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
+	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 }
 
 /**

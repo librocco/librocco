@@ -13,7 +13,7 @@ import {
 	MapReduceRow,
 	CouchDocument,
 	MapReduceRes,
-	NavListEntry
+	NavMap
 } from "@/types";
 import { DocType } from "@/enums";
 
@@ -33,7 +33,7 @@ export type WarehouseInterface = WI<NoteInterface>;
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & {
 	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
 	stock: () => Observable<VolumeStock[]>;
-	getWarehouseList: () => Promise<NavListEntry[]>;
+	getWarehouseList: () => Promise<NavMap>;
 };
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
