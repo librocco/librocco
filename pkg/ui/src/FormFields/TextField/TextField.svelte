@@ -10,8 +10,7 @@
 		helpText?: string;
 		inputAction?: Action | (() => void);
 		variant?: TextFieldSize;
-		error?: boolean;
-		onHelpTextClick?: () => void;
+		isValid?: boolean;
 	}
 
 	export let name: string;
@@ -19,27 +18,25 @@
 	export let helpText = "";
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
-	export let error = false;
+	export let isValid = false;
 	export let value = "";
-	export let onHelpTextClick = () => {};
-	$: error = error;
+	$: isValid = isValid;
 
 	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
-	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]"];
+	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]", "empty:hidden"];
 	const inputBaseClasses = ["block", "w-full", "border-0", "text-sm", "focus:outline-0", "focus:ring-0", variant];
-	const clickableHelpText = onHelpTextClick ? "cursor-pointer underline" : "";
 
 	const containerBaseClasses = ["flex", "mx-[2px]", "outline", "rounded-md", "shadow-sm", "focus-within:outline-2"];
 
-	$: containerFocusColor = error ? "focus-within:outline-red-500" : "focus-within:outline-teal-500";
+	$: containerFocusColor = isValid ? "focus-within:outline-red-500" : "focus-within:outline-teal-500";
 
-	$: helpTextColour = error ? "text-red-500" : "text-gray-500";
+	$: helpTextColour = isValid ? "text-red-500" : "text-gray-500";
 	const containerBorderWidth = "outline-1 shadow-sm";
 	const containerBorderColour = "outline-gray-300";
 
 	const labelClasses = labelBaseClasses.join(" ");
 	const inputClasses = inputBaseClasses.join(" ");
-	$: helpTextClasses = helpTextBaseClasses.concat(helpTextColour, clickableHelpText).join(" ");
+	$: helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
 	$: containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth, containerFocusColor).join(" ");
 </script>
 
@@ -63,7 +60,12 @@
 			</div>
 		{/if}
 	</div>
+	{#if $$slots.helpText}
+		<div class={helpTextClasses}>
+			<slot name="helpText" />
+		</div>
+	{/if}
 	{#if helpText}
-		<p on:keypress={onHelpTextClick} on:click={onHelpTextClick} class={helpTextClasses}>{helpText}</p>
+		<p aria-live="polite" class={helpTextClasses}>{helpText}</p>
 	{/if}
 </div>

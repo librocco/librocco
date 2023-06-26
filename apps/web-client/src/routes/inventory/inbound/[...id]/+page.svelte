@@ -51,7 +51,7 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
-	const findBook = (db: DatabaseInterface) => (isbn: string) => db.books().get([isbn]);
+	const findBook = (db: DatabaseInterface) => (values: BookEntry) => db.books().get([values.isbn]);
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
@@ -284,7 +284,7 @@
 					{openEditMode}
 					book={$bookForm.book}
 					{publisherList}
-					onISBNField={findBook(db)}
+					onValidate={findBook(db)}
 					onSubmit={handleAddTransaction(db)}
 					onCancel={handleCloseBookForm}
 				/>
