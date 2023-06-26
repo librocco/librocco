@@ -1,18 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter } from "@librocco/shared";
 
 import {
 	BooksInterface,
 	CouchDocument,
 	DbStream,
 	DesignDocument,
-	InNoteList,
 	MapReduceRow,
-	NavListEntry,
 	Replicator,
-	VolumeStock
+	VolumeStock,
+	InNoteMap,
+	NavEntry,
+	NavMap
 } from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
@@ -23,49 +24,56 @@ import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
+import { newStock } from "./stock";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
-import { newStock } from "./stock";
+import { versionId } from "@/utils/misc";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
-	#warehouseListStream: Observable<NavListEntry[]>;
-	#outNoteListStream: Observable<NavListEntry[]>;
-	#inNoteListStream: Observable<InNoteList>;
+	#warehouseListStream: Observable<NavMap>;
+	#outNoteListStream: Observable<NavMap>;
+	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<VolumeStock[]>;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
 
-		const warehouseListCache = new BehaviorSubject<NavListEntry[]>([]);
+		const warehouseListCache = new BehaviorSubject<NavMap>(new Map());
 		this.#warehouseListStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
-				map(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName }))),
+				map(
+					({ rows }) =>
+						new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
 
-		const outNoteListCache = new BehaviorSubject<NavListEntry[]>([]);
+		const outNoteListCache = new BehaviorSubject<NavMap>(new Map());
 		this.#outNoteListStream = this.view<OutNoteListRow>("v1_list/outbound")
 			.stream({})
 			.pipe(
-				map(({ rows }) =>
-					rows
-						.filter(({ value: { committed } }) => !committed)
-						.map(({ key: id, value: { displayName = "not-found" } }) => ({ id, displayName }))
+				map(
+					({ rows }) =>
+						new Map(
+							wrapIter(rows)
+								.filter(({ value: { committed } }) => !committed)
+								.map(({ key: id, value: { displayName = "not-found" } }) => [id, { displayName }])
+						)
 				),
 				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
 			);
 
-		const inNoteListCache = new BehaviorSubject<InNoteList>([]);
+		const inNoteListCache = new BehaviorSubject<InNoteMap>(new Map());
 		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
 			.stream({})
 			.pipe(
-				map(({ rows }) => aggregateInNoteList(rows)),
+				map(({ rows }) => wrapIter(rows).reduce((acc, row) => acc.aggregate(row), new InNoteAggregator())),
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
@@ -167,10 +175,10 @@ class Database implements DatabaseInterface {
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
-	async getWarehouseList() {
+	async getWarehouseList(): Promise<NavMap> {
 		return this.view<WarehouseListRow>("v1_list/warehouses")
 			.query({})
-			.then(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })));
+			.then(({ rows }) => new Map(mapIter(rows, ({ key: id, value: { displayName = "" } }) => [id, { displayName }])));
 	}
 	// #endregion queries
 
@@ -188,20 +196,51 @@ export const newDatabase = (db: PouchDB.Database): DatabaseInterface => {
 };
 
 // #region helpers
-const aggregateInNoteList = (rows: InNoteListRow[]): InNoteList =>
-	rows.reduce((acc, { key, value: { type, displayName = "", committed } }) => {
+class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implements InNoteMap {
+	constructor() {
+		super();
+	}
+
+	#currentWarehouseId = "";
+
+	private getDefaultWarehouse() {
+		return this.get(versionId("0-all"));
+	}
+
+	private getCurrentWarehouse() {
+		return this.get(this.#currentWarehouseId);
+	}
+
+	private addWarehouse(id: string, displayName: string) {
+		this.set(id, { displayName, notes: new Map() });
+		this.#currentWarehouseId = id;
+	}
+
+	private addNote(id: string, displayName: string) {
+		// Add note to default warehouse and its corresponding warehouse
+		this.getDefaultWarehouse()?.notes.set(id, { displayName });
+		this.getCurrentWarehouse()?.notes.set(id, { displayName });
+	}
+
+	aggregate(row: InNoteListRow) {
+		const {
+			key,
+			value: { type, displayName = "", committed }
+		} = row;
+
 		if (type === "warehouse") {
-			return [...acc, { id: key, displayName, notes: [] }];
+			this.addWarehouse(key, displayName);
+			return this;
 		}
 
 		// We're not displaying committed notes in the list
 		if (committed) {
-			return acc;
+			return this;
 		}
 
-		// Add note to the default warehouse (first in the list) as well as the corresponding warehouse (last in the list so far)
-		acc[0].notes.push({ id: key, displayName });
-		acc[acc.length - 1].notes.push({ id: key, displayName });
-		return acc;
-	}, [] as InNoteList);
+		this.addNote(key, displayName);
+
+		return this;
+	}
+}
 // #endregion helpers

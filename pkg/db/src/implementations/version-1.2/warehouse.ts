@@ -227,7 +227,7 @@ class Warehouse implements WarehouseInterface {
 		return this.update({}, { displayName });
 	}
 
-	async getEntries(): Promise<VolumeStockClient[]> {
+	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
 		const entries = queryRes.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
 		return addWarehouseNames(entries, warehouses);

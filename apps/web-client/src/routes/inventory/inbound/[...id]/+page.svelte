@@ -27,7 +27,7 @@
 		BookDetailForm,
 		Slideover
 	} from "@librocco/ui";
-	import type { BookEntry, DatabaseInterface } from "@librocco/db";
+	import type { BookEntry, DatabaseInterface, NavMap } from "@librocco/db";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -43,6 +43,7 @@
 
 	import { links } from "$lib/data";
 	import { base } from "$app/paths";
+	import { map } from "rxjs";
 
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
@@ -56,7 +57,14 @@
 	const findBook = (db: DatabaseInterface) => (values: BookEntry) => db.books().get([values.isbn]);
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
+	const inNoteList = readableFromStream(
+		inNoteListCtx,
+		db
+			?.stream()
+			.inNoteList(inNoteListCtx)
+			.pipe(map((m) => [...m])),
+		[]
+	);
 
 	const emptyBook = {
 		isbn: "",
@@ -184,6 +192,13 @@
 			modalOpen: false,
 			editMode: false
 		});
+
+	const mapNotesToNavItems = (notes: NavMap) =>
+		[...notes].map(([id, { displayName }]) => ({
+			name: displayName || id,
+			href: `${base}/inventory/inbound/${id}`,
+			current: id === $page.params.id
+		}));
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -193,16 +208,8 @@
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
-		{#each $inNoteList as { id, displayName, notes }, index (id)}
-			<SidebarItemGroup
-				name={displayName || id}
-				{index}
-				items={notes?.map(({ id, displayName }) => ({
-					name: displayName || id,
-					href: `${base}/inventory/inbound/${id}`,
-					current: id === $page.params.id
-				}))}
-			>
+		{#each $inNoteList as [id, { displayName, notes }], index (id)}
+			<SidebarItemGroup name={displayName || id} {index} items={mapNotesToNavItems(notes)}>
 				<svelte:fragment slot="actions">
 					{#if !id.includes("0-all")}
 						<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />

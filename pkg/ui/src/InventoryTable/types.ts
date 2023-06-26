@@ -9,7 +9,8 @@ export type InventoryTableData = BookCoreRowData & {
 // VolumeStockClient has warehouseName as a string, but it should expect an array where
 // a volume in an Out Note can potentially come out of multiple warehouses
 export type OutNoteTableData = BookCoreRowData & {
-	availableWarehouses?: { value: string; label: string }[];
+	/** @TODO this is a NavMap ... move shared types to 'shared' package */
+	availableWarehouses?: Map<string, { displayName: string }>;
 };
 
 export type BookCoreRowData = {
