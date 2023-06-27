@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, reduce, wrapIter } from "./generators";
+import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, reduce, slice, wrapIter } from "./generators";
 
 describe("iterableFromGenerator", () => {
 	test("should allow for multiple iterations over the same generator", () => {
@@ -66,6 +66,18 @@ describe("Smoke test of transformers", () => {
 		const iterable: number[] = [];
 		const reduced = reduce(iterable, (acc, value) => acc + value, 0);
 		expect(reduced).toEqual(0);
+	});
+
+	test("slice", () => {
+		const iterable = [1, 2, 3, 4, 5, 6];
+		const sliced = slice(iterable, 1, 4);
+		expect([...sliced]).toEqual([2, 3, 4]);
+	});
+
+	test("slice with end out of bounds", () => {
+		const iterable = [1, 2, 3, 4, 5, 6];
+		const sliced = slice(iterable, 1, 10);
+		expect([...sliced]).toEqual([2, 3, 4, 5, 6]);
 	});
 });
 
