@@ -30,6 +30,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { links } from "$lib/data";
+	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	export let data: PageData;
 
@@ -40,17 +41,6 @@
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList(warehouseListCtx), []);
-
-	/**
-	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
-	 * _(and navigate to the newly created warehouse page)_.
-	 */
-	const handleCreateWarehouse = async () => {
-		loading = true;
-		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
-		await warehouse.create();
-		goto(`${base}/inventory/stock/${warehouse._id}`);
-	};
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -64,6 +54,21 @@
 	$: currentPage = warehouesStores.currentPage;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
+
+	$: toasts = warehouseToastMessages(warehouse?.displayName);
+
+	/**
+	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		loading = true;
+		const warehouse = getDB().warehouse(NEW_WAREHOUSE);
+		await warehouse.create();
+		await goto(`${base}/inventory/stock/${warehouse._id}`);
+
+		toastSuccess(toasts.warehouseCreated);
+	};
 
 	const tableOptions = writable({
 		data: $entries
