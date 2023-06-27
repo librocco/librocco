@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { filter, map } from "./generators";
-import { StockElement, VolumeStockInput, VolumeStockMap } from "./types";
+import { StockElement, VolumeStock, VolumeStockInput, VolumeStockMap } from "./types";
 
 export class StockMap implements VolumeStockMap {
 	#internal = new Map<string, StockElement>();
@@ -94,6 +94,10 @@ export class StockMap implements VolumeStockMap {
 		}
 
 		return this;
+	}
+
+	rows(): Iterable<VolumeStock> {
+		return map(this.entries(), ([[isbn, warehouseId], { quantity }]) => ({ isbn, warehouseId, quantity }));
 	}
 
 	warehouse(warehouseId: string) {
