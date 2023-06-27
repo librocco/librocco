@@ -147,3 +147,31 @@ describe("StockMap '.aggregage' method", () => {
 		]);
 	});
 });
+
+describe("StockMap subsets ('.byWarehouse' and '.byIsbn' methods)", () => {
+	test("should return an iterable of entries filtered by warehouseId", () => {
+		const m = new StockMap([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "11111111", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
+		]);
+
+		expect([...m.warehouse("wh1")]).toEqual([
+			[["12345678", "wh1"], { quantity: 10 }],
+			[["11111111", "wh1"], { quantity: 5 }]
+		]);
+	});
+
+	test("should return an iterable of entries filtered by isbn", () => {
+		const m = new StockMap([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "11111111", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
+		]);
+
+		expect([...m.isbn("12345678")]).toEqual([
+			[["12345678", "wh1"], { quantity: 10 }],
+			[["12345678", "wh2"], { quantity: 10 }]
+		]);
+	});
+});
