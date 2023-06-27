@@ -240,7 +240,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if !loading}
-			{#if note}
+			{#if Boolean($entries.length)}
 				<InventoryTable
 					{table}
 					on:transactionupdate={handleTransactionUpdate}
