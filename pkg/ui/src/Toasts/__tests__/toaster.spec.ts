@@ -11,7 +11,8 @@ import TestToaster from "./TestToaster.svelte";
 
 const defaultToast = {
 	message: "I'm a toast",
-	duration: 2000
+	duration: 2000,
+	pausable: false
 };
 
 afterEach(() => {
