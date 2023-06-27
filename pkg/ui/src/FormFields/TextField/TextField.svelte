@@ -7,30 +7,28 @@
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
 		label?: string;
-		helpText?: string;
 		inputAction?: Action | (() => void);
 		variant?: TextFieldSize;
-		error?: boolean;
+		isValid?: boolean;
 	}
 
 	export let name: string;
 	export let label = "";
-	export let helpText = "";
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
-	export let error = false;
+	export let isValid = false;
 	export let value = "";
-	$: error = error;
+	$: isValid = isValid;
 
 	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
-	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]"];
+	const helpTextBaseClasses = ["ml-[2px]", "text-sm", "min-h-[20px]", "empty:hidden"];
 	const inputBaseClasses = ["block", "w-full", "border-0", "text-sm", "focus:outline-0", "focus:ring-0", variant];
 
 	const containerBaseClasses = ["flex", "mx-[2px]", "outline", "rounded-md", "shadow-sm", "focus-within:outline-2"];
 
-	$: containerFocusColor = error ? "focus-within:outline-red-500" : "focus-within:outline-teal-500";
+	$: containerFocusColor = isValid ? "focus-within:outline-red-500" : "focus-within:outline-teal-500";
 
-	$: helpTextColour = error ? "text-red-500" : "text-gray-500";
+	$: helpTextColour = isValid ? "text-red-500" : "text-gray-500";
 	const containerBorderWidth = "outline-1 shadow-sm";
 	const containerBorderColour = "outline-gray-300";
 
@@ -60,7 +58,9 @@
 			</div>
 		{/if}
 	</div>
-	{#if helpText}
-		<p class={helpTextClasses}>{helpText}</p>
+	{#if $$slots.helpText}
+		<div class={helpTextClasses}>
+			<slot name="helpText" />
+		</div>
 	{/if}
 </div>

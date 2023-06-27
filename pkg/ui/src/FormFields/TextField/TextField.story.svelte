@@ -13,7 +13,9 @@
 
 <Hst.Story title="Form Fields / TextField" layout={{ type: "grid", width: 700 }}>
 	<Hst.Variant title="Default">
-		<TextField name="default-placeholder" label="Default with placeholder" placeholder="placeholder" helpText="And some help text" />
+		<TextField name="default-placeholder" label="Default with placeholder" placeholder="placeholder">
+			<p slot="helpText">And some help text</p>
+		</TextField>
 	</Hst.Variant>
 	<Hst.Variant title="Start Adornment">
 		<TextField name="start-adornment" placeholder="placeholderemail@gmail.com" label="Start Adornment">
