@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { Toaster, Toast, ToastOptions } from "./types";
+import type { Toaster, ToastOptions } from "./types";
 
 export const toasters = new Map<string, Toaster>();
 
