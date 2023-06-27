@@ -32,15 +32,23 @@ describe("toasterStore", () => {
 	test("should pop toasts by id", () => {
 		const toaster = createToasterStore();
 
+		const toast2 = { ...defaultToast, message: "message 2" };
+		const toast3 = { ...defaultToast, message: "message 3" };
+
 		toaster.push(defaultToast);
+		toaster.push(toast2);
+		toaster.push(toast3);
 
-		const [toast] = get(toaster);
+		const [, secondToast] = get(toaster);
 
-		toaster.pop(toast.id);
+		toaster.pop(secondToast.id);
 
 		const toasts = get(toaster);
 
-		expect(toasts.length).toBe(0);
+		expect(toasts.length).toBe(2);
+
+		expect(toasts[0].message).toEqual(toast3.message);
+		expect(toasts[1].message).toEqual(defaultToast.message);
 	});
 
 	test("should remove all toasts", () => {

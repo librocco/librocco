@@ -32,10 +32,12 @@ export const createToasterStore = () => {
 		toasts.update((all) => all.filter((t) => t.id !== id));
 	};
 
+	let count = 0;
+
 	const push = (_toast) => {
 		// Create a unique ID so we can easily find/remove it
 		// if it is dismissible/has a timeout.
-		const id = Date.now();
+		const id = `${Date.now()}-${count++}`;
 
 		const toast = { id, ..._toast };
 
