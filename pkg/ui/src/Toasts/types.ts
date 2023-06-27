@@ -15,9 +15,9 @@ export interface ToastOptions<T = any> {
 	message: string;
 	duration: number;
 	pausable: boolean;
-	type: T;
+	type?: T;
 }
 
-export interface Toast<T = any> extends ToastOptions<T> {
+export interface ToastEntry<T = any> extends ToastOptions<T> {
 	id: string;
 }
