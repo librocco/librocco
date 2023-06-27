@@ -12,7 +12,8 @@ const toasterStore = createToasterStore();
 
 const defaultToast = {
 	message: "I'm a toast",
-	duration: 100
+	duration: 100,
+	pausable: false
 };
 
 afterEach(() => {
@@ -22,7 +23,7 @@ afterEach(() => {
 
 describe("toastStore", () => {
 	test("should set up a new toast with a `progress` property", () => {
-		const toastStore = createToastStore(toasterStore)(defaultToast);
+		const toastStore = createToastStore(toasterStore)({ ...defaultToast, id: "1-1" });
 
 		const toast = get(toastStore);
 
@@ -33,7 +34,7 @@ describe("toastStore", () => {
 	});
 
 	test("should start a toasts progress", async () => {
-		const toastStore = createToastStore(toasterStore)({ ...defaultToast, duration: 0 });
+		const toastStore = createToastStore(toasterStore)({ ...defaultToast, duration: 0, id: "1-1" });
 
 		let progress = 0;
 		const unsubscribe = toastStore.subscribe((t) => (progress = t.progress));
