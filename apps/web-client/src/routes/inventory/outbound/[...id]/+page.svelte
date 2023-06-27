@@ -180,7 +180,7 @@
 	<!-- Table slot -->
 	<svelte:fragment slot="table">
 		{#if !loading}
-			{#if note}
+			{#if Boolean($entries.length)}
 				<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
 			{/if}
 		{:else}
