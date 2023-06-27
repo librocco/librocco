@@ -1,2 +1,2 @@
 export { default as Toast } from "./Toast.svelte";
-export * from "./enums";
+export * from "./types";
