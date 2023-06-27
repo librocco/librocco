@@ -58,20 +58,23 @@ describe("toasterStore", () => {
 });
 
 describe("createToaster", () => {
-	test("should set toaster context", () => {
+	test("sets toaster in module map, which can be accessed from other components", () => {
+		const toasterId = "special-test-toaster";
+
 		render(
 			html`
 				<${Fragment}
 					onCreate=${() => {
-						const toaster = createToaster("default");
+						const toaster = createToaster(toasterId);
 
 						toaster.push(defaultToast);
 					}}
 				>
-					<${TestToaster} />
+					<${TestToaster} toasterId=${toasterId}/>
 				</${Fragment}>
 			`
 		);
+
 		expect(document.querySelector("span")).toHaveTextContent(defaultToast.message);
 	});
 });
