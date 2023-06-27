@@ -3,8 +3,7 @@
 	import { X } from "lucide-svelte";
 
 	import { consume } from "../Toasts";
-
-	import { ToastType, type Toast } from "./types";
+	import { type Toast, ToastType } from "./types";
 
 	export let toast: Toast;
 

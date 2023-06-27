@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { Hst } from "@histoire/plugin-svelte";
 
-	import Toast from "./Toast.svelte";
-	import { ToastType } from "./types";
-
+	import { Toast, type ToastData, ToastType } from "./";
 	import { createToaster } from "../Toasts";
 
 	export let Hst: Hst;
@@ -20,10 +18,10 @@
 	 * rendering of Toasts: they will not timeout and cannot be closed... but still, they require a toasterStore to
 	 * render properly, so we call...
 	 */
-	createToaster();
+	createToaster<ToastData>();
 
 	const toastCore = {
-		id: 1,
+		id: "1-1",
 		duration: 2000,
 		pausable: true
 	};
