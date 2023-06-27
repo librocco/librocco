@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createForm, getValue } from "felte";
+	import { createForm } from "felte";
 	import { createCombobox } from "svelte-headlessui";
 	import { ChevronsUpDown } from "lucide-svelte";
 
@@ -34,7 +34,7 @@
 				const errorsObj: Partial<Record<keyof BookEntry, string>> = { isbn: $errors.isbn ? $errors.isbn[0] : "" };
 				const isbnError = "ISBN already exists, would you like to Edit it?";
 
-				if (values.isbn.trim() === "" || $interacted !== "isbn") return errorsObj;
+				if (values.isbn.trim() === "" || editMode) return errorsObj;
 
 				errorsObj.isbn = "";
 
@@ -77,7 +77,7 @@
 				<TextField
 					name="isbn"
 					label="ISBN"
-					required={getValue($data, "isbn") === ""}
+					required={$data.isbn === ""}
 					disabled={editMode}
 					isValid={Boolean($errors.isbn && $errors.isbn[0])}
 				>

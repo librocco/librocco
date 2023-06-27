@@ -94,7 +94,6 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: emptyISBNInput = false;
 	$: formHeader = $bookForm.editMode
 		? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
 		: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
@@ -124,10 +123,8 @@
 
 	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
 		if (!bookEntry.isbn) {
-			emptyISBNInput = true;
 			return;
 		}
-		emptyISBNInput = false;
 
 		const booksInterface = db.books();
 
@@ -148,15 +145,18 @@
 		return note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
 	};
 
-	const handleEditBookEntry = (book: BookEntry) => {
-		bookForm.update((store) => {
-			store.book = book;
-			store.modalOpen = true;
+	const handleBookEntry =
+		(edit = false) =>
+		(book: BookEntry) => {
+			bookForm.update((store) => {
+				store.book = book;
+				store.modalOpen = true;
+				store.editMode = edit;
+				return store;
+			});
+		};
 
-			store.editMode = book.isbn !== "" && true;
-			return store;
-		});
-	};
+	const handleEditBookEntry = handleBookEntry(true);
 
 	const handleRemoveTransactions = (e: CustomEvent<RemoveTransactionsDetail>) => note.removeTransactions(...e.detail);
 
@@ -220,19 +220,12 @@
 						align="right"
 					/>
 				</div>
-				<TextField
-					name="scan-input"
-					placeholder="Scan to add books..."
-					variant={TextFieldSize.LG}
-					error={emptyISBNInput}
-					helpText={emptyISBNInput ? "ISBN cannot be empty" : ""}
-					bind:value={$bookForm.book.isbn}
-				>
+				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG} bind:value={$bookForm.book.isbn}>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
 					</svelte:fragment>
 					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<Button on:click={() => handleEditBookEntry($bookForm.book)} size={ButtonSize.SM}>
+						<Button on:click={() => handleBookEntry()($bookForm.book)} size={ButtonSize.SM}>
 							<svelte:fragment slot="startAdornment">
 								<Edit size={16} />
 							</svelte:fragment>
