@@ -7,7 +7,6 @@
 	interface $$Props extends HTMLInputAttributes {
 		name: string;
 		label?: string;
-		helpText?: string;
 		inputAction?: Action | (() => void);
 		variant?: TextFieldSize;
 		isValid?: boolean;
@@ -15,7 +14,6 @@
 
 	export let name: string;
 	export let label = "";
-	export let helpText = "";
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
 	export let isValid = false;
@@ -64,8 +62,5 @@
 		<div class={helpTextClasses}>
 			<slot name="helpText" />
 		</div>
-	{/if}
-	{#if helpText}
-		<p aria-live="polite" class={helpTextClasses}>{helpText}</p>
 	{/if}
 </div>
