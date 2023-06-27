@@ -148,6 +148,20 @@ describe("StockMap '.aggregage' method", () => {
 	});
 });
 
+describe("StockMap rows", () => {
+	test("returns an iterable of VolumeStock rows", () => {
+		const m = new StockMap([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" }
+		]);
+
+		expect([...m.rows()]).toEqual([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10 },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10 }
+		]);
+	});
+});
+
 describe("StockMap subsets ('.byWarehouse' and '.byIsbn' methods)", () => {
 	test("should return an iterable of entries filtered by warehouseId", () => {
 		const m = new StockMap([
