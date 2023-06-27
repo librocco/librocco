@@ -1,4 +1,8 @@
-export function map<T, R>(iterable: Iterable<T>, mapper: (value: T) => R): Iterable<R> {
+type ReusableGenerator<T> = {
+	[Symbol.iterator]: () => Generator<T>;
+};
+
+export function map<T, R>(iterable: Iterable<T>, mapper: (value: T) => R): ReusableGenerator<R> {
 	return iterableFromGenerator(function* () {
 		for (const value of iterable) {
 			yield mapper(value);
@@ -6,7 +10,7 @@ export function map<T, R>(iterable: Iterable<T>, mapper: (value: T) => R): Itera
 	});
 }
 
-export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Iterable<R>): Iterable<R> {
+export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Iterable<R>): ReusableGenerator<R> {
 	return iterableFromGenerator(function* () {
 		for (const value of iterable) {
 			yield* mapper(value);
@@ -14,7 +18,7 @@ export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Itera
 	});
 }
 
-export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): Iterable<T> {
+export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T> {
 	return iterableFromGenerator(function* () {
 		for (const value of iterable) {
 			if (predicate(value)) {
@@ -69,7 +73,7 @@ export function reduce<T>(iterable: Iterable<T>, reducer: (accumulator: T, value
  * @param genFn
  * @returns
  */
-export function iterableFromGenerator<T>(genFn: () => Generator<T>): Iterable<T> {
+export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGenerator<T> {
 	return {
 		[Symbol.iterator]: genFn
 	};
