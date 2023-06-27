@@ -22,7 +22,7 @@ export const createToaster = <T extends ToastOptions>(target = "default") => {
  * Creates a toaster store to hold and manage toasts
  */
 export const createToasterStore = <T extends ToastOptions>() => {
-	const toasts = writable<(T & { id: string })[]>();
+	const toasts = writable<(T & { id: string })[]>([]);
 
 	const clean = () => {
 		toasts.set([]);
