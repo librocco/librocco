@@ -1,7 +1,12 @@
-/** An interface representing the way book quantity is stored in the db, be it transaction (notes) or stock (warehouse/all stock) */
-export interface VolumeStockInput {
+export interface VolumeStock {
 	isbn: string;
 	quantity: number;
 	warehouseId: string;
-	noteType: "inbound" | "outbound";
 }
+
+export type VolumeStockInput = VolumeStock & { noteType: "inbound" | "outbound" };
+
+export type StockKey = [string, string];
+export type StockElement = { quantity: number };
+export type StockEntry = [StockKey, StockElement];
+export type VolumeStockMap = Map<StockKey, StockElement>;
