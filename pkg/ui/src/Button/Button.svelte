@@ -93,7 +93,8 @@
 	$: sizeClasses = [textClasses, spacingClasses].join(" ");
 	$: colorClasses = colorClassesLookup[color];
 	const focusClasses = "focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white";
-	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, className].join(" ");
+	const disabledClasses = "disabled:text-gray-700 disabled:bg-gray-100 disabled:border disabled:border-gray-300";
+	$: containerClasses = [sizeClasses, shapeClass, colorClasses, focusClasses, disabledClasses, className].join(" ");
 </script>
 
 <button class={containerClasses} on:click type="button" {...$$restProps}>

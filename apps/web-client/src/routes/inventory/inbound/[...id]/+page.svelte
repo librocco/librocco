@@ -27,7 +27,7 @@
 		BookDetailForm,
 		Slideover
 	} from "@librocco/ui";
-	import type { BookEntry } from "@librocco/db";
+	import type { BookEntry, DatabaseInterface } from "@librocco/db";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -53,6 +53,8 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
+	const findBook = (db: DatabaseInterface) => (values: BookEntry) => db.books().get([values.isbn]);
+
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
 
@@ -64,8 +66,6 @@
 		year: "",
 		price: 0
 	};
-
-	$: bookFormHeader = { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
 
 	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
 
@@ -84,7 +84,9 @@
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: emptyISBNInput = false;
+	$: formHeader = $bookForm.editMode
+		? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
+		: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
 
 	$: toasts = noteToastMessages(note?.displayName, warehouse?.displayName);
 
@@ -117,21 +119,22 @@
 		data: $entries
 	});
 
-	const bookForm = writable<{ book: BookEntry; modalOpen: boolean }>({
+	const bookForm = writable<{ book: BookEntry; modalOpen: boolean; editMode?: boolean }>({
 		book: emptyBook,
-		modalOpen: false
+		modalOpen: false,
+		editMode: false
 	});
+
+	const openEditMode = () => bookForm.update((store) => ({ ...store, editMode: true }));
 
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = async (bookEntry: BookEntry) => {
+	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
 		if (!bookEntry.isbn) {
-			emptyISBNInput = true;
 			return;
 		}
-		emptyISBNInput = false;
 
 		const booksInterface = db.books();
 
@@ -162,22 +165,24 @@
 		note.removeTransactions(...e.detail);
 	};
 
-	const handleEditBookEntry = (book: BookEntry) => {
-		bookFormHeader = book.isbn
-			? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
-			: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
+	const handleBookEntry =
+		(edit = false) =>
+		(book: BookEntry) => {
+			bookForm.update((store) => {
+				store.book = book;
+				store.modalOpen = true;
+				store.editMode = edit;
+				return store;
+			});
+		};
 
-		bookForm.update((store) => {
-			store.book = book;
-			store.modalOpen = true;
-			return store;
-		});
-	};
+	const handleEditBookEntry = handleBookEntry(true);
 
 	const handleCloseBookForm = () =>
 		bookForm.set({
 			book: emptyBook,
-			modalOpen: false
+			modalOpen: false,
+			editMode: false
 		});
 </script>
 
@@ -233,19 +238,12 @@
 						align="right"
 					/>
 				</div>
-				<TextField
-					name="scan-input"
-					placeholder="Scan to add books..."
-					variant={TextFieldSize.LG}
-					error={emptyISBNInput}
-					helpText={emptyISBNInput ? "ISBN cannot be empty" : ""}
-					bind:value={$bookForm.book.isbn}
-				>
+				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG} bind:value={$bookForm.book.isbn}>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
 					</svelte:fragment>
 					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<Button on:click={() => handleEditBookEntry($bookForm.book)} size={ButtonSize.SM}>
+						<Button on:click={() => handleBookEntry()($bookForm.book)} size={ButtonSize.SM}>
 							<svelte:fragment slot="startAdornment">
 								<Edit size={16} />
 							</svelte:fragment>
@@ -291,8 +289,16 @@
 
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.modalOpen}
-			<Slideover title={bookFormHeader.title} description={bookFormHeader.description} handleClose={handleCloseBookForm}>
-				<BookDetailForm book={$bookForm.book} {publisherList} onSubmit={handleAddTransaction} onCancel={handleCloseBookForm} />
+			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+				<BookDetailForm
+					editMode={$bookForm.editMode}
+					{openEditMode}
+					book={$bookForm.book}
+					{publisherList}
+					onValidate={findBook(db)}
+					onSubmit={handleAddTransaction(db)}
+					onCancel={handleCloseBookForm}
+				/>
 			</Slideover>
 		{/if}
 	</svelte:fragment>

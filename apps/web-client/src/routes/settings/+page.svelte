@@ -46,10 +46,11 @@
 						label="Remote CouchDB URL"
 						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/"
 						value={$remoteCouchConfigStore?.couchUrl}
-						error={errors?.["couch-url"] ? true : false}
-						helpText={errors?.["couch-url"] || ""}
+						isValid={errors?.["couch-url"] ? true : false}
 						required
-					/>
+					>
+						<p slot="helpText">{errors?.["couch-url"] || ""}</p>
+					</TextField>
 					<div class="self-end">
 						<Button type="submit">Save settings</Button>
 					</div>
