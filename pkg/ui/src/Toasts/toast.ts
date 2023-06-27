@@ -4,13 +4,14 @@ import { tweened } from "svelte/motion";
 import { linear } from "svelte/easing";
 
 import { toasters } from "./toaster";
+import type { Toast, ToasterStore, ToastStore } from "./types";
 
 // TODO: what if toast shouldn't disappear automatically?
 
 /**
  * Sets up toast store and action
  */
-export const consume = (_toast, target = "default") => {
+export const consume = (_toast: Toast, target = "default") => {
 	const { toaster: toasterStore } = toasters.get(target);
 
 	// TODO: no toaster found in map...
@@ -28,7 +29,7 @@ export const consume = (_toast, target = "default") => {
 /**
  * Creates a toast store to hold and manage toast data
  */
-export const createToastStore = (toasterStore) => (_toast) => {
+export const createToastStore = (toasterStore: ToasterStore) => (_toast: Toast) => {
 	const toastStore = writable(_toast);
 	const progressStore = tweened(0, { duration: _toast.duration, easing: linear });
 
@@ -51,7 +52,7 @@ export const createToastStore = (toasterStore) => (_toast) => {
 /**
  * Creates a toast action which will initialise the toast progress
  */
-export const createToastAction = (toastStore) => (node) => {
+export const createToastAction = (toastStore: ToastStore) => (node: HTMLElement) => {
 	const next = 1;
 
 	let toast;

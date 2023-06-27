@@ -1,10 +1,9 @@
-import type { ToastCore } from "../Toasts";
+import type { ToastOptions, Toast as ToastCore } from "../Toasts";
 
 export enum ToastType {
 	Success = "success",
 	Error = "error"
 }
 
-export type Toast = ToastCore & {
-	type: ToastType;
-};
+export type ToastData = ToastOptions<ToastType>;
+export type Toast = ToastCore<ToastType>;
