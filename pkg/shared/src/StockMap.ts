@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import { map } from "./generators";
+import { filter, map } from "./generators";
 import { VolumeStockInput } from "./types";
 
 type StockElement = { quantity: number };
@@ -97,6 +97,14 @@ export class StockMap implements VolumeStockMap {
 		}
 
 		return this;
+	}
+
+	warehouse(warehouseId: string) {
+		return filter(this, ([[, warehouseId_]]) => warehouseId === warehouseId_);
+	}
+
+	isbn(isbn: string) {
+		return filter(this, ([[isbn_]]) => isbn === isbn_);
 	}
 	// #endregion Additional methods
 }
