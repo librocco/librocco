@@ -1,7 +1,9 @@
 <script lang="ts">
 	import { toasters } from "../toaster";
 
-	const { toaster } = toasters.get("default");
+	export let toasterId: string;
+
+	const { toaster } = toasters.get(toasterId);
 </script>
 
 {#each $toaster as toast}
