@@ -1,5 +1,5 @@
 import { writable } from "svelte/store";
-import type { Toaster } from "./types";
+import type { Toaster, Toast, ToastOptions } from "./types";
 
 export const toasters = new Map<string, Toaster>();
 
@@ -7,8 +7,8 @@ export const toasters = new Map<string, Toaster>();
 /**
  * Sets up toaster store and adds it to toaster context
  */
-export const createToaster = (target = "default") => {
-	const toasterStore = createToasterStore();
+export const createToaster = <T extends ToastOptions>(target = "default") => {
+	const toasterStore = createToasterStore<T>();
 
 	// TODO: overriding old toaster
 	toasters.set(target, { toaster: toasterStore });
@@ -21,27 +21,27 @@ export const createToaster = (target = "default") => {
 /**
  * Creates a toaster store to hold and manage toasts
  */
-export const createToasterStore = () => {
-	const toasts = writable([]);
+export const createToasterStore = <T extends ToastOptions>() => {
+	const toasts = writable<(T & { id: string })[]>();
 
 	const clean = () => {
 		toasts.set([]);
 	};
 
-	const pop = (id) => {
+	const pop = (id: string) => {
 		toasts.update((all) => all.filter((t) => t.id !== id));
 	};
 
 	let count = 0;
 
-	const push = (_toast) => {
+	const push = (toast: T) => {
 		// Create a unique ID so we can easily find/remove it
 		// if it is dismissible/has a timeout.
 		const id = `${Date.now()}-${count++}`;
 
-		const toast = { id, ..._toast };
+		const entry = { id, ...toast };
 
-		toasts.update((all) => [toast, ...all]);
+		toasts.update((all) => [entry, ...all]);
 	};
 
 	return {

@@ -1,6 +1,6 @@
-import { createToaster, ToastType } from "@librocco/ui";
+import { createToaster, ToastType, type ToastData } from "@librocco/ui";
 
-export const defaultToaster = createToaster();
+export const defaultToaster = createToaster<ToastData>();
 
 export const toastSuccess = (message) =>
 	defaultToaster.push({
