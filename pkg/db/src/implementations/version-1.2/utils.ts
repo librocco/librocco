@@ -1,10 +1,10 @@
-import { EntriesStreamResult, NavListEntry, VolumeStockClient } from "@/types";
+import { EntriesStreamResult, NavListEntry, VolumeStock, VolumeStockClient } from "@/types";
 
 import { versionId } from "@/utils/misc";
 
 export const combineTransactionsWarehouses =
 	({ includeAvailableWarehouses }: { includeAvailableWarehouses: boolean }) =>
-	([entries, stats, warehouses]: [VolumeStockClient[], { total: number; totalPages: number }, NavListEntry[]]): EntriesStreamResult => {
+	([entries, stats, warehouses]: [VolumeStock[], { total: number; totalPages: number }, NavListEntry[]]): EntriesStreamResult => {
 		// Create a record of warehouse ids and names for easy lookup
 		const warehouseNames = warehouses.reduce(
 			(acc, { id, displayName }) => ({ ...acc, [id]: displayName }),

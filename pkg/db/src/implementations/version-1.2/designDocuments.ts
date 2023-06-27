@@ -41,22 +41,6 @@ const sequenceNamingDesignDocument: DesignDocument = {
 const stockDesignDocument: DesignDocument = {
 	_id: "_design/v1_stock",
 	views: {
-		by_warehouse: {
-			map: function (doc: WarehouseData | NoteData) {
-				const { entries, committed } = doc as NoteData;
-
-				// Account for book transactions only if the note is committed
-				if (doc.docType === "note" && entries && committed) {
-					entries.forEach((entry) => {
-						// Check if we should be incrementing or decrementing the overall quantity
-						const delta = (doc as NoteData).noteType === "inbound" ? entry.quantity : -entry.quantity;
-
-						emit([entry.warehouseId, entry.isbn], delta);
-					});
-				}
-			}.toString(),
-			reduce: "_sum"
-		},
 		by_isbn: {
 			map: function (doc: WarehouseData | NoteData) {
 				const { entries, committed } = doc as NoteData;
