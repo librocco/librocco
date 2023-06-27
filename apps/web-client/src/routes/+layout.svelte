@@ -4,6 +4,9 @@
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
+	import { Toast } from "@librocco/ui";
+	import { defaultToaster } from "$lib/toasts";
+
 	onMount(async () => {
 		if (pwaInfo) {
 			const { registerSW } = await import("virtual:pwa-register");
@@ -32,6 +35,15 @@
 </svelte:head>
 
 <slot />
+
+<!--Toasts container-->
+<div class="fixed bottom-12 right-4 z-[100] md:top-20 md:bottom-auto">
+	<div class="flex flex-col gap-y-6">
+		{#each $defaultToaster as toast (toast.id)}
+			<Toast {toast} />
+		{/each}
+	</div>
+</div>
 
 <style global>
 	:global(body) {
