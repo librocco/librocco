@@ -2,7 +2,7 @@ import { describe, test, expect } from "vitest";
 
 import { StockMap } from "./StockMap";
 
-describe("StockMap", () => {
+describe("StockMap Map interface", () => {
 	test("should index the element using tuple as if value, not reference", () => {
 		const map = new StockMap();
 
@@ -69,5 +69,81 @@ describe("StockMap", () => {
 		expect([...map.values()]).toEqual(values);
 		expect([...map.keys()]).toEqual(keys);
 		expect([...map.entries()]).toEqual(entries);
+	});
+});
+
+describe("StockMap '.aggregage' method", () => {
+	test("should aggregate the quantity by [isbm, warehouse] of entries passed as argument", () => {
+		const m = new StockMap();
+
+		m.aggragate([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
+		]);
+
+		expect([...m]).toEqual([
+			[["12345678", "wh1"], { quantity: 15 }],
+			[["12345678", "wh2"], { quantity: 10 }]
+		]);
+	});
+
+	test("quantity from 'outbound' entries should be subtracted", () => {
+		const m = new StockMap();
+
+		m.aggragate([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 5, noteType: "outbound" }
+		]);
+
+		expect([...m]).toEqual([
+			[["12345678", "wh1"], { quantity: 5 }],
+			[["12345678", "wh2"], { quantity: 10 }]
+		]);
+	});
+
+	test("should remove the entry if the quantity is 0", () => {
+		const m = new StockMap();
+
+		m.aggragate([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "outbound" }
+		]);
+
+		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 10 }]]);
+	});
+
+	test("should disregard entries with 0 quantity", () => {
+		const m = new StockMap();
+
+		m.aggragate([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 0, noteType: "inbound" }
+		]);
+
+		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 10 }]]);
+	});
+
+	test("should account for additional aggregation calls", () => {
+		const m = new StockMap();
+
+		m.aggragate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
+		m.aggragate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
+
+		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 20 }]]);
+	});
+
+	test("should aggregate the initial entries if instantiated with an iterable (passed into the constructor)", () => {
+		const m = new StockMap([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" }
+		]);
+
+		expect([...m]).toEqual([
+			[["12345678", "wh1"], { quantity: 10 }],
+			[["12345678", "wh2"], { quantity: 10 }]
+		]);
 	});
 });

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { map } from "./generators";
+import { VolumeStockInput } from "./types";
 
 type StockElement = { quantity: number };
 type VolumeStockMap = Map<[string, string], StockElement>;
@@ -11,11 +12,15 @@ export class StockMap implements VolumeStockMap {
 	// but is here to keep TypeScript happy
 	readonly size = 0;
 
-	constructor() {
+	constructor(initialEntries?: Iterable<VolumeStockInput>) {
 		// "Bind" the 'size' property to the internal map's 'size' property
 		Object.defineProperty(this, "size", {
 			get: () => this.#internal.size
 		});
+
+		if (initialEntries) {
+			this.aggragate(initialEntries);
+		}
 	}
 
 	// #region Map interface
@@ -69,4 +74,29 @@ export class StockMap implements VolumeStockMap {
 	}
 
 	// #endregion Map interface
+
+	// #region Additional methods
+	aggragate(entries: Iterable<VolumeStockInput>) {
+		for (const entry of entries) {
+			// Skip entries with 0 quantity
+			if (entry.quantity === 0) continue;
+
+			const key = [entry.isbn, entry.warehouseId] as [string, string];
+			const delta = entry.noteType === "inbound" ? entry.quantity : -entry.quantity;
+
+			const current = this.get(key);
+			if (current) {
+				current.quantity += delta;
+				// Remove an entry when the quantity reaches 0
+				if (current.quantity === 0) {
+					this.delete(key);
+				}
+			} else {
+				this.set(key, { quantity: entry.quantity });
+			}
+		}
+
+		return this;
+	}
+	// #endregion Additional methods
 }
