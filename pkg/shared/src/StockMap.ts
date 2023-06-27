@@ -1,9 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { filter, map } from "./generators";
-import { VolumeStockInput } from "./types";
-
-type StockElement = { quantity: number };
-type VolumeStockMap = Map<[string, string], StockElement>;
+import { StockElement, VolumeStockInput, VolumeStockMap } from "./types";
 
 export class StockMap implements VolumeStockMap {
 	#internal = new Map<string, StockElement>();
