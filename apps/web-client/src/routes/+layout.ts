@@ -29,7 +29,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			remoteCouchConfigStore.set({ couchUrl: DEV_COUCH_URL });
 		}
 
-		const db = await createDB().init();
+		const db = await createDB();
 
 		return {
 			db
