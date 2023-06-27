@@ -18,12 +18,36 @@ export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Itera
 	});
 }
 
+export function filter<T, S extends T>(iterable: Iterable<T>, predicate: (value: T) => value is S): ReusableGenerator<S>;
+export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T>;
 export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T> {
 	return iterableFromGenerator(function* () {
 		for (const value of iterable) {
 			if (predicate(value)) {
 				yield value;
 			}
+		}
+	});
+}
+
+export function slice<T>(iterable: Iterable<T>, start: number, end: number): ReusableGenerator<T> {
+	return iterableFromGenerator(function* () {
+		const iterator = iterable[Symbol.iterator]();
+
+		let i = 0;
+
+		while (i < end) {
+			// If end out of bounds, simply stop
+			const { value, done } = iterator.next();
+			if (done && value === undefined) {
+				break;
+			}
+
+			if (i >= start) {
+				yield iterable[i];
+			}
+
+			i++;
 		}
 	});
 }
@@ -82,7 +106,9 @@ export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGen
 interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
+	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
+	slice(start: number, end: number): TransformableIterable<T>;
 	reduce<R>(reducer: (accumulator: R, value: T) => R, seed: R): R;
 	reduce(reducer: (accumulator: T, value: T) => T, seed?: T): T;
 }
@@ -115,12 +141,14 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
 	const f = (predicate: (value: T) => boolean) => wrapIter(filter(iterable, predicate));
 	const r = (reducer: (accumulator: T, value: T) => T, seed?: T) => reduce(iterable, reducer, seed);
+	const s = (start: number, end: number) => wrapIter(slice(iterable, start, end));
 
 	return {
 		[Symbol.iterator]: iterable[Symbol.iterator],
 		map: m,
 		flatMap: fm,
 		filter: f,
+		slice: s,
 		reduce: r
 	};
 };
