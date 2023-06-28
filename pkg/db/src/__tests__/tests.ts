@@ -87,11 +87,58 @@ export const standardApi: TestFunction = async (db) => {
 	note1 = await note1.setName({}, "New name");
 	expect(note1.displayName).toEqual("Note 1");
 
-	// Notes on the default warehouse should atomatically be outbound, and on specific warehouses inbound.
+	// Notes on the default warehouse should automatically be outbound, and on specific warehouses inbound.
 	const outboundNote = db.warehouse().note();
 	const inboundNote = db.warehouse("wh1").note();
 	expect(outboundNote.noteType).toEqual("outbound");
 	expect(inboundNote.noteType).toEqual("inbound");
+
+	// Trying to access a note belonging to a different warehouse should throw an error.
+	const wh1Note = db.warehouse("wh1").note("wh1-note");
+	const wh1NoteFullId = wh1Note._id;
+	let err;
+	try {
+		db.warehouse("wh2").note(wh1NoteFullId);
+	} catch (e) {
+		err = e;
+	}
+	expect(err).toBeDefined();
+};
+
+export const getEntriesQueries: TestFunction = async (db) => {
+	// Set up warehouses
+	const defaultWh = await db.warehouse().create();
+	const wh1 = await db
+		.warehouse("wh1")
+		.create()
+		.then((w) => w.setName({}, "Warehouse 1"));
+
+	// Check for note
+	const note = await wh1.note().create();
+	await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
+	const entries = await note.getEntries({});
+	expect(entries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Check for warehouse
+	// Note is not yet committed, so no entries should be returned.
+	let wh1Entries = await wh1.getEntries({});
+	expect(wh1Entries).toEqual([]);
+	await note.commit({});
+	wh1Entries = await wh1.getEntries({});
+	expect(wh1Entries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Should work all the same for the default warehouse
+	const defaultWhEntries = await defaultWh.getEntries({});
+	expect(defaultWhEntries).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
 };
 
 export const noteTransactionOperations: TestFunction = async (db) => {
