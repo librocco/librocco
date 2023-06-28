@@ -31,6 +31,7 @@ export type WarehouseInterface = WI<NoteInterface>;
 
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & {
 	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
+	stock: () => Observable<VolumeStock[]>;
 };
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
