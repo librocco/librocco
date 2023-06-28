@@ -107,9 +107,9 @@ describe("StockMap '.aggregage' method", () => {
 		const m = new StockMap();
 
 		m.aggragate([
-			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "outbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
-			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "outbound" }
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }
 		]);
 
 		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 10 }]]);
