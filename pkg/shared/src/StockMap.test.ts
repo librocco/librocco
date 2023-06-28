@@ -135,8 +135,8 @@ describe("StockMap '.aggregage' method", () => {
 		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 20 }]]);
 	});
 
-	test("should aggregate the initial entries if instantiated with an iterable (passed into the constructor)", () => {
-		const m = new StockMap([
+	test("should create a map from db rows", () => {
+		const m = StockMap.fromDbRows([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" }
 		]);
@@ -150,42 +150,69 @@ describe("StockMap '.aggregage' method", () => {
 
 describe("StockMap rows", () => {
 	test("returns an iterable of VolumeStock rows", () => {
-		const m = new StockMap([
+		const m = StockMap.fromDbRows([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" }
 		]);
 
-		expect([...m.rows()]).toEqual([
+		const rows = [...m.rows()];
+		expect(rows).toEqual([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10 },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10 }
 		]);
+		// Rows should be reusable
+		expect(rows).toEqual([...m.rows()]);
 	});
 });
 
-describe("StockMap subsets ('.byWarehouse' and '.byIsbn' methods)", () => {
-	test("should return an iterable of entries filtered by warehouseId", () => {
-		const m = new StockMap([
+describe("StockMap subsets ('.warehouse' and '.isbn' methods)", () => {
+	test("should return a new StockMap containing only the entries belonging to a warehouse", () => {
+		const m = StockMap.fromDbRows([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
 			{ isbn: "11111111", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
 		]);
 
-		expect([...m.warehouse("wh1")]).toEqual([
+		const wh1 = m.warehouse("wh1");
+
+		expect([...wh1]).toEqual([
 			[["12345678", "wh1"], { quantity: 10 }],
 			[["11111111", "wh1"], { quantity: 5 }]
 		]);
+		expect([...wh1.rows()]).toEqual([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10 },
+			{ isbn: "11111111", warehouseId: "wh1", quantity: 5 }
+		]);
 	});
 
-	test("should return an iterable of entries filtered by isbn", () => {
-		const m = new StockMap([
+	test("should return itself if filtering by default warehouse", () => {
+		const m = StockMap.fromDbRows([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
 			{ isbn: "11111111", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
 		]);
 
-		expect([...m.isbn("12345678")]).toEqual([
+		const wh1 = m.warehouse("0-all");
+
+		expect(wh1).toBe(m);
+	});
+
+	test("should return a new StockMap containing only the entries with the provided isbn", () => {
+		const m = StockMap.fromDbRows([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
+			{ isbn: "11111111", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
+		]);
+
+		const byIsbn = m.isbn("12345678");
+
+		expect([...byIsbn]).toEqual([
 			[["12345678", "wh1"], { quantity: 10 }],
 			[["12345678", "wh2"], { quantity: 10 }]
+		]);
+		expect([...byIsbn.rows()]).toEqual([
+			{ isbn: "12345678", warehouseId: "wh1", quantity: 10 },
+			{ isbn: "12345678", warehouseId: "wh2", quantity: 10 }
 		]);
 	});
 });
