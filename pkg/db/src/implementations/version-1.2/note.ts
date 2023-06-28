@@ -4,13 +4,13 @@ import { debug } from "@librocco/shared";
 
 import { DocType, NoteState } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult } from "@/types";
+import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
-import { combineTransactionsWarehouses } from "./utils";
+import { addWarehouseNames, combineTransactionsWarehouses } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -49,11 +49,29 @@ class Note implements NoteInterface {
 		// Outbound notes are assigned to the default warehouse, while inbound notes are assigned to a non-default warehouse
 		this.noteType = warehouse._id === versionId("0-all") ? "outbound" : "inbound";
 
+		const idSegments = id?.split("/").filter(Boolean) || [];
+
 		// If id provided, validate it:
 		// - it should either be a full id - 'v1/<warehouse-id>/<note-type>/<note-id>'
 		// - or a single segment id - '<note-id>'
-		if (id && ![1, 4].includes(id.split("/").length)) {
+		if (id && ![1, 4].includes(idSegments.length)) {
 			throw new Error("Invalid note id: " + id);
+		}
+
+		// If warehouse provided as part of the id, verify there's
+		// no mismatch between backreferenced warehouse and the provided one.
+		if (idSegments.length === 4 && idSegments[1] !== warehouse._id) {
+			const wId = versionId(idSegments[1]);
+			const refWId = versionId(warehouse._id);
+			if (wId !== refWId) {
+				throw new Error(
+					"Warehouse referenced in the note and one provided in note id mismatch:" +
+						"\n		referenced: " +
+						refWId +
+						"\n		provided: " +
+						wId
+				);
+			}
 		}
 
 		// Store the id internally:
@@ -350,6 +368,12 @@ class Note implements NoteInterface {
 		}
 
 		return this.update(ctx, { committed: true });
+	}
+
+	async getEntries(): Promise<VolumeStockClient[]> {
+		const entries = await this.get().then((note) => note?.entries || []);
+		const warehouses = await this.#db.getWarehouseList();
+		return addWarehouseNames(entries, warehouses);
 	}
 
 	/**
