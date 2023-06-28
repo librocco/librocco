@@ -1,20 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
-import { debug, wrapIter, map as mapIter } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
 
-import {
-	BooksInterface,
-	CouchDocument,
-	DbStream,
-	DesignDocument,
-	MapReduceRow,
-	Replicator,
-	VolumeStock,
-	InNoteMap,
-	NavEntry,
-	NavMap
-} from "@/types";
+import { BooksInterface, CouchDocument, DbStream, DesignDocument, MapReduceRow, Replicator, InNoteMap, NavEntry, NavMap } from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -38,7 +27,7 @@ class Database implements DatabaseInterface {
 	#outNoteListStream: Observable<NavMap>;
 	#inNoteListStream: Observable<InNoteMap>;
 
-	#stockStream: Observable<VolumeStock[]>;
+	#stockStream: Observable<StockMap>;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
@@ -77,7 +66,7 @@ class Database implements DatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
-		const stockCache = new ReplaySubject<VolumeStock[]>(1);
+		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
 			.pipe(share({ connector: () => stockCache, resetOnRefCountZero: false }));
@@ -100,7 +89,7 @@ class Database implements DatabaseInterface {
 		return newDbReplicator(this);
 	}
 
-	stock(): Observable<VolumeStock[]> {
+	stock(): Observable<StockMap> {
 		return this.#stockStream;
 	}
 
