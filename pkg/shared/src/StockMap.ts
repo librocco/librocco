@@ -89,7 +89,7 @@ export class StockMap implements VolumeStockMap {
 					this.delete(key);
 				}
 			} else {
-				this.set(key, { quantity: entry.quantity });
+				this.set(key, { quantity: delta });
 			}
 		}
 
