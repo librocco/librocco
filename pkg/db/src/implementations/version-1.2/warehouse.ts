@@ -1,6 +1,6 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
@@ -12,7 +12,7 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { newNote } from "./note";
 import { newStock } from "./stock";
 
-import { runAfterCondition, uniqueTimestamp, versionId, isEmpty } from "@/utils/misc";
+import { runAfterCondition, uniqueTimestamp, versionId, isEmpty, sortBooks } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseNames } from "./utils";
 
@@ -33,7 +33,7 @@ class Warehouse implements WarehouseInterface {
 	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
 
-	#stock: Observable<VolumeStock[]>;
+	#stock: Observable<Iterable<VolumeStock>>;
 
 	_id: VersionedString;
 	docType = DocType.Warehouse;
@@ -67,16 +67,11 @@ class Warehouse implements WarehouseInterface {
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
-		const stockCache = new ReplaySubject<VolumeStock[]>(1);
-		this.#stock =
-			this._id === versionId("0-all")
-				? // The stock cached inside the db instance is the stock of the default warehouse (entire stock)
-				  this.#db.stock()
-				: // If this is a non-default warehouse, pick out only the stock for this warehouse
-				  this.#db.stock().pipe(
-						map((rows) => rows.filter(({ warehouseId }) => this._id === warehouseId)),
-						share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
-				  );
+		const stockCache = new ReplaySubject<Iterable<VolumeStock>>(1);
+		this.#stock = this.#db.stock().pipe(
+			map((stock) => wrapIter([...stock.rows()]).filter(({ warehouseId }) => [warehouseId, versionId("0-all")].includes(this._id))),
+			share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+		);
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
 		// This is enough to signal that the warehouse intsance is initialised.
@@ -229,7 +224,7 @@ class Warehouse implements WarehouseInterface {
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
-		const entries = queryRes.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
 		return addWarehouseNames(entries, warehouses);
 	}
 
@@ -251,13 +246,16 @@ class Warehouse implements WarehouseInterface {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = this.#stock.pipe(map((rows) => rows.slice(startIx, endIx)));
+				const entries = this.#stock.pipe(map((stock) => [...stock].sort(sortBooks).slice(startIx, endIx)));
 
 				const stats = this.#stock.pipe(
-					map((rows) => ({
-						total: rows.length,
-						totalPages: Math.ceil(rows.length / itemsPerPage)
-					}))
+					map((stock) => {
+						const total = [...stock].length;
+						return {
+							total,
+							totalPages: Math.ceil(total / itemsPerPage)
+						};
+					})
 				);
 
 				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(

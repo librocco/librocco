@@ -1,12 +1,14 @@
 import { map } from "@librocco/shared";
 
-import { EntriesStreamResult, NavMap, VolumeStock, VolumeStockClient } from "@/types";
+import { VolumeStock } from "@librocco/shared";
+
+import { EntriesStreamResult, NavMap, VolumeStockClient } from "@/types";
 
 import { versionId } from "@/utils/misc";
 
 export const combineTransactionsWarehouses =
 	({ includeAvailableWarehouses }: { includeAvailableWarehouses: boolean }) =>
-	([entries, stats, warehouses]: [VolumeStock[], { total: number; totalPages: number }, NavMap]): EntriesStreamResult => {
+	([entries, stats, warehouses]: [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap]): EntriesStreamResult => {
 		const rows = [
 			...(includeAvailableWarehouses
 				? addAvailableWarehouses(addWarehouseNames(entries, warehouses), warehouses)

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Observable } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, StockMap } from "@librocco/shared";
 
 import {
 	DatabaseInterface as DI,
@@ -32,7 +32,7 @@ export type WarehouseInterface = WI<NoteInterface>;
 
 export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & {
 	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
-	stock: () => Observable<VolumeStock[]>;
+	stock: () => Observable<StockMap>;
 	getWarehouseList: () => Promise<NavMap>;
 };
 

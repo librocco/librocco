@@ -1,17 +1,16 @@
-import { concat, filter, firstValueFrom, from, map, mergeMap, Observable, reduce, switchMap } from "rxjs";
+import { concat, from, Observable, switchMap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, StockMap, wrapIter } from "@librocco/shared";
 
-import { VolumeStock } from "@/types";
 import { DatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { newChangesStream } from "@/utils/pouchdb";
-import { sortBooks, versionId } from "@/utils/misc";
+import { versionId } from "@/utils/misc";
 
 export interface StockInterface {
 	changes: () => PouchDB.Core.Changes<any>;
-	query: () => Promise<any>;
-	stream: (ctx: debug.DebugCtx) => Observable<VolumeStock[]>;
+	query: () => Promise<StockMap>;
+	stream: (ctx: debug.DebugCtx) => Observable<StockMap>;
 }
 
 type Doc = NoteData | WarehouseData;
@@ -48,51 +47,20 @@ class Stock implements StockInterface {
 	}
 
 	async query() {
-		const source = from(this.#db._pouch.allDocs({ ...this.options, include_docs: true }));
-		const pipeline = source.pipe(
-			switchMap(({ rows }) => from(rows)),
-			map(({ doc }) => doc as Doc),
-			filter((doc): doc is NoteData => doc?.docType === "note"),
-			filter(({ committed, entries }) => Boolean(committed && entries?.length)),
-			mergeMap(({ entries, noteType }) => from(entries).pipe(map((entry) => ({ ...entry, noteType })))),
-			reduce((acc, curr) => acc.aggregate(curr), new MapAggregator())
-		);
-		const res = await firstValueFrom(pipeline);
-		return [...res.values()].sort(sortBooks);
+		const queryRes = await this.#db._pouch.allDocs({ ...this.options, include_docs: true });
+
+		const mapGenerator = wrapIter(queryRes.rows)
+			.map(({ doc }) => doc as Doc)
+			.filter((doc): doc is NoteData => doc?.docType === "note")
+			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
+			.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
+
+		return new StockMap(mapGenerator);
 	}
 
 	stream(ctx: debug.DebugCtx) {
 		const trigger = concat(from(Promise.resolve()), this.changesStream(ctx));
-		const pipeline = trigger.pipe(switchMap(() => this.query()));
-		return pipeline;
-	}
-}
-
-class MapAggregator extends Map<string, VolumeStock> {
-	aggregate({ isbn, quantity, noteType, warehouseId }: VolumeStock & Pick<NoteData, "noteType">) {
-		if (
-			// Skip entries with zero quantity
-			quantity === 0
-		) {
-			return this;
-		}
-
-		const key = `${isbn}-${warehouseId}`;
-		const delta = noteType === "inbound" ? quantity : -quantity;
-
-		const existing = this.get(key);
-		if (existing) {
-			existing.quantity += delta;
-			if (existing.quantity === 0) {
-				this.delete(key);
-			}
-
-			return this;
-		}
-
-		this.set(key, { isbn, quantity: delta, warehouseId });
-
-		return this;
+		return trigger.pipe(switchMap(() => this.query()));
 	}
 }
 
