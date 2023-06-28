@@ -1,10 +1,10 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug, wrapIter } from "@librocco/shared";
+import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
+import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -33,7 +33,7 @@ class Warehouse implements WarehouseInterface {
 	// subscribe to this stream.
 	#stream: Observable<WarehouseData>;
 
-	#stock: Observable<Iterable<VolumeStock>>;
+	#stock: Observable<StockMap>;
 
 	_id: VersionedString;
 	docType = DocType.Warehouse;
@@ -67,9 +67,9 @@ class Warehouse implements WarehouseInterface {
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
-		const stockCache = new ReplaySubject<Iterable<VolumeStock>>(1);
+		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stock = this.#db.stock().pipe(
-			map((stock) => wrapIter([...stock.rows()]).filter(({ warehouseId }) => [warehouseId, versionId("0-all")].includes(this._id))),
+			map((stock) => stock.warehouse(this._id)),
 			share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
@@ -246,16 +246,13 @@ class Warehouse implements WarehouseInterface {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = this.#stock.pipe(map((stock) => [...stock].sort(sortBooks).slice(startIx, endIx)));
+				const entries = this.#stock.pipe(map((stock) => [...stock.rows()].sort(sortBooks).slice(startIx, endIx)));
 
 				const stats = this.#stock.pipe(
-					map((stock) => {
-						const total = [...stock].length;
-						return {
-							total,
-							totalPages: Math.ceil(total / itemsPerPage)
-						};
-					})
+					map((stock) => ({
+						total: stock.size,
+						totalPages: Math.ceil(stock.size / itemsPerPage)
+					}))
 				);
 
 				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(
