@@ -87,6 +87,7 @@ class Database implements DatabaseInterface {
 		return this;
 	}
 
+	// #region setup
 	replicate(): Replicator {
 		return newDbReplicator(this);
 	}
@@ -120,6 +121,19 @@ class Database implements DatabaseInterface {
 		return this;
 	}
 
+	updateDesignDoc(doc: DesignDocument) {
+		return this._pouch.put(doc).catch((err) => {
+			// If error is not a conflict, throw it back
+			if (err.status != 409) {
+				throw err;
+			}
+			// If the error was a conflict (document exists), update the document
+			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
+		});
+	}
+	// #endregion setup
+
+	// #region instances
 	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string) {
 		return newView<R, M>(this._pouch, view);
 	}
@@ -131,21 +145,14 @@ class Database implements DatabaseInterface {
 	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {
 		return newWarehouse(this, id);
 	}
+	// #endregion instances
 
-	updateDesignDoc(doc: DesignDocument) {
-		return this._pouch.put(doc).catch((err) => {
-			// If error is not a conflict, throw it back
-			if (err.status != 409) {
-				throw err;
-			}
-			// If the error was a conflict (document exists), update the document
-			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
-		});
-	}
-
-	async findNote(id: string) {
+	// #region queries
+	async findNote(noteId: string) {
+		// Remove trailing slash if any
+		const id = noteId.replace(/\/$/, "");
 		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split("/");
+		const idSegments = id.split("/").filter(Boolean);
 
 		// Validate the id is correct
 		if (idSegments.length !== 4) {
@@ -159,6 +166,13 @@ class Database implements DatabaseInterface {
 
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
+
+	async getWarehouseList() {
+		return this.view<WarehouseListRow>("v1_list/warehouses")
+			.query({})
+			.then(({ rows }) => rows.map(({ key: id, value: { displayName = "" } }) => ({ id, displayName })));
+	}
+	// #endregion queries
 
 	stream(): DbStream {
 		return {

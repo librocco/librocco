@@ -189,17 +189,17 @@
 					{/if}
 				</td>
 				<td class="py-4 px-3 text-left">
-					{price}
+					{price || "N/A"}
 				</td>
 				<td class="hidden py-4 px-3 text-left sm:table-cell">
-					{year}
+					{year || "N/A"}
 				</td>
 
 				<td class="hidden py-4 px-3 md:table-cell">
-					{publisher}
+					{publisher || ""}
 				</td>
 				<td class="hidden py-4 px-3 xl:table-cell">
-					{editedBy}
+					{editedBy || ""}
 				</td>
 				<td class="py-4 px-3 text-left">
 					<div class="flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
