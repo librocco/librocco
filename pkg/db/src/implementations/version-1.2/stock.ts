@@ -55,7 +55,7 @@ class Stock implements StockInterface {
 			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
 			.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
 
-		return new StockMap(mapGenerator);
+		return StockMap.fromDbRows(mapGenerator);
 	}
 
 	stream(ctx: debug.DebugCtx) {

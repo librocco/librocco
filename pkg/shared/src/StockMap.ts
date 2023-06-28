@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { filter, map } from "./generators";
-import { StockElement, VolumeStock, VolumeStockInput, VolumeStockMap } from "./types";
+import { StockElement, StockEntry, VolumeStock, VolumeStockInput, VolumeStockMap } from "./types";
 
 export class StockMap implements VolumeStockMap {
 	#internal = new Map<string, StockElement>();
@@ -9,15 +9,23 @@ export class StockMap implements VolumeStockMap {
 	// but is here to keep TypeScript happy
 	readonly size = 0;
 
-	constructor(initialEntries?: Iterable<VolumeStockInput>) {
+	constructor(source?: Iterable<StockEntry>) {
 		// "Bind" the 'size' property to the internal map's 'size' property
 		Object.defineProperty(this, "size", {
 			get: () => this.#internal.size
 		});
 
-		if (initialEntries) {
-			this.aggragate(initialEntries);
+		if (source) {
+			for (const [key, value] of source) {
+				this.set(key, value);
+			}
 		}
+	}
+
+	static fromDbRows(rows: Iterable<VolumeStockInput>) {
+		const map = new StockMap();
+		map.aggragate(rows);
+		return map;
 	}
 
 	// #region Map interface
@@ -101,11 +109,11 @@ export class StockMap implements VolumeStockMap {
 	}
 
 	warehouse(warehouseId: string) {
-		return filter(this, ([[, warehouseId_]]) => warehouseId === warehouseId_);
+		return warehouseId.includes("0-all") ? this : new StockMap(filter(this, ([[, warehouseId_]]) => warehouseId === warehouseId_));
 	}
 
 	isbn(isbn: string) {
-		return filter(this, ([[isbn_]]) => isbn === isbn_);
+		return new StockMap(filter(this, ([[isbn_]]) => isbn === isbn_));
 	}
 	// #endregion Additional methods
 }
