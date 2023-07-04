@@ -23,10 +23,10 @@
 
 	const bookCache: BookCache = {};
 
-	const { form, data, setFields, interacted, setInteracted, errors, setTouched, setErrors } = createForm({
+	const { form, data, setFields, setInteracted, errors, setTouched, setErrors } = createForm({
 		initialValues: book,
 		onSubmit: (values) => {
-			onSubmit(values);
+			onSubmit({ ...values, publisher: $publisherCombo.selected || values.publisher });
 		},
 		debounced: {
 			timeout: 1000,

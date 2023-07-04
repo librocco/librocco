@@ -2,17 +2,16 @@
 	import type { createTable } from "./table";
 	import type { OutNoteTableData, RemoveTransactionsDetail, TransactionUpdateDetail, WarehouseChangeDetail } from "./types";
 
-	import { Checkbox, Button, ButtonColor, Badge, BadgeSize } from "../";
+	import { Checkbox, Button, ButtonColor, type BookEntry } from "../";
 
 	import TdWarehouseSelect from "./TdWarehouseSelect.svelte";
 	import QuantityInput from "./QuantityInput.svelte";
 
-	import { quadIn } from "svelte/easing";
-	import { fadeBgColor } from "../lib/transitions";
 	import { thRowBaseStyles } from "./utils";
 	import { createEventDispatcher } from "svelte";
 
 	export let table: ReturnType<typeof createTable<OutNoteTableData>>;
+	export let onEdit: (bookEntry: BookEntry) => void = () => {};
 
 	const { table: tableAction, tableRow, resetRowSelection } = table;
 	$: ({ rows, selected } = $table);
@@ -30,7 +29,8 @@
 		price: "Price",
 		publisher: "Publisher",
 		year: "Year",
-		warehouses: "Warehouse"
+		warehouses: "Warehouse",
+		edit: "Edit"
 	};
 
 	/** @TODO mvp quick integration */
@@ -118,6 +118,9 @@
 			<th scope="col" class="{thRowBaseStyles} hidden md:table-cell">
 				{headers.year}
 			</th>
+			<th scope="col" class="{thRowBaseStyles} hidden md:table-cell">
+				{headers.edit}
+			</th>
 
 			<th scope="col" class={thRowBaseStyles}> {headers.warehouses} </th>
 		</tr>
@@ -177,6 +180,11 @@
 				</td>
 				<td class="hidden py-4 px-3 text-left md:table-cell">
 					{year}
+				</td>
+				<td class="hidden py-4 px-3 text-left md:table-cell">
+					<div class="flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
+						<Button color={ButtonColor.White} on:click={() => onEdit(row)}>Edit</Button>
+					</div>
 				</td>
 
 				<TdWarehouseSelect on:change={handleWarehouseChange({ isbn, warehouseId, quantity })} data={row} {rowIx} />

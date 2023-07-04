@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
@@ -37,9 +38,11 @@
 	import { getDB } from "$lib/db";
 
 	import { createNoteStores } from "$lib/stores/inventory";
+	import { bookFormStore } from "$lib/stores/inventory/book_form";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { addBookEntry, handleBookEntry, handleCloseBookForm, openEditMode, publisherList } from "$lib/utils/book_form";
 
 	import { links } from "$lib/data";
 	import { base } from "$app/paths";
@@ -58,17 +61,6 @@
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(inNoteListCtx, db?.stream().inNoteList(inNoteListCtx), []);
 
-	const emptyBook = {
-		isbn: "",
-		title: "",
-		authors: "",
-		publisher: "",
-		year: "",
-		price: 0
-	};
-
-	const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
 	$: loading = !data;
@@ -78,13 +70,14 @@
 
 	$: noteStores = createNoteStores(note);
 
+	$: isbn = "";
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: formHeader = $bookForm.editMode
+	$: formHeader = $bookFormStore.editMode
 		? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
 		: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
 
@@ -119,32 +112,16 @@
 		data: $entries
 	});
 
-	const bookForm = writable<{ book: BookEntry; modalOpen: boolean; editMode?: boolean }>({
-		book: emptyBook,
-		modalOpen: false,
-		editMode: false
-	});
-
-	const openEditMode = () => bookForm.update((store) => ({ ...store, editMode: true }));
-
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
 	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
-		if (!bookEntry.isbn) {
-			return;
-		}
+		isbn = "";
 
-		const booksInterface = db.books();
+		addBookEntry(db)(bookEntry);
 
-		booksInterface.upsert([bookEntry]);
-		bookForm.set({
-			book: emptyBook,
-			modalOpen: false
-		});
-
-		await note.addVolumes({ isbn: bookEntry.isbn, quantity: 1 });
+		await note.addVolumes({ isbn: bookEntry.isbn, quantity: $bookFormStore.editMode ? 0 : 1 });
 
 		toastSuccess(toasts.volumeAdded(bookEntry.isbn));
 	};
@@ -165,25 +142,7 @@
 		note.removeTransactions(...e.detail);
 	};
 
-	const handleBookEntry =
-		(edit = false) =>
-		(book: BookEntry) => {
-			bookForm.update((store) => {
-				store.book = book;
-				store.modalOpen = true;
-				store.editMode = edit;
-				return store;
-			});
-		};
-
 	const handleEditBookEntry = handleBookEntry(true);
-
-	const handleCloseBookForm = () =>
-		bookForm.set({
-			book: emptyBook,
-			modalOpen: false,
-			editMode: false
-		});
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -238,12 +197,12 @@
 						align="right"
 					/>
 				</div>
-				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG} bind:value={$bookForm.book.isbn}>
+				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG} bind:value={isbn}>
 					<svelte:fragment slot="startAdornment">
 						<QrCode />
 					</svelte:fragment>
 					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<Button on:click={() => handleBookEntry()($bookForm.book)} size={ButtonSize.SM}>
+						<Button on:click={() => handleBookEntry()({ ...$bookFormStore.book, isbn })} size={ButtonSize.SM}>
 							<svelte:fragment slot="startAdornment">
 								<Edit size={16} />
 							</svelte:fragment>
@@ -288,12 +247,12 @@
 	</div>
 
 	<svelte:fragment slot="slideOver">
-		{#if $bookForm.modalOpen}
+		{#if $bookFormStore.modalOpen}
 			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
 				<BookDetailForm
-					editMode={$bookForm.editMode}
+					editMode={$bookFormStore.editMode}
 					{openEditMode}
-					book={$bookForm.book}
+					book={$bookFormStore.book}
 					{publisherList}
 					onValidate={findBook(db)}
 					onSubmit={handleAddTransaction(db)}
