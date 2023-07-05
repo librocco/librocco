@@ -41,6 +41,6 @@
 	}
 
 	.animate-unknown {
-		animation: slider 1s ease-in-out;
+		animation: slider 300ms ease-in-out;
 	}
 </style>
