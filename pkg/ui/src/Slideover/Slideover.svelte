@@ -2,12 +2,13 @@
 	import { X } from "lucide-svelte";
 	import type { MouseEventHandler } from "svelte/elements";
 
+	import { slide } from "svelte/transition";
 	export let title: string;
 	export let description: string;
 	export let handleClose: MouseEventHandler<HTMLButtonElement>;
 </script>
 
-<div class="animate-unknown flex max-w-2xl flex-col shadow-lg">
+<div out:slide={{ axis: "x", duration: 300 }} class="animate-unknown flex max-w-2xl flex-col shadow-lg">
 	<div class="flex items-start justify-between bg-gray-50 px-6 py-6">
 		<div class="flex flex-col gap-y-2">
 			<p class="text-xl font-normal text-gray-900">
