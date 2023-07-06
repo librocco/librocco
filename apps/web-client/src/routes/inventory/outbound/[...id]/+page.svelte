@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { onMount } from "svelte";
 	import { Edit, QrCode } from "lucide-svelte";
 	import { map } from "rxjs";
 	import { page } from "$app/stores";
@@ -26,8 +27,12 @@
 		Button,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
-		ProgressBar
+		ProgressBar,
+		Slideover,
+		BookDetailForm
 	} from "@librocco/ui";
+
+	import type { BookEntry, DatabaseInterface } from "@librocco/db";
 
 	import { noteStates, NoteTempState } from "$lib/enums/inventory";
 	import { NoteState } from "$lib/enums/db";
@@ -37,9 +42,11 @@
 	import { getDB } from "$lib/db";
 
 	import { createNoteStores } from "$lib/stores/inventory";
+	import { bookFormStore } from "$lib/stores/inventory/book_form";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { addBookEntry, findBook, handleBookEntry, handleCloseBookForm, openEditMode, publisherList } from "$lib/utils/book_form";
 
 	import { links } from "$lib/data";
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
@@ -70,6 +77,7 @@
 
 	$: noteStores = createNoteStores(note);
 
+	$: isbn = "";
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
@@ -78,6 +86,10 @@
 	$: entries = noteStores.entries;
 
 	$: toasts = noteToastMessages(note?.displayName);
+	const formHeader = {
+		title: "Edit book details",
+		description: "Use this form to manually edit details of an existing book in your inbound note"
+	};
 
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
@@ -111,10 +123,12 @@
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
 
-	const handleAddTransaction = (isbn: string) => () => {
-		note.addVolumes({ isbn, quantity: 1 });
+	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
+		isbn = "";
+		addBookEntry(db)(bookEntry);
+		await note.addVolumes({ isbn: bookEntry.isbn, quantity: $bookFormStore.editMode ? 0 : 1 });
 
-		toastSuccess(toasts.volumeAdded(isbn));
+		toastSuccess(toasts.volumeAdded(bookEntry.isbn));
 	};
 
 	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
@@ -169,13 +183,13 @@
 					align="right"
 				/>
 			</div>
-			<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+			<TextField bind:value={isbn} name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
 				<svelte:fragment slot="startAdornment">
 					<QrCode />
 				</svelte:fragment>
 				<div let:value slot="endAdornment" class="flex gap-x-2">
 					<!-- @TODO: no validation is implemented here -->
-					<Button on:click={handleAddTransaction(value)} size={ButtonSize.SM}>
+					<Button on:click={() => handleBookEntry()({ ...$bookFormStore.book, isbn })} size={ButtonSize.SM}>
 						<svelte:fragment slot="startAdornment">
 							<Edit size={16} />
 						</svelte:fragment>
@@ -190,7 +204,12 @@
 	<svelte:fragment slot="table">
 		{#if !loading}
 			{#if Boolean($entries.length)}
-				<OutNoteTable {table} on:transactionupdate={handleTransactionUpdate} on:removetransactions={handleRemoveTransactions} />
+				<OutNoteTable
+					{table}
+					onEdit={handleBookEntry(true)}
+					on:transactionupdate={handleTransactionUpdate}
+					on:removetransactions={handleRemoveTransactions}
+				/>
 			{/if}
 		{:else}
 			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
@@ -211,4 +230,20 @@
 			{/if}
 		{/if}
 	</div>
+
+	<svelte:fragment slot="slideOver">
+		{#if $bookFormStore.modalOpen}
+			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+				<BookDetailForm
+					editMode={$bookFormStore.editMode}
+					{openEditMode}
+					book={$bookFormStore.book}
+					{publisherList}
+					onValidate={findBook(db)}
+					onSubmit={handleAddTransaction(db)}
+					onCancel={handleCloseBookForm}
+				/>
+			</Slideover>
+		{/if}
+	</svelte:fragment>
 </InventoryPage>

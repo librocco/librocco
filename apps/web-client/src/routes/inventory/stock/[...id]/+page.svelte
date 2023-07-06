@@ -18,7 +18,9 @@
 		SidebarItem,
 		SideBarNav,
 		NewEntitySideNavButton,
-		ProgressBar
+		ProgressBar,
+		Slideover,
+		BookDetailForm
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE } from "@librocco/db";
 
@@ -27,8 +29,10 @@
 	import { getDB } from "$lib/db";
 
 	import { createWarehouseStores } from "$lib/stores/inventory";
+	import { bookFormStore } from "$lib/stores/inventory/book_form";
 
 	import { readableFromStream } from "$lib/utils/streams";
+	import { addBookEntry, handleBookEntry, handleCloseBookForm, publisherList } from "$lib/utils/book_form";
 
 	import { links } from "$lib/data";
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
@@ -86,6 +90,13 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.update(({ data }) => ({ data: $entries }));
+
+	const openEditMode = () => bookFormStore.update((store) => ({ ...store, editMode: true }));
+
+	const formHeader = {
+		title: "Edit book details",
+		description: "Use this form to manually edit details of an existing book in your inbound note"
+	};
 </script>
 
 <InventoryPage>
@@ -120,7 +131,7 @@
 	<svelte:fragment slot="table">
 		{#if !loading}
 			{#if Boolean($entries.length)}
-				<InventoryTable {table} />
+				<InventoryTable {table} onEdit={handleBookEntry(true)} />
 			{/if}
 		{:else}
 			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
@@ -142,4 +153,18 @@
 			{/if}
 		{/if}
 	</div>
+	<svelte:fragment slot="slideOver">
+		{#if $bookFormStore.modalOpen}
+			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+				<BookDetailForm
+					editMode={true}
+					{openEditMode}
+					book={$bookFormStore.book}
+					{publisherList}
+					onSubmit={addBookEntry(db)}
+					onCancel={handleCloseBookForm}
+				/>
+			</Slideover>
+		{/if}
+	</svelte:fragment>
 </InventoryPage>

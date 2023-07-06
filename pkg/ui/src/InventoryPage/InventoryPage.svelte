@@ -32,7 +32,7 @@
 	</main>
 
 	{#if $$slots.slideOver}
-		<section class="fixed right-0 h-auto bg-gray-50 shadow-lg">
+		<section class="h-autoshadow-lg fixed right-0">
 			<slot name="slideOver" />
 		</section>
 	{/if}
