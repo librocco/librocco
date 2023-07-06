@@ -99,7 +99,7 @@
 	};
 </script>
 
-<InventoryPage>
+<InventoryPage view="stock">
 	<!-- Header slot -->
 	<Header {links} currentLocation={`${base}/inventory/stock/`} slot="header" />
 

@@ -161,7 +161,7 @@
 </script>
 
 <!-- svelte-ignore missing-declaration -->
-<InventoryPage>
+<InventoryPage view="inbound">
 	<!-- Header slot -->
 	<Header {links} currentLocation={`${base}/inventory/inbound/`} slot="header" />
 
@@ -197,6 +197,7 @@
 						{/if}
 					</div>
 					<SelectMenu
+						id="note-state-picker"
 						class="w-[138px]"
 						options={noteStates}
 						bind:value={$state}
