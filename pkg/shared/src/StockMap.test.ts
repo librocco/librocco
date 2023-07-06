@@ -73,7 +73,7 @@ describe("StockMap Map interface", () => {
 });
 
 describe("StockMap '.aggregage' method", () => {
-	test("should aggregate the quantity by [isbm, warehouse] of entries passed as argument", () => {
+	test("should aggregate the quantity by [isbn, warehouse] of entries passed as argument", () => {
 		const m = new StockMap();
 
 		m.aggragate([
