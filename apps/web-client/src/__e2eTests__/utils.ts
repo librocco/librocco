@@ -22,6 +22,8 @@ interface SideNav {
 	createNote: () => Promise<void>;
 	assertLinks: (labels: string[]) => Promise<void>;
 	link: (label: string) => Locator;
+	assertGroups: (labels: string[]) => Promise<void>;
+	linkGroup: (name: string) => LinkGroup;
 }
 
 export function getSidebar(page: Page): SideNav {
@@ -36,12 +38,72 @@ export function getSidebar(page: Page): SideNav {
 
 	const link = (label: string) => container.getByRole("link", { name: label, exact: true });
 
+	const assertGroups = (labels: string[]) => compareEntries(container, labels, "button");
+
+	const linkGroup = (name: string) => getLinkGroup(page, container, name);
+
 	return {
 		container,
 		waitFor,
 		createNote,
 		createWarehouse,
 		assertLinks,
+		link,
+		assertGroups,
+		linkGroup
+	};
+}
+
+interface LinkGroup extends Omit<SideNav, "assertGroups" | "linkGroup" | "createWarehouse"> {
+	open: () => Promise<void>;
+}
+
+export function getLinkGroup(page: Page, sidebar: Locator, name: string): LinkGroup {
+	// Transform group name to a valid id (same logic we're using to assign id to the element)
+	const groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[\(\)]/g, "")}`;
+
+	// Get group container (using the id)
+	const container = sidebar.locator(`#${groupId}`);
+
+	const waitFor = () => container.waitFor();
+
+	// Expand button will have the "group name" as its label
+	const expandButton = container.getByRole("button", { name });
+
+	// When the group is expanded, the expand button will have an aria attribute "aria-expanded" set to "true"
+	const isExpanded = async () => {
+		const expanded = await expandButton.getAttribute("aria-expanded");
+		return expanded === "true";
+	};
+
+	const open = async () => {
+		const expanded = await isExpanded();
+		if (expanded) {
+			return;
+		}
+		await expandButton.click();
+		// Wait for the group to expand (the group will have an expand button at all times, if expanded it will have at least two)
+		page.waitForFunction((groupId) => document.getElementById(groupId).children.length > 1, groupId);
+	};
+
+	const createNote = async () => {
+		await open();
+		return container.getByRole("button", { name: "Create note" }).click();
+	};
+
+	const assertLinks = async (labels: string[]) => {
+		await open();
+		return compareEntries(container, labels, "a");
+	};
+
+	const link = (label: string) => container.getByRole("link", { name: label, exact: true });
+
+	return {
+		container,
+		open,
+		createNote,
+		assertLinks,
+		waitFor,
 		link
 	};
 }
