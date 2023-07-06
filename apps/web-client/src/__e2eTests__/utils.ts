@@ -60,7 +60,7 @@ interface LinkGroup extends Omit<SideNav, "assertGroups" | "linkGroup" | "create
 
 export function getLinkGroup(page: Page, sidebar: Locator, name: string): LinkGroup {
 	// Transform group name to a valid id (same logic we're using to assign id to the element)
-	const groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[\(\)]/g, "")}`;
+	const groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[()]/g, "")}`;
 
 	// Get group container (using the id)
 	const container = sidebar.locator(`#${groupId}`);
