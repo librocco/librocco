@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, reduce, slice, wrapIter } from "./generators";
+import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, reduce, slice, wrapIter, zip } from "./generators";
 
 describe("iterableFromGenerator", () => {
 	test("should allow for multiple iterations over the same generator", () => {
@@ -79,6 +79,36 @@ describe("Smoke test of transformers", () => {
 		const sliced = slice(iterable, 1, 10);
 		expect([...sliced]).toEqual([2, 3, 4, 5, 6]);
 	});
+
+	test("zip", () => {
+		const nums = [1, 2, 3];
+		const letters = ["a", "b", "c"];
+		const zipped = zip(nums, letters);
+		expect([...zipped]).toEqual([
+			[1, "a"],
+			[2, "b"],
+			[3, "c"]
+		]);
+	});
+
+	test("zip different lengths", () => {
+		const nums = [1, 2, 3];
+		const letters = ["a", "b"];
+
+		const zipped1 = zip(nums, letters);
+		const zipped2 = zip(letters, nums);
+
+		expect([...zipped1]).toEqual([
+			[1, "a"],
+			[2, "b"],
+			[3, undefined]
+		]);
+		expect([...zipped2]).toEqual([
+			["a", 1],
+			["b", 2],
+			[undefined, 3]
+		]);
+	});
 });
 
 describe("Composition with 'wrapIter'", () => {
@@ -89,12 +119,20 @@ describe("Composition with 'wrapIter'", () => {
 			{ step: "3", rows: [5, 6] }
 		];
 
+		const toZip1 = ["two", "four", "six"];
+		const toZip2 = [2, 4, 6];
+
 		const result = wrapIter(iterable)
 			.flatMap(({ rows }) => rows) // Iterable { 1, 2, 3, 4, 5, 6 }
 			.map((value) => value + 1) // Iterable { 2, 3, 4, 5, 6, 7 }
 			.filter((value) => value % 2 === 0) // Iterable { 2, 4, 6 }
-			.map((value) => value.toString()); // Iterable { "2", "4", "6" }
+			.map((value) => value.toString()) // Iterable { "2", "4", "6" }
+			.zip(toZip1, toZip2); // Iterable { ["2", "two", 2], ["4", "four", 4], ["6", "six", 6] }
 
-		expect([...result]).toEqual(["2", "4", "6"]);
+		expect([...result]).toEqual([
+			["2", "two", 2],
+			["4", "four", 4],
+			["6", "six", 6]
+		]);
 	});
 });
