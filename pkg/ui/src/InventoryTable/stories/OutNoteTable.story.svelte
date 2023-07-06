@@ -11,11 +11,11 @@
 
 	export let Hst: Hst;
 
-	const multipleWarehouses = [
-		{ label: "Varia 2018", value: "varia-2018" },
-		{ label: "Nuovo 2021", value: "nuovo-2021" }
-	];
-	const singleWarehouse = [{ label: "Varia 2018", value: "varia-2018" }];
+	const multipleWarehouses = new Map([
+		["varia-2018", { displayName: "Varia 2018" }],
+		["nuovo-2021", { displayName: "Nuovo 2021" }]
+	]);
+	const singleWarehouse = new Map([["varia-2018", { displayName: "Varia 2018" }]]);
 
 	const outNoteRows = [
 		{ ...rows[0], warehouseId: "", warehouseName: "", availableWarehouses: multipleWarehouses },
