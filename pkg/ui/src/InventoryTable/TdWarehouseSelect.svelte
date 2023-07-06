@@ -19,13 +19,17 @@
 
 	$: dispatchChange($combobox.selected);
 
-	$: ({ warehouseName, availableWarehouses = [] } = data);
+	$: ({ warehouseName, availableWarehouses = new Map() } = data);
 
-	$: selectedLabel = availableWarehouses.find(({ value }) => value === $combobox.selected)?.label;
+	$: selectedLabel = availableWarehouses.get($combobox.selected)?.displayName;
+
+	/** @TODO 'warehouses' type: NavMap */
+	const mapWarehousesToOptions = (warehouses: OutNoteTableData["availableWarehouses"]) =>
+		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
 </script>
 
 <td class="py-4 px-1.5">
-	{#if availableWarehouses?.length > 1}
+	{#if availableWarehouses?.size > 1}
 		<TextField name={`Row ${rowIx} warehouse`} inputAction={combobox.input} value={selectedLabel} placeholder="Select warehouse...">
 			<span slot="startAdornment" class="rounded-full p-1 {$combobox.selected ? 'bg-teal-400' : 'bg-red-400'}" />
 			<svelte:fragment slot="endAdornment">
@@ -35,7 +39,7 @@
 			</svelte:fragment>
 		</TextField>
 		<div class="relative">
-			<ComboboxMenu {combobox} options={availableWarehouses} />
+			<ComboboxMenu {combobox} options={mapWarehousesToOptions(availableWarehouses)} />
 		</div>
 	{:else}
 		<div class="flex items-center rounded-md bg-gray-100 shadow-sm">

@@ -84,7 +84,7 @@ describe("tableContentStore", () => {
 		// Should receive the initial state (only book1 transaction in the note)
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
 			])
 		);
 
@@ -95,11 +95,11 @@ describe("tableContentStore", () => {
 		);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
 				// Book data for book2 is already available in the db
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
 				// Book data for book3 is not available in the db - only the transaction data is shown
-				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
+				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
 			]);
 		});
 
@@ -107,10 +107,10 @@ describe("tableContentStore", () => {
 		await db.books().upsert([book3]);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
 				// Full book3 data should be displayed
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
 			]);
 		});
 
@@ -125,10 +125,10 @@ describe("tableContentStore", () => {
 					quantity: 12,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
-					availableWarehouses: []
+					availableWarehouses: new Map()
 				},
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] },
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: [] }
+				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
+				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
 			]);
 		});
 	});

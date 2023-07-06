@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Search } from "lucide-svelte";
+	import { map } from "rxjs";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { base } from "$app/paths";
@@ -44,7 +45,15 @@
 	const db = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseList = readableFromStream(warehouseListCtx, db?.stream().warehouseList(warehouseListCtx), []);
+	const warehouseList = readableFromStream(
+		warehouseListCtx,
+		db
+			?.stream()
+			.warehouseList(warehouseListCtx)
+			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+			.pipe(map((m) => [...m])),
+		[]
+	);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -96,7 +105,7 @@
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
-		{#each $warehouseList as { displayName, id }}
+		{#each $warehouseList as [id, { displayName }]}
 			<SidebarItem href="{base}/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">

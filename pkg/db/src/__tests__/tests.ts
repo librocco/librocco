@@ -6,7 +6,7 @@ import { testUtils } from "@librocco/shared";
 
 import { NoteState } from "@/enums";
 
-import { BookEntry, InNoteList, NavListEntry, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
+import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
 
 import { versionId } from "@/utils/misc";
@@ -117,7 +117,7 @@ export const getEntriesQueries: TestFunction = async (db) => {
 	const note = await wh1.note().create();
 	await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
 	const entries = await note.getEntries({});
-	expect(entries).toEqual([
+	expect([...entries]).toEqual([
 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
 	]);
@@ -125,17 +125,17 @@ export const getEntriesQueries: TestFunction = async (db) => {
 	// Check for warehouse
 	// Note is not yet committed, so no entries should be returned.
 	let wh1Entries = await wh1.getEntries({});
-	expect(wh1Entries).toEqual([]);
+	expect([...wh1Entries]).toEqual([]);
 	await note.commit({});
 	wh1Entries = await wh1.getEntries({});
-	expect(wh1Entries).toEqual([
+	expect([...wh1Entries]).toEqual([
 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
 	]);
 
 	// Should work all the same for the default warehouse
 	const defaultWhEntries = await defaultWh.getEntries({});
-	expect(defaultWhEntries).toEqual([
+	expect([...defaultWhEntries]).toEqual([
 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
 	]);
@@ -148,16 +148,16 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// @TODO: With current implementation, we're streaming all warehouses in the db as 'available warehouses' on each outbound note.
 	// Update this when we implement a more fine grained approach.
-	const availableWarehouses = [wh1, wh2].map(({ _id, displayName }) => ({ value: _id, label: displayName }));
+	const availableWarehouses = [wh1, wh2].map(({ _id, displayName }) => ({ id: _id, displayName }));
 
 	// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
 	const note = await db.warehouse().note().create();
 
 	// Subscribe to entries to receive updates
-	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
 	note.stream()
 		.entries({})
-		.subscribe(({ rows }) => (entries = rows));
+		.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
 
 	// Initial stream should be empty
 	await waitFor(() => {
@@ -618,7 +618,7 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 export const warehousesListStream: TestFunction = async (db) => {
 	const wl$ = db.stream().warehouseList({});
 	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
-	wl$.subscribe((wl) => (warehouseList = wl));
+	wl$.subscribe((wl) => (warehouseList = navMapToNavList(wl)));
 
 	// The default warehouse should be created automatically
 	await waitFor(() => {
@@ -655,149 +655,158 @@ export const warehousesListStream: TestFunction = async (db) => {
 export const inNotesStream: TestFunction = async (db) => {
 	const inl$ = db.stream().inNoteList({});
 	let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
+	let actual: PossiblyEmpty<InNoteMap> = EMPTY;
 
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 	const warehouse1 = await db.warehouse("warehouse-1").create();
-	inl$.subscribe((inl) => (inNoteList = inl));
-
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [] },
-			{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [] }
-		]);
+	inl$.subscribe((inl) => {
+		inNoteList = inNoteMapToInNoteList(inl);
+		actual = inl;
 	});
 
-	// When a new inbound note is created, it should be added to the list (for both the particular warehouse, as well as the default warehouse)
-	const note1 = await warehouse1.note().create();
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Note" }] },
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Note" }]
-			}
-		]);
-	});
+	try {
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{ id: versionId("0-all"), displayName: "All", notes: [] },
+				{ id: versionId("warehouse-1"), displayName: "New Warehouse", notes: [] }
+			]);
+		});
 
-	// Updating of the note name should be reflected in the stream
-	await note1.setName({}, "New Name");
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Name" }]
-			}
-		]);
-	});
+		// When a new inbound note is created, it should be added to the list (for both the particular warehouse, as well as the default warehouse)
+		const note1 = await warehouse1.note().create();
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Note" }] },
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Note" }]
+				}
+			]);
+		});
 
-	// Adding a note in another warehouse should add it to a particular warehouse, as well as the default warehouse
-	const note2 = await db.warehouse("warehouse-2").note().create();
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{
-				id: versionId("0-all"),
-				displayName: "All",
-				notes: [
-					{ id: note1._id, displayName: "New Name" },
-					{ id: note2._id, displayName: "New Note" }
-				]
-			},
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Name" }]
-			},
-			{
-				id: versionId("warehouse-2"),
-				displayName: "New Warehouse (2)",
-				notes: [{ id: note2._id, displayName: "New Note" }]
-			}
-		]);
-	});
+		// Updating of the note name should be reflected in the stream
+		await note1.setName({}, "New Name");
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Name" }]
+				}
+			]);
+		});
 
-	// Deleting a note should remove it from the list (but the warehouse should still be there)
-	await note2.delete({});
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Name" }]
-			},
-			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
-		]);
-	});
+		// Adding a note in another warehouse should add it to a particular warehouse, as well as the default warehouse
+		const note2 = await db.warehouse("warehouse-2").note().create();
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: versionId("0-all"),
+					displayName: "All",
+					notes: [
+						{ id: note1._id, displayName: "New Name" },
+						{ id: note2._id, displayName: "New Note" }
+					]
+				},
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Name" }]
+				},
+				{
+					id: versionId("warehouse-2"),
+					displayName: "New Warehouse (2)",
+					notes: [{ id: note2._id, displayName: "New Note" }]
+				}
+			]);
+		});
 
-	// Outbound notes should not be included in the list
-	await db.warehouse().note().create();
-	// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
-	// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
-	// only the latter took place.
-	await note1.setName({}, "New Note - Updated");
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{
-				id: versionId("0-all"),
-				displayName: "All",
-				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
-			},
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
-			},
-			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
-		]);
-	});
+		// Deleting a note should remove it from the list (but the warehouse should still be there)
+		await note2.delete({});
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{ id: versionId("0-all"), displayName: "All", notes: [{ id: note1._id, displayName: "New Name" }] },
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Name" }]
+				},
+				{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
 
-	// Should not stream committed notes
-	const note3 = await warehouse1.note().create();
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{
-				id: versionId("0-all"),
-				displayName: "All",
-				notes: [
-					{ id: note1._id, displayName: "New Note - Updated" },
-					{
-						id: note3._id,
-						// There's already an outbound note with the name "New Note"
-						displayName: "New Note (2)"
-					}
-				]
-			},
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [
-					{ id: note1._id, displayName: "New Note - Updated" },
-					{ id: note3._id, displayName: "New Note (2)" }
-				]
-			},
-			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
-		]);
-	});
+		// Outbound notes should not be included in the list
+		await db.warehouse().note().create();
+		// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
+		// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
+		// only the latter took place.
+		await note1.setName({}, "New Note - Updated");
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: versionId("0-all"),
+					displayName: "All",
+					notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+				},
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+				},
+				{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
 
-	await note3.commit({}, { force: true });
-	await waitFor(() => {
-		expect(inNoteList).toEqual([
-			{
-				id: versionId("0-all"),
-				displayName: "All",
-				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
-			},
-			{
-				id: versionId("warehouse-1"),
-				displayName: "New Warehouse",
-				notes: [{ id: note1._id, displayName: "New Note - Updated" }]
-			},
-			{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
-		]);
-	});
+		// Should not stream committed notes
+		const note3 = await warehouse1.note().create();
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: versionId("0-all"),
+					displayName: "All",
+					notes: [
+						{ id: note1._id, displayName: "New Note - Updated" },
+						{
+							id: note3._id,
+							// There's already an outbound note with the name "New Note"
+							displayName: "New Note (2)"
+						}
+					]
+				},
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [
+						{ id: note1._id, displayName: "New Note - Updated" },
+						{ id: note3._id, displayName: "New Note (2)" }
+					]
+				},
+				{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
+
+		await note3.commit({}, { force: true });
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: versionId("0-all"),
+					displayName: "All",
+					notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+				},
+				{
+					id: versionId("warehouse-1"),
+					displayName: "New Warehouse",
+					notes: [{ id: note1._id, displayName: "New Note - Updated" }]
+				},
+				{ id: versionId("warehouse-2"), displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
+	} catch (err) {
+		console.log(actual);
+		throw err;
+	}
 };
 
 export const outNotesStream: TestFunction = async (db) => {
@@ -807,7 +816,7 @@ export const outNotesStream: TestFunction = async (db) => {
 	// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 	const note1 = await db.warehouse().note().create();
 	// Subscribe after the initial update to test the initial state being streamed
-	onl$.subscribe((onl) => (outNoteList = onl));
+	onl$.subscribe((onl) => (outNoteList = navMapToNavList(onl)));
 	await waitFor(() => {
 		expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note" }]);
 	});
@@ -913,13 +922,13 @@ export const streamsShouldFallBackToDefaultValueForTheirType: TestFunction = asy
 	let warehouseList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 	db.stream()
 		.inNoteList({})
-		.subscribe((inl) => (inNoteList = inl));
+		.subscribe((inl) => (inNoteList = inNoteMapToInNoteList(inl)));
 	db.stream()
 		.outNoteList({})
-		.subscribe((onl) => (outNoteList = onl));
+		.subscribe((onl) => (outNoteList = navMapToNavList(onl)));
 	db.stream()
 		.warehouseList({})
-		.subscribe((wl) => (warehouseList = wl));
+		.subscribe((wl) => (warehouseList = navMapToNavList(wl)));
 	// The default warehosue gets created automatically, so we will essentially
 	// always be receiving the default warehouse in the warehouse (and in-note) list
 	const defaultWarehouse = {
@@ -1199,3 +1208,26 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 
 	await waitFor(() => expect(wInst1).toEqual(wInst2));
 };
+
+// #region helpers
+// Legacy types used for more convenient testing of (updated) Map values
+// eslint-disable-next-line @typescript-eslint/ban-types
+type NavListEntry<A = {}> = { id: string; displayName: string } & A;
+
+/** Old in note list - an array instead of currently used Map */
+type InNoteList = NavListEntry<{ notes: NavListEntry[] }>[];
+
+/** Volume stock client with 'availableWarehouses' being NavListEntry */
+type VolumeStockClientOld = Omit<VolumeStockClient, "availableWarehouses"> & { availableWarehouses?: NavListEntry[] };
+
+// Functions used to convert the new Map types to the legacy ones (for easier testing)
+const navMapToNavList = (navMap: NavMap): NavListEntry[] => [...navMap].map(([id, { displayName }]) => ({ id, displayName }));
+
+const inNoteMapToInNoteList = (inNoteMap: InNoteMap): InNoteList =>
+	[...inNoteMap].map(([id, { displayName, notes }]) => ({ id, displayName, notes: navMapToNavList(notes) }));
+
+const volumeStockClientToVolumeStockClientOld = ({ availableWarehouses, ...vsc }: VolumeStockClient): VolumeStockClientOld => ({
+	...vsc,
+	...(availableWarehouses ? { availableWarehouses: navMapToNavList(availableWarehouses) } : {})
+});
+// #endregion
