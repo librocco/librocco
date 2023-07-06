@@ -43,16 +43,10 @@ export const rows: InventoryTableData[] = [
 	}
 ];
 
-export const availableWarehouses = [
-	{
-		label: "Warehouse 1",
-		value: "wh1"
-	},
-	{
-		label: "Warehouse 2",
-		value: "wh2"
-	}
-];
+export const availableWarehouses = new Map([
+	["wh1", { displayName: "Warehouse 1" }],
+	["wh2", { displayName: "Warehouse 2" }]
+]);
 
 /**
  * Includes three rows, with the first and the second row having the warehouse set up and third having it empty
