@@ -158,7 +158,6 @@
 			href: `${base}/inventory/inbound/${id}`,
 			current: id === $page.params.id
 		}));
-
 </script>
 
 <!-- svelte-ignore missing-declaration -->
