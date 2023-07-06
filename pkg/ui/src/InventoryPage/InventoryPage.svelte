@@ -1,4 +1,8 @@
-<div class="flex h-screen flex-col">
+<script>
+	export let view = "";
+</script>
+
+<div data-view={view} class="flex h-screen flex-col">
 	<div class="basis-[5%]">
 		<slot name="header" />
 	</div>

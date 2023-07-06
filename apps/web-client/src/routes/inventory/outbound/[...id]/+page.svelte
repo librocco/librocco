@@ -147,7 +147,7 @@
 	};
 </script>
 
-<InventoryPage>
+<InventoryPage view="outbound">
 	<!-- Header slot -->
 	<Header {links} currentLocation={`${base}/inventory/outbound/`} slot="header" />
 
@@ -176,6 +176,7 @@
 					{/if}
 				</div>
 				<SelectMenu
+					id="note-state-picker"
 					class="w-[138px]"
 					options={noteStates}
 					bind:value={$state}
