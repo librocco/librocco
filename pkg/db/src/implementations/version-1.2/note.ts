@@ -370,7 +370,7 @@ class Note implements NoteInterface {
 		return this.update(ctx, { committed: true });
 	}
 
-	async getEntries(): Promise<VolumeStockClient[]> {
+	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const entries = await this.get().then((note) => note?.entries || []);
 		const warehouses = await this.#db.getWarehouseList();
 		return addWarehouseNames(entries, warehouses);

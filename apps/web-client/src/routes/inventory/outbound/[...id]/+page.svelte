@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { Edit, QrCode } from "lucide-svelte";
+	import { map } from "rxjs";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { base } from "$app/paths";
@@ -51,7 +52,15 @@
 	const db = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(outNoteListCtx, db?.stream().outNoteList(outNoteListCtx), []);
+	const outNoteList = readableFromStream(
+		outNoteListCtx,
+		db
+			?.stream()
+			.outNoteList(outNoteListCtx)
+			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+			.pipe(map((m) => [...m])),
+		[]
+	);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -130,7 +139,7 @@
 
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
-		{#each $outNoteList as { displayName, id }}
+		{#each $outNoteList as [id, { displayName }]}
 			<SidebarItem name={displayName || id} href="{base}/inventory/outbound/{id}" current={id === $page.params.id} />
 		{/each}
 		<svelte:fragment slot="actions">
