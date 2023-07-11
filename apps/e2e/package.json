@@ -1,0 +1,25 @@
+{
+	"name": "@librocco/e2e",
+	"version": "0.0.1",
+	"scripts": {
+		"build": "echo e2e has no build functionality, skipping...",
+		"test": "playwright test --ui",
+		"test:codegen": "playwright codegen",
+		"test:ci": "playwright test",
+		"typecheck": "tsc",
+		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
+		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
+		"format": "prettier --write --plugin-search-dir=. ."
+	},
+	"devDependencies": {
+		"@librocco/shared": "workspace:*",
+		"@playwright/test": "~1.35.1",
+		"@typescript-eslint/eslint-plugin": "^5.27.0",
+		"@typescript-eslint/parser": "^5.27.0",
+		"eslint": "^8.16.0",
+		"eslint-config-prettier": "^8.3.0",
+		"prettier": "^2.6.2",
+		"typescript": "^4.8.4"
+	},
+	"type": "module"
+}
