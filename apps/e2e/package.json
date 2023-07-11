@@ -6,7 +6,7 @@
 		"test": "playwright test --ui",
 		"test:codegen": "playwright codegen",
 		"test:ci:setup": "playwright install --with-deps",
-		"test:ci": "(cd ../web-client && rushx start) & PREVIEW_PID=$!; playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
+		"test:ci": "(cd ../web-client && rushx start) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
 		"typecheck": "tsc",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",

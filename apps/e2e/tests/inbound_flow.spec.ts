@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
 
+import { baseURL } from "./constants";
+
 import { getSidebar, createDefaultWarehouses, renameEntity, getNoteStatePicker } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
-	await page.goto("http://localhost:5173");
+	await page.goto(baseURL);
 	// Wait for the app to become responsive (when the default view is loaded)
 	await page.getByRole("heading", { name: "All" }).getByText("All").waitFor();
 
