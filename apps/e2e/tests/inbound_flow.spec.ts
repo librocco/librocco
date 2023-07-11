@@ -69,7 +69,13 @@ test("note heading should display note name, warehouse it belongs to and 'update
 	const updatedAtElement = page.getByText("Last updated:");
 	await updatedAtElement.waitFor();
 	const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent);
-	const updatedAt = new Date(updatedAtString.replace("Last updated: ", ""));
+
+	const updatedAt = new Date(
+		updatedAtString
+			// Replace the " at " separator (webkit formatted date) to a regular date string
+			.replace(" at ", ", ")
+			.replace("Last updated: ", "")
+	);
 
 	// Without mocking the date, we can't assert the exact date, but we can expect the updated at to be under a minute from now
 	expect(Date.now() - 60 * 1000).toBeLessThan(updatedAt.getTime());

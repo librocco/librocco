@@ -139,7 +139,7 @@ async function compareEntries(container: Locator, labels: string[], selector: st
 	}
 
 	for (const [link, label] of zip(elements, labels)) {
-		expect(link).toHaveText(label);
+		await expect(link).toHaveText(label);
 	}
 }
 // #endregion helpers
