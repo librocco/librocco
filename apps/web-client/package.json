@@ -8,9 +8,6 @@
 		"preview": "vite preview",
 		"test": "vitest --",
 		"test:ci": "vitest --",
-		"test:e2e": "playwright test --ui",
-		"test:e2e:codegen": "playwright codegen",
-		"test:e2e:ci": "playwright test",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
@@ -19,7 +16,6 @@
 	},
 	"devDependencies": {
 		"@librocco/shared": "workspace:*",
-		"@playwright/test": "~1.35.1",
 		"@sveltejs/kit": "~1.15.7",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
 		"@typescript-eslint/parser": "^5.27.0",
