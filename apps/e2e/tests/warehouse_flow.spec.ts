@@ -3,7 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { createDefaultWarehouses, getSidebar, renameEntity } from "./utils";
+import { createDefaultWarehouses, renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -13,7 +13,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("should create a warehouse on 'Create warehouse' button click and show that warehouse in the sidebar nav", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("stock").sidebar();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
@@ -25,7 +25,7 @@ test("should create a warehouse on 'Create warehouse' button click and show that
 });
 
 test("should allow for renaming of the warehouse using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("stock").sidebar();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
@@ -51,7 +51,7 @@ test("should allow for renaming of the warehouse using the editable title and sh
 });
 
 test("should assign default warehouse names (with sequenced index) to newly created warehouses", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("stock").sidebar();
 
 	// Create 3 new warehouses by clicking on the 'Create warehouse' button
 	await createDefaultWarehouses(page, 3);
@@ -63,7 +63,7 @@ test("should assign default warehouse names (with sequenced index) to newly crea
 test('should continue the sequenced order from the highest numbered "New Warehouse" even if lower numbered warehouses have been renamed', async ({
 	page
 }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("stock").sidebar();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
@@ -94,7 +94,7 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 });
 
 test("should reset the naming sequence when all warehouses with default names get renamed", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("stock").sidebar();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);

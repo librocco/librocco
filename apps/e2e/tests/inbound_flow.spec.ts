@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { getSidebar, createDefaultWarehouses, renameEntity, getNoteStatePicker } from "./utils";
+import { createDefaultWarehouses, renameEntity, getNoteStatePicker } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -22,7 +22,7 @@ test.beforeEach(async ({ page }) => {
 
 test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {
 	// Check that the sidebar shows the "All" group as well as one group per each of the created warehouses
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 	await sidebar.assertGroups(["All", "New Warehouse", "New Warehouse (2)"]);
 
 	// Create a new inbound note in the first warehouse
@@ -40,7 +40,7 @@ test('should create a new inbound note, belonging to a particular warehouse on "
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create a new note
@@ -59,7 +59,7 @@ test("should allow for renaming of the note using the editable title and show th
 
 test("note heading should display note name, warehouse it belongs to and 'updated at' timestamp", async ({ page }) => {
 	// Create a new note in the given warehouse
-	await getSidebar(page).linkGroup("New Warehouse").createNote();
+	await getDashboard(page).view("inbound").sidebar().linkGroup("New Warehouse").createNote();
 
 	// Check note page contents
 	await page.getByRole("heading", { name: "New Note in New Warehouse" }).waitFor();
@@ -83,7 +83,7 @@ test("note heading should display note name, warehouse it belongs to and 'update
 });
 
 test("should assign default name to note in sequential order", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 
 	// Create a new inbound note in the first warehouse
 	await sidebar.linkGroup("New Warehouse").createNote();
@@ -97,7 +97,7 @@ test("should assign default name to note in sequential order", async ({ page }) 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create three notes (we can use only "New Warehouse" for this)
@@ -131,7 +131,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 });
 
 test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create three notes (we can use only "New Warehouse" for this)
@@ -169,7 +169,7 @@ test("should reset the naming sequence when all notes with default names get ren
 });
 
 test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
-	const sidebar = getSidebar(page);
+	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create two notes in the given warehouse
