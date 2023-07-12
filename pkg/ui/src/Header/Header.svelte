@@ -16,7 +16,7 @@
 			<BookCopy color="white" strokeWidth={2} size={36} />
 		</div>
 
-		<nav class="flex gap-x-4">
+		<nav class="flex gap-x-4" aria-label="Main navigation">
 			{#each links as { label, href }}
 				<a
 					{href}

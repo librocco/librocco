@@ -1,0 +1,1 @@
+export { getDashboard } from "./dashboard";
