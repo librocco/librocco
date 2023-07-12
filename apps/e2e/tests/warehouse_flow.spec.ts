@@ -2,13 +2,14 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
+import { getDashboard } from "./helpers";
 import { createDefaultWarehouses, getSidebar, renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
-	// Wait for the app to become responsive (when the default view is loaded)
-	await page.getByRole("heading", { name: "All" }).getByText("All").waitFor();
+	// Wait for the app to become responsive
+	await getDashboard(page).waitFor();
 });
 
 test("should create a warehouse on 'Create warehouse' button click and show that warehouse in the sidebar nav", async ({ page }) => {

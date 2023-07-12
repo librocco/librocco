@@ -2,12 +2,12 @@
 	export let view = "";
 </script>
 
-<div data-view={view} class="flex h-screen flex-col">
+<div class="flex h-screen flex-col">
 	<div class="basis-[5%]">
 		<slot name="header" />
 	</div>
 
-	<main class="flex basis-[95%] items-stretch divide-x divide-gray-300 overflow-y-auto">
+	<main data-view={view} class="flex basis-[95%] items-stretch divide-x divide-gray-300 overflow-y-auto">
 		{#if $$slots.sidebar}
 			<section
 				id="sidebar-section"
