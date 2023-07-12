@@ -1,6 +1,6 @@
 import { expect, type Locator, type Page } from "@playwright/test";
 
-import { zip } from "@librocco/shared";
+import { zip, testUtils } from "@librocco/shared";
 
 /** A utility function that clicks on the 'Create warehouse' button specified number of times (creating a new warehouse each time) */
 export async function createDefaultWarehouses(page: Page, count: number) {
@@ -130,16 +130,18 @@ export async function renameEntity(page: Page, newName: string) {
 
 // #region helpers
 async function compareEntries(container: Locator, labels: string[], selector: string) {
-	const elements = await container.locator(selector).all();
+	return testUtils.waitFor(async () => {
+		const elements = await container.locator(selector).all();
 
-	expect(elements.length).toBe(labels.length);
+		expect(elements.length).toBe(labels.length);
 
-	if (elements.length === 0) {
-		return;
-	}
+		if (elements.length === 0) {
+			return;
+		}
 
-	for (const [link, label] of zip(elements, labels)) {
-		await expect(link).toHaveText(label);
-	}
+		for (const [link, label] of zip(elements, labels)) {
+			await expect(link).toHaveText(label);
+		}
+	});
 }
 // #endregion helpers
