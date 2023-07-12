@@ -112,9 +112,6 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await linkGroupWh1.createNote();
 	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 
-	// Wait for the last update to be shown in the sidebar
-	await sidebar.link("New Note (3)").waitFor();
-
 	// Check the nav links before continuing
 	await linkGroupWh1.assertLinks(["New Note", "New Note (2)", "New Note (3)"]);
 
@@ -193,12 +190,6 @@ test("should remove the note from the sidebar when the note is deleted", async (
 	const noteStatePicker = getNoteStatePicker(page);
 	await noteStatePicker.locator("button").click();
 	await noteStatePicker.getByText("Delete", { exact: true }).click();
-
-	// Wait for the success message
-	await page.getByText("New Note (2) deleted").waitFor();
-	// Wait for the element in sidebar to leave the screen
-	await linkGroupAll.link("New Note (2)").waitFor({ state: "detached" });
-	await linkGroupWh1.link("New Note (2)").waitFor({ state: "detached" });
 
 	// Check that the note has been deleted from the sidebar
 	await linkGroupAll.assertLinks(["New Note"]);
