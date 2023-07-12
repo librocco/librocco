@@ -18,8 +18,6 @@ test("should create a warehouse on 'Create warehouse' button click and show that
 	await sidebar.createWarehouse();
 	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
 	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
-	// Wait for "New Warehouse" link to appear in the sidebar
-	await sidebar.link("New Warehouse").waitFor();
 
 	// Sidebar should display the "All" pseudo-warehouse and the newly created warehouse ("New Warehouse")
 	await sidebar.assertLinks(["All", "New Warehouse"]);
@@ -32,8 +30,6 @@ test("should allow for renaming of the warehouse using the editable title and sh
 	await sidebar.createWarehouse();
 	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
 	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
-	// Wait for "New Warehouse" link to appear in the sidebar
-	await sidebar.link("New Warehouse").waitFor();
 
 	// Rename "New Warehouse"
 	//
@@ -49,9 +45,6 @@ test("should allow for renaming of the warehouse using the editable title and sh
 	await input.fill("Warehouse 1");
 	await input.press("Enter");
 
-	// Wait for the navigation to show the update (signaling the update made the async round trip)
-	await sidebar.link("Warehouse 1").waitFor();
-
 	// The sidebar should display the default ("All") pseudo-warehouse and the renamed warehouse ("Warehouse 1")
 	await sidebar.assertLinks(["All", "Warehouse 1"]);
 });
@@ -61,8 +54,6 @@ test("should assign default warehouse names (with sequenced index) to newly crea
 
 	// Create 3 new warehouses by clicking on the 'Create warehouse' button
 	await createDefaultWarehouses(page, 3);
-	// Just in case, wait for the last warehouse to be added to the side nav
-	await sidebar.link("New Warehouse (3)").waitFor();
 
 	// We can check the naming sequence by looking at the sidebar nav
 	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
@@ -75,8 +66,6 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
-	// Just in case, wait for the last warehouse to be added to the side nav
-	await sidebar.link("New Warehouse (3)").waitFor();
 
 	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
 	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
@@ -90,9 +79,6 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 	await page.getByRole("heading", { name: "New Warehouse (2)" }).waitFor();
 	await renameEntity(page, "Warehouse 2");
 
-	// Wait for the last update to appear in the sidebar
-	await sidebar.link("Warehouse 2").waitFor();
-
 	// The sidebar nav should display the updated warehouse names
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)"]);
 
@@ -101,10 +87,8 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 
 	// When naming a new warehouse, the naming sequence picks up after (existing) "New Warehouse (3)"
 	await page.getByRole("heading", { name: "New Warehouse (4)" }).waitFor();
-	// Wait for the newly created warehouse to appear in the sidebar
-	await sidebar.link("New Warehouse (4)").waitFor();
 
-	// Check the nav links for good measure
+	// Check the nav links
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)", "New Warehouse (4)"]);
 });
 
@@ -113,8 +97,6 @@ test("should reset the naming sequence when all warehouses with default names ge
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
-	// Wait for the last warehouse to be added to the side nav
-	await sidebar.link("New Warehouse (3)").waitFor();
 
 	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
 	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
@@ -132,9 +114,6 @@ test("should reset the naming sequence when all warehouses with default names ge
 	await page.getByRole("heading", { name: "New Warehouse (3)" }).waitFor();
 	await renameEntity(page, "Warehouse 3");
 
-	// Wait for the last update to appear in the sidebar
-	await sidebar.link("Warehouse 3").waitFor();
-
 	// The sidebar nav should display the updated warehouse names
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3"]);
 
@@ -143,11 +122,7 @@ test("should reset the naming sequence when all warehouses with default names ge
 
 	// The new warehouse should now have the default name ("New Warehouse")
 	await page.getByRole("heading", { name: "New Warehouse", exact: true }).waitFor();
-	// Wait for the newly created warehouse to appear in the sidebar
-	await sidebar.link("New Warehouse").waitFor();
 
-	// Check the nav links for good measure
-	//
 	// "New Warehouse" appears last as nav items are sorted in chronological order (under the hood, using timestamped ids)
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3", "New Warehouse"]);
 });

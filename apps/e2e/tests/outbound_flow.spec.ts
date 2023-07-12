@@ -25,8 +25,6 @@ test('should create a new outbound note, on "Create note" button click and show 
 
 	// Check that we've been redirected to the new note's page
 	await page.getByRole("heading", { name: "New Note" }).waitFor();
-	// Wait for the note link to appear in the sidebar
-	await sidebar.link("New Note").waitFor();
 
 	// The sidebar should show only the created note at this point
 	await sidebar.assertLinks(["New Note"]);
@@ -43,9 +41,6 @@ test("should allow for renaming of the note using the editable title and show th
 
 	// Rename "New Note"
 	await renameEntity(page, "Note 1");
-
-	// Wait for the update to be shown in the sidebar
-	await sidebar.link("Note 1").waitFor();
 
 	// The sidebar should display the updated note name
 	await sidebar.assertLinks(["Note 1"]);
@@ -103,9 +98,6 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await sidebar.createNote();
 	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 
-	// Wait for the last note created to be shown in the sidebar
-	await sidebar.link("New Note (3)").waitFor();
-
 	// Check the nav links before continuing
 	await sidebar.assertLinks(["New Note", "New Note (2)", "New Note (3)"]);
 
@@ -117,9 +109,6 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await sidebar.link("New Note (2)").click();
 	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
 	await renameEntity(page, "Note 2");
-
-	// Wait for the navigation to show the latest update
-	await sidebar.link("Note 2").waitFor();
 
 	// Check the nav links for good measure
 	await sidebar.assertLinks(["Note 1", "Note 2", "New Note (3)"]);
@@ -142,9 +131,6 @@ test("should reset the naming sequence when all notes with default names get ren
 	await sidebar.createNote();
 	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 
-	// Wait for the last note created to be shown in the sidebar
-	await sidebar.link("New Note (3)").waitFor();
-
 	// Rename all of the notes
 	await sidebar.link("New Note").click();
 	await page.getByRole("heading", { name: "New Note", exact: true }).waitFor();
@@ -158,9 +144,6 @@ test("should reset the naming sequence when all notes with default names get ren
 	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 	await renameEntity(page, "Note 3");
 
-	// Wait for the last update to appear in the sidebar
-	await sidebar.link("Note 3").waitFor();
-
 	// Check the nav links for good measure
 	await sidebar.assertLinks(["Note 1", "Note 2", "Note 3"]);
 
@@ -168,8 +151,6 @@ test("should reset the naming sequence when all notes with default names get ren
 	await sidebar.createNote();
 	await page.getByRole("heading", { name: "New Note" }).waitFor();
 
-	// The latest note should be shown in the sidebar
-	await sidebar.link("New Note").waitFor();
 	await sidebar.assertLinks(["Note 1", "Note 2", "Note 3", "New Note"]);
 });
 
@@ -183,9 +164,6 @@ test("should remove the note from the sidebar when the note is deleted", async (
 	await sidebar.createNote();
 	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
 
-	// Wait for the latest note to be shown in the sidebar
-	await sidebar.link("New Note (2)").waitFor();
-
 	// Check the links
 	await sidebar.assertLinks(["New Note", "New Note (2)"]);
 
@@ -193,9 +171,6 @@ test("should remove the note from the sidebar when the note is deleted", async (
 	const noteStatePicker = getNoteStatePicker(page);
 	await noteStatePicker.locator("button").click();
 	await noteStatePicker.getByText("Delete", { exact: true }).click();
-
-	// Wait for the deletion to be reflected in the sidebar
-	await sidebar.link("New Note (2)").waitFor({ state: "detached" });
 
 	// Check that the note has been deleted from the sidebar
 	await sidebar.assertLinks(["New Note"]);
