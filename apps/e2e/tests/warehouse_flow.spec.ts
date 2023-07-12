@@ -13,32 +13,36 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("should create a warehouse on 'Create warehouse' button click and show that warehouse in the sidebar nav", async ({ page }) => {
-	const sidebar = getDashboard(page).view("stock").sidebar();
+	const view = getDashboard(page).view("stock");
+	const sidebar = view.sidebar();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
 	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
-	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
+	await view.content().heading("New Warehouse").waitFor();
 
 	// Sidebar should display the "All" pseudo-warehouse and the newly created warehouse ("New Warehouse")
 	await sidebar.assertLinks(["All", "New Warehouse"]);
 });
 
 test("should allow for renaming of the warehouse using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getDashboard(page).view("stock").sidebar();
+	const view = getDashboard(page).view("stock");
+
+	const sidebar = view.sidebar();
+	const content = view.content();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
 	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
-	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
+	await content.heading("New Warehouse").waitFor();
 
 	// Rename "New Warehouse"
 	//
 	// Click the editable title
-	await page.locator("#table-section").getByRole("heading").click();
+	await content.heading("New Warehouse", { exact: true }).container.click();
 
 	// Wait for the TextEditable to become an input
-	const input = page.locator("#table-section").getByRole("heading").getByRole("textbox");
+	const input = content.container.getByRole("heading").getByRole("textbox");
 	await input.waitFor();
 
 	// Fill in the new name and submit
@@ -63,7 +67,10 @@ test("should assign default warehouse names (with sequenced index) to newly crea
 test('should continue the sequenced order from the highest numbered "New Warehouse" even if lower numbered warehouses have been renamed', async ({
 	page
 }) => {
-	const sidebar = getDashboard(page).view("stock").sidebar();
+	const view = getDashboard(page).view("stock");
+
+	const sidebar = view.sidebar();
+	const content = view.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
@@ -73,11 +80,11 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 
 	// Rename the first two warehouses
 	await sidebar.link("New Warehouse").click();
-	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
+	await content.heading("New Warehouse", { exact: true }).waitFor();
 	await renameEntity(page, "Warehouse 1");
 
 	await sidebar.link("New Warehouse (2)").click();
-	await page.getByRole("heading", { name: "New Warehouse (2)" }).waitFor();
+	await content.heading("New Warehouse (2)").waitFor();
 	await renameEntity(page, "Warehouse 2");
 
 	// The sidebar nav should display the updated warehouse names
@@ -87,14 +94,17 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 	await sidebar.createWarehouse();
 
 	// When naming a new warehouse, the naming sequence picks up after (existing) "New Warehouse (3)"
-	await page.getByRole("heading", { name: "New Warehouse (4)" }).waitFor();
+	await content.heading("New Warehouse (4)").waitFor();
 
 	// Check the nav links
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)", "New Warehouse (4)"]);
 });
 
 test("should reset the naming sequence when all warehouses with default names get renamed", async ({ page }) => {
-	const sidebar = getDashboard(page).view("stock").sidebar();
+	const view = getDashboard(page).view("stock");
+
+	const sidebar = view.sidebar();
+	const content = view.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
@@ -104,15 +114,15 @@ test("should reset the naming sequence when all warehouses with default names ge
 
 	// Rename all of the warehouses (restarting the naming sequence)
 	await sidebar.link("New Warehouse").click();
-	await page.getByRole("heading", { name: "New Warehouse" }).waitFor();
+	await content.heading("New Warehouse", { exact: true }).waitFor();
 	await renameEntity(page, "Warehouse 1");
 
 	await sidebar.link("New Warehouse (2)").click();
-	await page.getByRole("heading", { name: "New Warehouse (2)" }).waitFor();
+	await content.heading("New Warehouse (2)").waitFor();
 	await renameEntity(page, "Warehouse 2");
 
 	await sidebar.link("New Warehouse (3)").click();
-	await page.getByRole("heading", { name: "New Warehouse (3)" }).waitFor();
+	await content.heading("New Warehouse (3)").waitFor();
 	await renameEntity(page, "Warehouse 3");
 
 	// The sidebar nav should display the updated warehouse names
@@ -122,7 +132,7 @@ test("should reset the naming sequence when all warehouses with default names ge
 	await sidebar.createWarehouse();
 
 	// The new warehouse should now have the default name ("New Warehouse")
-	await page.getByRole("heading", { name: "New Warehouse", exact: true }).waitFor();
+	await content.heading("New Warehouse", { exact: true }).waitFor();
 
 	// "New Warehouse" appears last as nav items are sorted in chronological order (under the hood, using timestamped ids)
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3", "New Warehouse"]);

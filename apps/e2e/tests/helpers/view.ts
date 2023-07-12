@@ -1,8 +1,9 @@
 import type { Page, Locator } from "@playwright/test";
 
-import type { ViewInterface, ViewName, WaitForOpts, DashboardInterface, SidebarInterface } from "./types";
+import type { ViewInterface, ViewName, WaitForOpts, DashboardInterface, SidebarInterface, ContentInterface } from "./types";
 
 import { Sidebar } from "./sidebar";
+import { Content } from "./content";
 
 export class View implements ViewInterface {
 	#page: Page;
@@ -23,5 +24,9 @@ export class View implements ViewInterface {
 
 	sidebar(): SidebarInterface {
 		return new Sidebar(this.#page, this);
+	}
+
+	content(): ContentInterface {
+		return new Content(this.#page, this);
 	}
 }
