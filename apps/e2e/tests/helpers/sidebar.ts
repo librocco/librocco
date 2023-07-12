@@ -1,7 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
-import type { SidebarInterface, SideLinkGroupInterface, ViewInterface, WaitForOpts } from "./types";
+import type { ContentInterface, NavInterface, SidebarInterface, SideLinkGroupInterface, ViewInterface, WaitForOpts } from "./types";
 
+import { getDashboard } from "./dashboard";
 import { compareEntries } from "./utils";
 
 export class Sidebar implements SidebarInterface {
@@ -21,12 +22,12 @@ export class Sidebar implements SidebarInterface {
 		return this.container.waitFor(opts);
 	}
 
-	createWarehouse() {
-		return this.container.getByRole("button", { name: "Create warehouse" }).click();
+	async createWarehouse() {
+		return createEntity(this, this.#view.content(), "warehouse");
 	}
 
-	createNote() {
-		return this.container.getByRole("button", { name: "Create note" }).click();
+	async createNote() {
+		return createEntity(this, this.#view.content(), "note");
 	}
 
 	assertLinks(labels: string[]) {
@@ -91,7 +92,8 @@ class SideLinkGroup implements SideLinkGroupInterface {
 
 	async createNote() {
 		await this.open();
-		return this.container.getByRole("button", { name: "Create note" }).click();
+		const content = getDashboard(this.#page).view("inbound").content();
+		return createEntity(this, content, "note");
 	}
 
 	async assertLinks(labels: string[]) {
@@ -102,4 +104,23 @@ class SideLinkGroup implements SideLinkGroupInterface {
 	link(label: string) {
 		return this.container.getByRole("link", { name: label, exact: true });
 	}
+}
+
+async function createEntity(nav: NavInterface, content: ContentInterface, entity: "warehouse" | "note") {
+	// Save the title of the entuty currently open in the content section (if any)
+	const currentTitle = await content.heading().textContent();
+
+	// Create entity (note/warehouse)
+	await nav.container.getByRole("button", { name: `Create ${entity}` }).click();
+
+	// If current title, wait for it to get removed
+	if (currentTitle) {
+		await content.heading(currentTitle).waitFor({ state: "detached" });
+	}
+
+	// Wait for the new title to appear in the content section
+	const newTitle = await content.heading().container.textContent();
+
+	// Wait for the new title to appear in the nav
+	await nav.link(newTitle).waitFor();
 }
