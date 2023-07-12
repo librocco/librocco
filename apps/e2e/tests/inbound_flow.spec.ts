@@ -21,16 +21,15 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {
+	const view = getDashboard(page).view("inbound");
+
 	// Check that the sidebar shows the "All" group as well as one group per each of the created warehouses
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const sidebar = view.sidebar();
 	await sidebar.assertGroups(["All", "New Warehouse", "New Warehouse (2)"]);
 
 	// Create a new inbound note in the first warehouse
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 	await linkGroupWh1.createNote();
-
-	// Check that we've been redirected to the new note's page
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
 
 	// The new note link should be visible in the sidebar in both "All" and "New Warehouse" groups
 	await sidebar.linkGroup("All").assertLinks(["New Note"]);
@@ -40,14 +39,12 @@ test('should create a new inbound note, belonging to a particular warehouse on "
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const view = getDashboard(page).view("inbound");
+	const sidebar = view.sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create a new note
 	await linkGroupWh1.createNote();
-
-	// Check that we've been redirected to the new note's page
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
 
 	// Rename "New Note"
 	await renameEntity(page, "Note 1");
@@ -58,68 +55,62 @@ test("should allow for renaming of the note using the editable title and show th
 });
 
 test("note heading should display note name, warehouse it belongs to and 'updated at' timestamp", async ({ page }) => {
+	const view = getDashboard(page).view("inbound");
+
 	// Create a new note in the given warehouse
-	await getDashboard(page).view("inbound").sidebar().linkGroup("New Warehouse").createNote();
+	await view.sidebar().linkGroup("New Warehouse").createNote();
 
 	// Check note page contents
-	await page.getByRole("heading", { name: "New Note in New Warehouse" }).waitFor();
+	const content = view.content();
+	await content.heading("New Note").waitFor();
 
-	const updatedAtElement = page.getByText("Last updated:");
-	await updatedAtElement.waitFor();
-	const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent);
-
-	const updatedAt = new Date(
-		updatedAtString
-			// Replace the " at " separator (webkit formatted date) to a regular date string
-			.replace(" at ", ", ")
-			.replace("Last updated: ", "")
-	);
-
-	// Without mocking the date, we can't assert the exact date, but we can expect the updated at to be under a minute from now
-	expect(Date.now() - 60 * 1000).toBeLessThan(updatedAt.getTime());
+	// Check that the "Last updated: " timestamp is close to current date
+	await content.assertUpdatedAt(new Date());
 
 	// Should display "Draft" state
 	await page.getByText("Draft").waitFor();
 });
 
 test("should assign default name to note in sequential order", async ({ page }) => {
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const view = getDashboard(page).view("inbound");
 
-	// Create a new inbound note in the first warehouse
+	const sidebar = view.sidebar();
+
+	// Create two inbound notes, one in each warehouse
 	await sidebar.linkGroup("New Warehouse").createNote();
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
-
-	// The note naming sequence continues from the highest numbered note of all the inbound notes (regardless of the warehouse)
 	await sidebar.linkGroup("New Warehouse (2)").createNote();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
+
+	// Check the nav links
+	await sidebar.linkGroup("All").assertLinks(["New Note", "New Note (2)"]);
+	await sidebar.linkGroup("New Warehouse").assertLinks(["New Note"]);
+	await sidebar.linkGroup("New Warehouse (2)").assertLinks(["New Note (2)"]);
 });
 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
+	const view = getDashboard(page).view("inbound");
+
 	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
+	const content = view.content();
+
 	// Create three notes (we can use only "New Warehouse" for this)
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
-
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
-
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 
 	// Check the nav links before continuing
 	await linkGroupWh1.assertLinks(["New Note", "New Note (2)", "New Note (3)"]);
 
 	// Rename the first two notes
 	await linkGroupWh1.link("New Note").click();
-	await page.getByRole("heading", { name: "New Note in New Warehouse" }).waitFor();
+	await content.heading("New Note in New Warehouse").waitFor();
 	await renameEntity(page, "Note 1");
 
 	await linkGroupWh1.link("New Note (2)").click();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
+	await content.heading("New Note (2)").waitFor();
 	await renameEntity(page, "Note 2");
 
 	// Check the nav links for good measure
@@ -127,34 +118,34 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Creating a new note should continue off from "New Note (3)"
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (4)" }).waitFor();
+
+	await sidebar.assertLinks(["Note 1", "Note 2", "New Note (3)", "New Note (4)"]);
 });
 
 test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const view = getDashboard(page).view("inbound");
+
+	const sidebar = view.sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
+
+	const content = view.content();
 
 	// Create three notes (we can use only "New Warehouse" for this)
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
-
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
-
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
 
 	// Rename all of the notes
 	await linkGroupWh1.link("New Note").click();
-	await page.getByRole("heading", { name: "New Note in New Warehouse", exact: true }).waitFor();
+	await content.heading("New Note in New Warehouse").waitFor();
 	await renameEntity(page, "Note 1");
 
 	await linkGroupWh1.link("New Note (2)").click();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
+	await content.heading("New Note (2)").waitFor();
 	await renameEntity(page, "Note 2");
 
 	await linkGroupWh1.link("New Note (3)").click();
-	await page.getByRole("heading", { name: "New Note (3)" }).waitFor();
+	await content.heading("New Note (3)").waitFor();
 	await renameEntity(page, "Note 3");
 
 	// Wait for the last update to be shown in the sidebar
@@ -165,19 +156,21 @@ test("should reset the naming sequence when all notes with default names get ren
 
 	// Creating a new note should start over from "New Note"
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
+
+	await sidebar.assertLinks(["Note 1", "Note 2", "Note 3", "New Note"]);
 });
 
 test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
+	const view = getDashboard(page).view("inbound");
+
 	const sidebar = getDashboard(page).view("inbound").sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
-	// Create two notes in the given warehouse
-	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note" }).waitFor();
+	const content = view.content();
 
+	// Create two notes in the first warehouse
 	await linkGroupWh1.createNote();
-	await page.getByRole("heading", { name: "New Note (2)" }).waitFor();
+	await linkGroupWh1.createNote();
 
 	// Check the links
 	const linkGroupAll = sidebar.linkGroup("All");
