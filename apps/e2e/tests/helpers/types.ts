@@ -21,4 +21,19 @@ export interface MainNavInterface extends HelperLocator {
 	navigate(to: ViewName): Promise<ViewInterface>;
 }
 
-export interface ViewInterface extends HelperLocator {}
+export interface ViewInterface extends HelperLocator {
+	sidebar(): SidebarInterface;
+}
+
+export interface SidebarInterface extends HelperLocator {
+	createWarehouse(): Promise<void>;
+	createNote(): Promise<void>;
+	assertLinks(labels: string[]): Promise<void>;
+	link(label: string): Locator;
+	assertGroups(labels: string[]): Promise<void>;
+	linkGroup(name: string): SideLinkGroupInterface;
+}
+
+export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGroups" | "linkGroup" | "createWarehouse"> {
+	open(): Promise<void>;
+}
