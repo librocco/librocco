@@ -2,24 +2,22 @@ import { expect, test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
+import { getDashboard } from "./helpers";
 import { getSidebar, createDefaultWarehouses, renameEntity, getNoteStatePicker } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
+
 	// Wait for the app to become responsive (when the default view is loaded)
-	await page.getByRole("heading", { name: "All" }).getByText("All").waitFor();
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
 
 	// Create two warehouses first (to which we can add the notes)
 	await createDefaultWarehouses(page, 2);
 
 	// Navigate to the inbound note page
-	await page.getByRole("link", { name: "Inbound" }).click();
-
-	// Wait for the inbound page to load (assert this by "All" nav group being visible)
-	await page.locator('[data-view="inbound"]').waitFor();
-	// Wait for the sidebar to load
-	await getSidebar(page).linkGroup("All").waitFor();
+	await dashboard.navigate("inbound");
 });
 
 test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {

@@ -2,19 +2,19 @@ import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
+import { getDashboard } from "./helpers";
 import { getSidebar, renameEntity, getNoteStatePicker } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
-	// Wait for the app to become responsive (when the default view is loaded)
-	await page.getByRole("heading", { name: "All" }).getByText("All").waitFor();
+
+	// Wait for the app to become responsive
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await page.getByRole("link", { name: "Outbound" }).click();
-
-	// Wait for the inbound page to load (assert this by "All" nav group being visible)
-	await page.locator('[data-view="outbound"]').waitFor();
+	await dashboard.navigate("outbound");
 });
 
 test('should create a new outbound note, on "Create note" button click and show it in the sidebar', async ({ page }) => {
