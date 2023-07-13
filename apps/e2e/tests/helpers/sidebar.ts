@@ -13,11 +13,11 @@ export function getSidebar(page: Page): SidebarInterface {
 	};
 
 	const createWarehouse = async () => {
-		return createEntity(page, Object.assign(container, { link }), "warehouse");
+		return createEntity(Object.assign(container, { link }), "warehouse");
 	};
 
 	const createNote = async () => {
-		return createEntity(page, Object.assign(container, { link }), "note");
+		return createEntity(Object.assign(container, { link }), "note");
 	};
 
 	const assertLinks = (labels: string[]) => compareEntries(container, labels, "a");
@@ -61,7 +61,7 @@ function getSideLinkGroup(page: Page, sidebar: Locator, name: string): SideLinkG
 
 	const createNote = async () => {
 		await open();
-		return createEntity(page, Object.assign(container, { link }), "note");
+		return createEntity(Object.assign(container, { link }), "note");
 	};
 
 	const assertLinks = async (labels: string[]) => {
@@ -72,8 +72,8 @@ function getSideLinkGroup(page: Page, sidebar: Locator, name: string): SideLinkG
 	return Object.assign(container, { link, isExpanded, open, createNote, assertLinks });
 }
 
-async function createEntity(page: Page, nav: NavInterface, entity: "warehouse" | "note") {
-	const content = getDashboard(page).content();
+async function createEntity(nav: NavInterface, entity: "warehouse" | "note") {
+	const content = getDashboard(nav.page()).content();
 
 	// Save the title of the entuty currently open in the content section (if any)
 	const currentTitle = await content.heading().getTitle({ timeout: 10 });
