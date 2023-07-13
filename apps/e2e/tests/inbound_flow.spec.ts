@@ -1,5 +1,7 @@
 import { test } from "@playwright/test";
 
+import { NoteState } from "@librocco/shared";
+
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
@@ -65,7 +67,7 @@ test("note heading should display note name, warehouse it belongs to and 'update
 	await content.assertUpdatedAt(new Date());
 
 	// Should display "Draft" state
-	await page.getByText("Draft").waitFor();
+	await content.statePicker().assertState(NoteState.Draft);
 });
 
 test("should assign default name to note in sequential order", async ({ page }) => {
@@ -173,9 +175,7 @@ test("should remove the note from the sidebar when the note is deleted", async (
 	await linkGroupWh1.assertLinks(["New Note", "New Note (2)"]);
 
 	// Delete the "New Note (2)" note (we're already at "New Note (2)" page)
-	const noteStatePicker = getNoteStatePicker(page);
-	await noteStatePicker.locator("button").click();
-	await noteStatePicker.getByText("Delete", { exact: true }).click();
+	await content.statePicker().select(NoteState.Deleted);
 
 	// Check that the note has been deleted from the sidebar
 	await linkGroupAll.assertLinks(["New Note"]);
