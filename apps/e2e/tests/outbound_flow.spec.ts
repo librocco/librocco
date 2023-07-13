@@ -18,22 +18,21 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('should create a new outbound note, on "Create note" button click and show it in the sidebar', async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
-	const sidebar = view.sidebar();
+	const dasbboard = getDashboard(page);
+	const sidebar = dasbboard.sidebar();
 
 	// Create a new note
 	await sidebar.createNote();
 
 	// Check that we've been redirected to the new note's page
-	await view.content().heading("New Note").waitFor();
+	await dasbboard.content().heading("New Note").waitFor();
 
 	// The sidebar should show only the created note at this point
 	await sidebar.assertLinks(["New Note"]);
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
-	const sidebar = view.sidebar();
+	const sidebar = getDashboard(page).sidebar();
 
 	// Create a new note
 	await sidebar.createNote();
@@ -46,10 +45,10 @@ test("should allow for renaming of the note using the editable title and show th
 });
 
 test("note heading should display note name, 'updated at' timestamp and note state", async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create a new note
 	await sidebar.createNote();
@@ -65,10 +64,10 @@ test("note heading should display note name, 'updated at' timestamp and note sta
 });
 
 test("should assign default name to notes in sequential order", async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create a new note
 	await sidebar.createNote();
@@ -82,10 +81,10 @@ test("should assign default name to notes in sequential order", async ({ page })
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
-	const view = getDashboard(page).view("outbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create three notes (we can use only "New Warehouse" for this)
 	await sidebar.createNote();
@@ -114,7 +113,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 });
 
 test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
+	const view = getDashboard(page);
 
 	const sidebar = view.sidebar();
 	const content = view.content();
@@ -147,10 +146,7 @@ test("should reset the naming sequence when all notes with default names get ren
 });
 
 test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
-	const view = getDashboard(page).view("outbound");
-
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = getDashboard(page).sidebar();
 
 	// Create two notes in the given warehouse
 	await sidebar.createNote();

@@ -13,23 +13,24 @@ test.beforeEach(async ({ page }) => {
 });
 
 test("should create a warehouse on 'Create warehouse' button click and show that warehouse in the sidebar nav", async ({ page }) => {
-	const view = getDashboard(page).view("stock");
-	const sidebar = view.sidebar();
+	const dashboard = getDashboard(page);
+	const sidebar = dashboard.sidebar();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
+
 	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
-	await view.content().heading("New Warehouse").waitFor();
+	await dashboard.content().heading("New Warehouse").waitFor();
 
 	// Sidebar should display the "All" pseudo-warehouse and the newly created warehouse ("New Warehouse")
 	await sidebar.assertLinks(["All", "New Warehouse"]);
 });
 
 test("should allow for renaming of the warehouse using the editable title and show the update in the sidebar", async ({ page }) => {
-	const view = getDashboard(page).view("stock");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create the new warehouse by clicking the "Create warehouse" button
 	await sidebar.createWarehouse();
@@ -55,22 +56,20 @@ test("should allow for renaming of the warehouse using the editable title and sh
 });
 
 test("should assign default warehouse names (with sequenced index) to newly created warehouses", async ({ page }) => {
-	const sidebar = getDashboard(page).view("stock").sidebar();
-
 	// Create 3 new warehouses by clicking on the 'Create warehouse' button
 	await createDefaultWarehouses(page, 3);
 
 	// We can check the naming sequence by looking at the sidebar nav
-	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
+	await getDashboard(page).sidebar().assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
 });
 
 test('should continue the sequenced order from the highest numbered "New Warehouse" even if lower numbered warehouses have been renamed', async ({
 	page
 }) => {
-	const view = getDashboard(page).view("stock");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);
@@ -101,10 +100,10 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 });
 
 test("should reset the naming sequence when all warehouses with default names get renamed", async ({ page }) => {
-	const view = getDashboard(page).view("stock");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
-	const content = view.content();
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
 	await createDefaultWarehouses(page, 3);

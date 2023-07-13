@@ -11,10 +11,12 @@ export interface HelperLocator {
 }
 
 export interface DashboardInterface {
-	nav(): MainNavInterface;
-	navigate(to: ViewName): Promise<ViewInterface>;
-	view(name: ViewName): ViewInterface;
 	waitFor(opts?: WaitForOpts): Promise<void>;
+	nav(): MainNavInterface;
+	navigate(to: ViewName): Promise<void>;
+	view(name: ViewName): ViewInterface;
+	sidebar(): SidebarInterface;
+	content(): ContentInterface;
 }
 
 export interface NavInterface extends HelperLocator {
@@ -22,13 +24,10 @@ export interface NavInterface extends HelperLocator {
 }
 
 export interface MainNavInterface extends HelperLocator {
-	navigate(to: ViewName): Promise<ViewInterface>;
+	navigate(to: ViewName): Promise<void>;
 }
 
-export interface ViewInterface extends HelperLocator {
-	sidebar(): SidebarInterface;
-	content(): ContentInterface;
-}
+export interface ViewInterface extends HelperLocator {}
 
 export interface SidebarInterface extends HelperLocator {
 	createWarehouse(): Promise<void>;

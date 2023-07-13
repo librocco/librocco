@@ -21,10 +21,8 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
-
 	// Check that the sidebar shows the "All" group as well as one group per each of the created warehouses
-	const sidebar = view.sidebar();
+	const sidebar = getDashboard(page).sidebar();
 	await sidebar.assertGroups(["All", "New Warehouse", "New Warehouse (2)"]);
 
 	// Create a new inbound note in the first warehouse
@@ -39,8 +37,7 @@ test('should create a new inbound note, belonging to a particular warehouse on "
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
-	const sidebar = view.sidebar();
+	const sidebar = getDashboard(page).sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create a new note
@@ -55,13 +52,13 @@ test("should allow for renaming of the note using the editable title and show th
 });
 
 test("note heading should display note name, warehouse it belongs to and 'updated at' timestamp", async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
+	const dashboard = getDashboard(page);
 
 	// Create a new note in the given warehouse
-	await view.sidebar().linkGroup("New Warehouse").createNote();
+	await dashboard.sidebar().linkGroup("New Warehouse").createNote();
 
 	// Check note page contents
-	const content = view.content();
+	const content = dashboard.content();
 	await content.heading("New Note").waitFor();
 
 	// Check that the "Last updated: " timestamp is close to current date
@@ -72,9 +69,7 @@ test("note heading should display note name, warehouse it belongs to and 'update
 });
 
 test("should assign default name to note in sequential order", async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
-
-	const sidebar = view.sidebar();
+	const sidebar = getDashboard(page).sidebar();
 
 	// Create two inbound notes, one in each warehouse
 	await sidebar.linkGroup("New Warehouse").createNote();
@@ -89,12 +84,12 @@ test("should assign default name to note in sequential order", async ({ page }) 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
-	const view = getDashboard(page).view("inbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const sidebar = dashboard.sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
-	const content = view.content();
+	const content = dashboard.content();
 
 	// Create three notes (we can use only "New Warehouse" for this)
 	await linkGroupWh1.createNote();
@@ -123,12 +118,12 @@ test("should continue the naming sequence from the highest sequenced note name (
 });
 
 test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = view.sidebar();
+	const sidebar = dashboard.sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
-	const content = view.content();
+	const content = dashboard.content();
 
 	// Create three notes (we can use only "New Warehouse" for this)
 	await linkGroupWh1.createNote();
@@ -161,12 +156,12 @@ test("should reset the naming sequence when all notes with default names get ren
 });
 
 test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
-	const view = getDashboard(page).view("inbound");
+	const dashboard = getDashboard(page);
 
-	const sidebar = getDashboard(page).view("inbound").sidebar();
+	const sidebar = dashboard.sidebar();
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
-	const content = view.content();
+	const content = dashboard.content();
 
 	// Create two notes in the first warehouse
 	await linkGroupWh1.createNote();
