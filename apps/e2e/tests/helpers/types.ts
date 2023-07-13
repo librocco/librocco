@@ -5,13 +5,8 @@ export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 
 export type ViewName = "inbound" | "outbound" | "stock";
 
-export interface HelperLocator {
-	container: Locator;
-	waitFor: Locator["waitFor"];
-}
-
 export interface DashboardInterface {
-	waitFor(opts?: WaitForOpts): Promise<void>;
+	waitFor: Locator["waitFor"];
 	nav(): MainNavInterface;
 	navigate(to: ViewName): Promise<void>;
 	view(name: ViewName): ViewInterface;
@@ -19,17 +14,17 @@ export interface DashboardInterface {
 	content(): ContentInterface;
 }
 
-export interface NavInterface extends HelperLocator {
+export interface NavInterface extends Locator {
 	link(label: string, opts?: { active?: boolean }): Locator;
 }
 
-export interface MainNavInterface extends HelperLocator {
+export interface MainNavInterface extends Locator {
 	navigate(to: ViewName): Promise<void>;
 }
 
-export interface ViewInterface extends HelperLocator {}
+export interface ViewInterface extends Locator {}
 
-export interface SidebarInterface extends HelperLocator {
+export interface SidebarInterface extends Locator {
 	createWarehouse(): Promise<void>;
 	createNote(): Promise<void>;
 	assertLinks(labels: string[]): Promise<void>;
@@ -42,15 +37,15 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 	open(): Promise<void>;
 }
 
-export interface ContentInterface extends HelperLocator {
+export interface ContentInterface extends Locator {
 	heading(title?: string, opts?: GetByTextOpts): ContentHeadingInterface;
 	updatedAt(): Promise<Date>;
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
 }
 
-export interface ContentHeadingInterface extends HelperLocator {
-	textContent(opts?: { timeout?: number }): Promise<string>;
+export interface ContentHeadingInterface extends Locator {
+	getTitle(opts?: WaitForOpts): Promise<string>;
 }
 
-export interface StatePickerInterface extends HelperLocator {}
+export interface StatePickerInterface extends Locator {}

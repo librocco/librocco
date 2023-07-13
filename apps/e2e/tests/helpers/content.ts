@@ -2,27 +2,13 @@ import { type Locator, type Page, expect } from "@playwright/test";
 
 import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
 
-export class Content implements ContentInterface {
-	#page: Page;
+export function getContent(page: Page): ContentInterface {
+	const container = page.locator("#table-section");
 
-	container: Locator;
+	const heading = (title?: string, opts?: GetByTextOpts): ContentHeadingInterface => getHeading(container, title, opts);
 
-	constructor(page: Page) {
-		this.#page = page;
-
-		this.container = page.locator("#table-section");
-	}
-
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
-
-	heading(title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
-		return new ContentHeading(this.#page, this, title, opts);
-	}
-
-	async updatedAt(): Promise<Date> {
-		const updatedAtElement = this.container.getByText("Last updated:");
+	const updatedAt = async (): Promise<Date> => {
+		const updatedAtElement = container.getByText("Last updated:");
 		await updatedAtElement.waitFor();
 
 		const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent);
@@ -33,62 +19,42 @@ export class Content implements ContentInterface {
 				.replace(" at ", ", ")
 				.replace("Last updated: ", "")
 		);
-	}
+	};
 
-	async assertUpdatedAt(date: Date): Promise<void> {
-		const updatedAt = await this.updatedAt();
-		const updatedAtMillis = updatedAt.getTime();
+	const assertUpdatedAt = async (date: Date): Promise<void> => {
+		const updatedAtDate = await updatedAt();
+		const updatedAtMillis = updatedAtDate.getTime();
 
 		// Without mocking the date, we can't assert the exact date, but we can expect the updated at to be under a minute from now
 		const dateMillis = date.getTime() - 60 * 1000;
 
 		expect(dateMillis).toBeLessThan(updatedAtMillis);
-	}
+	};
 
-	statePicker(): StatePickerInterface {
-		return new StatePicker(this.#page, this);
-	}
+	const statePicker = (): StatePickerInterface => {
+		return getStatePicker(container);
+	};
+
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker });
 }
 
-class ContentHeading implements ContentHeadingInterface {
-	#page: Page;
-	#content: ContentInterface;
+function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
+	const container = title
+		? content.getByRole("heading", { name: title }).getByText(title, opts)
+		: content.getByRole("heading").locator("p");
 
-	container: Locator;
+	const getTitle = async (opts?: WaitForOpts) => {
+		try {
+			const textContent = await container.textContent(opts);
+			return textContent.trim();
+		} catch {
+			return "";
+		}
+	};
 
-	constructor(page: Page, content: ContentInterface, title?: string, opts?: GetByTextOpts) {
-		const heading = content.container.getByRole("heading", opts);
-		this.container = title ? heading.getByText(title) : heading.locator("p");
-	}
-
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
-
-	textContent(opts: { timeout?: number } = { timeout: 500 }) {
-		return (
-			this.container
-				.textContent(opts)
-				// If there's an error (the heading probably isn't visible, fall back to empty string)
-				.catch(() => "")
-		);
-	}
+	return Object.assign(container, { getTitle });
 }
 
-class StatePicker implements StatePickerInterface {
-	#page: Page;
-	#content: ContentInterface;
-
-	container: Locator;
-
-	constructor(page: Page, content: ContentInterface) {
-		this.#page = page;
-		this.#content = content;
-
-		this.container = page.locator("#note-state-picker");
-	}
-
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
+function getStatePicker(content: Locator): StatePickerInterface {
+	return content.locator("#note-state-picker");
 }
