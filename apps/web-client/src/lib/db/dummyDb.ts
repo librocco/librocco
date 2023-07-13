@@ -5,7 +5,7 @@
 
 import { derived } from "svelte/store";
 
-import { NoteState } from "$lib/enums/db";
+import { NoteState } from "@librocco/shared";
 
 import type { DbInterface, DbStream, NavListEntry, Stores } from "$lib/types/db";
 
