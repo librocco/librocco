@@ -1,16 +1,14 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-import type { ViewInterface, WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
+import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
 
 export class Content implements ContentInterface {
 	#page: Page;
-	#view: ViewInterface;
 
 	container: Locator;
 
-	constructor(page: Page, view: ViewInterface) {
+	constructor(page: Page) {
 		this.#page = page;
-		this.#view = view;
 
 		this.container = page.locator("#table-section");
 	}

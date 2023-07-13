@@ -1,6 +1,7 @@
 import type { Locator, Page } from "@playwright/test";
+import { getDashboard } from "./dashboard";
 
-import type { ViewName, WaitForOpts, MainNavInterface, DashboardInterface } from "./types";
+import type { ViewName, WaitForOpts, MainNavInterface } from "./types";
 
 const viewLinkLookup: Record<ViewName, string> = {
 	inbound: "Inbound",
@@ -10,13 +11,11 @@ const viewLinkLookup: Record<ViewName, string> = {
 
 export class MainNav implements MainNavInterface {
 	#page: Page;
-	#dashboard: DashboardInterface;
 
 	container: Locator;
 
-	constructor(page: Page, dashboard: DashboardInterface) {
+	constructor(page: Page) {
 		this.#page = page;
-		this.#dashboard = dashboard;
 
 		this.container = page.getByRole("navigation", { name: "Main navigation" });
 	}
@@ -32,8 +31,6 @@ export class MainNav implements MainNavInterface {
 	async navigate(to: ViewName) {
 		const label = viewLinkLookup[to];
 		this.container.getByRole("link", { name: label, exact: true }).click();
-		const nextView = this.#dashboard.view(to);
-		await nextView.waitFor();
-		return nextView;
+		await getDashboard(this.#page).view(to).waitFor();
 	}
 }

@@ -1,19 +1,17 @@
 import type { Locator, Page } from "@playwright/test";
 
-import type { ContentInterface, NavInterface, SidebarInterface, SideLinkGroupInterface, ViewInterface, WaitForOpts } from "./types";
+import type { NavInterface, SidebarInterface, SideLinkGroupInterface, WaitForOpts } from "./types";
 
 import { getDashboard } from "./dashboard";
 import { compareEntries } from "./utils";
 
 export class Sidebar implements SidebarInterface {
 	#page: Page;
-	#view: ViewInterface;
 
 	container: Locator;
 
-	constructor(page: Page, view: ViewInterface) {
+	constructor(page: Page) {
 		this.#page = page;
-		this.#view = view;
 
 		this.container = page.getByRole("navigation", { name: "Sidebar" });
 	}
@@ -23,11 +21,11 @@ export class Sidebar implements SidebarInterface {
 	}
 
 	async createWarehouse() {
-		return createEntity(this, this.#view.content(), "warehouse");
+		return createEntity(this.#page, this, "warehouse");
 	}
 
 	async createNote() {
-		return createEntity(this, this.#view.content(), "note");
+		return createEntity(this.#page, this, "note");
 	}
 
 	assertLinks(labels: string[]) {
@@ -49,7 +47,6 @@ export class Sidebar implements SidebarInterface {
 
 class SideLinkGroup implements SideLinkGroupInterface {
 	#page: Page;
-	#sidebar: SidebarInterface;
 
 	container: Locator;
 
@@ -58,7 +55,6 @@ class SideLinkGroup implements SideLinkGroupInterface {
 
 	constructor(page: Page, sidebar: SidebarInterface, name: string) {
 		this.#page = page;
-		this.#sidebar = sidebar;
 
 		// Transform group name to a valid id (same logic we're using to assign id to the element)
 		this.#groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[()]/g, "")}`;
@@ -92,8 +88,7 @@ class SideLinkGroup implements SideLinkGroupInterface {
 
 	async createNote() {
 		await this.open();
-		const content = getDashboard(this.#page).view("inbound").content();
-		return createEntity(this, content, "note");
+		return createEntity(this.#page, this, "note");
 	}
 
 	async assertLinks(labels: string[]) {
@@ -106,7 +101,9 @@ class SideLinkGroup implements SideLinkGroupInterface {
 	}
 }
 
-async function createEntity(nav: NavInterface, content: ContentInterface, entity: "warehouse" | "note") {
+async function createEntity(page: Page, nav: NavInterface, entity: "warehouse" | "note") {
+	const content = getDashboard(page).content();
+
 	// Save the title of the entuty currently open in the content section (if any)
 	const currentTitle = await content.heading().textContent();
 
