@@ -3,6 +3,7 @@ import { type Locator, type Page, expect } from "@playwright/test";
 import { type NoteState } from "@librocco/shared";
 
 import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
+import { getDashboard } from "./dashboard";
 
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#table-section");
@@ -41,20 +42,31 @@ export function getContent(page: Page): ContentInterface {
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
-	const container = title
-		? content.getByRole("heading", { name: title }).getByText(title, opts)
-		: content.getByRole("heading").locator("p");
+	const container = content.getByRole("heading");
+
+	const element = title ? container.getByText(title, opts) : container.locator("p");
 
 	const getTitle = async (opts?: WaitForOpts) => {
 		try {
-			const textContent = await container.textContent(opts);
+			const textContent = await element.textContent(opts);
 			return textContent.trim();
 		} catch {
 			return "";
 		}
 	};
 
-	return Object.assign(container, { getTitle });
+	const rename = async (newName: string) => {
+		await element.click();
+
+		const input = container.getByRole("textbox");
+
+		await input.fill(newName);
+		await input.press("Enter");
+
+		await getDashboard(container.page()).sidebar().link(newName).waitFor();
+	};
+
+	return Object.assign(container, { getTitle, rename });
 }
 
 function getStatePicker(content: Locator): StatePickerInterface {

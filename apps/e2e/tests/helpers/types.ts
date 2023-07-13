@@ -48,6 +48,7 @@ export interface ContentInterface extends Locator {
 
 export interface ContentHeadingInterface extends Locator {
 	getTitle(opts?: WaitForOpts): Promise<string>;
+	rename(newTitle: string): Promise<void>;
 }
 
 export interface StatePickerInterface extends Locator {
