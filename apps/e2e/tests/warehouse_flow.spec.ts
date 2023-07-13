@@ -40,10 +40,10 @@ test("should allow for renaming of the warehouse using the editable title and sh
 	// Rename "New Warehouse"
 	//
 	// Click the editable title
-	await content.heading("New Warehouse", { exact: true }).container.click();
+	await content.heading("New Warehouse", { exact: true }).click();
 
 	// Wait for the TextEditable to become an input
-	const input = content.container.getByRole("heading").getByRole("textbox");
+	const input = content.getByRole("heading").getByRole("textbox");
 	await input.waitFor();
 
 	// Fill in the new name and submit

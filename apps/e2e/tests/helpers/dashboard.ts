@@ -1,55 +1,24 @@
 import type { Page } from "@playwright/test";
 
-import type {
-	ContentInterface,
-	DashboardInterface,
-	MainNavInterface,
-	SidebarInterface,
-	ViewInterface,
-	ViewName,
-	WaitForOpts
-} from "./types";
+import type { DashboardInterface, ViewName, WaitForOpts } from "./types";
 
-import { MainNav } from "./navigation";
-import { View } from "./view";
-import { Sidebar } from "./sidebar";
-import { Content } from "./content";
+import { getMainNav } from "./navigation";
+import { getSidebar } from "./sidebar";
+import { getContent } from "./content";
 
-import { getSidebar } from "../utils";
+export function getDashboard(page: Page): DashboardInterface {
+	const nav = () => getMainNav(page);
 
-export function getDashboard(page: Page) {
-	return new Dashboard(page);
-}
+	const navigate = (to: ViewName) => nav().navigate(to);
 
-class Dashboard implements DashboardInterface {
-	#page: Page;
+	const view = (name: ViewName) => page.locator(`[data-view="${name}"]`);
 
-	constructor(page: Page) {
-		this.#page = page;
-	}
+	const sidebar = () => getSidebar(page);
 
-	nav(): MainNavInterface {
-		return new MainNav(this.#page);
-	}
-
-	navigate(to: ViewName) {
-		return this.nav().navigate(to);
-	}
-
-	view(name: ViewName): ViewInterface {
-		return new View(this.#page, name);
-	}
+	const content = () => getContent(page);
 
 	// The dashboard is ready (as well as the app when the default warehouse is loaded - shown in the side nav)
-	waitFor(opts?: WaitForOpts) {
-		return getSidebar(this.#page).link("All").waitFor(opts);
-	}
+	const waitFor = (opts?: WaitForOpts) => sidebar().link("All").waitFor(opts);
 
-	sidebar(): SidebarInterface {
-		return new Sidebar(this.#page);
-	}
-
-	content(): ContentInterface {
-		return new Content(this.#page);
-	}
+	return { waitFor, nav, navigate, view, sidebar, content };
 }

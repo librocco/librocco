@@ -1,7 +1,8 @@
-import type { Locator, Page } from "@playwright/test";
-import { getDashboard } from "./dashboard";
+import type { Page } from "@playwright/test";
 
-import type { ViewName, WaitForOpts, MainNavInterface } from "./types";
+import type { ViewName, MainNavInterface } from "./types";
+
+import { getDashboard } from "./dashboard";
 
 const viewLinkLookup: Record<ViewName, string> = {
 	inbound: "Inbound",
@@ -9,28 +10,16 @@ const viewLinkLookup: Record<ViewName, string> = {
 	stock: "Stock"
 };
 
-export class MainNav implements MainNavInterface {
-	#page: Page;
+export function getMainNav(page: Page): MainNavInterface {
+	const container = page.getByRole("navigation", { name: "Main navigation" });
 
-	container: Locator;
+	const link = (label: string) => container.getByRole("link", { name: label, exact: true });
 
-	constructor(page: Page) {
-		this.#page = page;
-
-		this.container = page.getByRole("navigation", { name: "Main navigation" });
-	}
-
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
-
-	link(label: string) {
-		return this.container.getByRole("link", { name: label, exact: true });
-	}
-
-	async navigate(to: ViewName) {
+	const navigate = async (to: ViewName) => {
 		const label = viewLinkLookup[to];
-		this.container.getByRole("link", { name: label, exact: true }).click();
-		await getDashboard(this.#page).view(to).waitFor();
-	}
+		container.getByRole("link", { name: label, exact: true }).click();
+		await getDashboard(page).view(to).waitFor();
+	};
+
+	return Object.assign(container, { link, navigate });
 }

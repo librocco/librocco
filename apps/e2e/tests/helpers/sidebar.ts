@@ -5,118 +5,89 @@ import type { NavInterface, SidebarInterface, SideLinkGroupInterface, WaitForOpt
 import { getDashboard } from "./dashboard";
 import { compareEntries } from "./utils";
 
-export class Sidebar implements SidebarInterface {
-	#page: Page;
+export function getSidebar(page: Page): SidebarInterface {
+	const container = page.getByRole("navigation", { name: "Sidebar" });
 
-	container: Locator;
+	const link = (label: string) => {
+		return container.getByRole("link", { name: label, exact: true });
+	};
 
-	constructor(page: Page) {
-		this.#page = page;
+	const createWarehouse = async () => {
+		return createEntity(page, Object.assign(container, { link }), "warehouse");
+	};
 
-		this.container = page.getByRole("navigation", { name: "Sidebar" });
-	}
+	const createNote = async () => {
+		return createEntity(page, Object.assign(container, { link }), "note");
+	};
 
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
+	const assertLinks = (labels: string[]) => compareEntries(container, labels, "a");
 
-	async createWarehouse() {
-		return createEntity(this.#page, this, "warehouse");
-	}
+	const assertGroups = (labels: string[]) => compareEntries(container, labels, "button");
 
-	async createNote() {
-		return createEntity(this.#page, this, "note");
-	}
+	const linkGroup = (name: string): SideLinkGroupInterface => getSideLinkGroup(page, container, name);
 
-	assertLinks(labels: string[]) {
-		return compareEntries(this.container, labels, "a");
-	}
-
-	link(label: string) {
-		return this.container.getByRole("link", { name: label, exact: true });
-	}
-
-	assertGroups(labels: string[]) {
-		return compareEntries(this.container, labels, "button");
-	}
-
-	linkGroup(name: string): SideLinkGroupInterface {
-		return new SideLinkGroup(this.#page, this, name);
-	}
+	return Object.assign(container, { link, createWarehouse, createNote, assertLinks, assertGroups, linkGroup });
 }
 
-class SideLinkGroup implements SideLinkGroupInterface {
-	#page: Page;
+function getSideLinkGroup(page: Page, sidebar: Locator, name: string): SideLinkGroupInterface {
+	// Transform group name to a valid id (same logic we're using to assign id to the element)
+	const groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[()]/g, "")}`;
 
-	container: Locator;
+	// Get group container (using the id)
+	const container = sidebar.locator(`#${groupId}`);
 
-	#groupId: string;
-	#expandButton: Locator;
+	// Expand button will have the "group name" as its label
+	const expandButton = container.getByRole("button", { name });
 
-	constructor(page: Page, sidebar: SidebarInterface, name: string) {
-		this.#page = page;
-
-		// Transform group name to a valid id (same logic we're using to assign id to the element)
-		this.#groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[()]/g, "")}`;
-
-		// Get group container (using the id)
-		this.container = sidebar.container.locator(`#${this.#groupId}`);
-
-		// Expand button will have the "group name" as its label
-		this.#expandButton = this.container.getByRole("button", { name });
-	}
-
-	waitFor(opts?: WaitForOpts) {
-		return this.container.waitFor(opts);
-	}
+	const link = (label: string) => {
+		return container.getByRole("link", { name: label, exact: true });
+	};
 
 	// When the group is expanded, the expand button will have an aria attribute "aria-expanded" set to "true"
-	async isExpanded() {
-		const expanded = await this.#expandButton.getAttribute("aria-expanded");
+	const isExpanded = async () => {
+		const expanded = await expandButton.getAttribute("aria-expanded");
 		return expanded === "true";
-	}
+	};
 
-	async open() {
-		const expanded = await this.isExpanded();
+	const open = async () => {
+		const expanded = await isExpanded();
 		if (expanded) {
 			return;
 		}
-		await this.#expandButton.click();
+		await expandButton.click();
 		// Wait for the group to expand (the group will have an expand button at all times, if expanded it will have at least two)
-		await this.#page.waitForFunction((groupId) => document.getElementById(groupId).children.length > 1, this.#groupId);
-	}
+		await page.waitForFunction((groupId) => document.getElementById(groupId).children.length > 1, groupId);
+	};
 
-	async createNote() {
-		await this.open();
-		return createEntity(this.#page, this, "note");
-	}
+	const createNote = async () => {
+		await open();
+		return createEntity(page, Object.assign(container, { link }), "note");
+	};
 
-	async assertLinks(labels: string[]) {
-		await this.open();
-		return compareEntries(this.container, labels, "a");
-	}
+	const assertLinks = async (labels: string[]) => {
+		await open();
+		return compareEntries(container, labels, "a");
+	};
 
-	link(label: string) {
-		return this.container.getByRole("link", { name: label, exact: true });
-	}
+	return Object.assign(container, { link, isExpanded, open, createNote, assertLinks });
 }
 
 async function createEntity(page: Page, nav: NavInterface, entity: "warehouse" | "note") {
 	const content = getDashboard(page).content();
 
 	// Save the title of the entuty currently open in the content section (if any)
-	const currentTitle = await content.heading().textContent();
+	const currentTitle = await content.heading().getTitle({ timeout: 10 });
 
 	// Create entity (note/warehouse)
-	await nav.container.getByRole("button", { name: `Create ${entity}` }).click();
+	await nav.getByRole("button", { name: `Create ${entity}` }).click();
 
 	// If current title, wait for it to get removed
 	if (currentTitle) {
-		await content.heading(currentTitle).waitFor({ state: "detached" });
+		await content.heading(currentTitle, { exact: true }).waitFor({ state: "detached" });
 	}
 
 	// Wait for the new title to appear in the content section
-	const newTitle = await content.heading().container.textContent();
+	const newTitle = await content.heading().getTitle();
 
 	// Wait for the new title to appear in the nav
 	await nav.link(newTitle).waitFor();
