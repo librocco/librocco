@@ -1,5 +1,7 @@
 import type { Locator } from "@playwright/test";
 
+import type { NoteState } from "@librocco/shared";
+
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 
@@ -48,4 +50,8 @@ export interface ContentHeadingInterface extends Locator {
 	getTitle(opts?: WaitForOpts): Promise<string>;
 }
 
-export interface StatePickerInterface extends Locator {}
+export interface StatePickerInterface extends Locator {
+	getState(): Promise<NoteState>;
+	assertState(state: NoteState): Promise<void>;
+	select(state: NoteState): Promise<void>;
+}

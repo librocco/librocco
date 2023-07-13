@@ -1,5 +1,7 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
+import { type NoteState } from "@librocco/shared";
+
 import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
 
 export function getContent(page: Page): ContentInterface {
@@ -56,5 +58,39 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 }
 
 function getStatePicker(content: Locator): StatePickerInterface {
-	return content.locator("#note-state-picker");
+	const container = content.locator("#note-state-picker");
+
+	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState>;
+
+	const assertState = (state: NoteState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
+
+	const expandButton = container.locator("button[aria-haspopup='true']");
+
+	const isExpanded = async () => {
+		const expanded = await expandButton.getAttribute("aria-expanded");
+		return expanded === "true";
+	};
+
+	const open = async () => {
+		const expanded = await isExpanded();
+		if (expanded) {
+			return;
+		}
+		await expandButton.click();
+	};
+
+	const select = async (newState: NoteState) => {
+		const currentState = await getState();
+
+		console.log("Current state:", currentState);
+		if (currentState === newState) {
+			return;
+		}
+
+		await open();
+
+		await container.locator(`[data-option="${newState}"]`).click();
+	};
+
+	return Object.assign(container, { getState, assertState, select });
 }
