@@ -2,9 +2,7 @@
 import { expect } from "vitest";
 import { BehaviorSubject, switchMap } from "rxjs";
 
-import { testUtils } from "@librocco/shared";
-
-import { NoteState } from "@/enums";
+import { NoteState, testUtils } from "@librocco/shared";
 
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
