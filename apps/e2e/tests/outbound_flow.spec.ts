@@ -5,7 +5,6 @@ import { NoteState } from "@librocco/shared";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -34,13 +33,16 @@ test('should create a new outbound note, on "Create note" button click and show 
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getDashboard(page).sidebar();
+	const dashboard = getDashboard(page);
+
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
 
 	// Create a new note
 	await sidebar.createNote();
 
 	// Rename "New Note"
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	// The sidebar should display the updated note name
 	await sidebar.assertLinks(["Note 1"]);
@@ -99,11 +101,11 @@ test("should continue the naming sequence from the highest sequenced note name (
 	// Rename the first two notes
 	await sidebar.link("New Note").click();
 	await content.heading("New Note", { exact: true }).waitFor();
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	await sidebar.link("New Note (2)").click();
 	await content.heading("New Note (2)").waitFor();
-	await renameEntity(page, "Note 2");
+	await content.heading().rename("Note 2");
 
 	// Check the nav links for good measure
 	await sidebar.assertLinks(["Note 1", "Note 2", "New Note (3)"]);
@@ -128,15 +130,15 @@ test("should reset the naming sequence when all notes with default names get ren
 	// Rename all of the notes
 	await sidebar.link("New Note").click();
 	await content.heading("New Note", { exact: true }).waitFor();
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	await sidebar.link("New Note (2)").click();
 	await content.heading("New Note (2)").waitFor();
-	await renameEntity(page, "Note 2");
+	await content.heading().rename("Note 2");
 
 	await sidebar.link("New Note (3)").click();
 	await content.heading("New Note (3)").waitFor();
-	await renameEntity(page, "Note 3");
+	await content.heading().rename("Note 3");
 
 	// Check the nav links for good measure
 	await sidebar.assertLinks(["Note 1", "Note 2", "Note 3"]);
