@@ -66,7 +66,7 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 		await getDashboard(container.page()).sidebar().link(newName).waitFor();
 	};
 
-	return Object.assign(container, { getTitle, rename });
+	return Object.assign(element, { getTitle, rename });
 }
 
 function getStatePicker(content: Locator): StatePickerInterface {
