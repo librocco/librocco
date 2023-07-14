@@ -24,7 +24,7 @@ export interface MainNavInterface extends Locator {
 	navigate(to: ViewName): Promise<void>;
 }
 
-export interface ViewInterface extends Locator {}
+export type ViewInterface = Locator;
 
 export interface SidebarInterface extends Locator {
 	createWarehouse(): Promise<void>;
