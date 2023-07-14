@@ -5,12 +5,12 @@
 		"build": "echo e2e has no build functionality, skipping...",
 		"test": "playwright test --ui",
 		"test:codegen": "playwright codegen",
-		"test:ci:setup": "playwright install --with-deps",
 		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
 		"typecheck": "tsc",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
-		"format": "prettier --write --plugin-search-dir=. ."
+		"format": "prettier --write --plugin-search-dir=. .",
+		"postinstall": "playwright install --with-deps"
 	},
 	"devDependencies": {
 		"@librocco/shared": "workspace:*",
