@@ -52,6 +52,24 @@ export function slice<T>(iterable: Iterable<T>, start: number, end: number): Reu
 	});
 }
 
+export function zip<A extends readonly Iterable<unknown>[]>(
+	...iterables: A
+): ReusableGenerator<{ [K in keyof A]: A[K] extends Iterable<infer T> ? T : never }> {
+	return iterableFromGenerator(function* () {
+		const iterators = iterables.map((iterable) => iterable[Symbol.iterator]());
+		while (true) {
+			const results = iterators.map((iterator) => iterator.next());
+
+			// Run the loop until all iterators are done
+			if (results.every((result) => result.done)) {
+				break;
+			}
+
+			yield results.map((result) => result.value) as any;
+		}
+	});
+}
+
 export class EmptyIterableError extends Error {
 	constructor() {
 		super("Cannot reduce empty iterable without seed");
@@ -109,6 +127,9 @@ interface TransformableIterable<T> extends Iterable<T> {
 	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
 	slice(start: number, end: number): TransformableIterable<T>;
+	zip<A extends readonly Iterable<unknown>[]>(
+		...iterables: A
+	): TransformableIterable<[T, ...{ [K in keyof A]: A[K] extends Iterable<infer E> ? E : never }]>;
 	reduce<R>(reducer: (accumulator: R, value: T) => R, seed: R): R;
 	reduce(reducer: (accumulator: T, value: T) => T, seed?: T): T;
 }
@@ -140,8 +161,10 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 	const m = <R>(mapper: (value: T) => R) => wrapIter(map(iterable, mapper));
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
 	const f = (predicate: (value: T) => boolean) => wrapIter(filter(iterable, predicate));
-	const r = (reducer: (accumulator: T, value: T) => T, seed?: T) => reduce(iterable, reducer, seed);
 	const s = (start: number, end: number) => wrapIter(slice(iterable, start, end));
+	const z = <A extends readonly Iterable<unknown>[]>(...iterables: A) => wrapIter(zip(iterable, ...iterables));
+
+	const r = (reducer: (accumulator: T, value: T) => T, seed?: T) => reduce(iterable, reducer, seed);
 
 	return {
 		[Symbol.iterator]: iterable[Symbol.iterator],
@@ -149,6 +172,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		flatMap: fm,
 		filter: f,
 		slice: s,
-		reduce: r
+		reduce: r,
+		zip: z
 	};
 };
