@@ -1,6 +1,6 @@
 import type { Locator, Page } from "@playwright/test";
 
-import type { NavInterface, SidebarInterface, SideLinkGroupInterface, WaitForOpts } from "./types";
+import type { NavInterface, SidebarInterface, SideLinkGroupInterface } from "./types";
 
 import { getDashboard } from "./dashboard";
 import { compareEntries } from "./utils";

@@ -5,7 +5,7 @@ import { NoteState } from "@librocco/shared";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { renameEntity, getNoteStatePicker } from "./utils";
+import { renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
