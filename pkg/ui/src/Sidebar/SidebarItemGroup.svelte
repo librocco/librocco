@@ -48,7 +48,7 @@
 	].join(" ");
 </script>
 
-<div>
+<div id="nav-group-{name.replaceAll(' ', '_').replaceAll(/[\(\)]/g, '')}">
 	<button
 		type="button"
 		class={buttonBaseClasses}
