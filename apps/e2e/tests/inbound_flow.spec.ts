@@ -5,18 +5,20 @@ import { NoteState } from "@librocco/shared";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { createDefaultWarehouses, renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
-	// Wait for the app to become responsive (when the default view is loaded)
 	const dashboard = getDashboard(page);
+	const sidebar = dashboard.sidebar();
+
+	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
 
 	// Create two warehouses first (to which we can add the notes)
-	await createDefaultWarehouses(page, 2);
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
 
 	// Navigate to the inbound note page
 	await dashboard.navigate("inbound");
@@ -39,14 +41,18 @@ test('should create a new inbound note, belonging to a particular warehouse on "
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	const sidebar = getDashboard(page).sidebar();
+	const dashboard = getDashboard(page);
+
+	const sidebar = dashboard.sidebar();
+	const content = dashboard.content();
+
 	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	// Create a new note
 	await linkGroupWh1.createNote();
 
 	// Rename "New Note"
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	// The sidebar should display the updated note name in both "All" and "New Warehouse" groups
 	await sidebar.linkGroup("All").assertLinks(["Note 1"]);
@@ -104,11 +110,11 @@ test("should continue the naming sequence from the highest sequenced note name (
 	// Rename the first two notes
 	await linkGroupWh1.link("New Note").click();
 	await content.heading("New Note in New Warehouse").waitFor();
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	await linkGroupWh1.link("New Note (2)").click();
 	await content.heading("New Note (2)").waitFor();
-	await renameEntity(page, "Note 2");
+	await content.heading().rename("Note 2");
 
 	// Check the nav links for good measure
 	await linkGroupWh1.assertLinks(["Note 1", "Note 2", "New Note (3)"]);
@@ -135,15 +141,15 @@ test("should reset the naming sequence when all notes with default names get ren
 	// Rename all of the notes
 	await linkGroupWh1.link("New Note").click();
 	await content.heading("New Note in New Warehouse").waitFor();
-	await renameEntity(page, "Note 1");
+	await content.heading().rename("Note 1");
 
 	await linkGroupWh1.link("New Note (2)").click();
 	await content.heading("New Note (2)").waitFor();
-	await renameEntity(page, "Note 2");
+	await content.heading().rename("Note 2");
 
 	await linkGroupWh1.link("New Note (3)").click();
 	await content.heading("New Note (3)").waitFor();
-	await renameEntity(page, "Note 3");
+	await content.heading().rename("Note 3");
 
 	// Wait for the last update to be shown in the sidebar
 	await sidebar.link("Note 3").waitFor();

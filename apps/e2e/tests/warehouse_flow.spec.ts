@@ -3,7 +3,6 @@ import { test } from "@playwright/test";
 import { baseURL } from "./constants";
 
 import { getDashboard } from "./helpers";
-import { createDefaultWarehouses, renameEntity } from "./utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -56,11 +55,15 @@ test("should allow for renaming of the warehouse using the editable title and sh
 });
 
 test("should assign default warehouse names (with sequenced index) to newly created warehouses", async ({ page }) => {
+	const sidebar = getDashboard(page).sidebar();
+
 	// Create 3 new warehouses by clicking on the 'Create warehouse' button
-	await createDefaultWarehouses(page, 3);
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
 
 	// We can check the naming sequence by looking at the sidebar nav
-	await getDashboard(page).sidebar().assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
+	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
 });
 
 test('should continue the sequenced order from the highest numbered "New Warehouse" even if lower numbered warehouses have been renamed', async ({
@@ -72,7 +75,9 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 	const content = dashboard.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	await createDefaultWarehouses(page, 3);
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
 
 	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
 	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
@@ -80,11 +85,11 @@ test('should continue the sequenced order from the highest numbered "New Warehou
 	// Rename the first two warehouses
 	await sidebar.link("New Warehouse").click();
 	await content.heading("New Warehouse", { exact: true }).waitFor();
-	await renameEntity(page, "Warehouse 1");
+	await content.heading().rename("Warehouse 1");
 
 	await sidebar.link("New Warehouse (2)").click();
 	await content.heading("New Warehouse (2)").waitFor();
-	await renameEntity(page, "Warehouse 2");
+	await content.heading().rename("Warehouse 2");
 
 	// The sidebar nav should display the updated warehouse names
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)"]);
@@ -106,7 +111,9 @@ test("should reset the naming sequence when all warehouses with default names ge
 	const content = dashboard.content();
 
 	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	await createDefaultWarehouses(page, 3);
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
+	await sidebar.createWarehouse();
 
 	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
 	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
@@ -114,15 +121,15 @@ test("should reset the naming sequence when all warehouses with default names ge
 	// Rename all of the warehouses (restarting the naming sequence)
 	await sidebar.link("New Warehouse").click();
 	await content.heading("New Warehouse", { exact: true }).waitFor();
-	await renameEntity(page, "Warehouse 1");
+	await content.heading().rename("Warehouse 1");
 
 	await sidebar.link("New Warehouse (2)").click();
 	await content.heading("New Warehouse (2)").waitFor();
-	await renameEntity(page, "Warehouse 2");
+	await content.heading().rename("Warehouse 2");
 
 	await sidebar.link("New Warehouse (3)").click();
 	await content.heading("New Warehouse (3)").waitFor();
-	await renameEntity(page, "Warehouse 3");
+	await content.heading().rename("Warehouse 3");
 
 	// The sidebar nav should display the updated warehouse names
 	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3"]);
