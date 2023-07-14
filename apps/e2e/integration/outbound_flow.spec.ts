@@ -2,9 +2,9 @@ import { test } from "@playwright/test";
 
 import { NoteState } from "@librocco/shared";
 
-import { baseURL } from "./constants";
+import { baseURL } from "../constants";
 
-import { getDashboard } from "./helpers";
+import { getDashboard } from "../helpers";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
