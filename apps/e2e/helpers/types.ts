@@ -7,6 +7,21 @@ export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 
 export type ViewName = "inbound" | "outbound" | "stock";
 
+/** @TODO Import this from shared (duplicate) */
+export interface DisplayRow {
+	isbn: string;
+	title: string;
+	quantity: number;
+	warehouseId: string;
+	price: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	warehouseName: string;
+}
+
 export interface DashboardInterface {
 	waitFor: Locator["waitFor"];
 	nav(): MainNavInterface;
@@ -14,6 +29,7 @@ export interface DashboardInterface {
 	view(name: ViewName): ViewInterface;
 	sidebar(): SidebarInterface;
 	content(): ContentInterface;
+	bookForm(): BookFormInterface;
 }
 
 export interface NavInterface extends Locator {
@@ -44,6 +60,7 @@ export interface ContentInterface extends Locator {
 	updatedAt(): Promise<Date>;
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
+	createButton: Locator;
 }
 
 export interface ContentHeadingInterface extends Locator {
@@ -55,4 +72,25 @@ export interface StatePickerInterface extends Locator {
 	getState(): Promise<NoteState>;
 	assertState(state: NoteState): Promise<void>;
 	select(state: NoteState): Promise<void>;
+}
+
+export interface BookFormValues {
+	isbn: string;
+	title: string;
+	price: number;
+	year: string;
+	authors: string;
+	publisher: string;
+	editedBy: string;
+	outOfPrint: boolean;
+}
+
+export interface BookFormInterface extends Locator {
+	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
+	submit(): Promise<void>;
+	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
+}
+
+export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
+	set: (value: T) => Promise<void>;
 }
