@@ -2,7 +2,14 @@ import { type Locator, type Page, expect } from "@playwright/test";
 
 import { type NoteState } from "@librocco/shared";
 
-import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
+import type {
+	WaitForOpts,
+	ContentInterface,
+	ContentHeadingInterface,
+	StatePickerInterface,
+	GetByTextOpts,
+	ScanFieldInterface
+} from "./types";
 
 import { getDashboard } from "./dashboard";
 import { getEntriesTable } from "./entriesTable";
@@ -40,11 +47,11 @@ export function getContent(page: Page): ContentInterface {
 		return getStatePicker(container);
 	};
 
-	const createButton = container.getByRole("button", { name: "Create", exact: true });
+	const scanField = (): ScanFieldInterface => getScanField(container);
 
 	const entries = () => getEntriesTable(container);
 
-	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, createButton, entries });
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries });
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
@@ -111,4 +118,13 @@ function getStatePicker(content: Locator): StatePickerInterface {
 	};
 
 	return Object.assign(container, { getState, assertState, select });
+}
+
+function getScanField(content: Locator): ScanFieldInterface {
+	const container = content.locator("#scan-input-container");
+	const input = container.locator("input");
+
+	const create = () => container.getByRole("button", { name: "Create" }).click();
+
+	return Object.assign(input, { create });
 }
