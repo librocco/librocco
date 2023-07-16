@@ -60,7 +60,7 @@ export interface ContentInterface extends Locator {
 	updatedAt(): Promise<Date>;
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
-	createButton: Locator;
+	scanField(): ScanFieldInterface;
 	entries(): EntriesTableInterface;
 }
 
@@ -73,6 +73,10 @@ export interface StatePickerInterface extends Locator {
 	getState(): Promise<NoteState>;
 	assertState(state: NoteState): Promise<void>;
 	select(state: NoteState): Promise<void>;
+}
+
+export interface ScanFieldInterface extends Locator {
+	create(): Promise<void>;
 }
 
 export interface BookFormValues {

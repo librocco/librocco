@@ -184,7 +184,13 @@
 					align="right"
 				/>
 			</div>
-			<TextField bind:value={isbn} name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+			<TextField
+				id="scan-input-container"
+				bind:value={isbn}
+				name="scan-input"
+				placeholder="Scan to add books..."
+				variant={TextFieldSize.LG}
+			>
 				<svelte:fragment slot="startAdornment">
 					<QrCode />
 				</svelte:fragment>
