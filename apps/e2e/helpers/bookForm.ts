@@ -20,7 +20,9 @@ export function getBookForm(page: Page): BookFormInterface {
 		}
 	};
 
-	return Object.assign(container, { field, submit, fillBookData });
+	const fillExistingData = async () => container.getByText("ISBN already exists, would you like to Edit it?").click();
+
+	return Object.assign(container, { field, submit, fillBookData, fillExistingData });
 }
 
 type BookFieldContstructors = {
