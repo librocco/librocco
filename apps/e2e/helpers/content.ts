@@ -38,7 +38,9 @@ export function getContent(page: Page): ContentInterface {
 		return getStatePicker(container);
 	};
 
-	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker });
+	const createButton = container.getByRole("button", { name: "Create", exact: true });
+
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, createButton });
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
