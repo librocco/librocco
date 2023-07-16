@@ -61,6 +61,7 @@ export interface ContentInterface extends Locator {
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
 	createButton: Locator;
+	entries(): EntriesTableInterface;
 }
 
 export interface ContentHeadingInterface extends Locator {
@@ -93,4 +94,18 @@ export interface BookFormInterface extends Locator {
 
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
 	set: (value: T) => Promise<void>;
+}
+
+export interface AssertRowFieldsOpts {
+	strict?: boolean;
+}
+
+export interface EntriesTableInterface extends Locator {
+	row(index: number): EntriesRowInterface;
+	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
+}
+
+export interface EntriesRowInterface extends Locator {
+	assertField<K extends keyof DisplayRow>(name: K, value: DisplayRow[K]): Promise<void>;
+	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 }

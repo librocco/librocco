@@ -3,7 +3,9 @@ import { type Locator, type Page, expect } from "@playwright/test";
 import { type NoteState } from "@librocco/shared";
 
 import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
+
 import { getDashboard } from "./dashboard";
+import { getEntriesTable } from "./entriesTable";
 
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#table-section");
@@ -40,7 +42,9 @@ export function getContent(page: Page): ContentInterface {
 
 	const createButton = container.getByRole("button", { name: "Create", exact: true });
 
-	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, createButton });
+	const entries = () => getEntriesTable(container);
+
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, createButton, entries });
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
