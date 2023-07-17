@@ -108,9 +108,15 @@ export interface AssertRowFieldsOpts {
 export interface EntriesTableInterface extends Locator {
 	row(index: number): EntriesRowInterface;
 	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
+	selectAll(): Promise<void>;
+	unselectAll(): Promise<void>;
+	deleteSelected(): Promise<void>;
 }
 
 export interface EntriesRowInterface extends Locator {
 	assertField<K extends keyof DisplayRow>(name: K, value: DisplayRow[K]): Promise<void>;
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
+	setQuantity(value: number): Promise<void>;
+	select(): Promise<void>;
+	unselect(): Promise<void>;
 }
