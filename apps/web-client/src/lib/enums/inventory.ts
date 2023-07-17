@@ -1,10 +1,4 @@
-import { NoteState } from "@librocco/shared";
-
-export enum NoteTempState {
-	Saving = "saving",
-	Committing = "committing",
-	Deleting = "deleting"
-}
+import { NoteState, NoteTempState } from "@librocco/shared";
 
 interface NoteStateParams {
 	value: NoteState;

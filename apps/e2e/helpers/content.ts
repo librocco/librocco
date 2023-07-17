@@ -1,6 +1,6 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-import { type NoteState } from "@librocco/shared";
+import { NoteTempState, type NoteState } from "@librocco/shared";
 
 import type {
 	WaitForOpts,
@@ -85,9 +85,9 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 function getStatePicker(content: Locator): StatePickerInterface {
 	const container = content.locator("#note-state-picker");
 
-	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState>;
+	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState | NoteTempState>;
 
-	const assertState = (state: NoteState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
+	const assertState = (state: NoteState | NoteTempState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
 
 	const expandButton = container.locator("button[aria-haspopup='true']");
 
