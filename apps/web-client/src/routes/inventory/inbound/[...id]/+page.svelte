@@ -5,7 +5,7 @@
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
 
-	import { NoteState } from "@librocco/shared";
+	import { NoteState, NoteTempState } from "@librocco/shared";
 	import {
 		InventoryPage,
 		TextField,
@@ -31,7 +31,7 @@
 	} from "@librocco/ui";
 	import type { BookEntry, DatabaseInterface, NavMap } from "@librocco/db";
 
-	import { noteStates, NoteTempState } from "$lib/enums/inventory";
+	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
