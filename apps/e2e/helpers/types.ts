@@ -92,9 +92,9 @@ export interface BookFormValues {
 
 export interface BookFormInterface extends Locator {
 	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
-	submit(): Promise<void>;
 	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
 	fillExistingData(): Promise<void>;
+	submit(kind?: "keyboard" | "click"): Promise<void>;
 }
 
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
