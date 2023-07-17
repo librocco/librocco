@@ -8,7 +8,7 @@
 
 	import { writable } from "svelte/store";
 
-	import { NoteState } from "@librocco/shared";
+	import { NoteState, NoteTempState } from "@librocco/shared";
 	import {
 		InventoryPage,
 		TextField,
@@ -35,7 +35,7 @@
 
 	import type { BookEntry, DatabaseInterface } from "@librocco/db";
 
-	import { noteStates, NoteTempState } from "$lib/enums/inventory";
+	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 

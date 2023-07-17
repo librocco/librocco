@@ -1,7 +1,5 @@
 import type { VolumeStockClient, BookEntry } from "@librocco/db";
-import type { NoteState } from "@librocco/shared";
-
-import type { NoteTempState } from "$lib/enums/inventory";
+import type { NoteState, NoteTempState } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
 
