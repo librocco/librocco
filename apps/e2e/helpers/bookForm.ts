@@ -9,8 +9,12 @@ export function getBookForm(page: Page): BookFormInterface {
 		return bookFieldContstructors[name](container);
 	};
 
-	const submit = async () => {
-		await container.press("Enter");
+	const submit = async (kind: "click" | "keyboard" = "keyboard") => {
+		if (kind === "keyboard") {
+			await container.press("Enter");
+		} else {
+			await container.getByRole("button", { name: "Save" }).click();
+		}
 		await container.waitFor({ state: "detached" });
 	};
 
