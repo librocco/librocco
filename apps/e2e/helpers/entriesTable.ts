@@ -30,7 +30,15 @@ export function getEntriesTable(content: Locator): EntriesTableInterface {
 		}
 	};
 
-	return Object.assign(container, { row, assertRows });
+	const selectAll = () => container.locator("thead").locator("input[type='checkbox']").check();
+
+	const unselectAll = () => container.locator("thead").locator("input[type='checkbox']").uncheck();
+
+	const deleteSelected = async () => {
+		await container.getByRole("button", { name: "Delete" }).click();
+	};
+
+	return Object.assign(container, { row, assertRows, deleteSelected, selectAll, unselectAll });
 }
 
 const defaultValues: Omit<DisplayRow, "warehouseId" | "warehouseName"> = {
@@ -48,6 +56,8 @@ const defaultValues: Omit<DisplayRow, "warehouseId" | "warehouseName"> = {
 function getEntriesRow(table: Locator, index: number): EntriesRowInterface {
 	const container = table.locator("tbody").getByRole("row").nth(index);
 
+	const selectCheckbox = container.locator("input[name*='Select']");
+
 	const assertField = <K extends keyof DisplayRow>(name: K, value: DisplayRow[K]) => {
 		return container.locator(`[data-property="${name}"][data-value="${value}"]`).waitFor();
 	};
@@ -61,5 +71,15 @@ function getEntriesRow(table: Locator, index: number): EntriesRowInterface {
 		}
 	};
 
-	return Object.assign(container, { assertField, assertFields });
+	const setQuantity = async (quantity: number) => {
+		const quantityInput = container.locator("[data-property='quantity']").locator("input");
+		await quantityInput.fill(quantity.toString());
+		await quantityInput.press("Enter");
+	};
+
+	const select = () => selectCheckbox.check();
+
+	const unselect = () => selectCheckbox.uncheck();
+
+	return Object.assign(container, { assertField, assertFields, setQuantity, select, unselect });
 }
