@@ -8,7 +8,8 @@ import type {
 	ContentHeadingInterface,
 	StatePickerInterface,
 	GetByTextOpts,
-	ScanFieldInterface
+	ScanFieldInterface,
+	ViewName
 } from "./types";
 
 import { getDashboard } from "./dashboard";
@@ -49,7 +50,7 @@ export function getContent(page: Page): ContentInterface {
 
 	const scanField = (): ScanFieldInterface => getScanField(container);
 
-	const entries = () => getEntriesTable(container);
+	const entries = (view: ViewName) => getEntriesTable(view, container);
 
 	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries });
 }

@@ -62,10 +62,10 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Wait for the app to become responsive (when the default view is loaded)
 		await dashboard.waitFor();
 
-		// Create a warehouse first (to which we can add the notes)
+		// Create a warehouse first (to which we can add the notes, in case of inbound)
 		await sidebar.createWarehouse();
 
-		// Navigate to the inbound note page
+		// Navigate to the correct view
 		await dashboard.navigate(view);
 
 		// Create a new note to work with
@@ -78,7 +78,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Open the book form by clicking the 'Create' button
 		await content.scanField().create();
@@ -95,72 +95,29 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		await bookForm.submit();
 
-		// Check updates in the entries table cell by bell
 		const row1 = entries.row(0);
-		await row1.assertField("isbn", "1234567890");
-		await row1.assertField("quantity", 1); // Default quantity should be 1
-		await row1.assertField("title", "Book 1");
-		await row1.assertField("price", 12);
-		await row1.assertField("year", "2020");
-		await row1.assertField("authors", "Author and Sons");
-		await row1.assertField("publisher", "Reed Elsevier");
-		await row1.assertField("editedBy", "Sons");
-		await row1.assertField("outOfPrint", true);
+		row1.assertFields(book1);
 
-		// Create another book using the automated api (with same fields, but different isbn, to check they work the same way)
+		// Create another book using the automated api (to check they work the same way)
 		await content.scanField().create();
 		await bookForm.fillBookData({
 			isbn: "1234567891",
-			title: "Book 1",
-			price: 12,
+			title: "Book 2",
+			price: 20,
 			year: "2020",
-			authors: "Author and Sons",
-			publisher: "Reed Elsevier",
-			editedBy: "Sons",
-			outOfPrint: true
+			authors: "Some other author",
+			publisher: "Penguin Random House",
+			editedBy: "No one",
+			outOfPrint: false
 		});
 		await bookForm.submit();
 
 		// Check that the updates are shown in row 2
 		const row2 = entries.row(1);
-		await row2.assertField("isbn", "1234567891");
-		await row2.assertField("quantity", 1); // Default quantity should be 1
-		await row2.assertField("title", "Book 1");
-		await row2.assertField("price", 12);
-		await row2.assertField("year", "2020");
-		await row2.assertField("authors", "Author and Sons");
-		await row2.assertField("publisher", "Reed Elsevier");
-		await row2.assertField("editedBy", "Sons");
-		await row2.assertField("outOfPrint", true);
+		await row2.assertFields(book2);
 
 		// Use automated api to check all rows
-		await entries.assertRows(
-			[
-				{
-					isbn: "1234567890",
-					quantity: 1,
-					title: "Book 1",
-					price: 12,
-					year: "2020",
-					authors: "Author and Sons",
-					publisher: "Reed Elsevier",
-					editedBy: "Sons",
-					outOfPrint: true
-				},
-				{
-					isbn: "1234567891",
-					quantity: 1,
-					title: "Book 1",
-					price: 12,
-					year: "2020",
-					authors: "Author and Sons",
-					publisher: "Reed Elsevier",
-					editedBy: "Sons",
-					outOfPrint: true
-				}
-			],
-			{ strict: true }
-		);
+		await entries.assertRows([book1, book2], { strict: true });
 	});
 
 	test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and filling out the rest of the form", async ({
@@ -171,7 +128,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
-		const entries = content.entries();
+		const entries = content.entries(view);
 		const scanField = content.scanField();
 
 		// Open the book form with the isbn added to the form using the 'Scan' field
@@ -213,7 +170,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Create book 1 transaction by filling out the form
 		await scanField.create();
@@ -264,7 +221,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Add transaction with book 1
 		await scanField.create();
@@ -295,10 +252,10 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Create a new note to work with
-		await sidebar.linkGroup("New Warehouse").createNote();
+		await createNoteForView(page, view);
 
 		// Create book 1 transaction by filling out the form
 		await scanField.create();
@@ -380,7 +337,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// We're adding books in non-aplphabetical order to check if they're sorted correctly
 		const books = [book2, book3, book1];
@@ -413,7 +370,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Add three books
 		const books = [book1, book2, book3];
@@ -447,7 +404,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Add three books
 		const books = [book1, book2, book3];
@@ -481,7 +438,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
-		const entries = content.entries();
+		const entries = content.entries(view);
 
 		// Add three books
 		const books = [book1, book2, book3];
@@ -520,7 +477,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
-		const entries = content.entries();
+		const entries = content.entries(view);
 		const statePicker = content.statePicker();
 
 		// Add a transaction with 0 quantity
@@ -540,4 +497,8 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 test.describe("Inbound note view", () => {
 	runNoteTransactionTests("inbound");
+});
+
+test.describe("Outbound note view", () => {
+	runNoteTransactionTests("outbound");
 });
