@@ -1,11 +1,11 @@
 import type { Locator } from "@playwright/test";
 
-import { AssertRowFieldsOpts, DisplayRow, EntriesRowInterface, EntriesTableInterface } from "./types";
+import { AssertRowFieldsOpts, DisplayRow, EntriesRowInterface, EntriesTableInterface, ViewName } from "./types";
 
-export function getEntriesTable(content: Locator): EntriesTableInterface {
+export function getEntriesTable(view: ViewName, content: Locator): EntriesTableInterface {
 	const container = content.locator("#inventory-table");
 
-	const row = (index: number) => getEntriesRow(container, index);
+	const row = (index: number) => getEntriesRow(view, container, index);
 
 	const assertRows = async (rows: Partial<DisplayRow>[], opts: AssertRowFieldsOpts = { strict: false }) => {
 		// Create an array of 10 nulls. This is our assertion template. We're filling the array with 'rows' passed as argument,
@@ -53,7 +53,7 @@ const defaultValues: Omit<DisplayRow, "warehouseId" | "warehouseName"> = {
 	outOfPrint: false
 };
 
-function getEntriesRow(table: Locator, index: number): EntriesRowInterface {
+function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRowInterface {
 	const container = table.locator("tbody").getByRole("row").nth(index);
 
 	const selectCheckbox = container.locator("input[name*='Select']");
@@ -66,7 +66,17 @@ function getEntriesRow(table: Locator, index: number): EntriesRowInterface {
 		// If strict we're asserting that the non-provided fields are the default values
 		// whereas, for non-strict, we're asserting only for provided fields
 		const compareObj = opts.strict ? { ...defaultValues, ...row } : row;
+
+		// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
+		const rowFieldsLookup = {
+			stock: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
+			inbound: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
+			outbound: ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName"]
+		};
+
 		for (const [name, value] of Object.entries(compareObj)) {
+			// Skip fields not visible in the particular view
+			if (!rowFieldsLookup[view].includes(name)) continue;
 			await assertField(name as keyof DisplayRow, value);
 		}
 	};

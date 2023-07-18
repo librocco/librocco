@@ -61,7 +61,7 @@ export interface ContentInterface extends Locator {
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
 	scanField(): ScanFieldInterface;
-	entries(): EntriesTableInterface;
+	entries(view: ViewName): EntriesTableInterface;
 }
 
 export interface ContentHeadingInterface extends Locator {
