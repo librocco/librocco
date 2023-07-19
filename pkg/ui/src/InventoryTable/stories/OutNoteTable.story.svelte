@@ -15,11 +15,18 @@
 		["varia-2018", { displayName: "Varia 2018" }],
 		["nuovo-2021", { displayName: "Nuovo 2021" }]
 	]);
-	const singleWarehouse = new Map([["varia-2018", { displayName: "Varia 2018" }]]);
+	const singleWhId = "varia-2018";
+	const singleWhDisplayName = "Varia 2018";
+	const singleWarehouse = new Map([[singleWhId, { displayName: singleWhDisplayName }]]);
 
 	const outNoteRows = [
 		{ ...rows[0], warehouseId: "", warehouseName: "", availableWarehouses: multipleWarehouses },
-		{ ...rows[1], warehouseId: singleWarehouse[0].value, warehouseName: singleWarehouse[0].label, availableWarehouses: singleWarehouse }
+		{
+			...rows[1],
+			warehouseId: singleWhId,
+			warehouseName: singleWhDisplayName,
+			availableWarehouses: singleWarehouse
+		}
 	];
 
 	const tableOptions = writable({
