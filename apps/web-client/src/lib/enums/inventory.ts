@@ -1,4 +1,4 @@
-import { NoteState } from "$lib/enums/db";
+import { NoteState } from "@librocco/shared";
 
 export enum NoteTempState {
 	Saving = "saving",

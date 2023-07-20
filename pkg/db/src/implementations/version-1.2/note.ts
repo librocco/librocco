@@ -1,8 +1,8 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { NoteState, debug } from "@librocco/shared";
 
-import { DocType, NoteState } from "@/enums";
+import { DocType } from "@/enums";
 
 import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";

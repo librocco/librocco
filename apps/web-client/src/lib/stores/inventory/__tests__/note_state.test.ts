@@ -2,10 +2,9 @@ import { describe, test, expect } from "vitest";
 import { get } from "svelte/store";
 import { firstValueFrom } from "rxjs";
 
-import { testUtils } from "@librocco/shared";
+import { NoteState, testUtils } from "@librocco/shared";
 
 import { NoteTempState } from "$lib/enums/inventory";
-import { NoteState } from "$lib/enums/db";
 
 import { createInternalStateStore, createDisplayStateStore } from "../note_state";
 

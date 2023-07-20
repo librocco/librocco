@@ -3,9 +3,9 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { debug } from "@librocco/shared";
+import { NoteState, debug } from "@librocco/shared";
 
-import type { DocType, NoteState } from "./enums";
+import type { DocType } from "./enums";
 
 import { NEW_WAREHOUSE } from "./constants";
 

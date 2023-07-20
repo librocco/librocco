@@ -1,7 +1,7 @@
 {
 	"extends": "../../pkg/scaffold/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "tests",
+		"rootDir": ".",
 		"baseUrl": ".",
 
 		"strictNullChecks": false,
@@ -10,5 +10,5 @@
 		"lib": ["ESNext", "DOM", "DOM.Iterable"]
 	},
 	"exclude": ["node_modules"],
-	"include": ["tests"]
+	"include": ["./**/*.ts"]
 }
