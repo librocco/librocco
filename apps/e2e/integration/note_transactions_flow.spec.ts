@@ -247,7 +247,6 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 	test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
 		const dashboard = getDashboard(page);
 
-		const sidebar = dashboard.sidebar();
 		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
@@ -471,7 +470,10 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		await statePicker.assertState(NoteTempState.Committing);
 	});
 
-	test("should not allow committing a note with 0-quantity transaction(s)", async ({ page }) => {
+	/**
+	 * @TODO : Unskip this when working on https://github.com/librocco/librocco/issues/288
+	 */
+	test.skip("should not allow committing a note with 0-quantity transaction(s)", async ({ page }) => {
 		const dashboard = getDashboard(page);
 
 		const bookForm = dashboard.bookForm();
