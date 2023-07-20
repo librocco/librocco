@@ -125,7 +125,12 @@ function getScanField(content: Locator): ScanFieldInterface {
 	const container = content.locator("#scan-input-container");
 	const input = container.locator("input");
 
+	const add = async (isbn: string) => {
+		await input.fill(isbn);
+		await input.press("Enter");
+	};
+
 	const create = () => container.getByRole("button", { name: "Create" }).click();
 
-	return Object.assign(input, { create });
+	return Object.assign(input, { add, create });
 }
