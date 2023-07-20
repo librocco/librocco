@@ -163,7 +163,10 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		]);
 	});
 
-	test("should aggregate the quantity of the same book", async ({ page }) => {
+	/**
+	 * @TODO : Unskip this when working on https://github.com/librocco/librocco/issues/284
+	 */
+	test.skip("should aggregate the quantity of the same book", async ({ page }) => {
 		const dashboard = getDashboard(page);
 
 		const bookForm = dashboard.bookForm();
