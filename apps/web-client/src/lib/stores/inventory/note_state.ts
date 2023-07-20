@@ -1,10 +1,9 @@
 import { get, writable, type Writable } from "svelte/store";
 
 import type { NoteInterface } from "@librocco/db";
-import { debug } from "@librocco/shared";
+import { NoteState, debug } from "@librocco/shared";
 
 import { noteStateLookup, type NoteTempState } from "$lib/enums/inventory";
-import { NoteState } from "$lib/enums/db";
 
 import type { Subscription } from "rxjs";
 

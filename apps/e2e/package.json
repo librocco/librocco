@@ -3,7 +3,8 @@
 	"version": "0.0.1",
 	"scripts": {
 		"build": "echo e2e has no build functionality, skipping...",
-		"test": "playwright test --ui",
+		"test:open": "playwright test --ui",
+		"test:run": "playwright test",
 		"test:codegen": "playwright codegen",
 		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
 		"typecheck": "tsc",
