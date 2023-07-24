@@ -93,7 +93,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		await bookForm.field("editedBy").set("Sons");
 		await bookForm.field("outOfPrint").set(true);
 
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		const row1 = entries.row(0);
 		row1.assertFields(book1);
@@ -110,7 +110,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 			editedBy: "No one",
 			outOfPrint: false
 		});
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		// Check that the updates are shown in row 2
 		const row2 = entries.row(1);
@@ -145,7 +145,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		await bookForm.field("editedBy").set("Sons");
 		await bookForm.field("outOfPrint").set(true);
 
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		// Check updates in the entries table
 		await entries.assertRows([
@@ -178,12 +178,12 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Create book 1 transaction by filling out the form
 		await scanField.create();
 		await bookForm.fillBookData(book1);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		// Create book 2 transaction by filling out the form
 		await scanField.create();
 		await bookForm.fillBookData(book2);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		// Check that both books are in the entries table
 		// (by not using 'strict: true', we're asserting only by values we care about)
@@ -229,7 +229,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add transaction with book 1
 		await scanField.create();
 		await bookForm.fillBookData(book1);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		// Add another note
 		await createNoteForView(page, view);
@@ -262,7 +262,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Create book 1 transaction by filling out the form
 		await scanField.create();
 		await bookForm.fillBookData(book1);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		await entries.assertRows([
 			{
@@ -284,7 +284,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Create book 2 transaction by filling out the form
 		await scanField.create();
 		await bookForm.fillBookData(book2);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		await entries.assertRows([
 			{
@@ -314,7 +314,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add a third transaction
 		await scanField.create();
 		await bookForm.fillBookData(book3);
-		await bookForm.submit();
+		await bookForm.submit("click");
 
 		await entries.assertRows([
 			{
@@ -348,7 +348,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		for (const book of books) {
 			await scanField.create();
 			await bookForm.fillBookData(book);
-			await bookForm.submit();
+			await bookForm.submit("click");
 		}
 
 		// Check that the transactions are sorted by isbn
@@ -379,7 +379,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		for (const book of books) {
 			await scanField.create();
 			await bookForm.fillBookData(book);
-			await bookForm.submit();
+			await bookForm.submit("click");
 		}
 
 		// Delete the second transaction
@@ -413,7 +413,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		for (const book of books) {
 			await scanField.create();
 			await bookForm.fillBookData(book);
-			await bookForm.submit();
+			await bookForm.submit("click");
 		}
 
 		// Select all transactions
@@ -447,7 +447,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		for (const book of books) {
 			await scanField.create();
 			await bookForm.fillBookData(book);
-			await bookForm.submit();
+			await bookForm.submit("click");
 		}
 
 		// Select all transactions
@@ -488,7 +488,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add a transaction with 0 quantity
 		await content.scanField().create();
 		await bookForm.fillBookData(book1);
-		await bookForm.submit();
+		await bookForm.submit("click");
 		await entries.row(0).setQuantity(0);
 
 		// Try and commit the note
