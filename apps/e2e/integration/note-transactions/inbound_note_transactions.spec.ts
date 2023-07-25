@@ -50,18 +50,18 @@ test("should display correct transaction fields for the inbound note view", asyn
 
 	// Check the displayed transaction (field by field)
 	const row = content.entries("inbound").row(0);
-	await row.assertField("isbn", book1.isbn);
-	await row.assertField("title", book1.title);
-	await row.assertField("authors", book1.authors);
+	await row.field("isbn").assert(book1.isbn);
+	await row.field("title").assert(book1.title);
+	await row.field("authors").assert(book1.authors);
 	// The default quantity is 1
-	await row.assertField("quantity", 1);
-	await row.assertField("price", book1.price);
-	await row.assertField("year", book1.year);
-	await row.assertField("publisher", book1.publisher);
-	await row.assertField("editedBy", book1.editedBy);
+	await row.field("quantity").assert(1);
+	await row.field("price").assert(book1.price);
+	await row.field("year").assert(book1.year);
+	await row.field("publisher").assert(book1.publisher);
+	await row.field("editedBy").assert(book1.editedBy);
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
-	await row.assertField("outOfPrint", book1.outOfPrint);
+	await row.field("outOfPrint").assert(book1.outOfPrint);
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
@@ -74,18 +74,18 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 
 	// Check the displayed transaction (field by field)
 	const row = content.entries("inbound").row(0);
-	await row.assertField("isbn", book1.isbn);
-	await row.assertField("title", "N/A");
-	await row.assertField("authors", "N/A");
+	await row.field("isbn").assert(book1.isbn);
+	await row.field("title").assert("N/A");
+	await row.field("authors").assert("N/A");
 	// The default quantity is 1
-	await row.assertField("quantity", 1);
-	await row.assertField("price", "N/A" as any);
-	await row.assertField("year", "N/A");
-	await row.assertField("publisher", "");
-	await row.assertField("editedBy", "");
+	await row.field("quantity").assert(1);
+	await row.field("price").assert("N/A" as any);
+	await row.field("year").assert("N/A");
+	await row.field("publisher").assert("");
+	await row.field("editedBy").assert("");
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
-	await row.assertField("outOfPrint", false);
+	await row.field("outOfPrint").assert(false);
 });
 
 runCommonTransactionTests("inbound");
