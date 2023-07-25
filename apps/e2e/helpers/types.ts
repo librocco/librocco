@@ -115,9 +115,15 @@ export interface EntriesTableInterface extends Locator {
 }
 
 export interface EntriesRowInterface extends Locator {
-	assertField<K extends keyof DisplayRow>(name: K, value: DisplayRow[K]): Promise<void>;
+	field<K extends keyof DisplayRow>(name: K): EntriesFieldInterface<K>;
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 	setQuantity(value: number): Promise<void>;
 	select(): Promise<void>;
 	unselect(): Promise<void>;
 }
+
+export interface Asserter<T> {
+	assert: (value: T) => Promise<void>;
+}
+
+export type EntriesFieldInterface<K extends keyof DisplayRow> = Asserter<DisplayRow[K]>;
