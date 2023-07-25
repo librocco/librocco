@@ -155,13 +155,10 @@
 						<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
 					</span>
 				</td>
-				<th
-					data-property="isbn"
-					data-value={isbn}
-					scope="row"
-					class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none"
-				>
-					{isbn}
+				<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
+					<span data-property="isbn" data-value={isbn}>
+						{isbn}
+					</span>
 					<dl class="font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
