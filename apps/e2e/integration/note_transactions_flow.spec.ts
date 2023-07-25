@@ -120,70 +120,39 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		await entries.assertRows([book1, book2], { strict: true });
 	});
 
-	test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and filling out the rest of the form", async ({
+	test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 		page
 	}) => {
 		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
 		const entries = content.entries(view);
 		const scanField = content.scanField();
 
 		// Open the book form with the isbn added to the form using the 'Scan' field
-		await scanField.fill("1234567890");
-		// Open the form
-		await scanField.create();
-
-		// Fill out all of the form fields, except for the isbn (should be filled out already)
-		await bookForm.field("title").set("Book 1");
-		await bookForm.field("price").set(12);
-		await bookForm.field("year").set("2020");
-		await bookForm.field("authors").set("Author and Sons");
-		await bookForm.field("publisher").set("Reed Elsevier");
-		await bookForm.field("editedBy").set("Sons");
-		await bookForm.field("outOfPrint").set(true);
-
-		await bookForm.submit("click");
+		await scanField.add("1234567890");
 
 		// Check updates in the entries table
 		await entries.assertRows([
 			{
 				isbn: "1234567890",
-				quantity: 1,
-				title: "Book 1",
-				price: 12,
-				year: "2020",
-				authors: "Author and Sons",
-				publisher: "Reed Elsevier",
-				editedBy: "Sons",
-				outOfPrint: true
+				quantity: 1
 			}
 		]);
 	});
 
-	/**
-	 * @TODO : Unskip this when working on https://github.com/librocco/librocco/issues/284
-	 */
-	test.skip("should aggregate the quantity of the same book", async ({ page }) => {
+	test("should aggregate the quantity of the same book", async ({ page }) => {
 		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
 		const entries = content.entries(view);
 
-		// Create book 1 transaction by filling out the form
-		await scanField.create();
-		await bookForm.fillBookData(book1);
-		await bookForm.submit("click");
+		// Create book 1 transaction (quanitity 1)
+		await scanField.add(book1.isbn);
 
-		// Create book 2 transaction by filling out the form
-		await scanField.create();
-		await bookForm.fillBookData(book2);
-		await bookForm.submit("click");
+		// Create book 2 transaction (quanitity 1)
+		await scanField.add(book2.isbn);
 
 		// Check that both books are in the entries table
 		// (by not using 'strict: true', we're asserting only by values we care about)
@@ -199,10 +168,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		]);
 
 		// Create another transaction for book 1
-		await scanField.fill("1234567890");
-		await scanField.create();
-		await bookForm.fillExistingData();
-		await bookForm.submit("click");
+		await scanField.add(book1.isbn);
 
 		// No new transaction should be added, but the quantity of book 1 should be increased
 		await entries.assertRows([
@@ -226,7 +192,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		const scanField = content.scanField();
 		const entries = content.entries(view);
 
-		// Add transaction with book 1
+		// Add transaction with book 1 (filling the form with book data)
 		await scanField.create();
 		await bookForm.fillBookData(book1);
 		await bookForm.submit("click");
@@ -234,14 +200,8 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add another note
 		await createNoteForView(page, view);
 
-		// Add book 1 again
-		await scanField.fill("1234567890");
-		await scanField.create();
-
-		/** @TEMP : hopefully, this won't be necessary in the future */
-		await bookForm.fillExistingData();
-		await bookForm.submit("click");
-		/**	@TEMP */
+		// Add book 1 again (this time using only isbn and 'Add' button)
+		await scanField.add(book1.isbn);
 
 		// Check that the new note contains the full book data in the transaction
 		await entries.row(0).assertFields(book1);
@@ -249,8 +209,6 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 	test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
 		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
@@ -260,82 +218,41 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		await createNoteForView(page, view);
 
 		// Create book 1 transaction by filling out the form
-		await scanField.create();
-		await bookForm.fillBookData(book1);
-		await bookForm.submit("click");
-
-		await entries.assertRows([
-			{
-				isbn: "1234567890",
-				quantity: 1
-			}
-		]);
+		await scanField.add("1234567890");
 
 		// Change the quantity of the transaction
 		await entries.row(0).setQuantity(3);
 
-		await entries.assertRows([
-			{
-				isbn: "1234567890",
-				quantity: 3
-			}
-		]);
+		await entries.assertRows([{ isbn: "1234567890", quantity: 3 }]);
 
 		// Create book 2 transaction by filling out the form
-		await scanField.create();
-		await bookForm.fillBookData(book2);
-		await bookForm.submit("click");
+		await scanField.add("1234567891");
 
 		await entries.assertRows([
-			{
-				isbn: "1234567890",
-				quantity: 3
-			},
-			{
-				isbn: "1234567891",
-				quantity: 1
-			}
+			{ isbn: "1234567890", quantity: 3 },
+			{ isbn: "1234567891", quantity: 1 }
 		]);
 
 		// Change the quantity of the second transaction
 		await entries.row(1).setQuantity(5);
 
 		await entries.assertRows([
-			{
-				isbn: "1234567890",
-				quantity: 3
-			},
-			{
-				isbn: "1234567891",
-				quantity: 5
-			}
+			{ isbn: "1234567890", quantity: 3 },
+			{ isbn: "1234567891", quantity: 5 }
 		]);
 
 		// Add a third transaction
-		await scanField.create();
-		await bookForm.fillBookData(book3);
-		await bookForm.submit("click");
+		await scanField.add("1234567892");
 
 		await entries.assertRows([
-			{
-				isbn: "1234567890",
-				quantity: 3
-			},
-			{
-				isbn: "1234567891",
-				quantity: 5
-			},
-			{
-				isbn: "1234567892",
-				quantity: 1
-			}
+			{ isbn: "1234567890", quantity: 3 },
+			{ isbn: "1234567891", quantity: 5 },
+			{ isbn: "1234567892", quantity: 1 }
 		]);
 	});
 
 	test("should sort transactions by isbn", async ({ page }) => {
 		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
@@ -346,29 +263,15 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 
 		// Add transactions
 		for (const book of books) {
-			await scanField.create();
-			await bookForm.fillBookData(book);
-			await bookForm.submit("click");
+			await scanField.add(book.isbn);
 		}
 
 		// Check that the transactions are sorted by isbn
-		await entries.assertRows([
-			{
-				isbn: "1234567890"
-			},
-			{
-				isbn: "1234567891"
-			},
-			{
-				isbn: "1234567892"
-			}
-		]);
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 	});
 
-	test("should delete the transaction from the note when when selected for deletion and deletion confirment", async ({ page }) => {
+	test("should delete the transaction from the note when when selected for deletion and deletion confirmed", async ({ page }) => {
 		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
@@ -377,9 +280,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add three books
 		const books = [book1, book2, book3];
 		for (const book of books) {
-			await scanField.create();
-			await bookForm.fillBookData(book);
-			await bookForm.submit("click");
+			await scanField.add(book.isbn);
 		}
 
 		// Delete the second transaction
@@ -402,8 +303,6 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 	test("should delete multiple transactions if so selected", async ({ page }) => {
 		const dashboard = getDashboard(page);
 
-		const bookForm = dashboard.bookForm();
-
 		const content = dashboard.content();
 		const scanField = content.scanField();
 		const entries = content.entries(view);
@@ -411,9 +310,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add three books
 		const books = [book1, book2, book3];
 		for (const book of books) {
-			await scanField.create();
-			await bookForm.fillBookData(book);
-			await bookForm.submit("click");
+			await scanField.add(book.isbn);
 		}
 
 		// Select all transactions
@@ -436,8 +333,6 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 	test("should delete all transactions if all selected", async ({ page }) => {
 		const dashboard = getDashboard(page);
 
-		const bookForm = dashboard.bookForm();
-
 		const content = dashboard.content();
 		const scanField = content.scanField();
 		const entries = content.entries(view);
@@ -445,9 +340,7 @@ const runNoteTransactionTests = (view: "inbound" | "outbound") => {
 		// Add three books
 		const books = [book1, book2, book3];
 		for (const book of books) {
-			await scanField.create();
-			await bookForm.fillBookData(book);
-			await bookForm.submit("click");
+			await scanField.add(book.isbn);
 		}
 
 		// Select all transactions
