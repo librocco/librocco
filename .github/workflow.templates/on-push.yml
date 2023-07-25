@@ -3,7 +3,6 @@
 #@ load("rush.lib.yml", "rush_install")
 #@ load("rush.lib.yml", "rush_build")
 #@ load("test-job.lib.yml", "test_job")
-#@ load("web-client_deploy.lib.yml", "deploy")
 
 name: Checks
 
@@ -82,4 +81,33 @@ jobs:
             - name: Check for unlisted artifacts in 'apps' and 'pkg' folders
               run: rush check-workspace-projects
 
-    deploy-production: #@ deploy()
+    deploy-production:
+        name: Deploy web-client app to bunny cdn
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v3
+            - uses: actions/setup-node@v3
+              with:
+                  node-version: "16"
+            -  #@ cache_node()
+            -  #@ rush_add_path()
+            -  #@ rush_install()
+            -  #@ rush_build()
+            - name: Build web-client app using prefix ${{ github.head_ref || github.ref_name }}
+              run: cd apps/web-client && rushx build:prod
+              env:
+                  BASE_PATH: /${{ github.head_ref || github.ref_name }}
+            - name: Install ncftp
+              run: |
+                  sudo apt-get update
+                  sudo apt-get install ncftp
+            - name: Copy built app to bunny storage zone
+              run: ncftpput -R -v -u librocco -p "${BUNNY_STORAGE_PASSWORD}" -m storage.bunnycdn.com ${{ github.head_ref || github.ref_name }} apps/web-client/build/*
+              env:
+                  BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+            - name: Purge bunny cache
+              run: 'curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"'
+              env:
+                  BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
+            - name: Output link to deployed app
+              run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY

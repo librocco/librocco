@@ -225,11 +225,10 @@ jobs:
     name: Deploy web-client app to bunny cdn
     runs-on: ubuntu-latest
     steps:
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "16"
-    - name: Checkout repository
-      uses: actions/checkout@v3
     - name: Cache node modules
       uses: actions/cache@v3
       with:
@@ -238,7 +237,7 @@ jobs:
           ~/.pnpm-store
           common/temp
           **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
