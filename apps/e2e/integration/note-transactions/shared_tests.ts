@@ -1,8 +1,8 @@
-import { type Page, test } from "@playwright/test";
+import { Page, test } from "@playwright/test";
 
 import { NoteState, NoteTempState } from "@librocco/shared";
 
-import { baseURL } from "../../constants";
+import { ViewName } from "../../helpers/types";
 
 import { getDashboard } from "../../helpers";
 
@@ -17,79 +17,7 @@ const book1 = {
 	outOfPrint: true
 };
 
-const book2 = {
-	isbn: "1234567891",
-	title: "Book 2",
-	price: 20,
-	year: "2020",
-	authors: "Some other author",
-	publisher: "Penguin Random House",
-	editedBy: "No one",
-	outOfPrint: false
-};
-const createNoteForView = (page: Page, view: "inbound" | "outbound") => {
-	const sidebar = getDashboard(page).sidebar();
-
-	// Outbound notes are created against a default warehouse
-	if (view === "outbound") {
-		return sidebar.createNote();
-	}
-
-	// For all inbound note tests (in this suite) we're using a first warehouse created
-	// ("New Warehouse") to create notes
-	return sidebar.linkGroup("New Warehouse").createNote();
-};
-
-export const runCommonTransactionTests = (view: "inbound" | "outbound") => {
-	/** @TODO should be tested view-specific */
-	test("should add a transaction to the note by filling out the book form on 'Create' button", async ({ page }) => {
-		const dashboard = getDashboard(page);
-
-		const bookForm = dashboard.bookForm();
-
-		const content = dashboard.content();
-		const entries = content.entries(view);
-
-		// Open the book form by clicking the 'Create' button
-		await content.scanField().create();
-
-		// Filling out the book form field by field
-		await bookForm.field("isbn").set("1234567890");
-		await bookForm.field("title").set("Book 1");
-		await bookForm.field("price").set(12);
-		await bookForm.field("year").set("2020");
-		await bookForm.field("authors").set("Author and Sons");
-		await bookForm.field("publisher").set("Reed Elsevier");
-		await bookForm.field("editedBy").set("Sons");
-		await bookForm.field("outOfPrint").set(true);
-
-		await bookForm.submit("click");
-
-		const row1 = entries.row(0);
-		row1.assertFields(book1);
-
-		// Create another book using the automated api (to check they work the same way)
-		await content.scanField().create();
-		await bookForm.fillBookData({
-			isbn: "1234567891",
-			title: "Book 2",
-			price: 20,
-			year: "2020",
-			authors: "Some other author",
-			publisher: "Penguin Random House",
-			editedBy: "No one",
-			outOfPrint: false
-		});
-		await bookForm.submit("click");
-
-		// Check that the updates are shown in row 2
-		const row2 = entries.row(1);
-		await row2.assertFields(book2);
-
-		// Use automated api to check all rows
-		await entries.assertRows([book1, book2], { strict: true });
-	});
-
+export const runCommonTransactionTests = (view: ViewName, createNote: (page: Page) => Promise<void>) => {
 	test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 		page
 	}) => {
@@ -167,7 +95,7 @@ export const runCommonTransactionTests = (view: "inbound" | "outbound") => {
 		await bookForm.submit("click");
 
 		// Add another note (when programmatic setup is supported, we will be testing with the default note )
-		await createNoteForView(page, view);
+		await createNote(page);
 		/***** @TODO this part should be replaced by programmatically creating a book data entry */
 
 		// Add book 1 again (this time using only isbn and 'Add' button)
@@ -185,7 +113,7 @@ export const runCommonTransactionTests = (view: "inbound" | "outbound") => {
 		const entries = content.entries(view);
 
 		// Create a new note to work with
-		await createNoteForView(page, view);
+		await createNote(page);
 
 		// Create book 1 transaction by filling out the form
 		await scanField.add("1234567890");
