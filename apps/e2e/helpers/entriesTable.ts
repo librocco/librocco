@@ -1,6 +1,14 @@
 import type { Locator } from "@playwright/test";
 
-import { AssertRowFieldsOpts, DisplayRow, EntriesRowInterface, EntriesTableInterface, ViewName } from "./types";
+import {
+	AssertRowFieldsOpts,
+	Asserter,
+	DisplayRow,
+	EntriesFieldInterface,
+	EntriesRowInterface,
+	EntriesTableInterface,
+	ViewName
+} from "./types";
 
 export function getEntriesTable(view: ViewName, content: Locator): EntriesTableInterface {
 	const container = content.locator("#inventory-table");
@@ -58,9 +66,17 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 
 	const selectCheckbox = container.locator("input[name*='Select']");
 
-	const assertField = <K extends keyof DisplayRow>(name: K, value: DisplayRow[K]) => {
-		return container.locator(`[data-property="${name}"][data-value="${value}"]`).waitFor();
+	const setQuantity = async (quantity: number) => {
+		const quantityInput = container.locator("[data-property='quantity']").locator("input");
+		await quantityInput.fill(quantity.toString());
+		await quantityInput.press("Enter");
 	};
+
+	const select = () => selectCheckbox.check();
+
+	const unselect = () => selectCheckbox.uncheck();
+
+	const field = <K extends keyof DisplayRow>(name: K) => fieldConstructorLookup[name](container);
 
 	const assertFields = async (row: Partial<DisplayRow>, opts: AssertRowFieldsOpts = { strict: false }) => {
 		// If strict we're asserting that the non-provided fields are the default values
@@ -77,19 +93,37 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 		for (const [name, value] of Object.entries(compareObj)) {
 			// Skip fields not visible in the particular view
 			if (!rowFieldsLookup[view].includes(name)) continue;
-			await assertField(name as keyof DisplayRow, value);
+			await field(name as keyof DisplayRow).assert(value);
 		}
 	};
 
-	const setQuantity = async (quantity: number) => {
-		const quantityInput = container.locator("[data-property='quantity']").locator("input");
-		await quantityInput.fill(quantity.toString());
-		await quantityInput.press("Enter");
+	return Object.assign(container, { field, assertFields, setQuantity, select, unselect });
+}
+
+interface FieldConstructor<K extends keyof DisplayRow> {
+	(row: Locator): EntriesFieldInterface<K>;
+}
+
+const genericFieldConstructor =
+	<K extends keyof DisplayRow>(name: K): FieldConstructor<K> =>
+	(row) => {
+		return {
+			assert: (want) => row.locator(`[data-property="${name}"][data-value="${want}"]`).waitFor()
+		};
 	};
 
-	const select = () => selectCheckbox.check();
-
-	const unselect = () => selectCheckbox.uncheck();
-
-	return Object.assign(container, { assertField, assertFields, setQuantity, select, unselect });
-}
+const fieldConstructorLookup: {
+	[K in keyof DisplayRow]: FieldConstructor<K>;
+} = {
+	isbn: genericFieldConstructor("isbn"),
+	title: genericFieldConstructor("title"),
+	authors: genericFieldConstructor("authors"),
+	price: genericFieldConstructor("price"),
+	quantity: genericFieldConstructor("quantity"),
+	publisher: genericFieldConstructor("publisher"),
+	outOfPrint: genericFieldConstructor("outOfPrint"),
+	warehouseId: genericFieldConstructor("warehouseId"),
+	warehouseName: genericFieldConstructor("warehouseName"),
+	editedBy: genericFieldConstructor("editedBy"),
+	year: genericFieldConstructor("year")
+};
