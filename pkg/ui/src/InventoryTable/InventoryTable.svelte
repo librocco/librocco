@@ -175,7 +175,7 @@
 				{/if}
 
 				<th scope="row" class="p-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
-					<span data-property="isbn" data-value={isbn}>{isbn}</span>
+					<span data-property="isbn">{isbn}</span>
 					<dl class="max-w-[15rem] truncate font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
@@ -185,13 +185,13 @@
 						<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">{year}</dd>
 					</dl>
 				</th>
-				<td data-property="title" data-value={title} class="hidden px-3 py-4 lg:table-cell">
+				<td data-property="title" class="hidden px-3 py-4 lg:table-cell">
 					<span class="inline-block max-w-[15rem] truncate">{title}</span>
 				</td>
-				<td data-property="authors" data-value={authors} class="hidden py-4 px-3 lg:table-cell">
+				<td data-property="authors" class="hidden py-4 px-3 lg:table-cell">
 					{authors}
 				</td>
-				<td data-property="quantity" data-value={quantity} class="py-4 px-3 text-left">
+				<td data-property="quantity" class="py-4 px-3 text-left">
 					{#if interactive}
 						<!-- For interactive variant, show the quantity input element -->
 						<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
@@ -200,17 +200,17 @@
 						<Badge label={quantity.toString()} size={BadgeSize.LG} />
 					{/if}
 				</td>
-				<td data-property="price" data-value={price} class="py-4 px-3 text-left">
+				<td data-property="price" class="py-4 px-3 text-left">
 					{price}
 				</td>
-				<td data-property="year" data-value={year} class="hidden py-4 px-3 text-left sm:table-cell">
+				<td data-property="year" class="hidden py-4 px-3 text-left sm:table-cell">
 					{year}
 				</td>
 
-				<td data-property="publisher" data-value={publisher} class="hidden py-4 px-3 md:table-cell">
+				<td data-property="publisher" class="hidden py-4 px-3 md:table-cell">
 					{publisher}
 				</td>
-				<td data-property="editedBy" data-value={editedBy} class="hidden py-4 px-3 xl:table-cell">
+				<td data-property="editedBy" class="hidden py-4 px-3 xl:table-cell">
 					{editedBy}
 				</td>
 				<td class="py-4 px-3 text-left">
@@ -218,7 +218,7 @@
 						<Button color={ButtonColor.White} on:click={() => onEdit(row)}>Edit</Button>
 					</div>
 				</td>
-				<td data-property="outOfPrint" data-value={outOfPrint} class="hidden py-4 px-3 text-center xl:table-cell">
+				<td data-property="outOfPrint" class="hidden py-4 px-3 text-center xl:table-cell">
 					<span class="inline-block">
 						<Checkbox name={`Row ${rowIx} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
 					</span>

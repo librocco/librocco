@@ -1,12 +1,12 @@
-import type { Locator } from "@playwright/test";
+import { expect, type Locator } from "@playwright/test";
 
 import {
 	AssertRowFieldsOpts,
-	Asserter,
 	DisplayRow,
 	EntriesFieldInterface,
 	EntriesRowInterface,
 	EntriesTableInterface,
+	TransactionRowField,
 	ViewName
 } from "./types";
 
@@ -76,7 +76,7 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 
 	const unselect = () => selectCheckbox.uncheck();
 
-	const field = <K extends keyof DisplayRow>(name: K) => fieldConstructorLookup[name](container);
+	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](container);
 
 	const assertFields = async (row: Partial<DisplayRow>, opts: AssertRowFieldsOpts = { strict: false }) => {
 		// If strict we're asserting that the non-provided fields are the default values
@@ -93,37 +93,49 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 		for (const [name, value] of Object.entries(compareObj)) {
 			// Skip fields not visible in the particular view
 			if (!rowFieldsLookup[view].includes(name)) continue;
-			await field(name as keyof DisplayRow).assert(value);
+			await field(name as TransactionRowField).assert(value);
 		}
 	};
 
 	return Object.assign(container, { field, assertFields, setQuantity, select, unselect });
 }
 
-interface FieldConstructor<K extends keyof DisplayRow> {
+interface FieldConstructor<K extends TransactionRowField> {
 	(row: Locator): EntriesFieldInterface<K>;
 }
 
-const genericFieldConstructor =
-	<K extends keyof DisplayRow>(name: K): FieldConstructor<K> =>
-	(row) => {
-		return {
-			assert: (want) => row.locator(`[data-property="${name}"][data-value="${want}"]`).waitFor()
-		};
-	};
+const stringFieldConstructor =
+	<K extends TransactionRowField>(name: K): FieldConstructor<K> =>
+	(row) => ({
+		assert: (want) => expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString())
+	});
+
+const quantityFieldCostructor: FieldConstructor<"quantity"> = (row) => ({
+	assert: (want) => expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString())
+});
+
+const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
+	assert: (want) => {
+		const el = row.locator('[data-property="outOfPrint"]').locator(`input`);
+		return want ? expect(el).toBeChecked() : expect(el).not.toBeChecked();
+	}
+});
+
+const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) => ({
+	assert: (want) => expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want)
+});
 
 const fieldConstructorLookup: {
-	[K in keyof DisplayRow]: FieldConstructor<K>;
+	[K in TransactionRowField]: FieldConstructor<K>;
 } = {
-	isbn: genericFieldConstructor("isbn"),
-	title: genericFieldConstructor("title"),
-	authors: genericFieldConstructor("authors"),
-	price: genericFieldConstructor("price"),
-	quantity: genericFieldConstructor("quantity"),
-	publisher: genericFieldConstructor("publisher"),
-	outOfPrint: genericFieldConstructor("outOfPrint"),
-	warehouseId: genericFieldConstructor("warehouseId"),
-	warehouseName: genericFieldConstructor("warehouseName"),
-	editedBy: genericFieldConstructor("editedBy"),
-	year: genericFieldConstructor("year")
+	isbn: stringFieldConstructor("isbn"),
+	title: stringFieldConstructor("title"),
+	authors: stringFieldConstructor("authors"),
+	price: stringFieldConstructor("price"),
+	quantity: quantityFieldCostructor,
+	publisher: stringFieldConstructor("publisher"),
+	outOfPrint: outOfPrintFieldConstructor,
+	warehouseName: warehouseNameFieldConstructor,
+	editedBy: stringFieldConstructor("editedBy"),
+	year: stringFieldConstructor("year")
 };
