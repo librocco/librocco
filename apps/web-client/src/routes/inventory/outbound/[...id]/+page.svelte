@@ -30,7 +30,8 @@
 		type RemoveTransactionsDetail,
 		ProgressBar,
 		Slideover,
-		BookDetailForm
+		BookDetailForm,
+		ScanInput
 	} from "@librocco/ui";
 
 	import type { BookEntry, DatabaseInterface } from "@librocco/db";
@@ -184,26 +185,12 @@
 					align="right"
 				/>
 			</div>
-			<TextField
-				id="scan-input-container"
-				bind:value={isbn}
-				name="scan-input"
-				placeholder="Scan to add books..."
-				variant={TextFieldSize.LG}
-			>
-				<svelte:fragment slot="startAdornment">
-					<QrCode />
-				</svelte:fragment>
-				<div let:value slot="endAdornment" class="flex gap-x-2">
-					<!-- @TODO: no validation is implemented here -->
-					<Button on:click={() => handleBookEntry()({ ...$bookFormStore.book, isbn })} size={ButtonSize.SM}>
-						<svelte:fragment slot="startAdornment">
-							<Edit size={16} />
-						</svelte:fragment>
-						Create
-					</Button>
-				</div>
-			</TextField>
+			<ScanInput
+				onAdd={(isbn) => {
+					note.addVolumes({ isbn, quantity: 1 });
+				}}
+				onCreate={() => handleBookEntry()({ ...$bookFormStore.book, isbn })}
+			/>
 		{/if}
 	</svelte:fragment>
 
