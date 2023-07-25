@@ -1,11 +1,26 @@
 import type { Locator } from "@playwright/test";
 
-import type { NoteState } from "@librocco/shared";
+import type { NoteState, NoteTempState } from "@librocco/shared";
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 
 export type ViewName = "inbound" | "outbound" | "stock";
+
+/** @TODO Import this from shared (duplicate) */
+export interface DisplayRow {
+	isbn: string;
+	title: string;
+	quantity: number;
+	warehouseId: string;
+	price: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	warehouseName: string;
+}
 
 export interface DashboardInterface {
 	waitFor: Locator["waitFor"];
@@ -14,6 +29,7 @@ export interface DashboardInterface {
 	view(name: ViewName): ViewInterface;
 	sidebar(): SidebarInterface;
 	content(): ContentInterface;
+	bookForm(): BookFormInterface;
 }
 
 export interface NavInterface extends Locator {
@@ -44,6 +60,8 @@ export interface ContentInterface extends Locator {
 	updatedAt(): Promise<Date>;
 	assertUpdatedAt(date: Date): Promise<void>;
 	statePicker(): StatePickerInterface;
+	scanField(): ScanFieldInterface;
+	entries(view: ViewName): EntriesTableInterface;
 }
 
 export interface ContentHeadingInterface extends Locator {
@@ -52,7 +70,54 @@ export interface ContentHeadingInterface extends Locator {
 }
 
 export interface StatePickerInterface extends Locator {
-	getState(): Promise<NoteState>;
-	assertState(state: NoteState): Promise<void>;
+	getState(): Promise<NoteState | NoteTempState>;
+	assertState(state: NoteState | NoteTempState): Promise<void>;
 	select(state: NoteState): Promise<void>;
+}
+
+export interface ScanFieldInterface extends Locator {
+	add(isbn: string): Promise<void>;
+	create(): Promise<void>;
+}
+
+export interface BookFormValues {
+	isbn: string;
+	title: string;
+	price: number;
+	year: string;
+	authors: string;
+	publisher: string;
+	editedBy: string;
+	outOfPrint: boolean;
+}
+
+export interface BookFormInterface extends Locator {
+	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
+	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
+	fillExistingData(): Promise<void>;
+	submit(kind?: "keyboard" | "click"): Promise<void>;
+}
+
+export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
+	set: (value: T) => Promise<void>;
+}
+
+export interface AssertRowFieldsOpts {
+	strict?: boolean;
+}
+
+export interface EntriesTableInterface extends Locator {
+	row(index: number): EntriesRowInterface;
+	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
+	selectAll(): Promise<void>;
+	unselectAll(): Promise<void>;
+	deleteSelected(): Promise<void>;
+}
+
+export interface EntriesRowInterface extends Locator {
+	assertField<K extends keyof DisplayRow>(name: K, value: DisplayRow[K]): Promise<void>;
+	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
+	setQuantity(value: number): Promise<void>;
+	select(): Promise<void>;
+	unselect(): Promise<void>;
 }

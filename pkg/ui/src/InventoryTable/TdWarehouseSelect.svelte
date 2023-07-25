@@ -28,7 +28,7 @@
 		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
 </script>
 
-<td class="py-4 px-1.5">
+<td data-property="warehouseName" data-value={selectedLabel} class="py-4 px-1.5">
 	{#if availableWarehouses?.size > 1}
 		<TextField name={`Row ${rowIx} warehouse`} inputAction={combobox.input} value={selectedLabel} placeholder="Select warehouse...">
 			<span slot="startAdornment" class="rounded-full p-1 {$combobox.selected ? 'bg-teal-400' : 'bg-red-400'}" />
