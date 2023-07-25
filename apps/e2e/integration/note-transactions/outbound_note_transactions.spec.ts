@@ -57,6 +57,9 @@ test("should display correct transaction fields for the outbound note view", asy
 	await row.assertField("year", book1.year);
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
+	/**
+	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
+	 */
 	// await row.assertField("warehouseName", "not-found");
 });
 
@@ -79,6 +82,9 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await row.assertField("year", "N/A");
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
+	/**
+	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
+	 */
 	// await row.assertField("warehouseName", "not-found");
 });
 
