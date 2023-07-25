@@ -156,7 +156,7 @@
 					</span>
 				</td>
 				<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
-					<span data-property="isbn" data-value={isbn}>
+					<span data-property="isbn">
 						{isbn}
 					</span>
 					<dl class="font-normal lg:hidden">
@@ -168,19 +168,19 @@
 						<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">€{price}</dd>
 					</dl>
 				</th>
-				<td data-property="title" data-value={title} class="hidden px-3 py-4 lg:table-cell">
+				<td data-property="title" class="hidden px-3 py-4 lg:table-cell">
 					{title}
 				</td>
-				<td data-property="authors" data-value={authors} class="hidden py-4 px-3 lg:table-cell">
+				<td data-property="authors" class="hidden py-4 px-3 lg:table-cell">
 					{authors}
 				</td>
-				<td data-property="quantity" data-value={quantity} class="py-4 px-3 text-left">
+				<td data-property="quantity" class="py-4 px-3 text-left">
 					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, warehouseId, quantity })} />
 				</td>
-				<td data-property="price" data-value={price} class="hidden py-4 px-3 text-left sm:table-cell">
+				<td data-property="price" class="hidden py-4 px-3 text-left sm:table-cell">
 					{price}
 				</td>
-				<td data-property="year" data-value={year} class="hidden py-4 px-3 text-left md:table-cell">
+				<td data-property="year" class="hidden py-4 px-3 text-left md:table-cell">
 					{year}
 				</td>
 				<td class="hidden py-4 px-3 text-left md:table-cell">

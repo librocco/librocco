@@ -58,7 +58,7 @@ test("should display correct transaction fields for the outbound note view", asy
 	/**
 	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
 	 */
-	// await row.field("warehouseName").assert("not-found")
+	await row.field("warehouseName").assert("not-found");
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
@@ -83,7 +83,7 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	/**
 	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
 	 */
-	// await row.field("warehouseName").assert("not-found")
+	await row.field("warehouseName").assert("not-found");
 });
 
 runCommonTransactionTests("outbound");

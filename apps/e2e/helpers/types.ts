@@ -4,6 +4,8 @@ import type { NoteState, NoteTempState } from "@librocco/shared";
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
+/** A type of display row property names, without 'warehouseId' as it's never displayed */
+export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
 
 export type ViewName = "inbound" | "outbound" | "stock";
 
@@ -115,7 +117,7 @@ export interface EntriesTableInterface extends Locator {
 }
 
 export interface EntriesRowInterface extends Locator {
-	field<K extends keyof DisplayRow>(name: K): EntriesFieldInterface<K>;
+	field<K extends TransactionRowField>(name: K): EntriesFieldInterface<K>;
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 	setQuantity(value: number): Promise<void>;
 	select(): Promise<void>;
@@ -126,4 +128,4 @@ export interface Asserter<T> {
 	assert: (value: T) => Promise<void>;
 }
 
-export type EntriesFieldInterface<K extends keyof DisplayRow> = Asserter<DisplayRow[K]>;
+export type EntriesFieldInterface<K extends TransactionRowField> = Asserter<DisplayRow[K]>;
