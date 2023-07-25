@@ -174,13 +174,8 @@
 					</td>
 				{/if}
 
-				<th
-					data-property="isbn"
-					data-value={isbn}
-					scope="row"
-					class="p-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}"
-				>
-					{isbn}
+				<th scope="row" class="p-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
+					<span data-property="isbn" data-value={isbn}>{isbn}</span>
 					<dl class="max-w-[15rem] truncate font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
