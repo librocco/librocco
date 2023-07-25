@@ -4,6 +4,7 @@
 	"scripts": {
 		"build": "echo e2e has no build functionality, skipping...",
 		"test:open": "playwright test --ui",
+		"test:debug": "playwright test $1 --debug",
 		"test:run": "playwright test",
 		"test:codegen": "playwright codegen",
 		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",

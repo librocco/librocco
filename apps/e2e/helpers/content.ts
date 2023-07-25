@@ -1,9 +1,19 @@
 import { type Locator, type Page, expect } from "@playwright/test";
 
-import { type NoteState } from "@librocco/shared";
+import { NoteTempState, type NoteState } from "@librocco/shared";
 
-import type { WaitForOpts, ContentInterface, ContentHeadingInterface, StatePickerInterface, GetByTextOpts } from "./types";
+import type {
+	WaitForOpts,
+	ContentInterface,
+	ContentHeadingInterface,
+	StatePickerInterface,
+	GetByTextOpts,
+	ScanFieldInterface,
+	ViewName
+} from "./types";
+
 import { getDashboard } from "./dashboard";
+import { getEntriesTable } from "./entriesTable";
 
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#table-section");
@@ -38,7 +48,11 @@ export function getContent(page: Page): ContentInterface {
 		return getStatePicker(container);
 	};
 
-	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker });
+	const scanField = (): ScanFieldInterface => getScanField(container);
+
+	const entries = (view: ViewName) => getEntriesTable(view, container);
+
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries });
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
@@ -72,9 +86,9 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 function getStatePicker(content: Locator): StatePickerInterface {
 	const container = content.locator("#note-state-picker");
 
-	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState>;
+	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState | NoteTempState>;
 
-	const assertState = (state: NoteState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
+	const assertState = (state: NoteState | NoteTempState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
 
 	const expandButton = container.locator("button[aria-haspopup='true']");
 
@@ -105,4 +119,18 @@ function getStatePicker(content: Locator): StatePickerInterface {
 	};
 
 	return Object.assign(container, { getState, assertState, select });
+}
+
+function getScanField(content: Locator): ScanFieldInterface {
+	const container = content.locator("#scan-input-container");
+	const input = container.locator("input");
+
+	const add = async (isbn: string) => {
+		await input.fill(isbn);
+		await input.press("Enter");
+	};
+
+	const create = () => container.getByRole("button", { name: "Create" }).click();
+
+	return Object.assign(input, { add, create });
 }

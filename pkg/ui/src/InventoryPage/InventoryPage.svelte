@@ -39,7 +39,7 @@
 	</main>
 
 	{#if $$slots.slideOver}
-		<section id="slideover-section" class="h-autoshadow-lg fixed right-0">
+		<section id="slideover-section" class="fixed right-0 max-h-screen overflow-y-auto shadow-lg">
 			<slot name="slideOver" />
 		</section>
 	{/if}
