@@ -1,4 +1,4 @@
-import { type Page, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 import { baseURL } from "../../constants";
 
@@ -17,8 +17,6 @@ const book1 = {
 	outOfPrint: true
 };
 
-const createNote = async (page: Page) => getDashboard(page).sidebar().createNote();
-
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
@@ -32,7 +30,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.navigate("outbound");
 
 	// Create a new note to work with
-	await createNote(page);
+	await getDashboard(page).sidebar().createNote();
 });
 
 test("should display correct transaction fields for the outbound note view", async ({ page }) => {
@@ -88,4 +86,4 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	// await row.assertField("warehouseName", "not-found");
 });
 
-runCommonTransactionTests("outbound", createNote);
+runCommonTransactionTests("outbound");
