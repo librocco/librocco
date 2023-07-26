@@ -15,6 +15,7 @@
 		"postinstall": "playwright install --with-deps"
 	},
 	"devDependencies": {
+		"@librocco/db": "workspace:*",
 		"@librocco/shared": "workspace:*",
 		"@playwright/test": "~1.35.1",
 		"@typescript-eslint/eslint-plugin": "^5.27.0",
