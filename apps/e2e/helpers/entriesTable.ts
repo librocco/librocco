@@ -3,10 +3,12 @@ import { expect, type Locator } from "@playwright/test";
 import {
 	AssertRowFieldsOpts,
 	DisplayRow,
-	EntriesFieldInterface,
 	EntriesRowInterface,
 	EntriesTableInterface,
+	GenericTransactionField,
+	TransactionFieldInterfaceLookup,
 	TransactionRowField,
+	TransactionRowValues,
 	ViewName
 } from "./types";
 
@@ -49,7 +51,7 @@ export function getEntriesTable(view: ViewName, content: Locator): EntriesTableI
 	return Object.assign(container, { row, assertRows, deleteSelected, selectAll, unselectAll });
 }
 
-const defaultValues: Omit<DisplayRow, "warehouseId" | "warehouseName"> = {
+const defaultValues: TransactionRowValues = {
 	isbn: "",
 	price: 0,
 	quantity: 1,
@@ -58,6 +60,7 @@ const defaultValues: Omit<DisplayRow, "warehouseId" | "warehouseName"> = {
 	authors: "",
 	publisher: "",
 	editedBy: "",
+	warehouseName: "not-found",
 	outOfPrint: false
 };
 
@@ -66,19 +69,13 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 
 	const selectCheckbox = container.locator("input[name*='Select']");
 
-	const setQuantity = async (quantity: number) => {
-		const quantityInput = container.locator("[data-property='quantity']").locator("input");
-		await quantityInput.fill(quantity.toString());
-		await quantityInput.press("Enter");
-	};
-
 	const select = () => selectCheckbox.check();
 
 	const unselect = () => selectCheckbox.uncheck();
 
 	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](container);
 
-	const assertFields = async (row: Partial<DisplayRow>, opts: AssertRowFieldsOpts = { strict: false }) => {
+	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts = { strict: false }) => {
 		// If strict we're asserting that the non-provided fields are the default values
 		// whereas, for non-strict, we're asserting only for provided fields
 		const compareObj = opts.strict ? { ...defaultValues, ...row } : row;
@@ -90,28 +87,34 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 			outbound: ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName"]
 		};
 
-		for (const [name, value] of Object.entries(compareObj)) {
+		for (const entry of Object.entries(compareObj)) {
+			const [name, value] = entry;
 			// Skip fields not visible in the particular view
 			if (!rowFieldsLookup[view].includes(name)) continue;
-			await field(name as TransactionRowField).assert(value);
+			await field<any>(name as keyof TransactionFieldInterfaceLookup).assert(value);
 		}
 	};
 
-	return Object.assign(container, { field, assertFields, setQuantity, select, unselect });
+	return Object.assign(container, { field, assertFields, select, unselect });
 }
 
-interface FieldConstructor<K extends TransactionRowField> {
-	(row: Locator): EntriesFieldInterface<K>;
+interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
+	(row: Locator): TransactionFieldInterfaceLookup[K];
 }
 
 const stringFieldConstructor =
-	<K extends TransactionRowField>(name: K): FieldConstructor<K> =>
+	<K extends GenericTransactionField>(name: K): FieldConstructor<K> =>
 	(row) => ({
-		assert: (want) => expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString())
+		assert: (want: string | number | boolean) => expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString())
 	});
 
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row) => ({
-	assert: (want) => expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString())
+	assert: (want) => expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString()),
+	set: async (value) => {
+		const quantityInput = row.locator("[data-property='quantity']").locator("input");
+		await quantityInput.fill(value.toString());
+		await quantityInput.press("Enter");
+	}
 });
 
 const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
