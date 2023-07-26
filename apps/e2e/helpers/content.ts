@@ -108,7 +108,6 @@ function getStatePicker(content: Locator): StatePickerInterface {
 	const select = async (newState: NoteState) => {
 		const currentState = await getState();
 
-		console.log("Current state:", currentState);
 		if (currentState === newState) {
 			return;
 		}
