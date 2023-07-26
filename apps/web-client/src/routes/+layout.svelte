@@ -5,9 +5,23 @@
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import { Toast } from "@librocco/ui";
+
+	import type { LayoutData } from "./$types";
+
 	import { defaultToaster } from "$lib/toasts";
 
+	export let data: LayoutData;
+
+	const { db } = data;
+
 	onMount(async () => {
+		// Register the db to the window object.
+		// This is used for e2e tests (easier setup through direct access to the db).
+		// This is not a security concern as the db is in the user's browser anyhow.
+		if (db) {
+			window["_db"] = db;
+		}
+
 		if (pwaInfo) {
 			const { registerSW } = await import("virtual:pwa-register");
 			registerSW({
