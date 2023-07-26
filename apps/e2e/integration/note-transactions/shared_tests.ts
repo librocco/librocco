@@ -1,10 +1,10 @@
-import { Page, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 import { NoteState, NoteTempState } from "@librocco/shared";
 
 import { ViewName } from "../../helpers/types";
 
-import { getDashboard } from "../../helpers";
+import { getDashboard, getDbHandle } from "../../helpers";
 
 const book1 = {
 	isbn: "1234567890",
@@ -17,7 +17,7 @@ const book1 = {
 	outOfPrint: true
 };
 
-export const runCommonTransactionTests = (view: ViewName, createNote: (page: Page) => Promise<void>) => {
+export const runCommonTransactionTests = (view: ViewName) => {
 	test("should add a transaction to the note by 'typing the ISBN into the 'Scan' field and pressing \"Enter\" (the same way scenner interaction would be processed)", async ({
 		page
 	}) => {
@@ -80,23 +80,17 @@ export const runCommonTransactionTests = (view: ViewName, createNote: (page: Pag
 	});
 
 	test("should autofill the existing book data when adding a transaction with existing isbn", async ({ page }) => {
-		const dashboard = getDashboard(page);
+		// Setup: Add book data to the database
+		const dbHandle = await getDbHandle(page);
+		await dbHandle.evaluate(async (db, book) => {
+			db.books().upsert([book]);
+		}, book1);
 
-		const bookForm = dashboard.bookForm();
+		const dashboard = getDashboard(page);
 
 		const content = dashboard.content();
 		const scanField = content.scanField();
 		const entries = content.entries(view);
-
-		/***** @TODO this part should be replaced by programmatically creating a book data entry */
-		// Add transaction with book 1 (filling the form with book data)
-		await scanField.create();
-		await bookForm.fillBookData(book1);
-		await bookForm.submit("click");
-
-		// Add another note (when programmatic setup is supported, we will be testing with the default note )
-		await createNote(page);
-		/***** @TODO this part should be replaced by programmatically creating a book data entry */
 
 		// Add book 1 again (this time using only isbn and 'Add' button)
 		await scanField.add(book1.isbn);
@@ -111,9 +105,6 @@ export const runCommonTransactionTests = (view: ViewName, createNote: (page: Pag
 		const content = dashboard.content();
 		const scanField = content.scanField();
 		const entries = content.entries(view);
-
-		// Create a new note to work with
-		await createNote(page);
 
 		// Create book 1 transaction by filling out the form
 		await scanField.add("1234567890");
