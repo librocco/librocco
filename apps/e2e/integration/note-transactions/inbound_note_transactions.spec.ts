@@ -1,8 +1,8 @@
-import { type Page, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 import { baseURL } from "../../constants";
 
-import { getDashboard } from "../../helpers";
+import { getDashboard, getDbHandle } from "../../helpers";
 
 import { runCommonTransactionTests } from "./shared_tests";
 
@@ -17,29 +17,24 @@ const book1 = {
 	outOfPrint: true
 };
 
-const createNote = async (page: Page) =>
-	// For all inbound note tests (in this suite) we're using a first warehouse created
-	// ("New Warehouse") to create notes
-	getDashboard(page).sidebar().linkGroup("New Warehouse").createNote();
-
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
-	const sidebar = dashboard.sidebar();
 
 	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
 
-	// Create a warehouse first to which we can add the notes
-	await sidebar.createWarehouse();
-
 	// Navigate to the inbound
 	await dashboard.navigate("inbound");
 
+	// Create a warehouse to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
+
 	// Create a new note to work with
-	await createNote(page);
+	await getDashboard(page).sidebar().linkGroup("New Warehouse").createNote();
 });
 
 test("should display correct transaction fields for the inbound note view", async ({ page }) => {
@@ -93,4 +88,4 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await row.assertField("outOfPrint", false);
 });
 
-runCommonTransactionTests("inbound", createNote);
+runCommonTransactionTests("inbound");
