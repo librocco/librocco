@@ -110,7 +110,7 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		await scanField.add("1234567890");
 
 		// Change the quantity of the transaction
-		await entries.row(0).setQuantity(3);
+		await entries.row(0).field("quantity").set(3);
 
 		await entries.assertRows([{ isbn: "1234567890", quantity: 3 }]);
 
@@ -123,7 +123,7 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		]);
 
 		// Change the quantity of the second transaction
-		await entries.row(1).setQuantity(5);
+		await entries.row(1).field("quantity").set(5);
 
 		await entries.assertRows([
 			{ isbn: "1234567890", quantity: 3 },
@@ -267,7 +267,7 @@ export const runCommonTransactionTests = (view: ViewName) => {
 
 		// Add a transaction with 0 quantity
 		await content.scanField().add("1234567890");
-		await entries.row(0).setQuantity(0);
+		await entries.row(0).field("quantity").set(0);
 
 		// Try and commit the note
 		await statePicker.select(NoteState.Committed);
