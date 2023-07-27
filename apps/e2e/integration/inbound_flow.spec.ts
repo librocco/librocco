@@ -4,27 +4,31 @@ import { NoteState } from "@librocco/shared";
 
 import { baseURL } from "../constants";
 
-import { getDashboard } from "../helpers";
+import { getDashboard, getDbHandle } from "../helpers";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
-	const sidebar = dashboard.sidebar();
 
 	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
-
-	// Create two warehouses first (to which we can add the notes)
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
 
 	// Navigate to the inbound note page
 	await dashboard.navigate("inbound");
 });
 
 test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Display name should default to "New Warehouse"
+		await db.warehouse("wh-1").create();
+		// Display name should default to "New Warehouse (2)"
+		await db.warehouse("wh-2").create();
+	});
+
 	// Check that the sidebar shows the "All" group as well as one group per each of the created warehouses
 	const sidebar = getDashboard(page).sidebar();
 	await sidebar.assertGroups(["All", "New Warehouse", "New Warehouse (2)"]);
@@ -41,6 +45,10 @@ test('should create a new inbound note, belonging to a particular warehouse on "
 });
 
 test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
+
 	const dashboard = getDashboard(page);
 
 	const sidebar = dashboard.sidebar();
@@ -60,10 +68,14 @@ test("should allow for renaming of the note using the editable title and show th
 });
 
 test("note heading should display note name, warehouse it belongs to and 'updated at' timestamp", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => db.warehouse("test-warehouse").setName({}, "Test Warehouse"));
+
 	const dashboard = getDashboard(page);
 
 	// Create a new note in the given warehouse
-	await dashboard.sidebar().linkGroup("New Warehouse").createNote();
+	await dashboard.sidebar().linkGroup("Test Warehouse").createNote();
 
 	// Check note page contents
 	const content = dashboard.content();
@@ -77,6 +89,15 @@ test("note heading should display note name, warehouse it belongs to and 'update
 });
 
 test("should assign default name to note in sequential order", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Display name should default to "New Warehouse"
+		await db.warehouse("wh-1").create();
+		// Display name should default to "New Warehouse (2)"
+		await db.warehouse("wh-2").create();
+	});
+
 	const sidebar = getDashboard(page).sidebar();
 
 	// Create two inbound notes, one in each warehouse
@@ -92,6 +113,11 @@ test("should assign default name to note in sequential order", async ({ page }) 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	// Display name should default to "New Warehouse"
+	await dbHandle.evaluate(async (db) => db.warehouse("wh-1").create());
+
 	const dashboard = getDashboard(page);
 
 	const sidebar = dashboard.sidebar();
@@ -126,6 +152,11 @@ test("should continue the naming sequence from the highest sequenced note name (
 });
 
 test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	// Display name defaults to "New Warehouse"
+	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
+
 	const dashboard = getDashboard(page);
 
 	const sidebar = dashboard.sidebar();
@@ -164,6 +195,11 @@ test("should reset the naming sequence when all notes with default names get ren
 });
 
 test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	// Display name defaults to "New Warehouse"
+	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
+
 	const dashboard = getDashboard(page);
 
 	const sidebar = dashboard.sidebar();
