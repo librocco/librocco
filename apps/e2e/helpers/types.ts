@@ -4,8 +4,20 @@ import type { NoteState, NoteTempState } from "@librocco/shared";
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
+/** A type of display row property names, without 'warehouseId' as it's never displayed */
+export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
 
 export type ViewName = "inbound" | "outbound" | "stock";
+
+interface Asserter<T> {
+	assert: (value: T) => Promise<void>;
+}
+
+interface Setter<T> {
+	set: (value: T) => Promise<void>;
+}
+
+type AsserterSetter<T> = Asserter<T> & Setter<T>;
 
 /** @TODO Import this from shared (duplicate) */
 export interface DisplayRow {
@@ -80,6 +92,7 @@ export interface ScanFieldInterface extends Locator {
 	create(): Promise<void>;
 }
 
+// #region book form
 export interface BookFormValues {
 	isbn: string;
 	title: string;
@@ -101,7 +114,9 @@ export interface BookFormInterface extends Locator {
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
 	set: (value: T) => Promise<void>;
 }
+// #endregion book form
 
+// #region inventory table
 export interface AssertRowFieldsOpts {
 	strict?: boolean;
 }
@@ -115,9 +130,27 @@ export interface EntriesTableInterface extends Locator {
 }
 
 export interface EntriesRowInterface extends Locator {
-	assertField<K extends keyof DisplayRow>(name: K, value: DisplayRow[K]): Promise<void>;
+	field<K extends keyof TransactionFieldInterfaceLookup>(name: K): TransactionFieldInterfaceLookup[K];
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
-	setQuantity(value: number): Promise<void>;
 	select(): Promise<void>;
 	unselect(): Promise<void>;
 }
+
+export type TransactionRowValues = {
+	[K in keyof TransactionFieldInterfaceLookup]: DisplayRow[K];
+};
+
+export interface TransactionFieldInterfaceLookup {
+	isbn: Asserter<string>;
+	title: Asserter<string>;
+	authors: Asserter<string>;
+	quantity: AsserterSetter<number>;
+	year: Asserter<string>;
+	publisher: Asserter<string>;
+	price: Asserter<number>;
+	warehouseName: Asserter<string>;
+	editedBy: Asserter<string>;
+	outOfPrint: Asserter<boolean>;
+}
+export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity">;
+// #endregion inventory table
