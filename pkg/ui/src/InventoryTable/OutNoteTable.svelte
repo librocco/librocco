@@ -128,7 +128,7 @@
 
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { isbn, title, authors, year, quantity, price, rowIx, warehouseId } = row}
+			{@const { isbn, title = "N/A", authors = "N/A", year = "N/A", quantity, price = "N/A", rowIx, warehouseId } = row}
 			<tr
 				use:tableRow={{
 					// Header row starts the count at 0

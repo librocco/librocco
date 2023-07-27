@@ -135,14 +135,14 @@
 				rowIx,
 				isbn,
 				warehouseId,
-				authors,
+				authors = "N/A",
 				quantity,
 				price = "N/A",
 				year = "N/A",
-				title,
+				title = "N/A",
 				publisher = "",
 				editedBy = "",
-				outOfPrint
+				outOfPrint = false
 			} = row}
 			<tr
 				use:tableRow={{
