@@ -3,7 +3,8 @@ import type { Locator, Page } from "@playwright/test";
 import type { NavInterface, SidebarInterface, SideLinkGroupInterface } from "./types";
 
 import { getDashboard } from "./dashboard";
-import { compareEntries } from "./utils";
+
+import { compareEntries, useExpandButton } from "./utils";
 
 export function getSidebar(page: Page): SidebarInterface {
 	const container = page.getByRole("navigation", { name: "Sidebar" });
@@ -24,40 +25,23 @@ export function getSidebar(page: Page): SidebarInterface {
 
 	const assertGroups = (labels: string[]) => compareEntries(container, labels, "button");
 
-	const linkGroup = (name: string): SideLinkGroupInterface => getSideLinkGroup(page, container, name);
+	const linkGroup = (name: string): SideLinkGroupInterface => getSideLinkGroup(container, name);
 
 	return Object.assign(container, { link, createWarehouse, createNote, assertLinks, assertGroups, linkGroup });
 }
 
-function getSideLinkGroup(page: Page, sidebar: Locator, name: string): SideLinkGroupInterface {
+function getSideLinkGroup(sidebar: Locator, name: string): SideLinkGroupInterface {
 	// Transform group name to a valid id (same logic we're using to assign id to the element)
 	const groupId = `nav-group-${name.replaceAll(" ", "_").replaceAll(/[()]/g, "")}`;
 
 	// Get group container (using the id)
 	const container = sidebar.locator(`#${groupId}`);
 
-	// Expand button will have the "group name" as its label
-	const expandButton = container.getByRole("button", { name });
-
 	const link = (label: string) => {
 		return container.getByRole("link", { name: label, exact: true });
 	};
 
-	// When the group is expanded, the expand button will have an aria attribute "aria-expanded" set to "true"
-	const isExpanded = async () => {
-		const expanded = await expandButton.getAttribute("aria-expanded");
-		return expanded === "true";
-	};
-
-	const open = async () => {
-		const expanded = await isExpanded();
-		if (expanded) {
-			return;
-		}
-		await expandButton.click();
-		// Wait for the group to expand (the group will have an expand button at all times, if expanded it will have at least two)
-		await page.waitForFunction((groupId) => document.getElementById(groupId).children.length > 1, groupId);
-	};
+	const { open } = useExpandButton(container);
 
 	const createNote = async () => {
 		await open();
@@ -69,7 +53,7 @@ function getSideLinkGroup(page: Page, sidebar: Locator, name: string): SideLinkG
 		return compareEntries(container, labels, "a");
 	};
 
-	return Object.assign(container, { link, isExpanded, open, createNote, assertLinks });
+	return Object.assign(container, { link, open, createNote, assertLinks });
 }
 
 async function createEntity(nav: NavInterface, entity: "warehouse" | "note") {
