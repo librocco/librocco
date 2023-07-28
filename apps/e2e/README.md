@@ -378,8 +378,11 @@ Entries row interface is a locator to a particular row in the table. It exposes 
     -   each field has a different way of handling this so this way we're exposing the consistent API, regardless of possibly differing functionality
     -   retries until pass or timeout
 -   **set:**
-    -   **only the following fields have this method:** quantity
+    -   **only the following fields have this method:** quantity, warehouse name (also changes warehouseId, through the UI)
     -   accepts the `value` param (appropriate type for the field) and sets the value in a way that's specific to the field
+-   **assertOptions:**
+    -   **only the following fields have this method:** warehouse name
+    -   accepts a list of options (labels) and asserts is against the options in the picker
 
 #### 2.2.13 Book form interface
 
