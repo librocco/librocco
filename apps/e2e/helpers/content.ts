@@ -15,6 +15,8 @@ import type {
 import { getDashboard } from "./dashboard";
 import { getEntriesTable } from "./entriesTable";
 
+import { useExpandButton } from "./utils";
+
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#table-section");
 
@@ -90,20 +92,7 @@ function getStatePicker(content: Locator): StatePickerInterface {
 
 	const assertState = (state: NoteState | NoteTempState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
 
-	const expandButton = container.locator("button[aria-haspopup='true']");
-
-	const isExpanded = async () => {
-		const expanded = await expandButton.getAttribute("aria-expanded");
-		return expanded === "true";
-	};
-
-	const open = async () => {
-		const expanded = await isExpanded();
-		if (expanded) {
-			return;
-		}
-		await expandButton.click();
-	};
+	const { open } = useExpandButton(container);
 
 	const select = async (newState: NoteState) => {
 		const currentState = await getState();
