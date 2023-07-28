@@ -140,6 +140,10 @@ export type TransactionRowValues = {
 	[K in keyof TransactionFieldInterfaceLookup]: DisplayRow[K];
 };
 
+export interface WarehouseNameTransactionField extends AsserterSetter<string>, Locator {
+	assertOptions(options: string[]): Promise<void>;
+}
+
 export interface TransactionFieldInterfaceLookup {
 	isbn: Asserter<string>;
 	title: Asserter<string>;
@@ -148,9 +152,9 @@ export interface TransactionFieldInterfaceLookup {
 	year: Asserter<string>;
 	publisher: Asserter<string>;
 	price: Asserter<number>;
-	warehouseName: Asserter<string>;
+	warehouseName: WarehouseNameTransactionField;
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
 }
-export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity">;
+export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName">;
 // #endregion inventory table
