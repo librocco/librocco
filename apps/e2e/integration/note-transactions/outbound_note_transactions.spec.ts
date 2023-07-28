@@ -120,23 +120,15 @@ test("transaction should allow for warehouse selection if there is more than one
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(async (db) => {
 		// Create two warehouses with the book in stock
-		const wh1 = await db.warehouse("wh-1").setName({}, "Warehouse 1");
-		const wh2 = await db.warehouse("wh-2").setName({}, "Warehouse 2");
-		// Provide a third warehouse as noise (this one should not be displayed in the selection as is doesn't contain "1234567890")
-		/** @TODO uncomment next line when working on https://github.com/librocco/librocco/issues/267 */
-		// await wh3.setName({}, "Warehouse 3");
-
-		// Add the book to both warehouses
-		await Promise.all([
-			wh1
-				.note()
-				.addVolumes({ isbn: "1234567890", quantity: 1 })
-				.then((n) => n.commit({})),
-			wh2
-				.note()
-				.addVolumes({ isbn: "1234567890", quantity: 1 })
-				.then((n) => n.commit({}))
-		]);
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
 	});
 
 	const dashboard = getDashboard(page);
@@ -153,17 +145,123 @@ test("transaction should allow for warehouse selection if there is more than one
 	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
 	// Check row's available warehouses
 	await row.field("warehouseName").assertOptions(["Warehouse 1", "Warehouse 2"]);
-	// Select the first warehouse
-	await row.field("warehouseName").set("Warehouse 1");
-	// Assert the update
-	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
+});
 
-	// Add another transaction with the same isbn (should default to "" warehouse)
+test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
 	await scanField.add("1234567890");
 
-	// The warehouses for the transactions is different (even though the isbn is the same) so two rows should be displayed
 	await entries.assertRows([
 		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
 		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
 	]);
+});
+
+test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with specified warehouse on 'Add'", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	// Add yet another transaction for the same book (should default to "" warehouse and aggregate with previous one)
+	await scanField.add("1234567890");
+
+	await entries.assertRows([
+		{ isbn: "1234567890", quantity: 2, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+});
+
+/**
+ * @TODO unskip when working on https://github.com/librocco/librocco/issues/301
+ */
+test.skip("if there are two transactions with same isbn, but different warehouses and one switches to the warehouse of the other, should aggregate the two", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	// Change the warehouse of the latter transaction to the same as the first one
+	//
+	// Note: transaction with warehouse of "" will be sorted before other transactions with the same isbn
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	await entries.assertRows([{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 1" }]);
 });
