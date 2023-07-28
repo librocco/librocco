@@ -11,6 +11,7 @@ import {
 	TransactionRowValues,
 	ViewName
 } from "./types";
+import { useExpandButton } from "./utils";
 
 export function getEntriesTable(view: ViewName, content: Locator): EntriesTableInterface {
 	const container = content.locator("#inventory-table");
@@ -124,9 +125,34 @@ const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
 	}
 });
 
-const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) => ({
-	assert: (want) => expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want)
-});
+const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) => {
+	const container = row.locator('[data-property="warehouseName"]');
+
+	const { open, close } = useExpandButton(container, { throttle: 500 });
+
+	const set = async (value: string) => {
+		await open();
+		// Find the desired option
+		await container.getByRole("option", { name: value }).click();
+		// Close the dropdown (if open)
+		await close();
+	};
+
+	const assert = (want: string) => expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want);
+
+	const assertOptions = async (options: string[]) => {
+		// Open the dropdown
+		await open();
+		// Assert the options appear in the same order
+		await Promise.all(options.map((option, i) => expect(container.getByRole("option").nth(i)).toHaveText(option)));
+		// After the options are awaited (assertions have passed), check the length of the options (to make sure there are no extra options)
+		await expect(container.getByRole("option")).toHaveCount(options.length);
+		// Close the dropdown
+		await close();
+	};
+
+	return Object.assign(container, { assert, set, assertOptions });
+};
 
 const fieldConstructorLookup: {
 	[K in TransactionRowField]: FieldConstructor<K>;
