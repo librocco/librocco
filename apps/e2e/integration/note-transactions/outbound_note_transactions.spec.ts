@@ -89,7 +89,7 @@ runCommonTransactionTests("outbound");
 /**
  * @TODO unskip this when working on https://github.com/librocco/librocco/issues/300
  */
-test.skip("transaction should default to the only warehouse, the given book is available in if there is only one", async ({ page }) => {
+test.skip("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(async (db) => {
@@ -113,7 +113,7 @@ test.skip("transaction should default to the only warehouse, the given book is a
 	await content.entries("outbound").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" });
 });
 
-test("transaction should allow for warehouse selection if there is more than one warehouse given book is available in", async ({
+test("transaction should allow for warehouse selection if there is more than one warehouse the given book is available in", async ({
 	page
 }) => {
 	// Setup
@@ -122,6 +122,9 @@ test("transaction should allow for warehouse selection if there is more than one
 		// Create two warehouses with the book in stock
 		const wh1 = await db.warehouse("wh-1").setName({}, "Warehouse 1");
 		const wh2 = await db.warehouse("wh-2").setName({}, "Warehouse 2");
+		// Provide a third warehouse as noise (this one should not be displayed in the selection as is doesn't contain "1234567890")
+		/** @TODO uncomment next line when working on https://github.com/librocco/librocco/issues/267 */
+		// await wh3.setName({}, "Warehouse 3");
 
 		// Add the book to both warehouses
 		await Promise.all([
@@ -137,11 +140,30 @@ test("transaction should allow for warehouse selection if there is more than one
 	});
 
 	const dashboard = getDashboard(page);
+
 	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+	const row = entries.row(0);
 
 	// Add a book transaction to the note
-	await content.scanField().add("1234567890");
+	await scanField.add("1234567890");
 
 	// Assert relevant fields (isbn, quantity and warehouseName)
-	await content.entries("outbound").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
+	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
+	// Check row's available warehouses
+	await row.field("warehouseName").assertOptions(["Warehouse 1", "Warehouse 2"]);
+	// Select the first warehouse
+	await row.field("warehouseName").set("Warehouse 1");
+	// Assert the update
+	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
+
+	// Add another transaction with the same isbn (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	// The warehouses for the transactions is different (even though the isbn is the same) so two rows should be displayed
+	await entries.assertRows([
+		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	]);
 });
