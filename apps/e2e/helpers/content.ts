@@ -12,6 +12,8 @@ import type {
 	ViewName
 } from "./types";
 
+import { assertionTimeout } from "../constants";
+
 import { getDashboard } from "./dashboard";
 import { getEntriesTable } from "./entriesTable";
 
@@ -20,13 +22,16 @@ import { useExpandButton } from "./utils";
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#table-section");
 
-	const heading = (title?: string, opts?: GetByTextOpts): ContentHeadingInterface => getHeading(container, title, opts);
+	const heading = (title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface => getHeading(container, title, opts);
 
-	const updatedAt = async (): Promise<Date> => {
+	const updatedAt = async (opts?: WaitForOpts): Promise<Date> => {
 		const updatedAtElement = container.getByText("Last updated:");
-		await updatedAtElement.waitFor();
+		await updatedAtElement.waitFor({ timeout: assertionTimeout, ...opts });
 
-		const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent);
+		const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent, null, {
+			timeout: assertionTimeout,
+			...opts
+		});
 
 		return new Date(
 			updatedAtString
@@ -36,8 +41,8 @@ export function getContent(page: Page): ContentInterface {
 		);
 	};
 
-	const assertUpdatedAt = async (date: Date): Promise<void> => {
-		const updatedAtDate = await updatedAt();
+	const assertUpdatedAt = async (date: Date, opts?: WaitForOpts): Promise<void> => {
+		const updatedAtDate = await updatedAt(opts);
 		const updatedAtMillis = updatedAtDate.getTime();
 
 		// Without mocking the date, we can't assert the exact date, but we can expect the updated at to be under a minute from now
@@ -64,14 +69,14 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 
 	const getTitle = async (opts?: WaitForOpts) => {
 		try {
-			const textContent = await element.textContent(opts);
+			const textContent = await element.textContent({ timeout: assertionTimeout, ...opts });
 			return textContent.trim();
 		} catch {
 			return "";
 		}
 	};
 
-	const rename = async (newName: string) => {
+	const rename = async (newName: string, opts?: WaitForOpts) => {
 		await element.click();
 
 		const input = container.getByRole("textbox");
@@ -79,7 +84,10 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 		await input.fill(newName);
 		await input.press("Enter");
 
-		await getDashboard(container.page()).sidebar().link(newName).waitFor();
+		await getDashboard(container.page())
+			.sidebar()
+			.link(newName)
+			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(element, { getTitle, rename });
@@ -88,9 +96,13 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 function getStatePicker(content: Locator): StatePickerInterface {
 	const container = content.locator("#note-state-picker");
 
-	const getState = () => container.locator("#current-value").getAttribute("data-value") as Promise<NoteState | NoteTempState>;
+	const getState = (opts?: WaitForOpts) =>
+		container.locator("#current-value").getAttribute("data-value", { timeout: assertionTimeout, ...opts }) as Promise<
+			NoteState | NoteTempState
+		>;
 
-	const assertState = (state: NoteState | NoteTempState) => container.locator(`#current-value[data-value="${state}"]`).waitFor();
+	const assertState = (state: NoteState | NoteTempState, opts?: WaitForOpts) =>
+		container.locator(`#current-value[data-value="${state}"]`).waitFor({ timeout: assertionTimeout, ...opts });
 
 	const { open } = useExpandButton(container);
 
