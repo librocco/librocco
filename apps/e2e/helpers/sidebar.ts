@@ -1,6 +1,8 @@
 import type { Locator, Page } from "@playwright/test";
 
-import type { NavInterface, SidebarInterface, SideLinkGroupInterface } from "./types";
+import type { NavInterface, SidebarInterface, SideLinkGroupInterface, WaitForOpts } from "./types";
+
+import { assertionTimeout } from "../constants";
 
 import { getDashboard } from "./dashboard";
 
@@ -13,17 +15,17 @@ export function getSidebar(page: Page): SidebarInterface {
 		return container.getByRole("link", { name: label, exact: true });
 	};
 
-	const createWarehouse = async () => {
-		return createEntity(Object.assign(container, { link }), "warehouse");
+	const createWarehouse = async (opts?: WaitForOpts) => {
+		return createEntity(Object.assign(container, { link }), "warehouse", opts);
 	};
 
-	const createNote = async () => {
-		return createEntity(Object.assign(container, { link }), "note");
+	const createNote = async (opts?: WaitForOpts) => {
+		return createEntity(Object.assign(container, { link }), "note", opts);
 	};
 
-	const assertLinks = (labels: string[]) => compareEntries(container, labels, "a");
+	const assertLinks = (labels: string[], opts?: WaitForOpts) => compareEntries(container, labels, "a", opts);
 
-	const assertGroups = (labels: string[]) => compareEntries(container, labels, "button");
+	const assertGroups = (labels: string[], opts?: WaitForOpts) => compareEntries(container, labels, "button", opts);
 
 	const linkGroup = (name: string): SideLinkGroupInterface => getSideLinkGroup(container, name);
 
@@ -43,20 +45,20 @@ function getSideLinkGroup(sidebar: Locator, name: string): SideLinkGroupInterfac
 
 	const { open } = useExpandButton(container);
 
-	const createNote = async () => {
-		await open();
-		return createEntity(Object.assign(container, { link }), "note");
+	const createNote = async (opts?: WaitForOpts) => {
+		await open(opts);
+		return createEntity(Object.assign(container, { link }), "note", opts);
 	};
 
-	const assertLinks = async (labels: string[]) => {
-		await open();
-		return compareEntries(container, labels, "a");
+	const assertLinks = async (labels: string[], opts?: WaitForOpts) => {
+		await open(opts);
+		return compareEntries(container, labels, "a", opts);
 	};
 
 	return Object.assign(container, { link, open, createNote, assertLinks });
 }
 
-async function createEntity(nav: NavInterface, entity: "warehouse" | "note") {
+async function createEntity(nav: NavInterface, entity: "warehouse" | "note", opts?: WaitForOpts) {
 	const content = getDashboard(nav.page()).content();
 
 	// Save the title of the entuty currently open in the content section (if any)
@@ -67,12 +69,12 @@ async function createEntity(nav: NavInterface, entity: "warehouse" | "note") {
 
 	// If current title, wait for it to get removed
 	if (currentTitle) {
-		await content.heading(currentTitle, { exact: true }).waitFor({ state: "detached" });
+		await content.heading(currentTitle, { exact: true }).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
 	}
 
 	// Wait for the new title to appear in the content section
-	const newTitle = await content.heading().getTitle();
+	const newTitle = await content.heading().getTitle(opts);
 
 	// Wait for the new title to appear in the nav
-	await nav.link(newTitle).waitFor();
+	await nav.link(newTitle).waitFor({ timeout: assertionTimeout, ...opts });
 }
