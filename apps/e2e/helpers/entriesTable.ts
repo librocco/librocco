@@ -9,8 +9,12 @@ import {
 	TransactionFieldInterfaceLookup,
 	TransactionRowField,
 	TransactionRowValues,
-	ViewName
+	ViewName,
+	WaitForOpts
 } from "./types";
+
+import { assertionTimeout } from "../constants";
+
 import { useExpandButton } from "./utils";
 
 export function getEntriesTable(view: ViewName, content: Locator): EntriesTableInterface {
@@ -18,7 +22,7 @@ export function getEntriesTable(view: ViewName, content: Locator): EntriesTableI
 
 	const row = (index: number) => getEntriesRow(view, container, index);
 
-	const assertRows = async (rows: Partial<DisplayRow>[], opts: AssertRowFieldsOpts = { strict: false }) => {
+	const assertRows = async (rows: Partial<DisplayRow>[], opts: AssertRowFieldsOpts) => {
 		// Create an array of 10 nulls. This is our assertion template. We're filling the array with 'rows' passed as argument,
 		// leaving us with an array of 10 rows, some of which are possibly nulls (in which case they shouldn't exist in the DOM)
 		//
@@ -29,14 +33,14 @@ export function getEntriesTable(view: ViewName, content: Locator): EntriesTableI
 			// If no values are provided, we're expecting the row to not exist in the DOM (or we're waiting for it to be removed)
 			// If using 'strict: false' we're expecting the row to exist in the DOM, but we don't care about the fields (e.g. {} for row values will suffice)
 			if (!values) {
-				await row(index).waitFor({ state: "detached" });
+				await row(index).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
 				continue;
 			}
 
 			// We're waiting for the row to be present before asserting the fields
 			// this is for 'strict: false' case where we can pass an empty object and the assertion will pass without making any
 			// DOM/locator queries (which is perfectly fine), but we want to make sure the row exists (even if we don't care about the fields)
-			await row(index).waitFor();
+			await row(index).waitFor({ timeout: assertionTimeout, ...opts });
 			await row(index).assertFields(values, opts);
 		}
 	};
@@ -76,10 +80,10 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 
 	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](container);
 
-	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts = { strict: false }) => {
+	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts) => {
 		// If strict we're asserting that the non-provided fields are the default values
 		// whereas, for non-strict, we're asserting only for provided fields
-		const compareObj = opts.strict ? { ...defaultValues, ...row } : row;
+		const compareObj = opts?.strict ? { ...defaultValues, ...row } : row;
 
 		// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
 		const rowFieldsLookup = {
@@ -92,7 +96,7 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 			const [name, value] = entry;
 			// Skip fields not visible in the particular view
 			if (!rowFieldsLookup[view].includes(name)) continue;
-			await field<any>(name as keyof TransactionFieldInterfaceLookup).assert(value);
+			await field<any>(name as keyof TransactionFieldInterfaceLookup).assert(value, opts);
 		}
 	};
 
@@ -106,11 +110,16 @@ interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
 const stringFieldConstructor =
 	<K extends GenericTransactionField>(name: K): FieldConstructor<K> =>
 	(row) => ({
-		assert: (want: string | number | boolean) => expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString())
+		assert: (want: string | number | boolean, opts?: WaitForOpts) =>
+			expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
 	});
 
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row) => ({
-	assert: (want) => expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString()),
+	assert: (want, opts) =>
+		expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString(), {
+			timeout: assertionTimeout,
+			...opts
+		}),
 	set: async (value) => {
 		const quantityInput = row.locator("[data-property='quantity']").locator("input");
 		await quantityInput.fill(value.toString());
@@ -119,9 +128,11 @@ const quantityFieldCostructor: FieldConstructor<"quantity"> = (row) => ({
 });
 
 const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
-	assert: (want) => {
+	assert: (want, opts) => {
 		const el = row.locator('[data-property="outOfPrint"]').locator(`input`);
-		return want ? expect(el).toBeChecked() : expect(el).not.toBeChecked();
+		return want
+			? expect(el).toBeChecked({ timeout: assertionTimeout, ...opts })
+			: expect(el).not.toBeChecked({ timeout: assertionTimeout, ...opts });
 	}
 });
 
@@ -138,15 +149,20 @@ const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) =
 		await close();
 	};
 
-	const assert = (want: string) => expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want);
+	const assert = (want: string, opts?: WaitForOpts) =>
+		expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want, { timeout: assertionTimeout, ...opts });
 
-	const assertOptions = async (options: string[]) => {
+	const assertOptions = async (options: string[], opts?: WaitForOpts) => {
 		// Open the dropdown
 		await open();
 		// Assert the options appear in the same order
-		await Promise.all(options.map((option, i) => expect(container.getByRole("option").nth(i)).toHaveText(option)));
+		await Promise.all(
+			options.map((option, i) =>
+				expect(container.getByRole("option").nth(i)).toHaveText(option, { timeout: assertionTimeout, ...opts })
+			)
+		);
 		// After the options are awaited (assertions have passed), check the length of the options (to make sure there are no extra options)
-		await expect(container.getByRole("option")).toHaveCount(options.length);
+		await expect(container.getByRole("option")).toHaveCount(options.length, { timeout: assertionTimeout, ...opts });
 		// Close the dropdown
 		await close();
 	};
