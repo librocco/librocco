@@ -2,7 +2,10 @@ import { type Locator, expect } from "@playwright/test";
 
 import { zip, testUtils } from "@librocco/shared";
 
-export async function compareEntries(container: Locator, labels: string[], selector: string) {
+import { assertionTimeout } from "../constants";
+import { WaitForOpts } from "./types";
+
+export async function compareEntries(container: Locator, labels: string[], selector: string, opts?: { timeout?: number }) {
 	return testUtils.waitFor(async () => {
 		const elements = await container.locator(selector).all();
 
@@ -13,7 +16,7 @@ export async function compareEntries(container: Locator, labels: string[], selec
 		}
 
 		for (const [link, label] of zip(elements, labels)) {
-			await expect(link).toHaveText(label);
+			await expect(link).toHaveText(label, { timeout: assertionTimeout, ...opts });
 		}
 	});
 }
@@ -44,7 +47,7 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 		}
 	};
 
-	const open = async () => {
+	const open = async (opts?: WaitForOpts) => {
 		try {
 			// If the dropdown is closed, open it
 			const button = getExpandButton("closed");
@@ -54,12 +57,12 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 			// Already open (noop)
 		} finally {
 			// Ensure the dropdown is open
-			await getExpandButton("open").waitFor();
+			await getExpandButton("open").waitFor({ timeout: assertionTimeout, ...opts });
 			await container.page().waitForTimeout(throttle);
 		}
 	};
 
-	const close = async () => {
+	const close = async (opts?: WaitForOpts) => {
 		try {
 			// If the dropdown is open, close it
 			const button = getExpandButton("open");
@@ -69,7 +72,7 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 			// Already closed (noop)
 		} finally {
 			// Ensure the dropdown is closed
-			await getExpandButton("closed").waitFor();
+			await getExpandButton("closed").waitFor({ timeout: assertionTimeout, ...opts });
 			await container.page().waitForTimeout(throttle);
 		}
 	};
