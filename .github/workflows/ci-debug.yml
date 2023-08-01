@@ -1,0 +1,39 @@
+name: Checks
+"on":
+  push:
+    branches:
+    - ci-debug/*
+jobs:
+  upterm-session:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v3-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Build the app
+      run: cd apps/web-client && rushx build:prod
+    - name: Setup upterm (debug) session
+      uses: lhotari/action-upterm@v1
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: ci-debug-artifacts
+        path: ci-debug-artifacts/
+        retention-days: 30
