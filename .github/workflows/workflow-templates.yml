@@ -4,6 +4,8 @@ name: Github Actions templates
     paths:
     - .github/workflow.templates/*
     - .github/workflows/*
+    branches-ignore:
+    - ci-debug/*
 jobs:
   check-template-generation:
     name: Check Github Actions templates
