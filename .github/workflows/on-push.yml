@@ -1,6 +1,8 @@
 name: Checks
 "on":
-- push
+  push:
+    branches-ignore:
+    - ci-debug/*
 jobs:
   js-search-test:
     name: JS-Search Tests

@@ -7,7 +7,9 @@
 name: Checks
 
 "on":
-    - push
+    push:
+        branches-ignore:
+            - "ci-debug/*"
 
 jobs:
     js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
