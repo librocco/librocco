@@ -89,10 +89,7 @@ describe("tableContentStore", () => {
 		);
 
 		// Update the note (add additional transactions)
-		await note.addVolumes(
-			{ isbn: book2.isbn, quantity: 10, warehouseId: "jazz" },
-			{ isbn: book3.isbn, quantity: 5, warehouseId: "jazz" }
-		);
+		await note.addVolumes({ isbn: book2.isbn, quantity: 10, warehouseId: "jazz" }, { isbn: book3.isbn, quantity: 5, warehouseId: "jazz" });
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
 				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },

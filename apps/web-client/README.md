@@ -16,8 +16,8 @@ We're using PouchDB (on top of browser's IndexedDB), as a local db instance and 
 
 When the app is opened, the top level load function checks if in browser environment and performs [db.init](../../pkg/db/README.md#212-initialising-the-interface). `db.init` replicates the data from the remote db:
 
--   this might take awhile the first time the app is opened (as the entire remote db needs to be replicated into the local one)
--   each subsequent run will merely pull the changes (to get the local db up to speed)
+- this might take awhile the first time the app is opened (as the entire remote db needs to be replicated into the local one)
+- each subsequent run will merely pull the changes (to get the local db up to speed)
 
 After the local db is created, and populated with the contents from the remote db, the bidirectional sync is started.
 
@@ -33,24 +33,24 @@ The main (and currently the only) top level view is the inventory. It is the mai
 
 The loading logic for all inventory views happens in `/inventory/+layout.ts` and is specific to a particular view (read from rest of the path):
 
--   `/stock`:
+- `/stock`:
 
-    -   **default view**
-    -   the load function instantiates the specific warehouse (read from route) and passes the warehouse interface down to the page component
-    -   the view is used to inspect the current stock in a particular warehouse
-    -   if warehouse not provided, or doesn't exist, defaults to: `/invntory/stock/0-all` (the default warehouse)
+  - **default view**
+  - the load function instantiates the specific warehouse (read from route) and passes the warehouse interface down to the page component
+  - the view is used to inspect the current stock in a particular warehouse
+  - if warehouse not provided, or doesn't exist, defaults to: `/invntory/stock/0-all` (the default warehouse)
 
--   `/inbound`:
+- `/inbound`:
 
-    -   the load function runs `db.findNote`, returning the note and its parent warehouse, passing them both down to the page component (as note interface and warehouse interface respectively)
-    -   used to inspect, create, delete, update, commit the note (and its transactions)
-    -   if note not found redirects back to the root of the view: `/inventory/inbound`
+  - the load function runs `db.findNote`, returning the note and its parent warehouse, passing them both down to the page component (as note interface and warehouse interface respectively)
+  - used to inspect, create, delete, update, commit the note (and its transactions)
+  - if note not found redirects back to the root of the view: `/inventory/inbound`
 
--   `outbound`:
+- `outbound`:
 
-    -   the load function runs `db.findNote`, passing only the note down to the page component (as all outbond notes belong to the default warehouse)
-    -   used to inspect, create, delete, update, commit the note (and its transactions)
-    -   if note not found redirects back to the root of the view: `/inventory/outbound`
+  - the load function runs `db.findNote`, passing only the note down to the page component (as all outbond notes belong to the default warehouse)
+  - used to inspect, create, delete, update, commit the note (and its transactions)
+  - if note not found redirects back to the root of the view: `/inventory/outbound`
 
 #### 1.1.2. Data flows
 
@@ -64,9 +64,9 @@ To display/update the data streamed, we simply bind the stores to interactive el
 
 The way this works, under the hood, is:
 
--   Svelte performs `store.subscribe` to pass the value to the element, in diagrams we'll call this `bind:subscribe`
--   each time the element gets updated (sort of `on:change`), Svelte performs `store.set` with the updated value, in diagrams, we'll call this `bind:set`
--   when the element is destroyed, the store gets unsubscribed from
+- Svelte performs `store.subscribe` to pass the value to the element, in diagrams we'll call this `bind:subscribe`
+- each time the element gets updated (sort of `on:change`), Svelte performs `store.set` with the updated value, in diagrams, we'll call this `bind:set`
+- when the element is destroyed, the store gets unsubscribed from
 
 ##### 'displayName' store
 
@@ -115,23 +115,23 @@ Additionally, in the UI, we're using temp states, one for each state displayed i
 
 The way temp states work:
 
--   if we're updating the draft note (this is normally an outside update), the state displayed is "Saving", then when the note gets updated, the note's current state in db (Draft) is streamed back to the display store
--   if we're committing the note, we set the state as "Committed", the temp state ("Committing") is displayed, the update is propagated to the db (running `note.commit()`) and committed note streams the update, so the state "Committed" is displayed
--   if deleting the note, the temp state is set to "Deleting", whilst the db update is performing `note.delete()`
+- if we're updating the draft note (this is normally an outside update), the state displayed is "Saving", then when the note gets updated, the note's current state in db (Draft) is streamed back to the display store
+- if we're committing the note, we set the state as "Committed", the temp state ("Committing") is displayed, the update is propagated to the db (running `note.commit()`) and committed note streams the update, so the state "Committed" is displayed
+- if deleting the note, the temp state is set to "Deleting", whilst the db update is performing `note.delete()`
 
 To achieve this behaviour, the note `state` store is composed of two parts, `internalState` store and the synthetic, `displayStateStore` store:
 
--   `internalState` store:
-    -   an actual Svelte, writable, store
-    -   on subscribe, it opens subscription to the note's (in db) state
-    -   each time the note in db updates, the update is streamed to update the internal state store
-    -   additionally, it is intentionally a writable store, allowing for explicit updates, for UI only states, as we'll explore below
--   `displayState` store is a "synthetic" store:
-    -   doesn't really hold a value, but satisfies a Svelte store interface and the store contract, by exposing `subscribe`, `set` and `update` methods
-    -   serves as a wrapper around the `internalState` store:
-        -   forwards subscription to the internal store (the `subscribe` method exposed is actually `internalState.subscribe`)
-        -   handles `set` and `update` to update the note in db (using appropriate handlers, as described above :point_up:), which then gets streamed back to the `internalState` and its subscribers
-        -   while the note update is taking place, sets a temp state to the `internalState` store (to signal, using the UI, that the update is taking place)
+- `internalState` store:
+  - an actual Svelte, writable, store
+  - on subscribe, it opens subscription to the note's (in db) state
+  - each time the note in db updates, the update is streamed to update the internal state store
+  - additionally, it is intentionally a writable store, allowing for explicit updates, for UI only states, as we'll explore below
+- `displayState` store is a "synthetic" store:
+  - doesn't really hold a value, but satisfies a Svelte store interface and the store contract, by exposing `subscribe`, `set` and `update` methods
+  - serves as a wrapper around the `internalState` store:
+    - forwards subscription to the internal store (the `subscribe` method exposed is actually `internalState.subscribe`)
+    - handles `set` and `update` to update the note in db (using appropriate handlers, as described above :point_up:), which then gets streamed back to the `internalState` and its subscribers
+    - while the note update is taking place, sets a temp state to the `internalState` store (to signal, using the UI, that the update is taking place)
 
 All those flows look something like this
 
@@ -168,11 +168,11 @@ const state = createDisplayStateStore({}, note, internalStateStore);
 // Some handler updating different note properties has access
 // to the 'internalStateStore'
 function updateDisplayName(note, name, internalStateStore) {
-    // Set temp 'Saving' state to the store (signaling the UI that the update is taking place)
-    internalStateStore.set("Saving");
+  // Set temp 'Saving' state to the store (signaling the UI that the update is taking place)
+  internalStateStore.set("Saving");
 
-    // Perform the update
-    note.setName(name);
+  // Perform the update
+  note.setName(name);
 }
 ```
 
