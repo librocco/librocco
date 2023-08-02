@@ -1,23 +1,23 @@
 name: Github Actions templates
 
 "on":
-    push:
-        paths:
-            - ".github/workflow.templates/*"
-            - ".github/workflows/*"
-        branches-ignore:
-            - "ci-debug/*"
+  push:
+    paths:
+      - ".github/workflow.templates/*"
+      - ".github/workflows/*"
+    branches-ignore:
+      - "ci-debug/*"
 
 jobs:
-    check-template-generation:
-        name: Check Github Actions templates
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v2
-            - name: Run script to generate Github Actions
-              run: ./.github/build-workflows.sh
-            - name: Check if there are any changes
-              run: |
-                  git status
-                  git diff
-                  git status | grep "working tree clean" || false && echo Did you forget to run build-workflows.sh?
+  check-template-generation:
+    name: Check Github Actions templates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Run script to generate Github Actions
+        run: ./.github/build-workflows.sh
+      - name: Check if there are any changes
+        run: |
+          git status
+          git diff
+          git status | grep "working tree clean" || false && echo Did you forget to run build-workflows.sh?
