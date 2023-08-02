@@ -11,15 +11,23 @@
 	export let rowIx: number;
 
 	/** @TODO mvp quick integration */
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount, tick } from "svelte";
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
 	const dispatchChange = (warehouseId: string) => dispatch("change", { warehouseId });
+
+	// If there's only one warehouse the book is available in, and no warehouseId is specified, select it automatically.
+	onMount(() => {
+		if (!warehouseId && availableWarehouses.size === 1) {
+			// Tick isn't necessary here, but it's much easier when testing
+			tick().then(() => dispatchChange(availableWarehouses.keys().next().value));
+		}
+	});
 
 	const combobox = createCombobox({ label: `Select ${rowIx} warehouse`, selected: data.warehouseId });
 
 	$: dispatchChange($combobox.selected);
 
-	$: ({ warehouseName, availableWarehouses = new Map() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
 
 	$: selectedLabel = availableWarehouses.get($combobox.selected)?.displayName;
 
