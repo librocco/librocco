@@ -51,7 +51,7 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 		try {
 			// If the dropdown is closed, open it
 			const button = getExpandButton("closed");
-			await button.waitFor({ timeout: 100 });
+			await button.waitFor({ timeout: 500 });
 			await button.click();
 		} catch {
 			// Already open (noop)
@@ -66,7 +66,7 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 		try {
 			// If the dropdown is open, close it
 			const button = getExpandButton("open");
-			await button.waitFor({ timeout: 100 });
+			await button.waitFor({ timeout: 500 });
 			await button.click();
 		} catch {
 			// Already closed (noop)
