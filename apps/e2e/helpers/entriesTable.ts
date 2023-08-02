@@ -45,9 +45,29 @@ export function getEntriesTable(view: ViewName, content: Locator): EntriesTableI
 		}
 	};
 
-	const selectAll = () => container.locator("thead").locator("input[type='checkbox']").check();
+	const selectAll = async () => {
+		await container.locator("thead").locator("input[type='checkbox']").check();
 
-	const unselectAll = () => container.locator("thead").locator("input[type='checkbox']").uncheck();
+		const selectCheckboxLocator = container.locator("tbody").locator("input[type='checkbox'][name*='Select']");
+
+		// Count all the "Select (...)" row checkboxes and wait for them to be checked
+		const count = await selectCheckboxLocator.count();
+		for (let i = 0; i < count; i++) {
+			await expect(selectCheckboxLocator.nth(i)).toBeChecked();
+		}
+	};
+
+	const unselectAll = async () => {
+		await container.locator("thead").locator("input[type='checkbox']").uncheck();
+
+		const selectCheckboxLocator = container.locator("tbody").locator("input[type='checkbox'][name*='Select']");
+
+		// Count all the "Select (...)" row checkboxes and wait for them to be unchecked
+		const count = await selectCheckboxLocator.count();
+		for (let i = 0; i < count; i++) {
+			await expect(selectCheckboxLocator.nth(i)).toBeChecked();
+		}
+	};
 
 	const deleteSelected = async () => {
 		await container.getByRole("button", { name: "Delete" }).click();
