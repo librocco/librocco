@@ -27,9 +27,9 @@ export class OutOfStockError extends Error {
 		const message = `Trying to commit a note containing transactions that would result in a negative stock.
         Invalid transactions:
         ${invalidTransactions.map(
-			({ isbn, warehouseId, quantity, available }) =>
-				`ISBN: '${isbn}', warehouse: '${warehouseId}', quantity: ${quantity}, available in warehouse: ${available}`
-		).join(`
+					({ isbn, warehouseId, quantity, available }) =>
+						`ISBN: '${isbn}', warehouse: '${warehouseId}', quantity: ${quantity}, available in warehouse: ${available}`
+				).join(`
         `)}`;
 
 		super(message);

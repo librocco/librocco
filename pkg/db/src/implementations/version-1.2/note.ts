@@ -65,11 +65,7 @@ class Note implements NoteInterface {
 			const refWId = versionId(warehouse._id);
 			if (wId !== refWId) {
 				throw new Error(
-					"Warehouse referenced in the note and one provided in note id mismatch:" +
-						"\n		referenced: " +
-						refWId +
-						"\n		provided: " +
-						wId
+					"Warehouse referenced in the note and one provided in note id mismatch:" + "\n		referenced: " + refWId + "\n		provided: " + wId
 				);
 			}
 		}
@@ -404,9 +400,7 @@ class Note implements NoteInterface {
 								.slice(startIx, endIx)
 						)
 					),
-					this.#stream.pipe(
-						map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))
-					),
+					this.#stream.pipe(map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))),
 					this.#db.stream().warehouseList(ctx)
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
