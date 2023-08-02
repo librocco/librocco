@@ -1,8 +1,8 @@
 version: "3"
 
 services:
-    db:
-        image: ghcr.io/librocco/dev-db:latest
-        container_name: librocco-dev-db
-        ports:
-            - "${PUBLIC_COUCHDB_PORT}:5984"
+  db:
+    image: ghcr.io/librocco/dev-db:latest
+    container_name: librocco-dev-db
+    ports:
+      - "${PUBLIC_COUCHDB_PORT}:5984"

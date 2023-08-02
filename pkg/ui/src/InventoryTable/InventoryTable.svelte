@@ -163,11 +163,7 @@
 			>
 				<!-- Show chackbox/row selection only on interactive variant -->
 				{#if interactive}
-					<td
-						class="border-l-4 px-2 text-center sm:align-middle {selected.includes(row)
-							? 'border-teal-500'
-							: 'border-transparent'}"
-					>
+					<td class="border-l-4 px-2 text-center sm:align-middle {selected.includes(row) ? 'border-teal-500' : 'border-transparent'}">
 						<span class="inline-block">
 							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
 						</span>

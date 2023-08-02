@@ -1,15 +1,15 @@
 version: "3"
 
 services:
-    test-data:
-        image: ghcr.io/librocco/testdata
-        container_name: librocco-testdata
-        ports:
-            - 5000:5984
+  test-data:
+    image: ghcr.io/librocco/testdata
+    container_name: librocco-testdata
+    ports:
+      - 5000:5984
 
-    couch-1:
-        image: ghcr.io/librocco/couchdb:3.2.2-base
-        container_name: librocco-testcouch-1
-        ports:
-            - 5001:5984
-            - 8081:9100
+  couch-1:
+    image: ghcr.io/librocco/couchdb:3.2.2-base
+    container_name: librocco-testcouch-1
+    ports:
+      - 5001:5984
+      - 8081:9100
