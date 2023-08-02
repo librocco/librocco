@@ -177,9 +177,7 @@ const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) =
 		await open();
 		// Assert the options appear in the same order
 		await Promise.all(
-			options.map((option, i) =>
-				expect(container.getByRole("option").nth(i)).toHaveText(option, { timeout: assertionTimeout, ...opts })
-			)
+			options.map((option, i) => expect(container.getByRole("option").nth(i)).toHaveText(option, { timeout: assertionTimeout, ...opts }))
 		);
 		// After the options are awaited (assertions have passed), check the length of the options (to make sure there are no extra options)
 		await expect(container.getByRole("option")).toHaveCount(options.length, { timeout: assertionTimeout, ...opts });
