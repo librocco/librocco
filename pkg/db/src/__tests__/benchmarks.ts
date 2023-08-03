@@ -17,13 +17,12 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 		)
 	);
 
-	const noteUpdates = notes.map((note) =>
-		(note.type === "inbound" ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
+	for (const note of notes) {
+		await (note.type === "inbound" ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
 			.then((w) => w.note(note.id).create())
 			.then((n) => n.addVolumes(...note.books))
-			.then((n) => n.commit({}))
-	);
-	await Promise.all(noteUpdates);
+			.then((n) => n.commit({}));
+	}
 
 	// Since we've implemented pagination, we need to make assertions per page basis.
 	const numPages = Math.ceil(fullStock.books.length / 10);
