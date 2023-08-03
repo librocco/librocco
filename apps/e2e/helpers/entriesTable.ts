@@ -98,7 +98,7 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 
 	const unselect = () => selectCheckbox.uncheck();
 
-	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](container);
+	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](container, view);
 
 	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts) => {
 		// If strict we're asserting that the non-provided fields are the default values
@@ -124,7 +124,7 @@ function getEntriesRow(view: ViewName, table: Locator, index: number): EntriesRo
 }
 
 interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
-	(row: Locator): TransactionFieldInterfaceLookup[K];
+	(row: Locator, view: ViewName): TransactionFieldInterfaceLookup[K];
 }
 
 const stringFieldConstructor =
@@ -134,12 +134,14 @@ const stringFieldConstructor =
 			expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
 	});
 
-const quantityFieldCostructor: FieldConstructor<"quantity"> = (row) => ({
+const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
 	assert: (want, opts) =>
-		expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString(), {
-			timeout: assertionTimeout,
-			...opts
-		}),
+		view === "stock"
+			? expect(row.locator('[data-property="quantity"]')).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
+			: expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString(), {
+					timeout: assertionTimeout,
+					...opts
+			  }),
 	set: async (value) => {
 		const quantityInput = row.locator("[data-property='quantity']").locator("input");
 		await quantityInput.fill(value.toString());
