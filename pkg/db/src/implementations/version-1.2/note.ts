@@ -312,19 +312,6 @@ class Note implements NoteInterface {
 		return this.update({}, this);
 	}
 
-	private async getStockPerIsbn(isbns: string[]): Promise<Record<string, number>[]> {
-		return Promise.all(
-			isbns.map(async (isbn) => {
-				const { rows } = await this.#db._pouch.query<number>("v1_stock/by_isbn", {
-					startkey: [isbn],
-					endkey: [isbn, {}],
-					group_level: 2
-				});
-				return rows.reduce((acc, { key: [, warehouseId], value: quantity }) => ({ ...acc, [warehouseId]: quantity }), {});
-			})
-		);
-	}
-
 	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
@@ -349,14 +336,14 @@ class Note implements NoteInterface {
 				break;
 			}
 			case "outbound": {
-				// Get availability per warehouse for each transaction isbn
-				const availabilityPerIsbn = await this.getStockPerIsbn(this.entries.map(({ isbn }) => isbn));
+				const stock = await this.#db.getStock();
 
 				const invalidTransactions = this.entries
-					// Add corresponding availability to each transaction
-					.map((transaction, i) => ({
-						...transaction,
-						available: availabilityPerIsbn[i][transaction.warehouseId] || 0
+					.map(({ isbn, quantity, warehouseId }) => ({
+						isbn,
+						quantity,
+						warehouseId,
+						available: stock.isbn(isbn).get([isbn, warehouseId])?.quantity || 0
 					}))
 					// Filter out transactions that are valid
 					.filter(({ quantity, available }) => quantity > available);
