@@ -254,26 +254,4 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		await page.waitForTimeout(1000);
 		await statePicker.assertState(NoteTempState.Committing);
 	});
-
-	/**
-	 * @TODO : Unskip this when working on https://github.com/librocco/librocco/issues/288
-	 */
-	test.skip("should not allow committing a note with 0-quantity transaction(s)", async ({ page }) => {
-		const dashboard = getDashboard(page);
-
-		const content = dashboard.content();
-		const entries = content.entries(view);
-		const statePicker = content.statePicker();
-
-		// Add a transaction with 0 quantity
-		await content.scanField().add("1234567890");
-		await entries.row(0).field("quantity").set(0);
-
-		// Try and commit the note
-		await statePicker.select(NoteState.Committed);
-
-		/** @TODO This is a terrible way to assert this and is not really communicating anything, update when we have error display */
-		await page.waitForTimeout(1000);
-		await statePicker.assertState(NoteTempState.Committing);
-	});
 };
