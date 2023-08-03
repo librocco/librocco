@@ -144,17 +144,15 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 	const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 	await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
 
-	// @TODO: With current implementation, we're streaming all warehouses in the db as 'available warehouses' on each outbound note.
-	// Update this when we implement a more fine grained approach.
-	const availableWarehouses = [wh1, wh2].map(({ _id, displayName }) => ({ id: _id, displayName }));
+	// There are no books in stock so 'availableWarehouses' will always be empty
+	const availableWarehouses: NavListEntry[] = [];
 
 	// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
 	const note = await db.warehouse().note().create();
 
 	// Subscribe to entries to receive updates
 	let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
-	note
-		.stream()
+	note.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
 
@@ -358,6 +356,111 @@ export const streamNoteValuesAccordingToSpec: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(note2State).toEqual(NoteState.Deleted);
 	});
+};
+
+export const outboundNoteAvailableWarehouses: TestFunction = async (db) => {
+	// Create two warehouses to work with
+	const wh1 = await db
+		.warehouse("wh-1")
+		.create()
+		.then((w) => w.setName({}, "Warehouse 1"));
+	const wh2 = await db
+		.warehouse("wh-2")
+		.create()
+		.then((w) => w.setName({}, "Warehouse 2"));
+
+	// Create an outbound note
+	const note = await db.warehouse().note().create();
+
+	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+	note.stream()
+		.entries({})
+		.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
+
+	// No transactions are added
+	await waitFor(() => expect(entries).toEqual([]));
+
+	// Add a tranasction with isbn not available in any warehouse
+	await note.addVolumes({ isbn: "1234567890", quantity: 1 });
+
+	// Should display the transaction, but no 'availableWarehouses'
+	await waitFor(() =>
+		expect(entries).toEqual([{ isbn: "1234567890", quantity: 1, warehouseId: "", warehouseName: "not-found", availableWarehouses: [] }])
+	);
+
+	// Add a book to the first warehouse
+	await wh1
+		.note()
+		.create()
+		.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+		.then((n) => n.commit({}));
+
+	// 'availableWarehouses' (in outbound note transaction) should display the first warehouse
+	await waitFor(() =>
+		expect(entries).toEqual([
+			{
+				isbn: "1234567890",
+				quantity: 1,
+				warehouseId: "",
+				warehouseName: "not-found",
+				availableWarehouses: [{ id: versionId("wh-1"), displayName: "Warehouse 1" }]
+			}
+		])
+	);
+
+	// Add the same book to the second warehouse
+	await wh2
+		.note()
+		.create()
+		.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+		.then((n) => n.commit({}));
+
+	// 'availableWarehouses' (in outbound note transaction) should now display both warehouses
+	await waitFor(() =>
+		expect(entries).toEqual([
+			{
+				isbn: "1234567890",
+				quantity: 1,
+				warehouseId: "",
+				warehouseName: "not-found",
+				availableWarehouses: [
+					{ id: versionId("wh-1"), displayName: "Warehouse 1" },
+					{ id: versionId("wh-2"), displayName: "Warehouse 2" }
+				]
+			}
+		])
+	);
+
+	// Add a different book to the first warehouse
+	await wh1
+		.note()
+		.create()
+		.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+		.then((n) => n.commit({}));
+
+	// Adding the same book to the outbound note should display only the first warehouse
+	await note.addVolumes({ isbn: "1111111111", quantity: 1 });
+	await waitFor(() =>
+		expect(entries).toEqual([
+			{
+				isbn: "1111111111",
+				quantity: 1,
+				warehouseId: "",
+				warehouseName: "not-found",
+				availableWarehouses: [{ id: versionId("wh-1"), displayName: "Warehouse 1" }]
+			},
+			{
+				isbn: "1234567890",
+				quantity: 1,
+				warehouseId: "",
+				warehouseName: "not-found",
+				availableWarehouses: [
+					{ id: versionId("wh-1"), displayName: "Warehouse 1" },
+					{ id: versionId("wh-2"), displayName: "Warehouse 2" }
+				]
+			}
+		])
+	);
 };
 
 export const streamWarehouseStock: TestFunction = async (db) => {
@@ -1170,8 +1273,7 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	let ndn: PossiblyEmpty<string> = EMPTY;
 
 	const note = await db.warehouse().note("note-1").create();
-	note
-		.stream()
+	note.stream()
 		.displayName({})
 		.subscribe((dn$) => (ndn = dn$));
 
