@@ -86,10 +86,7 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 
 runCommonTransactionTests("outbound");
 
-/**
- * @TODO unskip this when working on https://github.com/librocco/librocco/issues/300
- */
-test.skip("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
+test("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(async (db) => {
