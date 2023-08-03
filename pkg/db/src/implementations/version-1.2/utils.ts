@@ -1,4 +1,4 @@
-import { map, StockMap, wrapIter } from "@librocco/shared";
+import { map, StockMap } from "@librocco/shared";
 
 import { VolumeStock } from "@librocco/shared";
 
@@ -53,10 +53,7 @@ export const addAvailableWarehouses = (
 ): Iterable<VolumeStockClient> => {
 	return map(entries, (e) => {
 		const availableWarehouses: NavMap = new Map(
-			wrapIter(stock.isbn(e.isbn)).map(([[, warehouseId]]) => [
-				warehouseId,
-				warehouses.get(warehouseId) || { displayName: "not-found" }
-			])
+			map(stock.isbn(e.isbn), ([[, warehouseId]]) => [warehouseId, warehouses.get(warehouseId) || { displayName: "not-found" }])
 		);
 		return { ...e, availableWarehouses };
 	});

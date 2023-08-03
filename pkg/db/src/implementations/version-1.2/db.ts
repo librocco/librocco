@@ -37,7 +37,8 @@ class Database implements DatabaseInterface {
 			.stream({})
 			.pipe(
 				map(
-					({ rows }) => new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+					({ rows }) =>
+						new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
 				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
@@ -90,6 +91,10 @@ class Database implements DatabaseInterface {
 
 	stock(): Observable<StockMap> {
 		return this.#stockStream;
+	}
+
+	getStock(): Promise<StockMap> {
+		return newStock(this).query();
 	}
 
 	async buildIndexes() {
