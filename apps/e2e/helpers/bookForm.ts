@@ -2,6 +2,8 @@ import type { Locator, Page } from "@playwright/test";
 
 import type { BookFormValues, BookFormInterface, BookFormFieldInterface, DisplayRow } from "./types";
 
+import { useExpandButton } from "./utils";
+
 export function getBookForm(page: Page): BookFormInterface {
 	const container = page.locator("#book-detail-form");
 
@@ -66,44 +68,7 @@ function getOutOfPrintField(form: Locator): BookFormFieldInterface<boolean> {
 function getPublisherField(form: Locator): BookFormFieldInterface<string> {
 	const container = form.locator("#publisher-field-container");
 
-	const expandButton = (state?: "open" | "closed") => {
-		switch (state) {
-			case "open":
-				return container.locator("button[aria-expanded=true]");
-			case "closed":
-				return container.locator("button[aria-expanded=false]");
-			default:
-				return container.locator("button");
-		}
-	};
-
-	const open = async () => {
-		try {
-			// If the dropdown is closed, open it
-			const button = expandButton("closed");
-			await button.waitFor({ timeout: 100 });
-			await button.click();
-		} catch {
-			// Already open (noop)
-		} finally {
-			// Ensure the dropdown is open
-			await expandButton("open").waitFor();
-		}
-	};
-
-	const close = async () => {
-		try {
-			// If the dropdown is open, close it
-			const button = expandButton("open");
-			await button.waitFor({ timeout: 100 });
-			await button.click();
-		} catch {
-			// Already closed (noop)
-		} finally {
-			// Ensure the dropdown is closed
-			await expandButton("closed").waitFor();
-		}
-	};
+	const { open, close } = useExpandButton(container);
 
 	const set = async (value: string) => {
 		await open();
