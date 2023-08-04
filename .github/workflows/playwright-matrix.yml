@@ -1,0 +1,58 @@
+name: PlaywrightMatrix
+"on":
+  push:
+    branches:
+    - playwright-matrix/**
+  schedule:
+  - cron: 30 5 * * 1,3
+jobs:
+  e2e-test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        dummy1:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+        dummy2:
+        - 1
+        - 2
+        - 3
+        - 4
+        - 5
+        - 6
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "16"
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v4-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Build the app
+      run: cd apps/web-client && rushx build:prod
+    - name: Run Playwright tests
+      run: cd apps/e2e && rushx test:ci
+    - uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: playwright-test-results
+        path: apps/e2e/test-results
+        retention-days: 30
