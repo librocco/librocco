@@ -172,6 +172,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 			await scanField.add(isbn);
 		}
 
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+
 		// Delete the second transaction
 		await entries.row(1).select();
 
@@ -202,6 +205,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 			await scanField.add(isbn);
 		}
 
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+
 		// Select all transactions
 		await entries.selectAll();
 
@@ -231,6 +237,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		for (const isbn of isbns) {
 			await scanField.add(isbn);
 		}
+
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 
 		// Select all transactions
 		await entries.selectAll();
