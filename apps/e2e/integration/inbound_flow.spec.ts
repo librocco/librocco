@@ -82,7 +82,8 @@ test("note heading should display note name, warehouse it belongs to and 'update
 	await content.heading("New Note").waitFor();
 
 	// Check that the "Last updated: " timestamp is close to current date
-	await content.assertUpdatedAt(new Date());
+	// (should be way less than 2 minute difference, but due to the date rounding down, we allow a bit of a buffer)
+	await content.assertUpdatedAt(new Date(), { precision: 2 * 60 * 1000 });
 
 	// Should display "Draft" state
 	await content.statePicker().assertState(NoteState.Draft);
