@@ -217,6 +217,10 @@ test("if there are two transactions, one with specified and one with unspecified
 
 	// Add another transaction for the same book (should default to "" warehouse)
 	await scanField.add("1234567890");
+	await entries.assertRows([
+		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	]);
 
 	// Add yet another transaction for the same book (should default to "" warehouse and aggregate with previous one)
 	await scanField.add("1234567890");
