@@ -272,9 +272,6 @@ class Note implements NoteInterface {
 	}
 
 	updateTransaction(match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock): Promise<NoteInterface> {
-		// Create a safe copy of volume entries
-		const entries = [...this.entries];
-
 		const matchTr = {
 			...match,
 			warehouseId: match.warehouseId ? versionId(match.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
@@ -286,16 +283,24 @@ class Note implements NoteInterface {
 			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
 		};
 
-		const i = entries.findIndex((e) => e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId);
+		// Remove the matched transaction from the list of entries (this is the transaction we're updating to a new one)
+		const entries = this.entries.filter((e) => !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
 
-		// If the entry exists, update it, if not push it to the end of the list.
-		if (i !== -1) {
-			entries[i] = updateTr;
-		} else {
+		// Check if there already is a transaction with the same 'isbn' and 'warehouseId' as the updated transaction.
+		// If so, we're merging the two, if not we're simply adding a new transaction to the list.
+		const existingTxnIx = entries.findIndex((e) => e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
+
+		if (existingTxnIx == -1) {
 			entries.push(updateTr);
+		} else {
+			entries[existingTxnIx] = {
+				...entries[existingTxnIx],
+				quantity: entries[existingTxnIx].quantity + updateTr.quantity
+			};
 		}
+
 		// Post an update, the local entries will be updated by the update function.
-		return this.update({}, { entries });
+		return this.update({}, { entries: entries.sort(sortBooks) });
 	}
 
 	removeTransactions(...transactions: Omit<VolumeStock, "quantity">[]): Promise<NoteInterface> {
