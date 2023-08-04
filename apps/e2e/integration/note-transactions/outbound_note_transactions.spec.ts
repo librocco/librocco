@@ -126,6 +126,12 @@ test("transaction should allow for warehouse selection if there is more than one
 				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
 				.then((n) => n.commit({}));
 		}
+
+		// Create additional warehouse where the book is not available (as noise) - this warehouse shouldn't be available for selection
+		await db
+			.warehouse("wh-3")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 3"));
 	});
 
 	const dashboard = getDashboard(page);
