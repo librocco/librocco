@@ -21,6 +21,14 @@ export const createReplicationStore =
 			stateStore.set("ACTIVE");
 		});
 
+		replicator.on("paused", (err) => {
+			// Non-live replication still 'pauses'. I think this happens between batches
+			// We don't need to communicate this in single-shot operations
+			if (config.live) {
+				stateStore.set("PAUSED:IDLE");
+			}
+		});
+
 		// Fires when finished or explicitly canceled by either end, when `opts.live == false`
 		replicator.on("complete", (info) => {
 			if (config.direction !== "sync") {
@@ -30,6 +38,7 @@ export const createReplicationStore =
 					stateStore.set("COMPLETED");
 				} else {
 					stateStore.set("FAILED:CANCEL");
+					infoStore.update((info) => ({ ...info, error: "local db cancelled operation" }));
 				}
 			} else {
 				const { pull, push } = info as SyncResultComplete;
@@ -37,6 +46,9 @@ export const createReplicationStore =
 				if (pull.status === "complete" && push.status === "complete") {
 					stateStore.set("COMPLETED");
 				} else if (pull.status === "cancelled" || push.status === "cancelled") {
+					const errorInfo = `${pull.status === "cancelled" ? "remote" : "local"} db cancelled operation"`;
+					infoStore.update((info) => ({ ...info, error: errorInfo }));
+
 					stateStore.set("FAILED:CANCEL");
 				}
 			}
@@ -61,6 +73,7 @@ export const createReplicationStore =
 		return {
 			config: configStore,
 			status: stateStore,
+			info: infoStore,
 			cancel,
 			done: async () => {
 				try {
