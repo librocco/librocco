@@ -1,4 +1,4 @@
-import { writable } from "svelte/store";
+import { readable, writable, derived } from "svelte/store";
 
 import type { DatabaseInterface } from "@librocco/db";
 
@@ -9,16 +9,41 @@ import { getDB } from "$lib/db";
 export const createReplicationStore =
 	(local = getDB()) =>
 	(remote: string | PouchDB.Database, config: ReplicationOptions = { live: true, retry: true, direction: "sync" }) => {
-		// TODO: does config need to be in a store?
-		const configStore = writable<ReplicationOptions | null>(config);
-		const stateStore = writable<ReplicationState>("INIT");
-		const infoStore = writable<ReplicationInfo>({ error: "" });
+		const configStore = readable<ReplicationOptions>(config);
+		const stateStore = writable<{ state: ReplicationState; info: string }>({ state: "INIT", info: "" });
+
+		const changesStore = writable<ReplicationInfo>({ docsWritten: 0, docsRead: 0, docsPending: 0 });
+		const progressStore = derived(changesStore, (info) => {
+			const { docsWritten, docsPending } = info;
+
+			// It doesn't seem to matter whether we check docsWritten or docsRead
+			// in either direction ("to" | "from") or "sync": they report the same number
+			const total = docsWritten + docsPending;
+			// we can't garauntee that docsPending is present => we return -1 when we can't calculate progress
+			const progress = docsPending ? Math.floor((100 * docsWritten) / total) / 100 : -1;
+
+			return {
+				...info,
+				progress
+			};
+		});
 
 		const replicator = initReplicator(local, remote, config);
 
 		// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
 		replicator.on("active", () => {
-			stateStore.set("ACTIVE");
+			stateStore.set({ state: "ACTIVE", info: "" });
+		});
+
+		replicator.on("change", (info) => {
+			const change = config.direction === "sync" ? (info as SyncResult).change : (info as ReplicationResult);
+
+			changesStore.set({
+				docsWritten: change.docs_written,
+				docsRead: change.docs_read,
+				// @ts-ignore: `change.pending` seems to exist in some contexts, as is potentially add by the pouch adapter being used
+				docsPending: change.pending ?? null
+			});
 		});
 
 		replicator.on("paused", (err) => {
@@ -27,10 +52,9 @@ export const createReplicationStore =
 			if (config.live) {
 				// Err is only passed when `config.retry = true` and pouch is trying to recover
 				if (err) {
-					stateStore.set("PAUSED:ERROR");
-					infoStore.update((info) => ({ ...info, error: (err as Error)?.message }));
+					stateStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
 				} else {
-					stateStore.set("PAUSED:IDLE");
+					stateStore.set({ state: "PAUSED:IDLE", info: "" });
 				}
 			}
 		});
@@ -41,46 +65,48 @@ export const createReplicationStore =
 				const { status } = info as ReplicationResultComplete;
 
 				if (status === "complete") {
-					stateStore.set("COMPLETED");
+					stateStore.set({ state: "COMPLETED", info: "" });
 				} else {
-					stateStore.set("FAILED:CANCEL");
-					infoStore.update((info) => ({ ...info, error: "local db cancelled operation" }));
+					stateStore.set({ state: "FAILED:CANCEL", info: "local db cancelled operation" });
 				}
 			} else {
 				const { pull, push } = info as SyncResultComplete;
 
 				if (pull.status === "complete" && push.status === "complete") {
-					stateStore.set("COMPLETED");
+					stateStore.set({ state: "COMPLETED", info: "" });
 				} else if (pull.status === "cancelled" || push.status === "cancelled") {
 					const errorInfo = `${pull.status === "cancelled" ? "remote" : "local"} db cancelled operation"`;
-					infoStore.update((info) => ({ ...info, error: errorInfo }));
 
-					stateStore.set("FAILED:CANCEL");
+					stateStore.set({ state: "FAILED:CANCEL", info: errorInfo });
 				}
 			}
 
+			// Just to be sure...
 			cancel();
 		});
 
 		// Fires on e.g network or server error when `opts.retry == false`
 		replicator.on("error", (err) => {
-			stateStore.set("FAILED:ERROR");
-			infoStore.update((info) => ({ ...info, error: (err as Error)?.message }));
+			stateStore.set({ state: "FAILED:ERROR", info: (err as Error)?.message });
+			// Just to be sure...
 			cancel();
 		});
 
 		const cancel = () => {
 			replicator.cancel();
+			// It's unclear from pouchDB docs/issues whether this is already handled, so we call it just incase
 			replicator.removeAllListeners();
-
-			configStore.set(null);
 		};
 
 		return {
 			config: configStore,
 			status: stateStore,
-			info: infoStore,
+			progress: progressStore,
 			cancel,
+			/**
+			 * A promise that will resolve when replication is "done".
+			 * This will only happen when in situations where `opts.live == false`
+			 */
 			done: async () => {
 				try {
 					await replicator;
@@ -96,7 +122,9 @@ type ReplicationOptions = PouchDB.Replication.ReplicateOptions & { direction: "t
 type ReplicationState = "INIT" | "ACTIVE" | "COMPLETED" | "FAILED:CANCEL" | "FAILED:ERROR" | "PAUSED:IDLE" | "PAUSED:ERROR";
 
 type ReplicationInfo = {
-	error: string;
+	docsWritten: number;
+	docsRead: number;
+	docsPending: number;
 };
 
 /**
@@ -106,7 +134,7 @@ type ReplicationInfo = {
  * which leaves it up to us to check which one we are working with in the event handlers defined in `createReplicationStore`
  */
 type Replicator = PouchDB.Replication.ReplicationEventEmitter<
-	{ change: { pending?: string } },
+	{},
 	SyncResult | ReplicationResult,
 	SyncResultComplete | ReplicationResultComplete
 >;
