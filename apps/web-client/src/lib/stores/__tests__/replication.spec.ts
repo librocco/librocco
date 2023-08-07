@@ -1,11 +1,15 @@
 import { test, expect, describe, beforeEach, afterEach } from "vitest";
+import { get } from "svelte/store";
+
+import type { BookEntry, DatabaseInterface } from "@librocco/db";
+import { testUtils } from "@librocco/shared";
 
 import { newTestDB } from "$lib/__testUtils__/db";
-
 import { default as bookData } from "$lib/db/data/books";
-import type { BookEntry, DatabaseInterface } from "@librocco/db";
 
 import { createReplicationStore } from "../replication";
+
+const { waitFor } = testUtils;
 
 const books = Object.values(bookData) as unknown as BookEntry[];
 const bookIds = books.map(({ isbn }) => isbn);
@@ -76,15 +80,19 @@ describe("Replication to/from remote, when `live == false`", () => {
 
 		await replicationStore.done();
 
+		const errorInfo = get(replicationStore.info).error;
+
 		const expectedStatusFlow = ["INIT", "FAILED:CANCEL"];
+		const exepctedErrorInfo = "local db cancelled operation";
 
 		expect(statusFlow).toEqual(expectedStatusFlow);
+		expect(errorInfo).toEqual(exepctedErrorInfo);
 
 		unsubscribe();
 	});
 
 	// Note: not checking -> ACTIVE also applies here
-	test("when something goes wrong should communicate status as: INIT -> FAILED:ERROR", async (ctx) => {
+	test("when something goes wrong should communicate status as: INIT -> FAILED:ERROR, and set error info", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore(sourceDb)(remoteDb._pouch, { live: false, retry: false, direction: "to" });
@@ -98,8 +106,42 @@ describe("Replication to/from remote, when `live == false`", () => {
 		await replicationStore.done();
 
 		const expectedStatusFlow = ["INIT", "FAILED:ERROR"];
+		// internal pouch error info
+		const exepctedErrorInfo = "database is closed";
+
+		const errorInfo = get(replicationStore.info).error;
 
 		expect(statusFlow).toEqual(expectedStatusFlow);
+		expect(errorInfo).toEqual(exepctedErrorInfo);
+
+		unsubscribe();
+	});
+});
+
+describe("Replication to/from remote, when `live == true`", () => {
+	test("should communicate idle 'completion', and resumed activity as: INIT -> ACTIVE -> PAUSED:IDLE -> ACTIVE", async (ctx) => {
+		const { remoteDb, sourceDb } = ctx;
+
+		const replicationStore = createReplicationStore(sourceDb)(remoteDb._pouch, { live: true, retry: false, direction: "to" });
+
+		const statusFlow = [];
+		const unsubscribe = replicationStore.status.subscribe((status) => statusFlow.push(status));
+
+		// Replication should be idle after initial sourceDb data is replicated to remote
+		await waitFor(() => {
+			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE"];
+			expect(statusFlow).toEqual(expectedStatusFlow);
+		});
+
+		// Then we add more books to sourceDb...
+		sourceDb.books().upsert(books);
+
+		// ... and expect replication to resume
+		await waitFor(() => {
+			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE", "ACTIVE"];
+
+			expect(statusFlow).toEqual(expectedStatusFlow);
+		});
 
 		unsubscribe();
 	});
