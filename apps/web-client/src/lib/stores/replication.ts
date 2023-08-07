@@ -25,7 +25,13 @@ export const createReplicationStore =
 			// Non-live replication still 'pauses'. I think this happens between batches
 			// We don't need to communicate this in single-shot operations
 			if (config.live) {
-				stateStore.set("PAUSED:IDLE");
+				// Err is only passed when `config.retry = true` and pouch is trying to recover
+				if (err) {
+					stateStore.set("PAUSED:ERROR");
+					infoStore.update((info) => ({ ...info, error: (err as Error)?.message }));
+				} else {
+					stateStore.set("PAUSED:IDLE");
+				}
 			}
 		});
 
