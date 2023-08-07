@@ -2,6 +2,8 @@ import { writable } from "svelte/store";
 
 import type { DatabaseInterface } from "@librocco/db";
 
+import PouchDB from "pouchdb";
+
 import { getDB } from "$lib/db";
 
 export const createReplicationStore =
@@ -9,28 +11,43 @@ export const createReplicationStore =
 	(remote: string | PouchDB.Database, config: ReplicationOptions = { live: true, retry: true, direction: "sync" }) => {
 		// TODO: does config need to be in a store?
 		const configStore = writable<ReplicationOptions | null>(config);
-		const statusStore = writable({ status: ReplicationStatus.Inactive, info: "" });
+		const stateStore = writable<ReplicationState>("INIT");
+		const infoStore = writable<ReplicationInfo>({ error: "" });
 
 		const replicator = initReplicator(local, remote, config);
 
+		// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
 		replicator.on("active", () => {
-			// Fires when replication starts
-			// or, if `opts.live == true`, when transitioning from "paused"
-			statusStore.set({ status: ReplicationStatus.Active, info: "" });
-
-			// TODO: I'd like to check previous status...
-			// to distinguish between "started" and "restarted"... or is this not needed?
+			stateStore.set("ACTIVE");
 		});
 
+		// Fires when finished or explicitly canceled by either end, when `opts.live == false`
 		replicator.on("complete", (info) => {
-			// if live == false => fires when complete, or if cancel() was called
-			if (config.live === false) {
-				statusStore.set({ status: ReplicationStatus.Complete, info: "" });
+			if (config.direction !== "sync") {
+				const { status } = info as ReplicationResultComplete;
+
+				if (status === "complete") {
+					stateStore.set("COMPLETED");
+				} else {
+					stateStore.set("FAILED:CANCEL");
+				}
+			} else {
+				const { pull, push } = info as SyncResultComplete;
+
+				if (pull.status === "complete" && push.status === "complete") {
+					stateStore.set("COMPLETED");
+				} else if (pull.status === "cancelled" || push.status === "cancelled") {
+					stateStore.set("FAILED:CANCEL");
+				}
 			}
 
-			// if live == true => fires on cancel()
-			// {}
+			cancel();
+		});
 
+		// Fires on e.g network or server error when `opts.retry == false`
+		replicator.on("error", (err) => {
+			stateStore.set("FAILED:ERROR");
+			infoStore.update((info) => ({ ...info, error: (err as Error)?.message }));
 			cancel();
 		});
 
@@ -43,33 +60,42 @@ export const createReplicationStore =
 
 		return {
 			config: configStore,
-			status: statusStore,
+			status: stateStore,
 			cancel,
 			done: async () => {
-				await replicator;
+				try {
+					await replicator;
+				} catch (err) {
+					return err;
+				}
 			}
 		};
 	};
 
-export enum ReplicationStatus {
-	Inactive = "INACTIVE",
-	Active = "ACTIVE",
-	Complete = "COMPLETE"
-}
-
 type ReplicationOptions = PouchDB.Replication.ReplicateOptions & { direction: "to" | "from" | "sync" };
+
+type ReplicationState = "INIT" | "ACTIVE" | "COMPLETED" | "FAILED:CANCEL" | "FAILED:ERROR" | "PAUSED:IDLE" | "PAUSED:ERROR";
+
+type ReplicationInfo = {
+	error: string;
+};
 
 /**
  * "Sync" handlers have a slightly different signature than "to" | "from" handlers because of the variable `info` passed to "change" & "complete" events
- * All three methods return an instance of a ReplicationEventEmitter, which we want to work with => this type gives us that single interaction point
+ * All three methods return an instance of a ReplicationEventEmitter, which we want to work with => this type gives us that single interface
  * The second & third generics define the "change" and "compelete" event `info` - and tell us it can be of either type "SyncResult" or "ReplicationResult"
  * which leaves it up to us to check which one we are working with in the event handlers defined in `createReplicationStore`
  */
 type Replicator = PouchDB.Replication.ReplicationEventEmitter<
 	{ change: { pending?: string } },
-	PouchDB.Replication.SyncResult<{}> | PouchDB.Replication.ReplicationResult<{}>,
-	PouchDB.Replication.SyncResultComplete<{}> | PouchDB.Replication.ReplicationResultComplete<{}>
+	SyncResult | ReplicationResult,
+	SyncResultComplete | ReplicationResultComplete
 >;
+
+type SyncResult = PouchDB.Replication.SyncResult<{}>;
+type SyncResultComplete = PouchDB.Replication.SyncResultComplete<{}>;
+type ReplicationResult = PouchDB.Replication.ReplicationResult<{}>;
+type ReplicationResultComplete = PouchDB.Replication.ReplicationResultComplete<{}>;
 
 const initReplicator = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions): Replicator => {
 	const { direction, ...opts } = config;
