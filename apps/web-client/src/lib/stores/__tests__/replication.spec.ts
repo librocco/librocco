@@ -145,4 +145,33 @@ describe("Replication to/from remote, when `live == true`", () => {
 
 		unsubscribe();
 	});
+
+	test("and `retry = true`, should communicate idle error", async (ctx) => {
+		const { sourceDb } = ctx;
+
+		// A remote that is currently 'offline' - our replicator will try to connect and fail...
+		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
+
+		const replicationStore = createReplicationStore(sourceDb)(errorRemote, {
+			live: true,
+			retry: true,
+			direction: "to"
+		});
+
+		const statusFlow = [];
+		const unsubscribe = replicationStore.status.subscribe((status) => statusFlow.push(status));
+
+		const expectedStatusFlow = ["INIT", "PAUSED:ERROR"];
+
+		await waitFor(() => {
+			expect(statusFlow).toEqual(expectedStatusFlow);
+		});
+
+		const errorInfo = get(replicationStore.info).error;
+
+		expect(errorInfo).not.toEqual("");
+
+		replicationStore.cancel();
+		unsubscribe();
+	});
 });
