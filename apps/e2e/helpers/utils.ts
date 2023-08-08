@@ -1,24 +1,23 @@
 import { type Locator, expect } from "@playwright/test";
 
-import { zip, testUtils } from "@librocco/shared";
-
 import { assertionTimeout } from "../constants";
 import { WaitForOpts } from "./types";
 
 export async function compareEntries(container: Locator, labels: string[], selector: string, opts?: { timeout?: number }) {
-	return testUtils.waitFor(async () => {
-		const elements = await container.locator(selector).all();
-
-		expect(elements.length).toBe(labels.length);
-
-		if (elements.length === 0) {
-			return;
+	for (let i = 0; i <= labels.length; i++) {
+		// Instead of checking (statically) for the length of elements to match and retry until they do,
+		// we're using the built-in retries (of (Locator).waitFor) and expecting the element of n+1 to be detached (verifying there aren't more elements than wanted).
+		//
+		// If there are fewer elements than in the wanted list of labels, if will be caught by the `expect` assertion below.
+		if (i === labels.length) {
+			await container
+				.locator(selector)
+				.nth(i)
+				.waitFor({ timeout: assertionTimeout, ...opts, state: "detached" });
+		} else {
+			await expect(container.locator(selector).nth(i)).toHaveText(labels[i], { timeout: assertionTimeout, ...opts });
 		}
-
-		for (const [link, label] of zip(elements, labels)) {
-			await expect(link).toHaveText(label, { timeout: assertionTimeout, ...opts });
-		}
-	});
+	}
 }
 
 /**
