@@ -227,10 +227,7 @@ test("if there are two transactions, one with specified and one with unspecified
 	]);
 });
 
-/**
- * @TODO unskip when working on https://github.com/librocco/librocco/issues/301
- */
-test.skip("if there are two transactions with same isbn, but different warehouses and one switches to the warehouse of the other, should aggregate the two", async ({
+test("updating a transaction to an 'isbn' and 'warehouseId' of an already existing transaction should aggregate the two", async ({
 	page
 }) => {
 	// Setup
