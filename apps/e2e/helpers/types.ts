@@ -70,7 +70,7 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 export interface ContentInterface extends Locator {
 	heading(title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface;
 	updatedAt(opts?: WaitForOpts): Promise<Date>;
-	assertUpdatedAt(date: Date, opts?: WaitForOpts): Promise<void>;
+	assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
 	statePicker(): StatePickerInterface;
 	scanField(): ScanFieldInterface;
 	entries(view: ViewName): EntriesTableInterface;
