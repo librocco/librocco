@@ -41,14 +41,15 @@ export function getContent(page: Page): ContentInterface {
 		);
 	};
 
-	const assertUpdatedAt = async (date: Date, opts?: WaitForOpts): Promise<void> => {
+	const assertUpdatedAt = async (date: Date, opts?: WaitForOpts & { precision?: number }): Promise<void> => {
 		const updatedAtDate = await updatedAt(opts);
 		const updatedAtMillis = updatedAtDate.getTime();
 
-		// Without mocking the date, we can't assert the exact date, but we can expect the updated at to be under a minute from now
-		const dateMillis = date.getTime() - 60 * 1000;
+		// Without mocking the date, we can't assert the exact date, but we can expect the 'updatedAt' to be close to the want date
+		const { precision = 60 * 1000 } = opts || {};
+		const dateCheckMillis = date.getTime() - precision;
 
-		expect(dateMillis).toBeLessThan(updatedAtMillis);
+		expect(updatedAtMillis).toBeGreaterThan(dateCheckMillis);
 	};
 
 	const statePicker = (): StatePickerInterface => {
