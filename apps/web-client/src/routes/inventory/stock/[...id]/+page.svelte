@@ -95,17 +95,14 @@
 	// #endregion table
 
 	// #region book-form
-	$: bookForm = newBookFormStore(db);
+	$: bookForm = newBookFormStore();
 
-	const handleUpdateBookData = async (book: BookEntry) => {
+	const handleBookFormSubmit = async (book: BookEntry) => {
 		await db.books().upsert([book]);
 		toastSuccess(toasts.bookDataUpdated(book.isbn));
-	};
-
-	const handleBookFormEdit = async (book: BookEntry) => {
-		await handleUpdateBookData(book);
 		bookForm.close();
 	};
+
 	// #endregion book-form
 </script>
 
@@ -141,7 +138,7 @@
 	<svelte:fragment slot="table">
 		{#if !loading}
 			{#if Boolean($entries.length)}
-				<InventoryTable {table} onEdit={bookForm.open("edit")} />
+				<InventoryTable {table} onEdit={bookForm.open} />
 			{/if}
 		{:else}
 			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
@@ -167,7 +164,7 @@
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.open}
 			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
-				<BookDetailForm {...$bookForm.bookFormProps} {publisherList} on:edit={({ detail }) => handleBookFormEdit(detail)} />
+				<BookDetailForm {publisherList} book={$bookForm.book} on:submit={({ detail }) => handleBookFormSubmit(detail)} />
 			</Slideover>
 		{/if}
 	</svelte:fragment>
