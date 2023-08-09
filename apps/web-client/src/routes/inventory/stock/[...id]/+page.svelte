@@ -22,20 +22,19 @@
 		Slideover,
 		BookDetailForm
 	} from "@librocco/ui";
-	import { NEW_WAREHOUSE } from "@librocco/db";
+	import { NEW_WAREHOUSE, type BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/inventory";
-	import { bookFormStore } from "$lib/stores/inventory/book_form";
+	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { readableFromStream } from "$lib/utils/streams";
-	import { addBookEntry, handleBookEntry, handleCloseBookForm, publisherList } from "$lib/utils/book_form";
 
-	import { links } from "$lib/data";
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
+	import { links, publisherList } from "$lib/data";
 
 	export let data: PageData;
 
@@ -70,6 +69,7 @@
 
 	$: toasts = warehouseToastMessages(warehouse?.displayName);
 
+	// #region warehouse-actions
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
 	 * _(and navigate to the newly created warehouse page)_.
@@ -82,21 +82,31 @@
 
 		toastSuccess(toasts.warehouseCreated);
 	};
+	// #endregion warehouse-actions
 
+	// #region table
 	const tableOptions = writable({
 		data: $entries
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.update(({ data }) => ({ data: $entries }));
+	$: tableOptions.set({ data: $entries });
+	// #endregion table
 
-	const openEditMode = () => bookFormStore.update((store) => ({ ...store, editMode: true }));
+	// #region book-form
+	$: bookForm = newBookFormStore(db);
 
-	const formHeader = {
-		title: "Edit book details",
-		description: "Use this form to manually edit details of an existing book in your inbound note"
+	const handleUpdateBookData = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
 	};
+
+	const handleBookFormEdit = async (book: BookEntry) => {
+		await handleUpdateBookData(book);
+		bookForm.close();
+	};
+	// #endregion book-form
 </script>
 
 <InventoryPage view="stock">
@@ -131,7 +141,7 @@
 	<svelte:fragment slot="table">
 		{#if !loading}
 			{#if Boolean($entries.length)}
-				<InventoryTable {table} onEdit={handleBookEntry(true)} />
+				<InventoryTable {table} onEdit={bookForm.open("edit")} />
 			{/if}
 		{:else}
 			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
@@ -153,17 +163,11 @@
 			{/if}
 		{/if}
 	</div>
+
 	<svelte:fragment slot="slideOver">
-		{#if $bookFormStore.modalOpen}
-			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
-				<BookDetailForm
-					editMode={true}
-					{openEditMode}
-					book={$bookFormStore.book}
-					{publisherList}
-					onSubmit={addBookEntry(db)}
-					onCancel={handleCloseBookForm}
-				/>
+		{#if $bookForm.open}
+			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
+				<BookDetailForm {...$bookForm.bookFormProps} {publisherList} on:edit={({ detail }) => handleBookFormEdit(detail)} />
 			</Slideover>
 		{/if}
 	</svelte:fragment>
