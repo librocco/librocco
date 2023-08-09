@@ -139,21 +139,11 @@
 	// #region transaction-actions
 
 	// #region book-form
-	$: bookForm = newBookFormStore(db);
+	$: bookForm = newBookFormStore();
 
-	const handleUpdateBookData = async (book: BookEntry) => {
+	const handleBookFormSubmit = async (book: BookEntry) => {
 		await db.books().upsert([book]);
 		toastSuccess(toasts.bookDataUpdated(book.isbn));
-	};
-
-	const handleBookFormCreate = async (book: BookEntry) => {
-		await handleAddTransaction(book.isbn);
-		await handleUpdateBookData(book);
-		bookForm.close();
-	};
-
-	const handleBookFormEdit = async (book: BookEntry) => {
-		await handleUpdateBookData(book);
 		bookForm.close();
 	};
 	// #endregion book-form
@@ -213,7 +203,7 @@
 						align="right"
 					/>
 				</div>
-				<ScanInput onAdd={handleAddTransaction} onCreate={bookForm.open("create")} />
+				<ScanInput onAdd={handleAddTransaction} />
 			{/if}
 		{/if}
 	</svelte:fragment>
@@ -226,7 +216,7 @@
 					{table}
 					on:transactionupdate={handleTransactionUpdate}
 					on:removetransactions={handleRemoveTransactions}
-					onEdit={bookForm.open("edit")}
+					onEdit={bookForm.open}
 					interactive
 				/>
 			{/if}
@@ -254,10 +244,10 @@
 		{#if $bookForm.open}
 			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
 				<BookDetailForm
-					{...$bookForm.bookFormProps}
 					{publisherList}
-					on:create={({ detail }) => handleBookFormCreate(detail)}
-					on:edit={({ detail }) => handleBookFormEdit(detail)}
+					book={$bookForm.book}
+					on:submit={({ detail }) => handleBookFormSubmit(detail)}
+					on:cancel={bookForm.close}
 				/>
 			</Slideover>
 		{/if}

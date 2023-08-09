@@ -140,23 +140,14 @@
 	// #region transaction-actions
 
 	// #region book-form
-	$: bookForm = newBookFormStore(db);
+	$: bookForm = newBookFormStore();
 
-	const handleUpdateBookData = async (book: BookEntry) => {
+	const handleBookFormSubmit = async (book: BookEntry) => {
 		await db.books().upsert([book]);
 		toastSuccess(toasts.bookDataUpdated(book.isbn));
-	};
-
-	const handleBookFormCreate = async (book: BookEntry) => {
-		await handleAddTransaction(book.isbn);
-		await handleUpdateBookData(book);
 		bookForm.close();
 	};
 
-	const handleBookFormEdit = async (book: BookEntry) => {
-		await handleUpdateBookData(book);
-		bookForm.close();
-	};
 	// #endregion book-form
 </script>
 
@@ -197,7 +188,7 @@
 					align="right"
 				/>
 			</div>
-			<ScanInput onAdd={handleAddTransaction} onCreate={bookForm.open("create")} />
+			<ScanInput onAdd={handleAddTransaction} />
 		{/if}
 	</svelte:fragment>
 
@@ -207,7 +198,7 @@
 			{#if Boolean($entries.length)}
 				<OutNoteTable
 					{table}
-					onEdit={bookForm.open("edit")}
+					onEdit={bookForm.open}
 					on:transactionupdate={handleTransactionUpdate}
 					on:removetransactions={handleRemoveTransactions}
 				/>
@@ -235,12 +226,7 @@
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.open}
 			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
-				<BookDetailForm
-					{...$bookForm.bookFormProps}
-					{publisherList}
-					on:create={({ detail }) => handleBookFormCreate(detail)}
-					on:edit={({ detail }) => handleBookFormEdit(detail)}
-				/>
+				<BookDetailForm {publisherList} book={$bookForm.book} on:submit={({ detail }) => handleBookFormSubmit(detail)} />
 			</Slideover>
 		{/if}
 	</svelte:fragment>
