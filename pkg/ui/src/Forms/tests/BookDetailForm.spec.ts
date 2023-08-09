@@ -32,6 +32,11 @@ test("sets form field initial values via props:", () => {
 	expect(screen.getByRole("checkbox", { name: "Out of print" })).toBeChecked();
 });
 
+test("should disble isbn field to prevent unintentional overwrites", () => {
+	render(BookDetailForm, { book });
+	expect(screen.getByRole("textbox", { name: "isbn" })).toBeDisabled();
+});
+
 test("should set field values if 'book' prop gets updated", async () => {
 	const { component } = render(BookDetailForm);
 
@@ -56,43 +61,23 @@ test("should set field values if 'book' prop gets updated", async () => {
 	});
 });
 
-test("should fire 'create' event on submit, if in 'create' (default) mode", async () => {
-	const mockCreate = vi.fn();
-	const mockEdit = vi.fn();
-
-	const { component } = render(BookDetailForm, { book });
-	component.$on("create", (e) => mockCreate(e.detail));
-	component.$on("edit", (e) => mockEdit(e.detail));
-
-	const saveButton = screen.getByText("Save");
-	userEvent.click(saveButton);
-
-	await waitFor(() => expect(mockCreate).toHaveBeenCalledWith(book));
-	expect(mockEdit).not.toHaveBeenCalled();
-});
-
-test("should fire 'edit' event on submit, if in 'edit' mode", async () => {
-	const mockCreate = vi.fn();
-	const mockEdit = vi.fn();
+test("should fire 'sumbmit' event on submit", async () => {
+	const mockSubmit = vi.fn();
 
 	const { component } = render(BookDetailForm, { book, mode: "edit" });
-	component.$on("create", (e) => mockCreate(e.detail));
-	component.$on("edit", (e) => mockEdit(e.detail));
+	component.$on("submit", (e) => mockSubmit(e.detail));
 
 	const saveButton = screen.getByText("Save");
 	userEvent.click(saveButton);
 
-	await waitFor(() => expect(mockEdit).toHaveBeenCalledWith(book));
-	expect(mockCreate).not.toHaveBeenCalled();
+	await waitFor(() => expect(mockSubmit).toHaveBeenCalledWith(book));
 });
 
 test("should not allow submitting the form without required fields", async () => {
-	const mockCreate = vi.fn();
-	const mockEdit = vi.fn();
+	const mockSubmit = vi.fn();
 
 	const { component } = render(BookDetailForm);
-	component.$on("create", (e) => mockCreate(e.detail));
-	component.$on("edit", (e) => mockEdit(e.detail));
+	component.$on("submit", (e) => mockSubmit(e.detail));
 
 	const saveButton = screen.getByText("Save");
 	userEvent.click(saveButton);
@@ -102,16 +87,7 @@ test("should not allow submitting the form without required fields", async () =>
 	// This way we're testing that the submit handler is not called as field errors are shown using some special logic in the form,
 	// without rendering additional html elements (which would be easy to find).
 	await new Promise((res) => setTimeout(res, 500));
-	expect(mockEdit).not.toHaveBeenCalled();
-	expect(mockCreate).not.toHaveBeenCalled();
-
-	// Check the same for 'edit' mode
-	component.$set({ mode: "edit" });
-	userEvent.click(saveButton);
-
-	await new Promise((res) => setTimeout(res, 500));
-	expect(mockEdit).not.toHaveBeenCalled();
-	expect(mockCreate).not.toHaveBeenCalled();
+	expect(mockSubmit).not.toHaveBeenCalled();
 });
 
 test("should fire 'cancel' event on cancel button click", async () => {

@@ -19,9 +19,6 @@
 			editedBy: "Anonymous",
 			outOfPrint: true
 		}}
-		mode="edit"
-		on:create={() => alert("create")}
-		on:edit={() => alert("edit")}
 		{publisherList}
 	/>
 </Hst.Story>
