@@ -41,12 +41,14 @@ test("should display correct transaction fields for the inbound note view", asyn
 	const dashboard = getDashboard(page);
 
 	const content = dashboard.content();
-	const bookForm = dashboard.bookForm();
 
-	// Fill the book form, creating a transaction
-	await content.scanField().create();
-	await bookForm.fillBookData(book1);
-	await bookForm.submit("click");
+	// Setup
+	//
+	// Add the book data to the database
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db, book) => db.books().upsert([book]), book1);
+	// Add the transaction to the note
+	await content.scanField().add(book1.isbn);
 
 	// Check the displayed transaction (field by field)
 	const row = content.entries("inbound").row(0);
