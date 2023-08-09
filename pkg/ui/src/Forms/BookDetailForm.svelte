@@ -13,16 +13,14 @@
 	export let book: Partial<BookEntry> = {};
 	export let publisherList: string[] = [];
 
-	export let mode: "create" | "edit" = "create";
 
 	const dispatchEvent = createEventDispatcher<{
-		create: BookEntry;
-		edit: BookEntry;
+		"submit": BookEntry;
 		cancel: void;
 	}>();
 
 	function handleSubmit(values: BookEntry) {
-		dispatchEvent(mode, values);
+		dispatchEvent("submit", values);
 	}
 	function handleCancel() {
 		dispatchEvent("cancel");
@@ -53,7 +51,7 @@
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div id="isbn-field-container" class="basis-full">
-				<TextField name="isbn" label="ISBN" />
+				<TextField name="isbn" label="ISBN" disabled />
 			</div>
 			<div id="title-field-container" class="basis-full">
 				<TextField name="title" label="Title" required />
