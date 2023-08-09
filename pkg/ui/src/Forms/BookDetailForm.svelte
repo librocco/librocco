@@ -13,9 +13,8 @@
 	export let book: Partial<BookEntry> = {};
 	export let publisherList: string[] = [];
 
-
 	const dispatchEvent = createEventDispatcher<{
-		"submit": BookEntry;
+		submit: BookEntry;
 		cancel: void;
 	}>();
 
