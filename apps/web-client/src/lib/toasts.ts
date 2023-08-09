@@ -18,17 +18,19 @@ export const toastError = (message) =>
 		message
 	});
 
-export const noteToastMessages = (noteName, warehouseName = "all") => ({
+export const noteToastMessages = (noteName: string, warehouseName = "all") => ({
 	inNoteCreated: `${noteName} created in ${warehouseName}`,
 	inNoteCommited: `${noteName} commited`,
 	outNoteCreated: `${noteName} created`,
 	outNoteCommited: `${noteName} commited to ${warehouseName}`,
 	noteDeleted: `${noteName} deleted`,
-	volumeAdded: (isbn) => `${isbn} added to ${noteName}`,
-	volumeRemoved: (qtn) => `Removed ${qtn} book${qtn === 1 ? "" : "s"} from ${noteName}`,
-	volumeUpdated: (isbn) => `${isbn} quantitiy updated`
+	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`,
+	volumeAdded: (isbn: string) => `${isbn} added to ${noteName}`,
+	volumeRemoved: (qtn: number) => `Removed ${qtn} book${qtn === 1 ? "" : "s"} from ${noteName}`,
+	volumeUpdated: (isbn: string) => `${isbn} quantitiy updated`
 });
 
 export const warehouseToastMessages = (warehouseName) => ({
-	warehouseCreated: `${warehouseName} created`
+	warehouseCreated: `${warehouseName} created`,
+	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`
 });

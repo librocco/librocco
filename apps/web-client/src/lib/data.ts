@@ -15,3 +15,5 @@ export const links = [
 	},
 	{ label: "Settings", href: `${base}/settings/` }
 ];
+
+export const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
