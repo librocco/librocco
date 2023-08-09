@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { Edit, QrCode } from "lucide-svelte";
 	import { map } from "rxjs";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
@@ -11,7 +9,6 @@
 	import { NoteState, NoteTempState } from "@librocco/shared";
 	import {
 		InventoryPage,
-		TextField,
 		Pagination,
 		Badge,
 		BadgeColor,
@@ -23,9 +20,6 @@
 		SideBarNav,
 		SidebarItem,
 		NewEntitySideNavButton,
-		TextFieldSize,
-		ButtonSize,
-		Button,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
 		ProgressBar,
@@ -34,23 +28,22 @@
 		ScanInput
 	} from "@librocco/ui";
 
-	import type { BookEntry, DatabaseInterface } from "@librocco/db";
+	import type { BookEntry } from "@librocco/db";
 
 	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
 	import { createNoteStores } from "$lib/stores/inventory";
-	import { bookFormStore } from "$lib/stores/inventory/book_form";
+	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
-	import { addBookEntry, findBook, handleBookEntry, handleCloseBookForm, openEditMode, publisherList } from "$lib/utils/book_form";
 
-	import { links } from "$lib/data";
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { links, publisherList } from "$lib/data";
 
 	export let data: PageData;
 
@@ -78,7 +71,6 @@
 
 	$: noteStores = createNoteStores(note);
 
-	$: isbn = "";
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
@@ -87,11 +79,9 @@
 	$: entries = noteStores.entries;
 
 	$: toasts = noteToastMessages(note?.displayName);
-	const formHeader = {
-		title: "Edit book details",
-		description: "Use this form to manually edit details of an existing book in your inbound note"
-	};
 
+	// #region note-actions
+	//
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
@@ -115,37 +105,59 @@
 
 		toastSuccess(toasts.outNoteCreated);
 	};
+	// #region note-actions
 
+	// #region table
 	const tableOptions = writable({
 		data: $entries
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.update(({ data }) => ({ data: $entries }));
+	$: tableOptions.set({ data: $entries });
+	// #endregion table
 
-	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
-		isbn = "";
-		addBookEntry(db)(bookEntry);
-		await note.addVolumes({ isbn: bookEntry.isbn, quantity: $bookFormStore.editMode ? 0 : 1 });
-
-		toastSuccess(toasts.volumeAdded(bookEntry.isbn));
+	// #region transaction-actions
+	const handleAddTransaction = async (isbn: string) => {
+		await note.addVolumes({ isbn, quantity: 1 });
+		toastSuccess(toasts.volumeAdded(isbn));
+		close();
 	};
 
 	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
 		const { matchTxn, updateTxn } = detail;
-		const { isbn, warehouseId = "", quantity = matchTxn.quantity } = updateTxn;
 
-		await note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+		await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
 
 		// TODO: This doesn't seem to work / get called?
-		toastSuccess(toasts.volumeUpdated(isbn));
+		toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
 	};
 
 	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
 		await note.removeTransactions(...e.detail);
 		toastSuccess(toasts.volumeRemoved(e.detail.length));
 	};
+	// #region transaction-actions
+
+	// #region book-form
+	$: bookForm = newBookFormStore(db);
+
+	const handleUpdateBookData = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+	};
+
+	const handleBookFormCreate = async (book: BookEntry) => {
+		await handleAddTransaction(book.isbn);
+		await handleUpdateBookData(book);
+		bookForm.close();
+	};
+
+	const handleBookFormEdit = async (book: BookEntry) => {
+		await handleUpdateBookData(book);
+		bookForm.close();
+	};
+	// #endregion book-form
 </script>
 
 <InventoryPage view="outbound">
@@ -185,12 +197,7 @@
 					align="right"
 				/>
 			</div>
-			<ScanInput
-				onAdd={(isbn) => {
-					note.addVolumes({ isbn, quantity: 1 });
-				}}
-				onCreate={() => handleBookEntry()({ ...$bookFormStore.book, isbn })}
-			/>
+			<ScanInput onAdd={handleAddTransaction} onCreate={bookForm.open("create")} />
 		{/if}
 	</svelte:fragment>
 
@@ -200,7 +207,7 @@
 			{#if Boolean($entries.length)}
 				<OutNoteTable
 					{table}
-					onEdit={handleBookEntry(true)}
+					onEdit={bookForm.open("edit")}
 					on:transactionupdate={handleTransactionUpdate}
 					on:removetransactions={handleRemoveTransactions}
 				/>
@@ -226,16 +233,13 @@
 	</div>
 
 	<svelte:fragment slot="slideOver">
-		{#if $bookFormStore.modalOpen}
-			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+		{#if $bookForm.open}
+			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
 				<BookDetailForm
-					editMode={$bookFormStore.editMode}
-					{openEditMode}
-					book={$bookFormStore.book}
+					{...$bookForm.bookFormProps}
 					{publisherList}
-					onValidate={findBook(db)}
-					onSubmit={handleAddTransaction(db)}
-					onCancel={handleCloseBookForm}
+					on:create={({ detail }) => handleBookFormCreate(detail)}
+					on:edit={({ detail }) => handleBookFormEdit(detail)}
 				/>
 			</Slideover>
 		{/if}
