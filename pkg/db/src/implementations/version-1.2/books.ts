@@ -14,6 +14,7 @@ class Books implements BooksInterface {
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
+		console.log({ bookEntries });
 		await Promise.all(
 			bookEntries.map((b) => {
 				return new Promise<void>((resolve, reject) => {
@@ -37,29 +38,21 @@ class Books implements BooksInterface {
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
-		const rawBooks = await this.#db._pouch
+		const books = await this.#db._pouch
 			.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
+			// The rows are returned in the same order as the supplied keys array.
+			// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 			.then((docs) => unwrapDocs(docs));
-		// The rows are returned in the same order as the supplied keys array.
-		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 
-		const combinedResults = wrapIter(isbns).zip(rawBooks);
+		const isbnsToFetch = wrapIter(isbns)
+			.zip(books)
+			.filter(([, book]) => book === undefined)
+			.map(([isbn]) => isbn)
+			.map((isbn) => pluginManager.getBook(isbn));
 
-		const existingBooks: BookEntry[] = [];
-		// temp fix for isbn
-		const fetchIsbns = combinedResults.map(([isbn, book]) => {
-			if (book !== undefined) {
-				existingBooks.push(book);
-				return;
-			}
+		Promise.all([...isbnsToFetch]).then((res) => this.upsert(res));
 
-			return isbn;
-		});
-
-		const fetchedBooks = await Promise.all(fetchIsbns.map((isbn = "") => pluginManager.getBook(isbn)));
-		this.upsert(fetchedBooks);
-
-		return [...fetchedBooks, ...existingBooks];
+		return books;
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
