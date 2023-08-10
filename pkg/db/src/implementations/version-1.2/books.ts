@@ -14,7 +14,6 @@ class Books implements BooksInterface {
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
-		console.log({ bookEntries });
 		await Promise.all(
 			bookEntries.map((b) => {
 				return new Promise<void>((resolve, reject) => {
@@ -47,10 +46,9 @@ class Books implements BooksInterface {
 		const isbnsToFetch = wrapIter(isbns)
 			.zip(books)
 			.filter(([, book]) => book === undefined)
-			.map(([isbn]) => isbn)
-			.map((isbn) => pluginManager.getBook(isbn));
+			.map(([isbn]) => isbn);
 
-		Promise.all([...isbnsToFetch]).then((res) => this.upsert(res));
+		Promise.all([...isbnsToFetch].map((isbn) => pluginManager.getBook(isbn))).then((res) => this.upsert(res));
 
 		return books;
 	}
@@ -66,13 +64,11 @@ class Books implements BooksInterface {
 
 			const initialState = from(this.get(isbns));
 
-			// only use latest change to query allDocs
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() => from(this.get(isbns)))
 			);
 
-			// call plugin here
 			concat(initialState, changeStream)
 				.pipe(tap(debug.log(ctx, "books_stream:result:raw")))
 				.subscribe((doc) => subscriber.next(doc));

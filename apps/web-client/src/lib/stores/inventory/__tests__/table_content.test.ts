@@ -129,4 +129,68 @@ describe("tableContentStore", () => {
 			]);
 		});
 	});
+	test("should fetch book data from plugin if not foudn in database", async () => {
+		const db = await newTestDB();
+
+		const book1 = {
+			isbn: "0194349279",
+			title: "Holiday Jazz Chants",
+			authors: "Carolyn Graham",
+			publisher: "Oxford",
+			year: "1999",
+			price: 39.86
+		};
+
+		// Set up initial state:
+		const note = await db.warehouse().note("note-1").create();
+
+		// persist book first
+		await db.books().upsert([book1]);
+
+		await note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "jazz" });
+		// Both books are present in the db
+
+		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
+		let displayEntries: DisplayRow[];
+		tableData.entries.subscribe((de) => (displayEntries = de));
+
+		// Should receive the initial state (only book1 transaction in the note)
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
+			])
+		);
+
+		// add additional transaction for an isbn that doesn't exist in db
+
+		await note.addVolumes({ isbn: "12345", quantity: 1, warehouseId: "jazz" });
+
+		// note should contain entry with undefined data
+
+		await waitFor(() => {
+			expect(displayEntries).toEqual([
+				{
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map()
+				},
+				{
+					isbn: "12345",
+					title: `Book with ISBN 12345`,
+					authors: "Some Author",
+					warehouseName: "not-found",
+					price: 10,
+					quantity: 1,
+					warehouseId: "v1/jazz",
+					availableWarehouses: new Map()
+				}
+			]);
+		});
+
+		// wait for pluginManager
+
+		// note should contain entry with book data "fetched" from plugin
+	});
 });
