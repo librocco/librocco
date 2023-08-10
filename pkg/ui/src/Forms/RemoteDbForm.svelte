@@ -25,7 +25,7 @@
 </script>
 
 <form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit remote database connection config">
-	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
+	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
 				<TextField
@@ -35,7 +35,7 @@
 					required={true}
                     pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
 				>
-                    <p slot="helpText">URL format: <span class="italic">user:pwd@host:post/db_name</span></p>
+                    <p slot="helpText">URL format: <span class="italic">user:password@host:post/db_name</span></p>
                 </TextField>
 			</div>
             <div>
@@ -54,9 +54,9 @@
                                 Sync direction
                             </label>
                             <select id="direction" name="direction" class="appearance-none">
-                                <option value="to">➡️ To</option>
-                                <option value="from">⬅️ From</option>
-                                <option value="sync">↔️ Sync</option>
+                                <option value="to">➡️ To remote</option>
+                                <option value="from">⬅️ From remote</option>
+                                <option value="sync">↔️ Sync with remote</option>
                             </select>
                         </div>
                         <Checkbox id="live" name="live" label="Live" helpText="Watch for and sync new changes as they become available." />
