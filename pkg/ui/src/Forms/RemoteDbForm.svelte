@@ -39,8 +39,8 @@
                 </TextField>
 			</div>
             <div>
-                <details open>
-                    <summary class="flex cursor-pointer items-center justify-between py-3 px-2">
+                <details>
+                    <summary class="flex cursor-pointer items-center justify-between py-3">
                         <span id="open" class="inline-flex items-center gap-x-2 text-base leading-6 text-gray-600">
                             <ChevronUp /> Less options
                         </span>
@@ -48,7 +48,7 @@
                             <ChevronDown size={24}/> More options
                         </span>
                     </summary>
-                    <div class="flex flex-col gap-y-6 pl-10">
+                    <div class="flex flex-col gap-y-6 pl-8">
                         <div class="flex flex-col gap-y-2">
                             <label for="direction" class={"text-sm font-medium text-gray-700"}>
                                 Sync direction
