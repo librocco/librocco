@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "../../constants";
 
-import { getDashboard } from "../../helpers";
+import { getDashboard, getDbHandle } from "../../helpers";
 
 import { runCommonTransactionTests } from "./shared_tests";
 
@@ -55,9 +55,8 @@ test("should display correct transaction fields for the outbound note view", asy
 	await row.field("year").assert(book1.year);
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
-	/**
-	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
-	 */
+
+	// There is no warehouse the book is available in so 'not-found' should be displayed
 	await row.field("warehouseName").assert("not-found");
 });
 
@@ -80,10 +79,189 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await row.field("year").assert("N/A");
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
-	/**
-	 * @TODO Uncomment this when working on https://github.com/librocco/librocco/issues/295
-	 */
+
+	// There is no warehouse the book is available in so 'not-found' should be displayed
 	await row.field("warehouseName").assert("not-found");
 });
 
 runCommonTransactionTests("outbound");
+
+test("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create a warehouse to work with
+		const wh = await db.warehouse("wh-1").setName({}, "Warehouse 1");
+
+		// Add the book to the warehouse (through an inbound note)
+		await wh
+			.note()
+			.addVolumes({ isbn: "1234567890", quantity: 1 })
+			.then((n) => n.commit({}));
+	});
+
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Add a book transaction to the note
+	await content.scanField().add("1234567890");
+
+	// Assert relevant fields (isbn, quantity and warehouseName)
+	await content.entries("outbound").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" });
+});
+
+test("transaction should allow for warehouse selection if there is more than one warehouse the given book is available in", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+
+		// Create additional warehouse where the book is not available (as noise) - this warehouse shouldn't be available for selection
+		await db
+			.warehouse("wh-3")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 3"));
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+	const row = entries.row(0);
+
+	// Add a book transaction to the note
+	await scanField.add("1234567890");
+
+	// Assert relevant fields (isbn, quantity and warehouseName)
+	await row.assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "" });
+	// Check row's available warehouses
+	await row.field("warehouseName").assertOptions(["Warehouse 1", "Warehouse 2"]);
+});
+
+test("if there's one transaction for the isbn with specified warehouse, should add a new transaction (with unspecified warehouse) on 'Add'", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	await entries.assertRows([
+		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+});
+
+test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with specified warehouse on 'Add'", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	// Add yet another transaction for the same book (should default to "" warehouse and aggregate with previous one)
+	await scanField.add("1234567890");
+
+	await entries.assertRows([
+		{ isbn: "1234567890", quantity: 2, warehouseName: "" },
+		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	]);
+});
+
+test("updating a transaction to an 'isbn' and 'warehouseId' of an already existing transaction should aggregate the two", async ({
+	page
+}) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(async (db) => {
+		// Create two warehouses with the book in stock
+		for (let i = 1; i <= 2; i++) {
+			await db
+				.warehouse(`wh-${i}`)
+				.create()
+				.then((wh) => wh.setName({}, `Warehouse ${i}`))
+				.then((wh) => wh.note().create())
+				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.commit({}));
+		}
+	});
+
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const scanField = content.scanField();
+	const entries = content.entries("outbound");
+
+	// Add one transaction for the book and select the first warehouse
+	await scanField.add("1234567890");
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	// Add another transaction for the same book (should default to "" warehouse)
+	await scanField.add("1234567890");
+
+	// Change the warehouse of the latter transaction to the same as the first one
+	//
+	// Note: transaction with warehouse of "" will be sorted before other transactions with the same isbn
+	await entries.row(0).field("warehouseName").set("Warehouse 1");
+
+	await entries.assertRows([{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 1" }]);
+});

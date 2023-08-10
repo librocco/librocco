@@ -6,19 +6,19 @@
 
 2. [Structure](#2-structure):
 
-    - 2.1. [New test runner](#21-new-test-runner)
-    - 2.2. [Setting up the implementation](#22-setting-up-the-implementation)
-    - 2.3. [Running the tests](#23-running-the-tests)
-    - 2.4. [Running tests against multiple implementations](#24-running-tests-against-multiple-implementations)
-    - 2.5. [Data loaders](#25-data-loaders)
+   - 2.1. [New test runner](#21-new-test-runner)
+   - 2.2. [Setting up the implementation](#22-setting-up-the-implementation)
+   - 2.3. [Running the tests](#23-running-the-tests)
+   - 2.4. [Running tests against multiple implementations](#24-running-tests-against-multiple-implementations)
+   - 2.5. [Data loaders](#25-data-loaders)
 
 3. [Usage](#3-usage):
 
-    - 3.1. [Test modes](#31-test-modes)
-    - 3.2. [Main test file](#32-main-test-file)
-    - 3.3. [Writing tests](#33-writing-tests)
-    - 3.4. [Benchmarks](#34-benchmarks)
-    - 3.5. [Test scripts](#35-test-scripts)
+   - 3.1. [Test modes](#31-test-modes)
+   - 3.2. [Main test file](#32-main-test-file)
+   - 3.3. [Writing tests](#33-writing-tests)
+   - 3.4. [Benchmarks](#34-benchmarks)
+   - 3.5. [Test scripts](#35-test-scripts)
 
 ## 1. Motivation
 
@@ -43,7 +43,7 @@ import { newTestRunner } from "@test-runner/runner";
 
 // Notice the async callback of the describe block
 describe("Datamodel tests", async () => {
-    const runner = await newTestRunner(dataLoader);
+  const runner = await newTestRunner(dataLoader);
 });
 ```
 
@@ -65,12 +65,12 @@ import { newTestRunner } from "@test-runner/runner";
 import { v1 as newDatabase } from "@/implementations";
 
 describe("Datamodel tests", async () => {
-    const runner = await newTestRunner(dataLoader);
+  const runner = await newTestRunner(dataLoader);
 
-    // Setup tests for v1 implementation
-    const setup = runner.setup({ version: "v1", newDatabase });
+  // Setup tests for v1 implementation
+  const setup = runner.setup({ version: "v1", newDatabase });
 
-    // ...run the tests
+  // ...run the tests
 });
 ```
 
@@ -91,24 +91,24 @@ import { newTestRunner } from "@test-runner/runner";
 import { v1 as newDatabase } from "@/implementations";
 
 describe("Datamodel tests", async () => {
-    const runner = await newTestRunner(dataLoader);
+  const runner = await newTestRunner(dataLoader);
 
-    const setup = runner.setup({ version: "v1", newDatabase });
+  const setup = runner.setup({ version: "v1", newDatabase });
 
-    // Run the test against the db interface set up by the runner
-    setup.test("should do something", async (db, version, getNotesAndWarehouses) => {
-        // Make assertions
-    });
+  // Run the test against the db interface set up by the runner
+  setup.test("should do something", async (db, version, getNotesAndWarehouses) => {
+    // Make assertions
+  });
 });
 ```
 
 Let's break down the `.test` method:
 
--   The test method behaves similarly to vitest's `test` function as it serves as a wrapper around it: just like vitest's `test`, it accepts a name and a test callback, only caveat here is: the callback has to be `async` (which it always will be as we're testing async behaviour)
--   The test callback receives some additional parameters, provided by runner setup:
-    -   the setup uses (specific implementation's) `newDatabase` (passed to `runner.setup`) to create a new `db` interface, with new database name, for each test, so the tests are parralelisable
-    -   the setup passes the currently tested version string (`"v1"` in this case) to the test callback (in case we need it to prepend the doc ids with the version number, as is the current implementation)
-    -   finally, `getNotesAndWarehouses` function is passed to the test callback (to be used if neccessary) to load the fixtures
+- The test method behaves similarly to vitest's `test` function as it serves as a wrapper around it: just like vitest's `test`, it accepts a name and a test callback, only caveat here is: the callback has to be `async` (which it always will be as we're testing async behaviour)
+- The test callback receives some additional parameters, provided by runner setup:
+  - the setup uses (specific implementation's) `newDatabase` (passed to `runner.setup`) to create a new `db` interface, with new database name, for each test, so the tests are parralelisable
+  - the setup passes the currently tested version string (`"v1"` in this case) to the test callback (in case we need it to prepend the doc ids with the version number, as is the current implementation)
+  - finally, `getNotesAndWarehouses` function is passed to the test callback (to be used if neccessary) to load the fixtures
 
 ### 2.4. Running tests against multiple implementations
 
@@ -133,27 +133,27 @@ import { newTestRunner } from "@test-runner/runner";
 import * as implementations from "@/implementations";
 
 describe("Datamodel tests", async () => {
-    // We initialise the test runner on the same test data
-    const runner = await newTestRunner(dataLoader);
+  // We initialise the test runner on the same test data
+  const runner = await newTestRunner(dataLoader);
 
-    // Loop over the implementations and get a test setup for each
-    Object.entries(implementations).forEach(([version, newDatabase]) => {
-        // Let's add additional describe block for nicer test reporting
-        describe(`Test ${version} implementation`, () => {
-            // Setup has to be ran for each specific version
-            // (passing in the version string and 'newDatabase' function)
-            const setup = runner.setup({ version, newDatabase });
+  // Loop over the implementations and get a test setup for each
+  Object.entries(implementations).forEach(([version, newDatabase]) => {
+    // Let's add additional describe block for nicer test reporting
+    describe(`Test ${version} implementation`, () => {
+      // Setup has to be ran for each specific version
+      // (passing in the version string and 'newDatabase' function)
+      const setup = runner.setup({ version, newDatabase });
 
-            // Run the test against the db interface set up for specific implementation
-            setup.test("should do something", async (db) => {
-                // Make assertions
-            });
+      // Run the test against the db interface set up for specific implementation
+      setup.test("should do something", async (db) => {
+        // Make assertions
+      });
 
-            setup.test("should do something else", async (db) => {
-                // Make assertions
-            });
-        });
+      setup.test("should do something else", async (db) => {
+        // Make assertions
+      });
     });
+  });
 });
 ```
 
@@ -177,13 +177,13 @@ _Note: the transform step is unnecessary and will be omitted in the future when 
 
 The loader must be an object with two methods:
 
--   getNotes - should return a list of notes in their chronological order
--   getSnaps - should return a list of snapshots of all of the warehouses, after each note has been committed
+- getNotes - should return a list of notes in their chronological order
+- getSnaps - should return a list of snapshots of all of the warehouses, after each note has been committed
 
 Currently we have two data loaders implemented:
 
--   fsDataLoader - loading the data from the fs (stored in .json format)
--   couchdbImageLoader - loading the data from the CouchDB container build from an image filled with test data
+- fsDataLoader - loading the data from the fs (stored in .json format)
+- couchdbImageLoader - loading the data from the CouchDB container build from an image filled with test data
 
 ## 3. Usage
 
@@ -223,19 +223,19 @@ However, more often than not, we only want to test the specific implementation (
 
 The difference here is controlled through `TEST_MODE` end variable:
 
--   `TEST_MODE=all` (default) - run the tests against all implementations
--   `TEST_MODE=current-version` - run the tests only against current version of the db interface implementation
+- `TEST_MODE=all` (default) - run the tests against all implementations
+- `TEST_MODE=current-version` - run the tests only against current version of the db interface implementation
 
 ### 3.2. Main test files
 
 As mentioned above, in the test runner example, our actual tests are set up in a way that's very similar to the code we used as an example. There's are a couple of small differences:
 
--   we have multiple test files:
-    -   `test-runner/__tests__/runner.test.ts` - includes a (very simple) test suite for unit testing of the runner itself: **this should rarely be updated as the runner itself is developed and shoud only be updated if, for some reason, we decide to update the runner itself**
-    -   `__tests__/main.test.ts` - the main logic of our test suite
-    -   `__tests__/main.bench.ts` - the benchmark file (looks very similar to `main.test.ts`, but runs `setup.bench` rather than `setup.test` for each test case)
--   our `main.test.ts`, even though very similar to the example above, contains additional logic for controlling of the test modes (as described in [test modes section](#31-test-modes))
--   finally, our tests are not written in the test file itself (`main.test.ts`/`main.bench.ts`) as we want to be able to reuse some or all of the tests in different test suites, more below
+- we have multiple test files:
+  - `test-runner/__tests__/runner.test.ts` - includes a (very simple) test suite for unit testing of the runner itself: **this should rarely be updated as the runner itself is developed and shoud only be updated if, for some reason, we decide to update the runner itself**
+  - `__tests__/main.test.ts` - the main logic of our test suite
+  - `__tests__/main.bench.ts` - the benchmark file (looks very similar to `main.test.ts`, but runs `setup.bench` rather than `setup.test` for each test case)
+- our `main.test.ts`, even though very similar to the example above, contains additional logic for controlling of the test modes (as described in [test modes section](#31-test-modes))
+- finally, our tests are not written in the test file itself (`main.test.ts`/`main.bench.ts`) as we want to be able to reuse some or all of the tests in different test suites, more below
 
 ### 3.3. Writing tests
 
@@ -245,11 +245,11 @@ Since we want to reuse some or all of the test cases across different suites (te
 import { TestFunction } from "@/test-runner/types";
 
 export const standardApi: TestFunction = async (db, version) => {
-    // ...make assertions
+  // ...make assertions
 };
 
 export const stressTest: TestFunction = async (db, version, getNotesAndWarehouses) => {
-    // ...make assertions
+  // ...make assertions
 };
 ```
 
@@ -264,7 +264,7 @@ therefore, it's important that all of the exports from the `test.ts` file (in th
 ```typescript
 // tests.ts
 export const standardApi: TestFunction = async (db) => {
-    expect(foo).toEqual(bar);
+  expect(foo).toEqual(bar);
 };
 
 // main.test.ts
@@ -273,9 +273,9 @@ import * as tests from "./tests";
 // ...runner and implementation setup
 
 Object.entries(tests).forEach(([name, testFn]) => {
-    // Notice how the test name is the name of the exported function (in this example: 'standardApi')
-    // and the test callback is the exported function itself
-    setup.test(name, testFn);
+  // Notice how the test name is the name of the exported function (in this example: 'standardApi')
+  // and the test callback is the exported function itself
+  setup.test(name, testFn);
 });
 ```
 
@@ -283,7 +283,7 @@ The result of this iteration (in this example, containing only one test) would e
 
 ```typescript
 test("standardApi", async () => {
-    expect(foo).toEqual(bar);
+  expect(foo).toEqual(bar);
 });
 ```
 
@@ -291,8 +291,8 @@ test("standardApi", async () => {
 
 One final thing to mention is the way our test files (files containing test cases) are organized:
 
--   `__tests__/tests.ts` - file containing unit tests for any db interface implementation
--   `__tests__/benchmarks.ts` - file containing tests cases, using the tests data (fixtures) and performing a large amount of operations (plus assertions after the operations are completed, ofc) to provide for benchmarks/stress tests - **still WIP**
+- `__tests__/tests.ts` - file containing unit tests for any db interface implementation
+- `__tests__/benchmarks.ts` - file containing tests cases, using the tests data (fixtures) and performing a large amount of operations (plus assertions after the operations are completed, ofc) to provide for benchmarks/stress tests - **still WIP**
 
 The former contains the tests used to test out the base behaviour of the implementation (and are ran only in `main.test.ts` suite), while the latter is more focused on handling large data load, without going into some of the standard behaviour quirks, and is used in `bench.test.ts` as well as in `main.test.ts` (if in full test mode).
 

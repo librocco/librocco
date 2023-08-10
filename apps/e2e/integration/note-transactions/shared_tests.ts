@@ -172,6 +172,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 			await scanField.add(isbn);
 		}
 
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+
 		// Delete the second transaction
 		await entries.row(1).select();
 
@@ -201,6 +204,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		for (const isbn of isbns) {
 			await scanField.add(isbn);
 		}
+
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 
 		// Select all transactions
 		await entries.selectAll();
@@ -232,6 +238,9 @@ export const runCommonTransactionTests = (view: ViewName) => {
 			await scanField.add(isbn);
 		}
 
+		// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
+		await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+
 		// Select all transactions
 		await entries.selectAll();
 
@@ -246,28 +255,6 @@ export const runCommonTransactionTests = (view: ViewName) => {
 		const dashboard = getDashboard(page);
 
 		const statePicker = dashboard.content().statePicker();
-
-		// Try and commit the note
-		await statePicker.select(NoteState.Committed);
-
-		/** @TODO This is a terrible way to assert this and is not really communicating anything, update when we have error display */
-		await page.waitForTimeout(1000);
-		await statePicker.assertState(NoteTempState.Committing);
-	});
-
-	/**
-	 * @TODO : Unskip this when working on https://github.com/librocco/librocco/issues/288
-	 */
-	test.skip("should not allow committing a note with 0-quantity transaction(s)", async ({ page }) => {
-		const dashboard = getDashboard(page);
-
-		const content = dashboard.content();
-		const entries = content.entries(view);
-		const statePicker = content.statePicker();
-
-		// Add a transaction with 0 quantity
-		await content.scanField().add("1234567890");
-		await entries.row(0).field("quantity").set(0);
 
 		// Try and commit the note
 		await statePicker.select(NoteState.Committed);

@@ -1,22 +1,27 @@
-import { map } from "@librocco/shared";
+import { map, StockMap } from "@librocco/shared";
 
 import { VolumeStock } from "@librocco/shared";
 
 import { EntriesStreamResult, NavMap, VolumeStockClient } from "@/types";
 
-import { versionId } from "@/utils/misc";
+type Params = [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap, ...any[]];
+type ParamsWithAvailableWarehouses = [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap, StockMap];
 
-export const combineTransactionsWarehouses =
-	({ includeAvailableWarehouses }: { includeAvailableWarehouses: boolean }) =>
-	([entries, stats, warehouses]: [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap]): EntriesStreamResult => {
-		const rows = [
-			...(includeAvailableWarehouses
-				? addAvailableWarehouses(addWarehouseNames(entries, warehouses), warehouses)
-				: addWarehouseNames(entries, warehouses))
-		];
-
-		return { ...stats, rows };
-	};
+export function combineTransactionsWarehouses(opts: {
+	includeAvailableWarehouses: true;
+}): (params: ParamsWithAvailableWarehouses) => EntriesStreamResult;
+export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }): (params: Params) => EntriesStreamResult;
+export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }) {
+	return opts?.includeAvailableWarehouses
+		? ([entries, stats, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
+				...stats,
+				rows: [...addAvailableWarehouses(addWarehouseNames(entries, warehouses), warehouses, stock)]
+		  })
+		: ([entries, stats, warehouses]: Params): EntriesStreamResult => ({
+				...stats,
+				rows: [...addWarehouseNames(entries, warehouses)]
+		  });
+}
 
 /**
  * Takes in a list of VolumeStock entries and a list of existing warehouses and adds a `warehouseName` field (with respect to warehouseId) to each entry.
@@ -41,8 +46,15 @@ export const addWarehouseNames = (entries: Iterable<VolumeStock>, warehouses: Na
  * @param warehouses
  * @returns
  */
-export const addAvailableWarehouses = (entries: Iterable<VolumeStockClient>, warehouses: NavMap): Iterable<VolumeStockClient> => {
-	const availableWarehouses: NavMap = new Map(warehouses);
-	availableWarehouses.delete(versionId("0-all"));
-	return map(entries, (e) => ({ ...e, availableWarehouses }));
+export const addAvailableWarehouses = (
+	entries: Iterable<VolumeStockClient>,
+	warehouses: NavMap,
+	stock: StockMap
+): Iterable<VolumeStockClient> => {
+	return map(entries, (e) => {
+		const availableWarehouses: NavMap = new Map(
+			map(stock.isbn(e.isbn), ([[, warehouseId]]) => [warehouseId, warehouses.get(warehouseId) || { displayName: "not-found" }])
+		);
+		return { ...e, availableWarehouses };
+	});
 };

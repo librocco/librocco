@@ -25,8 +25,7 @@
 
 			toastSuccess("Remote CouchDB URL updated");
 		} else {
-			errors["couch-url"] =
-				"URL should have format https://<COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
+			errors["couch-url"] = "URL should have format https://<COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
 		}
 	};
 </script>

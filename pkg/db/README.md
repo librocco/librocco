@@ -8,37 +8,37 @@ Each version, should implement a standardised type interface, and have the same 
 
 1. [Package/folder structure](#1-package-structure)
 
-    - 1.1. [Types](#11-types)
-    - 1.2. [TestRunner](#12-test-runner)
-    - 1.3. [Exports](#13-exports)
+   - 1.1. [Types](#11-types)
+   - 1.2. [TestRunner](#12-test-runner)
+   - 1.3. [Exports](#13-exports)
 
 2. [Usage](#2-usage)
 
-    - 2.1. [Database interface](#21-database-interface)
+   - 2.1. [Database interface](#21-database-interface)
 
-        - 2.1.1. [Instantiating the interface](#211-instantiating-the-interface)
-        - 2.1.2. [Initialising the interface](#212-initialising-the-interface)
-        - 2.1.3. [Remote replication](#213-remote-replication)
-        - 2.1.4. [Idempotency](#214-idempotency)
-        - 2.1.5. [Stream](#215-stream)
-        - 2.1.6. [Accessing other structures](#216-accessing-other-structures)
-        - 2.1.7. [Find Note](#217-find-note)
-        - 2.1.8. [Additinal methods/properties](#218-additional-methodsproperties)
+     - 2.1.1. [Instantiating the interface](#211-instantiating-the-interface)
+     - 2.1.2. [Initialising the interface](#212-initialising-the-interface)
+     - 2.1.3. [Remote replication](#213-remote-replication)
+     - 2.1.4. [Idempotency](#214-idempotency)
+     - 2.1.5. [Stream](#215-stream)
+     - 2.1.6. [Accessing other structures](#216-accessing-other-structures)
+     - 2.1.7. [Find Note](#217-find-note)
+     - 2.1.8. [Additinal methods/properties](#218-additional-methodsproperties)
 
-    - 2.2. [Chainable model of notes and warehouses](#22-chainable-model-of-notes-and-warehouses)
+   - 2.2. [Chainable model of notes and warehouses](#22-chainable-model-of-notes-and-warehouses)
 
-    - 2.3. [Warehouse interface](#23-warehouse-interface)
+   - 2.3. [Warehouse interface](#23-warehouse-interface)
 
-        - 2.3.1. [CRUD](#231-crud)
-        - 2.3.2. [Stream](#232-stream)
+     - 2.3.1. [CRUD](#231-crud)
+     - 2.3.2. [Stream](#232-stream)
 
-    - 2.4. [Note interface](#24-note-interface)
+   - 2.4. [Note interface](#24-note-interface)
 
-        - 2.4.1. [Inbound/outbound](#241-inboundoutbound)
-        - 2.4.2. [Note states](#242-note-states)
-        - 2.4.3. [CRUD](#243-crud)
-        - 2.4.4. [Stream](#244-stream)
-        - 2.4.5. [Additional methods](#245-additional-methods)
+     - 2.4.1. [Inbound/outbound](#241-inboundoutbound)
+     - 2.4.2. [Note states](#242-note-states)
+     - 2.4.3. [CRUD](#243-crud)
+     - 2.4.4. [Stream](#244-stream)
+     - 2.4.5. [Additional methods](#245-additional-methods)
 
 ## 1. Package structure
 
@@ -66,33 +66,33 @@ To take things further, we've implemented a test runner which can take in differ
 
 The package exprts:
 
--   the standardised type interface (for client usage)
--   current version of the database interface implementation
+- the standardised type interface (for client usage)
+- current version of the database interface implementation
 
 ## 2. Usage
 
 The db interface is created to satisfy our client app's needs. Being a book inventory management solution, the app organises book inventory as well as changes to said inventory. As such, our db interface is organised around the following structures:
 
--   warehouse:
+- warehouse:
 
-    -   warehouse is a section of the stock inventory
-    -   a warehouse could be an actual (physical) warehouse, or a symbolic one (representing a section of books in the store)
-    -   each warehouse tracks inventory stock at a given point in time
+  - warehouse is a section of the stock inventory
+  - a warehouse could be an actual (physical) warehouse, or a symbolic one (representing a section of books in the store)
+  - each warehouse tracks inventory stock at a given point in time
 
-    _Note: There can be multiple different warehouses, but there's always one (special) default warehouse. Each warehouse displays its own stock, while the default warehouse displays the entirety of the book stock (for all warehouses)._
+  _Note: There can be multiple different warehouses, but there's always one (special) default warehouse. Each warehouse displays its own stock, while the default warehouse displays the entirety of the book stock (for all warehouses)._
 
--   note:
+- note:
 
-    -   a note represents a single, contained, collection of transactions (changes in inventory)
-    -   notes can be **inbound** or **outbound**
-    -   **outbound** note example: A customer walks into the store (or is ordering online) and purchases some amount of books. This creates an **outbound** note, lists all of the books on the receipt as transactions, and all transactions displayed on the note (books and quantities of each book bought) decrement the stock for a given book in a given warehouse.
-    -   **inbound** note example: The store acquires some amount of books (be it a delivery from the distributor or an acquisition of used books). The **inbound** note is created, all of the books acquired (and their respective quantities) are listed as transactions in the note and all transactions increment the stock for a given book in a given warehouse.
+  - a note represents a single, contained, collection of transactions (changes in inventory)
+  - notes can be **inbound** or **outbound**
+  - **outbound** note example: A customer walks into the store (or is ordering online) and purchases some amount of books. This creates an **outbound** note, lists all of the books on the receipt as transactions, and all transactions displayed on the note (books and quantities of each book bought) decrement the stock for a given book in a given warehouse.
+  - **inbound** note example: The store acquires some amount of books (be it a delivery from the distributor or an acquisition of used books). The **inbound** note is created, all of the books acquired (and their respective quantities) are listed as transactions in the note and all transactions increment the stock for a given book in a given warehouse.
 
-    _Note: Each inbound note belongs to a particular (non-default) warehouse: all of the transactions in the (inbound) note increment the stock for a given book in the same warehouse (the one the note belongs to), while outbound notes all belong to the default warehouse: every transaction in an outbound note contains data logging from which particular warehouse some amount of books was taken._
+  _Note: Each inbound note belongs to a particular (non-default) warehouse: all of the transactions in the (inbound) note increment the stock for a given book in the same warehouse (the one the note belongs to), while outbound notes all belong to the default warehouse: every transaction in an outbound note contains data logging from which particular warehouse some amount of books was taken._
 
--   books:
-    -   this part of the db interface is not yet fully developed, but it's, essentially, a part of the db containing data for each book
-    -   each time the book transactions, or book stock are displayed by the client app, isbns and quantities are pulled from warehouse/note displayed while the book data (such as year, author(s), publisher) is retrieved from the books section for each given book
+- books:
+  - this part of the db interface is not yet fully developed, but it's, essentially, a part of the db containing data for each book
+  - each time the book transactions, or book stock are displayed by the client app, isbns and quantities are pulled from warehouse/note displayed while the book data (such as year, author(s), publisher) is retrieved from the books section for each given book
 
 ### 2.1. Database Interface
 
@@ -117,8 +117,8 @@ The code above **instantiates** a db interface and we can start using the db imm
 
 However, this doesn't guarantee that the database itself has been initialised. The database needs to be initialised only the first time it's used. In context of our currently used DBMS (CoudbDB/PouchDB), database being initialised would mean:
 
--   the design documents are uploaded
--   default warehouse has been created
+- the design documents are uploaded
+- default warehouse has been created
 
 To initialise the database, we run `db.init()`
 
@@ -131,14 +131,14 @@ The `db.init` method returns a promise which can be awaited to ensure the inital
 
 ```svelte
 <script>
-    const db = newDatabaseInterface(pouch);
+  const db = newDatabaseInterface(pouch);
 </script>
 
 {#await db.init({}, {})}
-    <p>Initialising the db...</p>
+  <p>Initialising the db...</p>
 {:then db}
-    <p>DB initialised</p>
-    <!-- Use the db with assurance that the default warehouse is created and design documents uploaded -->
+  <p>DB initialised</p>
+  <!-- Use the db with assurance that the default warehouse is created and design documents uploaded -->
 {/await}
 ```
 
@@ -158,9 +158,9 @@ db.init({ remoteDb }, {});
 
 Remote db string:
 
--   `user:password` are the auth for the connection to the remote db
--   `127.0.0.1:5000` is (obviously) the `host:port` part of the connection
--   `dev` is the name of the database (in the remote instance) we're replicating to and from
+- `user:password` are the auth for the connection to the remote db
+- `127.0.0.1:5000` is (obviously) the `host:port` part of the connection
+- `dev` is the name of the database (in the remote instance) we're replicating to and from
 
 In this case, when the db.init() has resolved, we're certain that the default warehouse is created, the design documents are uploaded and the initial replication is done (the remote db is replicated into the local db).
 
@@ -181,11 +181,11 @@ const remoteDb = "http://some:remote@db:1234/name";
 
 // This function is ran on each route (params) change
 async function load({ params }) {
-    // This is ran on each function run, but, in effect, the initialisation is ran only once.
-    // Every subsequent run simply returns the db
-    await db.init({ remoteDb }, {});
+  // This is ran on each function run, but, in effect, the initialisation is ran only once.
+  // Every subsequent run simply returns the db
+  await db.init({ remoteDb }, {});
 
-    return db.note(params.id);
+  return db.note(params.id);
 }
 ```
 
@@ -193,12 +193,12 @@ async function load({ params }) {
 
 Running `db.stream()` returns an object with methods used to construct a particular stream:
 
--   warehouseList - creates a stream, streaming a list of warehouse `id`s with their respective `displayName`s (to be used as navigation in stock view)
--   inNoteList:
-    -   creates a stream, streaming a list of warehouse `id`s, their respective `displayName`s and all inbound notes (their `id`s and `displayName`s) belonging to the respective warehouse
-    -   _note: The notes under the default ("All") warehouse are **not outbound** notes (as this is an inbound note list), but rather a list of all inbound notes (regardless of warehouse, they belong to)_
--   outNoteList:
-    -   creates a stream streaming a list of outbound note `id`s with their respective `displayName`s
+- warehouseList - creates a stream, streaming a list of warehouse `id`s with their respective `displayName`s (to be used as navigation in stock view)
+- inNoteList:
+  - creates a stream, streaming a list of warehouse `id`s, their respective `displayName`s and all inbound notes (their `id`s and `displayName`s) belonging to the respective warehouse
+  - _note: The notes under the default ("All") warehouse are **not outbound** notes (as this is an inbound note list), but rather a list of all inbound notes (regardless of warehouse, they belong to)_
+- outNoteList:
+  - creates a stream streaming a list of outbound note `id`s with their respective `displayName`s
 
 #### 2.1.6. Accessing other structures
 
@@ -222,8 +222,8 @@ Note and its corresponding warehouse can also be accessed by note id, using the 
 
 There are a couple of additional methods on the db interface, but those exist more for internal usage, rather than for client usage (as all of their functionality can be achieved, in a simplified way using other abstractions). These are:
 
--   `db.updateDesignDocument` - a method used to update the design document in the db (there's no need to run this manually as all design documents are updated with `db.init` method)
--   `db._pouch` - a reference to an embeded pouchdb instance around which the db interface is built (there are some really rare cases where this should be used directly)
+- `db.updateDesignDocument` - a method used to update the design document in the db (there's no need to run this manually as all design documents are updated with `db.init` method)
+- `db._pouch` - a reference to an embeded pouchdb instance around which the db interface is built (there are some really rare cases where this should be used directly)
 
 ### 2.2. Chainable model of notes and warehouses
 
@@ -356,12 +356,12 @@ const entriesStream = streams.entries({}, page, itemsPerPage);
 
 // Streams the display name (updated in real time)
 displayNameStream.subscribe((dn) => {
-    /* Do something with the 'displayName' */
+  /* Do something with the 'displayName' */
 });
 
 // Streams the warehouse stock (updated in real time)
 entriesStream.subscribe((entries) => {
-    /* Do something with the 'entries' (warehouse stock) */
+  /* Do something with the 'entries' (warehouse stock) */
 });
 ```
 
@@ -384,10 +384,10 @@ const wh1 = db.warehouse("warehouse-1").note("note-1");
 
 ##### Inbound notes:
 
--   represent a collection of inbound transactions of books (e.g. acquisition of used books, delivery from the supplier)
--   increment the inventory stock by quantities specified in transactions
--   they "belong" to a non-default warehouse
--   all transactions operate on the same (parent) warehouse
+- represent a collection of inbound transactions of books (e.g. acquisition of used books, delivery from the supplier)
+- increment the inventory stock by quantities specified in transactions
+- they "belong" to a non-default warehouse
+- all transactions operate on the same (parent) warehouse
 
 Inbound notes are accessed (or created) by explicitly specifying a warehouse:
 
@@ -401,10 +401,10 @@ const newInNote = db.warehouse("warehouse-1").note();
 
 ##### Outbound notes:
 
--   represent a collection of outbound transactions of books (e.g. sale, write off, and such)
--   decrement the inventory stock in warehouses specified in transactions, by quantities specified in transactions
--   all "belong" to the default warehouse
--   transactions operate on (possibly) different non-default warehouses, which need to be specified for each transaction
+- represent a collection of outbound transactions of books (e.g. sale, write off, and such)
+- decrement the inventory stock in warehouses specified in transactions, by quantities specified in transactions
+- all "belong" to the default warehouse
+- transactions operate on (possibly) different non-default warehouses, which need to be specified for each transaction
 
 Outbound notes are accessed (or created) by not specifying a warehouse, or explicitly specifying the default warehouse (former is preferred):
 
@@ -501,16 +501,16 @@ note.addVolumes({ isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" });
 
 Warehouse id :point_up: is optional and, if not provided, the default value will be applied with respect to the note type:
 
--   `inbound` note - `warehouseId` is the id of the warehouse parent to the note
--   `outbound` note - `warehouseId` (if not provided) defaults to `""`, signaling that no warehouse has yet been selected _(in that case, the warehouse id has to be selected later on, before committing the note)_.
+- `inbound` note - `warehouseId` is the id of the warehouse parent to the note
+- `outbound` note - `warehouseId` (if not provided) defaults to `""`, signaling that no warehouse has yet been selected _(in that case, the warehouse id has to be selected later on, before committing the note)_.
 
 We can also add multiple transactions at once, like so:
 
 ```typescript
 note.addVolumes(
-    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
-    { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" },
-    { isbn: "00000001", quantity: 3, warehouseId: "warehouse-1" }
+  { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
+  { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" },
+  { isbn: "00000001", quantity: 3, warehouseId: "warehouse-1" }
 );
 ```
 
@@ -539,8 +539,8 @@ console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "wareh
 
 // Update the transaction row (isbn: "12345678", warehouseId: "warehouse-1") to have the quantity of 2 (instead of 5)
 await note.updateTransaction(
-    { isbn: "12345678", warehouseId: "warehouse-1" },
-    { isbn: "12345678", warehouseId: "warehouse-1", quantity: 2 }
+  { isbn: "12345678", warehouseId: "warehouse-1" },
+  { isbn: "12345678", warehouseId: "warehouse-1", quantity: 2 }
 );
 entries = await firstValueFrom(note1.stream().entries({}));
 console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
@@ -552,8 +552,8 @@ entries = await firstValueFrom(note2.stream().entries({}));
 console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-1", quantity: 2}]
 
 await note.updateTransaction(
-    { isbn: "12345678", warehouseId: "warehouse-1" },
-    { isbn: "12345678", warehouseId: "warehouse-2", quantity: 2 }
+  { isbn: "12345678", warehouseId: "warehouse-1" },
+  { isbn: "12345678", warehouseId: "warehouse-2", quantity: 2 }
 );
 entries = await firstValueFrom(note2.stream().entries({}));
 console.log(entries.rows); // Prints out [{isbn: "12345678", warehouseId: "warehouse-2", quantity: 2}]
@@ -584,10 +584,10 @@ const note = await db.warehouse().note().create();
 
 // Add two transactions with the same isbn, but different warehouses
 await note.addVolumes(
-    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
-    // It's perfectly legal to not specify the warehouseId the first time around
-    // as it can be provided anytime before the note is committed
-    { isbn: "12345678", quantity: 3 }
+  { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
+  // It's perfectly legal to not specify the warehouseId the first time around
+  // as it can be provided anytime before the note is committed
+  { isbn: "12345678", quantity: 3 }
 );
 
 // The following operation would delete the first entry
@@ -604,17 +604,17 @@ Finally, we can remove multiple transactions at once, like so:
 const note = await db.warehouse().note().create();
 
 await note.addVolumes(
-    { isbn: "00000000", quantity: 2, warehouseId: "warehouse-1" },
-    { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
-    { isbn: "12345678", quantity: 3, warehouseId: "warehouse-2" },
-    { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" }
+  { isbn: "00000000", quantity: 2, warehouseId: "warehouse-1" },
+  { isbn: "12345678", quantity: 2, warehouseId: "warehouse-1" },
+  { isbn: "12345678", quantity: 3, warehouseId: "warehouse-2" },
+  { isbn: "11111111", quantity: 5, warehouseId: "warehouse-1" }
 );
 
 // This is the same as running removeTransactions for each transaction
 await note.removeTransactions(
-    { isbn: "00000000", warehouseId: "warehouse-1" },
-    { isbn: "12345678", warehouseId: "warehouse-2" },
-    { isbn: "11111111", warehouseId: "warehouse-1" }
+  { isbn: "00000000", warehouseId: "warehouse-1" },
+  { isbn: "12345678", warehouseId: "warehouse-2" },
+  { isbn: "11111111", warehouseId: "warehouse-1" }
 );
 
 // This leaves us with only one transaction left in the note: isbn = "12345678", quantity = 2, warheouseId = "warehouse-1"
@@ -645,22 +645,22 @@ const updatedAtStream = stream.updatedAt({});
 
 // Streams the display name (updated in real time)
 displayNameStream.subscribe((dn) => {
-    /* Do something with the 'displayName' */
+  /* Do something with the 'displayName' */
 });
 
 // Streams the transactions in the note (updated in real time)
 entriesStream.subscribe((entries) => {
-    /* Do something with the 'entries' (note transactions) */
+  /* Do something with the 'entries' (note transactions) */
 });
 
 // Streams the note state ('draft' or 'committed', updated in real time)
 stateStream.subscribe((state) => {
-    /* Do something with note 'state' */
+  /* Do something with note 'state' */
 });
 
 // Streams the time the note was last updated (updated in real time)
 updatedAtStream.subscribe((state) => {
-    /* Do something with note 'state' */
+  /* Do something with note 'state' */
 });
 ```
 
@@ -668,7 +668,7 @@ While the `displayName` stream is self-explanatory, `entries` streams volume tra
 
 #### 2.4.5. Additional methods
 
--   `note.commit` - Commit the note, making its transactions affect the stock, locking it for updates (in transactions, or name changes):
-    -   there are two guards, disallowing the committing of note containing invalid transactions:
-    1. If inbound note contains a transaction with `warehouseId` different than the parent warehouse of the note, an error is thrown (reporting all invalid transactions)
-    2. If an outbound note contains a transaction where the quantity of the book provided is greater than the quantity available in a particular warehouse, an error is thrown, reporting all invalid transactions, their quantity and quantity available for a particular book in a particular warehouse _(this is also aplicable if no warehouseId is provided for a transaction, reporting the quantity in stock as 0)_
+- `note.commit` - Commit the note, making its transactions affect the stock, locking it for updates (in transactions, or name changes):
+  - there are two guards, disallowing the committing of note containing invalid transactions:
+  1. If inbound note contains a transaction with `warehouseId` different than the parent warehouse of the note, an error is thrown (reporting all invalid transactions)
+  2. If an outbound note contains a transaction where the quantity of the book provided is greater than the quantity available in a particular warehouse, an error is thrown, reporting all invalid transactions, their quantity and quantity available for a particular book in a particular warehouse _(this is also aplicable if no warehouseId is provided for a transaction, reporting the quantity in stock as 0)_

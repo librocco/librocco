@@ -37,9 +37,7 @@
 					{@const hasCopies = quantity === 0 ? false : true}
 					<tr
 						use:combobox.item={{ value: row }}
-						class={`whitespace-nowrap text-sm font-light text-gray-500 ${
-							active || selected ? "bg-gray-100" : "even:bg-gray-50"
-						}`}
+						class={`whitespace-nowrap text-sm font-light text-gray-500 ${active || selected ? "bg-gray-100" : "even:bg-gray-50"}`}
 					>
 						<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800">
 							{isbn}

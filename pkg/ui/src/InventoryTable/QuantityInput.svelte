@@ -40,8 +40,8 @@
 			}
 
 			const value = parseInt(input.value);
-			if (value < 0) {
-				input.value = "0";
+			if (value <= 0) {
+				input.value = "";
 			}
 			if (maxValue && value > maxValue) {
 				input.value = maxValue.toString();
