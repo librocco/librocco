@@ -121,7 +121,7 @@
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
 		toastSuccess(toasts.volumeAdded(isbn));
-		close();
+		bookForm.close();
 	};
 
 	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
