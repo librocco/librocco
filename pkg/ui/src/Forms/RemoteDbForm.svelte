@@ -24,12 +24,13 @@
 	});
 </script>
 
-<form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
+<form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit remote database connection config">
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
 				<TextField
-					name="remoteUrl"
+					id="url"
+					name="url"
 					label="Remote CouchDB URL"
 					required={true}
                     pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
@@ -52,7 +53,7 @@
                             <label for="direction" class={"text-sm font-medium text-gray-700"}>
                                 Sync direction
                             </label>
-                            <select name="direction" class="appearance-none">
+                            <select id="direction" name="direction" class="appearance-none">
                                 <option value="to">➡️ To</option>
                                 <option value="from">⬅️ From</option>
                                 <option value="sync">↔️ Sync</option>
@@ -60,6 +61,7 @@
                         </div>
                         <Checkbox id="live" name="live" label="Live" helpText="Watch for and sync new changes as they become available." />
                         <Checkbox 
+							id="retry"
                             name="retry" 
                             label="Retry" 
                             helpText="Automatically retry sync on failure. Otherwise connections will have to be manually restarted." 
