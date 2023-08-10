@@ -64,7 +64,7 @@ test("should set field values if 'book' prop gets updated", async () => {
 test("should fire 'sumbmit' event on submit", async () => {
 	const mockSubmit = vi.fn();
 
-	const { component } = render(BookDetailForm, { book, mode: "edit" });
+	const { component } = render(BookDetailForm, { book });
 	component.$on("submit", (e) => mockSubmit(e.detail));
 
 	const saveButton = screen.getByText("Save");
@@ -100,4 +100,20 @@ test("should fire 'cancel' event on cancel button click", async () => {
 	userEvent.click(cancelButton);
 
 	await waitFor(() => expect(mockCancel).toHaveBeenCalled());
+});
+
+test("should allow specifying a custom publisher", async () => {
+	const mockSubmit = vi.fn();
+
+	const { component } = render(BookDetailForm, { book });
+	component.$on("submit", (e) => mockSubmit(e.detail));
+
+	const publisherInput = screen.getByRole("combobox", { name: "publisher" });
+	await userEvent.clear(publisherInput);
+	await userEvent.type(publisherInput, "Custom publisher");
+
+	const saveButton = screen.getByText("Save");
+	userEvent.click(saveButton);
+
+	await waitFor(() => expect(mockSubmit).toHaveBeenCalledWith({ ...book, publisher: "Custom publisher" }));
 });
