@@ -61,7 +61,46 @@ test("should set field values if 'book' prop gets updated", async () => {
 	});
 });
 
-test("should fire 'sumbmit' event on submit", async () => {
+test("should allow for prices with up to two decimal places", async () => {
+	const mockSubmit = vi.fn();
+
+	const { component } = render(BookDetailForm, { book });
+	component.$on("submit", (e) => mockSubmit(e.detail));
+
+	const priceInput = screen.getByRole("spinbutton", { name: "price" });
+	const submitButton = screen.getByRole("button", { name: "Save" });
+
+	await userEvent.clear(priceInput);
+	await userEvent.type(priceInput, "15.45");
+
+	await userEvent.click(submitButton);
+
+	await waitFor(() => expect(mockSubmit).toHaveBeenCalledWith({ ...book, price: 15.45 }));
+});
+
+test("should not allow submitting if price has more than 2 decimal places", async () => {
+	const mockSubmit = vi.fn();
+
+	const { component } = render(BookDetailForm, { book });
+	component.$on("submit", (e) => mockSubmit(e.detail));
+
+	const priceInput = screen.getByRole("spinbutton", { name: "price" });
+	const submitButton = screen.getByRole("button", { name: "Save" });
+
+	await userEvent.clear(priceInput);
+	await userEvent.type(priceInput, "15.455");
+
+	await userEvent.click(submitButton);
+
+	// Not the best way to test this, but we can safely assume that the submit handler will have been called within these 500ms.
+	//
+	// This way we're testing that the submit handler is not called as field errors are shown using some special logic in the form,
+	// without rendering additional html elements (which would be easy to find).
+	await new Promise((res) => setTimeout(res, 500));
+	expect(mockSubmit).not.toHaveBeenCalledWith({ ...book, price: 15.45 });
+});
+
+test("should fire 'submit' event on submit", async () => {
 	const mockSubmit = vi.fn();
 
 	const { component } = render(BookDetailForm, { book });
