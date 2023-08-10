@@ -14,8 +14,8 @@
 
 	const id = uuid();
 
-	const labelBaseClasses = ["font-medium", $$restProps.disabled ? "text-gray-400" : "text-gray-700"].join(" ");
-	const helpTextColor = $$restProps.disabled ? "text-gray-300" : "text-gray-500";
+	$: labelBaseClasses = ["font-medium", $$restProps.disabled ? "text-gray-400" : "text-gray-700"].join(" ");
+	$: helpTextColor = $$restProps.disabled ? "text-gray-300" : "text-gray-500";
 	const inputBaseClasses = [
 		"focus:ring-teal-500",
 		"h-4",
