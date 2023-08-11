@@ -18,7 +18,7 @@ type Doc = NoteData | WarehouseData;
 class Stock implements StockInterface {
 	#db: DatabaseInterface;
 
-	options: Parameters<PouchDB.Database["allDocs"]>[0];
+	options: PouchDB.Core.AllDocsWithinRangeOptions;
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;

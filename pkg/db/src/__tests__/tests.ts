@@ -152,7 +152,8 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Subscribe to entries to receive updates
 	let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
 
@@ -385,7 +386,8 @@ export const outboundNoteAvailableWarehouses: TestFunction = async (db) => {
 	const note = await db.warehouse().note().create();
 
 	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
 
@@ -1134,16 +1136,14 @@ export const booksInterface: TestFunction = async (db) => {
 
 	const booksInterface = db.books();
 
-	// insert test
-
+	// Insert test
 	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
 
 	const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
 	expect(booksFromDb).toEqual([book1, book2]);
 
-	// update test
-
+	// Update test
 	await Promise.all([
 		booksInterface.upsert([
 			{ ...book1, title: "Updated Title" },
@@ -1158,8 +1158,7 @@ export const booksInterface: TestFunction = async (db) => {
 		{ ...book2, title: "Updated Title 12" }
 	]);
 
-	// stream test
-
+	// Stream test
 	let bookEntries: (BookEntry | undefined)[] = [];
 
 	booksInterface.stream({}, [book1.isbn, book2.isbn, book3.isbn]).subscribe((stream) => {
@@ -1183,6 +1182,31 @@ export const booksInterface: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, book3]);
 	});
+};
+
+export const publishersStream: TestFunction = async (db) => {
+	// Publishers stream test
+	let publishers: PossiblyEmpty<string[]> = EMPTY;
+	db.books()
+		.streamPublishers({})
+		.subscribe((p) => (publishers = p));
+
+	// There are no books in the db, should stream an empty array
+	await waitFor(() => expect(publishers).toEqual([]));
+
+	// Adding a new book (with not-yet-registered publisher) should update the publishers stream
+	await db.books().upsert([{ isbn: "new-isbn", publisher: "HarperCollins UK" } as BookEntry]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK"]));
+
+	await db.books().upsert([
+		{ isbn: "new-isbn-2", publisher: "Oxford" },
+		{ isbn: "new-isbn-3", publisher: "Penguin" }
+	] as BookEntry[]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
+
+	// Adding a book with existing publisher should not duplicate the publisher in the stream
+	await db.books().upsert([{ isbn: "new-isbn-4", publisher: "Oxford" } as BookEntry]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 };
 
 export const dbGuards: TestFunction = async (db) => {
@@ -1285,7 +1309,8 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	let ndn: PossiblyEmpty<string> = EMPTY;
 
 	const note = await db.warehouse().note("note-1").create();
-	note.stream()
+	note
+		.stream()
 		.displayName({})
 		.subscribe((dn$) => (ndn = dn$));
 
