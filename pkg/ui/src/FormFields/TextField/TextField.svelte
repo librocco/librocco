@@ -17,7 +17,6 @@
 	export let inputAction: Action = () => {};
 	export let variant: TextFieldSize = TextFieldSize.Base;
 	export let isValid = false;
-	export let value = "";
 	$: isValid = isValid;
 
 	const labelBaseClasses = ["block", "text-sm", "font-medium", "text-gray-700"];
@@ -51,10 +50,10 @@
 				<slot name="startAdornment" />
 			</div>
 		{/if}
-		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {...$$restProps} use:inputAction bind:value />
+		<input type="text" id={name} aria-label={name} class={inputClasses} {name} {...$$restProps} use:inputAction />
 		{#if $$slots.endAdornment}
 			<div class="flex items-center bg-white pl-1 pr-3 text-gray-400">
-				<slot {value} name="endAdornment" />
+				<slot value={$$restProps.value} name="endAdornment" />
 			</div>
 		{/if}
 	</div>

@@ -48,11 +48,9 @@
 	const publisherCombo = createCombobox({ label: "publisher" });
 
 	// Update publisher value on combobox selection
-	publisherCombo.subscribe(({selected}) => {
+	publisherCombo.subscribe(({ selected }) => {
 		publisher = selected;
-	})
-
-
+	});
 </script>
 
 <form id="book-detail-form" class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
@@ -74,7 +72,7 @@
 				<TextField name="authors" label="Authors" />
 			</div>
 			<div id="publisher-field-container" class="relative basis-full">
-				<TextField name="publisher" label="Publisher" role="combobox" bind:value={publisher}>
+				<TextField name="publisher" autocomplete="off" label="Publisher" inputAction={publisherCombo.input} bind:value={publisher}>
 					<div slot="endAdornment">
 						<button use:publisherCombo.button type="button" class="flex items-center">
 							<ChevronsUpDown class="text-gray-400" />
