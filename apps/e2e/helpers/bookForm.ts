@@ -72,7 +72,7 @@ function getPublisherField(form: Locator): BookFormFieldInterface<string> {
 
 	const { open, close } = useExpandButton(container);
 
-	const set = async (value: string) => {
+	const select = async (value: string) => {
 		await open();
 		// Find the desired option
 		// TODO: We probably want to be able to add new publishers (this is a limited functionality for now)
@@ -81,5 +81,9 @@ function getPublisherField(form: Locator): BookFormFieldInterface<string> {
 		return close();
 	};
 
-	return Object.assign(container, { set });
+	const set = async (value: string) => {
+		await container.getByRole("combobox", { name: "publisher" }).fill(value);
+	};
+
+	return Object.assign(container, { set, select });
 }
