@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { DesignDocument } from "@/types";
+import { BookEntry, DesignDocument } from "@/types";
 import { WarehouseData, NoteData } from "./types";
 
 const sequenceNamingDesignDocument: DesignDocument = {
@@ -95,6 +95,16 @@ export const listDeisgnDocument: DesignDocument = {
 
 				emit(doc._id, { type: doc.docType, displayName: doc.displayName, committed: note.committed });
 			}.toString()
+		},
+		publishers: {
+			// Since we're only interested in 'publisher' property on book documents
+			// we can treat all docs as book documents and only emit if the property exists
+			map: function (doc: BookEntry) {
+				if (doc.publisher) {
+					emit(doc.publisher);
+				}
+			}.toString(),
+			reduce: "_count"
 		}
 	}
 };
