@@ -70,7 +70,7 @@ function getOutOfPrintField(form: Locator): BookFormFieldInterface<boolean> {
 function getPublisherField(form: Locator): BookFormFieldInterface<string> {
 	const container = form.locator("#publisher-field-container");
 
-	const { open, close } = useExpandButton(container);
+	const { open, close } = useExpandButton(container, { throttle: 200 });
 
 	const select = async (value: string) => {
 		await open();
@@ -83,6 +83,10 @@ function getPublisherField(form: Locator): BookFormFieldInterface<string> {
 
 	const set = async (value: string) => {
 		await container.getByRole("combobox", { name: "publisher" }).fill(value);
+		// TODO: This shouldn't be necessary, but there's a bug we couldn't shake for the time being and that is
+		// the fact that the dropdown closes on click outside, blocking the click event further and this way we're
+		// ensuring that the dropdown is closed before we continue with interactions
+		await close();
 	};
 
 	return Object.assign(container, { set, select });

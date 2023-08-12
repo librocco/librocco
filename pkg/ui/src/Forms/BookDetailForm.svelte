@@ -43,14 +43,15 @@
 		}
 	}
 
-	let publisher = "";
-
 	const publisherCombo = createCombobox({ label: "publisher" });
 
+	let publisher = "";
 	// Update publisher value on combobox selection
 	publisherCombo.subscribe(({ selected }) => {
 		publisher = selected;
 	});
+
+	$: publishers = publisherList.filter((p) => p.includes($publisherCombo.filter)).slice(0, 10);
 </script>
 
 <form id="book-detail-form" class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
@@ -79,7 +80,7 @@
 						</button>
 					</div>
 				</TextField>
-				<ComboboxMenu combobox={publisherCombo} options={publisherList} />
+				<ComboboxMenu combobox={publisherCombo} options={publishers} />
 			</div>
 			<div id="editedBy-field-container" class="basis-full">
 				<TextField name="editedBy" label="Edited by" />
