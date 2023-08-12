@@ -34,7 +34,7 @@
 
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { links, publisherList } from "$lib/data";
+	import { links } from "$lib/data";
 
 	export let data: PageData;
 
@@ -53,6 +53,9 @@
 			.pipe(map((m) => [...m])),
 		[]
 	);
+
+	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -164,7 +167,7 @@
 	<svelte:fragment slot="slideOver">
 		{#if $bookForm.open}
 			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
-				<BookDetailForm {publisherList} book={$bookForm.book} on:submit={({ detail }) => handleBookFormSubmit(detail)} />
+				<BookDetailForm publisherList={$publisherList} book={$bookForm.book} on:submit={({ detail }) => handleBookFormSubmit(detail)} />
 			</Slideover>
 		{/if}
 	</svelte:fragment>
