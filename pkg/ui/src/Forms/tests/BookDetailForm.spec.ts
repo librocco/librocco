@@ -118,7 +118,7 @@ test("should allow specifying a custom publisher", async () => {
 	await waitFor(() => expect(mockSubmit).toHaveBeenCalledWith({ ...book, publisher: "Custom publisher" }));
 });
 
-test.only("should show suggestions for publishers and filter with respect to input", async () => {
+test("should show suggestions for publishers and filter with respect to input", async () => {
 	const publisherList = ["Penguin", "Puffin", "Pearson", "Penguin Classics", "Penguin Books", "Penguin Random House"];
 
 	render(BookDetailForm, { book, publisherList });
@@ -143,7 +143,7 @@ test.only("should show suggestions for publishers and filter with respect to inp
 	});
 });
 
-test.only("should display maximum of 10 filtered results", async () => {
+test("should display maximum of 10 filtered results", async () => {
 	// Create an array going ["Penguin 0", "Pearson 0", "Penguin 1", "Pearson 1", ...and so on]
 	// with 15 entries for each (30 in total)
 	const publisherList = [
