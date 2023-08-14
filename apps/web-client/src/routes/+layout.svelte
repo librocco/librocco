@@ -13,9 +13,10 @@
 
 	// We toast here because we want replication state to be communicated wherever we are in the app
 	$: ({ replicator } = $remoteDbStore);
+	$: status = replicator && replicator.status;
 	$: {
 		if(replicator) {
-			toastReplicationStatus($replicator.state)
+			toastReplicationStatus($status.state)
 		}
 	}
 

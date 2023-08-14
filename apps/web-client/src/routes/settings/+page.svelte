@@ -9,6 +9,9 @@
 
 
 	$: ({ replicator } = $remoteDbStore);
+	$: status = replicator && replicator.status;
+	$: config = replicator && replicator.config;
+	$: progress = replicator && replicator.progress;
 </script>
 
 <InventoryPage>
@@ -25,20 +28,20 @@
 			<div class="w-full max-w-3xl">
 				{#if replicator}
 					<RemoteDbData
-						config={$replicator.config}
+						config={$config}
 						status={{ 
-							color: replicationStatusMessages[$replicator.state].color,
-							message: replicationStatusMessages[$replicator.state].message
+							color: replicationStatusMessages[$status.state].color,
+							message: replicationStatusMessages[$status.state].message
 						}}
 						onEdit={() => remoteDbStore.destroyHandler(replicator)}
 					>
 						<div slot="info" class="pt-2 flex flex-col gap-y-2">
-							{#if $replicator.info}
-								<p class="text-xs leading-4 font-medium uppercase text-gray-500">{$replicator.info}</p>
+							{#if $status.info}
+								<p class="text-xs leading-4 font-medium uppercase text-gray-500">{$status.info}</p>
 							{:else}
-								<ProgressBar value={$replicator.progress !== -1 ? $replicator.progress : undefined}/>
+								<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined}/>
 								<p class="text-xs leading-4 font-medium uppercase text-gray-500">
-									{$replicator.docsWritten}{$replicator.docsPending ? ` / ${$replicator.docsPending}` : ""} Documents synced
+									{$progress.docsWritten}{$progress.docsPending ? ` / ${$progress.docsPending}` : ""} Documents synced
 								</p>
 							{/if}
 						</div>	

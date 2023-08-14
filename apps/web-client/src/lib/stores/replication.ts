@@ -1,4 +1,4 @@
-import { readable, writable, derived } from "svelte/store";
+import { readable, writable, derived, get } from "svelte/store";
 
 import type { DatabaseInterface } from "@librocco/db";
 
@@ -32,12 +32,6 @@ export const createReplicationStore = (
 		};
 	});
 
-	const subscribe = derived([configStore, statusStore, progressStore], ([config, status, progress]) => ({
-		config,
-		...status,
-		...progress
-	})).subscribe;
-
 	const replicator = initReplicator(local, remote, config);
 
 	// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
@@ -59,10 +53,24 @@ export const createReplicationStore = (
 	replicator.on("paused", (err) => {
 		// Non-live replication still 'pauses'. I think this happens between batches
 		// We don't need to communicate this in single-shot operations
-		if (config.live) {
+		if (config.live && config.direction !== "sync") {
 			// Err is only passed when `config.retry = true` and pouch is trying to recover
 			if (err) {
 				statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
+			} else {
+				statusStore.set({ state: "PAUSED:IDLE", info: "" });
+			}
+		} else if (config.live) {
+			// Sync with `opts.live & opts.retry` does not behave as advertised
+			// no "err" is passed through when pouch is trying to recover
+			// meaning we can't distinguish Paused:Error from Paused:Idle
+			// This little trick seems to work in test cases
+			const changes = get(changesStore);
+
+			if (!changes.docsWritten) {
+				// A custom error message... it may fail for other reasons, but so far I've only seen this behaviour
+				// when a 'sync' handler is trying to connect
+				statusStore.set({ state: "PAUSED:ERROR", info: "Network error: couldn't connect to remote" });
 			} else {
 				statusStore.set({ state: "PAUSED:IDLE", info: "" });
 			}
@@ -85,6 +93,8 @@ export const createReplicationStore = (
 			if (pull.status === "complete" && push.status === "complete") {
 				statusStore.set({ state: "COMPLETED", info: "" });
 			} else if (pull.status === "cancelled" || push.status === "cancelled") {
+				// This branch does not appear to fire in tests because the 'complete' event is not emitted
+				// when a "sync" handler is cancelled. Leaving just incase I missed something...
 				const errorInfo = `${pull.status === "cancelled" ? "remote" : "local"} db cancelled operation"`;
 
 				statusStore.set({ state: "FAILED:CANCEL", info: errorInfo });
@@ -109,7 +119,9 @@ export const createReplicationStore = (
 	};
 
 	return {
-		subscribe,
+		config: configStore,
+		status: statusStore,
+		progress: progressStore,
 		cancel,
 		/**
 		 * A promise that will resolve when replication is "done".
