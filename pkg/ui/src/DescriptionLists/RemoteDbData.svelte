@@ -24,9 +24,10 @@
 <div class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2">
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<dl class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div class="basis-full flex flex-col gap-y-3">
+			<div class="basis-full flex flex-col gap-y-2">
                 <dt class="text-sm font-medium text-gray-700">Status</dt>
 				<dd><Badge label={status.message} color={status.color} size={BadgeSize.LG}/></dd>
+                <slot name="info" />
 			</div>
 			<div class="basis-full flex flex-col gap-y-3">
                 <dt class="text-sm font-medium text-gray-700">Remote CouchDB URL</dt>
