@@ -1,17 +1,15 @@
 <script lang="ts">
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
-	import { Badge, BadgeSize } from "../Badge";
+	import { Badge, BadgeColor, BadgeSize } from "../Badge";
     import { Button, ButtonColor}from "../Button";
     import { Checkbox } from "../FormFields"
 
     import type { RemoteDbConfig } from "../Forms";
 
-    interface RemoteDbConfigData extends RemoteDbConfig {
-        status: string;
-    }
+	export let config: RemoteDbConfig
+    export let status: { color: BadgeColor, message: string }
 
-	export let data: RemoteDbConfigData
 	export let onEdit: () => void = () => {};
 
     const directionIconLookup = {
@@ -20,7 +18,7 @@
         "from": ArrowLeft,
     }
 
-    $: direction = data.direction.charAt(0).toUpperCase() + data.direction.slice(1)
+    $: direction = config.direction.charAt(0).toUpperCase() + config.direction.slice(1)
 </script>
 
 <div class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2">
@@ -28,13 +26,13 @@
 		<dl class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full flex flex-col gap-y-3">
                 <dt class="text-sm font-medium text-gray-700">Status</dt>
-				<dd><Badge label={data.status} size={BadgeSize.LG}/></dd>
+				<dd><Badge label={status.message} color={status.color} size={BadgeSize.LG}/></dd>
 			</div>
 			<div class="basis-full flex flex-col gap-y-3">
                 <dt class="text-sm font-medium text-gray-700">Remote CouchDB URL</dt>
 				<dd class="flex items-center gap-x-2 text-gray-600">
                     <Database aria-hidden="true" />
-                    {data.url}
+                    {config.url}
                 </dd>
 			</div>
             <div>
@@ -51,7 +49,7 @@
                         <div class="flex flex-col gap-y-3">
                             <dt class="text-sm font-medium text-gray-700">Sync direction</dt>
                             <dd class="flex items-center gap-x-2 text-gray-600">
-                                <svelte:component this={directionIconLookup[data.direction]} aria-hidden="true" />
+                                <svelte:component this={directionIconLookup[config.direction]} aria-hidden="true" />
                                 {direction}
                             </dd>
                         </div>
@@ -66,9 +64,9 @@
                             </dt>
                             <dd> 
                                 <span aria-hidden="true">
-                                    <Checkbox disabled checked={data.live} name="live"/>
+                                    <Checkbox disabled checked={config.live} name="live"/>
                                 </span>
-                                <span class="sr-only">{data.live}</span>
+                                <span class="sr-only">{config.live}</span>
                             </dd>
                         </div>
                         <div class="flex flex-row-reverse items-start [justify-content:start]">
@@ -82,9 +80,9 @@
                             </dt>
                             <dd>
                                 <span aria-hidden="true">
-                                    <Checkbox disabled checked={data.retry} name="retry"/>
+                                    <Checkbox disabled checked={config.retry} name="retry"/>
                                 </span>
-                                <span class="sr-only">{data.retry}</span>
+                                <span class="sr-only">{config.retry}</span>
                             </dd>
                         </div>
                     </div>

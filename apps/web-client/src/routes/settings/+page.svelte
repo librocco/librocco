@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { base } from "$app/paths";
 
-	import { Header, InventoryPage, RemoteDbForm, RemoteDbData } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, BadgeColor } from "@librocco/ui";
 
 	import { links } from "$lib/data";
 	import { remoteDbStore } from "$lib/stores";
+	import { replicationStatusMessages } from "$lib/toasts";
+
 
 	$: ({ replicator } = $remoteDbStore);
 </script>
@@ -23,7 +25,11 @@
 			<div class="w-full max-w-3xl">
 				{#if replicator}
 					<RemoteDbData
-						data={{ ...$replicator.config, status: $replicator.status.state }}
+						config={$replicator.config}
+						status={{ 
+							color: replicationStatusMessages[$replicator.status.state].color,
+							message: replicationStatusMessages[$replicator.status.state].message
+						}}
 						onEdit={() => remoteDbStore.destroyHandler(replicator)}
 					/>
 				{:else}
