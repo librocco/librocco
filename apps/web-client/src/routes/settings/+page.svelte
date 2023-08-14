@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from "$app/paths";
 
-	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, BadgeColor } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData } from "@librocco/ui";
 
 	import { links } from "$lib/data";
 	import { remoteDbStore } from "$lib/stores";
