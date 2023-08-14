@@ -24,7 +24,7 @@
 </script>
 
 <div class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2">
-	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
+	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<dl class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full flex flex-col gap-y-3">
                 <dt class="text-sm font-medium text-gray-700">Status</dt>
