@@ -15,7 +15,7 @@
 	$: ({ replicator } = $remoteDbStore);
 	$: {
 		if(replicator) {
-			toastReplicationStatus($replicator.status.state)
+			toastReplicationStatus($replicator.state)
 		}
 	}
 
