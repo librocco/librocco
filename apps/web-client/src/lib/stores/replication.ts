@@ -34,8 +34,8 @@ export const createReplicationStore = (
 
 	const subscribe = derived([configStore, statusStore, progressStore], ([config, status, progress]) => ({
 		config,
-		status,
-		progress
+		...status,
+		...progress
 	})).subscribe;
 
 	const replicator = initReplicator(local, remote, config);

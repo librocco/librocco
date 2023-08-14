@@ -52,7 +52,7 @@ describe("Replication to/from/sync remote, when `live == false`", () => {
 		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.subscribe(({ status }) => statusFlow.push(status.state));
+		const unsubscribe = replicationStore.subscribe(({ state }) => statusFlow.push(state));
 
 		await replicationStore.done();
 
@@ -73,14 +73,14 @@ describe("Replication to/from/sync remote, when `live == false`", () => {
 		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.subscribe(({ status }) => statusFlow.push(status.state));
+		const unsubscribe = replicationStore.subscribe(({ state }) => statusFlow.push(state));
 
 		// Explicitly cancel replication
 		replicationStore.cancel();
 
 		await replicationStore.done();
 
-		const errorInfo = get(replicationStore).status.info;
+		const errorInfo = get(replicationStore).info;
 
 		const expectedStatusFlow = ["INIT", "FAILED:CANCEL"];
 		const exepctedErrorInfo = "local db cancelled operation";
@@ -98,7 +98,7 @@ describe("Replication to/from/sync remote, when `live == false`", () => {
 		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.subscribe(({ status }) => statusFlow.push(status.state));
+		const unsubscribe = replicationStore.subscribe(({ state }) => statusFlow.push(state));
 
 		// Invoke an error by closing remote Db
 		remoteDb._pouch.close();
@@ -109,7 +109,7 @@ describe("Replication to/from/sync remote, when `live == false`", () => {
 		// internal pouch error info
 		const exepctedErrorInfo = "database is closed";
 
-		const errorInfo = get(replicationStore).status.info;
+		const errorInfo = get(replicationStore).info;
 
 		expect(statusFlow).toEqual(expectedStatusFlow);
 		expect(errorInfo).toEqual(exepctedErrorInfo);
@@ -124,12 +124,12 @@ describe("Replication to/from/sync remote, when `live == false`", () => {
 
 		await replicationStore.done();
 
-		const progress = get(replicationStore).progress;
+		const replication = get(replicationStore);
 
 		// manual count of docs in dummy data from "$lib/db/data/books"
-		expect(progress.docsRead).toBe(23);
+		expect(replication.docsRead).toBe(23);
 		// It seems with the in-memory adapters pouch adapters, pending does not exist, which means we can't calculate progress => -1
-		expect(progress.progress).toBe(-1);
+		expect(replication.progress).toBe(-1);
 	});
 });
 
@@ -140,7 +140,7 @@ describe("Replication to/from/sync remote, when `live == true`", () => {
 		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "to" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.subscribe(({ status }) => statusFlow.push(status.state));
+		const unsubscribe = replicationStore.subscribe(({ state }) => statusFlow.push(state));
 
 		// Replication should be idle after initial sourceDb data is replicated to remote
 		await waitFor(() => {
@@ -174,7 +174,7 @@ describe("Replication to/from/sync remote, when `live == true`", () => {
 		});
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.subscribe(({ status }) => statusFlow.push(status.state));
+		const unsubscribe = replicationStore.subscribe(({ state }) => statusFlow.push(state));
 
 		const expectedStatusFlow = ["INIT", "PAUSED:ERROR"];
 
@@ -182,7 +182,7 @@ describe("Replication to/from/sync remote, when `live == true`", () => {
 			expect(statusFlow).toEqual(expectedStatusFlow);
 		});
 
-		const errorInfo = get(replicationStore).status.info;
+		const errorInfo = get(replicationStore).info;
 
 		expect(errorInfo).not.toEqual("");
 
