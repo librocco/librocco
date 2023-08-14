@@ -84,6 +84,9 @@ const config = {
 				})
 			]
 		}
+	},
+	test: {
+		exclude: ["**/__e2eTests__/**/*", "**/node_modules/**", "**/dist/**"]
 	}
 };
 

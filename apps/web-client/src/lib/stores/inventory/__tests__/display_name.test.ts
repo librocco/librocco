@@ -2,10 +2,7 @@ import { describe, test, expect, vi } from "vitest";
 import { writable, get } from "svelte/store";
 import { BehaviorSubject } from "rxjs";
 
-import { testUtils } from "@librocco/shared";
-
-import { NoteTempState } from "$lib/enums/inventory";
-import { NoteState } from "$lib/enums/db";
+import { NoteState, NoteTempState, testUtils } from "@librocco/shared";
 
 import type { NoteAppState } from "$lib/types/inventory";
 

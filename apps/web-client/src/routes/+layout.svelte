@@ -9,6 +9,8 @@
 	import { defaultToaster, toastSuccess } from "$lib/toasts";
 	import { remoteDbStore } from "$lib/stores";
 
+	import type { LayoutData } from "./$types";
+
 	// TODO: map state to toasts
 	// We want replication state to be communicated wherever we are in the app
 	$: ({ replicator } = $remoteDbStore);
@@ -18,7 +20,18 @@
 		}
 	}
 
+	export let data: LayoutData;
+
+	const { db } = data;
+
 	onMount(async () => {
+		// Register the db to the window object.
+		// This is used for e2e tests (easier setup through direct access to the db).
+		// This is not a security concern as the db is in the user's browser anyhow.
+		if (db) {
+			window["_db"] = db;
+		}
+
 		if (pwaInfo) {
 			const { registerSW } = await import("virtual:pwa-register");
 			registerSW({

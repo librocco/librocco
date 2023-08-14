@@ -82,11 +82,7 @@ class Books implements BooksInterface {
 			);
 
 			concat(initialState, changeStream)
-				.pipe(
-					tap(debug.log(ctx, "books_stream:result:raw")),
-					map(unwrapDocs),
-					tap(debug.log(ctx, "books_stream:result:transformed"))
-				)
+				.pipe(tap(debug.log(ctx, "books_stream:result:raw")), map(unwrapDocs), tap(debug.log(ctx, "books_stream:result:transformed")))
 				.subscribe((doc) => subscriber.next(doc));
 
 			return () => emitter.cancel();

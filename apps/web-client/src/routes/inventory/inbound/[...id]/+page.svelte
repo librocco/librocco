@@ -1,13 +1,11 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-	import { Edit, QrCode } from "lucide-svelte";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
 
+	import { NoteState, NoteTempState } from "@librocco/shared";
 	import {
 		InventoryPage,
-		TextField,
 		Pagination,
 		Badge,
 		BadgeColor,
@@ -19,9 +17,7 @@
 		SideBarNav,
 		SidebarItemGroup,
 		NewEntitySideNavButton,
-		Button,
-		ButtonSize,
-		TextFieldSize,
+		ScanInput,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
 		ProgressBar,
@@ -30,8 +26,7 @@
 	} from "@librocco/ui";
 	import type { BookEntry, DatabaseInterface, NavMap } from "@librocco/db";
 
-	import { noteStates, NoteTempState } from "$lib/enums/inventory";
-	import { NoteState } from "$lib/enums/db";
+	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
@@ -161,7 +156,7 @@
 </script>
 
 <!-- svelte-ignore missing-declaration -->
-<InventoryPage>
+<InventoryPage view="inbound">
 	<!-- Header slot -->
 	<Header {links} currentLocation={`${base}/inventory/inbound/`} slot="header" />
 
@@ -197,6 +192,7 @@
 						{/if}
 					</div>
 					<SelectMenu
+						id="note-state-picker"
 						class="w-[138px]"
 						options={noteStates}
 						bind:value={$state}
@@ -204,19 +200,12 @@
 						align="right"
 					/>
 				</div>
-				<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG} bind:value={isbn}>
-					<svelte:fragment slot="startAdornment">
-						<QrCode />
-					</svelte:fragment>
-					<div let:value slot="endAdornment" class="flex gap-x-2">
-						<Button on:click={() => handleBookEntry()({ ...$bookFormStore.book, isbn })} size={ButtonSize.SM}>
-							<svelte:fragment slot="startAdornment">
-								<Edit size={16} />
-							</svelte:fragment>
-							Create
-						</Button>
-					</div>
-				</TextField>
+				<ScanInput
+					onAdd={(isbn) => {
+						note.addVolumes({ isbn, quantity: 1 });
+					}}
+					onCreate={() => handleBookEntry()({ ...$bookFormStore.book, isbn })}
+				/>
 			{/if}
 		{/if}
 	</svelte:fragment>

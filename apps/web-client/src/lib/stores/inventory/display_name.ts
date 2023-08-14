@@ -1,9 +1,7 @@
 import { type Writable, get } from "svelte/store";
 
-import { NoteState, type NoteInterface, type WarehouseInterface } from "@librocco/db";
-import { debug } from "@librocco/shared";
-
-import { NoteTempState } from "$lib/enums/inventory";
+import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import { NoteState, NoteTempState, debug } from "@librocco/shared";
 
 import type { NoteAppState } from "$lib/types/inventory";
 

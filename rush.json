@@ -386,6 +386,10 @@
 			"projectFolder": "apps/web-client"
 		},
 		{
+			"packageName": "@librocco/e2e",
+			"projectFolder": "apps/e2e"
+		},
+		{
 			"packageName": "@librocco/scaffold",
 			"projectFolder": "pkg/scaffold"
 		},

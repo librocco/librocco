@@ -1,6 +1,6 @@
 import type { Writable } from "svelte/store";
 
-import { NoteState } from "$lib/enums/db";
+import { NoteState } from "@librocco/shared";
 
 import type { NoteStore } from "$lib/types/inventory";
 import type { NoteInterface, NoteStream } from "$lib/types/db";
