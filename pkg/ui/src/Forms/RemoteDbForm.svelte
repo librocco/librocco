@@ -35,7 +35,7 @@
 					required={true}
                     pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
 				>
-                    <p slot="helpText">URL format: <span class="italic">user:password@host:post/db_name</span></p>
+                    <p slot="helpText">URL format: <span class="italic">https://user:password@host:post/db_name</span></p>
                 </TextField>
 			</div>
             <div>
