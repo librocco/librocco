@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from "$app/paths";
 
-	import { Header, InventoryPage, RemoteDbForm, RemoteDbData } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
 
 	import { links } from "$lib/data";
 	import { remoteDbStore } from "$lib/stores";
@@ -27,11 +27,22 @@
 					<RemoteDbData
 						config={$replicator.config}
 						status={{ 
-							color: replicationStatusMessages[$replicator.status.state].color,
-							message: replicationStatusMessages[$replicator.status.state].message
+							color: replicationStatusMessages[$replicator.state].color,
+							message: replicationStatusMessages[$replicator.state].message
 						}}
 						onEdit={() => remoteDbStore.destroyHandler(replicator)}
-					/>
+					>
+						<div slot="info" class="pt-2 flex flex-col gap-y-2">
+							{#if $replicator.info}
+								<p class="text-xs leading-4 font-medium uppercase text-gray-500">{$replicator.info}</p>
+							{:else}
+								<ProgressBar value={$replicator.progress !== -1 ? $replicator.progress : undefined}/>
+								<p class="text-xs leading-4 font-medium uppercase text-gray-500">
+									{$replicator.docsWritten}{$replicator.docsPending ? ` / ${$replicator.docsPending}` : ""} Documents synced
+								</p>
+							{/if}
+						</div>	
+					</RemoteDbData>
 				{:else}
 					<RemoteDbForm 
 						onSubmit={(values) => remoteDbStore.createHandler(values)}
