@@ -6,6 +6,7 @@
 	import { Button, ButtonColor } from "../Button";
 
     import type { RemoteDbConfig } from "./types";
+	import Badge from "$lib/Badge/Badge.svelte";
 
 	export let data: Partial<RemoteDbConfig> = {};
 	export let onSubmit: (values: RemoteDbConfig) => void = () => {};
@@ -16,12 +17,14 @@
         retry: true
     }
 
-	const { form, data: dataStore } = createForm({
+	const { form, data: dataStore, setFields } = createForm({
 		initialValues: { ...defaultValues, ...data },
         onSubmit: (values) => {
             onSubmit(values)
         }
 	});
+
+	$: console.log($dataStore)
 </script>
 
 <form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit remote database connection config">
@@ -59,7 +62,18 @@
                                 <option value="sync">↔️ Sync with remote</option>
                             </select>
                         </div>
-                        <Checkbox id="live" name="live" label="Live" helpText="Watch for and sync new changes as they become available." />
+                        <Checkbox 
+							id="live" 
+							name="live" 
+							label="Live" 
+							helpText="Watch for and sync new changes as they become available."
+							on:change={() => {
+								if($dataStore.retry) {
+									setFields("retry", false)
+									setFields("live", false)
+								}
+							}}
+						 />
                         <Checkbox 
 							id="retry"
                             name="retry" 
