@@ -66,7 +66,7 @@
                             </dt>
                             <dd> 
                                 <span aria-hidden="true">
-                                    <Checkbox disabled checked name="live"/>
+                                    <Checkbox disabled checked={data.live} name="live"/>
                                 </span>
                                 <span class="sr-only">{data.live}</span>
                             </dd>
@@ -82,7 +82,7 @@
                             </dt>
                             <dd>
                                 <span aria-hidden="true">
-                                    <Checkbox disabled checked name="retry"/>
+                                    <Checkbox disabled checked={data.retry} name="retry"/>
                                 </span>
                                 <span class="sr-only">{data.retry}</span>
                             </dd>
