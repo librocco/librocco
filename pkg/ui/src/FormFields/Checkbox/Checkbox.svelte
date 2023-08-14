@@ -29,7 +29,7 @@
 
 <div class="relative flex items-start">
 	<div class="flex h-5 items-center">
-		<input type="checkbox" {id} {name} aria-describedby={`${name}-description`} class={inputBaseClasses} {...$$restProps} />
+		<input type="checkbox" {id} {name} aria-describedby={`${name}-description`} class={inputBaseClasses} {...$$restProps} on:change />
 	</div>
 	<div class="ml-3 text-sm">
 		<label for={id} class={labelBaseClasses}>
