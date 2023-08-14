@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { base } from "$app/paths";
 
-	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, type RemoteDbConfig } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData } from "@librocco/ui";
 
 	import { links } from "$lib/data";
 	import { remoteDbStore } from "$lib/stores";
-	import { toastSuccess } from "$lib/toasts";
 
 	$: ({ replicator } = $remoteDbStore);
 </script>
@@ -29,12 +28,7 @@
 					/>
 				{:else}
 					<RemoteDbForm 
-						onSubmit={(values) => {
-							remoteDbStore.createHandler(values);
-
-							// TODO: centralise toasts. Toast this on status: INIT, along with other status changes
-							toastSuccess("Remote CouchDB URL updated");
-						}}
+						onSubmit={(values) => remoteDbStore.createHandler(values)}
 					/>
 				{/if}
 			</div>
