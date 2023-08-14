@@ -6,17 +6,16 @@
 
 	import { Toast } from "@librocco/ui";
 
-	import { defaultToaster, toastSuccess } from "$lib/toasts";
+	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
 	import { remoteDbStore } from "$lib/stores";
 
 	import type { LayoutData } from "./$types";
 
-	// TODO: map state to toasts
-	// We want replication state to be communicated wherever we are in the app
+	// We toast here because we want replication state to be communicated wherever we are in the app
 	$: ({ replicator } = $remoteDbStore);
 	$: {
 		if(replicator) {
-			toastSuccess($replicator.status.state)
+			toastReplicationStatus($replicator.status.state)
 		}
 	}
 

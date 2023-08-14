@@ -1,5 +1,7 @@
 import { createToaster, ToastType, type ToastData } from "@librocco/ui";
 
+import type { ReplicationState } from "./stores/replication";
+
 export const defaultToaster = createToaster<ToastData>();
 
 export const toastSuccess = (message) =>
@@ -32,3 +34,15 @@ export const noteToastMessages = (noteName, warehouseName = "all") => ({
 export const warehouseToastMessages = (warehouseName) => ({
 	warehouseCreated: `${warehouseName} created`
 });
+
+const replicationStatusMessages = {
+	INIT: () => toastSuccess("Connecting to remote database"),
+	ACTIVE: () => toastSuccess("Syncing with database"),
+	COMPLETED: () => toastSuccess("Sync complete"),
+	"PAUSED:IDLE": () => toastSuccess("Sync up to date. Waiting for changes..."),
+	"FAILED:CANCEL": () => toastError("Sync cancelled. Closing connection"),
+	"FAILED:ERROR": () => toastError("Sync error. Closing connection"),
+	"PAUSED:ERROR": () => toastError("Sync error. Retrying...")
+};
+
+export const toastReplicationStatus = (state: ReplicationState) => replicationStatusMessages[state]();
