@@ -93,6 +93,10 @@ class Database implements DatabaseInterface {
 		return this.#stockStream;
 	}
 
+	getStock(): Promise<StockMap> {
+		return newStock(this).query();
+	}
+
 	async buildIndexes() {
 		const indexes = scanDesignDocuments(designDocs);
 		await Promise.all(indexes.map((view) => this._pouch.query(view)));

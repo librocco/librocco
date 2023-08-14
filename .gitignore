@@ -42,6 +42,10 @@
 # Test reports
 **/junit.xml
 
+# Playwright metedata
+**/test-results
+**/playwright-report
+
 # -------Ignored contents of the root of the repo------- #
 
 # Rush temporary files

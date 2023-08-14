@@ -29,11 +29,11 @@
 		<div
 			class="{$$props.disabled
 				? 'bg-gray-50 ring-[1px] ring-gray-200 divide-gray-200 text-gray-500'
-				: 'divide-teal-600 bg-teal-500 text-white'} inline-flex divide-x  rounded-md text-sm font-medium shadow-sm"
+				: 'divide-teal-600 bg-teal-500 text-white'} inline-flex divide-x rounded-md text-sm font-medium shadow-sm"
 		>
-			<div class="inline-flex items-center gap-x-2 rounded-l-md  py-2 px-4">
+			<div class="inline-flex items-center gap-x-2 rounded-l-md py-2 px-4">
 				<Check aria-hidden="true" />
-				<p class="capitalize">{value}</p>
+				<p id="current-value" data-value={value} class="capitalize">{value}</p>
 			</div>
 			{#if !$$props.disabled}
 				<ListboxButton
@@ -58,6 +58,7 @@
 						<div class="group whitespace-normal py-[10px] px-4 hover:bg-teal-500 {active ? 'bg-teal-500' : 'bg-white'}">
 							<div class="flex justify-between">
 								<p
+									data-option={option.value}
 									class="capitalize group-hover:text-white
 										{selected ? 'font-semibold' : 'font-normal'}
 										{active ? 'text-white' : 'text-gray-900'}"

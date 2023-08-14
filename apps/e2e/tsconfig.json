@@ -1,0 +1,14 @@
+{
+	"extends": "../../pkg/scaffold/tsconfig.json",
+	"compilerOptions": {
+		"rootDir": ".",
+		"baseUrl": ".",
+
+		"strictNullChecks": false,
+		"noEmit": true,
+		"module": "esnext",
+		"lib": ["ESNext", "DOM", "DOM.Iterable"]
+	},
+	"exclude": ["node_modules"],
+	"include": ["./**/*.ts"]
+}

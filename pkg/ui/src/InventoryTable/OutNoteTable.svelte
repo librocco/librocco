@@ -68,7 +68,7 @@
 	};
 </script>
 
-<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 	{#if selected.length}
 		<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 			<Button color={ButtonColor.White} on:click={handleRemoveTransactions}>
@@ -128,7 +128,7 @@
 
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { isbn, title, authors, year, quantity, price, rowIx, warehouseId } = row}
+			{@const { isbn, title = "N/A", authors = "N/A", year = "N/A", quantity, price = "N/A", rowIx, warehouseId } = row}
 			<tr
 				use:tableRow={{
 					// Header row starts the count at 0
@@ -156,7 +156,9 @@
 					</span>
 				</td>
 				<th scope="row" class="py-4 px-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none">
-					{isbn}
+					<span data-property="isbn">
+						{isbn}
+					</span>
 					<dl class="font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
@@ -166,19 +168,19 @@
 						<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">€{price}</dd>
 					</dl>
 				</th>
-				<td class="hidden px-3 py-4 lg:table-cell">
+				<td data-property="title" class="hidden px-3 py-4 lg:table-cell">
 					{title}
 				</td>
-				<td class="hidden py-4 px-3 lg:table-cell">
+				<td data-property="authors" class="hidden py-4 px-3 lg:table-cell">
 					{authors}
 				</td>
-				<td class="py-4 px-3 text-left">
+				<td data-property="quantity" class="py-4 px-3 text-left">
 					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, warehouseId, quantity })} />
 				</td>
-				<td class="hidden py-4 px-3 text-left sm:table-cell">
+				<td data-property="price" class="hidden py-4 px-3 text-left sm:table-cell">
 					{price}
 				</td>
-				<td class="hidden py-4 px-3 text-left md:table-cell">
+				<td data-property="year" class="hidden py-4 px-3 text-left md:table-cell">
 					{year}
 				</td>
 				<td class="hidden py-4 px-3 text-left md:table-cell">
