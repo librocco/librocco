@@ -1,4 +1,4 @@
-import { createToaster, ToastType, type ToastData } from "@librocco/ui";
+import { createToaster, ToastType, type ToastData, BadgeColor } from "@librocco/ui";
 
 import type { ReplicationState } from "./stores/replication";
 
@@ -35,14 +35,21 @@ export const warehouseToastMessages = (warehouseName) => ({
 	warehouseCreated: `${warehouseName} created`
 });
 
-const replicationStatusMessages = {
-	INIT: () => toastSuccess("Connecting to remote database"),
-	ACTIVE: () => toastSuccess("Syncing with database"),
-	COMPLETED: () => toastSuccess("Sync complete"),
-	"PAUSED:IDLE": () => toastSuccess("Sync up to date. Waiting for changes..."),
-	"FAILED:CANCEL": () => toastError("Sync cancelled. Closing connection"),
-	"FAILED:ERROR": () => toastError("Sync error. Closing connection"),
-	"PAUSED:ERROR": () => toastError("Sync error. Retrying...")
+// Aliging with BadgeColor enum here as it this color+message combo is used in the RemoteDb Description List
+export const replicationStatusMessages = {
+	INIT: { color: BadgeColor.Success, message: "Connecting to remote database" },
+	ACTIVE: { color: BadgeColor.Success, message: "Syncing with database" },
+	COMPLETED: { color: BadgeColor.Success, message: "Sync complete" },
+	"PAUSED:IDLE": { color: BadgeColor.Success, message: "Sync is up-to-date. Waiting for changes..." },
+	"FAILED:CANCEL": { color: BadgeColor.Error, message: "Sync cancelled. Connection closed" },
+	"FAILED:ERROR": { color: BadgeColor.Error, message: "Sync error. Connection closed" },
+	"PAUSED:ERROR": { color: BadgeColor.Error, message: "Sync error. Retrying..." }
 };
 
-export const toastReplicationStatus = (state: ReplicationState) => replicationStatusMessages[state]();
+export const toastReplicationStatus = (state: ReplicationState) => {
+	const { color, message } = replicationStatusMessages[state];
+
+	const toastFn = color === BadgeColor.Success ? toastSuccess : toastError;
+
+	return toastFn(message);
+};
