@@ -3,8 +3,10 @@ name: Github Actions templates
 "on":
   push:
     paths:
-      - '.github/workflow.templates/*'
-      - '.github/workflows/*'
+      - ".github/workflow.templates/*"
+      - ".github/workflows/*"
+    branches-ignore:
+      - "ci-debug/*"
 
 jobs:
   check-template-generation:

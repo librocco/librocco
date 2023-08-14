@@ -62,7 +62,7 @@
 	};
 </script>
 
-<table class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="relative min-w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
 	{#if selected.length}
 		<div class="absolute left-14 top-[6px] flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 			<Button color={ButtonColor.White} on:click={handleRemoveTransactions}>Delete {selected.length}</Button>
@@ -131,7 +131,19 @@
 
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { rowIx, isbn, warehouseId, authors, quantity, price, year, title, publisher, editedBy, outOfPrint } = row}
+			{@const {
+				rowIx,
+				isbn,
+				warehouseId,
+				authors = "N/A",
+				quantity,
+				price = "N/A",
+				year = "N/A",
+				title = "N/A",
+				publisher = "",
+				editedBy = "",
+				outOfPrint = false
+			} = row}
 			<tr
 				use:tableRow={{
 					// Header row starts the count at 0
@@ -151,11 +163,7 @@
 			>
 				<!-- Show chackbox/row selection only on interactive variant -->
 				{#if interactive}
-					<td
-						class="border-l-4 px-2 text-center sm:align-middle {selected.includes(row)
-							? 'border-teal-500'
-							: 'border-transparent'}"
-					>
+					<td class="border-l-4 px-2 text-center sm:align-middle {selected.includes(row) ? 'border-teal-500' : 'border-transparent'}">
 						<span class="inline-block">
 							<Checkbox name={`Select ${title}`} checked={selected.includes(row)} />
 						</span>
@@ -163,7 +171,7 @@
 				{/if}
 
 				<th scope="row" class="p-3 text-left font-medium text-gray-800 lg:w-auto lg:max-w-none {interactive ? '' : 'pl-8'}">
-					{isbn}
+					<span data-property="isbn">{isbn}</span>
 					<dl class="max-w-[15rem] truncate font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
 						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
@@ -173,13 +181,13 @@
 						<dd class="mt-1 truncate font-light text-gray-500 sm:hidden">{year}</dd>
 					</dl>
 				</th>
-				<td class="hidden px-3 py-4 lg:table-cell">
+				<td data-property="title" class="hidden px-3 py-4 lg:table-cell">
 					<span class="inline-block max-w-[15rem] truncate">{title}</span>
 				</td>
-				<td class="hidden py-4 px-3 lg:table-cell">
+				<td data-property="authors" class="hidden py-4 px-3 lg:table-cell">
 					{authors}
 				</td>
-				<td class="py-4 px-3 text-left">
+				<td data-property="quantity" class="py-4 px-3 text-left">
 					{#if interactive}
 						<!-- For interactive variant, show the quantity input element -->
 						<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
@@ -188,25 +196,25 @@
 						<Badge label={quantity.toString()} size={BadgeSize.LG} />
 					{/if}
 				</td>
-				<td class="py-4 px-3 text-left">
-					{price || "N/A"}
+				<td data-property="price" class="py-4 px-3 text-left">
+					{price}
 				</td>
-				<td class="hidden py-4 px-3 text-left sm:table-cell">
-					{year || "N/A"}
+				<td data-property="year" class="hidden py-4 px-3 text-left sm:table-cell">
+					{year}
 				</td>
 
-				<td class="hidden py-4 px-3 md:table-cell">
-					{publisher || ""}
+				<td data-property="publisher" class="hidden py-4 px-3 md:table-cell">
+					{publisher}
 				</td>
-				<td class="hidden py-4 px-3 xl:table-cell">
-					{editedBy || ""}
+				<td data-property="editedBy" class="hidden py-4 px-3 xl:table-cell">
+					{editedBy}
 				</td>
 				<td class="py-4 px-3 text-left">
 					<div class="flex items-center bg-white md:left-16 2xl:left-[4.5rem]">
 						<Button color={ButtonColor.White} on:click={() => onEdit(row)}>Edit</Button>
 					</div>
 				</td>
-				<td class="hidden py-4 px-3 text-center xl:table-cell">
+				<td data-property="outOfPrint" class="hidden py-4 px-3 text-center xl:table-cell">
 					<span class="inline-block">
 						<Checkbox name={`Row ${rowIx} is out of print: ${outOfPrint}`} checked={outOfPrint} disabled />
 					</span>

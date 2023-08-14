@@ -1,0 +1,35 @@
+#@ load("cache.lib.yml", "cache_node")
+#@ load("rush.lib.yml", "rush_add_path")
+#@ load("rush.lib.yml", "rush_install")
+#@ load("rush.lib.yml", "rush_build")
+
+name: Checks
+
+"on":
+  push:
+    branches:
+      - "ci-debug/*"
+
+jobs:
+  upterm-session:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "16"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Build the app
+        run: cd apps/web-client && rushx build:prod
+      - name: Setup upterm (debug) session
+        uses: lhotari/action-upterm@v1
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: ci-debug-artifacts
+          path: ci-debug-artifacts/
+          retention-days: 30

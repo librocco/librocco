@@ -5,7 +5,7 @@
 
 import { derived } from "svelte/store";
 
-import { NoteState } from "$lib/enums/db";
+import { NoteState } from "@librocco/shared";
 
 import type { DbInterface, DbStream, NavListEntry, Stores } from "$lib/types/db";
 
@@ -42,9 +42,7 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 		inNoteList: observableFromStore(
 			derived([warehouseStore, noteLookup], ([$warehouseStore, $noteLookup]) => {
 				// Filter out outbound and deleted notes
-				const filteredNotes = Object.values($noteLookup).filter(
-					({ state, type }) => state !== NoteState.Deleted && type === "inbound"
-				);
+				const filteredNotes = Object.values($noteLookup).filter(({ state, type }) => state !== NoteState.Deleted && type === "inbound");
 				// Group notes by warehouse adding each note to 'all' warehouse
 				const groupedNotes = filteredNotes.reduce((acc, note) => {
 					const { warehouse, id, displayName } = note;

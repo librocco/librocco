@@ -16,13 +16,11 @@
 			<BookCopy color="white" strokeWidth={2} size={36} />
 		</div>
 
-		<nav class="flex gap-x-4">
+		<nav class="flex gap-x-4" aria-label="Main navigation">
 			{#each links as { label, href }}
 				<a
 					{href}
-					class="rounded-md px-3 py-2 text-sm {currentLocation === href
-						? 'bg-teal-500 text-gray-900'
-						: 'text-white hover:text-teal-500'}"
+					class="rounded-md px-3 py-2 text-sm {currentLocation === href ? 'bg-teal-500 text-gray-900' : 'text-white hover:text-teal-500'}"
 					aria-current={currentLocation === href ? "page" : "false"}
 				>
 					<span>{label}</span>

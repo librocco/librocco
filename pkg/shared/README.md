@@ -7,7 +7,7 @@ This package contains some structures and utils used througout the monorepo.
 1. [Debug context](#1-debug-context)
 
 2. [Test Utils](#2-test-utils)
-    - 2.1. [Wait for](#21-wait-for)
+   - 2.1. [Wait for](#21-wait-for)
 
 ## 1. Debug context
 
@@ -22,14 +22,14 @@ import { from, map } from "rxjs";
 
 // Source observable
 const source = from(someEventSource).pipe(
-    tap((val) => console.log("source_stream:input_value: ", val)),
-    map(someMappingFunction),
-    tap((val) => console.log("source_stream:mapped_value: ", val))
+  tap((val) => console.log("source_stream:input_value: ", val)),
+  map(someMappingFunction),
+  tap((val) => console.log("source_stream:mapped_value: ", val))
 );
 
 // Destination
 source.pipe(tap((val) => console.log("subscriber:received_value: ", val))).subscribe(() => {
-    /* Do something */
+  /* Do something */
 });
 ```
 
@@ -43,15 +43,15 @@ import { Observable, tap } from "rxjs";
 
 // Creates observable stream from an even emitter (emitting numbers in this case).
 function observableFromEvent(e: EventEmitter<number>) {
-    return new Observable((s) => {
-        e.on("event", (val) => s.next(val));
-    });
+  return new Observable((s) => {
+    e.on("event", (val) => s.next(val));
+  });
 }
 
 // Takes in an observable stream, streaming numbers, pipes it
 // through a map function adding 1 to each value and returns the resulting stream.
 function mapAddOne(o: Observable<number>) {
-    return o.pipe(map((v) => v + 1));
+  return o.pipe(map((v) => v + 1));
 }
 ```
 
@@ -120,12 +120,12 @@ If we wanted to debug this, we could set up our `console.log`s like before. Now,
 
 ```typescript
 function observableFromEvent(e: EventEmitter<number>) {
-    return new Observable((s) => {
-        e.on("event", (val) => {
-            console.log("observable_from_event:event: ", val);
-            s.next(val);
-        });
+  return new Observable((s) => {
+    e.on("event", (val) => {
+      console.log("observable_from_event:event: ", val);
+      s.next(val);
     });
+  });
 }
 ```
 
@@ -156,12 +156,12 @@ First we pass the debug context object to all of the functions, and have that co
 ```typescript
 // Accepts and event emitter and debug context object, and starts the stream from the events emitted by the emitter.
 function streamFromEvent(e: EventEmitter, ctx: debug.DebugCtx) {
-    return someStream;
+  return someStream;
 }
 
 // Accepts an event emitter and the context, and passes both to `streamFromEvent`
 function streamEventWithMappedValue(e: EventEmitter, ctx: debug.DebugCtx) {
-    return streamFromEvent(ctx).pipe(map(someManipulation));
+  return streamFromEvent(ctx).pipe(map(someManipulation));
 }
 
 // Start the new stream with the context of { debug: false }
@@ -189,27 +189,27 @@ The `debug.log` method takes in the context and the "step" (a string name for th
 import { debug } from "@librocco/shared";
 
 function streamFromEvent(e: EventEmitter, ctx: debug.DebugCtx) {
-    return new Observable((s) => {
-        e.on("event", (val) => {
-            // Maybe log to the console (if ctx.debug:true)
-            // The log will look like this:
-            // stream_from_event:event: <val>
-            debug.log(ctx, "stream_from_event:event: ")(val);
-            // Stream the value
-            s.next(val);
-        });
+  return new Observable((s) => {
+    e.on("event", (val) => {
+      // Maybe log to the console (if ctx.debug:true)
+      // The log will look like this:
+      // stream_from_event:event: <val>
+      debug.log(ctx, "stream_from_event:event: ")(val);
+      // Stream the value
+      s.next(val);
     });
+  });
 }
 
 function streamEventWithMappedValue(e: EventEmitter, ctx: debug.DebugCtx) {
-    return streamFromEvent(ctx).pipe(
-        // Maybe log the value received from the stream
-        tap(debug.log(ctx, "stream_map:input: ")),
-        // Manipulate the stream
-        map(someManipulation),
-        // Log the result
-        tap(debug.log(ctx, "stream_map:res: "))
-    );
+  return streamFromEvent(ctx).pipe(
+    // Maybe log the value received from the stream
+    tap(debug.log(ctx, "stream_map:input: ")),
+    // Manipulate the stream
+    map(someManipulation),
+    // Log the result
+    tap(debug.log(ctx, "stream_map:res: "))
+  );
 }
 
 const stream = streamEventWithMappedValue({ debug: true });
@@ -261,7 +261,7 @@ const stream = createStream();
 let testValue;
 // Update the 'testValue' on each stream.
 stream.subscribe((val) => {
-    testValue = val;
+  testValue = val;
 });
 // Do an update, which should trigger a new value to be streamed.
 await updateWhichTriggersAStream();
@@ -269,11 +269,11 @@ await updateWhichTriggersAStream();
 // some logic might do something in the background and stream the value we're expecting, AT SOME point...
 // So we use our 'waitFor' to assert the value was streamd in a reasonable amount of time:
 await waitFor(() => {
-    expect(testValue).toEqual(wantValue);
+  expect(testValue).toEqual(wantValue);
 });
 ```
 
 In the above example, if the `waitFor` callback throws an error (either a failed assertion, or a different error), it will retry until timeout:
 
--   the first time it's executed without error (all assertions are passing), it will resolve
--   if timeout is reached, it will reject with the error thrown from the latest attempt (allowing for clear error reporting)
+- the first time it's executed without error (all assertions are passing), it will resolve
+- if timeout is reached, it will reject with the error thrown from the latest attempt (allowing for clear error reporting)
