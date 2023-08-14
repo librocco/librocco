@@ -5,7 +5,18 @@
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import { Toast } from "@librocco/ui";
-	import { defaultToaster } from "$lib/toasts";
+
+	import { defaultToaster, toastSuccess } from "$lib/toasts";
+	import { remoteDbStore } from "$lib/stores";
+
+	// TODO: map state to toasts
+	// We want replication state to be communicated wherever we are in the app
+	$: ({ replicator } = $remoteDbStore);
+	$: {
+		if(replicator) {
+			toastSuccess($replicator.status.state)
+		}
+	}
 
 	onMount(async () => {
 		if (pwaInfo) {
