@@ -32,7 +32,7 @@ export const createReplicationStore = (
 		};
 	});
 
-	const replicator = initReplicator(local, remote, config);
+	const replicator = initReplicator(local, remote, { ...config, batch_size: 5 });
 
 	// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
 	replicator.on("active", () => {
@@ -50,7 +50,7 @@ export const createReplicationStore = (
 		});
 	});
 
-	replicator.on("paused", (err) => {
+	replicator.on("paused", async (err) => {
 		// Non-live replication still 'pauses'. I think this happens between batches
 		// We don't need to communicate this in single-shot operations
 		if (config.live && config.direction !== "sync") {
@@ -78,7 +78,7 @@ export const createReplicationStore = (
 	});
 
 	// Fires when finished or explicitly canceled by either end, when `opts.live == false`
-	replicator.on("complete", (info) => {
+	replicator.on("complete", async (info) => {
 		if (config.direction !== "sync") {
 			const { status } = info as ReplicationResultComplete;
 
