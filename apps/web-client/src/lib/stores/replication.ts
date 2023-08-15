@@ -4,6 +4,8 @@ import type { DatabaseInterface } from "@librocco/db";
 
 import type PouchDB from "pouchdb";
 
+const BATCH_SIZE = 5;
+
 export const createReplicationStore = (
 	local: DatabaseInterface,
 	remote: string | PouchDB.Database,
@@ -32,7 +34,7 @@ export const createReplicationStore = (
 		};
 	});
 
-	const replicator = initReplicator(local, remote, { ...config, batch_size: 5 });
+	const replicator = initReplicator(local, remote, { ...config, batch_size: BATCH_SIZE });
 
 	// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
 	replicator.on("active", () => {
