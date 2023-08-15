@@ -40,6 +40,7 @@ afterEach(async (ctx) => {
 	if (ctx.remoteDb._pouch) {
 		try {
 			await ctx.remoteDb._pouch.destroy();
+			// eslint-disable-next-line no-empty
 		} catch (err) {}
 	}
 });

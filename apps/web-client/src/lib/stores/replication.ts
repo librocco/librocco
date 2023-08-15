@@ -47,8 +47,8 @@ export const createReplicationStore = (
 		changesStore.set({
 			docsWritten: change.docs_written,
 			docsRead: change.docs_read,
-			// @ts-ignore: `change.pending` seems to exist in some contexts, as is potentially add by the pouch adapter being used
-			docsPending: change.pending ?? null
+			// @ts-expect-error `change.pending` seems to exist in some contexts. It is potentially add by the pouch adapter being used
+			docsPending: change?.pending ?? null
 		});
 	});
 
@@ -164,15 +164,15 @@ type ReplicationInfo = {
  * which leaves it up to us to check which one we are working with in the event handlers defined in `createReplicationStore`
  */
 type Replicator = PouchDB.Replication.ReplicationEventEmitter<
-	{},
+	Record<string, never>,
 	SyncResult | ReplicationResult,
 	SyncResultComplete | ReplicationResultComplete
 >;
 
-type SyncResult = PouchDB.Replication.SyncResult<{}>;
-type SyncResultComplete = PouchDB.Replication.SyncResultComplete<{}>;
-type ReplicationResult = PouchDB.Replication.ReplicationResult<{}>;
-type ReplicationResultComplete = PouchDB.Replication.ReplicationResultComplete<{}>;
+type SyncResult = PouchDB.Replication.SyncResult<Record<string, never>>;
+type SyncResultComplete = PouchDB.Replication.SyncResultComplete<Record<string, never>>;
+type ReplicationResult = PouchDB.Replication.ReplicationResult<Record<string, never>>;
+type ReplicationResultComplete = PouchDB.Replication.ReplicationResultComplete<Record<string, never>>;
 
 const initReplicator = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions): Replicator => {
 	const { direction, ...opts } = config;
