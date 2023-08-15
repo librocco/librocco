@@ -10,7 +10,7 @@ export interface BookEntry {
 }
 
 export interface RemoteDbConfig {
-    url: string;
+	url: string;
 	direction: "to" | "from" | "sync";
 	live: boolean;
 	retry: boolean;
