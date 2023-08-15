@@ -42,7 +42,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
-	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
+	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: true };
 	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
 
 	return {

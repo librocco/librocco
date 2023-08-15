@@ -6,3 +6,5 @@ export * as debug from "./debugger";
 
 export * from "./generators";
 export * from "./StockMap";
+
+export * from "./pluginManager";

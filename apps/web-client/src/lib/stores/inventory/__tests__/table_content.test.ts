@@ -129,7 +129,7 @@ describe("tableContentStore", () => {
 			]);
 		});
 	});
-	test("should fetch book data from plugin if not foudn in database", async () => {
+	test("should fetch book data from plugin if not found in database", async () => {
 		const db = await newTestDB();
 
 		const book1 = {
@@ -148,9 +148,9 @@ describe("tableContentStore", () => {
 		await db.books().upsert([book1]);
 
 		await note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "jazz" });
-		// Both books are present in the db
 
-		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
+		const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: true };
+		const tableData = createDisplayEntriesStore(entriesCtx, db, note, readable(0));
 		let displayEntries: DisplayRow[];
 		tableData.entries.subscribe((de) => (displayEntries = de));
 
@@ -188,9 +188,5 @@ describe("tableContentStore", () => {
 				}
 			]);
 		});
-
-		// wait for pluginManager
-
-		// note should contain entry with book data "fetched" from plugin
 	});
 });

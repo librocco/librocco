@@ -3,7 +3,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, debug } from "@librocco/shared";
+import { NoteState, debug, PluginManager } from "@librocco/shared";
 
 import type { DocType } from "./enums";
 
@@ -352,7 +352,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * updated, otherwise it will be created.
 	 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
 	 */
-	books: () => BooksInterface;
+	books: (pluginManagerInstance?: PluginManager) => BooksInterface;
 }
 
 /**

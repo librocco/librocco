@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, StockMap, PluginManager } from "@librocco/shared";
 
 import { BooksInterface, CouchDocument, DbStream, DesignDocument, MapReduceRow, Replicator, InNoteMap, NavEntry, NavMap } from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
@@ -37,8 +37,7 @@ class Database implements DatabaseInterface {
 			.stream({})
 			.pipe(
 				map(
-					({ rows }) =>
-						new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+					({ rows }) => new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
 				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
@@ -139,8 +138,8 @@ class Database implements DatabaseInterface {
 		return newView<R, M>(this._pouch, view);
 	}
 
-	books(): BooksInterface {
-		return newBooksInterface(this);
+	books(pluginManagerInstance?: PluginManager): BooksInterface {
+		return newBooksInterface(this, pluginManagerInstance);
 	}
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {

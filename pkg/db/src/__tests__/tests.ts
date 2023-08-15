@@ -2,7 +2,7 @@
 import { expect } from "vitest";
 import { BehaviorSubject, switchMap } from "rxjs";
 
-import { NoteState, testUtils } from "@librocco/shared";
+import { NoteState, PluginManager, testUtils } from "@librocco/shared";
 
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
@@ -152,7 +152,8 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Subscribe to entries to receive updates
 	let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
 
@@ -385,7 +386,8 @@ export const outboundNoteAvailableWarehouses: TestFunction = async (db) => {
 	const note = await db.warehouse().note().create();
 
 	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
 
@@ -1132,8 +1134,10 @@ export const booksInterface: TestFunction = async (db) => {
 		price: 39.86
 	};
 
-	const booksInterface = db.books();
+	const pluginManagerInstance = new PluginManager();
+	const booksInterface = db.books(pluginManagerInstance);
 
+	pluginManagerInstance.disable();
 	// insert test
 
 	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
@@ -1171,14 +1175,14 @@ export const booksInterface: TestFunction = async (db) => {
 	});
 
 	// Stream should update when the book in the db is updated
-	await db.books().upsert([{ ...book1, title: "Stream updated title" }]);
+	await booksInterface.upsert([{ ...book1, title: "Stream updated title" }]);
 
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, undefined]);
 	});
 
 	// Stream should update if the book we're requesting (which didn't exist) is added
-	await db.books().upsert([book3]);
+	await booksInterface.upsert([book3]);
 
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, book3]);
@@ -1285,7 +1289,8 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	let ndn: PossiblyEmpty<string> = EMPTY;
 
 	const note = await db.warehouse().note("note-1").create();
-	note.stream()
+	note
+		.stream()
 		.displayName({})
 		.subscribe((dn$) => (ndn = dn$));
 

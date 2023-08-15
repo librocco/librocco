@@ -1,6 +1,6 @@
 import { concat, from, Observable, switchMap, tap } from "rxjs";
 
-import { debug, wrapIter } from "@librocco/shared";
+import { debug, wrapIter, PluginManager } from "@librocco/shared";
 
 import { BookEntry, BooksInterface, DatabaseInterface } from "@/types";
 
@@ -8,9 +8,11 @@ import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
+	#pluginManagerInstance: PluginManager;
 
-	constructor(db: DatabaseInterface) {
+	constructor(db: DatabaseInterface, pluginManagerInstance?: PluginManager) {
 		this.#db = db;
+		this.#pluginManagerInstance = pluginManagerInstance || new PluginManager();
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
@@ -48,8 +50,12 @@ class Books implements BooksInterface {
 			.filter(([, book]) => book === undefined)
 			.map(([isbn]) => isbn);
 
-		Promise.all([...isbnsToFetch].map((isbn) => pluginManager.getBook(isbn))).then((res) => this.upsert(res));
-
+		const results = await Promise.all([...isbnsToFetch].map((isbn) => this.#pluginManagerInstance.getBook(isbn)));
+		// in case of disab;ed plugin, the results would be null
+		const filteredResults = results.filter((result): result is BookEntry => Boolean(result));
+		if (filteredResults.length) {
+			this.upsert(filteredResults);
+		}
 		return books;
 	}
 
@@ -78,24 +84,6 @@ class Books implements BooksInterface {
 	}
 }
 
-export const newBooksInterface = (db: DatabaseInterface): BooksInterface => {
-	return new Books(db);
-};
-
-const pluginManager = {
-	getBook: (isbn: string): Promise<BookEntry> => {
-		// This is a mock function that returns a Promise resolving to a dummy book object after 300 ms
-		// would be replaced with a call to real plugin manager
-
-		return new Promise((resolve) => {
-			setTimeout(() => {
-				resolve({
-					title: `Book with ISBN ${isbn}`,
-					authors: "Some Author",
-					isbn,
-					price: 10
-				});
-			}, 300);
-		});
-	}
+export const newBooksInterface = (db: DatabaseInterface, pluginManagerInstance?: PluginManager): BooksInterface => {
+	return new Books(db, pluginManagerInstance);
 };
