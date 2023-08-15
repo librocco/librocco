@@ -8,5 +8,5 @@
 </script>
 
 <Hst.Story title="Forms / RemoteDbForm" layout={{ type: "grid", width: 600 }}>
-	<RemoteDbForm onSubmit={(values) => logEvent("submit", values)}/>
+	<RemoteDbForm onSubmit={(values) => logEvent("submit", values)} />
 </Hst.Story>

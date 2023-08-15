@@ -37,8 +37,7 @@ class Database implements DatabaseInterface {
 			.stream({})
 			.pipe(
 				map(
-					({ rows }) =>
-						new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+					({ rows }) => new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
 				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
