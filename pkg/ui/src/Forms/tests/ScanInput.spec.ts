@@ -53,3 +53,14 @@ test("should reset the form (input field) after 'Add' button click", async () =>
 	await userEvent.click(addButton);
 	expect(input).toHaveValue("");
 });
+
+test("should route keyboard input to the scan field (even if the field is not focused)", async () => {
+	const mockOnAdd = vi.fn();
+
+	render(ScanInput, { onAdd: mockOnAdd });
+
+	screen.getByRole("textbox");
+
+	await userEvent.keyboard("1234567890{Enter}");
+	expect(mockOnAdd).toHaveBeenCalledWith("1234567890");
+});
