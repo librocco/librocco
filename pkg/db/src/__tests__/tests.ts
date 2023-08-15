@@ -152,7 +152,8 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 
 	// Subscribe to entries to receive updates
 	let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
 
@@ -385,7 +386,8 @@ export const outboundNoteAvailableWarehouses: TestFunction = async (db) => {
 	const note = await db.warehouse().note().create();
 
 	let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
-	note.stream()
+	note
+		.stream()
 		.entries({})
 		.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
 
@@ -1285,7 +1287,8 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	let ndn: PossiblyEmpty<string> = EMPTY;
 
 	const note = await db.warehouse().note("note-1").create();
-	note.stream()
+	note
+		.stream()
 		.displayName({})
 		.subscribe((dn$) => (ndn = dn$));
 
