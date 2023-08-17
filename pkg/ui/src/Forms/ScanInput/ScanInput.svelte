@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from "$lib/Button";
 	import { QrCode } from "lucide-svelte";
-	import { scanInput, scanForm } from "./action";
+	import { scan } from "./action";
 
 	export let onAdd: (isbn: string) => void | Promise<void> = () => {};
 
@@ -13,7 +13,7 @@
 	};
 </script>
 
-<form id="scan-input-container" on:submit|preventDefault={handleSubmit(onAdd)} use:scanForm>
+<form id="scan-input-container" on:submit|preventDefault={handleSubmit(onAdd)}>
 	<div class="my-[2px]">
 		<div class="mx-[2px] flex rounded-md shadow-sm outline outline-1 outline-gray-300 focus-within:outline-2 focus-within:outline-teal-500">
 			<div class="flex items-center bg-white pr-0 pl-3 text-gray-400">
@@ -27,7 +27,7 @@
 				class="block w-full border-0 px-4 py-4 text-sm focus:outline-0 focus:ring-0"
 				name="isbn"
 				bind:value={isbn}
-				use:scanInput
+				use:scan
 			/>
 			<div class="flex items-center bg-white pl-1 pr-3 text-gray-400">
 				<div class="flex gap-x-2">
