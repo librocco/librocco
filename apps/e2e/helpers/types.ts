@@ -89,7 +89,6 @@ export interface StatePickerInterface extends Locator {
 
 export interface ScanFieldInterface extends Locator {
 	add(isbn: string): Promise<void>;
-	create(): Promise<void>;
 }
 
 // #region book form
