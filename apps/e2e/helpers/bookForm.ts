@@ -22,6 +22,8 @@ export function getBookForm(page: Page): BookFormInterface {
 
 	const fillBookData = async (entries: Partial<DisplayRow>) => {
 		for (const [name, value] of Object.entries(entries)) {
+			// Skip isbn field as it's not editable
+			if (name === "isbn") continue;
 			await field(name as keyof BookFormValues).set(value as BookFormValues[keyof BookFormValues]);
 		}
 	};

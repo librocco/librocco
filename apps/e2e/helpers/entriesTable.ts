@@ -76,13 +76,13 @@ export function getEntriesTable(view: ViewName, content: Locator): EntriesTableI
 	return Object.assign(container, { row, assertRows, deleteSelected, selectAll, unselectAll });
 }
 
-const defaultValues: TransactionRowValues = {
+const defaultValues: Omit<TransactionRowValues, "price"> & { price: string | number } = {
 	isbn: "",
-	price: 0,
+	price: "N/A",
 	quantity: 1,
-	title: "",
-	year: "",
-	authors: "",
+	title: "N/A",
+	year: "N/A",
+	authors: "N/A",
 	publisher: "",
 	editedBy: "",
 	warehouseName: "not-found",
