@@ -75,3 +75,17 @@ test("should not route keyboard input to the text field if input is slower than 
 
 	expect(mockOnAdd).not.toHaveBeenCalled();
 });
+
+test("if scan input element already has some value (from user input), should overwrite it on scan input (to prevent mixing of the two)", async () => {
+	const mockOnAdd = vi.fn();
+
+	render(ScanInput, { onAdd: mockOnAdd });
+
+	// Add some existing value to the scan input field
+	userEvent.type(screen.getByRole("textbox"), "987", { delay: 100 });
+
+	await userEvent.keyboard("1234567890");
+	await userEvent.keyboard("{Enter}");
+
+	expect(mockOnAdd).toHaveBeenCalledWith("1234567890");
+});
