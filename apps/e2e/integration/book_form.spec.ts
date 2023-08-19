@@ -18,7 +18,7 @@ const book1 = {
 	price: 12,
 	year: "2020",
 	authors: "Author and Sons",
-	publisher: "Reed Elsevier",
+	publisher: "Random publisher",
 	editedBy: "Sons",
 	outOfPrint: true
 };
