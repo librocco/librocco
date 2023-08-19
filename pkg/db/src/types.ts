@@ -380,6 +380,10 @@ export interface BooksInterface {
 	 * index 'i' of the request array, if the book data doesn't exist in the db, `undefined` will be found at its place._
 	 */
 	stream: (ctx: debug.DebugCtx, isbns: string[]) => Observable<(BookEntry | undefined)[]>;
+	/**
+	 * Steams a list of publishers built from 'publisher' properties of book data already in the db.
+	 */
+	streamPublishers: (ctx: debug.DebugCtx) => Observable<string[]>;
 }
 
 export interface NewDatabase {

@@ -64,7 +64,7 @@ test("should set field values if 'book' prop gets updated", async () => {
 test("should fire 'sumbmit' event on submit", async () => {
 	const mockSubmit = vi.fn();
 
-	const { component } = render(BookDetailForm, { book, mode: "edit" });
+	const { component } = render(BookDetailForm, { book });
 	component.$on("submit", (e) => mockSubmit(e.detail));
 
 	const saveButton = screen.getByText("Save");
@@ -100,4 +100,87 @@ test("should fire 'cancel' event on cancel button click", async () => {
 	userEvent.click(cancelButton);
 
 	await waitFor(() => expect(mockCancel).toHaveBeenCalled());
+});
+
+test("should allow specifying a custom publisher", async () => {
+	const mockSubmit = vi.fn();
+
+	const { component } = render(BookDetailForm, { book });
+	component.$on("submit", (e) => mockSubmit(e.detail));
+
+	const publisherInput = screen.getByRole("combobox", { name: "publisher" });
+	await userEvent.clear(publisherInput);
+	await userEvent.type(publisherInput, "Custom publisher");
+
+	const saveButton = screen.getByText("Save");
+	userEvent.click(saveButton);
+
+	await waitFor(() => expect(mockSubmit).toHaveBeenCalledWith({ ...book, publisher: "Custom publisher" }));
+});
+
+test("should show suggestions for publishers and filter with respect to input", async () => {
+	const publisherList = ["Penguin", "Puffin", "Pearson", "Penguin Classics", "Penguin Books", "Penguin Random House"];
+
+	render(BookDetailForm, { book, publisherList });
+
+	const publisherInput = screen.getByRole("combobox", { name: "publisher" });
+
+	// Should show all publishers on input start (all publishers start with "P")
+	await userEvent.clear(publisherInput);
+	await userEvent.type(publisherInput, "P");
+	await waitFor(() => {
+		publisherList.forEach((publisher) => {
+			screen.getByRole("option", { name: publisher });
+		});
+	});
+
+	// Should filter publishers on input change
+	await userEvent.type(publisherInput, "en"); // "Pen" is now in the input field
+	await waitFor(() => {
+		["Penguin", "Penguin Classics", "Penguin Books", "Penguin Random House"].forEach((publisher) => {
+			screen.getByRole("option", { name: publisher });
+		});
+	});
+});
+
+test("should display maximum of 10 filtered results", async () => {
+	// Create an array going ["Penguin 0", "Pearson 0", "Penguin 1", "Pearson 1", ...and so on]
+	// with 15 entries for each (30 in total)
+	const publisherList = [
+		...(function* () {
+			for (let i = 0; i < 15; i++) {
+				yield `Penguin ${i}`;
+				yield `Pearson ${i}`;
+			}
+		})()
+	];
+
+	render(BookDetailForm, { book, publisherList });
+	const publisherInput = screen.getByRole("combobox", { name: "publisher" });
+
+	// Clear and start typing (we need to interact with the input field to expand the suggestions)
+	await userEvent.clear(publisherInput);
+	await userEvent.type(publisherInput, "P");
+	await waitFor(() => {
+		// All our publishers start with "P", so the filter will not have taken any effect.
+		// Should display first 10 entries from the list.
+		expect(screen.getAllByRole("option")).toHaveLength(10);
+		publisherList.slice(0, 10).forEach((publisher) => {
+			screen.getByRole("option", { name: publisher });
+		});
+	});
+
+	// Filter using "Penguin"
+	await userEvent.clear(publisherInput);
+	await userEvent.type(publisherInput, "Penguin");
+	await waitFor(() => {
+		// Should display first 10 publishers containing "Penguin" (out of 15 total).
+		expect(screen.getAllByRole("option")).toHaveLength(10);
+		publisherList
+			.filter((p) => p.includes("Penguin"))
+			.slice(0, 10)
+			.forEach((publisher) => {
+				screen.getByRole("option", { name: publisher });
+			});
+	});
 });

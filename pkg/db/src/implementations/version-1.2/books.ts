@@ -2,7 +2,8 @@ import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { BookEntry, BooksInterface, DatabaseInterface } from "@/types";
+import { BookEntry, BooksInterface } from "@/types";
+import { DatabaseInterface, PublishersListRow } from "./types";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
@@ -53,7 +54,7 @@ class Books implements BooksInterface {
 			});
 
 			const initialState = from(
-				new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
+				new Promise<PouchDB.Core.AllDocsWithKeysResponse<BookEntry>>((resolve) => {
 					this.#db._pouch
 						.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 						.then((res) => {
@@ -68,7 +69,7 @@ class Books implements BooksInterface {
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() =>
 					from(
-						new Promise<PouchDB.Core.AllDocsResponse<BookEntry>>((resolve) => {
+						new Promise<PouchDB.Core.AllDocsWithKeysResponse<BookEntry>>((resolve) => {
 							this.#db._pouch
 								.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 								.then((res) => {
@@ -87,6 +88,17 @@ class Books implements BooksInterface {
 
 			return () => emitter.cancel();
 		});
+	}
+
+	streamPublishers(ctx: debug.DebugCtx): Observable<string[]> {
+		return this.#db
+			.view<PublishersListRow>("v1_list/publishers")
+			.stream(ctx, { group_level: 1 })
+			.pipe(
+				tap(debug.log(ctx, "books:publishers_stream:raw")),
+				map(({ rows }) => rows.map(({ key }) => key)),
+				tap(debug.log(ctx, "books:publishers_stream:transformed"))
+			);
 	}
 }
 
