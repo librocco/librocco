@@ -44,6 +44,13 @@
 	}
 
 	const publisherCombo = createCombobox({ label: "publisher" });
+
+	let publisher = "";
+	$: {
+		publisher = $publisherCombo.selected;
+	}
+
+	$: publishers = publisherList.filter((p) => p.includes($publisherCombo.filter)).slice(0, 10);
 </script>
 
 <form id="book-detail-form" class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
@@ -65,14 +72,14 @@
 				<TextField name="authors" label="Authors" />
 			</div>
 			<div id="publisher-field-container" class="relative basis-full">
-				<TextField name="publisher" label="Publisher" inputAction={publisherCombo.input} value={$publisherCombo.selected}>
+				<TextField name="publisher" autocomplete="off" label="Publisher" inputAction={publisherCombo.input} bind:value={publisher}>
 					<div slot="endAdornment">
 						<button use:publisherCombo.button type="button" class="flex items-center">
 							<ChevronsUpDown class="text-gray-400" />
 						</button>
 					</div>
 				</TextField>
-				<ComboboxMenu combobox={publisherCombo} options={publisherList} />
+				<ComboboxMenu combobox={publisherCombo} options={publishers} />
 			</div>
 			<div id="editedBy-field-container" class="basis-full">
 				<TextField name="editedBy" label="Edited by" />

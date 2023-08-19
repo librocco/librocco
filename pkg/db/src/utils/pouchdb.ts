@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import { concat, from, map, Observable, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
@@ -14,11 +15,11 @@ import { CouchDocument, DesignDocument, Replication } from "@/types";
  * @param res a result received from `PouchDB.allDocs({...options, include_docs: true})`
  * @returns and array of `doc` entries from each pouchdb "row", (including `_id` and `_rev`)
  */
-export const unwrapDocs = <T extends Record<string, any>>(res: PouchDB.Core.AllDocsResponse<T>): (T | undefined)[] =>
-	res.rows.map(({ doc: d }) => {
-		if (!d) return undefined;
+export const unwrapDocs = <T extends Record<string, any>>(res: PouchDB.Core.AllDocsWithKeysResponse<T>): (T | undefined)[] =>
+	res.rows.map((row) => {
+		if (!(row as any).doc) return undefined;
 		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { _id, _rev, ...doc } = d;
+		const { _id, _rev, ...doc } = (row as any).doc;
 		return doc as T;
 	});
 
