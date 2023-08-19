@@ -63,7 +63,7 @@
 				<TextField name="title" label="Title" required />
 			</div>
 			<div id="price-field-container" class="flex basis-full justify-between gap-x-4">
-				<TextField name="price" label="Price" required type="number" step="1">
+				<TextField name="price" label="Price" required type="number" step="0.01">
 					<span slot="startAdornment">€</span>
 				</TextField>
 				<TextField name="year" label="Year" />
