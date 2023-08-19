@@ -46,10 +46,9 @@
 	const publisherCombo = createCombobox({ label: "publisher" });
 
 	let publisher = "";
-	// Update publisher value on combobox selection
-	publisherCombo.subscribe(({ selected }) => {
-		publisher = selected;
-	});
+	$: {
+		publisher = $publisherCombo.selected;
+	}
 
 	$: publishers = publisherList.filter((p) => p.includes($publisherCombo.filter)).slice(0, 10);
 </script>
