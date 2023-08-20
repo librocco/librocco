@@ -65,11 +65,7 @@ class Note implements NoteInterface {
 			const refWId = versionId(warehouse._id);
 			if (wId !== refWId) {
 				throw new Error(
-					"Warehouse referenced in the note and one provided in note id mismatch:" +
-						"\n		referenced: " +
-						refWId +
-						"\n		provided: " +
-						wId
+					"Warehouse referenced in the note and one provided in note id mismatch:" + "\n		referenced: " + refWId + "\n		provided: " + wId
 				);
 			}
 		}
@@ -286,6 +282,12 @@ class Note implements NoteInterface {
 		// Remove the matched transaction from the list of entries (this is the transaction we're updating to a new one)
 		const entries = this.entries.filter((e) => !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
 
+		// If both existing entries and entries without the match transaction are the same:
+		// the match transaction wasn't found, exit early
+		if (entries.length === this.entries.length) {
+			return this.update({}, {}); // Noop update
+		}
+
 		// Check if there already is a transaction with the same 'isbn' and 'warehouseId' as the updated transaction.
 		// If so, we're merging the two, if not we're simply adding a new transaction to the list.
 		const existingTxnIx = entries.findIndex((e) => e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
@@ -396,9 +398,7 @@ class Note implements NoteInterface {
 								.slice(startIx, endIx)
 						)
 					),
-					this.#stream.pipe(
-						map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))
-					),
+					this.#stream.pipe(map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))),
 					this.#db.stream().warehouseList(ctx),
 					this.#db.stock()
 				]).pipe(
