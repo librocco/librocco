@@ -14,7 +14,7 @@ import { newStock } from "./stock";
 
 import { runAfterCondition, uniqueTimestamp, versionId, isEmpty, sortBooks } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { combineTransactionsWarehouses, addWarehouseNames } from "./utils";
+import { combineTransactionsWarehouses, addWarehouseNames, TableData } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -246,16 +246,16 @@ class Warehouse implements WarehouseInterface {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
 
-				const entries = this.#stock.pipe(map((stock) => [...stock.rows()].sort(sortBooks).slice(startIx, endIx)));
-
-				const stats = this.#stock.pipe(
-					map((stock) => ({
-						total: stock.size,
-						totalPages: Math.ceil(stock.size / itemsPerPage)
-					}))
+				const tableData = this.#stock.pipe(
+					map(
+						(stock): TableData => ({
+							rows: [...stock.rows()].sort(sortBooks).slice(startIx, endIx),
+							stats: { total: stock.size, totalPages: Math.ceil(stock.size / itemsPerPage) }
+						})
+					)
 				);
 
-				return combineLatest([entries, stats, this.#db.stream().warehouseList(ctx)]).pipe(
+				return combineLatest([tableData, this.#db.stream().warehouseList(ctx)]).pipe(
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
