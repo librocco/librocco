@@ -1,0 +1,42 @@
+{
+	"name": "@librocco/book-data-extension",
+	"version": "0.0.1",
+	"main": "./dist/plugin/index.js",
+	"exports": {
+		".": {
+			"import": "./dist/plugin/index.es.js",
+			"require": "./dist/plugin/index.js",
+			"default": "./dist/plugin/index.es.js"
+		}
+	},
+	"scripts": {
+		"build": "vite build",
+		"typecheck": "tsc --noEmit",
+		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
+		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
+		"test": "vitest",
+		"format": "prettier --write --plugin-search-dir=. ."
+	},
+	"devDependencies": {
+		"@librocco/db": "workspace:*",
+		"@types/node": "16",
+		"@types/testing-library__jest-dom": "~5.14.5",
+		"@typescript-eslint/eslint-plugin": "~5.27.0",
+		"@typescript-eslint/parser": "~5.27.0",
+		"eslint": "~8.16.0",
+		"eslint-config-prettier": "^8.3.0",
+		"prettier": "~2.7.1",
+		"tslib": "^2.3.1",
+		"typescript": "^4.8.4",
+		"vite": "~4.0.0",
+		"vitest": "~0.21.1",
+		"jsdom": "~21.1.1",
+		"@testing-library/dom": "~8.20.0",
+		"@testing-library/jest-dom": "~5.16.5",
+		"@testing-library/user-event": "~14.4.3"
+	},
+	"peerDependencies": {
+		"@librocco/db": "workspace:*"
+	},
+	"type": "module"
+}
