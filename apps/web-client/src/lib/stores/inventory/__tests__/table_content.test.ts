@@ -8,6 +8,7 @@ import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
 import { createDisplayEntriesStore } from "../table_content";
 import { newTestDB } from "$lib/__testUtils__/db";
+import { PluginManager } from "@librocco/shared";
 
 const { waitFor } = testUtils;
 
@@ -145,12 +146,13 @@ describe("tableContentStore", () => {
 		const note = await db.warehouse().note("note-1").create();
 
 		// persist book first
-		await db.books().upsert([book1]);
+		const pluginManagerInstance = new PluginManager();
+		const booksInterface = db.books(pluginManagerInstance);
+		await booksInterface.upsert([book1]);
 
 		await note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "jazz" });
 
-		const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: true };
-		const tableData = createDisplayEntriesStore(entriesCtx, db, note, readable(0));
+		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
 		let displayEntries: DisplayRow[];
 		tableData.entries.subscribe((de) => (displayEntries = de));
 

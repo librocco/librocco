@@ -16,26 +16,32 @@ class Books implements BooksInterface {
 	}
 
 	async upsert(bookEntries: BookEntry[]): Promise<void> {
-		await Promise.all(
-			bookEntries.map((b) => {
-				return new Promise<void>((resolve, reject) => {
-					const bookEntry = { ...b, _id: `books/${b.isbn}` };
-					this.#db._pouch
-						.put(bookEntry)
-						.then(() => resolve())
-						.catch((err) => {
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							if ((err as any).status !== 409) reject(err);
+		const bookIds = bookEntries.map((b) => `books/${b.isbn}`);
 
-							this.#db._pouch.get(bookEntry._id).then((bookDoc) => {
-								this.#db._pouch.put({ ...bookDoc, ...bookEntry }).then(() => {
-									resolve();
-								});
-							});
-						});
-				});
-			})
-		);
+		const docs = await this.#db._pouch.allDocs({ keys: bookIds, include_docs: true }).then(({ rows }) => {
+			// rows => contain _id and _rev
+			// Merge result with bookEntries
+			const mergedArray = bookEntries.map((b) => {
+				// Find the corresponding doc in result
+				const match = rows.find((row) => row.id === `books/${b.isbn}`);
+				// If a match is found, return the merged object
+				if (match && match.doc) {
+					return {
+						...match.doc,
+						_rev: match.value.rev,
+						...b
+					};
+				}
+				// If no match is found, return the original book with _id added
+
+				return {
+					...b,
+					_id: `books/${b.isbn}`
+				};
+			});
+			return mergedArray;
+		});
+		return new Promise<void>((resolve) => this.#db._pouch.bulkDocs(docs).then(() => resolve()));
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
@@ -50,17 +56,20 @@ class Books implements BooksInterface {
 			.filter(([, book]) => book === undefined)
 			.map(([isbn]) => isbn);
 
-		const results = await Promise.all([...isbnsToFetch].map((isbn) => this.#pluginManagerInstance.getBook(isbn)));
-		// in case of disab;ed plugin, the results would be null
-		const filteredResults = results.filter((result): result is BookEntry => Boolean(result));
-		if (filteredResults.length) {
+		Promise.all([...isbnsToFetch].map((isbn) => this.#pluginManagerInstance.getBook(isbn))).then((results) => {
+			// in case of disabled plugin, the results would be null
+			const filteredResults = results.filter((result): result is BookEntry => Boolean(result));
+
 			this.upsert(filteredResults);
-		}
+		});
+
 		return books;
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
+		// this is the function that will fire whenever there's data is emitted
 		return new Observable<(BookEntry | undefined)[]>((subscriber) => {
+			// listens to changes in docs with these isbns
 			const emitter = this.#db._pouch.changes<BookEntry[]>({
 				since: "now",
 				live: true,
@@ -70,11 +79,13 @@ class Books implements BooksInterface {
 
 			const initialState = from(this.get(isbns));
 
+			// creates new obvs every time there's a change in the database, and replaces the old Observable
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
 				switchMap(() => from(this.get(isbns)))
 			);
 
+			//subscribers receive updates in sequence
 			concat(initialState, changeStream)
 				.pipe(tap(debug.log(ctx, "books_stream:result:raw")))
 				.subscribe((doc) => subscriber.next(doc));
@@ -87,3 +98,5 @@ class Books implements BooksInterface {
 export const newBooksInterface = (db: DatabaseInterface, pluginManagerInstance?: PluginManager): BooksInterface => {
 	return new Books(db, pluginManagerInstance);
 };
+
+// given these functions, could you explain why there's a conflict error

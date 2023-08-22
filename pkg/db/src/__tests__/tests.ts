@@ -2,7 +2,7 @@
 import { expect } from "vitest";
 import { BehaviorSubject, switchMap } from "rxjs";
 
-import { NoteState, PluginManager, testUtils } from "@librocco/shared";
+import { NoteState, testUtils } from "@librocco/shared";
 
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
@@ -1134,10 +1134,8 @@ export const booksInterface: TestFunction = async (db) => {
 		price: 39.86
 	};
 
-	const pluginManagerInstance = new PluginManager();
-	const booksInterface = db.books(pluginManagerInstance);
+	const booksInterface = db.books();
 
-	pluginManagerInstance.disable();
 	// insert test
 
 	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
