@@ -38,7 +38,9 @@ class Stock implements StockInterface {
 			...this.options,
 			include_docs: false,
 			since: "now",
-			live: true
+			live: true,
+			// We don't care about changes to non-committed notes (as they don't affect the stock)
+			filter: (doc) => doc.committed
 		});
 	}
 
