@@ -1,7 +1,7 @@
 {
 	"extends": "../../pkg/scaffold/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "src",
+		"rootDir": "",
 		"baseUrl": ".",
 		"types": ["node"],
 		"lib": ["ESNext", "DOM"],
