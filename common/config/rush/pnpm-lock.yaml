@@ -309,6 +309,42 @@ importers:
       vite: 4.0.5
       vitest: 0.21.1_jsdom@21.1.2
 
+  ../../plugins/book-data-extension:
+    specifiers:
+      '@librocco/db': workspace:*
+      '@testing-library/dom': ~8.20.0
+      '@testing-library/jest-dom': ~5.16.5
+      '@testing-library/user-event': ~14.4.3
+      '@types/node': '16'
+      '@types/testing-library__jest-dom': ~5.14.5
+      '@typescript-eslint/eslint-plugin': ~5.27.0
+      '@typescript-eslint/parser': ~5.27.0
+      eslint: ~8.16.0
+      eslint-config-prettier: ^8.3.0
+      jsdom: ~21.1.1
+      prettier: ~2.7.1
+      tslib: ^2.3.1
+      typescript: ^4.8.4
+      vite: ~4.0.0
+      vitest: ~0.21.1
+    devDependencies:
+      '@librocco/db': link:../../pkg/db
+      '@testing-library/dom': 8.20.1
+      '@testing-library/jest-dom': 5.16.5
+      '@testing-library/user-event': 14.4.3_@testing-library+dom@8.20.1
+      '@types/node': 16.18.42
+      '@types/testing-library__jest-dom': 5.14.9
+      '@typescript-eslint/eslint-plugin': 5.27.1_3a1f49a875484df53680aa596ea20ec2
+      '@typescript-eslint/parser': 5.27.1_eslint@8.16.0+typescript@4.9.5
+      eslint: 8.16.0
+      eslint-config-prettier: 8.10.0_eslint@8.16.0
+      jsdom: 21.1.2
+      prettier: 2.7.1
+      tslib: 2.6.1
+      typescript: 4.9.5
+      vite: 4.0.5_@types+node@16.18.42
+      vitest: 0.21.1_jsdom@21.1.2
+
 packages:
 
   /@aashutoshrathi/word-wrap/1.2.6:
@@ -2688,6 +2724,10 @@ packages:
 
   /@types/ms/0.7.31:
     resolution: {integrity: sha512-iiUgKzV9AuaEkZqkOLDIvlQiL6ltuZd9tGcW3gwpnX8JbuiuhFlEGmmFXEXkN50Cvq7Os88IY2v0dkDqXYWVgA==}
+    dev: true
+
+  /@types/node/16.18.42:
+    resolution: {integrity: sha512-IrFfX/1oxDFQNpQzgt/BoP/hbMuQT68DPsNwzJmw8y3K8lfnPp0XymVN9GLFz+LobFmJGZ/peRzq+9wXYfCCtw==}
     dev: true
 
   /@types/node/20.4.10:
@@ -9667,6 +9707,40 @@ packages:
       terser:
         optional: true
     dependencies:
+      esbuild: 0.16.17
+      postcss: 8.4.27
+      resolve: 1.22.4
+      rollup: 3.28.0
+    optionalDependencies:
+      fsevents: 2.3.2
+    dev: true
+
+  /vite/4.0.5_@types+node@16.18.42:
+    resolution: {integrity: sha512-7m87RC+caiAxG+8j3jObveRLqaWA/neAdCat6JAZwMkSWqFHOvg8MYe5fAQxVBRAuKAQ1S6XDh3CBQuLNbY33w==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': '>= 14'
+      less: '*'
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      '@types/node': 16.18.42
       esbuild: 0.16.17
       postcss: 8.4.27
       resolve: 1.22.4
