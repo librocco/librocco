@@ -10,7 +10,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
-import { addWarehouseNames, combineTransactionsWarehouses } from "./utils";
+import { addWarehouseNames, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -391,14 +391,16 @@ class Note implements NoteInterface {
 
 				return combineLatest([
 					this.#stream.pipe(
-						map(({ entries = [] }) =>
-							entries
-								.map((e) => ({ ...e, warehouseName: "" }))
-								.sort(sortBooks)
-								.slice(startIx, endIx)
+						map(
+							({ entries = [] }): TableData => ({
+								rows: entries
+									.map((e) => ({ ...e, warehouseName: "" }))
+									.sort(sortBooks)
+									.slice(startIx, endIx),
+								stats: { total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }
+							})
 						)
 					),
-					this.#stream.pipe(map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))),
 					this.#db.stream().warehouseList(ctx),
 					this.#db.stock()
 				]).pipe(
