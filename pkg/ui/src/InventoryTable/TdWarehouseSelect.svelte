@@ -25,7 +25,14 @@
 
 	const combobox = createCombobox({ label: `Select ${rowIx} warehouse`, selected: data.warehouseId });
 
-	$: dispatchChange($combobox.selected);
+	// To prevent excess updates, we're keeping track of the latest value
+	// and dispatching update only when the value changes.
+	//
+	// This would normally be handled by the fact that the value is string (a value comparable primitive),
+	// but since the value is part of an object (state of combobox store), the reactive block is ran on each store
+	// update.
+	let selected = data.warehouseId;
+	$: selected !== $combobox.selected && dispatchChange((selected = $combobox.selected));
 
 	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
 

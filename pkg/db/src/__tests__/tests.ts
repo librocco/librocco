@@ -225,6 +225,19 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 		]);
 	});
 
+	// Updating transaction with not-matched 'matchTxn' should be a noop
+	await note.updateTransaction(
+		{ isbn: "11111111", warehouseId: versionId("wh3") },
+		{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh1._id) }
+	);
+	const entriesSnapshot = await note
+		.getEntries({})
+		.then((entries) => [...entries].map((e) => volumeStockClientToVolumeStockClientOld({ ...e, availableWarehouses: new Map() })));
+	expect([...entriesSnapshot]).toEqual([
+		{ isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1", availableWarehouses },
+		{ isbn: "11111111", quantity: 18, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1", availableWarehouses }
+	]);
+
 	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.removeTransactions({ isbn: "0123456789", warehouseId: wh1._id }, { isbn: "11111111", warehouseId: "wh3" });
 	await waitFor(() => {
