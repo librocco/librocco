@@ -42,7 +42,7 @@
 						</div>
 					</RemoteDbData>
 				{:else}
-					<RemoteDbForm onSubmit={(values) => remoteDbStore.createHandler(values)} />
+					<RemoteDbForm data={$config} onSubmit={(values) => remoteDbStore.createHandler(values)} />
 				{/if}
 			</div>
 		</div>
