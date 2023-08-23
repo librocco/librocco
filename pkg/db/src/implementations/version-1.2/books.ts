@@ -1,8 +1,8 @@
 import { concat, from, map, Observable, switchMap, tap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, wrapIter } from "@librocco/shared";
 
-import { BookEntry, BooksInterface } from "@/types";
+import { BookEntry, BooksInterface, CouchDocument } from "@/types";
 import { DatabaseInterface, PublishersListRow } from "./types";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
@@ -14,27 +14,23 @@ class Books implements BooksInterface {
 		this.#db = db;
 	}
 
-	async upsert(bookEntries: BookEntry[]): Promise<void> {
-		await Promise.all(
-			bookEntries.map((b) => {
-				return new Promise<void>((resolve, reject) => {
-					const bookEntry = { ...b, _id: `books/${b.isbn}` };
-					this.#db._pouch
-						.put(bookEntry)
-						.then(() => resolve())
-						.catch((err) => {
-							// eslint-disable-next-line @typescript-eslint/no-explicit-any
-							if ((err as any).status !== 409) reject(err);
+	async upsert(docsToUpsert: BookEntry[]): Promise<void> {
+		if (!docsToUpsert.length) return;
 
-							this.#db._pouch.get(bookEntry._id).then((bookDoc) => {
-								this.#db._pouch.put({ ...bookDoc, ...bookEntry }).then(() => {
-									resolve();
-								});
-							});
-						});
-				});
-			})
-		);
+		// Get revs for all updates
+		const docs = await this.#db._pouch
+			.allDocs<BookEntry>({
+				keys: docsToUpsert.map(({ isbn }) => `books/${isbn}`),
+				include_docs: true
+			} as PouchDB.Core.AllDocsWithKeysOptions)
+			.then(({ rows }) => rows.map(({ doc }) => doc as CouchDocument<BookEntry> | undefined));
+
+		const updates = wrapIter(docsToUpsert)
+			.map((doc) => ({ _id: `books/${doc.isbn}`, ...doc }))
+			.zip(docs)
+			.map(([update, { _rev } = { _rev: "" }]) => (_rev ? { ...update, _rev } : update));
+
+		await this.#db._pouch.bulkDocs([...updates]);
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
@@ -55,11 +51,12 @@ class Books implements BooksInterface {
 				filter: (doc) => isbns.includes(doc._id.replace("books/", ""))
 			});
 
-			const initialState = from(this.get(isbns));
+			const initialState = from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:initial_state")));
 
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
+				tap(debug.log(ctx, "books:change")),
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
-				switchMap(() => from(this.get(isbns)))
+				switchMap(() => from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:change:stream"))))
 			);
 
 			concat(initialState, changeStream)
