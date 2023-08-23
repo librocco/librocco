@@ -390,3 +390,13 @@ export interface NewDatabase {
 	(db: PouchDB.Database): DatabaseInterface;
 }
 // #endregion db
+
+// #region plugins
+export type LibroccoPlugin<T extends {}> = {
+	register: (instance: T) => LibroccoPlugin<T>;
+} & T;
+
+export interface BookFetcherPlugin {
+	fetchBookData(isbns: string[]): Promise<BookEntry[]>;
+}
+// #endregion plugins

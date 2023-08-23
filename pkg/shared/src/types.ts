@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 export interface VolumeStock {
 	isbn: string;
 	quantity: number;
