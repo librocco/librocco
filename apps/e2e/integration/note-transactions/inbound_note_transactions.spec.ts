@@ -147,12 +147,15 @@ test("should autofill the existing book data when adding a transaction with exis
 });
 
 test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
-	const content = getDashboard(page).content();
-	const scanField = content.scanField();
-	const entries = content.entries("inbound");
+	// Setup: Add one transaction to the note
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) => db.warehouse("wh-1").note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }));
 
-	// Add one transaction
-	await scanField.add("1234567890");
+	const scanField = getDashboard(page).content().scanField();
+	const entries = getDashboard(page).content().entries("outbound");
+
+	// Wait for the transaction to appear on screen before proceeding with assertions
+	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
 	// Change the quantity of the transaction
 	await entries.row(0).field("quantity").set(3);
