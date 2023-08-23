@@ -1,22 +1,75 @@
-import { readable, writable, derived, get } from "svelte/store";
+import { writable, derived, get } from "svelte/store";
 
 import type { DatabaseInterface } from "@librocco/db";
 
 import type PouchDB from "pouchdb";
 
-const BATCH_SIZE = 5;
+/**
+ * Replication store factory
+ */
+export const createReplicationStore = () => {
+	const replicationStores = createReplicationStores();
 
-export const createReplicationStore = (
-	local: DatabaseInterface,
-	remote: string | PouchDB.Database,
-	config: ReplicationOptions = { live: true, retry: true, direction: "sync" }
-) => {
-	const configStore = readable<ReplicationConfig>({
-		...config,
-		// This isn't used for the connection, just for reporting something in the UI
-		url: typeof remote === "string" ? remote : remote?.name
-	});
-	const statusStore = writable<{ state: ReplicationState; info: string }>({ state: "INIT", info: "" });
+	const { configStore: config, statusStore: status, progressStore: progress, replicatorStore: replicator } = replicationStores;
+
+	const start = (
+		local: DatabaseInterface,
+		remote: string | PouchDB.Database,
+		config: ReplicationOptions = { live: true, retry: true, direction: "sync" }
+	) => {
+		const replicationHandlers = createReplicationHandlers(local, replicationStores);
+
+		replicationStores.statusStore.set({ state: "INIT", info: "" });
+		replicationStores.configStore.set({
+			...config,
+			// This isn't used for the connection, just for reporting something in the UI
+			url: typeof remote === "string" ? remote : remote?.name
+		});
+
+		let replication: { replicator: Replicator; promise: Promise<void> };
+
+		if (!config.live) {
+			const oneOffHandler = config.direction !== "sync" ? replicationHandlers.start_replicate : replicationHandlers.start_sync;
+
+			replication = oneOffHandler(local, remote, config);
+		} else {
+			const liveHandler = config.direction !== "sync" ? replicationHandlers.start_replicate_live : replicationHandlers.start_sync_live;
+
+			replication = liveHandler(local, remote, config);
+		}
+
+		replicator.set(replication.replicator);
+
+		return replication;
+	};
+
+	const cancel = () => {
+		const replicationHandler = get(replicator);
+
+		if (replicationHandler) {
+			replicationHandler.cancel();
+			replicationHandler.removeAllListeners();
+			replicator.set(null);
+		}
+	};
+
+	return {
+		config,
+		status,
+		progress,
+		hasActiveHandler: derived(replicator, (replicatorStore) => (replicatorStore ? true : false)),
+		start,
+		cancel
+	};
+};
+
+/**
+ * Sets up various stores used by handlers to report replication status, progress, config etc
+ */
+const createReplicationStores = () => {
+	const replicatorStore = writable<Replicator>();
+	const configStore = writable<ReplicationConfig>();
+	const statusStore = writable<{ state: ReplicationState; info: string }>();
 
 	const changesStore = writable<ReplicationInfo>({ docsWritten: 0, docsRead: 0, docsPending: 0 });
 	const progressStore = derived(changesStore, (info) => {
@@ -34,39 +87,151 @@ export const createReplicationStore = (
 		};
 	});
 
-	const replicator = initReplicator(local, remote, { ...config, batch_size: BATCH_SIZE });
+	return {
+		configStore,
+		replicatorStore,
+		statusStore,
+		changesStore,
+		progressStore
+	};
+};
 
-	// Fires when replication starts or, if `opts.live == true`, when transitioning from "paused"
-	replicator.on("active", () => {
-		statusStore.set({ state: "ACTIVE", info: "" });
-	});
+/**
+ * Sets up handlers for various pouch replication methods
+ * mapping events or promise success|failure to replication store states
+ */
+const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typeof createReplicationStores>) => {
+	const { statusStore, changesStore } = stores;
 
-	replicator.on("change", (info) => {
-		const change = config.direction === "sync" ? (info as SyncResult).change : (info as ReplicationResult);
-
+	const handleError = (replicator, err) => {
+		statusStore.set({ state: "FAILED:ERROR", info: (err as Error)?.message });
+		// Just to be sure...
+		replicator.cancel();
+		replicator.removeAllListeners();
+	};
+	const handleActive = () => statusStore.set({ state: "ACTIVE:REPLICATING", info: "" });
+	const handleChange = (change: ReplicationResult) => {
 		changesStore.set({
 			docsWritten: change.docs_written,
 			docsRead: change.docs_read,
 			// @ts-expect-error `change.pending` seems to exist in some contexts. It is potentially add by the pouch adapter being used
 			docsPending: change?.pending ?? null
 		});
-	});
+	};
+	const handleIndexing = async (live = false) => {
+		statusStore.set({ state: "ACTIVE:INDEXING", info: "" });
 
-	replicator.on("paused", async (err) => {
-		// Non-live replication still 'pauses'. I think this happens between batches
-		// We don't need to communicate this in single-shot operations
-		if (config.live && config.direction !== "sync") {
-			// Err is only passed when `config.retry = true` and pouch is trying to recover
+		const doneStatus = live ? "PAUSED:IDLE" : "COMPLETED";
+
+		await db
+			.buildIndexes()
+			.then(() => statusStore.set({ state: doneStatus, info: "" }))
+			// could also throw here and it would be caught in promise chain inside replicationHandler...
+			.catch(() => statusStore.set({ state: "FAILED:ERROR", info: "could not build indexes" }));
+	};
+
+	/**
+	 * Replication handler for pouch.replicate.to|from (one-off)
+	 */
+	const start_replicate = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
+		const replicator = local._pouch.replicate[config.direction as "to" | "from"](remote, config);
+
+		replicator.on("active", handleActive);
+		replicator.on("change", (info) => handleChange(info));
+
+		// TODO: res in then() handler should also contain info about why... was it completed or cancelled?
+		const promise = replicator
+			.then(({ status }) => {
+				if (status === "complete") {
+					// if this threw it would be caught in catch below
+					return handleIndexing();
+				} else {
+					statusStore.set({ state: "FAILED:CANCEL", info: "operation cancelled by user" });
+				}
+				replicator.removeAllListeners();
+			})
+			.catch((err) => handleError(replicator, err));
+
+		return {
+			replicator,
+			promise
+		};
+	};
+
+	/**
+	 * Replication handler for pouch.sync (one-off)
+	 */
+	const start_sync = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
+		const replicator = local._pouch.sync(remote, config);
+
+		replicator.on("active", handleActive);
+		replicator.on("change", ({ change }) => handleChange(change));
+
+		const promise = replicator
+			.then(({ pull, push }) => {
+				if (pull.status === "complete" && push.status === "complete") {
+					// if this threw it would be caught in catch below
+					return handleIndexing();
+				} else {
+					statusStore.set({ state: "FAILED:CANCEL", info: "operation cancelled by user" });
+				}
+				replicator.removeAllListeners();
+			})
+			.catch((err) => handleError(replicator, err));
+
+		return {
+			replicator,
+			promise
+		};
+	};
+
+	/**
+	 * Replication handler for pouch.replicate.to|from (livee)
+	 */
+	const start_replicate_live = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
+		const replicator = local._pouch.replicate[config.direction as "to" | "from"](remote, config);
+
+		replicator.on("active", handleActive);
+		replicator.on("change", (info) => handleChange(info));
+
+		// will only fire if live and retry === false
+		replicator.on("error", (err) => {
+			statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
+			replicator.removeAllListeners();
+		});
+		replicator.on("paused", async (err) => {
 			if (err) {
 				statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
 			} else {
-				statusStore.set({ state: "PAUSED:IDLE", info: "" });
+				await handleIndexing(true);
 			}
-		} else if (config.live) {
-			// Sync with `opts.live & opts.retry` does not behave as advertised
+		});
+
+		return {
+			replicator,
+			promise: Promise.resolve()
+		};
+	};
+
+	/**
+	 * Replication handler for pouch.sync (live)
+	 */
+	const start_sync_live = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
+		const replicator = local._pouch.sync(remote, config);
+
+		replicator.on("active", handleActive);
+		replicator.on("change", ({ change }) => handleChange(change));
+
+		// will only fire if live and retry === false
+		replicator.on("error", (err) => {
+			statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
+			replicator.removeAllListeners();
+		});
+		replicator.on("paused", async () => {
+			// Sync with live & retry === true does not behave as advertised
 			// no "err" is passed through when pouch is trying to recover
 			// meaning we can't distinguish Paused:Error from Paused:Idle
-			// This little trick seems to work in test cases
+			// This little trick seems to work
 			const changes = get(changesStore);
 
 			if (!changes.docsWritten) {
@@ -74,76 +239,35 @@ export const createReplicationStore = (
 				// when a 'sync' handler is trying to connect
 				statusStore.set({ state: "PAUSED:ERROR", info: "Network error: couldn't connect to remote" });
 			} else {
-				statusStore.set({ state: "PAUSED:IDLE", info: "" });
+				await handleIndexing(true);
 			}
-		}
-	});
+		});
 
-	// Fires when finished or explicitly canceled by either end, when `opts.live == false`
-	replicator.on("complete", async (info) => {
-		if (config.direction !== "sync") {
-			const { status } = info as ReplicationResultComplete;
-
-			if (status === "complete") {
-				statusStore.set({ state: "COMPLETED", info: "" });
-			} else {
-				statusStore.set({ state: "FAILED:CANCEL", info: "local db cancelled operation" });
-			}
-		} else {
-			const { pull, push } = info as SyncResultComplete;
-
-			if (pull.status === "complete" && push.status === "complete") {
-				statusStore.set({ state: "COMPLETED", info: "" });
-			} else if (pull.status === "cancelled" || push.status === "cancelled") {
-				// This branch does not appear to fire in tests because the 'complete' event is not emitted
-				// when a "sync" handler is cancelled. Leaving just incase I missed something...
-				const errorInfo = `${pull.status === "cancelled" ? "remote" : "local"} db cancelled operation"`;
-
-				statusStore.set({ state: "FAILED:CANCEL", info: errorInfo });
-			}
-		}
-
-		// Just to be sure...
-		cancel();
-	});
-
-	// Fires on e.g network or server error when `opts.retry == false`
-	replicator.on("error", (err) => {
-		statusStore.set({ state: "FAILED:ERROR", info: (err as Error)?.message });
-		// Just to be sure...
-		cancel();
-	});
-
-	const cancel = () => {
-		replicator.cancel();
-		// It's unclear from pouchDB docs/issues whether this is already handled, so we call it just incase
-		replicator.removeAllListeners();
+		return {
+			replicator,
+			promise: Promise.resolve()
+		};
 	};
 
 	return {
-		config: configStore,
-		status: statusStore,
-		progress: progressStore,
-		cancel,
-		/**
-		 * A promise that will resolve when replication is "done".
-		 * This will only happen when in situations where `opts.live == false`
-		 */
-		done: async () => {
-			try {
-				await replicator;
-			} catch (err) {
-				return err;
-			}
-		}
+		start_replicate,
+		start_replicate_live,
+		start_sync,
+		start_sync_live
 	};
 };
 
-export type ReplicationStore = ReturnType<typeof createReplicationStore>;
-
 export type ReplicationConfig = ReplicationOptions & { url: string };
 
-export type ReplicationState = "INIT" | "ACTIVE" | "COMPLETED" | "FAILED:CANCEL" | "FAILED:ERROR" | "PAUSED:IDLE" | "PAUSED:ERROR";
+export type ReplicationState =
+	| "INIT"
+	| "ACTIVE:REPLICATING"
+	| "ACTIVE:INDEXING"
+	| "COMPLETED"
+	| "FAILED:CANCEL"
+	| "FAILED:ERROR"
+	| "PAUSED:IDLE"
+	| "PAUSED:ERROR";
 
 type ReplicationOptions = PouchDB.Replication.ReplicateOptions & {
 	direction: "to" | "from" | "sync";
@@ -167,16 +291,10 @@ type Replicator = PouchDB.Replication.ReplicationEventEmitter<
 	Record<string, never>,
 	SyncResult | ReplicationResult,
 	SyncResultComplete | ReplicationResultComplete
->;
+> &
+	Promise<SyncResultComplete | ReplicationResultComplete>;
 
 type SyncResult = PouchDB.Replication.SyncResult<Record<string, never>>;
 type SyncResultComplete = PouchDB.Replication.SyncResultComplete<Record<string, never>>;
 type ReplicationResult = PouchDB.Replication.ReplicationResult<Record<string, never>>;
 type ReplicationResultComplete = PouchDB.Replication.ReplicationResultComplete<Record<string, never>>;
-
-const initReplicator = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions): Replicator => {
-	const { direction, ...opts } = config;
-
-	// TODO: update db interface, temp tapping directly into _pouch for ease
-	return direction === "sync" ? local._pouch.sync(remote, opts) : local._pouch.replicate[direction](remote, opts);
-};
