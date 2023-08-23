@@ -402,6 +402,10 @@
 		{
 			"packageName": "@librocco/shared",
 			"projectFolder": "pkg/shared"
+		},
+		{
+			"packageName": "@librocco/book-data-extension",
+			"projectFolder": "plugins/book-data-extension"
 		}
 	]
 }
