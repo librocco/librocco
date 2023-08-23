@@ -1361,6 +1361,43 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	await waitFor(() => expect(wInst1).toEqual(wInst2));
 };
 
+export const BookFetcherPlugin: TestFunction = async (db) => {
+	// The initial book-fetcher plugin should satisfy the 'BookFetcherPlugin' interface
+	// with all of its methods being noop
+	//
+	// Here we're also testing that the api won't explode if no plugin is registered.
+	const res1 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
+	expect(res1).toEqual([]);
+
+	// Registering a plugin implementation should return that implementation for all subsequent calls
+	const impl1 = {
+		fetchBookData: async (isbns: string[]) => isbns as any // In practice this should be a BookEntry array
+	};
+	// Calling the implementation returned after registering the plugin
+	const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
+	expect(res21).toEqual(["11111111", "22222222"]);
+	// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
+	const res22 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
+	expect(res22).toEqual(["11111111", "22222222"]);
+
+	// Registering a different implementation should return that implementation for all subsequent calls
+	const impl2 = {
+		fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 }))
+	};
+	// Calling the implementation returned after registering the plugin
+	const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);
+	expect(res31).toEqual([
+		{ isbn: "11111111", title: "Title", price: 0 },
+		{ isbn: "22222222", title: "Title", price: 0 }
+	]);
+	// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
+	const res32 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
+	expect(res32).toEqual([
+		{ isbn: "11111111", title: "Title", price: 0 },
+		{ isbn: "22222222", title: "Title", price: 0 }
+	]);
+};
+
 // #region helpers
 // Legacy types used for more convenient testing of (updated) Map values
 // eslint-disable-next-line @typescript-eslint/ban-types
