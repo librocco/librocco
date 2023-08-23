@@ -45,20 +45,22 @@ afterEach(async (ctx) => {
 	}
 });
 
-describe("Replication `to/from` remote, when `live == false`", () => {
-	test("should replicate data one-way & when uninterrupted should communicate status as: INIT -> ACTIVE -> COMPLETED", async (ctx) => {
+describe("Replicate (to/from) remote, when `live == false`", () => {
+	test("should replicate data one-way & when uninterrupted should communicate status as: INIT -> ACTIVE:REPLICATIN -> ACTIVE:INDEXING -> COMPLETED", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 		const booksInterface = remoteDb.books();
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
-		await replicationStore.done();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+
+		await replication.promise;
 
 		const expectedData = await booksInterface.get(bookIds);
-		const expectedStatusFlow = ["INIT", "ACTIVE", "COMPLETED"];
+		const expectedStatusFlow = ["INIT", "ACTIVE:REPLICATING", "ACTIVE:INDEXING", "COMPLETED"];
 
 		expect(expectedData[0]).not.toBe(undefined);
 		expect(statusFlow).toEqual(expectedStatusFlow);
@@ -71,20 +73,22 @@ describe("Replication `to/from` remote, when `live == false`", () => {
 	test("when cancelled should communicate status as: INIT -> FAILED:CANCEL", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
+
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 
 		// Explicitly cancel replication
 		replicationStore.cancel();
 
-		await replicationStore.done();
+		await replication;
 
 		const errorInfo = get(replicationStore.status).info;
 
 		const expectedStatusFlow = ["INIT", "FAILED:CANCEL"];
-		const exepctedErrorInfo = "local db cancelled operation";
+		const exepctedErrorInfo = "operation cancelled by user";
 
 		expect(statusFlow).toEqual(expectedStatusFlow);
 		expect(errorInfo).toEqual(exepctedErrorInfo);
@@ -96,15 +100,16 @@ describe("Replication `to/from` remote, when `live == false`", () => {
 	test("when something goes wrong should communicate status as: INIT -> FAILED:ERROR, and set error info", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 		// Invoke an error by closing remote Db
 		remoteDb._pouch.close();
 
-		await replicationStore.done();
+		await replication.promise;
 
 		const expectedStatusFlow = ["INIT", "FAILED:ERROR"];
 		// internal pouch error info
@@ -121,9 +126,10 @@ describe("Replication `to/from` remote, when `live == false`", () => {
 	test("should track progress", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
 
-		await replicationStore.done();
+		await replication.promise;
 
 		const progress = get(replicationStore.progress);
 
@@ -134,18 +140,19 @@ describe("Replication `to/from` remote, when `live == false`", () => {
 	});
 });
 
-describe("Replication `to/from` remote, when `live == true`", () => {
-	test("should communicate idle 'completion' & resumed activity as: INIT -> ACTIVE -> PAUSED:IDLE -> ACTIVE", async (ctx) => {
+describe("Replicate (to/from) remote, when `live == true`", () => {
+	test("should communicate idle 'completion' & resumed activity as: INIT -> ACTIVE:REPLICATING -> ACTIVE:REPLICATING  PAUSED:IDLE -> ACTIVE:REPLICATING...", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "to" });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
 
 		// Replication should be idle after initial sourceDb data is replicated to remote
 		await waitFor(() => {
-			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE"];
+			const expectedStatusFlow = ["INIT", "ACTIVE:REPLICATING", "ACTIVE:INDEXING", "PAUSED:IDLE"];
 			expect(statusFlow).toEqual(expectedStatusFlow);
 		});
 
@@ -154,7 +161,15 @@ describe("Replication `to/from` remote, when `live == true`", () => {
 
 		// ... and expect replication to resume
 		await waitFor(() => {
-			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE", "ACTIVE"];
+			const expectedStatusFlow = [
+				"INIT",
+				"ACTIVE:REPLICATING",
+				"ACTIVE:INDEXING",
+				"PAUSED:IDLE",
+				"ACTIVE:REPLICATING",
+				"ACTIVE:INDEXING",
+				"PAUSED:IDLE"
+			];
 
 			expect(statusFlow).toEqual(expectedStatusFlow);
 		});
@@ -162,20 +177,17 @@ describe("Replication `to/from` remote, when `live == true`", () => {
 		unsubscribe();
 	});
 
-	test("and `retry = true`, should communicate idle 'error'", async (ctx) => {
+	test("and `retry = false`, should communicate idle 'error'", async (ctx) => {
 		const { sourceDb } = ctx;
 
 		// A remote that is currently 'offline' - our replicator will try to connect and fail...
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
-		const replicationStore = createReplicationStore(sourceDb, errorRemote, {
-			live: true,
-			retry: true,
-			direction: "to"
-		});
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "to" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
 		const expectedStatusFlow = ["INIT", "PAUSED:ERROR"];
 
@@ -190,22 +202,49 @@ describe("Replication `to/from` remote, when `live == true`", () => {
 		replicationStore.cancel();
 		unsubscribe();
 	});
-});
 
-describe("Replication `sync` remote, when `live == false`", () => {
-	test("should replicate data & when uninterrupted should communicate status as: INIT -> ACTIVE -> COMPLETED", async (ctx) => {
-		const { remoteDb, sourceDb } = ctx;
-		const booksInterface = remoteDb.books();
+	test("and `retry = true`, should communicate idle 'error'", async (ctx) => {
+		const { sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		// A remote that is currently 'offline' - our replicator will try to connect and fail...
+		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
+
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "to" });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
 
-		await replicationStore.done();
+		const expectedStatusFlow = ["INIT", "PAUSED:ERROR"];
+
+		await waitFor(() => {
+			expect(statusFlow).toEqual(expectedStatusFlow);
+		});
+
+		const errorInfo = get(replicationStore.status).info;
+
+		expect(errorInfo).toEqual("request to http://127.0.0.1:5000/dev/ failed, reason: connect ECONNREFUSED 127.0.0.1:5000");
+
+		replicationStore.cancel();
+		unsubscribe();
+	});
+});
+
+describe("Sync remote, when `live == false`", () => {
+	test("should replicate data & when uninterrupted should communicate status as: INIT -> ACTIVE:REPLICATING -> ACTIVE:INDEXING -> COMPLETED", async (ctx) => {
+		const { remoteDb, sourceDb } = ctx;
+		const booksInterface = remoteDb.books();
+
+		const replicationStore = createReplicationStore();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+
+		const statusFlow = [];
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
+
+		await replication.promise;
 
 		const expectedData = await booksInterface.get(bookIds);
-		const expectedStatusFlow = ["INIT", "ACTIVE", "COMPLETED"];
+		const expectedStatusFlow = ["INIT", "ACTIVE:REPLICATING", "ACTIVE:INDEXING", "COMPLETED"];
 
 		expect(expectedData[0]).not.toBe(undefined);
 		expect(statusFlow).toEqual(expectedStatusFlow);
@@ -213,30 +252,23 @@ describe("Replication `sync` remote, when `live == false`", () => {
 		unsubscribe();
 	});
 
-	// * This test fails and I'm not sure how to get the behaviour we'd like. But I don't think it's terminal that it doesnt work
-	// It seems "sync" handlers mis-behave in "pause" and "complete" events compared to the behaviour described in the docs
-	// In this case the "complete" handler never fires with a 'cancel' status, leaving a hanging INIT status
-	// The only way to capture this is via object returned from awaiting replicaiton promise. We have exposed this in the `done` fn (used for testing mainly),
-	// but it doesn't play well with how the store is generally constructed and how it is consumed
-	//* I'm not too worried about this edge, as our UI handles 'cancel' events by clearing the data and reverting to form controls for new input
-	//* so user's should never encounter this
-	test.skip("when cancelled should communicate status as: INIT -> FAILED:CANCEL", async (ctx) => {
+	test("when cancelled should communicate status as: INIT -> FAILED:CANCEL", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replicationStore = createReplicationStore();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
 		// Explicitly cancel replication
 		replicationStore.cancel();
-
-		await replicationStore.done();
+		await replication.promise;
 
 		const errorInfo = get(replicationStore.status).info;
 
 		const expectedStatusFlow = ["INIT", "FAILED:CANCEL"];
-		const exepctedErrorInfo = "local db cancelled operation";
+		const exepctedErrorInfo = "operation cancelled by user";
 
 		expect(statusFlow).toEqual(expectedStatusFlow);
 		expect(errorInfo).toEqual(exepctedErrorInfo);
@@ -248,15 +280,16 @@ describe("Replication `sync` remote, when `live == false`", () => {
 	test("when something goes wrong should communicate status as: INIT -> FAILED:ERROR, and set error info", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replicationStore = createReplicationStore();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
 		// Invoke an error by closing remote Db
 		remoteDb._pouch.close();
 
-		await replicationStore.done();
+		await replication.promise;
 
 		const expectedStatusFlow = ["INIT", "FAILED:ERROR"];
 		// internal pouch error info
@@ -273,9 +306,10 @@ describe("Replication `sync` remote, when `live == false`", () => {
 	test("should track progress", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replicationStore = createReplicationStore();
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
 
-		await replicationStore.done();
+		await replication.promise;
 
 		const progress = get(replicationStore.progress);
 
@@ -286,18 +320,19 @@ describe("Replication `sync` remote, when `live == false`", () => {
 	});
 });
 
-describe("Replication `sync` remote, when `live == true`", () => {
+describe("Sync remote, when `live == true`", () => {
 	test("should communicate idle 'completion' & resumed activity as: INIT -> ACTIVE -> PAUSED:IDLE -> ACTIVE", async (ctx) => {
 		const { remoteDb, sourceDb } = ctx;
 
-		const replicationStore = createReplicationStore(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "sync" });
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "sync" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
 		// Replication should be idle after initial sourceDb data is replicated to remote
 		await waitFor(() => {
-			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE"];
+			const expectedStatusFlow = ["INIT", "ACTIVE:REPLICATING", "ACTIVE:INDEXING", "PAUSED:IDLE"];
 			expect(statusFlow).toEqual(expectedStatusFlow);
 		});
 
@@ -306,11 +341,46 @@ describe("Replication `sync` remote, when `live == true`", () => {
 
 		// ... and expect replication to resume
 		await waitFor(() => {
-			const expectedStatusFlow = ["INIT", "ACTIVE", "PAUSED:IDLE", "ACTIVE"];
+			const expectedStatusFlow = [
+				"INIT",
+				"ACTIVE:REPLICATING",
+				"ACTIVE:INDEXING",
+				"PAUSED:IDLE",
+				"ACTIVE:REPLICATING",
+				"ACTIVE:INDEXING",
+				"PAUSED:IDLE"
+			];
 
 			expect(statusFlow).toEqual(expectedStatusFlow);
 		});
 
+		unsubscribe();
+	});
+
+	test("and `retry = false`, should communicate idle 'error'", async (ctx) => {
+		const { sourceDb } = ctx;
+
+		// A remote that is currently 'offline' - our replicator will try to connect and fail...
+		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
+
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "sync" });
+
+		const statusFlow = [];
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
+
+		// For some reason this is set twice... maybe once per side? I couldn't figure out why, but there's no harm in it I guess
+		const expectedStatusFlow = ["INIT", "PAUSED:ERROR"];
+
+		await waitFor(() => {
+			expect(statusFlow).toEqual(expectedStatusFlow);
+		});
+
+		const errorInfo = get(replicationStore.status).info;
+
+		expect(errorInfo).toEqual("request to http://127.0.0.1:5000/dev/ failed, reason: connect ECONNREFUSED 127.0.0.1:5000");
+
+		replicationStore.cancel();
 		unsubscribe();
 	});
 
@@ -320,16 +390,13 @@ describe("Replication `sync` remote, when `live == true`", () => {
 		// A remote that is currently 'offline' - our replicator will try to connect and fail...
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
-		const replicationStore = createReplicationStore(sourceDb, errorRemote, {
-			live: true,
-			retry: true,
-			direction: "sync"
-		});
+		const replicationStore = createReplicationStore();
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "sync" });
 
 		const statusFlow = [];
-		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
+		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
-		// For some reason this is set twice... maybe once per side? I couldn't figure out why, but there's no harm in it I guess
+		// For some reason this is set twice...: I have a feeling its because it retries immediately
 		const expectedStatusFlow = ["INIT", "PAUSED:ERROR", "PAUSED:ERROR"];
 
 		await waitFor(() => {
@@ -338,7 +405,7 @@ describe("Replication `sync` remote, when `live == true`", () => {
 
 		const errorInfo = get(replicationStore.status).info;
 
-		// This is a custom error that we've set. See explanation line 72 `replication.ts`
+		// Custom error message, see paused handler of `start_sync_live` handler for details
 		expect(errorInfo).toEqual("Network error: couldn't connect to remote");
 
 		replicationStore.cancel();
