@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { writable } from "svelte/store";
 
+export const MAXIMUM_SCANNER_KEY_GAP = 50;
+
 interface ScanState {
 	buffer: string;
 	timeout: NodeJS.Timeout;
@@ -41,7 +43,7 @@ export const scan = (node: HTMLInputElement) => {
 			}
 
 			const buffer = state.buffer + e.key;
-			const timeout = setTimeout(store.cancel, 50);
+			const timeout = setTimeout(store.cancel, MAXIMUM_SCANNER_KEY_GAP);
 
 			// If we receive 3 or more consecutive inputs with
 			// frequency of using a scanner, we can safely assume the input is comming from a scanner
