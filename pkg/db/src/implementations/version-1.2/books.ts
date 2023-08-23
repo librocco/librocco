@@ -38,10 +38,12 @@ class Books implements BooksInterface {
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
-		const rawBooks = await this.#db._pouch.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true });
-		// The rows are returned in the same order as the supplied keys array.
-		// The row for a nonexistent document will just contain an "error" property with the value "not_found".
-		return unwrapDocs(rawBooks);
+		const books = await this.#db._pouch
+			.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
+			// The rows are returned in the same order as the supplied keys array.
+			// The row for a nonexistent document will just contain an "error" property with the value "not_found".
+			.then((docs) => unwrapDocs(docs));
+		return books;
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
@@ -53,37 +55,15 @@ class Books implements BooksInterface {
 				filter: (doc) => isbns.includes(doc._id.replace("books/", ""))
 			});
 
-			const initialState = from(
-				new Promise<PouchDB.Core.AllDocsWithKeysResponse<BookEntry>>((resolve) => {
-					this.#db._pouch
-						.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
-						.then((res) => {
-							debug.log(ctx, "books_stream:initial_query:result")(res);
-							return resolve(res);
-						})
-						.catch(debug.log(ctx, "books_stream:initial_query:error"));
-				})
-			);
+			const initialState = from(this.get(isbns));
 
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
-				switchMap(() =>
-					from(
-						new Promise<PouchDB.Core.AllDocsWithKeysResponse<BookEntry>>((resolve) => {
-							this.#db._pouch
-								.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
-								.then((res) => {
-									debug.log(ctx, "books_stream:change_query:res")(res);
-									return resolve(res);
-								})
-								.catch(debug.log(ctx, "books_stream:change_query:error"));
-						})
-					)
-				)
+				switchMap(() => from(this.get(isbns)))
 			);
 
 			concat(initialState, changeStream)
-				.pipe(tap(debug.log(ctx, "books_stream:result:raw")), map(unwrapDocs), tap(debug.log(ctx, "books_stream:result:transformed")))
+				.pipe(tap(debug.log(ctx, "books_stream:result:raw")))
 				.subscribe((doc) => subscriber.next(doc));
 
 			return () => emitter.cancel();
