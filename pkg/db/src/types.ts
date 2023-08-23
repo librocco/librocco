@@ -353,6 +353,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
 	 */
 	books: () => BooksInterface;
+	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
 }
 
 /**
@@ -398,5 +399,9 @@ export type LibroccoPlugin<T extends {}> = {
 
 export interface BookFetcherPlugin {
 	fetchBookData(isbns: string[]): Promise<BookEntry[]>;
+}
+
+export interface PluginInterfaceLookup {
+	"book-fetcher": BookFetcherPlugin;
 }
 // #endregion plugins

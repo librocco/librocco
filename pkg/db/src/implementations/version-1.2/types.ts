@@ -13,7 +13,9 @@ import {
 	MapReduceRow,
 	CouchDocument,
 	MapReduceRes,
-	NavMap
+	NavMap,
+	PluginInterfaceLookup,
+	LibroccoPlugin
 } from "@/types";
 import { DocType } from "@/enums";
 
@@ -49,3 +51,8 @@ export type WarehouseListRow = MapReduceRow<string, { displayName?: string }>;
 export type OutNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean }>;
 export type InNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean; type: DocType }>;
 export type PublishersListRow = MapReduceRow<string, number>;
+
+// Plugins
+export type PluginLookup = {
+	[K in keyof PluginInterfaceLookup]: LibroccoPlugin<PluginInterfaceLookup[K]>;
+};
