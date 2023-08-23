@@ -7,10 +7,8 @@
 	import { remoteDbStore } from "$lib/stores";
 	import { replicationStatusMessages } from "$lib/toasts";
 
-	$: ({ replicator } = $remoteDbStore);
-	$: status = replicator && replicator.status;
-	$: config = replicator && replicator.config;
-	$: progress = replicator && replicator.progress;
+	$: ({ replicator } = remoteDbStore);
+	$: ({ status, config, progress, hasActiveHandler } = replicator);
 </script>
 
 <InventoryPage>
@@ -23,14 +21,14 @@
 				<p class="mt-1 text-sm leading-6 text-gray-600">Manage a connection to a remote database</p>
 			</div>
 			<div class="w-full max-w-3xl">
-				{#if replicator}
+				{#if $hasActiveHandler}
 					<RemoteDbData
 						config={$config}
 						status={{
 							color: replicationStatusMessages[$status.state].color,
 							message: replicationStatusMessages[$status.state].message
 						}}
-						onEdit={() => remoteDbStore.destroyHandler(replicator)}
+						onEdit={() => remoteDbStore.destroyHandler()}
 					>
 						<div slot="info" class="flex flex-col gap-y-2 pt-2">
 							{#if $status.info}

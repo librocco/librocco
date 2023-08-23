@@ -4,16 +4,16 @@ import { persisted } from "svelte-local-storage-store";
 import { LOCAL_STORAGE_COUCH_CONFIG } from "$lib/constants";
 import { getDB } from "$lib/db";
 
-import { createReplicationStore, type ReplicationConfig, type ReplicationStore } from "./replication";
+import { createReplicationStore, type ReplicationConfig } from "./replication";
 
+/**
+ * Provides a light wrapper around replicationStore start() and cancel() to cooridinate
+ * - db setup on client side only
+ * - persisted remote config / connection
+ */
 export const createRemoteDbStore = () => {
 	const persistedRemoteConfigStore = persisted<ReplicationConfig>(LOCAL_STORAGE_COUCH_CONFIG, null);
-	const replicatorStore = writable<ReplicationStore>(null);
-
-	const subscribe = derived([persistedRemoteConfigStore, replicatorStore], ([persistedRemoteConfig, replicator]) => ({
-		replicator,
-		persistedRemoteConfig
-	})).subscribe;
+	const replicationStore = createReplicationStore();
 
 	const createHandler = (opts: ReplicationConfig) => {
 		const db = getDB();
@@ -23,21 +23,26 @@ export const createRemoteDbStore = () => {
 		}
 
 		const { url, ...config } = opts;
-		const replicator = createReplicationStore(db, url, config);
 
-		replicatorStore.set(replicator);
+		replicationStore.start(db, url, config);
 		persistedRemoteConfigStore.set(opts);
 	};
 
-	const destroyHandler = (replicator: ReplicationStore) => {
-		replicator.cancel();
-
-		replicatorStore.set(null);
+	const destroyHandler = () => {
+		replicationStore.cancel();
 		persistedRemoteConfigStore.set(null);
 	};
 
+	const { config, status, progress, hasActiveHandler } = replicationStore;
+
 	return {
-		subscribe,
+		replicator: {
+			config,
+			status,
+			progress,
+			hasActiveHandler
+		},
+		persisted: persistedRemoteConfigStore,
 		createHandler,
 		destroyHandler
 	};
