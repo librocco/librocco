@@ -4,8 +4,18 @@ import { VolumeStock } from "@librocco/shared";
 
 import { EntriesStreamResult, NavMap, VolumeStockClient } from "@/types";
 
-type Params = [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap, ...any[]];
-type ParamsWithAvailableWarehouses = [Iterable<VolumeStock>, { total: number; totalPages: number }, NavMap, StockMap];
+export type TableData = {
+	/** Rows to display for a page */
+	rows: Iterable<VolumeStock>;
+	/** Stats used for pagination */
+	stats: {
+		total: number;
+		totalPages: number;
+	};
+};
+
+type Params = [TableData, NavMap, ...any[]];
+type ParamsWithAvailableWarehouses = [TableData, NavMap, StockMap];
 
 export function combineTransactionsWarehouses(opts: {
 	includeAvailableWarehouses: true;
@@ -13,13 +23,13 @@ export function combineTransactionsWarehouses(opts: {
 export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }): (params: Params) => EntriesStreamResult;
 export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }) {
 	return opts?.includeAvailableWarehouses
-		? ([entries, stats, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
+		? ([{ rows, stats }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
 				...stats,
-				rows: [...addAvailableWarehouses(addWarehouseNames(entries, warehouses), warehouses, stock)]
+				rows: [...addAvailableWarehouses(addWarehouseNames(rows, warehouses), warehouses, stock)]
 		  })
-		: ([entries, stats, warehouses]: Params): EntriesStreamResult => ({
+		: ([{ rows, stats }, warehouses]: Params): EntriesStreamResult => ({
 				...stats,
-				rows: [...addWarehouseNames(entries, warehouses)]
+				rows: [...addWarehouseNames(rows, warehouses)]
 		  });
 }
 
