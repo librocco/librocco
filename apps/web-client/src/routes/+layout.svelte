@@ -12,10 +12,10 @@
 	import type { LayoutData } from "./$types";
 
 	// We toast here because we want replication state to be communicated wherever we are in the app
-	$: ({ replicator } = $remoteDbStore);
-	$: status = replicator && replicator.status;
+	$: ({ replicator } = remoteDbStore);
+	$: ({ status, hasActiveHandler } = replicator);
 	$: {
-		if (replicator) {
+		if ($hasActiveHandler) {
 			toastReplicationStatus($status.state);
 		}
 	}
