@@ -76,5 +76,5 @@ export const useExpandButton = (container: Locator, opts: { throttle?: number } 
 		}
 	};
 
-	return { open, close };
+	return { open, close, getExpandButton };
 };
