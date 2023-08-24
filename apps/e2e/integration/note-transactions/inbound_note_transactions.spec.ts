@@ -105,6 +105,21 @@ test("should add a transaction to the note by 'typing the ISBN into the 'Scan' f
 	await content.entries("inbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
+test("should capture keyboard events if typing in numbers and direct the input to the 'Scan' field even if scan field not focused", async ({
+	page
+}) => {
+	const content = getDashboard(page).content();
+
+	// Wait for the field to be rendered before typing
+	await content.scanField().waitFor();
+
+	// Type in the isbn in the 'Scan' field
+	await page.keyboard.type("1234567890");
+	await page.keyboard.press("Enter");
+
+	await content.entries("inbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+});
+
 test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	// Setup: Add two transactions to the note
 	const dbHandle = await getDbHandle(page);

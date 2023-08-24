@@ -9,6 +9,7 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"test": "vitest",
+		"test:temp": "vitest ScanInput",
 		"format": "prettier --write --plugin-search-dir=. .",
 		"test:ci": "CI=true vitest run --reporter=junit --outputFile=./junit.xml --reporter=default",
 		"postinstall": "svelte-kit sync",
