@@ -172,7 +172,7 @@
 		{#each $inNoteList as [id, { displayName, notes }], index (id)}
 			<SidebarItemGroup
 				name={displayName || id}
-				expanded={$page.params.id.includes(id)}
+				expand={$page.params.id.includes(id)}
 				{index}
 				items={mapNotesToNavItems(notes, $page.params.id)}
 			>
