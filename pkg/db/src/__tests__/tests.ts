@@ -7,7 +7,8 @@ import { NoteState, testUtils } from "@librocco/shared";
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
 
-import { versionId } from "@/utils/misc";
+/** TODO: This will only work for "v1" at this point, make this more versatile */
+import { versionId } from "@/implementations/version-1.2/utils";
 
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 import { fiftyEntries } from "./data";
