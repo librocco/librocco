@@ -7,7 +7,8 @@ import { DocType } from "@/enums";
 import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
-import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
+import { versionId } from "./utils";
+import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
 import { addWarehouseNames, combineTransactionsWarehouses, TableData } from "./utils";
@@ -75,7 +76,7 @@ class Note implements NoteInterface {
 		// - if id is a full id, assign it as is
 		this._id = !id
 			? versionId(`${warehouse._id}/${this.noteType}/${uniqueTimestamp()}`)
-			: isVersioned(id) // If id is versioned, it's a full id, assign it as is
+			: isVersioned(id, "v1") // If id is versioned, it's a full id, assign it as is
 			? id
 			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
 

@@ -29,7 +29,7 @@ import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
-import { versionId } from "@/utils/misc";
+import { versionId } from "./utils";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;

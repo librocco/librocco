@@ -1,6 +1,6 @@
 import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from "rxjs";
 
-import { VersionedString, VolumeStock } from "../types";
+import { VersionedString, VersionString, VolumeStock } from "../types";
 
 export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
 	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
@@ -86,15 +86,23 @@ export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Obse
 };
 
 /**
- * Version id prepends an id string with v1/" prefix.
- * If id is already versioned, it is returned as is.
+ * A HOF used to create a versioning function for document ids.
+ * It accepts a version string (e.g. `"v1"`) and returns a function which:
+ * - takes in a document id,
+ * - checks if the id is versioned
+ * - if it's not versioned, prepends it with version string, e.g. `"doc-id"` -> `"v1/doc-id"`
+ * @param version
+ * @returns
  */
-export const versionId = (id: string): VersionedString => (isVersioned(id) ? id : `v1/${id}`);
+export const createVersioningFunction =
+	(version: VersionString) =>
+	(id: string): VersionedString =>
+		isVersioned(id, version) ? id : `v1/${id}`;
 
 /**
  * Returns true if the id is a versioned string.
  */
-export const isVersioned = (id: string): id is VersionedString => id.startsWith("v1/");
+export const isVersioned = (id: string, versionString: VersionString): id is VersionedString => id.startsWith(`${versionString}/`);
 
 /** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
 export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
