@@ -170,7 +170,12 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $inNoteList as [id, { displayName, notes }], index (id)}
-			<SidebarItemGroup name={displayName || id} {index} items={mapNotesToNavItems(notes, $page.params.id)}>
+			<SidebarItemGroup
+				name={displayName || id}
+				expanded={$page.params.id.includes(id)}
+				{index}
+				items={mapNotesToNavItems(notes, $page.params.id)}
+			>
 				<svelte:fragment slot="actions">
 					{#if !id.includes("0-all")}
 						<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
