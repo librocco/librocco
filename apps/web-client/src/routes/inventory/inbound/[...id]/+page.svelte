@@ -40,6 +40,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
 
@@ -152,11 +153,11 @@
 	// #endregion book-form
 
 	// #region helpers
-	const mapNotesToNavItems = (notes: NavMap) =>
+	const mapNotesToNavItems = (notes: NavMap, currentId: string) =>
 		[...notes].map(([id, { displayName }]) => ({
 			name: displayName || id,
 			href: `${base}/inventory/inbound/${id}`,
-			current: id === $page.params.id
+			current: comparePaths(id, currentId)
 		}));
 	// #endregion helpers
 </script>
@@ -169,7 +170,7 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $inNoteList as [id, { displayName, notes }], index (id)}
-			<SidebarItemGroup name={displayName || id} {index} items={mapNotesToNavItems(notes)}>
+			<SidebarItemGroup name={displayName || id} {index} items={mapNotesToNavItems(notes, $page.params.id)}>
 				<svelte:fragment slot="actions">
 					{#if !id.includes("0-all")}
 						<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
