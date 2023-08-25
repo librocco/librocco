@@ -397,7 +397,7 @@ describe("Sync remote, when `live == true`", () => {
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
 		// For some reason this is set twice...: I have a feeling its because it retries immediately
-		const expectedStatusFlow = ["INIT", "PAUSED:ERROR", "PAUSED:ERROR"];
+		const expectedStatusFlow = ["INIT", "PAUSED", "PAUSED"];
 
 		await waitFor(() => {
 			expect(statusFlow).toEqual(expectedStatusFlow);
@@ -406,7 +406,7 @@ describe("Sync remote, when `live == true`", () => {
 		const errorInfo = get(replicationStore.status).info;
 
 		// Custom error message, see paused handler of `start_sync_live` handler for details
-		expect(errorInfo).toEqual("Network error: couldn't connect to remote");
+		expect(errorInfo).toEqual("Sync status cannot be determined. Try refreshing the page");
 
 		replicationStore.cancel();
 		unsubscribe();

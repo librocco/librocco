@@ -10,7 +10,13 @@ import type PouchDB from "pouchdb";
 export const createReplicationStore = () => {
 	const replicationStores = createReplicationStores();
 
-	const { configStore: config, statusStore: status, progressStore: progress, replicatorStore: replicator } = replicationStores;
+	const {
+		configStore: config,
+		statusStore: status,
+		changesStore: changes,
+		progressStore: progress,
+		replicatorStore: replicator
+	} = replicationStores;
 
 	const start = (
 		local: DatabaseInterface,
@@ -19,8 +25,8 @@ export const createReplicationStore = () => {
 	) => {
 		const replicationHandlers = createReplicationHandlers(local, replicationStores);
 
-		replicationStores.statusStore.set({ state: "INIT", info: "" });
-		replicationStores.configStore.set({
+		status.set({ state: "INIT", info: "" });
+		config.set({
 			...config,
 			// This isn't used for the connection, just for reporting something in the UI
 			url: typeof remote === "string" ? remote : remote?.name
@@ -34,7 +40,6 @@ export const createReplicationStore = () => {
 			replication = oneOffHandler(local, remote, config);
 		} else {
 			const liveHandler = config.direction !== "sync" ? replicationHandlers.start_replicate_live : replicationHandlers.start_sync_live;
-
 			replication = liveHandler(local, remote, config);
 		}
 
@@ -49,7 +54,9 @@ export const createReplicationStore = () => {
 		if (replicationHandler) {
 			replicationHandler.cancel();
 			replicationHandler.removeAllListeners();
+
 			replicator.set(null);
+			changes.set({ docsWritten: 0, docsRead: 0, docsPending: 0, last_seq: 0 });
 		}
 	};
 
@@ -71,7 +78,7 @@ const createReplicationStores = () => {
 	const configStore = writable<ReplicationConfig>();
 	const statusStore = writable<{ state: ReplicationState; info: string }>();
 
-	const changesStore = writable<ReplicationInfo>({ docsWritten: 0, docsRead: 0, docsPending: 0 });
+	const changesStore = writable<ReplicationInfo>({ docsWritten: 0, docsRead: 0, docsPending: 0, last_seq: 0 });
 	const progressStore = derived(changesStore, (info) => {
 		const { docsWritten, docsPending } = info;
 
@@ -106,8 +113,8 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 	const handleError = (replicator, err) => {
 		statusStore.set({ state: "FAILED:ERROR", info: (err as Error)?.message });
 		// Just to be sure...
-		replicator.cancel();
 		replicator.removeAllListeners();
+		replicator.cancel();
 	};
 	const handleActive = () => statusStore.set({ state: "ACTIVE:REPLICATING", info: "" });
 	const handleChange = (change: PouchDB.Replication.ReplicationResult<Record<string, never>>) => {
@@ -115,13 +122,12 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 			docsWritten: change.docs_written,
 			docsRead: change.docs_read,
 			// @ts-expect-error `change.pending` seems to exist in some contexts. It is potentially add by the pouch adapter being used
-			docsPending: change?.pending ?? null
+			docsPending: change?.pending ?? null,
+			last_seq: change?.last_seq
 		});
 	};
-	const handleIndexing = async (live = false) => {
+	const handleIndexing = async (doneStatus: ReplicationState) => {
 		statusStore.set({ state: "ACTIVE:INDEXING", info: "" });
-
-		const doneStatus = live ? "PAUSED:IDLE" : "COMPLETED";
 
 		await db
 			.buildIndexes()
@@ -142,8 +148,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 		const promise = replicator
 			.then(({ status }) => {
 				if (status === "complete") {
-					// if this threw it would be caught in catch below
-					return handleIndexing();
+					return handleIndexing("COMPLETED");
 				} else {
 					statusStore.set({ state: "FAILED:CANCEL", info: "operation cancelled by user" });
 				}
@@ -169,8 +174,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 		const promise = replicator
 			.then(({ pull, push }) => {
 				if (pull.status === "complete" && push.status === "complete") {
-					// if this threw it would be caught in catch below
-					return handleIndexing();
+					return handleIndexing("COMPLETED");
 				} else {
 					statusStore.set({ state: "FAILED:CANCEL", info: "operation cancelled by user" });
 				}
@@ -202,9 +206,11 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 			if (err) {
 				statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
 			} else {
-				await handleIndexing(true);
+				await handleIndexing("PAUSED:IDLE");
 			}
 		});
+
+		replicator.then(() => statusStore.set({ state: "FAILED:CANCEL", info: "Sync canclled. Connection closed" }));
 
 		return {
 			replicator,
@@ -226,19 +232,21 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 			statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
 			replicator.removeAllListeners();
 		});
-		replicator.on("paused", async () => {
-			// Sync with live & retry === true does not behave as advertised
-			// no "err" is passed through when pouch is trying to recover
-			// meaning we can't distinguish Paused:Error from Paused:Idle
-			// This little trick seems to work
+		replicator.on("paused", async (err) => {
+			// TODO: consider ditching "sync" for two "replicate" handlers
+			// Sync with live & retry === true does not behave as advertised: no "err" is passed through when pouch is trying to recover
+			// meaning we can't distinguish PAUSED:ERROR from PAUSED:IDLE & =>
+			// it means we can't inform the user if they've put in the wrong url, or if the db is synced and up to date
 			const changes = get(changesStore);
 
-			if (!changes.docsWritten) {
-				// A custom error message... it may fail for other reasons, but so far I've only seen this behaviour
-				// when a 'sync' handler is trying to connect
-				statusStore.set({ state: "PAUSED:ERROR", info: "Network error: couldn't connect to remote" });
+			if (!changes.last_seq) {
+				// We use an indeterminate PAUSED status
+				statusStore.set({
+					state: "PAUSED",
+					info: "Sync status cannot be determined. Try refreshing the page"
+				});
 			} else {
-				await handleIndexing(true);
+				await handleIndexing("PAUSED:IDLE");
 			}
 		});
 
@@ -265,6 +273,8 @@ export type ReplicationState =
 	| "COMPLETED"
 	| "FAILED:CANCEL"
 	| "FAILED:ERROR"
+	// "live" sync handlers do not let us determine why we are paused...
+	| "PAUSED"
 	| "PAUSED:IDLE"
 	| "PAUSED:ERROR";
 
@@ -278,6 +288,7 @@ type ReplicationInfo = {
 	docsWritten: number;
 	docsRead: number;
 	docsPending: number;
+	last_seq: number;
 };
 
 /**
