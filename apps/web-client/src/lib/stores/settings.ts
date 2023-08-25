@@ -1,4 +1,3 @@
-import { derived, writable } from "svelte/store";
 import { persisted } from "svelte-local-storage-store";
 
 import { LOCAL_STORAGE_COUCH_CONFIG } from "$lib/constants";
