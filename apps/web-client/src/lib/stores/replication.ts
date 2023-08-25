@@ -139,7 +139,6 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 		replicator.on("active", handleActive);
 		replicator.on("change", (info) => handleChange(info));
 
-		// TODO: res in then() handler should also contain info about why... was it completed or cancelled?
 		const promise = replicator
 			.then(({ status }) => {
 				if (status === "complete") {
