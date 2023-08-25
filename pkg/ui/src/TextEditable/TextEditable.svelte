@@ -59,7 +59,7 @@
 			{/if}
 		</p>
 	{:else}
-		<div class="flex w-[400px] items-center gap-1  border-b-2 border-cyan-700">
+		<div class="flex w-[400px] items-center gap-1 border-b-2 border-cyan-700">
 			<input
 				class="h-[38px] w-full p-2 text-lg font-medium leading-6 focus:outline-none"
 				bind:this={input}

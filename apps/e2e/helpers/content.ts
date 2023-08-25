@@ -77,13 +77,13 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 		}
 	};
 
+	const textInput = () => container.getByRole("textbox");
+
 	const rename = async (newName: string, opts?: WaitForOpts) => {
 		await element.click();
 
-		const input = container.getByRole("textbox");
-
-		await input.fill(newName);
-		await input.press("Enter");
+		await textInput().fill(newName);
+		await textInput().press("Enter");
 
 		await getDashboard(container.page())
 			.sidebar()
@@ -91,7 +91,7 @@ function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): Con
 			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
-	return Object.assign(element, { getTitle, rename });
+	return Object.assign(element, { getTitle, rename, textInput });
 }
 
 function getStatePicker(content: Locator): StatePickerInterface {
@@ -131,7 +131,5 @@ function getScanField(content: Locator): ScanFieldInterface {
 		await input.press("Enter");
 	};
 
-	const create = () => container.getByRole("button", { name: "Create" }).click();
-
-	return Object.assign(input, { add, create });
+	return Object.assign(input, { add });
 }

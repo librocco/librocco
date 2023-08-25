@@ -10,7 +10,7 @@ import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp, versionId } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
-import { addWarehouseNames, combineTransactionsWarehouses } from "./utils";
+import { addWarehouseNames, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -282,6 +282,12 @@ class Note implements NoteInterface {
 		// Remove the matched transaction from the list of entries (this is the transaction we're updating to a new one)
 		const entries = this.entries.filter((e) => !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
 
+		// If both existing entries and entries without the match transaction are the same:
+		// the match transaction wasn't found, exit early
+		if (entries.length === this.entries.length) {
+			return this.update({}, {}); // Noop update
+		}
+
 		// Check if there already is a transaction with the same 'isbn' and 'warehouseId' as the updated transaction.
 		// If so, we're merging the two, if not we're simply adding a new transaction to the list.
 		const existingTxnIx = entries.findIndex((e) => e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
@@ -385,14 +391,16 @@ class Note implements NoteInterface {
 
 				return combineLatest([
 					this.#stream.pipe(
-						map(({ entries = [] }) =>
-							entries
-								.map((e) => ({ ...e, warehouseName: "" }))
-								.sort(sortBooks)
-								.slice(startIx, endIx)
+						map(
+							({ entries = [] }): TableData => ({
+								rows: entries
+									.map((e) => ({ ...e, warehouseName: "" }))
+									.sort(sortBooks)
+									.slice(startIx, endIx),
+								stats: { total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }
+							})
 						)
 					),
-					this.#stream.pipe(map(({ entries = [] }) => ({ total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }))),
 					this.#db.stream().warehouseList(ctx),
 					this.#db.stock()
 				]).pipe(
