@@ -26,7 +26,7 @@ export const createReplicationStore = () => {
 			url: typeof remote === "string" ? remote : remote?.name
 		});
 
-		let replication: { replicator: Replicator; promise: Promise<void> };
+		let replication: { replicator: ReplicationHandler; promise: Promise<void> };
 
 		if (!config.live) {
 			const oneOffHandler = config.direction !== "sync" ? replicationHandlers.start_replicate : replicationHandlers.start_sync;
@@ -67,7 +67,7 @@ export const createReplicationStore = () => {
  * Sets up various stores used by handlers to report replication status, progress, config etc
  */
 const createReplicationStores = () => {
-	const replicatorStore = writable<Replicator>();
+	const replicatorStore = writable<ReplicationHandler>();
 	const configStore = writable<ReplicationConfig>();
 	const statusStore = writable<{ state: ReplicationState; info: string }>();
 
@@ -110,7 +110,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 		replicator.removeAllListeners();
 	};
 	const handleActive = () => statusStore.set({ state: "ACTIVE:REPLICATING", info: "" });
-	const handleChange = (change: ReplicationResult) => {
+	const handleChange = (change: PouchDB.Replication.ReplicationResult<Record<string, never>>) => {
 		changesStore.set({
 			docsWritten: change.docs_written,
 			docsRead: change.docs_read,
@@ -134,7 +134,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 	 * Replication handler for pouch.replicate.to|from (one-off)
 	 */
 	const start_replicate = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
-		const replicator = local._pouch.replicate[config.direction as "to" | "from"](remote, config);
+		const replicator = local.replicate()[config.direction as "to" | "from"](remote, config);
 
 		replicator.on("active", handleActive);
 		replicator.on("change", (info) => handleChange(info));
@@ -162,7 +162,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 	 * Replication handler for pouch.sync (one-off)
 	 */
 	const start_sync = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
-		const replicator = local._pouch.sync(remote, config);
+		const replicator = local.replicate().sync(remote, config);
 
 		replicator.on("active", handleActive);
 		replicator.on("change", ({ change }) => handleChange(change));
@@ -189,7 +189,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 	 * Replication handler for pouch.replicate.to|from (livee)
 	 */
 	const start_replicate_live = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
-		const replicator = local._pouch.replicate[config.direction as "to" | "from"](remote, config);
+		const replicator = local.replicate()[config.direction as "to" | "from"](remote, config);
 
 		replicator.on("active", handleActive);
 		replicator.on("change", (info) => handleChange(info));
@@ -217,7 +217,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 	 * Replication handler for pouch.sync (live)
 	 */
 	const start_sync_live = (local: DatabaseInterface, remote: string | PouchDB.Database, config: ReplicationOptions) => {
-		const replicator = local._pouch.sync(remote, config);
+		const replicator = local.replicate().sync(remote, config);
 
 		replicator.on("active", handleActive);
 		replicator.on("change", ({ change }) => handleChange(change));
@@ -282,12 +282,13 @@ type ReplicationInfo = {
 };
 
 /**
+ * A unified types for Replication & Sync handlers which makes it just a little easier to refer generally to "Replication Handlers".
+ *
  * "Sync" handlers have a slightly different signature than "to" | "from" handlers because of the variable `info` passed to "change" & "complete" events
  * All three methods return an instance of a ReplicationEventEmitter, which we want to work with => this type gives us that single interface
  * The second & third generics define the "change" and "compelete" event `info` - and tell us it can be of either type "SyncResult" or "ReplicationResult"
- * which leaves it up to us to check which one we are working with in the event handlers defined in `createReplicationStore`
  */
-type Replicator = PouchDB.Replication.ReplicationEventEmitter<
+export type ReplicationHandler = PouchDB.Replication.ReplicationEventEmitter<
 	Record<string, never>,
 	SyncResult | ReplicationResult,
 	SyncResultComplete | ReplicationResultComplete

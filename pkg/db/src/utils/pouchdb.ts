@@ -2,7 +2,7 @@ import { concat, from, map, Observable, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { CouchDocument, DesignDocument, Replication } from "@/types";
+import { CouchDocument, DesignDocument } from "@/types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the
@@ -113,79 +113,6 @@ export const newChangesStream = <Model extends Record<any, any>>(ctx: debug.Debu
 			subscriber.next(change);
 		});
 		return () => emitter.cancel();
-	});
-
-/**
- * Log replication is a HOF returning a wrapper around a replication (or sync) object, used to
- * separate the logging from the replication logic.
- *
- * All params passed to the HOF are used for logging purposes.
- *
- * The returned function wraps the replication object: it takes in a replication object and returns it.
- *
- * @param ctx debug context
- * @param local local db name
- * @param remote remote db url
- * @returns
- */
-export const logReplication =
-	(ctx: debug.DebugCtx, local: string, remote: string) =>
-	(replication: Replication): Replication => {
-		const info = { local, remote };
-		replication
-			.on("change", (change) => {
-				// handle change
-				debug.log(ctx, "replication:change")({ ...info, change });
-			})
-			.on("complete", (complete) => {
-				// after unidirectional replication is done, initiate live syncing (bidirectional)
-				debug.log(ctx, `replication:complete`)({ ...info, complete });
-			})
-			.on("paused", () => {
-				// replication paused (e.g. user went offline)
-				debug.log(ctx, `replication:paused`)(info);
-			})
-			.on("active", function () {
-				// replicate resumed (e.g. user went back online)
-				debug.log(ctx, `replication:active`)(info);
-			})
-			.on("denied", (error) => {
-				// boo, something went wrong!
-				debug.log(ctx, `replication:error`)({ ...info, error });
-			})
-			.on("error", (error) => {
-				// boo, something went wrong!
-				debug.log(ctx, `replication:error`)({ ...info, error });
-			});
-
-		return replication;
-	};
-
-/**
- * Promisify replication takes in a replication object and constructs a promise which resolves when the replication is done
- * and the (optional) resolver function resolves (if provided).
- *
- * _(the resolver function is an additional step, like waiting for the first update to db stream after the replication os complete)_
- * @param replication
- * @param resolver
- * @returns
- */
-export const promisifyReplication = (
-	ctx: debug.DebugCtx,
-	replication: Replication,
-	resolver: (replication: Replication) => Promise<any> = () => Promise.resolve()
-) =>
-	new Promise<void>((resolve, reject) => {
-		replication
-			.on("error", (err) => {
-				reject(err);
-				debug.log(ctx, "replication_promise:resolved_with_error")(err);
-			})
-			.on("complete", () => {
-				debug.log(ctx, "replication_promise:complete")({});
-				resolver(replication).then(resolve);
-				debug.log(ctx, "replication_promise:resolver:complete")({});
-			});
 	});
 
 export const scanDesignDocuments = (docs: DesignDocument[]) => {
