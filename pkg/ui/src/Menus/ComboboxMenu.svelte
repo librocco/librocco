@@ -15,7 +15,7 @@
 		(option) => (typeof option === "string" ? { value: option, label: option } : option) as { value: string; label: string }
 	);
 
-	$: filtered = options.filter(({ value }) => value !== $combobox.filter);
+	$: filtered = options.filter(({ value }) => value.includes($combobox.filter));
 </script>
 
 <Transition

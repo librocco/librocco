@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { createEventDispatcher } from "svelte";
 	import { createForm } from "felte";
 	import { createCombobox } from "svelte-headlessui";
 	import { ChevronsUpDown } from "lucide-svelte";
@@ -9,92 +10,60 @@
 
 	import type { BookEntry } from "./types";
 
-	export let book: BookEntry;
+	export let book: Partial<BookEntry> = {};
 	export let publisherList: string[] = [];
-	export let onSubmit: (values: BookEntry) => void = () => {};
-	export let editMode: boolean = false;
-	export let openEditMode = () => {};
-	export let onCancel = () => {};
-	export let onValidate: (values: BookEntry) => Promise<BookEntry[]> | undefined = () => undefined;
 
-	interface BookCache {
-		[key: string]: BookEntry;
+	const dispatchEvent = createEventDispatcher<{
+		submit: BookEntry;
+		cancel: void;
+	}>();
+
+	function handleSubmit(values: BookEntry) {
+		dispatchEvent("submit", values);
+	}
+	function handleCancel() {
+		dispatchEvent("cancel");
 	}
 
-	const bookCache: BookCache = {};
-
-	const { form, data, setFields, setInteracted, errors, setTouched, setErrors } = createForm({
-		initialValues: book,
+	const initialValues = {
+		price: 0
+		// The rest of the initial values are "" or 'false' which we don't need to specify
+	};
+	const { form, setFields } = createForm({
+		initialValues: { ...initialValues, ...book },
 		onSubmit: (values) => {
-			onSubmit({ ...values, publisher: $publisherCombo.selected || values.publisher });
-		},
-		debounced: {
-			timeout: 1000,
-			validate: async (values) => {
-				const errorsObj: Partial<Record<keyof BookEntry, string>> = { isbn: $errors.isbn ? $errors.isbn[0] : "" };
-				const isbnError = "ISBN already exists, would you like to Edit it?";
-
-				if (values.isbn.trim() === "" || editMode) return errorsObj;
-
-				errorsObj.isbn = "";
-
-				if (bookCache[values.isbn]) {
-					errorsObj.isbn = isbnError;
-					setTouched("isbn", true);
-				} else {
-					const res = await onValidate(values);
-
-					if (res[0] !== undefined) {
-						errorsObj.isbn = isbnError;
-						setTouched("isbn", true);
-					}
-
-					bookCache[values.isbn] = res[0];
-				}
-
-				return errorsObj;
-			}
+			handleSubmit({ ...values, publisher: $publisherCombo.selected || values.publisher });
 		}
 	});
 
-	const handleEdit = () => {
-		openEditMode();
-
-		// reset isbn error on edit
-		setErrors("isbn", "");
-
-		setFields({ year: "", authors: "", publisher: "", editedBy: "", outOfPrint: false, ...bookCache[$data.isbn] });
-		setInteracted(null);
-	};
+	// Update fields each time a 'book' changes (this will happen in production, when we account for latency of fetching, possibly, existing book data)
+	$: {
+		for (const [key, value] of Object.entries(book)) {
+			setFields(key as keyof BookEntry, value);
+		}
+	}
 
 	const publisherCombo = createCombobox({ label: "publisher" });
+
+	let publisher = "";
+	$: {
+		publisher = $publisherCombo.selected;
+	}
+
+	$: publishers = publisherList.filter((p) => p.includes($publisherCombo.filter)).slice(0, 10);
 </script>
 
 <form id="book-detail-form" class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit book details">
 	<div class="flex flex-col justify-between gap-6 p-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div id="isbn-field-container" class="basis-full">
-				<TextField
-					name="isbn"
-					label="ISBN"
-					required={$data.isbn === ""}
-					disabled={editMode}
-					isValid={Boolean($errors.isbn && $errors.isbn[0])}
-				>
-					<svelte:fragment slot="helpText">
-						{#if Boolean($errors.isbn && $errors.isbn[0])}
-							<p aria-live="polite" class="cursor-pointer underline" on:keypress={handleEdit} on:click={handleEdit}>
-								{$errors.isbn && $errors.isbn[0]}
-							</p>
-						{/if}
-					</svelte:fragment>
-				</TextField>
+				<TextField name="isbn" label="ISBN" disabled />
 			</div>
 			<div id="title-field-container" class="basis-full">
 				<TextField name="title" label="Title" required />
 			</div>
 			<div id="price-field-container" class="flex basis-full justify-between gap-x-4">
-				<TextField name="price" label="Price" required type="number" step="1">
+				<TextField name="price" label="Price" required type="number" step="0.01">
 					<span slot="startAdornment">€</span>
 				</TextField>
 				<TextField name="year" label="Year" />
@@ -103,14 +72,14 @@
 				<TextField name="authors" label="Authors" />
 			</div>
 			<div id="publisher-field-container" class="relative basis-full">
-				<TextField name="publisher" label="Publisher" inputAction={publisherCombo.input} value={$publisherCombo.selected}>
+				<TextField name="publisher" autocomplete="off" label="Publisher" inputAction={publisherCombo.input} bind:value={publisher}>
 					<div slot="endAdornment">
 						<button use:publisherCombo.button type="button" class="flex items-center">
 							<ChevronsUpDown class="text-gray-400" />
 						</button>
 					</div>
 				</TextField>
-				<ComboboxMenu combobox={publisherCombo} options={publisherList} />
+				<ComboboxMenu combobox={publisherCombo} options={publishers} />
 			</div>
 			<div id="editedBy-field-container" class="basis-full">
 				<TextField name="editedBy" label="Edited by" />
@@ -121,7 +90,7 @@
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<Button color={ButtonColor.White} on:click={onCancel}>Cancel</Button>
-		<Button type="submit" color={ButtonColor.Primary} disabled={bookCache[$data.isbn] !== undefined && !editMode}>Save</Button>
+		<Button color={ButtonColor.White} on:click={handleCancel}>Cancel</Button>
+		<Button type="submit" color={ButtonColor.Primary}>Save</Button>
 	</div>
 </form>
