@@ -13,9 +13,9 @@
 
 	// We toast here because we want replication state to be communicated wherever we are in the app
 	$: ({ replicator } = remoteDbStore);
-	$: ({ status, hasActiveHandler } = replicator);
+	$: ({ status } = replicator);
 	$: {
-		if ($hasActiveHandler) {
+		if ($status) {
 			toastReplicationStatus($status.state);
 		}
 	}
