@@ -220,14 +220,6 @@ export type WarehouseInterface<N extends NoteInterface = NoteInterface, A extend
 // #endregion warehouse
 
 // #region replication
-// eslint-disable-next-line @typescript-eslint/ban-types
-export type Replication = PouchDB.Replication.ReplicationEventEmitter<any, any, any>;
-
-export interface ReplicatorRes {
-	replication: Replication;
-	promise: () => Promise<void>;
-}
-
 export interface Replicator {
 	/**
 	 * To sets up a transient replcation from the local db (to the remote db). It returns the `replication`
@@ -235,28 +227,21 @@ export interface Replicator {
 	 * @param ctx debug context
 	 * @param url remote db url
 	 */
-	to: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	to: (url: string | PouchDB.Database, options: PouchDB.Replication.ReplicateOptions) => PouchDB.Replication.Replication<{}>;
 	/**
 	 * From sets up a transient replication from the remote db (to the local db). It returns the `replication`
 	 * object and a `promise` method that resolves when the replication is done and the first value from db is updated.
 	 * @param ctx debug context
 	 * @param url remote db url
 	 */
-	from: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	from: (url: string | PouchDB.Database, options: PouchDB.Replication.ReplicateOptions) => PouchDB.Replication.Replication<{}>;
 	/**
 	 * Sync sets up a bidirectional, transient replication between two db instances. It returns the `replication`
 	 * object and a `promise` method that resolves when the replication is done and the first value from db is updated.
 	 * @param ctx debug context
 	 * @param url remote db url
 	 */
-	sync: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
-	/**
-	 * Live sets up a live, bidirectional replication between two db instances. It returns the `replication`
-	 * object and a `promise` method that resolves immediately (as the replication is ongoing).
-	 * @param ctx debug context
-	 * @param url remote db url
-	 */
-	live: (ctx: debug.DebugCtx, url: string) => ReplicatorRes;
+	sync: (url: string | PouchDB.Database, options: PouchDB.Replication.ReplicateOptions) => PouchDB.Replication.Sync<{}>;
 }
 // #endregion replication
 
