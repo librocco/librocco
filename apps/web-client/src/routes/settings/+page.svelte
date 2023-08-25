@@ -31,13 +31,15 @@
 						onEdit={() => remoteDbStore.destroyHandler()}
 					>
 						<div slot="info" class="flex flex-col gap-y-2 pt-2">
-							{#if $status.info}
-								<p class="text-xs font-medium uppercase leading-4 text-gray-500">{$status.info}</p>
-							{:else}
+							{#if $status.state === "ACTIVE:REPLICATING"}
 								<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined} />
 								<p class="text-xs font-medium uppercase leading-4 text-gray-500">
-									{$progress.docsWritten}{$progress.docsPending ? ` / ${$progress.docsPending}` : ""} Documents synced
+									{$progress.docsWritten}{$progress.docsPending ? ` / ${$progress.docsWritten + $progress.docsPending}` : ""} Documents synced
 								</p>
+							{:else if $status.state === "ACTIVE:INDEXING"}
+								<ProgressBar />
+							{:else}
+								<p class="text-xs font-medium uppercase leading-4 text-gray-500">{$status.info}</p>
 							{/if}
 						</div>
 					</RemoteDbData>
