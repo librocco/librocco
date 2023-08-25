@@ -37,11 +37,18 @@
 		type: ToastType.Error,
 		...toastCore
 	};
+
+	const warnToast = {
+		message: "Caution!",
+		type: ToastType.Warning,
+		...toastCore
+	};
 </script>
 
 <Hst.Story title="Toast" layout={{ type: "grid", width: 500 }}>
 	<div class="m-4 flex flex-col gap-y-6">
 		<Toast toast={successToast} />
 		<Toast toast={errorToast} />
+		<Toast toast={warnToast} />
 	</div>
 </Hst.Story>

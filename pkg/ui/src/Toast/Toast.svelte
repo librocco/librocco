@@ -9,7 +9,8 @@
 
 	const colourLookup = {
 		[ToastType.Error]: "bg-red-100 text-red-900",
-		[ToastType.Success]: "bg-green-100 text-green-900"
+		[ToastType.Success]: "bg-green-100 text-green-900",
+		[ToastType.Warning]: "bg-yellow-100 text-yellow-900"
 	};
 
 	const t = consume(toast);

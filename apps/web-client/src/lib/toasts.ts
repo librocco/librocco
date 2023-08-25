@@ -20,6 +20,14 @@ export const toastError = (message) =>
 		message
 	});
 
+export const toastWarning = (message) =>
+	defaultToaster.push({
+		duration: 2000,
+		pausable: true,
+		type: ToastType.Warning,
+		message
+	});
+
 export const noteToastMessages = (noteName, warehouseName = "all") => ({
 	inNoteCreated: `${noteName} created in ${warehouseName}`,
 	inNoteCommited: `${noteName} commited`,
@@ -41,6 +49,7 @@ export const replicationStatusMessages = {
 	"ACTIVE:REPLICATING": { color: BadgeColor.Success, message: "Syncing with database" },
 	"ACTIVE:INDEXING": { color: BadgeColor.Success, message: "Building indexes" },
 	COMPLETED: { color: BadgeColor.Success, message: "Sync complete" },
+	PAUSED: { color: BadgeColor.Warning, message: "Sync paused. Status unknown" },
 	"PAUSED:IDLE": { color: BadgeColor.Success, message: "Sync is up-to-date. Waiting for changes..." },
 	"FAILED:CANCEL": { color: BadgeColor.Error, message: "Sync cancelled. Connection closed" },
 	"FAILED:ERROR": { color: BadgeColor.Error, message: "Sync error. Connection closed" },
@@ -50,7 +59,7 @@ export const replicationStatusMessages = {
 export const toastReplicationStatus = (state: ReplicationState) => {
 	const { color, message } = replicationStatusMessages[state];
 
-	const toastFn = color === BadgeColor.Success ? toastSuccess : toastError;
+	const toastFn = color === BadgeColor.Success ? toastSuccess : color === BadgeColor.Error ? toastError : toastWarning;
 
 	return toastFn(message);
 };
