@@ -38,7 +38,8 @@ export const warehouseToastMessages = (warehouseName) => ({
 // Aliging with BadgeColor enum here as it this color+message combo is used in the RemoteDb Description List
 export const replicationStatusMessages = {
 	INIT: { color: BadgeColor.Success, message: "Connecting to remote database" },
-	ACTIVE: { color: BadgeColor.Success, message: "Syncing with database" },
+	"ACTIVE:REPLICATING": { color: BadgeColor.Success, message: "Syncing with database" },
+	"ACTIVE:INDEXING": { color: BadgeColor.Success, message: "Building indexes" },
 	COMPLETED: { color: BadgeColor.Success, message: "Sync complete" },
 	"PAUSED:IDLE": { color: BadgeColor.Success, message: "Sync is up-to-date. Waiting for changes..." },
 	"FAILED:CANCEL": { color: BadgeColor.Error, message: "Sync cancelled. Connection closed" },
