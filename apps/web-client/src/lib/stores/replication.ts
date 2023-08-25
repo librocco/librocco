@@ -232,7 +232,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 			statusStore.set({ state: "PAUSED:ERROR", info: (err as Error)?.message });
 			replicator.removeAllListeners();
 		});
-		replicator.on("paused", async (err) => {
+		replicator.on("paused", async () => {
 			// TODO: consider ditching "sync" for two "replicate" handlers
 			// Sync with live & retry === true does not behave as advertised: no "err" is passed through when pouch is trying to recover
 			// meaning we can't distinguish PAUSED:ERROR from PAUSED:IDLE & =>
