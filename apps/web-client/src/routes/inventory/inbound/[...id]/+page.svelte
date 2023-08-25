@@ -2,6 +2,8 @@
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 	import { writable } from "svelte/store";
+	import { base } from "$app/paths";
+	import { map } from "rxjs";
 
 	import { NoteState, NoteTempState } from "@librocco/shared";
 	import {
@@ -24,26 +26,22 @@
 		BookDetailForm,
 		Slideover
 	} from "@librocco/ui";
-	import type { BookEntry, DatabaseInterface, NavMap } from "@librocco/db";
+	import type { BookEntry, NavMap } from "@librocco/db";
 
 	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
 	import { createNoteStores } from "$lib/stores/inventory";
-	import { bookFormStore } from "$lib/stores/inventory/book_form";
+	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
-	import { addBookEntry, handleBookEntry, handleCloseBookForm, openEditMode, publisherList } from "$lib/utils/book_form";
 
 	import { links } from "$lib/data";
-	import { base } from "$app/paths";
-	import { map } from "rxjs";
-
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
 	export let data: PageData;
 
@@ -51,8 +49,6 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
-
-	const findBook = (db: DatabaseInterface) => (values: BookEntry) => db.books().get([values.isbn]);
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(
@@ -64,6 +60,9 @@
 		[]
 	);
 
+	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
 	$: loading = !data;
@@ -73,19 +72,17 @@
 
 	$: noteStores = createNoteStores(note);
 
-	$: isbn = "";
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
 	$: currentPage = noteStores.currentPage;
 	$: paginationData = noteStores.paginationData;
-	$: formHeader = $bookFormStore.editMode
-		? { title: "Edit book details", description: "Use this form to manually edit details of an existing book in your inbound note" }
-		: { title: "Create a new book", description: "Use this form to manually add a new book to your inbound note" };
 
 	$: toasts = noteToastMessages(note?.displayName, warehouse?.displayName);
 
+	// #region note-actions
+	//
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
@@ -110,49 +107,58 @@
 
 		toastSuccess(toasts.inNoteCreated);
 	};
+	// #endregion note-actions
 
+	// #region table
 	const tableOptions = writable({
 		data: $entries
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.update(({ data }) => ({ data: $entries }));
+	$: tableOptions.update(() => ({ data: $entries }));
+	// #endregion table
 
-	const handleAddTransaction = (db: DatabaseInterface) => async (bookEntry: BookEntry) => {
-		isbn = "";
-
-		addBookEntry(db)(bookEntry);
-
-		await note.addVolumes({ isbn: bookEntry.isbn, quantity: $bookFormStore.editMode ? 0 : 1 });
-
-		toastSuccess(toasts.volumeAdded(bookEntry.isbn));
+	// #region transaction-actions
+	const handleAddTransaction = async (isbn: string) => {
+		await note.addVolumes({ isbn, quantity: 1 });
+		toastSuccess(toasts.volumeAdded(isbn));
+		bookForm.close();
 	};
 
 	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
-		console.log("Bump");
 		const { matchTxn, updateTxn } = detail;
-		const { isbn, warehouseId, quantity = matchTxn.quantity } = updateTxn;
 
-		await note.updateTransaction(matchTxn, { isbn, warehouseId, quantity });
+		await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
 
 		// TODO: This doesn't seem to work / get called?
-		toastSuccess(toasts.volumeUpdated(isbn));
+		toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
 	};
 
 	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
-		await toastSuccess(toasts.volumeRemoved(e.detail.length));
-		note.removeTransactions(...e.detail);
+		await note.removeTransactions(...e.detail);
+		toastSuccess(toasts.volumeRemoved(e.detail.length));
 	};
+	// #region transaction-actions
 
-	const handleEditBookEntry = handleBookEntry(true);
+	// #region book-form
+	$: bookForm = newBookFormStore();
 
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
+
+	// #region helpers
 	const mapNotesToNavItems = (notes: NavMap) =>
 		[...notes].map(([id, { displayName }]) => ({
 			name: displayName || id,
 			href: `${base}/inventory/inbound/${id}`,
 			current: id === $page.params.id
 		}));
+	// #endregion helpers
 </script>
 
 <!-- svelte-ignore missing-declaration -->
@@ -200,12 +206,7 @@
 						align="right"
 					/>
 				</div>
-				<ScanInput
-					onAdd={(isbn) => {
-						note.addVolumes({ isbn, quantity: 1 });
-					}}
-					onCreate={() => handleBookEntry()({ ...$bookFormStore.book, isbn })}
-				/>
+				<ScanInput onAdd={handleAddTransaction} />
 			{/if}
 		{/if}
 	</svelte:fragment>
@@ -218,7 +219,7 @@
 					{table}
 					on:transactionupdate={handleTransactionUpdate}
 					on:removetransactions={handleRemoveTransactions}
-					onEdit={handleEditBookEntry}
+					onEdit={bookForm.open}
 					interactive
 				/>
 			{/if}
@@ -243,16 +244,13 @@
 	</div>
 
 	<svelte:fragment slot="slideOver">
-		{#if $bookFormStore.modalOpen}
-			<Slideover title={formHeader.title} description={formHeader.description} handleClose={handleCloseBookForm}>
+		{#if $bookForm.open}
+			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
 				<BookDetailForm
-					editMode={$bookFormStore.editMode}
-					{openEditMode}
-					book={$bookFormStore.book}
-					{publisherList}
-					onValidate={findBook(db)}
-					onSubmit={handleAddTransaction(db)}
-					onCancel={handleCloseBookForm}
+					publisherList={$publisherList}
+					book={$bookForm.book}
+					on:submit={({ detail }) => handleBookFormSubmit(detail)}
+					on:cancel={bookForm.close}
 				/>
 			</Slideover>
 		{/if}

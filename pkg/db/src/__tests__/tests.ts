@@ -21,123 +21,123 @@ const { waitFor } = testUtils;
 const EMPTY = Symbol("empty");
 type PossiblyEmpty<T> = typeof EMPTY | T;
 
-// // Base functionality
-// export const standardApi: TestFunction = async (db) => {
-// 	// If warehouse doesn't exist, a new one should be initialised with default values
-// 	// but no data should be saved to the db until explicitly done so.
-// 	let wh1 = db.warehouse("wh1");
-// 	expect(wh1._id).toEqual(versionId("wh1"));
-//
-// 	// Warehouse doesn't yet exist in the db.
-// 	const whInDB = await wh1.get();
-// 	expect(whInDB).toBeUndefined();
-//
-// 	// Save the warehouse to db and access from different instance.
-// 	wh1 = await wh1.create();
-// 	const wh1newInstance = await db.warehouse("wh1").get();
-// 	expect(wh1newInstance).toEqual(wh1);
-//
-// 	// If note doesn't exist, a new one should be initialised with default values
-// 	// but no data should be saved to the db until explicitly done so.
-// 	let note1 = wh1.note("note-1");
-// 	expect(note1._id).toBeTruthy();
-//
-// 	// Note doesn't yet exist in the db.
-// 	const noteInDB = await note1.get();
-// 	expect(noteInDB).toBeUndefined();
-//
-// 	// Save the note to db and access from different instance.
-// 	note1 = await note1.create();
-// 	const note1newInstance = await wh1.note("note-1").get();
-// 	expect(note1newInstance).toEqual({ ...note1, displayName: "New Note" });
-//
-// 	// Creating a new note (saving in the db) should also save the warehouse document to the db in one doesn't exist.
-// 	const wh2 = db.warehouse("wh2");
-// 	const note2 = wh2.note("note-2");
-// 	// None of the two yet exists in the warheouse.
-// 	const [wh2inDB, note2inDB] = await Promise.all([wh2.get(), note2.get()]);
-// 	expect(wh2inDB).toBeUndefined();
-// 	expect(note2inDB).toBeUndefined();
-// 	// Saving the note should also save the warehouse.
-// 	await note2.create();
-// 	await waitFor(async () => {
-// 		const [wh2inDB, note2inDB] = await Promise.all([wh2.get(), note2.get()]);
-// 		expect(wh2inDB).toEqual(wh2);
-// 		expect(note2inDB).toEqual(note2);
-// 	});
-//
-// 	// DB interface should be able to find notes by their id.
-// 	const { note: note2found, warehouse: warehouse2Found } = (await db.findNote(note2._id)) || {};
-// 	expect(note2found).toEqual({ ...note2, displayName: "New Note (2)" });
-// 	expect(warehouse2Found).toEqual(wh2);
-//
-// 	// Non-existing notes should return undefined.
-// 	// We're manipulating a dynamic id from note2 as id patterns might differ per implementation.
-// 	// replacing last two letters should do the trick.
-// 	const nonExistingId = note2._id.slice(0, -2) + "zz";
-// 	const nonExistingNote = await db.findNote(nonExistingId);
-// 	expect(nonExistingNote).toBeUndefined();
-//
-// 	// Committed notes can't be updated nor deleted.
-// 	note1 = await note1.setName({}, "Note 1");
-// 	expect(note1.displayName).toEqual("Note 1");
-// 	await note1.commit({}, { force: true });
-// 	note1 = await note1.setName({}, "New name");
-// 	expect(note1.displayName).toEqual("Note 1");
-//
-// 	// Notes on the default warehouse should automatically be outbound, and on specific warehouses inbound.
-// 	const outboundNote = db.warehouse().note();
-// 	const inboundNote = db.warehouse("wh1").note();
-// 	expect(outboundNote.noteType).toEqual("outbound");
-// 	expect(inboundNote.noteType).toEqual("inbound");
-//
-// 	// Trying to access a note belonging to a different warehouse should throw an error.
-// 	const wh1Note = db.warehouse("wh1").note("wh1-note");
-// 	const wh1NoteFullId = wh1Note._id;
-// 	let err;
-// 	try {
-// 		db.warehouse("wh2").note(wh1NoteFullId);
-// 	} catch (e) {
-// 		err = e;
-// 	}
-// 	expect(err).toBeDefined();
-// };
-//
-// export const getEntriesQueries: TestFunction = async (db) => {
-// 	// Set up warehouses
-// 	const defaultWh = await db.warehouse().create();
-// 	const wh1 = await db
-// 		.warehouse("wh1")
-// 		.create()
-// 		.then((w) => w.setName({}, "Warehouse 1"));
-//
-// 	// Check for note
-// 	const note = await wh1.note().create();
-// 	await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
-// 	const entries = await note.getEntries({});
-// 	expect([...entries]).toEqual([
-// 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
-// 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
-// 	]);
-//
-// 	// Check for warehouse
-// 	// Note is not yet committed, so no entries should be returned.
-// 	let wh1Entries = await wh1.getEntries({});
-// 	expect([...wh1Entries]).toEqual([]);
-// 	await note.commit({});
-// 	wh1Entries = await wh1.getEntries({});
-// 	expect([...wh1Entries]).toEqual([
-// 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
-// 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
-// 	]);
-//
-// 	// Should work all the same for the default warehouse
-// 	const defaultWhEntries = await defaultWh.getEntries({});
-// 	expect([...defaultWhEntries]).toEqual([
-// 		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
-// 		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
-// 	]);
-// };
+// Base functionality
+export const standardApi: TestFunction = async (db) => {
+	// If warehouse doesn't exist, a new one should be initialised with default values
+	// but no data should be saved to the db until explicitly done so.
+	let wh1 = db.warehouse("wh1");
+	expect(wh1._id).toEqual(versionId("wh1"));
+
+	// Warehouse doesn't yet exist in the db.
+	const whInDB = await wh1.get();
+	expect(whInDB).toBeUndefined();
+
+	// Save the warehouse to db and access from different instance.
+	wh1 = await wh1.create();
+	const wh1newInstance = await db.warehouse("wh1").get();
+	expect(wh1newInstance).toEqual(wh1);
+
+	// If note doesn't exist, a new one should be initialised with default values
+	// but no data should be saved to the db until explicitly done so.
+	let note1 = wh1.note("note-1");
+	expect(note1._id).toBeTruthy();
+
+	// Note doesn't yet exist in the db.
+	const noteInDB = await note1.get();
+	expect(noteInDB).toBeUndefined();
+
+	// Save the note to db and access from different instance.
+	note1 = await note1.create();
+	const note1newInstance = await wh1.note("note-1").get();
+	expect(note1newInstance).toEqual({ ...note1, displayName: "New Note" });
+
+	// Creating a new note (saving in the db) should also save the warehouse document to the db in one doesn't exist.
+	const wh2 = db.warehouse("wh2");
+	const note2 = wh2.note("note-2");
+	// None of the two yet exists in the warheouse.
+	const [wh2inDB, note2inDB] = await Promise.all([wh2.get(), note2.get()]);
+	expect(wh2inDB).toBeUndefined();
+	expect(note2inDB).toBeUndefined();
+	// Saving the note should also save the warehouse.
+	await note2.create();
+	await waitFor(async () => {
+		const [wh2inDB, note2inDB] = await Promise.all([wh2.get(), note2.get()]);
+		expect(wh2inDB).toEqual(wh2);
+		expect(note2inDB).toEqual(note2);
+	});
+
+	// DB interface should be able to find notes by their id.
+	const { note: note2found, warehouse: warehouse2Found } = (await db.findNote(note2._id)) || {};
+	expect(note2found).toEqual({ ...note2, displayName: "New Note (2)" });
+	expect(warehouse2Found).toEqual(wh2);
+
+	// Non-existing notes should return undefined.
+	// We're manipulating a dynamic id from note2 as id patterns might differ per implementation.
+	// replacing last two letters should do the trick.
+	const nonExistingId = note2._id.slice(0, -2) + "zz";
+	const nonExistingNote = await db.findNote(nonExistingId);
+	expect(nonExistingNote).toBeUndefined();
+
+	// Committed notes can't be updated nor deleted.
+	note1 = await note1.setName({}, "Note 1");
+	expect(note1.displayName).toEqual("Note 1");
+	await note1.commit({}, { force: true });
+	note1 = await note1.setName({}, "New name");
+	expect(note1.displayName).toEqual("Note 1");
+
+	// Notes on the default warehouse should automatically be outbound, and on specific warehouses inbound.
+	const outboundNote = db.warehouse().note();
+	const inboundNote = db.warehouse("wh1").note();
+	expect(outboundNote.noteType).toEqual("outbound");
+	expect(inboundNote.noteType).toEqual("inbound");
+
+	// Trying to access a note belonging to a different warehouse should throw an error.
+	const wh1Note = db.warehouse("wh1").note("wh1-note");
+	const wh1NoteFullId = wh1Note._id;
+	let err;
+	try {
+		db.warehouse("wh2").note(wh1NoteFullId);
+	} catch (e) {
+		err = e;
+	}
+	expect(err).toBeDefined();
+};
+
+export const getEntriesQueries: TestFunction = async (db) => {
+	// Set up warehouses
+	const defaultWh = await db.warehouse().create();
+	const wh1 = await db
+		.warehouse("wh1")
+		.create()
+		.then((w) => w.setName({}, "Warehouse 1"));
+
+	// Check for note
+	const note = await wh1.note().create();
+	await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
+	const entries = await note.getEntries({});
+	expect([...entries]).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Check for warehouse
+	// Note is not yet committed, so no entries should be returned.
+	let wh1Entries = await wh1.getEntries({});
+	expect([...wh1Entries]).toEqual([]);
+	await note.commit({});
+	wh1Entries = await wh1.getEntries({});
+	expect([...wh1Entries]).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+
+	// Should work all the same for the default warehouse
+	const defaultWhEntries = await defaultWh.getEntries({});
+	expect([...defaultWhEntries]).toEqual([
+		{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" },
+		{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1" }
+	]);
+};
 
 export const noteTransactionOperations: TestFunction = async (db) => {
 	// Set up two warehouses (with display names) and an outbound note
@@ -224,6 +224,19 @@ export const noteTransactionOperations: TestFunction = async (db) => {
 			{ isbn: "11111111", quantity: 18, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1", availableWarehouses }
 		]);
 	});
+
+	// Updating transaction with not-matched 'matchTxn' should be a noop
+	await note.updateTransaction(
+		{ isbn: "11111111", warehouseId: versionId("wh3") },
+		{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh1._id) }
+	);
+	const entriesSnapshot = await note
+		.getEntries({})
+		.then((entries) => [...entries].map((e) => volumeStockClientToVolumeStockClientOld({ ...e, availableWarehouses: new Map() })));
+	expect([...entriesSnapshot]).toEqual([
+		{ isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1", availableWarehouses },
+		{ isbn: "11111111", quantity: 18, warehouseId: versionId(wh1._id), warehouseName: "Warehouse 1", availableWarehouses }
+	]);
 
 	// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
 	await note.removeTransactions({ isbn: "0123456789", warehouseId: wh1._id }, { isbn: "11111111", warehouseId: "wh3" });
@@ -1136,16 +1149,14 @@ export const booksInterface: TestFunction = async (db) => {
 
 	const booksInterface = db.books();
 
-	// insert test
-
+	// Insert test
 	await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
 
 	const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
 	expect(booksFromDb).toEqual([book1, book2]);
 
-	// update test
-
+	// Update test
 	await Promise.all([
 		booksInterface.upsert([
 			{ ...book1, title: "Updated Title" },
@@ -1160,8 +1171,7 @@ export const booksInterface: TestFunction = async (db) => {
 		{ ...book2, title: "Updated Title 12" }
 	]);
 
-	// stream test
-
+	// Stream test
 	let bookEntries: (BookEntry | undefined)[] = [];
 
 	booksInterface.stream({}, [book1.isbn, book2.isbn, book3.isbn]).subscribe((stream) => {
@@ -1185,6 +1195,31 @@ export const booksInterface: TestFunction = async (db) => {
 	await waitFor(() => {
 		expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, book3]);
 	});
+};
+
+export const publishersStream: TestFunction = async (db) => {
+	// Publishers stream test
+	let publishers: PossiblyEmpty<string[]> = EMPTY;
+	db.books()
+		.streamPublishers({})
+		.subscribe((p) => (publishers = p));
+
+	// There are no books in the db, should stream an empty array
+	await waitFor(() => expect(publishers).toEqual([]));
+
+	// Adding a new book (with not-yet-registered publisher) should update the publishers stream
+	await db.books().upsert([{ isbn: "new-isbn", publisher: "HarperCollins UK" } as BookEntry]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK"]));
+
+	await db.books().upsert([
+		{ isbn: "new-isbn-2", publisher: "Oxford" },
+		{ isbn: "new-isbn-3", publisher: "Penguin" }
+	] as BookEntry[]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
+
+	// Adding a book with existing publisher should not duplicate the publisher in the stream
+	await db.books().upsert([{ isbn: "new-isbn-4", publisher: "Oxford" } as BookEntry]);
+	await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 };
 
 export const dbGuards: TestFunction = async (db) => {

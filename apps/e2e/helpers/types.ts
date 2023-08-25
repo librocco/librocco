@@ -78,6 +78,7 @@ export interface ContentInterface extends Locator {
 
 export interface ContentHeadingInterface extends Locator {
 	getTitle(opts?: WaitForOpts): Promise<string>;
+	textInput(): Locator;
 	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
 }
 
@@ -89,7 +90,6 @@ export interface StatePickerInterface extends Locator {
 
 export interface ScanFieldInterface extends Locator {
 	add(isbn: string): Promise<void>;
-	create(): Promise<void>;
 }
 
 // #region book form

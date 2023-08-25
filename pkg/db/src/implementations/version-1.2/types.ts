@@ -48,5 +48,4 @@ export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> 
 export type WarehouseListRow = MapReduceRow<string, { displayName?: string }>;
 export type OutNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean }>;
 export type InNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean; type: DocType }>;
-
-export type WarehouseStockRow = MapReduceRow<[string, string], number>;
+export type PublishersListRow = MapReduceRow<string, number>;
