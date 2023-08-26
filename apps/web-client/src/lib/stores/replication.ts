@@ -25,8 +25,8 @@ export const createReplicationStore = () => {
 	) => {
 		const replicationHandlers = createReplicationHandlers(local, replicationStores);
 
-		status.set({ state: "INIT", info: "" });
-		config.set({
+		replicationStores.statusStore.set({ state: "INIT", info: "" });
+		replicationStores.configStore.set({
 			...config,
 			// This isn't used for the connection, just for reporting something in the UI
 			url: typeof remote === "string" ? remote : remote?.name
