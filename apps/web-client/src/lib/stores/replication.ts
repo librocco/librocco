@@ -210,7 +210,11 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 			}
 		});
 
-		replicator.then(() => statusStore.set({ state: "FAILED:CANCEL", info: "Sync canclled. Connection closed" }));
+		replicator
+			.then(() => statusStore.set({ state: "FAILED:CANCEL", info: "Sync canclled. Connection closed" }))
+			// We're communicating err in above "error" handler, but still need to catch here
+			//eslint-disable-next-line @typescript-eslint/no-empty-function
+			.catch(() => {});
 
 		return {
 			replicator,
