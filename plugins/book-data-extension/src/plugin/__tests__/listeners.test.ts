@@ -29,17 +29,17 @@ function mockAddEventListenerBooks(eventName: string, cb: (event: MessageEvent) 
 	}
 }
 function mockAddEventListenerBooksTimeout(eventName: string, cb: (event: MessageEvent) => void) {
-    if (eventName === "message") {
-        const message = new MessageEvent("message", {
-            source: window,
-            data: {
-                message: "BOOK_FETCHER_RES:bookFetcherPlugin:",
-                books: [{ title: "book-123456" }]
-            }
-        });
+	if (eventName === "message") {
+		const message = new MessageEvent("message", {
+			source: window,
+			data: {
+				message: "BOOK_FETCHER_RES:bookFetcherPlugin:",
+				books: [{ title: "book-123456" }]
+			}
+		});
 
-        setTimeout(() => cb(message), 300);
-    }
+		setTimeout(() => cb(message), 300);
+	}
 }
 
 describe("book fetching listeners", () => {
@@ -59,15 +59,15 @@ describe("book fetching listeners", () => {
 
 		const ww = await listenForBooks("BOOK_FETCHER_RES:bookFetcherPlugin:", 1000);
 
-        expect(ww).toEqual([{ title: "book-123456" }]);
-    });
-    test("listenForBooks resolves to [] when book data is not received before timeout", async () => {
-        vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooksTimeout);
+		expect(ww).toEqual([{ title: "book-123456" }]);
+	});
+	test("listenForBooks resolves to [] when book data is not received before timeout", async () => {
+		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooksTimeout);
 
-        helpers.postMessage(`BOOK_FETCHER_REQ:bookFetcherPlugin:`);
+		helpers.postMessage(`BOOK_FETCHER_REQ:bookFetcherPlugin:`);
 
-        const ww = await listenForBooks("BOOK_FETCHER_RES:bookFetcherPlugin:", 200);
+		const ww = await listenForBooks("BOOK_FETCHER_RES:bookFetcherPlugin:", 200);
 
-        expect(ww).toEqual([]);
+		expect(ww).toEqual([]);
 	});
 });
