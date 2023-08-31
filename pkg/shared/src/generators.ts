@@ -132,6 +132,7 @@ interface TransformableIterable<T> extends Iterable<T> {
 	): TransformableIterable<[T, ...{ [K in keyof A]: A[K] extends Iterable<infer E> ? E : never }]>;
 	reduce<R>(reducer: (accumulator: R, value: T) => R, seed: R): R;
 	reduce(reducer: (accumulator: T, value: T) => T, seed?: T): T;
+	array(): T[];
 }
 
 /**
@@ -173,6 +174,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		filter: f,
 		slice: s,
 		reduce: r,
-		zip: z
+		zip: z,
+		array: () => Array.from(iterable)
 	};
 };
