@@ -16,16 +16,16 @@ export function listenForExtension(message: string, timeout: number): Promise<bo
 	});
 }
 
-export function listenForBooks(message: string, timeout: number): Promise<BookEntry[]> {
+export function listenForBook(message: string, timeout: number): Promise<BookEntry | undefined> {
 	return new Promise((resolve) => {
-		const promiseTimer = setTimeout(() => resolve([]), timeout);
+		const promiseTimer = setTimeout(() => resolve(undefined), timeout);
 
 		const handler = (event: MessageEvent) => {
 			if (event.source !== window) return;
 			if (event.data.message && event.data.message === message) {
 				clearTimeout(promiseTimer);
 				removeEventListener("message", handler);
-				resolve(event.data.books);
+				resolve(event.data.book);
 			}
 		};
 		addEventListener("message", handler);
