@@ -49,7 +49,7 @@ export const warehouseToastMessages = (warehouseName) => ({
 export const replicationStatusMessages = {
 	INIT: { color: BadgeColor.Success, message: "Connecting to remote database" },
 	"ACTIVE:REPLICATING": { color: BadgeColor.Success, message: "Syncing with database" },
-	"ACTIVE:INDEXING": { color: BadgeColor.Success, message: "Building indexes" },
+	"ACTIVE:INDEXING": { color: BadgeColor.Success, message: "Building indices" },
 	COMPLETED: { color: BadgeColor.Success, message: "Sync complete" },
 	PAUSED: { color: BadgeColor.Warning, message: "Sync paused. Status unknown" },
 	"PAUSED:IDLE": { color: BadgeColor.Success, message: "Sync is up-to-date. Waiting for changes..." },
