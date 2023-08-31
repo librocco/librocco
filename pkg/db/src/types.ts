@@ -329,7 +329,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 *
 	 * This should be ran after the initial replication to build local views with the data received from the replication.
 	 */
-	buildIndexes: () => Promise<void>;
+	buildIndices: () => Promise<void>;
 	/**
 	 * Books constructs an interface used for book operations agains the db:
 	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.

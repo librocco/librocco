@@ -130,7 +130,7 @@ const createReplicationHandlers = (db: DatabaseInterface, stores: ReturnType<typ
 		statusStore.set({ state: "ACTIVE:INDEXING", info: "" });
 
 		await db
-			.buildIndexes()
+			.buildIndices()
 			.then(() => statusStore.set({ state: doneStatus, info: "" }))
 			// could also throw here and it would be caught in promise chain inside replicationHandler...
 			.catch(() => statusStore.set({ state: "FAILED:ERROR", info: "could not build indexes" }));
