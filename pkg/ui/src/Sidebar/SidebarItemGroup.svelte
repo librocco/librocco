@@ -12,7 +12,16 @@
 
 	export let name: string;
 	export let index: number;
+
+	// Expanded is a value we can bind to and is used to control the expanded
+	// state of the group, both from inside the component and outside the component
 	export let expanded = false;
+	// Expand is used to explicitly expand the group from outside the component
+	// setting this to false is a noop, whereas setting it to true will set
+	// the 'expanded' value to true, effectively expanding the group
+	export let expand = expanded;
+	$: expand === true && (expanded = true);
+
 	export let items: SidebarItem[];
 
 	const controlId = `sub-menu-${index}`;

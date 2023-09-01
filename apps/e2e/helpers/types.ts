@@ -65,6 +65,8 @@ export interface SidebarInterface extends Locator {
 
 export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGroups" | "linkGroup" | "createWarehouse"> {
 	open(): Promise<void>;
+	assertOpen(): Promise<void>;
+	assertClosed(): Promise<void>;
 }
 
 export interface ContentInterface extends Locator {
