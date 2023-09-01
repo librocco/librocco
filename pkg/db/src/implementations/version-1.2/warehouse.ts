@@ -42,6 +42,7 @@ class Warehouse implements WarehouseInterface {
 	_deleted?: boolean;
 
 	displayName = "";
+	discountPercentage = 0;
 
 	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
@@ -104,6 +105,7 @@ class Warehouse implements WarehouseInterface {
 		// Update the data with provided fields
 		this.updateField("_rev", data._rev);
 		this.updateField("displayName", data.displayName);
+		this.updateField("discountPercentage", data.discountPercentage);
 
 		this.#exists = true;
 
@@ -223,6 +225,22 @@ class Warehouse implements WarehouseInterface {
 		return this.update({}, { displayName });
 	}
 
+	/**
+	 * Update discount percentage
+	 */
+	setDiscount(ctx: debug.DebugCtx, discountPercentage: number): Promise<WarehouseInterface> {
+		const currentDiscountPercentage = this.discountPercentage;
+		debug.log(ctx, "note:set_discount_percentage")({ discountPercentage, currentDiscountPercentage });
+
+		if (discountPercentage === currentDiscountPercentage || isNaN(discountPercentage)) {
+			debug.log(ctx, "note:set_discount:noop")({ discountPercentage, currentDiscountPercentage });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_discount:updating")({ discountPercentage });
+		return this.update({}, { discountPercentage });
+	}
+
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
 		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
@@ -241,6 +259,13 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "streams: display_name: input")),
 					map(({ displayName }) => displayName || ""),
 					tap(debug.log(ctx, "streams: display_name: res"))
+				),
+
+			discount: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "streams: discount: input")),
+					map(({ discountPercentage }) => discountPercentage || 0),
+					tap(debug.log(ctx, "streams: discount: res"))
 				),
 
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
