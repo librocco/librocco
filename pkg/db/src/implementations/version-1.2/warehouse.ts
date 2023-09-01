@@ -12,7 +12,8 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { newNote } from "./note";
 import { newStock } from "./stock";
 
-import { runAfterCondition, uniqueTimestamp, versionId, isEmpty, sortBooks } from "@/utils/misc";
+import { versionId } from "./utils";
+import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseNames, TableData } from "./utils";
 

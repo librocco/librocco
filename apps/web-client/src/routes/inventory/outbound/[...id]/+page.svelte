@@ -42,6 +42,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
 
@@ -150,7 +151,6 @@
 		toastSuccess(toasts.bookDataUpdated(book.isbn));
 		bookForm.close();
 	};
-
 	// #endregion book-form
 </script>
 
@@ -161,7 +161,7 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $outNoteList as [id, { displayName }]}
-			<SidebarItem name={displayName || id} href="{base}/inventory/outbound/{id}" current={id === $page.params.id} />
+			<SidebarItem name={displayName || id} href="{base}/inventory/outbound/{id}" current={comparePaths(id, $page.params.id)} />
 		{/each}
 		<svelte:fragment slot="actions">
 			<NewEntitySideNavButton label="Create note" on:click={handleCreateNote} />

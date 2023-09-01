@@ -22,7 +22,7 @@
 		Slideover,
 		BookDetailForm
 	} from "@librocco/ui";
-	import { NEW_WAREHOUSE, type BookEntry } from "@librocco/db";
+	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
 
 	import type { PageData } from "./$types";
 
@@ -33,6 +33,7 @@
 	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { readableFromStream } from "$lib/utils/streams";
+	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
 
@@ -116,7 +117,11 @@
 	<!-- Sidebar slot -->
 	<SideBarNav slot="sidebar">
 		{#each $warehouseList as [id, { displayName }]}
-			<SidebarItem href="{base}/inventory/stock/{id}" name={displayName || id} current={id === $page.params.id} />
+			<SidebarItem
+				href="{base}/inventory/stock/{id}"
+				name={displayName || id}
+				current={comparePaths(versionId(id), versionId($page.params.id))}
+			/>
 		{/each}
 		<svelte:fragment slot="actions">
 			<NewEntitySideNavButton label="Create warehouse" on:click={handleCreateWarehouse} />

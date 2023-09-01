@@ -43,7 +43,7 @@ function getSideLinkGroup(sidebar: Locator, name: string): SideLinkGroupInterfac
 		return container.getByRole("link", { name: label, exact: true });
 	};
 
-	const { open } = useExpandButton(container);
+	const { open, getExpandButton } = useExpandButton(container);
 
 	const createNote = async (opts?: WaitForOpts) => {
 		await open(opts);
@@ -55,7 +55,10 @@ function getSideLinkGroup(sidebar: Locator, name: string): SideLinkGroupInterfac
 		return compareEntries(container, labels, "a", opts);
 	};
 
-	return Object.assign(container, { link, open, createNote, assertLinks });
+	const assertOpen = async (opts?: WaitForOpts) => getExpandButton("open").waitFor({ timeout: assertionTimeout, ...opts });
+	const assertClosed = async (opts?: WaitForOpts) => getExpandButton("closed").waitFor({ timeout: assertionTimeout, ...opts });
+
+	return Object.assign(container, { link, open, createNote, assertLinks, assertOpen, assertClosed });
 }
 
 async function createEntity(nav: NavInterface, entity: "warehouse" | "note", opts?: WaitForOpts) {
