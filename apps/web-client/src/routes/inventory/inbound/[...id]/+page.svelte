@@ -24,7 +24,9 @@
 		type RemoveTransactionsDetail,
 		ProgressBar,
 		BookDetailForm,
-		Slideover
+		Slideover,
+		Button,
+		ButtonColor
 	} from "@librocco/ui";
 	import type { BookEntry, NavMap } from "@librocco/db";
 
@@ -203,14 +205,17 @@
 							</div>
 						{/if}
 					</div>
-					<SelectMenu
-						id="note-state-picker"
-						class="w-[138px]"
-						options={noteStates}
-						bind:value={$state}
-						disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-						align="right"
-					/>
+					<div class="flex gap-x-4">
+						<Button color={ButtonColor.White} on:click={() => note?.printReceipt()}>Print receipt</Button>
+						<SelectMenu
+							id="note-state-picker"
+							class="w-[138px]"
+							options={noteStates}
+							bind:value={$state}
+							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
+							align="right"
+						/>
+					</div>
 				</div>
 				<ScanInput onAdd={handleAddTransaction} />
 			{/if}
