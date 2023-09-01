@@ -173,6 +173,7 @@ export type NoteInterface<A extends Record<string, any> = {}> = NoteProto<A> & N
 export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 	{
 		displayName: string;
+		discountPercentage: number;
 	} & A
 >;
 
@@ -181,6 +182,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
  */
 export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	discount: (ctx: debug.DebugCtx) => Observable<number>;
 	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
 
@@ -199,6 +201,12 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	note: (id?: string) => N;
 	/** Set name udpates the `displayName` of the warehouse */
 	setName: (ctx: debug.DebugCtx, name: string) => Promise<WarehouseInterface<N, A>>;
+	/**
+	 * Set discount percentage to be applied to original book prices for all books belonging to the particular warehouse.
+	 * @param ctx debug context
+	 * @param discountPercentage discount percentage as two digit integer, e.g. 20 for 20% discount
+	 */
+	setDiscount: (ctx: debug.DebugCtx, discountPercentage: number) => Promise<WarehouseInterface<N, A>>;
 	/**
 	 * Stream returns an object containing observable streams for the warehouse:
 	 * - `displayName` - streams the warehouse's `displayName`
