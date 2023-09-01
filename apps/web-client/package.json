@@ -26,7 +26,7 @@
 		"postcss": "~8.4.13",
 		"prettier": "~2.7.1",
 		"prettier-plugin-tailwindcss": "~0.1.13",
-		"pouchdb-adapter-memory": "~7.3.0",
+		"pouchdb-adapter-memory": "~8.0.1",
 		"svelte": "~3.58.0",
 		"svelte-check": "^3.0.0",
 		"svelte-preprocess": "^5.0.3",
@@ -51,7 +51,7 @@
 		"@librocco/db": "workspace:*",
 		"@librocco/ui": "workspace:*",
 		"lucide-svelte": "^0.210.0",
-		"pouchdb": "~7.3.0",
+		"pouchdb": "~8.0.1",
 		"rxjs": "~7.8.0",
 		"uuid": "~9.0.0",
 		"svelte-local-storage-store": "~0.4.0"
