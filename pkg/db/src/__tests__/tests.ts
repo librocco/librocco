@@ -106,6 +106,35 @@ export const standardApi: TestFunction = async (db) => {
 	expect(err).toBeDefined();
 };
 
+export const warehouseDiscount: TestFunction = async (db) => {
+	const wh1 = await db.warehouse("wh1").create();
+
+	let discount: PossiblyEmpty<number> = EMPTY;
+	wh1
+		.stream()
+		.discount({})
+		.subscribe((d) => (discount = d));
+
+	// When the warehouse is created, should have a default discount of 0.
+	await waitFor(() => expect(discount).toEqual(0));
+
+	// Should allow update and reflect in the stream
+	await wh1.setDiscount({}, 10);
+	await waitFor(() => expect(discount).toEqual(10));
+
+	// Check that the instance updates as well
+	const dataCheck = await wh1.get();
+	expect(dataCheck?.discountPercentage).toEqual(10);
+
+	// Should block the update if updating to the same value
+	const { _rev: rev1 } = (await wh1.get()) || {};
+
+	await wh1.setDiscount({ debug: true }, 10);
+	const { _rev: rev2 } = (await wh1.get()) || {};
+	// The rev being the same tells us that no update took place
+	expect(rev2).toEqual(rev1);
+};
+
 export const getEntriesQueries: TestFunction = async (db) => {
 	// Set up warehouses
 	const defaultWh = await db.warehouse().create();

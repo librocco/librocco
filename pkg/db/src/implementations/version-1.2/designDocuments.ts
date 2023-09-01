@@ -7,7 +7,7 @@ const sequenceNamingDesignDocument: DesignDocument = {
 	views: {
 		warehouse: {
 			map: function (doc: WarehouseData) {
-				const { displayName } = doc as NoteData;
+				const { displayName } = doc as WarehouseData | NoteData;
 
 				if (doc.docType === "warehouse" && /^New Warehouse( \([0-9]+\))?$/.test(displayName)) {
 					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
