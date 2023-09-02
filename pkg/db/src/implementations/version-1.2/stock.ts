@@ -5,7 +5,7 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 import { DatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { newChangesStream } from "@/utils/pouchdb";
-import { versionId } from "@/utils/misc";
+import { versionId } from "./utils";
 
 export interface StockInterface {
 	changes: () => PouchDB.Core.Changes<any>;

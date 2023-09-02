@@ -1,6 +1,7 @@
 import { test } from "@playwright/test";
 
 import { NoteState } from "@librocco/shared";
+import { versionId } from "@librocco/db";
 
 import { baseURL } from "../constants";
 
@@ -223,4 +224,66 @@ test("should remove the note from the sidebar when the note is deleted", async (
 	// Check that the note has been deleted from the sidebar
 	await linkGroupAll.assertLinks(["New Note"]);
 	await linkGroupWh1.assertLinks(["New Note"]);
+});
+
+// TODO: Unskip when working on https://github.com/librocco/librocco/issues/347
+test.skip("should automatically open the warehouse group the note belongs to on page load", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			// Create a warehouse to work with
+			.warehouse("wh-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+			// Create a note to work with
+			.then((w) => w.note("note-1").create())
+			.then((n) => n.setName({}, "Note 1"))
+	);
+
+	// Explicitly navigate to the note page
+	await page.goto(`${baseURL}/preview/inventory/inbound/${versionId("wh-1/inbound/note-1")}`);
+
+	const sidebar = getDashboard(page).sidebar();
+
+	// The "All" group in the sidebar should be closed (as initial state)
+	await sidebar.linkGroup("All").assertClosed();
+	// The "Warehouse 1" group in the sidebar should be open
+	await sidebar.linkGroup("Warehouse 1").assertOpen();
+});
+
+test("should not close the side link group (open by clicking on it) on route change", async ({ page }) => {
+	// Setup
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			// Create a warehouse to work with
+			.warehouse("wh-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+			// Create a note to work with
+			.then((w) => w.note("note-1").create())
+			.then((n) => n.setName({}, "Note 1"))
+	);
+
+	const sidebar = getDashboard(page).sidebar();
+
+	// Go to the note page
+	await sidebar.linkGroup("Warehouse 1").open();
+	await sidebar.linkGroup("Warehouse 1").link("Note 1").click();
+	await getDashboard(page).content().heading("Note 1").waitFor();
+
+	// Open the "All" sidebar group
+	await sidebar.linkGroup("All").open();
+
+	// Double check that both groups are open
+	await sidebar.linkGroup("All").assertOpen();
+	await sidebar.linkGroup("Warehouse 1").assertOpen();
+
+	// Add a new note: This changes the route, but should not close any of the open side groups
+	await sidebar.linkGroup("Warehouse 1").createNote();
+
+	// Check that both groups are still open
+	await sidebar.linkGroup("All").assertOpen();
+	await sidebar.linkGroup("Warehouse 1").assertOpen();
 });

@@ -39,6 +39,22 @@ class Books implements BooksInterface {
 			// The rows are returned in the same order as the supplied keys array.
 			// The row for a nonexistent document will just contain an "error" property with the value "not_found".
 			.then((docs) => unwrapDocs(docs));
+
+		const isbnsToFetch = wrapIter(isbns)
+			.zip(books)
+			.filter(([, book]) => book === undefined)
+			.map(([isbn]) => isbn)
+			.array();
+
+		// The update is done in the background, so we're not awaiting the promises to resolve.
+		// Instead, we're returning the current state and the next state (state updated with books)
+		// will trigger the next stream (in case of listening to stream).
+		//
+		// For now we can live with 'books.get()' returning the state from the db, and, only on next
+		// request return updated state (with book data fetched for books not in the db at time of first request).
+		// TODO: Add a flag to explicitly await this on request (resulting in a full current state, after the books have been fetched)
+		this.#db.plugin("book-fetcher").fetchBookData(isbnsToFetch).then(this.upsert);
+
 		return books;
 	}
 

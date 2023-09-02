@@ -25,14 +25,7 @@ export const load: LayoutLoad = async ({ route, params, parent }) => {
 
 	// If we're on the stock page (warehouse view), we're only interested in the warehouse
 	if (location === "stock" && docId) {
-		// * Quick fix for default warehouse "0-all"
-		// non-default warehouse docs are always prepended by `v1` => params.id collects `v1/{id}`
-		// without version, default warehouse params.id has a trailing slash = `0-all/`
-		// this causes db.warehouse().get() to return undefined and creates an infinite redirect
-		// (-> ../layout.ts w/ pathname "/inventory/stock" -> back to here with pathname "inventory/stock/0-all")
-		// TODO: This should be fixed by adding db export `currentVersion` to all "inventory/stock/v1/0-all" redirects
-		// but this also requires update in db package
-		const warehouseId = docId === "0-all/" ? "0-all" : docId;
+		const warehouseId = docId?.trim().replace(/^\//, "").replace(/\/$/, "");
 
 		const warehouse = await db.warehouse(warehouseId).get();
 
