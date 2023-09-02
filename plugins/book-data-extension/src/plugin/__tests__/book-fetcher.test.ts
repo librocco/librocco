@@ -1,7 +1,7 @@
 import { test, describe, expect, vi } from "vitest";
 import * as listeners from "../listeners";
 import * as helpers from "../window-helpers";
-import { BookFetcherPlugin } from "..";
+import { createBookDataExtensionPlugin } from "..";
 
 function mockListenForExtension() {
 	return new Promise<boolean>((resolve) => resolve(true));
@@ -23,12 +23,12 @@ function mockAddEventListenerBooks(book: Record<string, string> | undefined, tim
 	};
 }
 
-describe("BookFetcherPlugin", () => {
+describe("createBookDataExtensionPlugin", () => {
 	test("fetchBookData returns books when called with isbns", async () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
 		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks({ title: "book-12345" }));
 
-		const books = await BookFetcherPlugin().fetchBookData(["12345"]);
+		const books = await createBookDataExtensionPlugin().fetchBookData(["12345"]);
 
 		expect(books).toEqual([{ title: "book-12345" }]);
 	});
@@ -37,7 +37,7 @@ describe("BookFetcherPlugin", () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
 		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks(undefined));
 
-		const books = await BookFetcherPlugin().fetchBookData(["12345"]);
+		const books = await createBookDataExtensionPlugin().fetchBookData(["12345"]);
 
 		expect(books).toEqual([]);
 	});
@@ -46,7 +46,7 @@ describe("BookFetcherPlugin", () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
 		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks({ title: "book-12345" }, 900));
 
-		const books = await BookFetcherPlugin().fetchBookData(["12345"]);
+		const books = await createBookDataExtensionPlugin().fetchBookData(["12345"]);
 
 		expect(books).toEqual([]);
 	});
@@ -55,8 +55,30 @@ describe("BookFetcherPlugin", () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(vi.fn(() => new Promise<boolean>((resolve) => resolve(false))));
 		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks({ title: "book-12345" }));
 
-		const books = await BookFetcherPlugin().fetchBookData(["12345"]);
+		const books = await createBookDataExtensionPlugin().fetchBookData(["12345"]);
 
 		expect(books).toEqual([]);
+	});
+
+	test("fetchBookData when called with isbns some of which are not found, returns array with only found books", async () => {
+		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks(undefined));
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }));
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }));
+
+		const books = await createBookDataExtensionPlugin().fetchBookData(["12345", "56789"]);
+
+		expect(books).toEqual([{ title: "book-56789" }, { title: "book-12345" }]);
+	});
+
+	test("fetchBookData when called with isbns some of which timeout, returns array with only returned books", async () => {
+		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }));
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }));
+		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-49857" }, 900));
+
+		const books = await createBookDataExtensionPlugin().fetchBookData(["56789", "12345", "49857"]);
+
+		expect(books).toEqual([{ title: "book-12345" }, { title: "book-56789" }]);
 	});
 });
