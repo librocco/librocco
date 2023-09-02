@@ -4,6 +4,10 @@ import { VolumeStock } from "@librocco/shared";
 
 import { EntriesStreamResult, NavMap, VolumeStockClient } from "@/types";
 
+import { createVersioningFunction } from "@/utils/misc";
+
+export const versionId = createVersioningFunction("v1");
+
 export type TableData = {
 	/** Rows to display for a page */
 	rows: Iterable<VolumeStock>;

@@ -3,7 +3,19 @@ import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share,
 
 import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
 
-import { BooksInterface, CouchDocument, DbStream, DesignDocument, MapReduceRow, Replicator, InNoteMap, NavEntry, NavMap } from "@/types";
+import {
+	BooksInterface,
+	CouchDocument,
+	DbStream,
+	DesignDocument,
+	MapReduceRow,
+	Replicator,
+	InNoteMap,
+	NavEntry,
+	NavMap,
+	PluginInterfaceLookup,
+	LibroccoPlugin
+} from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -14,9 +26,10 @@ import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
 import { newStock } from "./stock";
+import { newPluginsInterface, PluginsInterface } from "./plugins";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
-import { versionId } from "@/utils/misc";
+import { versionId } from "./utils";
 
 class Database implements DatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -29,16 +42,19 @@ class Database implements DatabaseInterface {
 
 	#stockStream: Observable<StockMap>;
 
+	#plugins: PluginsInterface;
+
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
+
+		this.#plugins = newPluginsInterface();
 
 		const warehouseListCache = new BehaviorSubject<NavMap>(new Map());
 		this.#warehouseListStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
 				map(
-					({ rows }) =>
-						new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+					({ rows }) => new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
 				),
 				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
 			);
@@ -145,6 +161,10 @@ class Database implements DatabaseInterface {
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {
 		return newWarehouse(this, id);
+	}
+
+	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
+		return this.#plugins.get(type);
 	}
 	// #endregion instances
 
