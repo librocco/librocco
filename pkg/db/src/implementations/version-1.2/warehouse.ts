@@ -15,7 +15,7 @@ import { newStock } from "./stock";
 import { versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { combineTransactionsWarehouses, addWarehouseNames, TableData } from "./utils";
+import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -242,9 +242,9 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
-		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
+		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
 		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
-		return addWarehouseNames(entries, warehouses);
+		return addWarehouseData(entries, warehouses);
 	}
 
 	/**
@@ -281,7 +281,7 @@ class Warehouse implements WarehouseInterface {
 					)
 				);
 
-				return combineLatest([tableData, this.#db.stream().warehouseList(ctx)]).pipe(
+				return combineLatest([tableData, this.#db.stream().warehouseMap(ctx)]).pipe(
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
