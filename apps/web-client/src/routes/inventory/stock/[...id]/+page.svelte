@@ -140,7 +140,7 @@
 					</h2>
 				</h2>
 				{#if warehouse && !warehouse._id.includes("0-all")}
-					<DiscountInput label="Warehouse Discount:" bind:value={$warehouseDiscount} />
+					<DiscountInput name="warehouse-discount" label="Warehouse Discount:" bind:value={$warehouseDiscount} />
 				{/if}
 			</div>
 			<TextField name="search" placeholder="Serach">

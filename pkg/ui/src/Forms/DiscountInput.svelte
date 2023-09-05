@@ -2,6 +2,7 @@
 	import { createEventDispatcher, tick } from "svelte";
 	import { XCircle, CheckCircle } from "lucide-svelte";
 
+	export let name = "discount";
 	export let label = "";
 	export let value = 0;
 
@@ -78,6 +79,7 @@
 
 			<input
 				class="arrows-hidden w-full rounded-sm border-gray-400 py-0 px-0.5 text-center"
+				{name}
 				type="number"
 				{value}
 				bind:this={input}
