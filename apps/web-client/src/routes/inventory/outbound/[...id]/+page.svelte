@@ -185,7 +185,7 @@
 					{/if}
 				</div>
 				<div class="flex gap-x-4">
-					<Button color={ButtonColor.White} on:click={() => note?.printReceipt}>Print receipt</Button>
+					<Button color={ButtonColor.White} on:click={() => note?.printReceipt()}>Print receipt</Button>
 					<SelectMenu
 						id="note-state-picker"
 						class="w-[138px]"
