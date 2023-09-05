@@ -15,7 +15,8 @@ import {
 	MapReduceRes,
 	NavMap,
 	PluginInterfaceLookup,
-	LibroccoPlugin
+	LibroccoPlugin,
+	WarehouseDataMap
 } from "@/types";
 import { DocType } from "@/enums";
 
@@ -36,7 +37,7 @@ export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & {
 	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
 	stock: () => Observable<StockMap>;
 	getStock: () => Promise<StockMap>;
-	getWarehouseList: () => Promise<NavMap>;
+	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 };
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
@@ -47,7 +48,7 @@ export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> 
 }
 
 // View response types
-export type WarehouseListRow = MapReduceRow<string, { displayName?: string }>;
+export type WarehouseListRow = MapReduceRow<string, Pick<WarehouseData, "displayName" | "discountPercentage">>;
 export type OutNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean }>;
 export type InNoteListRow = MapReduceRow<string, { displayName?: string; committed?: boolean; type: DocType }>;
 export type PublishersListRow = MapReduceRow<string, number>;

@@ -66,7 +66,7 @@ export const listDeisgnDocument: DesignDocument = {
 		warehouses: {
 			map: function (doc: WarehouseData | NoteData) {
 				if (doc.docType === "warehouse") {
-					emit(doc._id, { displayName: doc.displayName });
+					emit(doc._id, { displayName: doc.displayName, discountPercentage: (doc as WarehouseData).discountPercentage });
 				}
 			}.toString()
 		},

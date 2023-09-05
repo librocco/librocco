@@ -54,6 +54,7 @@ export interface VolumeStock {
 
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
 export interface VolumeStockClient extends VolumeStock {
+	warehouseDiscount: number;
 	warehouseName: string;
 	availableWarehouses?: NavMap;
 }
@@ -289,6 +290,10 @@ export type NavEntry<A = {}> = {
  * A map of navigation entries: { noteId => { displayName } }
  */
 export type NavMap<A = {}> = Map<string, NavEntry<A>>;
+/**
+ * A map of warehouses and their respective data
+ */
+export type WarehouseDataMap = Map<string, Pick<WarehouseData, "displayName" | "discountPercentage">>;
 
 /**
  * A map of inbound note entries: { warehouseId => { displayName, notes: NavMap } }
@@ -308,7 +313,7 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseList: (ctx: debug.DebugCtx) => Observable<NavMap>;
+	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 }
