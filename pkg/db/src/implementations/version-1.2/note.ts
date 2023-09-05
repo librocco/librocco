@@ -11,7 +11,7 @@ import { versionId } from "./utils";
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
-import { addWarehouseNames, combineTransactionsWarehouses, TableData } from "./utils";
+import { addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -367,8 +367,8 @@ class Note implements NoteInterface {
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const entries = await this.get().then((note) => note?.entries || []);
-		const warehouses = await this.#db.getWarehouseList();
-		return addWarehouseNames(entries, warehouses);
+		const warehouses = await this.#db.getWarehouseDataMap();
+		return addWarehouseData(entries, warehouses);
 	}
 
 	printReceipt(): Promise<string> {
@@ -406,7 +406,7 @@ class Note implements NoteInterface {
 							})
 						)
 					),
-					this.#db.stream().warehouseList(ctx),
+					this.#db.stream().warehouseMap(ctx),
 					this.#db.stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
