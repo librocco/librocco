@@ -129,4 +129,77 @@ describe("tableContentStore", () => {
 			]);
 		});
 	});
+
+	test("should apply warehouse discount (if any)", async () => {
+		const db = await newTestDB();
+
+		const book1 = {
+			isbn: "0194349276",
+			title: "Holiday Jazz Chants",
+			authors: "Carolyn Graham",
+			publisher: "Oxford",
+			year: "1999",
+			price: 60
+		};
+		const book2 = {
+			isbn: "0195399706",
+			title: "The Age of Wonder",
+			authors: "Richard Holmes",
+			publisher: "HarperCollins UK",
+			year: "2008",
+			price: 12
+		};
+
+		// Set up initial state:
+		const [wh1, wh2] = await Promise.all([
+			db
+				.warehouse("wh-1")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 1")),
+			db
+				.warehouse("wh-2")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 2"))
+		]);
+		const note = await db.warehouse().note("note-1").create();
+		await Promise.all([
+			note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "wh-1" }, { isbn: book2.isbn, quantity: 10, warehouseId: "wh-2" }),
+			// Both books are present in the db
+			db.books().upsert([book1, book2])
+		]);
+
+		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
+		let displayEntries: DisplayRow[];
+		tableData.entries.subscribe((de) => (displayEntries = de));
+
+		// Displays the state (including prices) as is
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
+				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", availableWarehouses: new Map() },
+				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", availableWarehouses: new Map() }
+			])
+		);
+
+		// Set the warehouse discount for the first warehouse
+		await wh1.setDiscount({}, 10);
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
+				// The price of book1 should be discounted (as wh-1 has a discount of 10%)
+				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", price: 54, availableWarehouses: new Map() },
+				// Warehouse 2 doesn't have a discount applied to it
+				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", price: 12, availableWarehouses: new Map() }
+			])
+		);
+
+		// Set the warehouse discount for the second warehouse
+		await wh2.setDiscount({}, 20);
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
+				// Applied discount: 10%
+				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", price: 54, availableWarehouses: new Map() },
+				// Applied discount: 20%
+				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", price: 9.6, availableWarehouses: new Map() }
+			])
+		);
+	});
 });

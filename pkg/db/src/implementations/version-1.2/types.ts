@@ -13,7 +13,6 @@ import {
 	MapReduceRow,
 	CouchDocument,
 	MapReduceRes,
-	NavMap,
 	PluginInterfaceLookup,
 	LibroccoPlugin,
 	WarehouseDataMap
