@@ -50,7 +50,7 @@
 		warehouseListCtx,
 		db
 			?.stream()
-			.warehouseList(warehouseListCtx)
+			.warehouseMap(warehouseListCtx)
 			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
 			.pipe(map((m) => [...m])),
 		[]
