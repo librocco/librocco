@@ -2,7 +2,8 @@ import type { ToastOptions, ToastEntry } from "../Toasts";
 
 export enum ToastType {
 	Success = "success",
-	Error = "error"
+	Error = "error",
+	Warning = "warning"
 }
 
 export type ToastData = ToastOptions<ToastType>;
