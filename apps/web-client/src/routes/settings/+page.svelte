@@ -1,60 +1,52 @@
 <script lang="ts">
-	import type { EventHandler } from "svelte/elements";
 	import { base } from "$app/paths";
 
-	import { Button, TextField, Header, InventoryPage } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
 
 	import { links } from "$lib/data";
-	import { remoteCouchConfigStore } from "$lib/stores/settings";
-	import { toastSuccess } from "$lib/toasts";
+	import { remoteDbStore } from "$lib/stores";
+	import { replicationStatusMessages } from "$lib/toasts";
 
-	let errors = {
-		"couch-url": ""
-	};
-
-	const handleSubmit: EventHandler<Event & { readonly submitter: HTMLElement }, HTMLFormElement> = (event) => {
-		const formData = new FormData(event.target as HTMLFormElement);
-
-		const couchUrl = formData.get("couch-url") as string;
-
-		const urlRegex = new RegExp("^(https?://)(.+):(.+)@(.+):(.+)$");
-
-		if (couchUrl && urlRegex.test(couchUrl)) {
-			errors["couch-url"] = "";
-			remoteCouchConfigStore.set({ couchUrl });
-
-			toastSuccess("Remote CouchDB URL updated");
-		} else {
-			errors["couch-url"] = "URL should have format https://<COUCHDB_USER:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/${DB_NAME}";
-		}
-	};
+	$: ({ replicator } = remoteDbStore);
+	$: ({ status, config, progress, hasActiveHandler } = replicator);
 </script>
 
 <InventoryPage>
 	<Header {links} currentLocation={`${base}/settings/`} slot="header" />
 
-	<div slot="table" class="flex justify-start">
-		<div class="flex basis-full flex-col gap-y-4 px-16 lg:basis-2/3">
-			<h1 class="text-xl">Database settings</h1>
-
-			<form method="POST" on:submit|preventDefault={handleSubmit}>
-				<div class="flex flex-col gap-y-4">
-					<TextField
-						name="couch-url"
-						id="couch-url"
-						label="Remote CouchDB URL"
-						placeholder="<COUCHDB_USER>:<COUCHDB_PASSWORD>@<COUCHDB_HOST>:<COUCHDB_PORT>/"
-						value={$remoteCouchConfigStore?.couchUrl}
-						isValid={errors?.["couch-url"] ? true : false}
-						required
+	<div slot="table" class="space-y-12">
+		<div class="flex flex-col gap-6 px-16 sm:flex-row">
+			<div>
+				<h2 class="text-base font-semibold leading-7 text-gray-900">Database settings</h2>
+				<p class="mt-1 text-sm leading-6 text-gray-600">Manage a connection to a remote database</p>
+			</div>
+			<div class="w-full max-w-3xl">
+				{#if $hasActiveHandler}
+					<RemoteDbData
+						config={$config}
+						status={{
+							color: replicationStatusMessages[$status.state].color,
+							message: replicationStatusMessages[$status.state].message
+						}}
+						onEdit={() => remoteDbStore.destroyHandler()}
 					>
-						<p slot="helpText">{errors?.["couch-url"] || ""}</p>
-					</TextField>
-					<div class="self-end">
-						<Button type="submit">Save settings</Button>
-					</div>
-				</div>
-			</form>
+						<div slot="info" class="flex flex-col gap-y-2 pt-2">
+							{#if $status.state === "ACTIVE:REPLICATING"}
+								<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined} />
+								<p class="text-xs font-medium uppercase leading-4 text-gray-500">
+									{$progress.docsWritten}{$progress.docsPending ? ` / ${$progress.docsWritten + $progress.docsPending}` : ""} Documents synced
+								</p>
+							{:else if $status.state === "ACTIVE:INDEXING"}
+								<ProgressBar />
+							{:else}
+								<p class="text-xs font-medium uppercase leading-4 text-gray-500">{$status.info}</p>
+							{/if}
+						</div>
+					</RemoteDbData>
+				{:else}
+					<RemoteDbForm data={$config} onSubmit={(values) => remoteDbStore.createHandler(values)} />
+				{/if}
+			</div>
 		</div>
 	</div>
 </InventoryPage>

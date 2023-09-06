@@ -14,8 +14,8 @@
 
 	const id = uuid();
 
-	const labelBaseClasses = ["font-medium", $$restProps.disabled ? "text-gray-400" : "text-gray-700"].join(" ");
-	const helpTextColor = $$restProps.disabled ? "text-gray-300" : "text-gray-500";
+	$: labelBaseClasses = ["font-medium", $$restProps.disabled ? "text-gray-400" : "text-gray-700"].join(" ");
+	$: helpTextColor = $$restProps.disabled ? "text-gray-300" : "text-gray-500";
 	const inputBaseClasses = [
 		"focus:ring-teal-500",
 		"h-4",
@@ -29,7 +29,7 @@
 
 <div class="relative flex items-start">
 	<div class="flex h-5 items-center">
-		<input type="checkbox" {id} {name} aria-describedby={`${name}-description`} class={inputBaseClasses} {...$$restProps} />
+		<input type="checkbox" {id} {name} aria-describedby={`${name}-description`} class={inputBaseClasses} {...$$restProps} on:change />
 	</div>
 	<div class="ml-3 text-sm">
 		<label for={id} class={labelBaseClasses}>

@@ -36,7 +36,7 @@ export const newModel = (rawData: RawData, config: ImplementationSetup) => {
 
 		// If testing with docker support, we're using the remote db to replicate to/from
 		if (__withDocker__) {
-			db.replicate().live({}, `http://admin:admin@127.0.0.1:5001/test-${dbName}`);
+			db.replicate().sync(`http://admin:admin@127.0.0.1:5001/test-${dbName}`, { live: true, retry: true });
 		}
 
 		return db.init();
