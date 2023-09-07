@@ -5,7 +5,7 @@ import PouchDB from "pouchdb";
 
 import { NoteState, debug } from "@librocco/shared";
 
-import type { DocType } from "./enums";
+import type { DocType, PrintJobStatus } from "./enums";
 
 import { NEW_WAREHOUSE } from "./constants";
 
@@ -154,6 +154,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * An imperative query (single response) of note's transactions (as opposed to the entries stream - an observable stream).
 	 */
 	getEntries: EntriesQuery;
+	printReceipt(): Promise<string>;
 }
 
 /**
@@ -244,6 +245,32 @@ export interface Replicator {
 	sync: (url: string | PouchDB.Database, options: PouchDB.Replication.ReplicateOptions) => PouchDB.Replication.Sync<{}>;
 }
 // #endregion replication
+
+// #region receipts
+export interface ReceiptItem {
+	isbn: string;
+	title: string;
+	quantity: number;
+	price: number;
+}
+
+export interface ReceiptData {
+	items: ReceiptItem[];
+	total: number;
+	timestamp: number;
+}
+
+export interface PrintJob extends CouchDocument<ReceiptData> {
+	printer_id: string;
+	// TODO: Update the states when developing the functionality further
+	status: PrintJobStatus;
+	error?: string;
+}
+
+export interface RecepitsInterface {
+	print(note: NoteData): Promise<string>;
+}
+// #endregion receipts
 
 // #region db
 export type NavEntry<A = {}> = {
@@ -339,6 +366,7 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 */
 	books: () => BooksInterface;
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
+	receipts: () => RecepitsInterface;
 }
 
 /**
