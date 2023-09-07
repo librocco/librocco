@@ -1,10 +1,12 @@
+import { wrapIter } from "@librocco/shared";
+
 import type { PrintJob, ReceiptData, RecepitsInterface } from "@/types";
 import type { DatabaseInterface, NoteData } from "./types";
 
 import { DocType, PrintJobStatus } from "@/enums";
 
-import { uniqueTimestamp, versionId } from "@/utils/misc";
-import { wrapIter } from "@librocco/shared";
+import { uniqueTimestamp } from "@/utils/misc";
+import { versionId } from "./utils";
 
 class Receipts implements RecepitsInterface {
 	#db: DatabaseInterface;
