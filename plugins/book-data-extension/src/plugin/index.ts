@@ -1,2 +1,27 @@
-export const dunnystring =
-	"This is a dummy string so that the 'build' script doesn't fail (warn = fail in CI) due to empty bundle. Remove when there's something to build.";
+import { BookFetcherPlugin, BookEntry } from "@librocco/db";
+import { postMessage } from "./window-helpers";
+import { listenForBook, listenForExtension } from "./listeners";
+
+export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
+	const fetchBookData = async (isbns: string[]): Promise<BookEntry[]> => {
+		// Check if the extension is registered if not resolve to []
+		postMessage(`BOOK_FETCHER:PING`);
+
+		const extensionAvailable = await listenForExtension(`BOOK_FETCHER:PONG`, 500);
+
+		if (!extensionAvailable) return [];
+
+		const unfilteredBookData = await Promise.all(isbns.map((isbn) => fetchBook(isbn)));
+
+		return unfilteredBookData.filter((bookData): bookData is BookEntry => bookData !== undefined);
+	};
+
+	const fetchBook = (isbn: string) => {
+		// Post message to the extension
+		postMessage(`BOOK_FETCHER:REQ:${isbn}`);
+
+		return listenForBook(`BOOK_FETCHER:RES`, 800);
+	};
+
+	return { fetchBookData };
+};
