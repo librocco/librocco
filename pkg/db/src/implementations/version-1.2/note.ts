@@ -371,6 +371,10 @@ class Note implements NoteInterface {
 		return addWarehouseNames(entries, warehouses);
 	}
 
+	printReceipt(): Promise<string> {
+		return this.#db.receipts().print(this);
+	}
+
 	/**
 	 * Creates streams for the note data. The streams are hot in a way that they will
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
