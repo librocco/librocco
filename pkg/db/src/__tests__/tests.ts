@@ -1570,30 +1570,96 @@ export const bookFetcherPlugin: TestFunction = async (db) => {
 };
 
 export const receiptPrinter: TestFunction = async (db) => {
-	// Setup: Create a note and book data for note entries
+	// We're creating a bunch of transactions to test the receipt
+	// taking into account entries which would be omitted in the UI by pagination.
+	//
+	// Additionally, we're later using this (predictable prices) to test applied discount.
+	const transactions = Array(20)
+		.fill(null)
+		.map((_, i) => ({
+			isbn: `transaction-${i}`,
+			title: `Transaction ${i}`,
+			quantity: 2,
+			warehouseId: "wh-1",
+			price: (1 + i) * 2
+		}));
+
+	// Setup: Create a note and book data for transactions
 	const [note] = await Promise.all([
 		db
 			.warehouse()
 			.note()
 			.create()
-			.then((n) =>
-				n.addVolumes(
-					{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
-					{ isbn: "22222222", quantity: 3, warehouseId: "warehouse-1" }
-				)
-			),
-		db.books().upsert([
-			{ isbn: "11111111", title: "The Age of Wonder", price: 12 },
-			{ isbn: "22222222", title: "Twelve Bar Blues", price: 13 }
-		])
+			// Add all transactions to the note
+			.then((n) => n.addVolumes(...transactions.map(({ isbn, quantity, warehouseId }) => ({ isbn, quantity, warehouseId })))),
+		// Create book data entries for transactions
+		db.books().upsert(transactions.map(({ isbn, title, price }) => ({ isbn, title, price })))
 	]);
 
 	// Print the note
-	const printJobId = await note.printReceipt();
+	let printJobId = await note.printReceipt();
 	expect(printJobId).toMatch(/print_queue\/printer-1\/[0-9a-z]+$/);
 
 	// The print job should have been added to the print queue
-	const printJob = await db._pouch.get(printJobId);
+	let printJob = await db._pouch.get(printJobId);
+	expect(printJob).toEqual({
+		_id: printJobId,
+		_rev: expect.any(String),
+		docType: DocType.PrintJob,
+		printer_id: "printer-1",
+		status: "PENDING",
+		items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price })),
+		// Prices series: 2, 4, ..., (n * 2) | n = 20
+		// S(n) = 2 + 4 + ... + (n * 2) | n = 20
+		// S(n) = n * (a1 + an) / 2
+		// S(n) = 20 * (2 + 40) / 2 = 420
+		//
+		// Quantities: 2 (for each entry)
+		// Sum = S(n) * 2 = 840
+		total: 840,
+		timestamp: expect.any(Number)
+	});
+
+	// Add a discount to wh-1
+	await db
+		.warehouse("wh-1")
+		.create()
+		.then((wh) => wh.setDiscount({}, 50));
+
+	// Print the note again
+	printJobId = await note.printReceipt();
+
+	// The print job should have been added to the print queue with discounted prices
+	printJob = await db._pouch.get(printJobId);
+	expect(printJob).toEqual({
+		_id: printJobId,
+		_rev: expect.any(String),
+		docType: DocType.PrintJob,
+		printer_id: "printer-1",
+		status: "PENDING",
+		items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+		// Prices series: 1, 2, ..., n | n = 20
+		// S(n) = 1 + 2 + ... + n | n = 20
+		// S(n) = n * (a1 + an) / 2
+		// S(n) = 20 * (1 + 20) / 2 = 210
+		//
+		// Quantities: 2 (for each entry)
+		// Sum = S(n) * 2 = 420
+		total: 420,
+		timestamp: expect.any(Number)
+	});
+
+	// Add transactions belonging to different warehouse (no discount should be applied to those)
+	//
+	// Transactions are the first two from the previous array (they already have a price set with book data), but since
+	// they belong to wh-2, no discount will be applied
+	await note.addVolumes(...transactions.slice(0, 2).map((txn) => ({ ...txn, warehouseId: "wh-2" })));
+
+	// Print the note again
+	printJobId = await note.printReceipt();
+
+	// The print job should have been added to the print queue with discounted prices
+	printJob = await db._pouch.get(printJobId);
 	expect(printJob).toEqual({
 		_id: printJobId,
 		_rev: expect.any(String),
@@ -1601,10 +1667,20 @@ export const receiptPrinter: TestFunction = async (db) => {
 		printer_id: "printer-1",
 		status: "PENDING",
 		items: [
-			{ isbn: "11111111", title: "The Age of Wonder", price: 12, quantity: 2 },
-			{ isbn: "22222222", title: "Twelve Bar Blues", price: 13, quantity: 3 }
+			// wh-1 transactions - with discount applied
+			...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+			// additional two transactions (wh-2) - no discount applied
+			...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price }))
 		],
-		total: 2 * 12 + 3 * 13,
+		// Prices series: 1, 2, ..., n | n = 20
+		// S(n) = 1 + 2 + ... + n | n = 20
+		// S(n) = n * (a1 + an) / 2
+		// S(n) = 20 * (1 + 20) / 2 = 210
+		//
+		// Quantities: 2 (for each entry)
+		// Sum = 2 * ( S(n) + transaction-0-without-discount + transaction-1-without-discount )
+		// Sum = 2 * ( S(n) + 2 + 4 ) = 432
+		total: 432,
 		timestamp: expect.any(Number)
 	});
 };

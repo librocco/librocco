@@ -33,11 +33,25 @@ class Receipts implements RecepitsInterface {
 
 	async print({ entries }: NoteData): Promise<string> {
 		const timestamp = Number(new Date());
-		const books = await this.#db.books().get(entries.map(({ isbn }) => isbn));
+
+		const [books, warehouseMap] = await Promise.all([
+			this.#db.books().get(entries.map(({ isbn }) => isbn)),
+			this.#db.getWarehouseDataMap()
+		]);
+
 		const items = wrapIter(entries)
+			// Add warehouse discount to each entry
+			.map(({ warehouseId, ...entry }) => ({ ...entry, discount: warehouseMap.get(warehouseId)?.discountPercentage ?? 0 }))
+			// Zip with book data res - we can safely do this as the length and ordering of isbns and book data is the same (with undefined for missing books)
 			.zip(books)
-			.map(([{ isbn, quantity }, { title, price } = { title: "", price: 0 }]) => ({ isbn, title, quantity, price }))
+			.map(([{ isbn, quantity, discount }, { title, price } = { title: "", price: 0 }]) => ({
+				isbn,
+				title,
+				quantity,
+				price: (price * (100 - discount)) / 100
+			}))
 			.array();
+
 		// In order to produce a correct total (two decimal places), we're doing the arithmetic over interegs and converting the result
 		// back to a float with two decimal places. This is to avoid floating point errors.
 		const total = items.reduce((acc, { quantity, price }) => acc + quantity * Math.floor(price * 100), 0) / 100;
