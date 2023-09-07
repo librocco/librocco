@@ -4,6 +4,8 @@ import { BehaviorSubject, switchMap } from "rxjs";
 
 import { NoteState, testUtils } from "@librocco/shared";
 
+import { DocType } from "../enums";
+
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStock, VolumeStockClient } from "@/types";
 import { TestFunction } from "@/test-runner/types";
 
@@ -1362,7 +1364,7 @@ export const syncNoteAndWarehouseInterfaceWithTheDb: TestFunction = async (db) =
 	await waitFor(() => expect(wInst1).toEqual(wInst2));
 };
 
-export const BookFetcherPlugin: TestFunction = async (db) => {
+export const bookFetcherPlugin: TestFunction = async (db) => {
 	// The initial book-fetcher plugin should satisfy the 'BookFetcherPlugin' interface
 	// with all of its methods being noop
 	//
@@ -1397,6 +1399,46 @@ export const BookFetcherPlugin: TestFunction = async (db) => {
 		{ isbn: "11111111", title: "Title", price: 0 },
 		{ isbn: "22222222", title: "Title", price: 0 }
 	]);
+};
+
+export const receiptPrinter: TestFunction = async (db) => {
+	// Setup: Create a note and book data for note entries
+	const [note] = await Promise.all([
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) =>
+				n.addVolumes(
+					{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
+					{ isbn: "22222222", quantity: 3, warehouseId: "warehouse-1" }
+				)
+			),
+		db.books().upsert([
+			{ isbn: "11111111", title: "The Age of Wonder", price: 12 },
+			{ isbn: "22222222", title: "Twelve Bar Blues", price: 13 }
+		])
+	]);
+
+	// Print the note
+	const printJobId = await note.printReceipt();
+	expect(printJobId).toMatch(/print_queue\/printer-1\/[0-9a-z]+$/);
+
+	// The print job should have been added to the print queue
+	const printJob = await db._pouch.get(printJobId);
+	expect(printJob).toEqual({
+		_id: printJobId,
+		_rev: expect.any(String),
+		docType: DocType.PrintJob,
+		printer_id: "printer-1",
+		status: "PENDING",
+		items: [
+			{ isbn: "11111111", title: "The Age of Wonder", price: 12, quantity: 2 },
+			{ isbn: "22222222", title: "Twelve Bar Blues", price: 13, quantity: 3 }
+		],
+		total: 2 * 12 + 3 * 13,
+		timestamp: expect.any(Number)
+	});
 };
 
 // #region helpers

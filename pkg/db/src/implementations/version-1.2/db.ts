@@ -14,7 +14,8 @@ import {
 	NavEntry,
 	NavMap,
 	PluginInterfaceLookup,
-	LibroccoPlugin
+	LibroccoPlugin,
+	RecepitsInterface
 } from "@/types";
 import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
 
@@ -27,6 +28,7 @@ import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
 import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
+import { newReceiptsInterface } from "./receipts";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
@@ -165,6 +167,11 @@ class Database implements DatabaseInterface {
 
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
 		return this.#plugins.get(type);
+	}
+
+	receipts(): RecepitsInterface {
+		// TODO: We should add additional method to connect the printer
+		return newReceiptsInterface(this, "printer-1");
 	}
 	// #endregion instances
 
