@@ -9,6 +9,7 @@ const config = {
 	histoire: {
 		plugins: [HstSvelte()],
 		setupFile: "./src/histoire.setup.ts",
+		storyMatch: ["src/**/*.story.svelte"],
 		vite: {
 			base: "/",
 			server: {
