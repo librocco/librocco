@@ -73,6 +73,7 @@ export interface ContentInterface extends Locator {
 	heading(title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface;
 	updatedAt(opts?: WaitForOpts): Promise<Date>;
 	assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
+	discount(): WarehouseDiscountInterface;
 	statePicker(): StatePickerInterface;
 	scanField(): ScanFieldInterface;
 	entries(view: ViewName): EntriesTableInterface;
@@ -92,6 +93,10 @@ export interface StatePickerInterface extends Locator {
 
 export interface ScanFieldInterface extends Locator {
 	add(isbn: string): Promise<void>;
+}
+
+export interface WarehouseDiscountInterface extends Locator {
+	set(value: number): Promise<void>;
 }
 
 // #region book form

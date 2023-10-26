@@ -15,7 +15,7 @@ import { newStock } from "./stock";
 import { versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { combineTransactionsWarehouses, addWarehouseNames, TableData } from "./utils";
+import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -42,6 +42,7 @@ class Warehouse implements WarehouseInterface {
 	_deleted?: boolean;
 
 	displayName = "";
+	discountPercentage = 0;
 
 	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
@@ -104,6 +105,7 @@ class Warehouse implements WarehouseInterface {
 		// Update the data with provided fields
 		this.updateField("_rev", data._rev);
 		this.updateField("displayName", data.displayName);
+		this.updateField("discountPercentage", data.discountPercentage);
 
 		this.#exists = true;
 
@@ -223,10 +225,26 @@ class Warehouse implements WarehouseInterface {
 		return this.update({}, { displayName });
 	}
 
+	/**
+	 * Update discount percentage
+	 */
+	setDiscount(ctx: debug.DebugCtx, discountPercentage: number): Promise<WarehouseInterface> {
+		const currentDiscountPercentage = this.discountPercentage;
+		debug.log(ctx, "note:set_discount_percentage")({ discountPercentage, currentDiscountPercentage });
+
+		if (discountPercentage === currentDiscountPercentage || isNaN(discountPercentage)) {
+			debug.log(ctx, "note:set_discount:noop")({ discountPercentage, currentDiscountPercentage });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_discount:updating")({ discountPercentage });
+		return this.update({}, { discountPercentage });
+	}
+
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
-		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseList()]);
+		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
 		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
-		return addWarehouseNames(entries, warehouses);
+		return addWarehouseData(entries, warehouses);
 	}
 
 	/**
@@ -243,6 +261,13 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "streams: display_name: res"))
 				),
 
+			discount: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "streams: discount: input")),
+					map(({ discountPercentage }) => discountPercentage || 0),
+					tap(debug.log(ctx, "streams: discount: res"))
+				),
+
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
 				const endIx = startIx + itemsPerPage;
@@ -256,7 +281,7 @@ class Warehouse implements WarehouseInterface {
 					)
 				);
 
-				return combineLatest([tableData, this.#db.stream().warehouseList(ctx)]).pipe(
+				return combineLatest([tableData, this.#db.stream().warehouseMap(ctx)]).pipe(
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))

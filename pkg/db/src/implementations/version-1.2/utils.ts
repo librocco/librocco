@@ -2,7 +2,7 @@ import { map, StockMap } from "@librocco/shared";
 
 import { VolumeStock } from "@librocco/shared";
 
-import { EntriesStreamResult, NavMap, VolumeStockClient } from "@/types";
+import { EntriesStreamResult, NavMap, VolumeStockClient, WarehouseDataMap } from "@/types";
 
 import { createVersioningFunction } from "@/utils/misc";
 
@@ -18,8 +18,8 @@ export type TableData = {
 	};
 };
 
-type Params = [TableData, NavMap, ...any[]];
-type ParamsWithAvailableWarehouses = [TableData, NavMap, StockMap];
+type Params = [TableData, WarehouseDataMap, ...any[]];
+type ParamsWithAvailableWarehouses = [TableData, WarehouseDataMap, StockMap];
 
 export function combineTransactionsWarehouses(opts: {
 	includeAvailableWarehouses: true;
@@ -29,11 +29,11 @@ export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouse
 	return opts?.includeAvailableWarehouses
 		? ([{ rows, stats }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
 				...stats,
-				rows: [...addAvailableWarehouses(addWarehouseNames(rows, warehouses), warehouses, stock)]
+				rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
 		  })
 		: ([{ rows, stats }, warehouses]: Params): EntriesStreamResult => ({
 				...stats,
-				rows: [...addWarehouseNames(rows, warehouses)]
+				rows: [...addWarehouseData(rows, warehouses)]
 		  });
 }
 
@@ -44,11 +44,12 @@ export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouse
  * @param warehouses
  * @returns
  */
-export const addWarehouseNames = (entries: Iterable<VolumeStock>, warehouses: NavMap): Iterable<VolumeStockClient> => {
+export const addWarehouseData = (entries: Iterable<VolumeStock>, warehouses: WarehouseDataMap): Iterable<VolumeStockClient> => {
 	return map(entries, (e) => {
 		return {
 			...e,
-			warehouseName: warehouses.get(e.warehouseId)?.displayName || "not-found"
+			warehouseName: warehouses.get(e.warehouseId)?.displayName || "not-found",
+			warehouseDiscount: warehouses.get(e.warehouseId)?.discountPercentage || 0
 		};
 	});
 };

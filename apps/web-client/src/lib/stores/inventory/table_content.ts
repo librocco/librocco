@@ -56,7 +56,14 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 				.pipe(
 					tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
 					map((booksFromDb) => booksFromDb.map((b = {} as BookEntry, i) => ({ ...b, ...rows[i] }))),
-					tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
+					tap(debug.log(ctx, "display_entries_store:table_data:merged_books")),
+					map((transactions) =>
+						transactions.map(({ price, warehouseDiscount, ...rest }) => ({
+							...rest,
+							price: price ? Math.round(price * (100 - warehouseDiscount)) / 100 : undefined
+						}))
+					),
+					tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
 				);
 		})
 	);
