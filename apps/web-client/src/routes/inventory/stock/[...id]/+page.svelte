@@ -20,7 +20,8 @@
 		NewEntitySideNavButton,
 		ProgressBar,
 		Slideover,
-		BookDetailForm
+		BookDetailForm,
+		DiscountInput
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
 
@@ -49,7 +50,7 @@
 		warehouseListCtx,
 		db
 			?.stream()
-			.warehouseList(warehouseListCtx)
+			.warehouseMap(warehouseListCtx)
 			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
 			.pipe(map((m) => [...m])),
 		[]
@@ -67,6 +68,7 @@
 	$: warehouesStores = createWarehouseStores(warehouse);
 
 	$: displayName = warehouesStores.displayName;
+	$: warehouseDiscount = warehouesStores.warehouseDiscount;
 	$: currentPage = warehouesStores.currentPage;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
@@ -131,9 +133,16 @@
 	<!-- Table header slot -->
 	<div class="flex w-full items-end justify-between" slot="tableHeader">
 		{#if !loading && warehouse}
-			<h2 class="mb-4 text-gray-900">
-				<TextEditable bind:value={$displayName} />
-			</h2>
+			<div>
+				<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
+					<h2 class="mb-4 text-gray-900">
+						<TextEditable bind:value={$displayName} />
+					</h2>
+				</h2>
+				{#if warehouse && !warehouse._id.includes("0-all")}
+					<DiscountInput name="warehouse-discount" label="Warehouse Discount:" bind:value={$warehouseDiscount} />
+				{/if}
+			</div>
 			<TextField name="search" placeholder="Serach">
 				<svelte:fragment slot="startAdornment">
 					<Search class="h-5 w-5" />

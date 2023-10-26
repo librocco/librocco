@@ -15,9 +15,10 @@ import {
 	NavMap,
 	PluginInterfaceLookup,
 	LibroccoPlugin,
-	RecepitsInterface
+	RecepitsInterface,
+	WarehouseDataMap
 } from "@/types";
-import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow } from "./types";
+import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow, WarehouseData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -38,7 +39,7 @@ class Database implements DatabaseInterface {
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
-	#warehouseListStream: Observable<NavMap>;
+	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
 	#inNoteListStream: Observable<InNoteMap>;
 
@@ -51,14 +52,20 @@ class Database implements DatabaseInterface {
 
 		this.#plugins = newPluginsInterface();
 
-		const warehouseListCache = new BehaviorSubject<NavMap>(new Map());
-		this.#warehouseListStream = this.view<WarehouseListRow>("v1_list/warehouses")
+		const warehouseMapCache = new BehaviorSubject<WarehouseDataMap>(new Map());
+		this.#warehouseMapStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
 				map(
-					({ rows }) => new Map<string, NavEntry>(wrapIter(rows).map(({ key: id, value: { displayName = "" } }) => [id, { displayName }]))
+					({ rows }) =>
+						new Map<string, Pick<WarehouseData, "displayName" | "discountPercentage">>(
+							wrapIter(rows).map(({ key: id, value: { displayName = "", discountPercentage = 0 } }) => [
+								id,
+								{ displayName, discountPercentage }
+							])
+						)
 				),
-				share({ connector: () => warehouseListCache, resetOnRefCountZero: false })
+				share({ connector: () => warehouseMapCache, resetOnRefCountZero: false })
 			);
 
 		const outNoteListCache = new BehaviorSubject<NavMap>(new Map());
@@ -95,7 +102,7 @@ class Database implements DatabaseInterface {
 		this._pouch.setMaxListeners(30);
 
 		// Initialise the streams
-		firstValueFrom(this.#warehouseListStream);
+		firstValueFrom(this.#warehouseMapStream);
 		firstValueFrom(this.#inNoteListStream);
 		firstValueFrom(this.#outNoteListStream);
 
@@ -195,16 +202,21 @@ class Database implements DatabaseInterface {
 		return note && warehouse ? { note, warehouse } : undefined;
 	}
 
-	async getWarehouseList(): Promise<NavMap> {
+	async getWarehouseDataMap(): Promise<WarehouseDataMap> {
 		return this.view<WarehouseListRow>("v1_list/warehouses")
 			.query({})
-			.then(({ rows }) => new Map(mapIter(rows, ({ key: id, value: { displayName = "" } }) => [id, { displayName }])));
+			.then(
+				({ rows }) =>
+					new Map(
+						mapIter(rows, ({ key: id, value: { displayName = "", discountPercentage = 0 } }) => [id, { displayName, discountPercentage }])
+					)
+			);
 	}
 	// #endregion queries
 
 	stream(): DbStream {
 		return {
-			warehouseList: (ctx: debug.DebugCtx) => this.#warehouseListStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
+			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
 		};

@@ -4,6 +4,8 @@ import { baseURL } from "../constants";
 
 import { getDashboard, getDbHandle } from "../helpers";
 
+import { book1 } from "./data";
+
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
@@ -11,17 +13,6 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 });
-
-const book1 = {
-	isbn: "1234567890",
-	title: "Book 1",
-	price: 12,
-	year: "2020",
-	authors: "Author and Sons",
-	publisher: "Random publisher",
-	editedBy: "Sons",
-	outOfPrint: true
-};
 
 test("update is reflected in table view - stock", async ({ page }) => {
 	// Setup
