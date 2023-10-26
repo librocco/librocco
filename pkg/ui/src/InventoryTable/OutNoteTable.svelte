@@ -50,14 +50,17 @@
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
 
-	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
-		const quantity = e.detail;
+	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: SubmitEvent) => {
+		const data = new FormData(e.currentTarget as HTMLFormElement);
+		const quantity = Number(data.get("quantity"));
+
 		const updateTxn = { ...matchTxn, quantity };
 
 		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
 		if (quantity === matchTxn.quantity) {
 			return;
 		}
+
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
 
@@ -147,7 +150,7 @@
 				class={`whitespace-nowrap text-sm font-light text-gray-500 ${selected.includes(row) ? "bg-gray-100" : "even:bg-gray-50"}`}
 			>
 				<td
-					class={`px-2 text-center sm:align-middle border-l-4 
+					class={`border-l-4 px-2 text-center sm:align-middle 
                         ${selected.includes(row) ? "border-teal-500" : "border-transparent"}
                     `}
 				>
@@ -175,7 +178,9 @@
 					{authors}
 				</td>
 				<td data-property="quantity" class="py-4 px-3 text-left">
-					<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, warehouseId, quantity })} />
+					<form method="POST" id="row-quantity-form" on:submit|preventDefault={handleQuantityChange({ isbn, warehouseId, quantity })}>
+						<QuantityInput value={quantity} name="quantity" id="quantity" min="1" required />
+					</form>
 				</td>
 				<td data-property="price" class="hidden py-4 px-3 text-left sm:table-cell">
 					{price}
