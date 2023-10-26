@@ -60,7 +60,9 @@ export function getContent(page: Page): ContentInterface {
 
 	const entries = (view: ViewName) => getEntriesTable(view, container);
 
-	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries });
+	const discount = () => getDiscount(container);
+
+	return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries, discount });
 }
 
 function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
@@ -132,4 +134,16 @@ function getScanField(content: Locator): ScanFieldInterface {
 	};
 
 	return Object.assign(input, { add });
+}
+
+function getDiscount(container: Locator) {
+	const locator = container.getByRole("spinbutton");
+
+	const set = async (value: number) => {
+		await locator.focus();
+		await locator.fill(value.toString());
+		await locator.press("Enter");
+	};
+
+	return Object.assign(locator, { set });
 }

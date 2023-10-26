@@ -10,6 +10,7 @@ import { createDisplayEntriesStore } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
+import { createWarehouseDiscountStore } from "./warehouse_discount";
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -57,6 +58,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 
 interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
+	warehouseDiscount: Writable<number>;
 	entries: Readable<DisplayRow[]>;
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
@@ -76,11 +78,15 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
 
+	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
+	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
+
 	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
 	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
 
 	return {
 		displayName,
+		warehouseDiscount,
 		entries,
 		currentPage,
 		paginationData
