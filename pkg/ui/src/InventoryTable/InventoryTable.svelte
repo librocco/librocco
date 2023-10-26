@@ -44,14 +44,17 @@
 		edit: RemoveTransactionsDetail;
 	}
 	const dispatch = createEventDispatcher<EventMap>();
-	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: CustomEvent<number>) => {
-		const quantity = e.detail;
+	const handleQuantityChange = (matchTxn: TransactionUpdateDetail["matchTxn"]) => (e: SubmitEvent) => {
+		const data = new FormData(e.currentTarget as HTMLFormElement);
+		const quantity = Number(data.get("quantity"));
+
 		const updateTxn = { ...matchTxn, quantity };
 
 		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
 		if (quantity === matchTxn.quantity) {
 			return;
 		}
+
 		dispatch("transactionupdate", { matchTxn, updateTxn });
 	};
 
@@ -190,7 +193,9 @@
 				<td data-property="quantity" class="py-4 px-3 text-left">
 					{#if interactive}
 						<!-- For interactive variant, show the quantity input element -->
-						<QuantityInput value={quantity} on:submit={handleQuantityChange({ isbn, quantity, warehouseId })} />
+						<form method="POST" id="row-quantity-form" on:submit|preventDefault={handleQuantityChange({ isbn, warehouseId, quantity })}>
+							<QuantityInput value={quantity} name="quantity" id="quantity" min="1" required />
+						</form>
 					{:else}
 						<!-- For non interactive variant, show only the (non-interative) badge element -->
 						<Badge label={quantity.toString()} size={BadgeSize.LG} />
