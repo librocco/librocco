@@ -52,19 +52,21 @@ const runCommonTests = (TableComponent: typeof OutNoteTable | typeof InventoryTa
 	const tableOptions = writable({ data });
 
 	test("should dispatch transaction update on quantity change", async () => {
-		const mockOnUpdate = vi.fn();
-
+		const user = userEvent.setup();
 		const table = createTable(tableOptions);
 
 		const { component } = render(TableComponent, { interactive: true, table });
-		component.$on("transactionupdate", (e) => mockOnUpdate(e.detail));
+
+		const mockOnUpdate = vi.fn();
+		component.$on("transactionupdate", (event) => mockOnUpdate(event.detail));
 
 		// Update the quantity of the first row (3 -> 2)
 		const quantityInput = screen.getAllByRole("spinbutton")[0];
-		await act(() => userEvent.clear(quantityInput));
-		await act(() => userEvent.type(quantityInput, "2"));
+		await user.clear(quantityInput);
+		await user.type(quantityInput, "2");
+
 		// Submit the update
-		await act(() => userEvent.keyboard("{enter}"));
+		await user.keyboard("{enter}");
 
 		const { isbn, quantity, warehouseId } = data[0];
 		const matchTxn = { isbn, quantity, warehouseId };
