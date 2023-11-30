@@ -70,6 +70,7 @@
 	$: displayName = warehouesStores.displayName;
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;
 	$: currentPage = warehouesStores.currentPage;
+	$: search = warehouesStores.search;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
 
@@ -138,16 +139,14 @@
 					<h2 class="mb-4 text-gray-900">
 						<TextEditable bind:value={$displayName} />
 					</h2>
+
+					<pre>Search: {$search}</pre>
 				</h2>
 				{#if warehouse && !warehouse._id.includes("0-all")}
 					<DiscountInput name="warehouse-discount" label="Warehouse Discount:" bind:value={$warehouseDiscount} />
 				{/if}
 			</div>
-			<TextField name="search" placeholder="Serach">
-				<svelte:fragment slot="startAdornment">
-					<Search class="h-5 w-5" />
-				</svelte:fragment>
-			</TextField>
+			<input type="text" bind:value={$search} name="search" placeholder="Search" />
 		{/if}
 	</div>
 

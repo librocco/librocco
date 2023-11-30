@@ -62,6 +62,7 @@ interface WarehouseDisplayStores {
 	entries: Readable<DisplayRow[]>;
 	currentPage: Writable<number>;
 	paginationData: Readable<PaginationData>;
+	search: Writable<string>;
 }
 interface CreateWarehouseStores {
 	(warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -74,6 +75,7 @@ interface CreateWarehouseStores {
  */
 export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const currentPage = writable(0);
+	const search = writable("");
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
@@ -82,13 +84,14 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
 	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage, search);
 
 	return {
 		displayName,
 		warehouseDiscount,
 		entries,
 		currentPage,
-		paginationData
+		paginationData,
+		search
 	};
 };
