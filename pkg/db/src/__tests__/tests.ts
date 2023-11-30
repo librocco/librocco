@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { expect } from "vitest";
-import { BehaviorSubject, switchMap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, switchMap } from "rxjs";
 
 import { NoteState, testUtils } from "@librocco/shared";
 
@@ -841,7 +841,7 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 	// Streams used to test pagination
 	const currentPage = new BehaviorSubject(0);
 	const paginate = (page: number) => currentPage.next(page);
-	const entriesWithPagination = currentPage.pipe(switchMap((page) => warehouse.stream().entries({}, page)));
+	const entriesWithPagination = currentPage.pipe(switchMap((page) => warehouse.stream().entries({}, page, 10)));
 	entriesWithPagination.subscribe((e) => (entries = e));
 
 	await waitFor(() => {
@@ -892,7 +892,7 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 	await db
 		.warehouse()
 		.note()
-		// Adding some of the transactions to and outbound note (same quantity) should simply remove said books from stock
+		// Adding some of the transactions to an outbound note (same quantity) should simply remove said books from stock
 		.addVolumes(...fiftyEntries.slice(10, 19).map((v) => ({ ...v, warehouseId: "wh1" })))
 		.then((n) => n.commit({}));
 	await waitFor(() => {
@@ -902,6 +902,21 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 		expect(entries.total).toEqual(19);
 		expect(entries.totalPages).toEqual(2);
 	});
+
+	// If no itemsPerPage provided, should stream all items
+	const allEntries = await firstValueFrom(warehouse.stream().entries({}));
+	// There currently are 19 entries in the warehouse => 28 added - 19 removed
+	expect(allEntries.rows.length).toEqual(19);
+	expect(allEntries.rows).toEqual(
+		// We've removed entries 10-18, in the previous step
+		fiftyEntries
+			.slice(0, 10)
+			.concat(fiftyEntries.slice(19, 28))
+			.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+	);
+	// Should still stream predictable pagination stats
+	expect(allEntries.total).toEqual(19);
+	expect(allEntries.totalPages).toEqual(1);
 };
 
 export const warehouseDataMapStream: TestFunction = async (db) => {
