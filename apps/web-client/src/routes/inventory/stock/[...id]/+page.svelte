@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
 	import { map } from "rxjs";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
@@ -24,6 +23,7 @@
 		DiscountInput
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
+	import { debug } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 
@@ -37,6 +37,7 @@
 	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
+	import { onMount } from "svelte";
 
 	export let data: PageData;
 
@@ -65,7 +66,29 @@
 
 	$: warehouse = data.warehouse;
 
-	$: warehouesStores = createWarehouseStores(warehouse);
+	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
+	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
+
+	// TEMP: Register some handlers to the window for experimental purposes
+	onMount(() => {
+		window["startLogging"] = () => {
+			warehouseCtx.logTimes = true;
+		};
+		window["endLogging"] = () => {
+			warehouseCtx.logTimes = true;
+		};
+		window["getSearchStats"] = () => {
+			const report = warehouseCtx.getTimes((k) => k.startsWith("search"));
+			const average = warehouseCtx.getAvgTimes((k) => k.startsWith("search"));
+			return {
+				sampleSize: Object.values(report).length,
+				averageTime: average
+			};
+		};
+		window["clearSearchStats"] = () => {
+			warehouseCtx.clearStats();
+		};
+	});
 
 	$: displayName = warehouesStores.displayName;
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;

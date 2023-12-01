@@ -7,6 +7,7 @@ import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
 import { observableFromStore, readableFromStream } from "$lib/utils/streams";
+import { debounce } from "$lib/utils/stores";
 
 interface CreateDisplayEntriesStore {
 	(
@@ -40,7 +41,11 @@ type Foo = Config & EntriesStreamResult;
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore, searchStore = readable("")) => {
 	const itemsPerPage = 10;
 
-	const config = derived([currentPageStore, searchStore], ([currentPage, searchString]) => ({ itemsPerPage, currentPage, searchString }));
+	const config = derived([currentPageStore, debounce(searchStore, 200)], ([currentPage, searchString]) => ({
+		itemsPerPage,
+		currentPage,
+		searchString
+	}));
 
 	const shareSubject = new ReplaySubject<[DisplayRow[], PaginationData]>(1);
 	// Process the data received from the paginated stream, "ziping" the data with the book data
@@ -49,6 +54,7 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 		// Create a stream from the current page store
 		observableFromStore(config)
 			.pipe(
+				tap(({ searchString }) => debug.logTimerStart(ctx, `search: ${searchString}`)),
 				// Each time current page changes, update the paginated stream (from the db)
 				switchMap((config) => {
 					const currentPage = config.searchString ? 0 : config.currentPage;
@@ -57,7 +63,10 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 					return stock.pipe(map((s) => ({ ...s, ...config })));
 				})
 			)
-			.pipe(search(db))
+			.pipe(
+				search(db),
+				tap(({ searchString }) => debug.logTimerEnd(ctx, `search: ${searchString}`))
+			)
 			.pipe(
 				switchMap(({ rows: r, ...rest }) => {
 					// Map rows to just isbns
@@ -84,11 +93,12 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 						})
 					);
 
-					return combineLatest([rows, pagination]).pipe(
-						// Multicast the stream (for both the table and pagination stores)
-						share({ connector: () => shareSubject })
-					);
+					return combineLatest([rows, pagination]);
 				})
+			)
+			.pipe(
+				// Multicast the stream (for both the table and pagination stores)
+				share({ connector: () => shareSubject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })
 			);
 
 	const tableData = pipeline.pipe(map(([rows]) => rows));
@@ -144,38 +154,3 @@ const search =
 	(db: DatabaseInterface) =>
 	(o: Observable<Foo>): Observable<Foo> =>
 		o.pipe(switchMap(({ searchString, ...rest }) => (searchString ? searchFilter(db, { searchString, ...rest }) : o)));
-
-// const _search =
-// 	(ctx: debug.DebugCtx, db: DatabaseInterface, searchFilter: (row: DisplayRow) => boolean, maxItems: number) =>
-// 	(observable: Observable<EntriesStreamResult>): Observable<EntriesStreamResult> =>
-// 		observable.pipe(
-// 			switchMap(({ rows, ...data }) =>
-// 				addBookDataToRows(db)(rows).pipe(
-// 					// Fetch book data for each entry (and merge each entry with book data, if found)
-// 					switchMap(addBookDataToRows(db)),
-// 					// Flat map the rows to an observable of rows (to be able to filter them)
-// 					concatMap((rows) => from(rows)),
-// 					filter(searchFilter),
-// 					take(maxItems),
-// 					toArray(),
-// 					map((rows) => ({ ...data, rows }))
-// 				)
-// 			)
-// 		);
-//
-// const addBookDataToRows =
-// 	(db: DatabaseInterface) =>
-// 	(rows: VolumeStockClient[]): Observable<(DisplayRow & Pick<VolumeStockClient, "warehouseDiscount">)[]> =>
-// 		from(db.books().get(rows.map(({ isbn }) => isbn))).pipe(
-// 			map((books) =>
-// 				wrapIter(rows)
-// 					.zip(books)
-// 					.map(([state, book]) => ({ ...state, ...book }))
-// 					.array()
-// 			)
-// 		);
-//
-// const pipeIf =
-// 	<O>(predicate: (o: O) => boolean, transformer: OperatorFunction<O, O>): OperatorFunction<O, O> =>
-// 	(observable: Observable<O>) =>
-// 		observable.pipe(switchMap((o) => (predicate(o) ? transformer(observable) : observable)));
