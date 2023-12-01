@@ -130,12 +130,19 @@ const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient
 		tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
 	);
 
-const paginate = ({ rows, currentPage, itemsPerPage, searchString }: Foo): Foo => {
-	const startIx = currentPage * itemsPerPage;
-	const endIx = startIx + itemsPerPage;
+const paginate = ({ rows, currentPage: cp, itemsPerPage, searchString }: Foo): Foo => {
+	let currentPage = cp;
+	let startIx = currentPage * itemsPerPage;
+	let endIx = startIx + itemsPerPage;
 
 	const total = rows.length;
 	const totalPages = Math.ceil(total / itemsPerPage);
+
+	if (startIx > total) {
+		currentPage = 0;
+		startIx = 0;
+		endIx = startIx + itemsPerPage;
+	}
 
 	return { rows: rows.slice(startIx, endIx), currentPage, itemsPerPage, total, totalPages, searchString };
 };
@@ -144,7 +151,7 @@ const searchFilter = (db: DatabaseInterface, { searchString, rows, ...rest }: Fo
 	from(db.books().get(rows.map(({ isbn }) => isbn))).pipe(
 		mapMergeBookData({}, rows),
 		concatMap((rows) => from(rows)),
-		filter(({ title }) => title?.includes(searchString)),
+		filter(matchBook(searchString)),
 		toArray(),
 		map((rows) => paginate({ rows, searchString, ...rest }))
 	);
@@ -153,3 +160,8 @@ const search =
 	(db: DatabaseInterface) =>
 	(o: Observable<Foo>): Observable<Foo> =>
 		o.pipe(switchMap(({ searchString, ...rest }) => (searchString ? searchFilter(db, { searchString, ...rest }) : o)));
+
+const matchBook = (searchString: string) => {
+	const ss = searchString.toLowerCase();
+	return ({ title }: BookEntry & VolumeStockClient): boolean => title?.toLowerCase()?.includes(ss);
+};
