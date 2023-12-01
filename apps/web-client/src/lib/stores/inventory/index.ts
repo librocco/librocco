@@ -12,6 +12,7 @@ import { createDisplayEntriesStore } from "./table_content";
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
 import { createWarehouseDiscountStore } from "./warehouse_discount";
+import { controlledStore } from "$lib/utils/stores";
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -61,9 +62,10 @@ interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
 	warehouseDiscount: Writable<number>;
 	entries: Readable<DisplayRow[]>;
-	currentPage: Writable<number>;
+	currentPageStore: Writable<number>;
 	paginationData: Readable<PaginationData>;
-	search: Writable<string>;
+	searchStore: Writable<string>;
+	search: () => void;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -75,8 +77,10 @@ interface CreateWarehouseStores {
  * @returns
  */
 export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => {
-	const currentPage = writable(0);
-	const search = writable("");
+	const currentPageStore = writable(0);
+	const searchStore = writable("");
+	// Wrap the search store in a controlled store so that we can search imperatively (e.g. at the click of a button)
+	const controlledSearchStore = controlledStore(searchStore);
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
@@ -84,14 +88,15 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPage, search);
+	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPageStore, controlledSearchStore);
 
 	return {
 		displayName,
 		warehouseDiscount,
 		entries,
-		currentPage,
+		currentPageStore,
+		searchStore,
 		paginationData,
-		search
+		search: () => controlledSearchStore.flush()
 	};
 };

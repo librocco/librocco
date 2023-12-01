@@ -20,7 +20,8 @@
 		ProgressBar,
 		Slideover,
 		BookDetailForm,
-		DiscountInput
+		DiscountInput,
+		TextFieldSize
 	} from "@librocco/ui";
 	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
 	import { debug } from "@librocco/shared";
@@ -38,6 +39,7 @@
 
 	import { links } from "$lib/data";
 	import { onMount } from "svelte";
+	import { warehouseStore } from "$lib/db/data";
 
 	export let data: PageData;
 
@@ -92,7 +94,8 @@
 
 	$: displayName = warehouesStores.displayName;
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;
-	$: currentPage = warehouesStores.currentPage;
+	$: currentPageStore = warehouesStores.currentPageStore;
+	$: searchStore = warehouesStores.searchStore;
 	$: search = warehouesStores.search;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
@@ -162,14 +165,25 @@
 					<h2 class="mb-4 text-gray-900">
 						<TextEditable bind:value={$displayName} />
 					</h2>
-
-					<pre>Search: {$search}</pre>
 				</h2>
 				{#if warehouse && !warehouse._id.includes("0-all")}
 					<DiscountInput name="warehouse-discount" label="Warehouse Discount:" bind:value={$warehouseDiscount} />
 				{/if}
 			</div>
-			<input type="text" bind:value={$search} name="search" placeholder="Search" />
+
+			<form
+				on:submit|preventDefault={search}
+				class="overflow-hidden rounded-lg border border-gray-200 focus-within:outline focus-within:outline-blue-400"
+			>
+				<input
+					class="w-72 border-none outline-none focus:ring-0"
+					type="text"
+					bind:value={$searchStore}
+					name="search"
+					placeholder="Search for book title or author(s)"
+				/>
+				<button type="submit" class="rounded bg-teal-500 px-4 py-2 text-white active:bg-teal-400">Search</button>
+			</form>
 		{/if}
 	</div>
 
@@ -195,7 +209,7 @@
 				</p>
 			{/if}
 			{#if $paginationData.numPages > 1}
-				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+				<Pagination maxItems={7} bind:value={$currentPageStore} numPages={$paginationData.numPages} />
 			{/if}
 		{/if}
 	</div>
