@@ -7,7 +7,7 @@ import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
 import { observableFromStore, readableFromStream } from "$lib/utils/streams";
-import { debounce } from "$lib/utils/stores";
+import { debouncedStore } from "$lib/utils/stores";
 
 interface CreateDisplayEntriesStore {
 	(
@@ -41,7 +41,7 @@ type Foo = Config & EntriesStreamResult;
 export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore, searchStore = readable("")) => {
 	const itemsPerPage = 10;
 
-	const config = derived([currentPageStore, debounce(searchStore, 200)], ([currentPage, searchString]) => ({
+	const config = derived([currentPageStore, debouncedStore(searchStore, 200)], ([currentPage, searchString]) => ({
 		itemsPerPage,
 		currentPage,
 		searchString
