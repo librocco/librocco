@@ -1,6 +1,7 @@
 import { writable, type Readable, type Writable } from "svelte/store";
 
 import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
 
@@ -65,7 +66,7 @@ interface WarehouseDisplayStores {
 	search: Writable<string>;
 }
 interface CreateWarehouseStores {
-	(warehouse?: WarehouseInterface): WarehouseDisplayStores;
+	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
 }
 
 /**
@@ -73,7 +74,7 @@ interface CreateWarehouseStores {
  * @param warehouse WarehouseInterface object
  * @returns
  */
-export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
+export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => {
 	const currentPage = writable(0);
 	const search = writable("");
 
@@ -83,8 +84,7 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage, search);
+	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPage, search);
 
 	return {
 		displayName,
