@@ -1,7 +1,7 @@
 import { vi, describe, test, expect, afterEach } from "vitest";
 import { writable } from "svelte/store";
 
-import { debounce } from "../stores";
+import { controlledStore, debouncedStore } from "../stores";
 
 import { wait } from "../../__testUtils__/misc";
 
@@ -15,7 +15,7 @@ describe("Debounce store wrapper", () => {
 		const timeout = 500;
 
 		const store = writable(0);
-		const debounced = debounce(store, timeout);
+		const debounced = debouncedStore(store, timeout);
 		debounced.subscribe(notify);
 
 		// Update the store
@@ -36,7 +36,7 @@ describe("Debounce store wrapper", () => {
 		const timeout = 500;
 
 		const store = writable(0);
-		const debounced = debounce(store, timeout);
+		const debounced = debouncedStore(store, timeout);
 		debounced.subscribe(notify);
 
 		// Update the store three times in close succession
@@ -57,7 +57,7 @@ describe("Debounce store wrapper", () => {
 		const timeout = 500;
 
 		const store = writable(0);
-		const debounced = debounce(store, timeout);
+		const debounced = debouncedStore(store, timeout);
 		debounced.subscribe(notify);
 
 		// Update the store with two values with rate slower than the debounce rate
@@ -70,5 +70,29 @@ describe("Debounce store wrapper", () => {
 		expect(notify).toHaveBeenCalledTimes(2);
 		expect(notify).toHaveBeenCalledWith(4);
 		expect(notify).toHaveBeenCalledWith(5);
+	});
+});
+
+describe("Controlled store wrapper", () => {
+	test("should notify with an update only after flush has been called (imperatively)", () => {
+		const notify = vi.fn();
+		const store = writable();
+
+		const controlled = controlledStore(store);
+		controlled.subscribe(notify);
+
+		// Notify will have been called on subscription (with the undefined value) as it's a svelte store after all
+		notify.mockClear();
+
+		// Update the store
+		store.set("foo");
+		store.set("foobar");
+
+		expect(notify).not.toHaveBeenCalled();
+
+		// Flush the store
+		controlled.flush();
+		expect(notify).toHaveBeenCalledTimes(1);
+		expect(notify).toHaveBeenCalledWith("foobar");
 	});
 });
