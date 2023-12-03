@@ -20,7 +20,7 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 		// Post message to the extension
 		postMessage(`BOOK_FETCHER:REQ:${isbn}`);
 
-		return listenForBook(`BOOK_FETCHER:RES`, 800);
+		return listenForBook(`BOOK_FETCHER:RES:${isbn}`, 4000);
 	};
 
 	return { fetchBookData };
