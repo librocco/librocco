@@ -43,6 +43,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 	import { comparePaths } from "$lib/utils/misc";
+	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
 	import { links } from "$lib/data";
 
@@ -124,7 +125,11 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
+		const plugin = createBookDataExtensionPlugin();
+		/** @TODO make sure book data conforms to the bookEntry interface **/
+		const book = await plugin.fetchBookData([isbn]);
 		await note.addVolumes({ isbn, quantity: 1 });
+		await db.books().upsert(book);
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
