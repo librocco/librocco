@@ -80,7 +80,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const currentPageStore = writable(0);
 	const searchStore = writable("");
 	// Wrap the search store in a controlled store so that we can search imperatively (e.g. at the click of a button)
-	const controlledSearchStore = controlledStore(searchStore);
+	const controlledSearchStore = controlledStore("", searchStore);
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
