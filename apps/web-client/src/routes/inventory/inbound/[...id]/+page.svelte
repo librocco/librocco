@@ -126,10 +126,9 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		const plugin = createBookDataExtensionPlugin();
-		/** @TODO make sure book data conforms to the bookEntry interface **/
 		const book = await plugin.fetchBookData([isbn]);
 		await note.addVolumes({ isbn, quantity: 1 });
-		await db.books().upsert(book);
+		if(book.length) await db.books().upsert(book);
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
