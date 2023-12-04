@@ -1,6 +1,6 @@
 import { writable, type Readable, type Writable } from "svelte/store";
 
-import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { NoteInterface, WarehouseInterface, SearchIndex } from "@librocco/db";
 import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
@@ -68,7 +68,7 @@ interface WarehouseDisplayStores {
 	search: () => void;
 }
 interface CreateWarehouseStores {
-	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
+	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface, searchIndex?: SearchIndex): WarehouseDisplayStores;
 }
 
 /**
@@ -76,11 +76,19 @@ interface CreateWarehouseStores {
  * @param warehouse WarehouseInterface object
  * @returns
  */
-export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => {
+export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, searchIndex) => {
 	const currentPageStore = writable(0);
 	const searchStore = writable("");
 	// Wrap the search store in a controlled store so that we can search imperatively (e.g. at the click of a button)
-	const controlledSearchStore = controlledStore("", searchStore);
+	const controlledSearchStore = controlledStore({ searchString: "", isbns: new Set<string>() }, searchStore, (searchString) =>
+		// If search index not provided, this is a noop
+		searchIndex
+			? {
+					searchString,
+					isbns: new Set(searchIndex.search(searchString).map(({ isbn }) => isbn))
+			  }
+			: { searchString: "", isbns: new Set() }
+	);
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
