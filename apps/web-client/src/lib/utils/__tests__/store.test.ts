@@ -78,7 +78,7 @@ describe("Controlled store wrapper", () => {
 		const notify = vi.fn();
 		const store = writable();
 
-		const controlled = controlledStore(store);
+		const controlled = controlledStore("", store);
 		controlled.subscribe(notify);
 
 		// Notify will have been called on subscription (with the undefined value) as it's a svelte store after all
@@ -94,5 +94,27 @@ describe("Controlled store wrapper", () => {
 		controlled.flush();
 		expect(notify).toHaveBeenCalledTimes(1);
 		expect(notify).toHaveBeenCalledWith("foobar");
+	});
+
+	test("should transform the value of the controlled store if 'modify' function passed in", () => {
+		const notify = vi.fn();
+		const store = writable();
+
+		const controlled = controlledStore("", store, (str) => `transformed: ${str}`);
+		controlled.subscribe(notify);
+
+		// Notify will have been called on subscription (with the undefined value) as it's a svelte store after all
+		notify.mockClear();
+
+		// Update the store
+		store.set("foo");
+		store.set("foobar");
+
+		expect(notify).not.toHaveBeenCalled();
+
+		// Flush the store
+		controlled.flush();
+		expect(notify).toHaveBeenCalledTimes(1);
+		expect(notify).toHaveBeenCalledWith("transformed: foobar");
 	});
 });
