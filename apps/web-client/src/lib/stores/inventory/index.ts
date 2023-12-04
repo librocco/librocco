@@ -1,4 +1,4 @@
-import { writable, type Readable, type Writable } from "svelte/store";
+import { writable, type Readable, type Writable, derived } from "svelte/store";
 
 import type { NoteInterface, WarehouseInterface, SearchIndex } from "@librocco/db";
 import type { debug } from "@librocco/shared";
@@ -12,7 +12,6 @@ import { createDisplayEntriesStore } from "./table_content";
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
 import { createWarehouseDiscountStore } from "./warehouse_discount";
-import { controlledStore } from "$lib/utils/stores";
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -65,7 +64,6 @@ interface WarehouseDisplayStores {
 	currentPageStore: Writable<number>;
 	paginationData: Readable<PaginationData>;
 	searchStore: Writable<string>;
-	search: () => void;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface, searchIndex?: SearchIndex): WarehouseDisplayStores;
@@ -80,7 +78,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 	const currentPageStore = writable(0);
 	const searchStore = writable("");
 	// Wrap the search store in a controlled store so that we can search imperatively (e.g. at the click of a button)
-	const controlledSearchStore = controlledStore({ searchString: "", isbns: new Set<string>() }, searchStore, (searchString) =>
+	const controlledSearchStore = derived(searchStore, (searchString) =>
 		// If search index not provided, this is a noop
 		searchIndex
 			? {
@@ -104,7 +102,6 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 		entries,
 		currentPageStore,
 		searchStore,
-		paginationData,
-		search: () => controlledSearchStore.flush()
+		paginationData
 	};
 };

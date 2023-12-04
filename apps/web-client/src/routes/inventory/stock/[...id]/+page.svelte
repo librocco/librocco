@@ -78,7 +78,6 @@
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;
 	$: currentPageStore = warehouesStores.currentPageStore;
 	$: searchStore = warehouesStores.searchStore;
-	$: search = warehouesStores.search;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
 
@@ -153,10 +152,7 @@
 				{/if}
 			</div>
 
-			<form
-				on:submit|preventDefault={search}
-				class="overflow-hidden rounded-lg border border-gray-200 focus-within:outline focus-within:outline-blue-400"
-			>
+			<div class="overflow-hidden rounded-lg border border-gray-200 focus-within:outline focus-within:outline-blue-400">
 				<input
 					class="w-72 border-none outline-none focus:ring-0"
 					type="text"
@@ -164,8 +160,7 @@
 					name="search"
 					placeholder="Search for book title or author(s)"
 				/>
-				<button type="submit" class="rounded bg-teal-500 px-4 py-2 text-white active:bg-teal-400">Search</button>
-			</form>
+			</div>
 		{/if}
 	</div>
 
