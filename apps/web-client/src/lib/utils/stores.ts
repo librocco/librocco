@@ -20,11 +20,17 @@ export const debouncedStore = <S extends Readable<any>>(store: S, timeout: numbe
 
 type ControlledStore<T> = Readable<T> & { flush: () => void };
 
-export const controlledStore = <T>(store: Readable<T>): ControlledStore<T> => {
-	const internal = writable<T>();
+export function controlledStore<T>(initial: T, store: Readable<T>): ControlledStore<T>;
+export function controlledStore<T, R>(initial: R, store: Readable<T>, modify: (a: T) => R): ControlledStore<R>;
+export function controlledStore<T, R = T>(
+	initial: R,
+	store: Readable<T>,
+	modify: (a: T) => R = (a) => a as unknown as R
+): ControlledStore<R> {
+	const internal = writable<R>(initial);
 
 	return {
 		subscribe: internal.subscribe,
-		flush: () => internal.set(get(store))
+		flush: () => internal.set(modify(get(store)))
 	};
-};
+}
