@@ -8,7 +8,6 @@
 
 	import {
 		InventoryPage,
-		TextField,
 		Pagination,
 		InventoryTable,
 		createTable,
@@ -20,10 +19,9 @@
 		ProgressBar,
 		Slideover,
 		BookDetailForm,
-		DiscountInput,
-		TextFieldSize
+		DiscountInput
 	} from "@librocco/ui";
-	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
+	import { NEW_WAREHOUSE, type BookEntry, versionId, type SearchIndex } from "@librocco/db";
 	import { debug } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
@@ -38,8 +36,6 @@
 	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
-	import { onMount } from "svelte";
-	import { warehouseStore } from "$lib/db/data";
 
 	export let data: PageData;
 
@@ -68,29 +64,15 @@
 
 	$: warehouse = data.warehouse;
 
-	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
-	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
+	// Create a search index for books in the db. Each time the books change, we recreate the index.
+	// This is more/less inexpensive (around 2sec), considering it runs in the background.
+	let index: SearchIndex | undefined;
+	db?.books()
+		.getSearchIndex()
+		.then((ix) => (index = ix));
 
-	// TEMP: Register some handlers to the window for experimental purposes
-	onMount(() => {
-		window["startLogging"] = () => {
-			warehouseCtx.logTimes = true;
-		};
-		window["endLogging"] = () => {
-			warehouseCtx.logTimes = true;
-		};
-		window["getSearchStats"] = () => {
-			const report = warehouseCtx.getTimes((k) => k.startsWith("search"));
-			const average = warehouseCtx.getAvgTimes((k) => k.startsWith("search"));
-			return {
-				sampleSize: Object.values(report).length,
-				averageTime: average
-			};
-		};
-		window["clearSearchStats"] = () => {
-			warehouseCtx.clearStats();
-		};
-	});
+	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
+	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse, index);
 
 	$: displayName = warehouesStores.displayName;
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;

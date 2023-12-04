@@ -1,5 +1,5 @@
 import { derived, get, readable, type Readable } from "svelte/store";
-import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest, of, from, concatMap, filter, toArray } from "rxjs";
+import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest, of } from "rxjs";
 
 import { debug, wrapIter } from "@librocco/shared";
 import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, VolumeStockClient, WarehouseInterface } from "@librocco/db";
@@ -8,13 +8,20 @@ import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
 import { observableFromStore, readableFromStream } from "$lib/utils/streams";
 
+type SearchFilter = {
+	searchString: string;
+	// Using a quick experiment, the 'Set.has' seems to be the fastest for entry-existing-lookup
+	// (compared to 'Array.includes' and 'Map.has')
+	isbns: Set<string>;
+};
+
 interface CreateDisplayEntriesStore {
 	(
 		ctx: debug.DebugCtx,
 		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
-		searchStore?: Readable<string>
+		searchFilterStore?: Readable<SearchFilter>
 	): {
 		entries: Readable<DisplayRow[]>;
 		paginationData: Readable<PaginationData>;
@@ -23,7 +30,7 @@ interface CreateDisplayEntriesStore {
 
 type Config = {
 	currentPage: number;
-	searchString: string;
+	searchFilter: SearchFilter;
 	itemsPerPage: number;
 };
 
@@ -37,13 +44,19 @@ type Foo = Config & EntriesStreamResult;
  * @param currentPageStore a store containing the current page index
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity, currentPageStore, searchStore = readable("")) => {
+export const createDisplayEntriesStore: CreateDisplayEntriesStore = (
+	ctx,
+	db,
+	entity,
+	currentPageStore,
+	searchFilterStore = readable<SearchFilter>({ searchString: "", isbns: new Set() })
+) => {
 	const itemsPerPage = 10;
 
-	const config = derived([currentPageStore, searchStore], ([currentPage, searchString]) => ({
+	const config = derived([currentPageStore, searchFilterStore], ([currentPage, searchFilter]) => ({
 		itemsPerPage,
 		currentPage,
-		searchString
+		searchFilter
 	}));
 
 	const shareSubject = new ReplaySubject<[DisplayRow[], PaginationData]>(1);
@@ -53,18 +66,18 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 		// Create a stream from the current page store
 		observableFromStore(config)
 			.pipe(
-				tap(({ searchString }) => debug.logTimerStart(ctx, `search: ${searchString}`)),
+				tap(({ searchFilter: { searchString } }) => debug.logTimerStart(ctx, `search: ${searchString}`)),
 				// Each time current page changes, update the paginated stream (from the db)
 				switchMap((config) => {
-					const currentPage = config.searchString ? 0 : config.currentPage;
-					const itemsPerPage = config.searchString ? 0 : config.itemsPerPage;
+					const currentPage = config.searchFilter.searchString ? 0 : config.currentPage;
+					const itemsPerPage = config.searchFilter.searchString ? 0 : config.itemsPerPage;
 					const stock = entity?.stream().entries(ctx, currentPage, itemsPerPage) || new Observable<EntriesStreamResult>();
 					return stock.pipe(map((s) => ({ ...s, ...config })));
 				})
 			)
 			.pipe(
-				search(db),
-				tap(({ searchString }) => debug.logTimerEnd(ctx, `search: ${searchString}`))
+				search,
+				tap(({ searchFilter: { searchString } }) => debug.logTimerEnd(ctx, `search: ${searchString}`))
 			)
 			.pipe(
 				switchMap(({ rows: r, ...rest }) => {
@@ -130,7 +143,7 @@ const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient
 		tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
 	);
 
-const paginate = ({ rows, currentPage: cp, itemsPerPage, searchString }: Foo): Foo => {
+const paginate = ({ rows, currentPage: cp, itemsPerPage, searchFilter }: Foo): Foo => {
 	let currentPage = cp;
 	let startIx = currentPage * itemsPerPage;
 	let endIx = startIx + itemsPerPage;
@@ -144,24 +157,17 @@ const paginate = ({ rows, currentPage: cp, itemsPerPage, searchString }: Foo): F
 		endIx = startIx + itemsPerPage;
 	}
 
-	return { rows: rows.slice(startIx, endIx), currentPage, itemsPerPage, total, totalPages, searchString };
+	return { rows: rows.slice(startIx, endIx), currentPage, itemsPerPage, total, totalPages, searchFilter };
 };
 
-const searchFilter = (db: DatabaseInterface, { searchString, rows, ...rest }: Foo): Observable<Foo> =>
-	from(db.books().get(rows.map(({ isbn }) => isbn))).pipe(
-		mapMergeBookData({}, rows),
-		concatMap((rows) => from(rows)),
-		filter(matchBook(searchString)),
-		toArray(),
-		map((rows) => paginate({ rows, searchString, ...rest }))
+const search = (o: Observable<Foo>): Observable<Foo> =>
+	o.pipe(
+		switchMap(({ searchFilter: { searchString, isbns } }) =>
+			searchString
+				? o.pipe(
+						map(({ rows, ...rest }) => ({ ...rest, rows: rows.filter(({ isbn }) => isbns.has(isbn)) })),
+						map(paginate)
+				  )
+				: o
+		)
 	);
-
-const search =
-	(db: DatabaseInterface) =>
-	(o: Observable<Foo>): Observable<Foo> =>
-		o.pipe(switchMap(({ searchString, ...rest }) => (searchString ? searchFilter(db, { searchString, ...rest }) : o)));
-
-const matchBook = (searchString: string) => {
-	const ss = searchString.toLowerCase();
-	return ({ title }: BookEntry & VolumeStockClient): boolean => title?.toLowerCase()?.includes(ss);
-};
