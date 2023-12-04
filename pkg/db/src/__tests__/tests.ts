@@ -1700,6 +1700,39 @@ export const receiptPrinter: TestFunction = async (db) => {
 	});
 };
 
+export const search: TestFunction = async (db) => {
+	// Setup: Add three books to the db
+	const lotr = {
+		isbn: "11111111",
+		title: "The Lord of the Rings: The Return of the King",
+		authors: "J.R.R. Tolkien",
+		publisher: "Penguin Classics",
+		price: 10
+	};
+	const pets = { isbn: "22222222", title: "Pet Sematary", authors: "Stephen King", publisher: "Oxford University Press", price: 20 };
+	const time = {
+		isbn: "33333333",
+		title: "A Brief History of Time",
+		authors: "Stephen Hawking",
+		publisher: "Oxford University Press",
+		price: 30
+	};
+
+	const books = [lotr, pets, time];
+	await db.books().upsert(books);
+
+	const index = await db.books().getSearchIndex();
+
+	// Search string: "oxford" - should match "Oxford University Press" (regardless of letter casing)
+	expect(index.search("oxford")).toEqual([pets, time]);
+
+	// Search string: "stephen" - should match "Stephen King" (author) and "Stephen Hawking" (author)
+	// expect(index.search("stephen")).toEqual([pets, time]);
+
+	// Search string: "king" - should match both "(...) Return of The King" (title) and "Stephen King" (author)
+	expect(index.search("king")).toEqual([lotr, pets]);
+};
+
 // #region helpers
 // Legacy types used for more convenient testing of (updated) Map values
 // eslint-disable-next-line @typescript-eslint/ban-types
