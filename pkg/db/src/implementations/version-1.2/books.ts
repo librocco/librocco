@@ -3,13 +3,15 @@ import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
-import { BookEntry, BooksInterface, CouchDocument } from "@/types";
+import { BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
 import { DatabaseInterface, PublishersListRow } from "./types";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
+
+	#searchIndex: SearchIndex | undefined;
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
@@ -66,8 +68,7 @@ class Books implements BooksInterface {
 		return books;
 	}
 
-	// TODO: This should probably get cached and streamed (multicast) due to substantial mem size
-	async getSearchIndex() {
+	private async createSearchIndex() {
 		const index = new Search("isbn");
 		index.addIndex("isbn");
 		index.addIndex("title");
@@ -79,7 +80,17 @@ class Books implements BooksInterface {
 		// but that's a can of worms of sorts, and we should revisit only if we see performance issues.
 		index.addDocuments(await this.getAllBooks());
 
+		this.#searchIndex = index;
 		return index;
+	}
+
+	// TODO: This should probably get cached and streamed (multicast) due to substantial mem size
+	async getSearchIndex() {
+		if (this.#searchIndex) {
+			return this.#searchIndex;
+		}
+
+		return this.createSearchIndex();
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
