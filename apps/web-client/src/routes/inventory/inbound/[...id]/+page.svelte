@@ -128,7 +128,7 @@
 		const plugin = createBookDataExtensionPlugin();
 		await note.addVolumes({ isbn, quantity: 1 });
 		const book = await plugin.fetchBookData([isbn]);
-		if(book.length) await db.books().upsert(book);
+		if (book.length) await db.books().upsert(book);
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
