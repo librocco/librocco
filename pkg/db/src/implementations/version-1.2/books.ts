@@ -17,6 +17,13 @@ class Books implements BooksInterface {
 		this.#db = db;
 	}
 
+	private streamChanges() {
+		return newChangesStream<unknown[]>(
+			{},
+			this.#db._pouch.changes({ since: "now", live: true, filter: (doc) => doc._id.startsWith("books/") })
+		);
+	}
+
 	private getAllBooks(): Promise<BookEntry[]> {
 		return this.#db._pouch
 			.allDocs<BookEntry>({ include_docs: true, startkey: "books/", endkey: "books/\uffff" })
@@ -84,13 +91,8 @@ class Books implements BooksInterface {
 		return index;
 	}
 
-	// TODO: This should probably get cached and streamed (multicast) due to substantial mem size
-	async getSearchIndex() {
-		if (this.#searchIndex) {
-			return this.#searchIndex;
-		}
-
-		return this.createSearchIndex();
+	streamSearchIndex() {
+		return concat(from(Promise.resolve()), this.streamChanges()).pipe(switchMap(() => this.createSearchIndex()));
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
