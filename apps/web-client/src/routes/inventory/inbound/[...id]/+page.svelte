@@ -53,6 +53,7 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
+	const plugin = createBookDataExtensionPlugin();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(
@@ -125,10 +126,15 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		const plugin = createBookDataExtensionPlugin();
 		await note.addVolumes({ isbn, quantity: 1 });
+
 		const book = await plugin.fetchBookData([isbn]);
-		if (book.length) await db.books().upsert(book);
+
+		if (book.length) {
+			toastSuccess(toasts.bookDataFetched(isbn));
+			await db.books().upsert(book);
+		}
+
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
