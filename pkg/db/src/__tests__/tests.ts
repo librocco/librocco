@@ -1,6 +1,7 @@
 /* eslint-disable no-case-declarations */
 import { expect } from "vitest";
 import { BehaviorSubject, firstValueFrom, switchMap } from "rxjs";
+import { Search } from "js-search";
 
 import { NoteState, testUtils } from "@librocco/shared";
 
@@ -1721,16 +1722,30 @@ export const search: TestFunction = async (db) => {
 	const books = [lotr, pets, time];
 	await db.books().upsert(books);
 
-	const index = await db.books().getSearchIndex();
+	let index = new Search("isbn");
+	db.books()
+		.streamSearchIndex()
+		.subscribe((i) => (index = i));
 
 	// Search string: "oxford" - should match "Oxford University Press" (regardless of letter casing)
-	expect(index.search("oxford")).toEqual([pets, time]);
+	await waitFor(() => expect(index.search("oxford")).toEqual([pets, time]));
 
 	// Search string: "stephen" - should match "Stephen King" (author) and "Stephen Hawking" (author)
 	// expect(index.search("stephen")).toEqual([pets, time]);
 
 	// Search string: "king" - should match both "(...) Return of The King" (title) and "Stephen King" (author)
-	expect(index.search("king")).toEqual([lotr, pets]);
+	await waitFor(() => expect(index.search("king")).toEqual([lotr, pets]));
+
+	// Adding a book to the db should update the index
+	const werther = {
+		isbn: "44444444",
+		title: "The Sorrows of Young Werther",
+		authors: "Johann Wolfgang von Goethe",
+		publisher: "Penguin Classics",
+		price: 40
+	};
+	await db.books().upsert([werther]);
+	await waitFor(() => expect(index.search("Penguin Classics")).toEqual([lotr, werther]));
 };
 
 // #region helpers
