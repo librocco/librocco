@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
 	import { map } from "rxjs";
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
@@ -9,7 +8,6 @@
 
 	import {
 		InventoryPage,
-		TextField,
 		Pagination,
 		InventoryTable,
 		createTable,
@@ -23,7 +21,8 @@
 		BookDetailForm,
 		DiscountInput
 	} from "@librocco/ui";
-	import { NEW_WAREHOUSE, type BookEntry, versionId } from "@librocco/db";
+	import { NEW_WAREHOUSE, type BookEntry, versionId, type SearchIndex } from "@librocco/db";
+	import { debug } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 
@@ -65,11 +64,20 @@
 
 	$: warehouse = data.warehouse;
 
-	$: warehouesStores = createWarehouseStores(warehouse);
+	// Create a search index for books in the db. Each time the books change, we recreate the index.
+	// This is more/less inexpensive (around 2sec), considering it runs in the background.
+	let index: SearchIndex | undefined;
+	db?.books()
+		.getSearchIndex()
+		.then((ix) => (index = ix));
+
+	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
+	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse, index);
 
 	$: displayName = warehouesStores.displayName;
 	$: warehouseDiscount = warehouesStores.warehouseDiscount;
-	$: currentPage = warehouesStores.currentPage;
+	$: currentPageStore = warehouesStores.currentPageStore;
+	$: searchStore = warehouesStores.searchStore;
 	$: paginationData = warehouesStores.paginationData;
 	$: entries = warehouesStores.entries;
 
@@ -143,11 +151,16 @@
 					<DiscountInput name="warehouse-discount" label="Warehouse Discount:" bind:value={$warehouseDiscount} />
 				{/if}
 			</div>
-			<TextField name="search" placeholder="Serach">
-				<svelte:fragment slot="startAdornment">
-					<Search class="h-5 w-5" />
-				</svelte:fragment>
-			</TextField>
+
+			<div class="overflow-hidden rounded-lg border border-gray-200 focus-within:outline focus-within:outline-blue-400">
+				<input
+					class="w-72 border-none outline-none focus:ring-0"
+					type="text"
+					bind:value={$searchStore}
+					name="search"
+					placeholder="Search for book title or author(s)"
+				/>
+			</div>
 		{/if}
 	</div>
 
@@ -173,7 +186,7 @@
 				</p>
 			{/if}
 			{#if $paginationData.numPages > 1}
-				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
+				<Pagination maxItems={7} bind:value={$currentPageStore} numPages={$paginationData.numPages} />
 			{/if}
 		{/if}
 	</div>

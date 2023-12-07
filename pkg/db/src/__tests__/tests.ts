@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { expect } from "vitest";
-import { BehaviorSubject, switchMap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, switchMap } from "rxjs";
 
 import { NoteState, testUtils } from "@librocco/shared";
 
@@ -841,7 +841,7 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 	// Streams used to test pagination
 	const currentPage = new BehaviorSubject(0);
 	const paginate = (page: number) => currentPage.next(page);
-	const entriesWithPagination = currentPage.pipe(switchMap((page) => warehouse.stream().entries({}, page)));
+	const entriesWithPagination = currentPage.pipe(switchMap((page) => warehouse.stream().entries({}, page, 10)));
 	entriesWithPagination.subscribe((e) => (entries = e));
 
 	await waitFor(() => {
@@ -892,7 +892,7 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 	await db
 		.warehouse()
 		.note()
-		// Adding some of the transactions to and outbound note (same quantity) should simply remove said books from stock
+		// Adding some of the transactions to an outbound note (same quantity) should simply remove said books from stock
 		.addVolumes(...fiftyEntries.slice(10, 19).map((v) => ({ ...v, warehouseId: "wh1" })))
 		.then((n) => n.commit({}));
 	await waitFor(() => {
@@ -902,6 +902,21 @@ export const warehousePaginationStream: TestFunction = async (db) => {
 		expect(entries.total).toEqual(19);
 		expect(entries.totalPages).toEqual(2);
 	});
+
+	// If no itemsPerPage provided, should stream all items
+	const allEntries = await firstValueFrom(warehouse.stream().entries({}));
+	// There currently are 19 entries in the warehouse => 28 added - 19 removed
+	expect(allEntries.rows.length).toEqual(19);
+	expect(allEntries.rows).toEqual(
+		// We've removed entries 10-18, in the previous step
+		fiftyEntries
+			.slice(0, 10)
+			.concat(fiftyEntries.slice(19, 28))
+			.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+	);
+	// Should still stream predictable pagination stats
+	expect(allEntries.total).toEqual(19);
+	expect(allEntries.totalPages).toEqual(1);
 };
 
 export const warehouseDataMapStream: TestFunction = async (db) => {
@@ -1683,6 +1698,39 @@ export const receiptPrinter: TestFunction = async (db) => {
 		total: 432,
 		timestamp: expect.any(Number)
 	});
+};
+
+export const search: TestFunction = async (db) => {
+	// Setup: Add three books to the db
+	const lotr = {
+		isbn: "11111111",
+		title: "The Lord of the Rings: The Return of the King",
+		authors: "J.R.R. Tolkien",
+		publisher: "Penguin Classics",
+		price: 10
+	};
+	const pets = { isbn: "22222222", title: "Pet Sematary", authors: "Stephen King", publisher: "Oxford University Press", price: 20 };
+	const time = {
+		isbn: "33333333",
+		title: "A Brief History of Time",
+		authors: "Stephen Hawking",
+		publisher: "Oxford University Press",
+		price: 30
+	};
+
+	const books = [lotr, pets, time];
+	await db.books().upsert(books);
+
+	const index = await db.books().getSearchIndex();
+
+	// Search string: "oxford" - should match "Oxford University Press" (regardless of letter casing)
+	expect(index.search("oxford")).toEqual([pets, time]);
+
+	// Search string: "stephen" - should match "Stephen King" (author) and "Stephen Hawking" (author)
+	// expect(index.search("stephen")).toEqual([pets, time]);
+
+	// Search string: "king" - should match both "(...) Return of The King" (title) and "Stephen King" (author)
+	expect(index.search("king")).toEqual([lotr, pets]);
 };
 
 // #region helpers

@@ -1,4 +1,5 @@
 import { concat, from, map, Observable, switchMap, tap } from "rxjs";
+import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
@@ -12,6 +13,13 @@ class Books implements BooksInterface {
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
+	}
+
+	private getAllBooks(): Promise<BookEntry[]> {
+		return this.#db._pouch
+			.allDocs<BookEntry>({ include_docs: true, startkey: "books/", endkey: "books/\uffff" })
+			.then(unwrapDocs)
+			.then((books) => books.filter((book): book is BookEntry => Boolean(book)));
 	}
 
 	async upsert(docsToUpsert: BookEntry[]): Promise<void> {
@@ -56,6 +64,22 @@ class Books implements BooksInterface {
 		this.#db.plugin("book-fetcher").fetchBookData(isbnsToFetch).then(this.upsert);
 
 		return books;
+	}
+
+	// TODO: This should probably get cached and streamed (multicast) due to substantial mem size
+	async getSearchIndex() {
+		const index = new Search("isbn");
+		index.addIndex("isbn");
+		index.addIndex("title");
+		index.addIndex("authors");
+		index.addIndex("publisher");
+		index.addIndex("editedBy");
+
+		// TODO: We might want to get the relevantBooksOnly (to reduce the size of the built index),
+		// but that's a can of worms of sorts, and we should revisit only if we see performance issues.
+		index.addDocuments(await this.getAllBooks());
+
+		return index;
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
