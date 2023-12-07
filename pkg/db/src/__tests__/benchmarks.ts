@@ -33,7 +33,7 @@ export const commit20Notes: TestFunction = async (db, version, getNotesAndWareho
 
 	await Promise.all(
 		stockPerPage.map(async (stock, page) => {
-			const { rows } = await firstValueFrom(db.warehouse().stream().entries({}, page));
+			const { rows } = await firstValueFrom(db.warehouse().stream().entries({}, page, 10));
 
 			expect(rows).toEqual(
 				stock.map(({ warehouseId, ...volumeStock }) =>
