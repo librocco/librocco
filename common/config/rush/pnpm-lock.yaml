@@ -145,7 +145,7 @@ importers:
         version: 4.9.5
       vite:
         specifier: ~4.0.0
-        version: 4.0.5(@types/node@20.4.10)
+        version: 4.0.5(@types/node@16.18.46)
       vite-plugin-pwa:
         specifier: 0.16.4
         version: 0.16.4(vite@4.0.5)(workbox-build@7.0.0)(workbox-window@6.5.4)
@@ -179,6 +179,9 @@ importers:
       eslint-config-prettier:
         specifier: ^8.3.0
         version: 8.10.0(eslint@8.16.0)
+      js-search:
+        specifier: workspace:*
+        version: link:../js-search
       pouchdb:
         specifier: ~8.0.1
         version: 8.0.1
@@ -199,7 +202,7 @@ importers:
         version: 9.0.0
       vite:
         specifier: ~4.0.0
-        version: 4.0.5(@types/node@20.4.10)
+        version: 4.0.5(@types/node@16.18.46)
       vitest:
         specifier: ~0.28.5
         version: 0.28.5
@@ -271,7 +274,7 @@ importers:
         version: 4.9.5
       vite:
         specifier: ~4.0.0
-        version: 4.0.5(@types/node@20.4.10)
+        version: 4.0.5(@types/node@16.18.46)
 
   ../../pkg/scaffold:
     dependencies:
@@ -347,7 +350,7 @@ importers:
         version: 4.9.5
       vite:
         specifier: ~4.0.0
-        version: 4.0.5(@types/node@20.4.10)
+        version: 4.0.5(@types/node@16.18.46)
       vitest:
         specifier: ~0.21.1
         version: 0.21.1(jsdom@21.1.2)
@@ -474,7 +477,7 @@ importers:
         version: 4.9.5
       vite:
         specifier: ~4.0.0
-        version: 4.0.5(@types/node@20.4.10)
+        version: 4.0.5(@types/node@16.18.46)
       vitest:
         specifier: ~0.21.1
         version: 0.21.1(jsdom@21.1.2)
@@ -2369,7 +2372,7 @@ packages:
       chokidar: 3.5.3
       pathe: 0.2.0
       picocolors: 1.0.0
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
     dev: true
 
   /@histoire/vendors@0.11.9:
@@ -2850,7 +2853,7 @@ packages:
       svelte: 3.58.0
       tiny-glob: 0.2.9
       undici: 5.22.1
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2883,7 +2886,7 @@ packages:
       '@sveltejs/vite-plugin-svelte': 2.4.5(svelte@3.58.0)(vite@4.0.5)
       debug: 4.3.4
       svelte: 3.58.0
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -2902,7 +2905,7 @@ packages:
       magic-string: 0.30.3
       svelte: 3.58.0
       svelte-hmr: 0.15.3(svelte@3.58.0)
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
       vitefu: 0.2.4(vite@4.0.5)
     transitivePeerDependencies:
       - supports-color
@@ -5993,7 +5996,7 @@ packages:
       sade: 1.8.1
       shiki-es: 0.2.0
       sirv: 2.0.3
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
       vite-node: 0.28.4
     transitivePeerDependencies:
       - '@types/node'
@@ -10038,7 +10041,7 @@ packages:
       picocolors: 1.0.0
       source-map: 0.6.1
       source-map-support: 0.5.21
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
     transitivePeerDependencies:
       - '@types/node'
       - less
@@ -10083,7 +10086,7 @@ packages:
       debug: 4.3.4
       fast-glob: 3.3.1
       pretty-bytes: 6.1.1
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
       workbox-build: 7.0.0
       workbox-window: 6.5.4
     transitivePeerDependencies:
@@ -10200,7 +10203,7 @@ packages:
       vite:
         optional: true
     dependencies:
-      vite: 4.0.5(@types/node@20.4.10)
+      vite: 4.0.5(@types/node@16.18.46)
     dev: true
 
   /vitest@0.21.1(jsdom@21.1.2):
