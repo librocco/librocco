@@ -1,4 +1,4 @@
-import { concat, from, map, Observable, switchMap, tap } from "rxjs";
+import { concat, from, map, Observable, share, Subject, switchMap, tap } from "rxjs";
 import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
@@ -11,7 +11,7 @@ import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
 
-	#searchIndex: SearchIndex | undefined;
+	#searchIndexStream?: Observable<SearchIndex>;
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
@@ -75,24 +75,23 @@ class Books implements BooksInterface {
 		return books;
 	}
 
-	private async createSearchIndex() {
-		const index = new Search("isbn");
-		index.addIndex("isbn");
-		index.addIndex("title");
-		index.addIndex("authors");
-		index.addIndex("publisher");
-		index.addIndex("editedBy");
-
-		// TODO: We might want to get the relevantBooksOnly (to reduce the size of the built index),
-		// but that's a can of worms of sorts, and we should revisit only if we see performance issues.
-		index.addDocuments(await this.getAllBooks());
-
-		this.#searchIndex = index;
-		return index;
+	/**
+	 * Creates a search index stream, assigns it to this.#searchIndexStream and multicasts it.
+	 * Returns the created stream.
+	 */
+	private createSearchIndexStream() {
+		const searchStreamCache = new Subject<SearchIndex>();
+		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
+			switchMap(() => from(this.getAllBooks())),
+			map(createSearchIndex),
+			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
+			// Reset the stream when there are no more subscribers (for the same reasons as above)
+			share({ connector: () => searchStreamCache, resetOnRefCountZero: true })
+		));
 	}
 
 	streamSearchIndex() {
-		return concat(from(Promise.resolve()), this.streamChanges()).pipe(switchMap(() => this.createSearchIndex()));
+		return this.#searchIndexStream ?? this.createSearchIndexStream();
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
@@ -134,4 +133,17 @@ class Books implements BooksInterface {
 
 export const newBooksInterface = (db: DatabaseInterface): BooksInterface => {
 	return new Books(db);
+};
+
+const createSearchIndex = (books: BookEntry[]) => {
+	const index = new Search("isbn");
+	index.addIndex("isbn");
+	index.addIndex("title");
+	index.addIndex("authors");
+	index.addIndex("publisher");
+	index.addIndex("editedBy");
+
+	index.addDocuments(books);
+
+	return index;
 };
