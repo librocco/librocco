@@ -406,6 +406,10 @@
 		{
 			"packageName": "@librocco/book-data-extension",
 			"projectFolder": "plugins/book-data-extension"
+		},
+		{
+			"packageName": "@librocco/receipt-printer",
+			"projectFolder": "pkg/receipt-printer"
 		}
 	]
 }

@@ -1,0 +1,18 @@
+{
+	"extends": "../scaffold/tsconfig.json",
+	"compilerOptions": {
+		"paths": {
+			"@/*": ["src/*"],
+			"@test-runner/*": ["src/test-runner/*"],
+			"@data-loaders/*": ["src/data-loaders/*"],
+			"@unit-test-data/*": ["src/test-runner/__testData__/*"]
+		},
+		"rootDir": "src",
+		"baseUrl": ".",
+
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"esModuleInterop": true
+	},
+	"exclude": ["node_modules"],
+	"include": ["src"]
+}

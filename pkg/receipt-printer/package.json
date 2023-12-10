@@ -1,0 +1,36 @@
+{
+	"name": "@librocco/receipt-printer",
+	"version": "0.0.1",
+	"main": "./dist/index.js",
+	"exports": {
+		".": {
+			"import": "./dist/index.es.js",
+			"require": "./dist/index.js",
+			"default": "./dist.index.es.js"
+		}
+	},
+	"types": "dist/index.d.ts",
+	"scripts": {
+		"dev": "vite dev",
+		"build": "vite build && tsc --project tsconfig.build.json",
+		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
+		"lint:strict": "eslint . --max-warnings=0",
+		"format": "prettier --write --plugin-search-dir=. .",
+		"typecheck": "tsc --noEmit"
+	},
+	"devDependencies": {
+		"@librocco/shared": "workspace:*",
+		"js-search": "workspace:*",
+		"@types/pouchdb": "~6.4.0",
+		"@types/uuid": "~9.0.0",
+		"@typescript-eslint/eslint-plugin": "~5.27.0",
+		"@typescript-eslint/parser": "~5.27.0",
+		"eslint": "~8.16.0",
+		"eslint-config-prettier": "^8.3.0",
+		"prettier": "~2.7.1",
+		"typescript": "^4.8.4",
+		"vite": "~4.0.0",
+		"@types/node": "~20.10.4"
+	},
+	"type": "module"
+}

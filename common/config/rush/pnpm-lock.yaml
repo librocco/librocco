@@ -276,6 +276,45 @@ importers:
         specifier: ~4.0.0
         version: 4.0.5(@types/node@16.18.46)
 
+  ../../pkg/receipt-printer:
+    devDependencies:
+      '@librocco/shared':
+        specifier: workspace:*
+        version: link:../shared
+      '@types/node':
+        specifier: ~20.10.4
+        version: 20.10.4
+      '@types/pouchdb':
+        specifier: ~6.4.0
+        version: 6.4.0
+      '@types/uuid':
+        specifier: ~9.0.0
+        version: 9.0.3
+      '@typescript-eslint/eslint-plugin':
+        specifier: ~5.27.0
+        version: 5.27.1(@typescript-eslint/parser@5.27.1)(eslint@8.16.0)(typescript@4.9.5)
+      '@typescript-eslint/parser':
+        specifier: ~5.27.0
+        version: 5.27.1(eslint@8.16.0)(typescript@4.9.5)
+      eslint:
+        specifier: ~8.16.0
+        version: 8.16.0
+      eslint-config-prettier:
+        specifier: ^8.3.0
+        version: 8.10.0(eslint@8.16.0)
+      js-search:
+        specifier: workspace:*
+        version: link:../js-search
+      prettier:
+        specifier: ~2.7.1
+        version: 2.7.1
+      typescript:
+        specifier: ^4.8.4
+        version: 4.9.5
+      vite:
+        specifier: ~4.0.0
+        version: 4.0.5(@types/node@20.10.4)
+
   ../../pkg/scaffold:
     dependencies:
       '@typescript-eslint/eslint-plugin':
@@ -3108,6 +3147,12 @@ packages:
 
   /@types/node@16.18.46:
     resolution: {integrity: sha512-Mnq3O9Xz52exs3mlxMcQuA7/9VFe/dXcrgAyfjLkABIqxXKOgBRjyazTxUbjsxDa4BP7hhPliyjVTP9RDP14xg==}
+    dev: true
+
+  /@types/node@20.10.4:
+    resolution: {integrity: sha512-D08YG6rr8X90YB56tSIuBaddy/UXAA9RKJoFvrsnogAum/0pmjkgi4+2nx96A330FmioegBWmEYQ+syqCFaveg==}
+    dependencies:
+      undici-types: 5.26.5
     dev: true
 
   /@types/node@20.4.10:
@@ -9883,6 +9928,10 @@ packages:
       has-symbols: 1.0.3
       which-boxed-primitive: 1.0.2
 
+  /undici-types@5.26.5:
+    resolution: {integrity: sha512-JlCMO+ehdEIKqlFxk6IfVoAUVmgz7cU7zD/h9XZ0qzeosSHmUJVOzSQvvYSYWXkFXC+IfLKSIffhv0sVZup6pA==}
+    dev: true
+
   /undici@5.22.1:
     resolution: {integrity: sha512-Ji2IJhFXZY0x/0tVBXeQwgPlLWw13GVzpsWPQ3rV50IFMMof2I55PZZxtm4P6iNq+L5znYN9nSTAq0ZyE6lSJw==}
     engines: {node: '>=14.0'}
@@ -10153,6 +10202,40 @@ packages:
         optional: true
     dependencies:
       '@types/node': 16.18.46
+      esbuild: 0.16.17
+      postcss: 8.4.29
+      resolve: 1.22.4
+      rollup: 3.28.1
+    optionalDependencies:
+      fsevents: 2.3.3
+    dev: true
+
+  /vite@4.0.5(@types/node@20.10.4):
+    resolution: {integrity: sha512-7m87RC+caiAxG+8j3jObveRLqaWA/neAdCat6JAZwMkSWqFHOvg8MYe5fAQxVBRAuKAQ1S6XDh3CBQuLNbY33w==}
+    engines: {node: ^14.18.0 || >=16.0.0}
+    hasBin: true
+    peerDependencies:
+      '@types/node': '>= 14'
+      less: '*'
+      sass: '*'
+      stylus: '*'
+      sugarss: '*'
+      terser: ^5.4.0
+    peerDependenciesMeta:
+      '@types/node':
+        optional: true
+      less:
+        optional: true
+      sass:
+        optional: true
+      stylus:
+        optional: true
+      sugarss:
+        optional: true
+      terser:
+        optional: true
+    dependencies:
+      '@types/node': 20.10.4
       esbuild: 0.16.17
       postcss: 8.4.29
       resolve: 1.22.4
