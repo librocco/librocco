@@ -50,6 +50,7 @@
 	"dependencies": {
 		"@librocco/db": "workspace:*",
 		"@librocco/ui": "workspace:*",
+		"@librocco/receipt-printer": "workspace:*",
 		"lucide-svelte": "^0.210.0",
 		"pouchdb": "~8.0.1",
 		"rxjs": "~7.8.0",

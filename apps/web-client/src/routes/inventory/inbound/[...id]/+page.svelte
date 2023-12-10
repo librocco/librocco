@@ -43,6 +43,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 	import { comparePaths } from "$lib/utils/misc";
+	import { printReceipt } from "$lib/receipts";
 
 	import { links } from "$lib/data";
 
@@ -206,7 +207,7 @@
 						{/if}
 					</div>
 					<div class="flex gap-x-4">
-						<Button color={ButtonColor.White} on:click={() => note?.printReceipt()}>Print receipt</Button>
+						<Button color={ButtonColor.White} on:click={() => printReceipt(note)}>Print receipt</Button>
 						<SelectMenu
 							id="note-state-picker"
 							class="w-[138px]"
