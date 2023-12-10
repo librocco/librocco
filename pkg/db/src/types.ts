@@ -157,7 +157,14 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * An imperative query (single response) of note's transactions (as opposed to the entries stream - an observable stream).
 	 */
 	getEntries: EntriesQuery;
+	/**
+	 * @deprecated Use `getReceiptData` to retrieve the data and `@librocco/receipt-printer` to print the receipt.
+	 */
 	printReceipt(): Promise<string>;
+	/**
+	 * Processes the note data to construct a data object used to print receipts.
+	 */
+	getReceiptData(): Promise<ReceiptData>;
 }
 
 /**
@@ -280,6 +287,7 @@ export interface PrintJob extends CouchDocument<ReceiptData> {
 
 export interface RecepitsInterface {
 	print(note: NoteData): Promise<string>;
+	constructReceiptData(entries: NoteData): Promise<ReceiptData>;
 }
 // #endregion receipts
 

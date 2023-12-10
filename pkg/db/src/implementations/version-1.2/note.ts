@@ -4,7 +4,7 @@ import { NoteState, debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
+import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient, ReceiptData } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
@@ -373,6 +373,10 @@ class Note implements NoteInterface {
 
 	printReceipt(): Promise<string> {
 		return this.#db.receipts().print(this);
+	}
+
+	getReceiptData(): Promise<ReceiptData> {
+		return this.#db.receipts().constructReceiptData(this);
 	}
 
 	/**

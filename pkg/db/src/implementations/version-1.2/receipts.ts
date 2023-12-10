@@ -31,7 +31,7 @@ class Receipts implements RecepitsInterface {
 		};
 	}
 
-	async print({ entries }: NoteData): Promise<string> {
+	async constructReceiptData({ entries }: NoteData): Promise<ReceiptData> {
 		const timestamp = Number(new Date());
 
 		const [books, warehouseMap] = await Promise.all([
@@ -56,7 +56,11 @@ class Receipts implements RecepitsInterface {
 		// back to a float with two decimal places. This is to avoid floating point errors.
 		const total = items.reduce((acc, { quantity, price }) => acc + quantity * Math.floor(price * 100), 0) / 100;
 
-		const printJob = this.constructPrintJob({ items, total, timestamp });
+		return { items, total, timestamp };
+	}
+
+	async print(data: NoteData): Promise<string> {
+		const printJob = this.constructPrintJob(await this.constructReceiptData(data));
 
 		await this.#db._pouch.put(printJob);
 
