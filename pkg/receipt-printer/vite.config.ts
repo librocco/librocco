@@ -10,7 +10,6 @@ export default defineConfig({
 			formats: ["es", "cjs"]
 		},
 		rollupOptions: {
-			external: ["events"],
 			output: {
 				exports: "named"
 			}
