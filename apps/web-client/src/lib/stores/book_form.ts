@@ -1,5 +1,7 @@
 import { writable, type Readable } from "svelte/store";
 
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
+
 import type { BookEntry } from "@librocco/db";
 
 interface SlideoverText {
@@ -22,9 +24,12 @@ type BookFormState = BookFormClosedState | BookFormOpenState;
 interface BookFormStore extends Readable<BookFormState> {
 	open: (book: Partial<BookEntry>) => void;
 	close: () => void;
+	fetch: (book: Partial<BookEntry>) => void;
 }
 
 export function newBookFormStore(): BookFormStore {
+	const plugin = createBookDataExtensionPlugin();
+
 	const internalStore = writable<BookFormState>({
 		open: false
 	});
@@ -45,9 +50,24 @@ export function newBookFormStore(): BookFormStore {
 	// Close the form
 	const close = () => internalStore.set({ open: false });
 
+	const fetch = async (book: Partial<BookEntry>) =>
+		plugin.fetchBookData([book.isbn]).then((bookData: BookEntry[]) => {
+			if (bookData.length) {
+				internalStore.set({
+					open: true,
+					slideoverText: {
+						title: "Create a new book",
+						description: "Use this form to manually add a new book to the note"
+					},
+					book: bookData[0]
+				});
+			}
+		});
+
 	return {
 		subscribe: internalStore.subscribe,
 		open,
-		close
+		close,
+		fetch
 	};
 }
