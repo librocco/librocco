@@ -1,21 +1,3 @@
-/**
- * Utility function that converts numbers into hex values
- *
- * @usage:
- *   numToHex(256) => '0100'
- *   numToHex(0) => '00'
- */
-const numToHexString = function (value: number | string) {
-	value = +value;
-	if (!isNaN(value)) {
-		value = value.toString(16);
-		while (value.length % 2 !== 0) {
-			value = "0" + value;
-		}
-	}
-	return value;
-};
-
 export const LF = "\x0a";
 export const FS = "\x1c";
 export const FF = "\x0c";
@@ -228,10 +210,6 @@ export const BARCODE_FORMAT = {
 	BARCODE_FONT_A: "\x1d\x66\x00", // Font type A for HRI barcode chars
 	BARCODE_FONT_B: "\x1d\x66\x01", // Font type B for HRI barcode chars
 
-	BARCODE_HEIGHT: function (height: number) {
-		// Barcode Height [1-255]
-		return Buffer.from("1d68" + numToHexString(height), "hex");
-	},
 	// Barcode Width  [2-6]
 	BARCODE_WIDTH: {
 		1: "\x1d\x77\x02",

@@ -311,6 +311,9 @@ importers:
       prettier:
         specifier: ~2.7.1
         version: 2.7.1
+      rollup-plugin-node-polyfills:
+        specifier: ~0.2.1
+        version: 0.2.1
       typescript:
         specifier: ^4.8.4
         version: 4.9.5

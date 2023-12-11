@@ -1,22 +1,3 @@
-/**
- * [getParityBit description]
- * @return {[type]} [description]
- */
-export function getParityBit(str: string) {
-	let parity = 0;
-	const reversedCode = str.split("").reverse().join("");
-	for (let counter = 0; counter < reversedCode.length; counter += 1) {
-		parity += parseInt(reversedCode.charAt(counter), 10) * Math.pow(3, (counter + 1) % 2);
-	}
-	return ((10 - (parity % 10)) % 10).toString();
-}
-
-export function codeLength(str: string) {
-	const hex = Number(str.length).toString(16).padStart(2, "0");
-	const buff = Buffer.from(hex, "hex");
-	return buff.toString();
-}
-
 export function charLength(char: string) {
 	const code = char.charCodeAt(0);
 	return code > 0x7f && code <= 0xffff ? 2 : 1; // More than 2bytes count as 2
@@ -41,8 +22,3 @@ export function upperCase<T extends string>(string: T): Uppercase<T> {
 }
 
 export type AnyCase<T extends string> = Uppercase<T> | Lowercase<T>;
-
-// eslint-disable-next-line @typescript-eslint/ban-types
-export function isKey<T extends {} | []>(key: string | number | symbol, of: T): key is keyof T {
-	return key in of;
-}
