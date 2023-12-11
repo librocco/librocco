@@ -272,6 +272,7 @@
 					book={$bookForm.book}
 					on:submit={({ detail }) => handleBookFormSubmit(detail)}
 					on:cancel={bookForm.close}
+					on:fetch={({ detail }) => bookForm.fetch(detail)}
 				/>
 			</Slideover>
 		{/if}
