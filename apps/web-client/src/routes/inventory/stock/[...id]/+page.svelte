@@ -68,8 +68,8 @@
 	// This is more/less inexpensive (around 2sec), considering it runs in the background.
 	let index: SearchIndex | undefined;
 	db?.books()
-		.getSearchIndex()
-		.then((ix) => (index = ix));
+		.streamSearchIndex()
+		.subscribe((ix) => (index = ix));
 
 	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
 	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse, index);
