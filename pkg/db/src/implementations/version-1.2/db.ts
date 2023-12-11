@@ -47,6 +47,8 @@ class Database implements DatabaseInterface {
 
 	#plugins: PluginsInterface;
 
+	#booksInterface?: BooksInterface;
+
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
 
@@ -165,7 +167,8 @@ class Database implements DatabaseInterface {
 	}
 
 	books(): BooksInterface {
-		return newBooksInterface(this);
+		// We're caching the books interface to avoid creating multiple instances
+		return this.#booksInterface ?? (this.#booksInterface = newBooksInterface(this));
 	}
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE): WarehouseInterface {

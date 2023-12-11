@@ -1,6 +1,7 @@
-import { writable, type Readable, type Writable } from "svelte/store";
+import { writable, type Readable, type Writable, derived } from "svelte/store";
 
-import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { NoteInterface, WarehouseInterface, SearchIndex } from "@librocco/db";
+import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
 
@@ -60,11 +61,12 @@ interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
 	warehouseDiscount: Writable<number>;
 	entries: Readable<DisplayRow[]>;
-	currentPage: Writable<number>;
+	currentPageStore: Writable<number>;
 	paginationData: Readable<PaginationData>;
+	searchStore: Writable<string>;
 }
 interface CreateWarehouseStores {
-	(warehouse?: WarehouseInterface): WarehouseDisplayStores;
+	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface, searchIndex?: SearchIndex): WarehouseDisplayStores;
 }
 
 /**
@@ -72,8 +74,19 @@ interface CreateWarehouseStores {
  * @param warehouse WarehouseInterface object
  * @returns
  */
-export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
-	const currentPage = writable(0);
+export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, searchIndex) => {
+	const currentPageStore = writable(0);
+	const searchStore = writable("");
+	// Wrap the search store in a controlled store so that we can search imperatively (e.g. at the click of a button)
+	const controlledSearchStore = derived(searchStore, (searchString) =>
+		// If search index not provided, this is a noop
+		searchIndex
+			? {
+					searchString,
+					isbns: new Set(searchIndex.search(searchString).map(({ isbn }) => isbn))
+			  }
+			: { searchString: "", isbns: new Set() }
+	);
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
@@ -81,14 +94,14 @@ export const createWarehouseStores: CreateWarehouseStores = (warehouse) => {
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entriesCtx = { name: `[WAREHOUSE_ENTRIES::${warehouse?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), warehouse, currentPage);
+	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPageStore, controlledSearchStore);
 
 	return {
 		displayName,
 		warehouseDiscount,
 		entries,
-		currentPage,
+		currentPageStore,
+		searchStore,
 		paginationData
 	};
 };
