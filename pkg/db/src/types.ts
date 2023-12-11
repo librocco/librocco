@@ -416,7 +416,7 @@ export interface BooksInterface {
 	/**
 	 * Get search index for full-text search, built from relevant books
 	 */
-	getSearchIndex: () => Promise<SearchIndex>;
+	streamSearchIndex: () => Observable<SearchIndex>;
 }
 
 export interface NewDatabase {

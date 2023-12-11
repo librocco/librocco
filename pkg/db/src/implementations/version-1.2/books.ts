@@ -1,9 +1,9 @@
-import { concat, from, map, Observable, switchMap, tap } from "rxjs";
+import { concat, from, map, Observable, share, Subject, switchMap, tap } from "rxjs";
 import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
-import { BookEntry, BooksInterface, CouchDocument } from "@/types";
+import { BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
 import { DatabaseInterface, PublishersListRow } from "./types";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
@@ -11,8 +11,17 @@ import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
 
+	#searchIndexStream?: Observable<SearchIndex>;
+
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
+	}
+
+	private streamChanges() {
+		return newChangesStream<unknown[]>(
+			{},
+			this.#db._pouch.changes({ since: "now", live: true, filter: (doc) => doc._id.startsWith("books/") })
+		);
 	}
 
 	private getAllBooks(): Promise<BookEntry[]> {
@@ -66,20 +75,23 @@ class Books implements BooksInterface {
 		return books;
 	}
 
-	// TODO: This should probably get cached and streamed (multicast) due to substantial mem size
-	async getSearchIndex() {
-		const index = new Search("isbn");
-		index.addIndex("isbn");
-		index.addIndex("title");
-		index.addIndex("authors");
-		index.addIndex("publisher");
-		index.addIndex("editedBy");
+	/**
+	 * Creates a search index stream, assigns it to this.#searchIndexStream and multicasts it.
+	 * Returns the created stream.
+	 */
+	private createSearchIndexStream() {
+		const searchStreamCache = new Subject<SearchIndex>();
+		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
+			switchMap(() => from(this.getAllBooks())),
+			map(createSearchIndex),
+			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
+			// Reset the stream when there are no more subscribers (for the same reasons as above)
+			share({ connector: () => searchStreamCache, resetOnRefCountZero: true })
+		));
+	}
 
-		// TODO: We might want to get the relevantBooksOnly (to reduce the size of the built index),
-		// but that's a can of worms of sorts, and we should revisit only if we see performance issues.
-		index.addDocuments(await this.getAllBooks());
-
-		return index;
+	streamSearchIndex() {
+		return this.#searchIndexStream ?? this.createSearchIndexStream();
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]) {
@@ -121,4 +133,17 @@ class Books implements BooksInterface {
 
 export const newBooksInterface = (db: DatabaseInterface): BooksInterface => {
 	return new Books(db);
+};
+
+const createSearchIndex = (books: BookEntry[]) => {
+	const index = new Search("isbn");
+	index.addIndex("isbn");
+	index.addIndex("title");
+	index.addIndex("authors");
+	index.addIndex("publisher");
+	index.addIndex("editedBy");
+
+	index.addDocuments(books);
+
+	return index;
 };
