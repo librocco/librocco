@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
-
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
+import type { Search } from "js-search";
 
 import { NoteState, debug } from "@librocco/shared";
 
@@ -66,6 +66,8 @@ export interface EntriesStreamResult {
 }
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
+
+export type SearchIndex = Search;
 // #endregion misc
 
 // #region books
@@ -411,6 +413,10 @@ export interface BooksInterface {
 	 * Steams a list of publishers built from 'publisher' properties of book data already in the db.
 	 */
 	streamPublishers: (ctx: debug.DebugCtx) => Observable<string[]>;
+	/**
+	 * Get search index for full-text search, built from relevant books
+	 */
+	streamSearchIndex: () => Observable<SearchIndex>;
 }
 
 export interface NewDatabase {

@@ -268,15 +268,17 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "streams: discount: res"))
 				),
 
-			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 0): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
-				const endIx = startIx + itemsPerPage;
+				// If items per page is not provided (or is 0), we're returning all results and falling back
+				// to 'undefined' => slice will return all results if 2nd argument is undefined.
+				const endIx = !itemsPerPage ? undefined : startIx + itemsPerPage;
 
 				const tableData = this.#stock.pipe(
 					map(
 						(stock): TableData => ({
 							rows: [...stock.rows()].sort(sortBooks).slice(startIx, endIx),
-							stats: { total: stock.size, totalPages: Math.ceil(stock.size / itemsPerPage) }
+							stats: { total: stock.size, totalPages: Math.ceil(itemsPerPage ? stock.size / itemsPerPage : 1) }
 						})
 					)
 				);

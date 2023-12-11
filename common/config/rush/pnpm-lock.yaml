@@ -185,6 +185,9 @@ importers:
       eslint-config-prettier:
         specifier: ^8.3.0
         version: 8.10.0(eslint@8.16.0)
+      js-search:
+        specifier: workspace:*
+        version: link:../js-search
       pouchdb:
         specifier: ~8.0.1
         version: 8.0.1

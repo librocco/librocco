@@ -19,6 +19,7 @@
 	 * Currently selected page index (0 - based)
 	 */
 	export let value: number = 0;
+	$: value > numPages && (value = 0);
 
 	const dispatch = createEventDispatcher();
 
