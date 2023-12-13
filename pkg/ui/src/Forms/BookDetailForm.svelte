@@ -16,6 +16,7 @@
 	const dispatchEvent = createEventDispatcher<{
 		submit: BookEntry;
 		cancel: void;
+		fetch: Partial<BookEntry>;
 	}>();
 
 	function handleSubmit(values: BookEntry) {
@@ -23,6 +24,9 @@
 	}
 	function handleCancel() {
 		dispatchEvent("cancel");
+	}
+	function handleFetch() {
+		dispatchEvent("fetch", book);
 	}
 
 	const initialValues = {
@@ -90,6 +94,7 @@
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
+		<Button color={ButtonColor.White} on:click={handleFetch}>Fetch</Button>
 		<Button color={ButtonColor.White} on:click={handleCancel}>Cancel</Button>
 		<Button type="submit" color={ButtonColor.Primary}>Save</Button>
 	</div>

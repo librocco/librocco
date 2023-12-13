@@ -28,7 +28,8 @@ export function listenForBook(message: string, timeout: number): Promise<BookEnt
 
 		const handler = (event: MessageEvent) => {
 			if (event.source !== window) return;
-			if (event.data.message && event.data.message === message) {
+			const receivedMessage = event.data.message;
+			if (event.data.message && receivedMessage === message) {
 				clearTimeout(promiseTimer);
 				removeEventListener("message", handler);
 				resolve(event.data.book);

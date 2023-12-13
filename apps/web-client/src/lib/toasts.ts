@@ -36,6 +36,7 @@ export const noteToastMessages = (noteName: string, warehouseName = "all") => ({
 	noteDeleted: `${noteName} deleted`,
 	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`,
 	volumeAdded: (isbn: string) => `${isbn} added to ${noteName}`,
+	bookDataFetched: (isbn: string) => `${isbn} book data found`,
 	volumeRemoved: (qtn: number) => `Removed ${qtn} book${qtn === 1 ? "" : "s"} from ${noteName}`,
 	volumeUpdated: (isbn: string) => `${isbn} quantitiy updated`
 });

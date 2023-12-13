@@ -13,14 +13,16 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 
 		const unfilteredBookData = await Promise.all(isbns.map((isbn) => fetchBook(isbn)));
 
-		return unfilteredBookData.filter((bookData): bookData is BookEntry => bookData !== undefined);
+		return unfilteredBookData.filter(
+			(bookData): bookData is BookEntry => bookData !== undefined && bookData.isbn !== "" && bookData.title !== ""
+		);
 	};
 
 	const fetchBook = (isbn: string) => {
 		// Post message to the extension
 		postMessage(`BOOK_FETCHER:REQ:${isbn}`);
 
-		return listenForBook(`BOOK_FETCHER:RES`, 800);
+		return listenForBook(`BOOK_FETCHER:RES:${isbn}`, 4000);
 	};
 
 	return { fetchBookData };
