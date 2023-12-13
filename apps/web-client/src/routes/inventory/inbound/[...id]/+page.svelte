@@ -43,6 +43,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 	import { comparePaths } from "$lib/utils/misc";
+	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
 	import { links } from "$lib/data";
 
@@ -52,6 +53,7 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
+	const plugin = createBookDataExtensionPlugin();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteList = readableFromStream(
@@ -125,6 +127,14 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
+
+		const book = await plugin.fetchBookData([isbn]);
+
+		if (book.length) {
+			toastSuccess(toasts.bookDataFetched(isbn));
+			await db.books().upsert(book);
+		}
+
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
@@ -262,6 +272,7 @@
 					book={$bookForm.book}
 					on:submit={({ detail }) => handleBookFormSubmit(detail)}
 					on:cancel={bookForm.close}
+					on:fetch={({ detail }) => bookForm.fetch(detail)}
 				/>
 			</Slideover>
 		{/if}
