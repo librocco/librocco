@@ -78,7 +78,12 @@ export const listDeisgnDocument: DesignDocument = {
 
 				const note = doc as NoteData;
 
-				emit(doc._id, { displayName: doc.displayName, committed: note.committed });
+				emit(doc._id, {
+					displayName: doc.displayName,
+					committed: note.committed,
+					updatedAt: note.updatedAt,
+					totalBooks: note.entries.length
+				});
 			}.toString()
 		},
 		inbound: {
@@ -93,7 +98,13 @@ export const listDeisgnDocument: DesignDocument = {
 					return;
 				}
 
-				emit(doc._id, { type: doc.docType, displayName: doc.displayName, committed: note.committed });
+				emit(doc._id, {
+					type: doc.docType,
+					displayName: doc.displayName,
+					committed: note.committed,
+					updatedAt: note.updatedAt,
+					totalBooks: note.entries.length
+				});
 			}.toString()
 		},
 		publishers: {
