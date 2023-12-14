@@ -1,3 +1,4 @@
+import { PROTO_PATHS } from "$lib/paths";
 import type { Breadcrumb } from "./types";
 
 interface BreadcrumbSegment {
@@ -9,9 +10,6 @@ type WarehouseSegments = [warehouse: BreadcrumbSegment];
 type InboundSegments = [warehouse: BreadcrumbSegment, note: BreadcrumbSegment];
 type OutboundSegments = [note: BreadcrumbSegment];
 
-// TEMP
-const basepath = "/preview/proto";
-
 export function createBreadcrumbs(type: "warehouse", ...segments: WarehouseSegments): Breadcrumb[];
 export function createBreadcrumbs(type: "inbound", ...segments: InboundSegments): Breadcrumb[];
 export function createBreadcrumbs(type: "outbound", ...segments: OutboundSegments): Breadcrumb[];
@@ -20,7 +18,7 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 		case "warehouse": {
 			const [{ id, displayName }] = segments as WarehouseSegments;
 			const label = displayName || id;
-			return [{ label: "Warehouses", href: `${basepath}/inventory/warehouses` }, { label }];
+			return [{ label: "Warehouses", href: PROTO_PATHS.WAREHOUSES }, { label }];
 		}
 
 		case "inbound": {
@@ -28,8 +26,8 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 			const warehouseLabel = warehouse.displayName || warehouse.id;
 			const noteLabel = note.displayName || note.id;
 			return [
-				{ label: "Inbound", href: `${basepath}/inventory/inbound` },
-				{ label: warehouseLabel, href: `${basepath}/inventory/warehouses/${warehouse.id}` },
+				{ label: "Inbound", href: PROTO_PATHS.INBOUND },
+				{ label: warehouseLabel, href: `${PROTO_PATHS.WAREHOUSES}/${warehouse.id}` },
 				{ label: noteLabel }
 			];
 		}
@@ -37,7 +35,7 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 		case "outbound": {
 			const [{ id, displayName }] = segments as OutboundSegments;
 			const label = displayName || id;
-			return [{ label: "Outbound", href: `${basepath}/outbound` }, { label }];
+			return [{ label: "Outbound", href: PROTO_PATHS.OUTBOUND }, { label }];
 		}
 	}
 }
