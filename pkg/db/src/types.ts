@@ -286,6 +286,8 @@ export interface RecepitsInterface {
 // #region db
 export type NavEntry<A = {}> = {
 	displayName: string;
+	updatedAt?: Date;
+	totalBooks?: number;
 } & A;
 
 /**
@@ -295,7 +297,7 @@ export type NavMap<A = {}> = Map<string, NavEntry<A>>;
 /**
  * A map of warehouses and their respective data
  */
-export type WarehouseDataMap = Map<string, Pick<WarehouseData, "displayName" | "discountPercentage">>;
+export type WarehouseDataMap = NavMap<Pick<WarehouseData, "displayName" | "discountPercentage">>;
 
 /**
  * A map of inbound note entries: { warehouseId => { displayName, notes: NavMap } }
