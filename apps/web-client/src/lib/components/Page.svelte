@@ -61,7 +61,7 @@
 	<div class="relative flex h-screen w-full flex-col overflow-hidden bg-gray-50">
 		<!-- Top bar input -->
 		<div
-			class="relative flex h-[66px] w-full items-center bg-white px-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.6),0px_1px_3px_0px_rgba(0,0,0,0.1)] focus-within:ring-2 focus-within:ring-inset"
+			class="relative flex h-[66px] w-full flex-shrink-0 items-center bg-white px-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.6),0px_1px_3px_0px_rgba(0,0,0,0.1)] focus-within:ring-2 focus-within:ring-inset"
 		>
 			<slot
 				name="topbar"
