@@ -60,10 +60,10 @@ class Database implements DatabaseInterface {
 			.pipe(
 				map(
 					({ rows }) =>
-						new Map<string, Pick<WarehouseData, "displayName" | "discountPercentage">>(
-							wrapIter(rows).map(({ key: id, value: { displayName = "", discountPercentage = 0 } }) => [
+						new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(
+							wrapIter(rows).map(({ key: id, value: { displayName = "", discountPercentage = 0, ...rest } }) => [
 								id,
-								{ displayName, discountPercentage }
+								{ displayName, discountPercentage, ...rest }
 							])
 						)
 				),
@@ -79,7 +79,7 @@ class Database implements DatabaseInterface {
 						new Map(
 							wrapIter(rows)
 								.filter(({ value: { committed } }) => !committed)
-								.map(({ key: id, value: { displayName = "not-found" } }) => [id, { displayName }])
+								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id, { displayName, ...rest }])
 						)
 				),
 				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
@@ -211,7 +211,10 @@ class Database implements DatabaseInterface {
 			.then(
 				({ rows }) =>
 					new Map(
-						mapIter(rows, ({ key: id, value: { displayName = "", discountPercentage = 0 } }) => [id, { displayName, discountPercentage }])
+						mapIter(rows, ({ key: id, value: { displayName = "", discountPercentage = 0, ...rest } }) => [
+							id,
+							{ displayName, discountPercentage, ...rest }
+						])
 					)
 			);
 	}
@@ -246,25 +249,25 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 		return this.get(this.#currentWarehouseId);
 	}
 
-	private addWarehouse(id: string, displayName: string) {
-		this.set(id, { displayName, notes: new Map() });
+	private addWarehouse(id: string, warehouse: NavEntry) {
+		this.set(id, { ...warehouse, notes: new Map() });
 		this.#currentWarehouseId = id;
 	}
 
-	private addNote(id: string, displayName: string) {
+	private addNote(id: string, note: NavEntry) {
 		// Add note to default warehouse and its corresponding warehouse
-		this.getDefaultWarehouse()?.notes.set(id, { displayName });
-		this.getCurrentWarehouse()?.notes.set(id, { displayName });
+		this.getDefaultWarehouse()?.notes.set(id, note);
+		this.getCurrentWarehouse()?.notes.set(id, note);
 	}
 
 	aggregate(row: InNoteListRow) {
 		const {
 			key,
-			value: { type, displayName = "", committed }
+			value: { type, displayName = "", committed, ...rest }
 		} = row;
 
 		if (type === "warehouse") {
-			this.addWarehouse(key, displayName);
+			this.addWarehouse(key, { displayName, ...rest });
 			return this;
 		}
 
@@ -273,7 +276,7 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 			return this;
 		}
 
-		this.addNote(key, displayName);
+		this.addNote(key, { displayName, ...rest });
 
 		return this;
 	}
