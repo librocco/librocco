@@ -1,21 +1,22 @@
 <script lang="ts">
 	import { Building, Plus, Search, CopyPlus } from "lucide-svelte";
 
-	import { base } from "$app/paths";
 	import { page } from "$app/stores";
 
 	import { Page } from "$lib/components";
+
+	import { PROTO_PATHS } from "$lib/paths";
 
 	const tabs = [
 		{
 			icon: Building,
 			label: "Warehouses",
-			href: `${base}/proto/inventory/warehouses`
+			href: PROTO_PATHS.WAREHOUSES
 		},
 		{
 			icon: CopyPlus,
 			label: "Inbound",
-			href: `${base}/proto/inventory/inbound`
+			href: PROTO_PATHS.INBOUND
 		}
 	];
 </script>
