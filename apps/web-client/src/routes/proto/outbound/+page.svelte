@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Plus, Search, Trash } from "lucide-svelte";
 
-	import { base } from "$app/paths";
-
 	import { EntityListRow, Page, PlaceholderBox } from "$lib/components";
 
 	import EntityList from "$lib/components/EntityList/EntityList.svelte";
 	import { Badge, BadgeColor } from "@librocco/ui/Badge";
 	import { generateUpdatedAtString } from "$lib/utils/time";
+
+	import { PROTO_PATHS } from "$lib/paths";
 
 	interface Note {
 		id: string;
@@ -62,7 +62,7 @@
 				{#each notes as note}
 					{@const displayName = note.displayName || note.id}
 					{@const updatedAt = note.updatedAt || undefined}
-					{@const href = `${base}/proto/outbound/${note.id}`}
+					{@const href = `${PROTO_PATHS.OUTBOUND}/${note.id}`}
 
 					<EntityListRow {...note} {displayName}>
 						<svelte:fragment slot="actions">

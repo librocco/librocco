@@ -1,30 +1,29 @@
 <script lang="ts">
 	import { BookCopy, Library, Package, Search, Settings } from "lucide-svelte";
 
-	import { base } from "$app/paths";
 	import { page } from "$app/stores";
 
-	const basepath = `${base}/proto`;
+	import { PROTO_PATHS } from "$lib/paths";
 
 	export const links = [
 		{
 			label: "Stock",
-			href: `${basepath}/stock/`,
+			href: PROTO_PATHS.STOCK,
 			icon: Search
 		},
 		{
 			label: "Manage inventory",
-			href: `${basepath}/inventory/`,
+			href: PROTO_PATHS.INVENTORY,
 			icon: Library
 		},
 		{
 			label: "Outbound",
-			href: `${basepath}/outbound/`,
+			href: PROTO_PATHS.OUTBOUND,
 			icon: Package
 		},
 		{
 			label: "Settings",
-			href: `${basepath}/settings/`,
+			href: PROTO_PATHS.SETTINGS,
 			icon: Settings
 		}
 	];

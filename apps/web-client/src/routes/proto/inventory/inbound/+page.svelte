@@ -3,11 +3,11 @@
 
 	import { Badge, BadgeColor } from "@librocco/ui/Badge";
 
-	import { base } from "$app/paths";
-
 	import { EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
+
+	import { PROTO_PATHS } from "$lib/paths";
 
 	interface Note {
 		id: string;
@@ -54,9 +54,7 @@
 		description="Get started by adding a new note with the appropriate warehouse"
 		class="center-absolute"
 	>
-		<a
-			href="{base}/proto/inventory/warehouses"
-			class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+		<a href={PROTO_PATHS.WAREHOUSES} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 			><span class="text-green-50">Back to warehouses</span></a
 		>
 	</PlaceholderBox>
@@ -67,7 +65,7 @@
 			{@const noteName = note.displayName || note.id}
 			{@const displayName = `${warehouseName} / ${noteName}`}
 			{@const updatedAt = note.updatedAt || undefined}
-			{@const href = `${base}/proto/inventory/inbound/${note.id}`}
+			{@const href = `${PROTO_PATHS.INBOUND}/${note.id}`}
 
 			<EntityListRow {...note} {displayName}>
 				<svelte:fragment slot="actions">
