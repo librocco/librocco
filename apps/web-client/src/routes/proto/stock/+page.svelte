@@ -12,6 +12,7 @@
 	import { createIntersectionObserver } from "$lib/actions";
 
 	import { getDB } from "$lib/db";
+	import { tick } from "svelte";
 
 	const db = getDB();
 
@@ -41,12 +42,17 @@
 	});
 	const table = createTable(tableOptions);
 	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
+
+	let searchField: HTMLInputElement;
+	$: tick().then(() => searchField?.focus());
+
+	const autofocus = (node?: HTMLInputElement) => node?.focus();
 </script>
 
 <Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input bind:value={$search} placeholder="Search" {...inputProps} />
+		<input use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
