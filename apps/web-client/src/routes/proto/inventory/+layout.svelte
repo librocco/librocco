@@ -1,9 +1,16 @@
 <script lang="ts">
 	import { Building, Plus, Search, CopyPlus } from "lucide-svelte";
 
+	import { NEW_WAREHOUSE } from "@librocco/db";
+
 	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
 
 	import { Page } from "$lib/components";
+
+	import { getDB } from "$lib/db";
+
+	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { PROTO_PATHS } from "$lib/paths";
 
@@ -19,6 +26,21 @@
 			href: PROTO_PATHS.INBOUND
 		}
 	];
+
+	// Db will be undefined only on server side. If in browser,
+	// it will be defined immediately, but `db.init` is ran asynchronously.
+	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
+	const db = getDB();
+
+	/**
+	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
+		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
+		await goto(`${PROTO_PATHS.WAREHOUSES}/${warehouse._id}`);
+	};
 </script>
 
 <!-- The existence of id param indicates we're either on 'warehouses/[...id]' or 'inbound/[...id]' page (both of which render the layout on their own) -->
@@ -34,7 +56,10 @@
 		<svelte:fragment slot="heading">
 			<div class="flex w-full items-center justify-between">
 				<h1 class="text-2xl font-bold leading-7 text-gray-900">Inventory</h1>
-				<button class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]">
+				<button
+					on:click={handleCreateWarehouse}
+					class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
+				>
 					<span><Plus size={20} /></span>
 					<span class="text-sm font-medium leading-5 text-gray-700">New warehouse</span>
 				</button>
