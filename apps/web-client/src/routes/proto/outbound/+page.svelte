@@ -1,37 +1,51 @@
 <script lang="ts">
 	import { Plus, Search, Trash } from "lucide-svelte";
+	import { map } from "rxjs";
 
-	import { EntityListRow, Page, PlaceholderBox } from "$lib/components";
+	import { Badge, BadgeColor } from "@librocco/ui";
 
-	import EntityList from "$lib/components/EntityList/EntityList.svelte";
-	import { Badge, BadgeColor } from "@librocco/ui/Badge";
+	import { goto } from "$app/navigation";
+
+	import { EntityList, EntityListRow, Page, PlaceholderBox } from "$lib/components";
+
+	import { getDB } from "$lib/db";
+
+	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+
 	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
 
 	import { PROTO_PATHS } from "$lib/paths";
 
-	interface Note {
-		id: string;
-		displayName?: string;
-		updatedAt?: Date;
-		totalBooks?: number;
-	}
-	const notes: Note[] = [
-		{
-			id: "note-1",
-			displayName: "New Note",
-			updatedAt: new Date(),
-			totalBooks: 0
-		},
-		{
-			id: "note-2",
-			displayName: "New Note (2)"
-		},
-		{
-			id: "note-3",
-			updatedAt: new Date(),
-			totalBooks: 3
-		}
-	];
+	const db = getDB();
+
+	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
+	const outNoteList = readableFromStream(
+		outNoteListCtx,
+		db
+			?.stream()
+			.outNoteList(outNoteListCtx)
+			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+			.pipe(map((m) => [...m])),
+		[]
+	);
+
+	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
+	const handleDeleteNote = (noteId: string) => async () => {
+		const { note } = await db?.findNote(noteId);
+		await note?.delete({});
+		toastSuccess(noteToastMessages("Note").noteDeleted);
+	};
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateNote = async () => {
+		const note = await db.warehouse().note().create();
+		toastSuccess(noteToastMessages("Note").outNoteCreated);
+		await goto(`${PROTO_PATHS.OUTBOUND}/${note._id}`);
+	};
 </script>
 
 <Page>
@@ -43,7 +57,10 @@
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Outbound</h1>
-			<button class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]">
+			<button
+				on:click={handleCreateNote}
+				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
+			>
 				<span><Plus size={20} /></span>
 				<span class="text-sm font-medium leading-5 text-gray-700">New note</span>
 			</button>
@@ -51,23 +68,24 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		{#if !notes.length}
+		{#if !$outNoteList.length}
 			<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-				<button class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 					><span class="text-green-50">New note</span></button
 				>
 			</PlaceholderBox>
 		{:else}
 			<EntityList>
-				{#each notes as note}
-					{@const displayName = note.displayName || note.id}
-					{@const updatedAt = note.updatedAt || undefined}
-					{@const href = `${PROTO_PATHS.OUTBOUND}/${note.id}`}
+				{#each $outNoteList as [noteId, note]}
+					{@const displayName = note.displayName || noteId}
+					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+					{@const totalBooks = note.totalBooks}
+					{@const href = `${PROTO_PATHS.OUTBOUND}/${noteId}`}
 
-					<EntityListRow {...note} {displayName}>
+					<EntityListRow {displayName} {totalBooks}>
 						<svelte:fragment slot="actions">
-							{#if updatedAt}
-								<Badge label="Last updated: {generateUpdatedAtString(updatedAt)}" color={BadgeColor.Success} />
+							{#if Boolean(updatedAt)}
+								<Badge label="Last updated: {updatedAt}" color={BadgeColor.Success} />
 							{:else}
 								<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
 								<div />
@@ -77,7 +95,7 @@
 								<a {href} class="rounded-md bg-pink-50 px-[17px] py-[9px]"
 									><span class="text-sm font-medium leading-5 text-pink-700">Edit</span></a
 								>
-								<button class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
+								<button on:click={handleDeleteNote(noteId)} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
 									><Trash class="border-gray-500" size={20} /></button
 								>
 							</div>
