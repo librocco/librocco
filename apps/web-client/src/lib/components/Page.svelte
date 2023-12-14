@@ -3,6 +3,8 @@
 
 	import { page } from "$app/stores";
 
+	import { TooltipWrapper } from "$lib/components";
+
 	import { PROTO_PATHS } from "$lib/paths";
 
 	export const links = [
@@ -39,17 +41,32 @@
 
 			<nav class="px-3" aria-label="Main navigation">
 				<ul class="flex flex-col items-center gap-y-3">
-					{#each links as { icon, href }}
-						<li>
-							<a
-								{href}
-								class="inline-block rounded-sm p-4 text-gray-400 {$page.url.pathname.startsWith(href)
-									? 'bg-gray-900'
-									: 'hover:bg-gray-700'}"
-							>
-								<svelte:component this={icon} size={24} />
-							</a>
-						</li>
+					{#each links as { label, icon, href }}
+						<TooltipWrapper
+							options={{
+								positioning: {
+									placement: "right"
+								},
+								openDelay: 0,
+								closeDelay: 0,
+								closeOnPointerDown: true,
+								forceVisible: true
+							}}
+							let:trigger
+						>
+							<li {...trigger} use:trigger.action>
+								<a
+									{href}
+									class="inline-block rounded-sm p-4 text-gray-400 {$page.url.pathname.startsWith(href)
+										? 'bg-gray-900'
+										: 'hover:bg-gray-700'}"
+								>
+									<svelte:component this={icon} size={24} />
+								</a>
+							</li>
+
+							<p slot="tooltip-content" class="px-4 py-1 text-white">{label}</p>
+						</TooltipWrapper>
 					{/each}
 				</ul>
 			</nav>
