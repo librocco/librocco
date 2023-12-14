@@ -14,6 +14,15 @@ const config = {
 		adapter: adapter(),
 		prerender: {
 			entries: [
+				// TODO: update once rehaul is finished
+				"/proto/inventory/inbound/",
+				"/proto/inventory/inbound/1/",
+				"/proto/inventory/warehouses/",
+				"/proto/inventory/warehouses/1/",
+				"/proto/stock/",
+				"/proto/outbound/",
+				"/proto/outbound/1/",
+				"/proto/settings/",
 				"/",
 				"/inventory",
 				"/inventory/",
