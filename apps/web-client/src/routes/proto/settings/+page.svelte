@@ -3,10 +3,14 @@
 
 	import { RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
 
+	import { goto } from "$app/navigation";
+
 	import { Page } from "$lib/components";
 
 	import { remoteDbStore } from "$lib/stores";
 	import { replicationStatusMessages } from "$lib/toasts";
+
+	import { appPath } from "$lib/paths";
 
 	$: ({ replicator } = remoteDbStore);
 	$: ({ status, config, progress, hasActiveHandler } = replicator);
@@ -15,7 +19,7 @@
 <Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input placeholder="Search" {...inputProps} />
+		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
