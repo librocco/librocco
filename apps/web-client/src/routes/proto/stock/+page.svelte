@@ -9,6 +9,8 @@
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 
+	import { createIntersectionObserver } from "$lib/actions";
+
 	import { getDB } from "$lib/db";
 
 	const db = getDB();
@@ -31,13 +33,13 @@
 	$: $search.length && resetMaxResults();
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
 
 	const tableOptions = writable({
 		data: $entries
 	});
-
 	const table = createTable(tableOptions);
-
 	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 </script>
 
@@ -61,12 +63,12 @@
 				<Search slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div class="h-full overflow-y-scroll">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
 				<InventoryTable {table} />
+
+				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
-					<div class="w-full text-center">
-						<button on:click={seeMore} class="mx-auto my-5 px-[15px] py-[9px] text-sm font-normal leading-5 text-blue-400">See More</button>
-					</div>
+					<div use:scroll.trigger />
 				{/if}
 			</div>
 		{/if}
