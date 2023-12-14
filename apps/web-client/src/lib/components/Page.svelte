@@ -58,7 +58,7 @@
 	<!-- Sidenav end -->
 
 	<!-- Main content -->
-	<div class="relative flex h-full w-full flex-col overflow-hidden bg-gray-50">
+	<div class="relative flex h-screen w-full flex-col overflow-hidden bg-gray-50">
 		<!-- Top bar input -->
 		<div
 			class="relative flex h-[66px] w-full items-center bg-white px-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.6),0px_1px_3px_0px_rgba(0,0,0,0.1)] focus-within:ring-2 focus-within:ring-inset"
@@ -77,10 +77,8 @@
 		</header>
 		<!-- Heading section end -->
 
-		<slot />
-
 		<!-- Main section -->
-		<main class="relative h-full w-full border-t bg-white">
+		<main class="relative h-full w-full overflow-hidden border-t bg-white">
 			<slot name="main" />
 		</main>
 		<!-- Main section end -->

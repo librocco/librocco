@@ -1,51 +1,196 @@
 <script lang="ts">
-	import { QrCode, Trash2, Printer } from "lucide-svelte";
-
-	import { Badge, BadgeColor } from "@librocco/ui";
-
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, Dropdown } from "$lib/components";
-
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { Printer, QrCode, Trash2 } from "lucide-svelte";
+	import { map } from "rxjs";
+	import { writable } from "svelte/store";
 
 	import { page } from "$app/stores";
+	import { goto } from "$app/navigation";
 
-	$: id = $page.params.id.split("/").filter(Boolean).pop();
-	$: displayName = id
-		.replace(/-/g, " ")
-		.split(" ")
-		.map((word) => word[0].toUpperCase() + word.slice(1))
-		.join(" ");
+	import { NoteState, NoteTempState } from "@librocco/shared";
+	import {
+		InventoryPage,
+		Pagination,
+		Badge,
+		BadgeColor,
+		OutNoteTable,
+		createTable,
+		Header,
+		SelectMenu,
+		TextEditable,
+		SideBarNav,
+		SidebarItem,
+		NewEntitySideNavButton,
+		type TransactionUpdateDetail,
+		type RemoveTransactionsDetail,
+		ProgressBar,
+		Slideover,
+		BookDetailForm,
+		ScanInput,
+		Button,
+		ButtonColor,
+		InventoryTable
+	} from "@librocco/ui";
 
-	$: note = { id, displayName };
-	$: warehouse = { id: "warehouse-1", name: "New Warehouse" };
+	import type { BookEntry } from "@librocco/db";
 
-	$: breadcrumbs = createBreadcrumbs("inbound", warehouse, note);
+	import type { PageData } from "./$types";
+
+	import { Breadcrumbs, Dropdown, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+
+	import { getDB } from "$lib/db";
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+
+	import { createNoteStores } from "$lib/stores/inventory";
+	import { newBookFormStore } from "$lib/stores/book_form";
+
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
+	import { comparePaths } from "$lib/utils/misc";
+
+	import { links } from "$lib/data";
+
+	import { PROTO_PATHS } from "$lib/paths";
+
+	export let data: PageData;
+
+	// Db will be undefined only on server side. If in browser,
+	// it will be defined immediately, but `db.init` is ran asynchronously.
+	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
+	const db = getDB();
+
+	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
+	$: loading = !data;
+
+	$: note = data.note;
+	$: warehouse = data.warehouse;
+
+	$: noteStores = createNoteStores(note);
+
+	$: displayName = noteStores.displayName;
+	$: state = noteStores.state;
+	$: updatedAt = noteStores.updatedAt;
+	$: currentPage = noteStores.currentPage;
+	$: paginationData = noteStores.paginationData;
+	$: entries = noteStores.entries;
+
+	$: toasts = noteToastMessages(note?.displayName);
+
+	// #region note-actions
+	//
+	// When the note is committed or deleted, automatically redirect to 'inbound' page.
+	$: {
+		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
+			goto(PROTO_PATHS.INBOUND);
+			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
+			toastSuccess(message);
+		}
+	}
+
+	const handleCommitSelf = async () => {
+		await note.commit({});
+		toastSuccess(noteToastMessages("Note").inNoteCommited);
+	};
+
+	const handleDeleteSelf = async () => {
+		await note.delete({});
+		toastSuccess(noteToastMessages("Note").noteDeleted);
+	};
+	// #region note-actions
+
+	// #region table
+	const tableOptions = writable({
+		data: $entries
+	});
+
+	const table = createTable(tableOptions);
+
+	$: tableOptions.set({ data: $entries });
+	// #endregion table
+
+	// #region transaction-actions
+	const handleAddTransaction = async (isbn: string) => {
+		await note.addVolumes({ isbn, quantity: 1 });
+		toastSuccess(toasts.volumeAdded(isbn));
+		bookForm.close();
+	};
+
+	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
+		const { matchTxn, updateTxn } = detail;
+
+		await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
+
+		// TODO: This doesn't seem to work / get called?
+		toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
+	};
+
+	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
+		await note.removeTransactions(...e.detail);
+		toastSuccess(toasts.volumeRemoved(e.detail.length));
+	};
+	// #region transaction-actions
+
+	// #region book-form
+	$: bookForm = newBookFormStore();
+
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
+
+	$: breadcrumbs =
+		note?._id && warehouse?._id
+			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
+			: [];
+
+	// #region temp
+	const handlePrint = () => {};
+
+	// TEMP: This is a quick and dirty implmeentation: replace with scan action
+	let scanValue = "";
+	const handleScanConfirm = (e: KeyboardEvent) => {
+		if (e.key === "Enter") {
+			handleAddTransaction(scanValue);
+			scanValue = "";
+		}
+	};
+	// #endregion temp
 </script>
 
 <Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<QrCode {...iconProps} />
-		<input placeholder="Scan to add books" {...inputProps} />
+		<input on:keydown={handleScanConfirm} bind:value={scanValue} placeholder="Scan to add books" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex w-full items-center justify-between">
 			<div>
-				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
-				<Badge label="Last updated: {generateUpdatedAtString(new Date())}" color={BadgeColor.Success} />
+				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+
+				<div class="h-5">
+					{#if $updatedAt}
+						<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+					{/if}
+				</div>
 			</div>
 
 			<div class="flex items-center gap-x-3">
-				<button class="rounded-md bg-teal-500 px-[17px] py-[9px] text-green-50 active:bg-teal-400">
+				<button on:click={handleCommitSelf} class="rounded-md bg-teal-500 px-[17px] py-[9px] text-green-50 active:bg-teal-400">
 					<span class="text-sm font-medium leading-5 text-green-50">Commit</span>
 				</button>
 
 				<Dropdown>
-					<button class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+					<button on:click={handlePrint} class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						><Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span></button
 					>
-					<button class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+					<button on:click={handleDeleteSelf} class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						><Trash2 class="text-white" size={20} /><span class="text-white">Delete</span></button
 					>
 				</Dropdown>
@@ -54,8 +199,20 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-			<QrCode slot="icon" let:iconProps {...iconProps} />
-		</PlaceholderBox>
+		{#if loading}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+		{:else if !$entries.length}
+			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
+				<QrCode slot="icon" let:iconProps {...iconProps} />
+			</PlaceholderBox>
+		{:else}
+			<InventoryTable
+				{table}
+				on:transactionupdate={handleTransactionUpdate}
+				on:removetransactions={handleRemoveTransactions}
+				onEdit={bookForm.open}
+				interactive
+			/>
+		{/if}
 	</svelte:fragment>
 </Page>
