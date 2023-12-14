@@ -1,14 +1,8 @@
 <script lang="ts">
 	import { Library } from "lucide-svelte";
-	import { createEventDispatcher } from "svelte";
 
 	export let displayName: string;
 	export let totalBooks = 0;
-
-	const dispatch = createEventDispatcher<{ delete: void }>();
-	const handleDelete = () => {
-		dispatch("delete");
-	};
 </script>
 
 <li class="flex items-center justify-between py-4 px-6">

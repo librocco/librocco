@@ -1,78 +1,76 @@
 <script lang="ts">
 	import { Trash } from "lucide-svelte";
+	import { map } from "rxjs";
 
 	import { Badge, BadgeColor } from "@librocco/ui/Badge";
-
-	import { base } from "$app/paths";
+	import { wrapIter } from "@librocco/shared";
 
 	import { EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { getDB } from "$lib/db";
 
-	interface Note {
-		id: string;
-		displayName?: string;
-		updatedAt?: Date;
-		totalBooks?: number;
-		warehouse: {
-			id: string;
-			displayName?: string;
-		};
-	}
-	const notes: Note[] = [
-		{
-			id: "note-1",
-			displayName: "New Note",
-			updatedAt: new Date(),
-			totalBooks: 0,
-			warehouse: {
-				id: "warehouse-1",
-				displayName: "Warehouse 1"
-			}
-		},
-		{
-			id: "note-2",
-			displayName: "New Note (2)",
-			warehouse: {
-				id: "warehouse-2"
-			}
-		},
-		{
-			id: "note-3",
-			updatedAt: new Date(),
-			totalBooks: 3,
-			warehouse: {
-				id: "warehouse-3"
-			}
-		}
-	];
+	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { readableFromStream } from "$lib/utils/streams";
+
+	import { PROTO_PATHS } from "$lib/paths";
+
+	// Db will be undefined only on server side. If in browser,
+	// it will be defined immediately, but `db.init` is ran asynchronously.
+	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
+	const db = getDB();
+
+	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
+	const inNoteList = readableFromStream(
+		inNoteListCtx,
+		db
+			?.stream()
+			.inNoteList(inNoteListCtx)
+			.pipe(
+				map((m) =>
+					wrapIter(m)
+						.filter(([warehouseId]) => !warehouseId.includes("0-all"))
+						.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
+						.array()
+				)
+			),
+		[]
+	);
+
+	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
+	const handleDeleteNote = (noteId: string) => async () => {
+		const { note } = await db?.findNote(noteId);
+		await note?.delete({});
+		toastSuccess(noteToastMessages("Note").noteDeleted);
+	};
 </script>
 
-{#if !notes.length}
+<!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
+
+{#if !$inNoteList.length}
 	<PlaceholderBox
 		title="No open notes"
 		description="Get started by adding a new note with the appropriate warehouse"
 		class="center-absolute"
 	>
-		<a
-			href="{base}/proto/inventory/warehouses"
-			class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+		<a href={PROTO_PATHS.WAREHOUSES} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 			><span class="text-green-50">Back to warehouses</span></a
 		>
 	</PlaceholderBox>
 {:else}
 	<EntityList>
-		{#each notes as note}
-			{@const warehouseName = note.warehouse.displayName || note.warehouse.id}
-			{@const noteName = note.displayName || note.id}
+		{#each $inNoteList as [warehouseName, [noteId, note]]}
+			{@const noteName = note.displayName || noteId}
 			{@const displayName = `${warehouseName} / ${noteName}`}
-			{@const updatedAt = note.updatedAt || undefined}
-			{@const href = `${base}/proto/inventory/inbound/${note.id}`}
+			{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+			{@const totalBooks = note.totalBooks}
+			{@const href = `${PROTO_PATHS.INBOUND}/${noteId}`}
 
-			<EntityListRow {...note} {displayName}>
+			<EntityListRow {totalBooks} {displayName}>
 				<svelte:fragment slot="actions">
-					{#if updatedAt}
-						<Badge label="Last updated: {generateUpdatedAtString(updatedAt)}" color={BadgeColor.Success} />
+					{#if note.updatedAt}
+						<Badge label="Last updated: {updatedAt}" color={BadgeColor.Success} />
 					{:else}
 						<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
 						<div />
@@ -82,7 +80,7 @@
 						<a {href} class="rounded-md bg-pink-50 px-[17px] py-[9px]"
 							><span class="text-sm font-medium leading-5 text-pink-700">Edit</span></a
 						>
-						<button class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
+						<button on:click={handleDeleteNote(noteId)} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
 							><Trash class="border-gray-500" size={20} /></button
 						>
 					</div>
