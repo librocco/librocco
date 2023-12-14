@@ -1,0 +1,22 @@
+<script lang="ts">
+	import { fade } from "svelte/transition";
+
+	import { createTooltip, melt, type CreateTooltipProps } from "@melt-ui/svelte";
+
+	export let options: CreateTooltipProps;
+
+	const {
+		elements: { trigger, content, arrow },
+		states: { open }
+	} = createTooltip(options);
+</script>
+
+<slot trigger={$trigger} />
+
+{#if $open}
+	<div use:melt={$content} transition:fade={{ duration: 100 }} class="z-10 rounded-md bg-gray-900 shadow">
+		<slot name="tooltip-content">
+			<div use:melt={$arrow} />
+		</slot>
+	</div>
+{/if}

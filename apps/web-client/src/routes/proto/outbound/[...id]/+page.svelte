@@ -47,7 +47,7 @@
 	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
-	import { Breadcrumbs, Dropdown, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 	import { PROTO_PATHS } from "$lib/paths";
 
 	export let data: PageData;
@@ -194,14 +194,24 @@
 					<span class="text-sm font-medium leading-5 text-green-50">Commit</span>
 				</button>
 
-				<Dropdown>
-					<button on:click={handlePrint} class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
-						><Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span></button
+				<DropdownWrapper let:item>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={handlePrint}
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
-					<button on:click={handleDeleteSelf} class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
-						><Trash2 class="text-white" size={20} /><span class="text-white">Delete</span></button
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={handleDeleteSelf}
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 					>
-				</Dropdown>
+						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
+					</div>
+				</DropdownWrapper>
 			</div>
 		</div>
 	</svelte:fragment>
