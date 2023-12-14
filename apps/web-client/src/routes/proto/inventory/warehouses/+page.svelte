@@ -6,7 +6,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { Dropdown, EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
+	import { DropdownWrapper, EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -71,12 +71,12 @@
 							><span class="text-sm font-medium leading-5 text-green-50">New note</span></button
 						>
 
-						<Dropdown let:separator let:item>
+						<DropdownWrapper let:separator let:item>
 							<div
 								{...item}
 								use:item.action
 								on:m-click={() => console.log("TODO: open warehouse edit modal")}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Edit class="text-gray-400" size={20} />
 								<span class="text-gray-700">Edit</span>
@@ -88,7 +88,7 @@
 								{href}
 								{...item}
 								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Table2 class="text-gray-400" size={20} />
 								<span class="text-gray-700">View Stock</span>
@@ -98,12 +98,12 @@
 								{...item}
 								use:item.action
 								on:m-click={handleDeleteWarehouse(warehouseId)}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+								class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Trash2 class="text-white" size={20} />
 								<span class="text-white">Delete</span>
 							</div>
-						</Dropdown>
+						</DropdownWrapper>
 					</div>
 				</svelte:fragment>
 			</EntityListRow>

@@ -7,7 +7,7 @@
 	const {
 		elements: { menu, item, trigger, separator },
 		states: { open }
-	} = createDropdownMenu({ positioning: { placement: "bottom-start" } });
+	} = createDropdownMenu({ positioning: { placement: "bottom-start" }, forceVisible: true });
 </script>
 
 <button use:melt={$trigger} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px] hover:bg-gray-100">
