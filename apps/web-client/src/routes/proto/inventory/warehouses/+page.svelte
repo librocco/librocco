@@ -1,10 +1,9 @@
 <script lang="ts">
 	import { Edit, BarChart, Trash2 } from "lucide-svelte";
 
-	import { Dropdown, EntityListRow, PlaceholderBox } from "$lib/components";
+	import { Dropdown, EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
 
-	import EntityList from "$lib/components/EntityList/EntityList.svelte";
-	import { base } from "$app/paths";
+	import { PROTO_PATHS } from "$lib/paths";
 
 	interface Warehouse {
 		id: string;
@@ -54,7 +53,7 @@
 								><Edit class="text-gray-400" size={20} /><span class="text-gray-700">Edit</span></button
 							>
 							<a
-								href="{base}/proto/inventory/warehouses/{warehouse.id}"
+								href="{PROTO_PATHS.WAREHOUSES}/{warehouse.id}"
 								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								><BarChart class="text-gray-400" size={20} /><span class="text-gray-700">View Stock</span></a
 							>
