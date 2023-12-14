@@ -67,21 +67,23 @@
 		</svelte:fragment>
 
 		<svelte:fragment slot="main">
-			<div class="flex gap-x-8 border-b border-gray-300 px-6">
-				{#each tabs as { label, icon, href }}
-					{@const active = $page.url.pathname.startsWith(href)}
-					<svelte:element
-						this={active ? "div" : "a"}
-						class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
-						{href}
-					>
-						<svelte:component this={icon} size={20} />
-						<span class="text-sm font-medium leading-5">{label}</span>
-					</svelte:element>
-				{/each}
-			</div>
+			<div class="flex h-full w-full flex-col overflow-hidden">
+				<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
+					{#each tabs as { label, icon, href }}
+						{@const active = $page.url.pathname.startsWith(href)}
+						<svelte:element
+							this={active ? "div" : "a"}
+							class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
+							{href}
+						>
+							<svelte:component this={icon} size={20} />
+							<span class="text-sm font-medium leading-5">{label}</span>
+						</svelte:element>
+					{/each}
+				</div>
 
-			<slot />
+				<slot />
+			</div>
 		</svelte:fragment>
 	</Page>
 {/if}
