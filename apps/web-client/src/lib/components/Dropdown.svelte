@@ -1,21 +1,16 @@
 <script lang="ts">
 	import { MoreVertical } from "lucide-svelte";
+	import { createDropdownMenu, melt } from "@melt-ui/svelte";
 
-	let open = false;
-
-	const toggleOpen = () => (open = !open);
+	const {
+		elements: { menu, item, trigger, separator }
+	} = createDropdownMenu({ positioning: { placement: "bottom-start" } });
 </script>
 
-<div class="relative">
-	<button on:click={toggleOpen} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
-		><MoreVertical class="border-gray-500" size={20} /></button
-	>
+<button use:melt={$trigger} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px] hover:bg-gray-100">
+	<MoreVertical class="border-gray-500" size={20} />
+</button>
 
-	{#if open}
-		<div
-			class="absolute -bottom-3 right-0 z-50 min-w-[224px] translate-y-full overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5"
-		>
-			<slot />
-		</div>
-	{/if}
+<div use:melt={$menu} class="z-50 min-w-[224px] overflow-hidden rounded-md bg-white shadow-lg ring-1 ring-black ring-opacity-5">
+	<slot separator={$separator} item={$item} />
 </div>

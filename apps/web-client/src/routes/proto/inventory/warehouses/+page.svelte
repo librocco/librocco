@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { map } from "rxjs";
-	import { Edit, BarChart, Trash2 } from "lucide-svelte";
+	import { Edit, Table2, Trash2 } from "lucide-svelte";
 
 	import { filter } from "@librocco/shared";
 
@@ -71,18 +71,38 @@
 							><span class="text-sm font-medium leading-5 text-green-50">New note</span></button
 						>
 
-						<Dropdown>
-							<button class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
-								><Edit class="text-gray-400" size={20} /><span class="text-gray-700">Edit</span></button
+						<Dropdown let:separator let:item>
+							<div
+								{...item}
+								use:item.action
+								on:m-click={() => console.log("TODO: open warehouse edit modal")}
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
-							<a {href} class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
-								><BarChart class="text-gray-400" size={20} /><span class="text-gray-700">View Stock</span></a
+								<Edit class="text-gray-400" size={20} />
+								<span class="text-gray-700">Edit</span>
+							</div>
+
+							<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
+
+							<a
+								{href}
+								{...item}
+								use:item.action
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
-							<button
-								on:click={handleDeleteWarehouse(warehouseId)}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
-								><Trash2 class="text-white" size={20} /><span class="text-white">Delete</span></button
+								<Table2 class="text-gray-400" size={20} />
+								<span class="text-gray-700">View Stock</span>
+							</a>
+
+							<div
+								{...item}
+								use:item.action
+								on:m-click={handleDeleteWarehouse(warehouseId)}
+								class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 							>
+								<Trash2 class="text-white" size={20} />
+								<span class="text-white">Delete</span>
+							</div>
 						</Dropdown>
 					</div>
 				</svelte:fragment>
