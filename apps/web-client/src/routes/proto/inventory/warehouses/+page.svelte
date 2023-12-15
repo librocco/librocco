@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { firstValueFrom, map } from "rxjs";
-	import { Edit, Table2, Trash2, Loader2 as Loader, Library } from "lucide-svelte";
+	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
 	import { onMount } from "svelte";
 
 	import { filter } from "@librocco/shared";
@@ -65,14 +65,26 @@
 			{@const displayName = warehouse.displayName || warehouseId}
 			{@const totalBooks = warehouse.totalBooks}
 			{@const href = appPath("warehouses", warehouseId)}
+			{@const warehouseDiscount = warehouse.discountPercentage}
 
 			<li class="entity-list-row">
 				<div class="max-w-1/2 w-full">
 					<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
 					<div class="flex items-center">
-						<Library class="mr-1 text-gray-700" size={20} />
-						<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+						<div class="flex w-32 items-center gap-x-1">
+							<Library class="text-gray-700" size={20} />
+							<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+						</div>
+
+						{#if warehouseDiscount}
+							<div class="flex items-center gap-x-1">
+								<div class="border border-gray-700 p-[1px]">
+									<Percent class="text-gray-700" size={14} />
+								</div>
+								<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+							</div>
+						{/if}
 					</div>
 				</div>
 
