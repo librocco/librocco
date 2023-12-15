@@ -56,12 +56,9 @@
 		<svelte:fragment slot="heading">
 			<div class="flex w-full items-center justify-between">
 				<h1 class="text-2xl font-bold leading-7 text-gray-900">Inventory</h1>
-				<button
-					on:click={handleCreateWarehouse}
-					class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
-				>
+				<button on:click={handleCreateWarehouse} class="button button-white">
 					<span><Plus size={20} /></span>
-					<span class="text-sm font-medium leading-5 text-gray-700">New warehouse</span>
+					<span class="button-text">New warehouse</span>
 				</button>
 			</div>
 		</svelte:fragment>

@@ -98,9 +98,7 @@
 			</div>
 		{:else if !$entries.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">New note</span></button
-				>
+				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">

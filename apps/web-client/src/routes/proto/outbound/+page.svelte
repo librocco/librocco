@@ -99,12 +99,8 @@
 							{/if}
 
 							<div class="flex items-center justify-end gap-3">
-								<a {href} class="rounded-md bg-pink-50 px-[17px] py-[9px]"
-									><span class="text-sm font-medium leading-5 text-pink-700">Edit</span></a
-								>
-								<button on:click={handleDeleteNote(noteId)} class="rounded-md border border-gray-300 bg-white py-[9px] pl-[17px] pr-[15px]"
-									><Trash class="border-gray-500" size={20} /></button
-								>
+								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+								<button on:click={handleDeleteNote(noteId)} class="button button-white"><Trash size={20} /></button>
 							</div>
 						</svelte:fragment>
 					</EntityListRow>

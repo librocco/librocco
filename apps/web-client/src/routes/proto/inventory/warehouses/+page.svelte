@@ -57,9 +57,7 @@
 	</div>
 {:else if !$warehouseList.length}
 	<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-		<button class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-			><span class="text-green-50">New warehouse</span></button
-		>
+		<button class="button button-green"><span class="button-text">New warehouse</span></button>
 	</PlaceholderBox>
 {:else}
 	<EntityList>
@@ -74,9 +72,7 @@
 					<div />
 
 					<div class="flex items-center justify-end gap-3">
-						<button on:click={handleCreateNote(warehouseId)} class="rounded-md bg-teal-500 px-[17px] py-[9px]"
-							><span class="text-sm font-medium leading-5 text-green-50">New note</span></button
-						>
+						<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
 
 						<DropdownWrapper let:separator let:item>
 							<div
