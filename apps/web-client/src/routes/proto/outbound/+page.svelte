@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { Plus, Search, Trash, Loader2 as Loader } from "lucide-svelte";
+	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
+	import { onMount } from "svelte";
 
 	import { Badge, BadgeColor } from "@librocco/ui";
 
 	import { goto } from "$app/navigation";
 
-	import { EntityList, EntityListRow, Page, PlaceholderBox } from "$lib/components";
+	import { Page, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -16,7 +17,6 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
-	import { onMount } from "svelte";
 
 	const db = getDB();
 
@@ -82,16 +82,25 @@
 				>
 			</PlaceholderBox>
 		{:else}
-			<EntityList>
+			<ul class="entity-list-container">
 				{#each $outNoteList as [noteId, note]}
 					{@const displayName = note.displayName || noteId}
 					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("outbound", noteId)}
 
-					<EntityListRow {displayName} {totalBooks}>
-						<svelte:fragment slot="actions">
-							{#if Boolean(updatedAt)}
+					<li class="entity-list-row">
+						<div class="max-w-1/2 w-full">
+							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+
+							<div class="flex items-center">
+								<Library class="mr-1 text-gray-700" size={20} />
+								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+							</div>
+						</div>
+
+						<div class="max-w-1/2 flex w-full items-center justify-between">
+							{#if note.updatedAt}
 								<Badge label="Last updated: {updatedAt}" color={BadgeColor.Success} />
 							{:else}
 								<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
@@ -102,10 +111,10 @@
 								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
 								<button on:click={handleDeleteNote(noteId)} class="button button-white"><Trash size={20} /></button>
 							</div>
-						</svelte:fragment>
-					</EntityListRow>
+						</div>
+					</li>
 				{/each}
-			</EntityList>
+			</ul>
 		{/if}
 	</svelte:fragment>
 </Page>
