@@ -13,9 +13,12 @@
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
+
+	import { createIntersectionObserver } from "$lib/actions";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -56,14 +59,22 @@
 	};
 	// #endregion warehouse-actions
 
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+
 	// #region table
 	const tableOptions = writable({
-		data: $entries
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
 	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?._id, displayName: warehouse?.displayName });
@@ -90,8 +101,13 @@
 				>
 			</PlaceholderBox>
 		{:else}
-			<div class="h-full overflow-y-scroll">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
 				<InventoryTable {table} />
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $entries?.length > maxResults}
+					<div use:scroll.trigger />
+				{/if}
 			</div>
 		{/if}
 	</svelte:fragment>
