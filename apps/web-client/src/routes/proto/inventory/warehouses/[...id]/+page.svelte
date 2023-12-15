@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
+	import { Search, Loader2 as Loader } from "lucide-svelte";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs } from "$lib/components";
 
@@ -93,7 +93,9 @@
 
 	<svelte:fragment slot="main">
 		{#if loading}
-			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+			<div class="center-absolute">
+				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			</div>
 		{:else if !$entries.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
 				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"

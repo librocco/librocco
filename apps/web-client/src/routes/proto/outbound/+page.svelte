@@ -1,8 +1,8 @@
 <script lang="ts">
-	import { Plus, Search, Trash } from "lucide-svelte";
+	import { Plus, Search, Trash, Loader2 as Loader } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 
-	import { Badge, BadgeColor, ProgressBar } from "@librocco/ui";
+	import { Badge, BadgeColor } from "@librocco/ui";
 
 	import { goto } from "$app/navigation";
 
@@ -72,7 +72,9 @@
 
 	<svelte:fragment slot="main">
 		{#if !initialized}
-			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+			<div class="center-absolute">
+				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			</div>
 		{:else if !$outNoteList.length}
 			<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"

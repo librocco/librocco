@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { Trash } from "lucide-svelte";
+	import { Loader2 as Loader, Trash } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 	import { onMount } from "svelte";
 
-	import { ProgressBar, Badge, BadgeColor } from "@librocco/ui";
+	import { Badge, BadgeColor } from "@librocco/ui";
 	import { wrapIter } from "@librocco/shared";
 
 	import { EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
@@ -52,7 +52,9 @@
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
 
 {#if !initialized}
-	<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+	<div class="center-absolute">
+		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+	</div>
 {:else if !$inNoteList.length}
 	<PlaceholderBox
 		title="No open notes"
