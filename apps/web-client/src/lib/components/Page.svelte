@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BookCopy, Library, Package, Search, Settings } from "lucide-svelte";
+	import { BookCopy, Library, Package, PackageMinus, Search, Settings } from "lucide-svelte";
 
 	import { page } from "$app/stores";
 
@@ -21,7 +21,7 @@
 		{
 			label: "Outbound",
 			href: appPath("outbound"),
-			icon: Package
+			icon: PackageMinus
 		},
 		{
 			label: "Settings",
