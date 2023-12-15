@@ -3,53 +3,36 @@
 	import { map } from "rxjs";
 	import { writable } from "svelte/store";
 
-	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 
-	import { NoteState, NoteTempState } from "@librocco/shared";
+	import { NoteState } from "@librocco/shared";
 	import {
-		InventoryPage,
-		Pagination,
 		Badge,
 		BadgeColor,
 		OutNoteTable,
 		createTable,
-		Header,
-		SelectMenu,
-		TextEditable,
-		SideBarNav,
-		SidebarItem,
-		NewEntitySideNavButton,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
-		ProgressBar,
-		Slideover,
-		BookDetailForm,
-		ScanInput,
-		Button,
-		ButtonColor
+		ProgressBar
 	} from "@librocco/ui";
-
 	import type { BookEntry } from "@librocco/db";
-
-	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+
+	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
-	import { createNoteStores } from "$lib/stores/inventory";
+	import { createNoteStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { scan } from "$lib/actions/scan";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
-	import { comparePaths } from "$lib/utils/misc";
 
-	import { links } from "$lib/data";
-	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
@@ -58,17 +41,6 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
-
-	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(
-		outNoteListCtx,
-		db
-			?.stream()
-			.outNoteList(outNoteListCtx)
-			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-			.pipe(map((m) => [...m])),
-		[]
-	);
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -84,8 +56,6 @@
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
-	$: currentPage = noteStores.currentPage;
-	$: paginationData = noteStores.paginationData;
 	$: entries = noteStores.entries;
 
 	$: toasts = noteToastMessages(note?.displayName);
@@ -192,7 +162,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -200,7 +170,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handleDeleteSelf}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
 					</div>
