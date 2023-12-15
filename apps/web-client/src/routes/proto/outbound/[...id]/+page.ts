@@ -4,7 +4,7 @@ import type { NoteLookupResult, NoteInterface, WarehouseInterface } from "@libro
 
 import type { PageLoad } from "./$types";
 
-import { PROTO_PATHS } from "$lib/paths";
+import { appPath } from "$lib/paths";
 
 export const load: PageLoad = async ({ params, parent }): Promise<Partial<NoteLookupResult<NoteInterface, WarehouseInterface>>> => {
 	// await db init in ../layout.ts
@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ params, parent }): Promise<Partial<NoteLo
 
 	const findNoteRes = await db.findNote(docId);
 	if (!findNoteRes) {
-		throw redirect(307, PROTO_PATHS.OUTBOUND);
+		throw redirect(307, appPath("outbound"));
 	}
 	return findNoteRes;
 };

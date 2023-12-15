@@ -12,18 +12,18 @@
 
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	const tabs = [
 		{
 			icon: Building,
 			label: "Warehouses",
-			href: PROTO_PATHS.WAREHOUSES
+			href: appPath("warehouses")
 		},
 		{
 			icon: CopyPlus,
 			label: "Inbound",
-			href: PROTO_PATHS.INBOUND
+			href: appPath("inbound")
 		}
 	];
 
@@ -39,7 +39,7 @@
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
 		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
-		await goto(`${PROTO_PATHS.WAREHOUSES}/${warehouse._id}`);
+		await goto(appPath("warehouses", warehouse._id));
 	};
 </script>
 

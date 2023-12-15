@@ -48,7 +48,7 @@
 
 	import { links } from "$lib/data";
 	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -93,7 +93,7 @@
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(PROTO_PATHS.OUTBOUND);
+			goto(appPath("outbound"));
 
 			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
 

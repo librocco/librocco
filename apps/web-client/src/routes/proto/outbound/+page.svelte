@@ -15,7 +15,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	const db = getDB();
 
@@ -44,7 +44,7 @@
 	const handleCreateNote = async () => {
 		const note = await db.warehouse().note().create();
 		toastSuccess(noteToastMessages("Note").outNoteCreated);
-		await goto(`${PROTO_PATHS.OUTBOUND}/${note._id}`);
+		await goto(appPath("outbound", note._id));
 	};
 </script>
 
@@ -80,7 +80,7 @@
 					{@const displayName = note.displayName || noteId}
 					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
 					{@const totalBooks = note.totalBooks}
-					{@const href = `${PROTO_PATHS.OUTBOUND}/${noteId}`}
+					{@const href = appPath("outbound", noteId)}
 
 					<EntityListRow {displayName} {totalBooks}>
 						<svelte:fragment slot="actions">

@@ -41,7 +41,7 @@
 	import { comparePaths } from "$lib/utils/misc";
 
 	import { links } from "$lib/data";
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -82,7 +82,7 @@
 	const handleCreateNote = async () => {
 		loading = true;
 		const note = await warehouse?.note().create();
-		await goto(`${PROTO_PATHS.INBOUND}/${note._id}`);
+		await goto(appPath("inbound", note._id));
 		toastSuccess(noteToastMessages("Note").inNoteCreated);
 	};
 	// #endregion warehouse-actions

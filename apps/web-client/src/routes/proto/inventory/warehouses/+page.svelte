@@ -14,7 +14,7 @@
 
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	const db = getDB();
 
@@ -42,7 +42,7 @@
 	const handleCreateNote = (warehouseId: string) => async () => {
 		const note = await db?.warehouse(warehouseId).note().create();
 		toastSuccess(noteToastMessages("Note").inNoteCreated);
-		await goto(`${PROTO_PATHS.INBOUND}/${note._id}`);
+		await goto(appPath("inbound", note._id));
 	};
 </script>
 
@@ -59,7 +59,7 @@
 		{#each $warehouseList as [warehouseId, warehouse]}
 			{@const displayName = warehouse.displayName || warehouseId}
 			{@const totalBooks = warehouse.totalBooks}
-			{@const href = `${PROTO_PATHS.WAREHOUSES}/${warehouseId}`}
+			{@const href = appPath("warehouses", warehouseId)}
 
 			<EntityListRow {displayName} {totalBooks}>
 				<svelte:fragment slot="actions">

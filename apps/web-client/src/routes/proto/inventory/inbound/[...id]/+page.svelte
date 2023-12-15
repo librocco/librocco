@@ -49,7 +49,7 @@
 
 	import { links } from "$lib/data";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -84,7 +84,7 @@
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(PROTO_PATHS.INBOUND);
+			goto(appPath("inbound"));
 			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
 			toastSuccess(message);
 		}
