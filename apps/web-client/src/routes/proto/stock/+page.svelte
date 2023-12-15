@@ -1,6 +1,7 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
+	import { Search, Loader2 as Loader } from "lucide-svelte";
 	import { writable } from "svelte/store";
+	import { tick } from "svelte";
 
 	import type { SearchIndex } from "@librocco/db";
 	import { InventoryTable, createTable } from "@librocco/ui";
@@ -12,7 +13,6 @@
 	import { createIntersectionObserver } from "$lib/actions";
 
 	import { getDB } from "$lib/db";
-	import { tick } from "svelte";
 
 	const db = getDB();
 
@@ -65,9 +65,17 @@
 				<Search slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else if !$entries?.length}
-			<PlaceholderBox title="No results" description="Search found no results" class="center-absolute">
-				<Search slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
+			<!-- Using await :then trick we're displaying the loading state for 1s, after which we show no-results message -->
+			<!-- The waiting state is here so as to not display the no results to quickly (in case of initial search, being slightly slower) -->
+			{#await new Promise((r) => setTimeout(r, 1000))}
+				<div class="center-absolute">
+					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+				</div>
+			{:then}
+				<PlaceholderBox title="No results" description="Search found no results" class="center-absolute">
+					<Search slot="icon" let:iconProps {...iconProps} />
+				</PlaceholderBox>
+			{/await}
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
 				<InventoryTable {table} />
