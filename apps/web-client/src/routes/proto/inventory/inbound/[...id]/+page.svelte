@@ -22,12 +22,14 @@
 	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 
 	import { getDB } from "$lib/db";
+
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
 	import { createNoteStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { scan } from "$lib/actions/scan";
+	import { createIntersectionObserver } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
@@ -82,14 +84,22 @@
 	};
 	// #region note-actions
 
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+
 	// #region table
 	const tableOptions = writable({
-		data: $entries
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
 	// #region transaction-actions
@@ -164,7 +174,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -172,7 +182,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handleDeleteSelf}
-						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 					>
 						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
 					</div>
@@ -189,13 +199,20 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<InventoryTable
-				{table}
-				on:transactionupdate={handleTransactionUpdate}
-				on:removetransactions={handleRemoveTransactions}
-				onEdit={bookForm.open}
-				interactive
-			/>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
+				<InventoryTable
+					{table}
+					on:transactionupdate={handleTransactionUpdate}
+					on:removetransactions={handleRemoveTransactions}
+					onEdit={bookForm.open}
+					interactive
+				/>
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $entries?.length > maxResults}
+					<div use:scroll.trigger />
+				{/if}
+			</div>
 		{/if}
 	</svelte:fragment>
 </Page>
