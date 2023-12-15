@@ -46,7 +46,7 @@ export const load: LayoutLoad = async ({
 	// In note view ('inbound/outbount') we need both the note and the warehouse (and db.findNote returns exactly that)
 	const findNoteRes = await db.findNote(docId);
 	if (!findNoteRes) {
-		throw redirect(307, PROTO_PATHS.OUTBOUND);
+		throw redirect(307, PROTO_PATHS.INBOUND);
 	}
 	return findNoteRes;
 };
