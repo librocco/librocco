@@ -1,19 +1,11 @@
 <script lang="ts">
-	import { Printer, QrCode, Trash2 } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, Loader2 as Loader } from "lucide-svelte";
 	import { writable } from "svelte/store";
 
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import {
-		Badge,
-		BadgeColor,
-		OutNoteTable,
-		createTable,
-		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail,
-		ProgressBar
-	} from "@librocco/ui";
+	import { Badge, BadgeColor, OutNoteTable, createTable, type TransactionUpdateDetail, type RemoveTransactionsDetail } from "@librocco/ui";
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -189,7 +181,9 @@
 
 	<svelte:fragment slot="main">
 		{#if loading}
-			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+			<div class="center-absolute">
+				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			</div>
 		{:else if !$entries.length}
 			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
 				<QrCode slot="icon" let:iconProps {...iconProps} />
