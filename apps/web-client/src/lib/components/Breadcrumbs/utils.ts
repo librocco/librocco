@@ -1,5 +1,6 @@
-import { PROTO_PATHS } from "$lib/paths";
 import type { Breadcrumb } from "./types";
+
+import { appPath } from "$lib/paths";
 
 interface BreadcrumbSegment {
 	id: string;
@@ -18,7 +19,7 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 		case "warehouse": {
 			const [{ id, displayName }] = segments as WarehouseSegments;
 			const label = displayName || id;
-			return [{ label: "Warehouses", href: PROTO_PATHS.WAREHOUSES }, { label }];
+			return [{ label: "Warehouses", href: appPath("warehouses") }, { label }];
 		}
 
 		case "inbound": {
@@ -26,8 +27,8 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 			const warehouseLabel = warehouse.displayName || warehouse.id;
 			const noteLabel = note.displayName || note.id;
 			return [
-				{ label: "Inbound", href: PROTO_PATHS.INBOUND },
-				{ label: warehouseLabel, href: `${PROTO_PATHS.WAREHOUSES}/${warehouse.id}` },
+				{ label: "Inbound", href: appPath("inbound") },
+				{ label: warehouseLabel, href: appPath("warehouses", warehouse.id) },
 				{ label: noteLabel }
 			];
 		}
@@ -35,7 +36,7 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 		case "outbound": {
 			const [{ id, displayName }] = segments as OutboundSegments;
 			const label = displayName || id;
-			return [{ label: "Outbound", href: PROTO_PATHS.OUTBOUND }, { label }];
+			return [{ label: "Outbound", href: appPath("outbound") }, { label }];
 		}
 	}
 }
