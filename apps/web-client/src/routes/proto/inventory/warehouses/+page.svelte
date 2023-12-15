@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { firstValueFrom, map } from "rxjs";
-	import { Edit, Table2, Trash2, Loader2 as Loader } from "lucide-svelte";
+	import { Edit, Table2, Trash2, Loader2 as Loader, Library } from "lucide-svelte";
 	import { onMount } from "svelte";
 
 	import { filter } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -60,56 +60,60 @@
 		<button class="button button-green"><span class="button-text">New warehouse</span></button>
 	</PlaceholderBox>
 {:else}
-	<EntityList>
+	<ul class="entity-list-container">
 		{#each $warehouseList as [warehouseId, warehouse]}
 			{@const displayName = warehouse.displayName || warehouseId}
 			{@const totalBooks = warehouse.totalBooks}
 			{@const href = appPath("warehouses", warehouseId)}
 
-			<EntityListRow {displayName} {totalBooks}>
-				<svelte:fragment slot="actions">
-					<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end -->
-					<div />
+			<li class="entity-list-row">
+				<div class="max-w-1/2 w-full">
+					<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
-					<div class="flex items-center justify-end gap-3">
-						<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
-
-						<DropdownWrapper let:separator let:item>
-							<div
-								{...item}
-								use:item.action
-								on:m-click={() => console.log("TODO: open warehouse edit modal")}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Edit class="text-gray-400" size={20} />
-								<span class="text-gray-700">Edit</span>
-							</div>
-
-							<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
-
-							<a
-								{href}
-								{...item}
-								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Table2 class="text-gray-400" size={20} />
-								<span class="text-gray-700">View Stock</span>
-							</a>
-
-							<div
-								{...item}
-								use:item.action
-								on:m-click={handleDeleteWarehouse(warehouseId)}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-							>
-								<Trash2 class="text-white" size={20} />
-								<span class="text-white">Delete</span>
-							</div>
-						</DropdownWrapper>
+					<div class="flex items-center">
+						<Library class="mr-1 text-gray-700" size={20} />
+						<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
 					</div>
-				</svelte:fragment>
-			</EntityListRow>
+				</div>
+
+				<div class="max-w-1/2 flex w-full items-center justify-end gap-3">
+					<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
+
+					<DropdownWrapper let:separator let:item>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={() => console.log("TODO: open warehouse edit modal")}
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						>
+							<Edit class="text-gray-400" size={20} />
+							<span class="text-gray-700">Edit</span>
+						</div>
+
+						<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
+
+						<a
+							{href}
+							{...item}
+							use:item.action
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						>
+							<Table2 class="text-gray-400" size={20} />
+							<span class="text-gray-700">View Stock</span>
+						</a>
+
+						<div
+							{...item}
+							use:item.action
+							on:m-click={handleDeleteWarehouse(warehouseId)}
+							class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						>
+							<Trash2 class="text-white" size={20} />
+							<span class="text-white">Delete</span>
+						</div>
+					</DropdownWrapper>
+				</div>
+			</li>
 		{/each}
-	</EntityList>
+	</ul>
 {/if}
