@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Plus, Search, Trash } from "lucide-svelte";
-	import { map } from "rxjs";
+	import { firstValueFrom, map } from "rxjs";
 
-	import { Badge, BadgeColor } from "@librocco/ui";
+	import { Badge, BadgeColor, ProgressBar } from "@librocco/ui";
 
 	import { goto } from "$app/navigation";
 
@@ -16,19 +16,22 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { onMount } from "svelte";
 
 	const db = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(
-		outNoteListCtx,
-		db
-			?.stream()
-			.outNoteList(outNoteListCtx)
-			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-			.pipe(map((m) => [...m])),
-		[]
-	);
+	const outNoteListStream = db
+		?.stream()
+		.outNoteList(outNoteListCtx)
+		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+		.pipe(map((m) => [...m]));
+	const outNoteList = readableFromStream(outNoteListCtx, outNoteListStream, []);
+
+	let initialized = false;
+	onMount(() => {
+		firstValueFrom(outNoteListStream).then(() => (initialized = true));
+	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
 	const handleDeleteNote = (noteId: string) => async () => {
@@ -68,7 +71,9 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		{#if !$outNoteList.length}
+		{#if !initialized}
+			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+		{:else if !$outNoteList.length}
 			<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 					><span class="text-green-50">New note</span></button

@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { Trash } from "lucide-svelte";
-	import { map } from "rxjs";
+	import { firstValueFrom, map } from "rxjs";
+	import { onMount } from "svelte";
 
-	import { Badge, BadgeColor } from "@librocco/ui/Badge";
+	import { ProgressBar, Badge, BadgeColor } from "@librocco/ui";
 	import { wrapIter } from "@librocco/shared";
 
 	import { EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
@@ -22,21 +23,23 @@
 	const db = getDB();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteList = readableFromStream(
-		inNoteListCtx,
-		db
-			?.stream()
-			.inNoteList(inNoteListCtx)
-			.pipe(
-				map((m) =>
-					wrapIter(m)
-						.filter(([warehouseId]) => !warehouseId.includes("0-all"))
-						.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
-						.array()
-				)
-			),
-		[]
-	);
+	const inNoteListStream = db
+		?.stream()
+		.inNoteList(inNoteListCtx)
+		.pipe(
+			map((m) =>
+				wrapIter(m)
+					.filter(([warehouseId]) => !warehouseId.includes("0-all"))
+					.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
+					.array()
+			)
+		);
+	const inNoteList = readableFromStream(inNoteListCtx, inNoteListStream, []);
+
+	let initialized = false;
+	onMount(() => {
+		firstValueFrom(inNoteListStream).then(() => (initialized = true));
+	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
 	const handleDeleteNote = (noteId: string) => async () => {
@@ -48,7 +51,9 @@
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
 
-{#if !$inNoteList.length}
+{#if !initialized}
+	<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+{:else if !$inNoteList.length}
 	<PlaceholderBox
 		title="No open notes"
 		description="Get started by adding a new note with the appropriate warehouse"
