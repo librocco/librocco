@@ -164,8 +164,8 @@
 			</div>
 
 			<div class="flex items-center gap-x-3">
-				<button on:click={handleCommitSelf} class="rounded-md bg-teal-500 px-[17px] py-[9px] text-green-50 active:bg-teal-400">
-					<span class="text-sm font-medium leading-5 text-green-50">Commit</span>
+				<button on:click={handleCommitSelf} class="button button-green">
+					<span class="button-text">Commit</span>
 				</button>
 
 				<DropdownWrapper let:item>
