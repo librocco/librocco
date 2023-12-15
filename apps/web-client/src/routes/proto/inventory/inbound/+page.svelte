@@ -14,7 +14,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
@@ -54,7 +54,7 @@
 		description="Get started by adding a new note with the appropriate warehouse"
 		class="center-absolute"
 	>
-		<a href={PROTO_PATHS.WAREHOUSES} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+		<a href={appPath("warehouses")} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 			><span class="text-green-50">Back to warehouses</span></a
 		>
 	</PlaceholderBox>
@@ -65,7 +65,7 @@
 			{@const displayName = `${warehouseName} / ${noteName}`}
 			{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
 			{@const totalBooks = note.totalBooks}
-			{@const href = `${PROTO_PATHS.INBOUND}/${noteId}`}
+			{@const href = appPath("inbound", noteId)}
 
 			<EntityListRow {totalBooks} {displayName}>
 				<svelte:fragment slot="actions">

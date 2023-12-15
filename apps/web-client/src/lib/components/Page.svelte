@@ -5,27 +5,27 @@
 
 	import { TooltipWrapper } from "$lib/components";
 
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	export const links = [
 		{
 			label: "Stock",
-			href: PROTO_PATHS.STOCK,
+			href: appPath("stock"),
 			icon: Search
 		},
 		{
 			label: "Manage inventory",
-			href: PROTO_PATHS.INVENTORY,
+			href: appPath("inventory"),
 			icon: Library
 		},
 		{
 			label: "Outbound",
-			href: PROTO_PATHS.OUTBOUND,
+			href: appPath("outbound"),
 			icon: Package
 		},
 		{
 			label: "Settings",
-			href: PROTO_PATHS.SETTINGS,
+			href: appPath("settings"),
 			icon: Settings
 		}
 	];

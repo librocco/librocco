@@ -48,7 +48,7 @@
 
 	import { links } from "$lib/data";
 	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
-	import { PROTO_PATHS } from "$lib/paths";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -93,7 +93,7 @@
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(PROTO_PATHS.OUTBOUND);
+			goto(appPath("outbound"));
 
 			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
 
@@ -199,7 +199,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -207,7 +207,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handleDeleteSelf}
-						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 					>
 						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
 					</div>

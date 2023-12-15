@@ -4,7 +4,7 @@ import type { NoteInterface, WarehouseInterface } from "@librocco/db";
 
 import type { LayoutLoad } from "./$types";
 
-import { PROTO_PATHS } from "$lib/paths";
+import { appPath } from "$lib/paths";
 
 export const load: LayoutLoad = async ({
 	route,
@@ -15,7 +15,7 @@ export const load: LayoutLoad = async ({
 
 	// If no location provided, use '/warehouses' as default
 	if (!location) {
-		throw redirect(307, PROTO_PATHS.WAREHOUSES);
+		throw redirect(307, appPath("warehouses"));
 	}
 
 	// await db init in ../layout.ts
@@ -37,7 +37,7 @@ export const load: LayoutLoad = async ({
 		const warehouse = await db.warehouse(warehouseId).get();
 
 		if (!warehouse) {
-			throw redirect(307, PROTO_PATHS.WAREHOUSES);
+			throw redirect(307, appPath("warehouses"));
 		}
 
 		return { warehouse };
@@ -46,7 +46,7 @@ export const load: LayoutLoad = async ({
 	// In note view ('inbound/outbount') we need both the note and the warehouse (and db.findNote returns exactly that)
 	const findNoteRes = await db.findNote(docId);
 	if (!findNoteRes) {
-		throw redirect(307, PROTO_PATHS.OUTBOUND);
+		throw redirect(307, appPath("inbound"));
 	}
 	return findNoteRes;
 };
