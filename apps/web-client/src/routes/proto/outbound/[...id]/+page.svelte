@@ -42,6 +42,8 @@
 	import { createNoteStores } from "$lib/stores/inventory";
 	import { newBookFormStore } from "$lib/stores/book_form";
 
+	import { scan } from "$lib/actions/scan";
+
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 	import { comparePaths } from "$lib/utils/misc";
@@ -158,22 +160,13 @@
 
 	// #region temp
 	const handlePrint = () => {};
-
-	// TEMP: This is a quick and dirty implmeentation: replace with scan action
-	let scanValue = "";
-	const handleScanConfirm = (e: KeyboardEvent) => {
-		if (e.key === "Enter") {
-			handleAddTransaction(scanValue);
-			scanValue = "";
-		}
-	};
 	// #endregion temp
 </script>
 
 <Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<QrCode {...iconProps} />
-		<input on:keydown={handleScanConfirm} bind:value={scanValue} placeholder="Scan to add books" {...inputProps} />
+		<input use:scan={handleAddTransaction} placeholder="Scan to add books" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
