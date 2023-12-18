@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
 
 import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
 
@@ -58,15 +58,16 @@ class Database implements DatabaseInterface {
 		this.#warehouseMapStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
-				map(
-					({ rows }) =>
-						new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(
-							wrapIter(rows).map(({ key: id, value: { displayName = "", discountPercentage = 0, ...rest } }) => [
-								id,
-								{ displayName, discountPercentage, ...rest }
-							])
-						)
+				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
+				map(({ rows }) => wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "" }] as const)),
+				// Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
+				switchMap((warehouses) =>
+					this.#stockStream.pipe(
+						map((s) => mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: s.warehouse(id).size }] as const))
+					)
 				),
+				// Convert the iterable into a map of required type
+				map((iter) => new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(iter)),
 				share({ connector: () => warehouseMapCache, resetOnRefCountZero: false })
 			);
 
