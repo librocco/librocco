@@ -23,9 +23,6 @@
 			</th>
 			<th scope="col" class="hidden py-4 px-3 text-left xl:table-cell"> Title </th>
 			<th scope="col" class="hidden py-4 px-3 text-left xl:table-cell"> Authors </th>
-
-			<th scope="col" class="hidden w-[10%] py-4 px-3 text-left md:table-cell"> Publisher </th>
-			<th scope="col" class="hidden w-[5%] py-4 px-3 text-left xl:table-cell"> Year </th>
 			<th scope="col" class="xs:text-left w-[4%] py-4 px-3 text-center sm:w-[6%]">
 				<span class="xs:inline hidden">Price</span>
 				<span class="xs:hidden inline">
@@ -40,6 +37,8 @@
 					Qty
 				</span>
 			</th>
+			<th scope="col" class="hidden w-[10%] py-4 px-3 text-left lg:table-cell"> Publisher </th>
+			<th scope="col" class="hidden w-[5%] py-4 px-3 text-left xl:table-cell"> Year </th>
 			{#if $$slots["row-warehouse"]}
 				<th scope="col" class="w-[9%] py-4 px-3 text-left sm:w-[15%] xl:w-[20%]">Warehouse </th>
 			{/if}
@@ -69,7 +68,7 @@
 			{@const stringQty = quantity.toString()}
 
 			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
-				<th scope="row" class="xs:max-w-fulltruncate max-w-[5rem] p-3 text-left font-medium text-gray-800">
+				<th scope="row" class="xs:max-w-full max-w-[5rem] truncate p-3 text-left font-medium text-gray-800">
 					<span data-property="isbn">{isbn}</span>
 					<dl class="font-normal xl:hidden">
 						<dt class="sr-only">Title:</dt>
@@ -85,12 +84,6 @@
 				</td>
 				<td data-property="authors" class="hidden truncate py-4 px-3 xl:table-cell">
 					{authors}
-				</td>
-				<td data-property="publisher" class="hidden truncate py-4 px-3 md:table-cell">
-					{publisher}
-				</td>
-				<td data-property="year" class="hidden py-4 px-3 text-left xl:table-cell">
-					{year}
 				</td>
 				<td data-property="price" class="xs:text-left truncate py-4 px-3 text-center">
 					{#if price !== "N/A" && warehouseDiscount}
@@ -108,6 +101,12 @@
 					<slot name="row-quantity" quantity={stringQty}>
 						<Badge label={stringQty} size={BadgeSize.LG} />
 					</slot>
+				</td>
+				<td data-property="publisher" class="hidden truncate py-4 px-3 lg:table-cell">
+					{publisher}
+				</td>
+				<td data-property="year" class="hidden py-4 px-3 text-left xl:table-cell">
+					{year}
 				</td>
 				{#if $$slots["row-warehouse"]}
 					<td class="py-4 text-center">
