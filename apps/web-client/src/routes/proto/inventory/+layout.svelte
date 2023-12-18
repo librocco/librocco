@@ -50,7 +50,7 @@
 	<Page>
 		<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 			<Search {...iconProps} />
-			<input placeholder="Search" {...inputProps} />
+			<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
 		</svelte:fragment>
 
 		<svelte:fragment slot="heading">
