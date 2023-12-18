@@ -6,40 +6,43 @@ export const rows: InventoryTableData[] = [
 		title: "Miti Del Nord",
 		authors: "Neil Gaiman",
 		quantity: 3,
-		price: 10,
+		price: 10000,
 		publisher: "Mondadori",
 		year: "2017",
 		editedBy: "",
 		outOfPrint: false,
 		warehouseId: "wh1",
-		warehouseName: "Warehouse 1"
+		warehouseName: "Warehouse 1",
+		warehouseDiscount: 20
 	},
 	{
 		isbn: "917289012381",
 		title: "Hellenistic history and culture",
 		authors: "Peter Green",
 		quantity: 3,
-		price: 10,
+		price: 100,
 		publisher: "Penguin",
 		year: "2017",
 		editedBy: "",
 		outOfPrint: false,
 		warehouseId: "wh1",
-		warehouseName: "Warehouse 1"
+		warehouseName: "Warehouse 1",
+		warehouseDiscount: 10
 	},
 
 	{
 		isbn: "917289012323",
-		title: "Studies in Greek culture and Roman policy",
-		authors: "Robert Lamberton",
+		title: "Studies in Greek culture and Roman policy, and other topics that you may study if you pursued a PhD in Hellianc culture",
+		authors: "Robert Lamberton, Fausto Lanzoni, Doriana Rodino, Carlo Tabacchi, Giuseppe Vottari",
 		quantity: 3,
 		price: 10,
-		publisher: "Penguin",
+		publisher: "A very long publisher name. Like super long. Longer than acceptable.",
 		year: "2017",
-		editedBy: "",
+		editedBy: "Renato Sironi, Francesca Desiderio, Evelina Poggi, Allesandro Lucchese",
 		outOfPrint: false,
 		warehouseId: "wh1",
-		warehouseName: "Warehouse 1"
+		warehouseName: "Warehouse 1",
+		warehouseDiscount: 0
 	}
 ];
 
