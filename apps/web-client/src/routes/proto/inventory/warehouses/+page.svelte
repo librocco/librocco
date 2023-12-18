@@ -1,12 +1,13 @@
 <script lang="ts">
-	import { map } from "rxjs";
-	import { Edit, Table2, Trash2 } from "lucide-svelte";
+	import { firstValueFrom, map } from "rxjs";
+	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
+	import { onMount } from "svelte";
 
 	import { filter } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, EntityList, EntityListRow, PlaceholderBox } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -19,15 +20,17 @@
 	const db = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseList = readableFromStream(
-		warehouseListCtx,
-		db
-			?.stream()
-			.warehouseMap(warehouseListCtx)
-			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-			.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))])),
-		[]
-	);
+	const warehouseListStream = db
+		?.stream()
+		.warehouseMap(warehouseListCtx)
+		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
+	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+
+	let initialized = false;
+	onMount(() => {
+		firstValueFrom(warehouseListStream).then(() => (initialized = true));
+	});
 
 	const handleDeleteWarehouse = (warehouseId: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
@@ -48,65 +51,81 @@
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
 
-{#if !$warehouseList.length}
+{#if !initialized}
+	<div class="center-absolute">
+		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+	</div>
+{:else if !$warehouseList.length}
 	<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-		<button class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-			><span class="text-green-50">New warehouse</span></button
-		>
+		<button class="button button-green"><span class="button-text">New warehouse</span></button>
 	</PlaceholderBox>
 {:else}
-	<EntityList>
+	<ul class="entity-list-container">
 		{#each $warehouseList as [warehouseId, warehouse]}
 			{@const displayName = warehouse.displayName || warehouseId}
 			{@const totalBooks = warehouse.totalBooks}
 			{@const href = appPath("warehouses", warehouseId)}
+			{@const warehouseDiscount = warehouse.discountPercentage}
 
-			<EntityListRow {displayName} {totalBooks}>
-				<svelte:fragment slot="actions">
-					<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end -->
-					<div />
+			<li class="entity-list-row">
+				<div class="max-w-1/2 w-full">
+					<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
-					<div class="flex items-center justify-end gap-3">
-						<button on:click={handleCreateNote(warehouseId)} class="rounded-md bg-teal-500 px-[17px] py-[9px]"
-							><span class="text-sm font-medium leading-5 text-green-50">New note</span></button
-						>
+					<div class="flex items-center">
+						<div class="flex w-32 items-center gap-x-1">
+							<Library class="text-gray-700" size={20} />
+							<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+						</div>
 
-						<DropdownWrapper let:separator let:item>
-							<div
-								{...item}
-								use:item.action
-								on:m-click={() => console.log("TODO: open warehouse edit modal")}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Edit class="text-gray-400" size={20} />
-								<span class="text-gray-700">Edit</span>
+						{#if warehouseDiscount}
+							<div class="flex items-center gap-x-1">
+								<div class="border border-gray-700 p-[1px]">
+									<Percent class="text-gray-700" size={14} />
+								</div>
+								<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
 							</div>
-
-							<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
-
-							<a
-								{href}
-								{...item}
-								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Table2 class="text-gray-400" size={20} />
-								<span class="text-gray-700">View Stock</span>
-							</a>
-
-							<div
-								{...item}
-								use:item.action
-								on:m-click={handleDeleteWarehouse(warehouseId)}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-							>
-								<Trash2 class="text-white" size={20} />
-								<span class="text-white">Delete</span>
-							</div>
-						</DropdownWrapper>
+						{/if}
 					</div>
-				</svelte:fragment>
-			</EntityListRow>
+				</div>
+
+				<div class="max-w-1/2 flex w-full items-center justify-end gap-3">
+					<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
+
+					<DropdownWrapper let:separator let:item>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={() => console.log("TODO: open warehouse edit modal")}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						>
+							<Edit class="text-gray-400" size={20} />
+							<span class="text-gray-700">Edit</span>
+						</div>
+
+						<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
+
+						<a
+							{href}
+							{...item}
+							use:item.action
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						>
+							<Table2 class="text-gray-400" size={20} />
+							<span class="text-gray-700">View Stock</span>
+						</a>
+
+						<div
+							{...item}
+							use:item.action
+							on:m-click={handleDeleteWarehouse(warehouseId)}
+							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						>
+							<Trash2 class="text-white" size={20} />
+							<span class="text-white">Delete</span>
+						</div>
+					</DropdownWrapper>
+				</div>
+			</li>
 		{/each}
-	</EntityList>
+	</ul>
 {/if}
