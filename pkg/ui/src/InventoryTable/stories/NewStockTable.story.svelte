@@ -5,6 +5,8 @@
 	import { FileEdit } from "lucide-svelte";
 
 	import NewStockTable from "../NewStockTable.svelte";
+	import NewOutboundTable from "../NewOutboundTable.svelte";
+	import TdWarehouseSelect from "../TdWarehouseSelect.svelte";
 
 	import { createTable } from "../table";
 
@@ -38,7 +40,7 @@
 			<div slot="row-quantity" let:quantity class="odd:bg-gray-50 even:bg-white">
 				<input
 					value={quantity}
-					class="w-full rounded border-2 border-gray-500 text-center  focus:border-teal-500 focus:ring-0"
+					class="w-full rounded border-2 border-gray-500 px-2 text-center focus:border-teal-500 focus:ring-0"
 					type="number"
 				/>
 			</div>
@@ -51,6 +53,31 @@
 				</button>
 			</div>
 		</NewStockTable>
+	</Hst.Variant>
+	<Hst.Variant title="Outbound">
+		<NewOutboundTable table={defaultStockTable}>
+			<div slot="row-quantity" let:quantity class="odd:bg-gray-50 even:bg-white">
+				<input
+					value={quantity}
+					class="w-full rounded border-2 border-gray-500 px-2 text-center focus:border-teal-500 focus:ring-0"
+					type="number"
+				/>
+			</div>
+
+			<div class="flex items-center rounded-md bg-gray-100 shadow-sm" slot="row-warehouse" let:row let:rowIx>
+				<span class="ml-3 rounded-full bg-teal-400 p-1" />
+				<input disabled type="text" value={row.warehouseName} class="w-full border-0 bg-gray-100 text-sm text-gray-500" />
+			</div>
+
+			<div slot="row-actions" let:row let:rowIx>
+				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+					<span class="sr-only">Edit row {rowIx}</span>
+					<span class="aria-hidden">
+						<FileEdit />
+					</span>
+				</button>
+			</div>
+		</NewOutboundTable>
 	</Hst.Variant>
 </Hst.Story>
 
