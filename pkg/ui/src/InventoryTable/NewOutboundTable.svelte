@@ -1,0 +1,126 @@
+<script lang="ts">
+	import type { createTable } from "./table";
+	import type { InventoryTableData } from "./types";
+
+	import { BadgeSize } from "..";
+	import Badge from "../Badge/Badge.svelte";
+
+	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+
+	const { table: tableAction } = table;
+	$: ({ rows } = $table);
+
+	// table rows + one header row
+	$: rowCount = rows.length + 1;
+</script>
+
+<table id="inventory-table" class="xs:table-fixed relative w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
+	<thead>
+		<tr class="whitespace-nowrap text-sm font-semibold leading-5 text-gray-900">
+			<th scope="col" class="xs:w-[15%] w-[9%] py-4 px-3 text-left sm:w-[22%] sm:w-[30%] xl:w-[10%]">
+				<span class="hidden xl:inline">ISBN</span>
+				<span class="inline xl:hidden">Book</span>
+			</th>
+			<th scope="col" class="hidden py-4 px-3 text-left xl:table-cell"> Title </th>
+			<th scope="col" class="hidden py-4 px-3 text-left xl:table-cell"> Authors </th>
+
+			<th scope="col" class="hidden w-[10%] py-4 px-3 text-left md:table-cell"> Publisher </th>
+			<th scope="col" class="hidden w-[5%] py-4 px-3 text-left xl:table-cell"> Year </th>
+			<th scope="col" class="xs:text-left w-[4%] py-4 px-3 text-center sm:w-[6%]">
+				<span class="xs:inline hidden">Price</span>
+				<span class="xs:hidden inline">
+					<span class="sr-only">Price</span>
+					€
+				</span>
+			</th>
+			<th scope="col" class="xs:text-left w-[4%] py-4 px-3 text-center sm:w-[6%]">
+				<span class="hidden md:inline">Quantity</span>
+				<span class="inline md:hidden">
+					<span class="sr-only">Quantity</span>
+					Qty
+				</span>
+			</th>
+			{#if $$slots["row-warehouse"]}
+				<th scope="col" class="w-[9%] py-4 px-3 text-left sm:w-[15%] xl:w-[20%]">Warehouse </th>
+			{/if}
+			{#if $$slots["row-actions"]}
+				<th scope="col" class="xs:w-[5%] w-[3%] py-4 px-3">
+					<span class="sr-only">Row Actions</span>
+				</th>
+			{/if}
+		</tr>
+	</thead>
+
+	<tbody>
+		{#each rows as row (row.key)}
+			{@const {
+				rowIx,
+				isbn,
+				authors = "N/A",
+				quantity,
+				price = "N/A",
+				year = "N/A",
+				title = "N/A",
+				publisher = "",
+				editedBy = "",
+				outOfPrint = false,
+				warehouseDiscount
+			} = row}
+			{@const stringQty = quantity.toString()}
+
+			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
+				<th scope="row" class="xs:max-w-fulltruncate max-w-[5rem] p-3 text-left font-medium text-gray-800">
+					<span data-property="isbn">{isbn}</span>
+					<dl class="font-normal xl:hidden">
+						<dt class="sr-only">Title:</dt>
+						<dd class="mt-1 truncate font-light text-gray-500">{title}</dd>
+						<dt class="sr-only">Authors:</dt>
+						<dd class="mt-1 truncate font-light text-gray-500 xl:hidden">{authors}</dd>
+						<dt class="sr-only">Year:</dt>
+						<dd class="mt-1 truncate font-light text-gray-500 xl:hidden">{year}</dd>
+					</dl>
+				</th>
+				<td data-property="title" class="hidden truncate px-3 py-4 xl:table-cell">
+					{title}
+				</td>
+				<td data-property="authors" class="hidden truncate py-4 px-3 xl:table-cell">
+					{authors}
+				</td>
+				<td data-property="publisher" class="hidden truncate py-4 px-3 md:table-cell">
+					{publisher}
+				</td>
+				<td data-property="year" class="hidden py-4 px-3 text-left xl:table-cell">
+					{year}
+				</td>
+				<td data-property="price" class="xs:text-left truncate py-4 px-3 text-center">
+					{#if price !== "N/A" && warehouseDiscount}
+						<div class="flex flex-col items-start gap-1">
+							<span class="sr-only">Discounted price:</span>
+							<span>{price - warehouseDiscount / 100}</span>
+							<span class="sr-only">Original price:</span>
+							<span class="text-gray-400 line-through">({price})</span>
+						</div>
+					{:else}
+						{price}
+					{/if}
+				</td>
+				<td data-property="quantity" class="xs:text-left py-4 px-3 text-center">
+					<slot name="row-quantity" quantity={stringQty}>
+						<Badge label={stringQty} size={BadgeSize.LG} />
+					</slot>
+				</td>
+				{#if $$slots["row-warehouse"]}
+					<td class="py-4 text-center">
+						<slot name="row-warehouse" {row} {rowIx} />
+					</td>
+				{/if}
+
+				{#if $$slots["row-actions"]}
+					<td class="py-4 text-center">
+						<slot name="row-actions" {row} {rowIx} />
+					</td>
+				{/if}
+			</tr>
+		{/each}
+	</tbody>
+</table>
