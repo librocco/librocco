@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 import { writable } from "svelte/store";
 
-export const MAXIMUM_SCANNER_KEY_GAP = 50;
+export const MAXIMUM_SCANNER_KEY_GAP = 100;
 
 interface ScanState {
 	buffer: string;

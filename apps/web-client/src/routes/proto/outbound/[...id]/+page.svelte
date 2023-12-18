@@ -1,55 +1,38 @@
 <script lang="ts">
 	import { Printer, QrCode, Trash2 } from "lucide-svelte";
-	import { map } from "rxjs";
 	import { writable } from "svelte/store";
 
-	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 
-	import { NoteState, NoteTempState } from "@librocco/shared";
+	import { NoteState } from "@librocco/shared";
 	import {
-		InventoryPage,
-		Pagination,
 		Badge,
 		BadgeColor,
 		OutNoteTable,
 		createTable,
-		Header,
-		SelectMenu,
-		TextEditable,
-		SideBarNav,
-		SidebarItem,
-		NewEntitySideNavButton,
 		type TransactionUpdateDetail,
 		type RemoveTransactionsDetail,
-		ProgressBar,
-		Slideover,
-		BookDetailForm,
-		ScanInput,
-		Button,
-		ButtonColor
+		ProgressBar
 	} from "@librocco/ui";
-
 	import type { BookEntry } from "@librocco/db";
-
-	import { noteStates } from "$lib/enums/inventory";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+
+	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 
-	import { createNoteStores } from "$lib/stores/inventory";
+	import { createNoteStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { scan } from "$lib/actions/scan";
+	import { createIntersectionObserver } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
-	import { comparePaths } from "$lib/utils/misc";
 
-	import { links } from "$lib/data";
-	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
@@ -58,17 +41,6 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
-
-	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteList = readableFromStream(
-		outNoteListCtx,
-		db
-			?.stream()
-			.outNoteList(outNoteListCtx)
-			/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-			.pipe(map((m) => [...m])),
-		[]
-	);
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -84,8 +56,6 @@
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
-	$: currentPage = noteStores.currentPage;
-	$: paginationData = noteStores.paginationData;
 	$: entries = noteStores.entries;
 
 	$: toasts = noteToastMessages(note?.displayName);
@@ -114,14 +84,22 @@
 	};
 	// #region note-actions
 
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+
 	// #region table
 	const tableOptions = writable({
-		data: $entries
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
 	// #region transaction-actions
@@ -217,12 +195,19 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<OutNoteTable
-				{table}
-				onEdit={bookForm.open}
-				on:transactionupdate={handleTransactionUpdate}
-				on:removetransactions={handleRemoveTransactions}
-			/>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
+				<OutNoteTable
+					{table}
+					onEdit={bookForm.open}
+					on:transactionupdate={handleTransactionUpdate}
+					on:removetransactions={handleRemoveTransactions}
+				/>
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $entries?.length > maxResults}
+					<div use:scroll.trigger />
+				{/if}
+			</div>
 		{/if}
 	</svelte:fragment>
 </Page>
