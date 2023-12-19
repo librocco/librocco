@@ -1,33 +1,17 @@
 <script lang="ts">
-	import { Search } from "lucide-svelte";
+	import { fade, fly } from "svelte/transition";
+	import { writable } from "svelte/store";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Search, FileEdit, X } from "lucide-svelte";
+
+	import { NewStockTable, createTable, ProgressBar, Slideover, BookDetailForm } from "@librocco/ui";
+	import type { BookEntry, SearchIndex } from "@librocco/db";
+	import { debug } from "@librocco/shared";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs } from "$lib/components";
 
-	import { page } from "$app/stores";
-
-	import { map } from "rxjs";
 	import { goto } from "$app/navigation";
-	import { base } from "$app/paths";
-
-	import { writable } from "svelte/store";
-
-	import {
-		InventoryPage,
-		Pagination,
-		InventoryTable,
-		createTable,
-		Header,
-		TextEditable,
-		SidebarItem,
-		SideBarNav,
-		NewEntitySideNavButton,
-		ProgressBar,
-		Slideover,
-		BookDetailForm,
-		DiscountInput
-	} from "@librocco/ui";
-	import type { BookEntry, SearchIndex } from "@librocco/db";
-	import { debug } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 
@@ -38,9 +22,7 @@
 	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { readableFromStream } from "$lib/utils/streams";
-	import { comparePaths } from "$lib/utils/misc";
 
-	import { links } from "$lib/data";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
@@ -108,6 +90,13 @@
 	// #endregion book-form
 
 	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?._id, displayName: warehouse?.displayName });
+
+	const {
+		elements: { trigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = createDialog({
+		forceVisible: true
+	});
 </script>
 
 <Page>
@@ -131,9 +120,57 @@
 				>
 			</PlaceholderBox>
 		{:else}
-			<div class="h-full overflow-y-scroll">
-				<InventoryTable {table} onEdit={bookForm.open} />
+			<div class="[scrollbar-width: thin] h-full overflow-y-auto" style="scrollbar-width: thin">
+				<NewStockTable {table}>
+					<div slot="row-actions" let:row let:rowIx>
+						<button
+							use:melt={$trigger}
+							on:m-click={async () => await bookForm.open(row)}
+							class="rounded p-3 text-gray-500 hover:text-gray-900"
+						>
+							<span class="sr-only">Edit row {rowIx}</span>
+							<span class="aria-hidden">
+								<FileEdit />
+							</span>
+						</button>
+					</div>
+				</NewStockTable>
 			</div>
 		{/if}
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
+				shadow-lg focus:outline-none"
+				transition:fly={{
+					x: 350,
+					duration: 300,
+					opacity: 1
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<BookDetailForm
+						publisherList={$publisherList}
+						book={$bookForm.open ? $bookForm.book : {}}
+						on:submit={({ detail }) => handleBookFormSubmit(detail)}
+						on:cancel={() => open.set(false)}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
