@@ -6,7 +6,6 @@
 
 	import NewStockTable from "../NewStockTable.svelte";
 	import NewOutboundTable from "../NewOutboundTable.svelte";
-	import TdWarehouseSelect from "../TdWarehouseSelect.svelte";
 
 	import { createTable } from "../table";
 
@@ -37,9 +36,9 @@
 
 	<Hst.Variant title="Inbound">
 		<NewStockTable table={defaultStockTable}>
-			<div slot="row-quantity" let:quantity class="odd:bg-gray-50 even:bg-white">
+			<div slot="row-quantity" let:row class="odd:bg-gray-50 even:bg-white">
 				<input
-					value={quantity}
+					value={row.quantity}
 					class="w-full rounded border-2 border-gray-500 px-2 text-center focus:border-teal-500 focus:ring-0"
 					type="number"
 				/>
