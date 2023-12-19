@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
-
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -9,13 +8,13 @@
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import { Badge, BadgeColor, NewStockTable, createTable, type RemoveTransactionsDetail, ProgressBar, BookDetailForm } from "@librocco/ui";
+	import { Badge, BadgeColor, NewStockTable, createTable, ProgressBar, BookDetailForm } from "@librocco/ui";
 
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
 
-	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+	import { Breadcrumbs, DropdownWrapper, PopoverWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
@@ -27,7 +26,6 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
-	import PopoverWrapper from "$lib/components/Melt/PopoverWrapper.svelte";
 
 	export let data: PageData;
 
@@ -93,15 +91,6 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 		bookForm.close();
 	};
-
-	// const handleTransactionUpdate = (async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
-	// 	const { matchTxn, updateTxn } = detail;
-
-	// 	await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
-
-	// 	// TODO: This doesn't seem to work / get called?
-	// 	toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
-	// };
 
 	const handleTransactionUpdate = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
@@ -214,13 +203,6 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<!-- <InventoryTable
-				{table}
-				on:transactionupdate={handleTransactionUpdate}
-				on:removetransactions={handleRemoveTransactions}
-				onEdit={bookForm.open}
-				interactive
-			/> -->
 			<NewStockTable {table}>
 				<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
 					{@const handleQuantityUpdate = handleTransactionUpdate(isbn, warehouseId, quantity)}
