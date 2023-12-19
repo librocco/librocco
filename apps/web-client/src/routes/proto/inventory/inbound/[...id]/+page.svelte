@@ -92,7 +92,7 @@
 		bookForm.close();
 	};
 
-	const handleTransactionUpdate = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -107,7 +107,7 @@
 		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
-	const handleRemoveTransactions = async (isbn: string, warehouseId: string) => {
+	const deleteRow = async (isbn: string, warehouseId: string) => {
 		await note.removeTransactions({ isbn, warehouseId });
 		toastSuccess(toasts.volumeRemoved(1));
 	};
@@ -205,7 +205,7 @@
 		{:else}
 			<NewStockTable {table}>
 				<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-					{@const handleQuantityUpdate = handleTransactionUpdate(isbn, warehouseId, quantity)}
+					{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
 
 					<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
 						<input
@@ -250,7 +250,7 @@
 								</span>
 							</button>
 							<button
-								on:click={() => handleRemoveTransactions(row.isbn, row.warehouseId)}
+								on:click={() => deleteRow(row.isbn, row.warehouseId)}
 								class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 							>
 								<span class="sr-only">Delete row {rowIx}</span>
