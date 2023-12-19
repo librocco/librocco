@@ -30,7 +30,7 @@
 					€
 				</span>
 			</th>
-			<th scope="col" class="xs:text-left w-[4%] py-4 px-3 text-center sm:w-[6%]">
+			<th scope="col" class="xs:text-left xs:w-[5%] w-[4%] py-4 px-3 text-center">
 				<span class="hidden md:inline">Quantity</span>
 				<span class="inline md:hidden">
 					<span class="sr-only">Quantity</span>
@@ -61,12 +61,8 @@
 				year = "N/A",
 				title = "N/A",
 				publisher = "",
-				editedBy = "",
-				outOfPrint = false,
 				warehouseDiscount
 			} = row}
-			{@const stringQty = quantity.toString()}
-
 			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
 				<th scope="row" class="xs:max-w-full max-w-[5rem] truncate p-3 text-left font-medium text-gray-800">
 					<span data-property="isbn">{isbn}</span>
@@ -98,8 +94,8 @@
 					{/if}
 				</td>
 				<td data-property="quantity" class="xs:text-left py-4 px-3 text-center">
-					<slot name="row-quantity" quantity={stringQty}>
-						<Badge label={stringQty} size={BadgeSize.LG} />
+					<slot name="row-quantity" {row} {rowIx}>
+						<Badge label={quantity.toString()} size={BadgeSize.LG} />
 					</slot>
 				</td>
 				<td data-property="publisher" class="hidden truncate py-4 px-3 lg:table-cell">
