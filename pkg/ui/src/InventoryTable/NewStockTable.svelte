@@ -64,7 +64,6 @@
 				outOfPrint = false,
 				warehouseDiscount
 			} = row}
-			{@const stringQty = quantity.toString()}
 
 			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
 				<th scope="row" class="xs:max-w-full max-w-[5rem] truncate p-3 text-left font-medium text-gray-800 ">
@@ -97,8 +96,8 @@
 					{/if}
 				</td>
 				<td data-property="quantity" class="xs:text-left py-4 px-3 text-center">
-					<slot name="row-quantity" quantity={stringQty}>
-						<Badge label={stringQty} size={BadgeSize.LG} />
+					<slot name="row-quantity" {row} {rowIx}>
+						<Badge label={quantity.toString()} size={BadgeSize.LG} />
 					</slot>
 				</td>
 				<td data-property="publisher" class="hidden truncate py-4 px-3 md:table-cell">
