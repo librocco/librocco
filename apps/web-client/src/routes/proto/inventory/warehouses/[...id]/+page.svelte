@@ -17,7 +17,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
@@ -42,7 +42,6 @@
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: note = data.note;
 	$: warehouse = data.warehouse;
 
 	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
@@ -51,17 +50,7 @@
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 
-	$: toasts = noteToastMessages(note?.displayName);
-
-	// #region book-form
-	$: bookForm = newBookFormStore();
-
-	const handleBookFormSubmit = async (book: BookEntry) => {
-		await db.books().upsert([book]);
-		toastSuccess(toasts.bookDataUpdated(book.isbn));
-		bookForm.close();
-	};
-	// #endregion book-form
+	$: toasts = warehouseToastMessages(warehouse?.displayName);
 
 	// #region warehouse-actions
 	/**
@@ -75,6 +64,16 @@
 		toastSuccess(noteToastMessages("Note").inNoteCreated);
 	};
 	// #endregion warehouse-actions
+
+	// #region book-form
+	$: bookForm = newBookFormStore();
+
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
 
 	// #region infinite-scroll
 	let maxResults = 20;
