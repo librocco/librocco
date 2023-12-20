@@ -3,11 +3,11 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Search, FileEdit, X } from "lucide-svelte";
+	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { NewStockTable, createTable, ProgressBar, Slideover, BookDetailForm } from "@librocco/ui";
-	import type { BookEntry, SearchIndex } from "@librocco/db";
+	import { NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
 	import { debug } from "@librocco/shared";
+	import type { BookEntry } from "@librocco/db";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs } from "$lib/components";
 
@@ -16,10 +16,13 @@
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
-	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
-	import { createWarehouseStores } from "$lib/stores/inventory";
+	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+
+	import { createWarehouseStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
+
+	import { createIntersectionObserver } from "$lib/actions";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -39,22 +42,26 @@
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
+	$: note = data.note;
 	$: warehouse = data.warehouse;
 
-	// Create a search index for books in the db. Each time the books change, we recreate the index.
-	// This is more/less inexpensive (around 2sec), considering it runs in the background.
-	let index: SearchIndex | undefined;
-	db?.books()
-		.streamSearchIndex()
-		.subscribe((ix) => (index = ix));
-
 	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
-	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse, index);
+	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 
-	$: toasts = warehouseToastMessages(warehouse?.displayName);
+	$: toasts = noteToastMessages(note?.displayName);
+
+	// #region book-form
+	$: bookForm = newBookFormStore();
+
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
 
 	// #region warehouse-actions
 	/**
@@ -69,25 +76,23 @@
 	};
 	// #endregion warehouse-actions
 
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+
 	// #region table
 	const tableOptions = writable({
-		data: $entries
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
-
-	// #region book-form
-	$: bookForm = newBookFormStore();
-
-	const handleBookFormSubmit = async (book: BookEntry) => {
-		await db.books().upsert([book]);
-		toastSuccess(toasts.bookDataUpdated(book.isbn));
-		bookForm.close();
-	};
-	// #endregion book-form
 
 	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?._id, displayName: warehouse?.displayName });
 
@@ -112,15 +117,19 @@
 
 	<svelte:fragment slot="main">
 		{#if loading}
-			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+			<div class="center-absolute">
+				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			</div>
 		{:else if !$entries.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">New note</span></button
-				>
+				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div class="[scrollbar-width: thin] h-full overflow-y-auto" style="scrollbar-width: thin">
+			<div
+				use:scroll.container={{ rootMargin: "400px" }}
+				class="[scrollbar-width: thin] h-full overflow-y-auto"
+				style="scrollbar-width: thin"
+			>
 				<NewStockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button
@@ -135,6 +144,11 @@
 						</button>
 					</div>
 				</NewStockTable>
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $entries?.length > maxResults}
+					<div use:scroll.trigger />
+				{/if}
 			</div>
 		{/if}
 	</svelte:fragment>

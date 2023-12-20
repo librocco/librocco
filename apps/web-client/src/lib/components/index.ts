@@ -7,4 +7,3 @@ export { default as DropdownWrapper } from "./Melt/DropdownWrapper.svelte";
 export { default as PopoverWrapper } from "./Melt/PopoverWrapper.svelte";
 
 export * from "./Breadcrumbs";
-export * from "./EntityList";
