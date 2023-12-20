@@ -15,7 +15,7 @@ const initialState: ScanState = {
 	target: null
 };
 
-export const scan = (node: HTMLInputElement) => {
+export const scan = (node?: HTMLInputElement, onSubmit?: (value: string) => void) => {
 	const store = (() => {
 		const store = writable<ScanState>(initialState);
 
@@ -29,6 +29,14 @@ export const scan = (node: HTMLInputElement) => {
 
 		return Object.assign(store, { reset, cancel });
 	})();
+
+	const handleSubmit = onSubmit
+		? (e: KeyboardEvent) => {
+				if (e.key !== "Enter") return;
+				e.preventDefault();
+				onSubmit(node.value);
+		  }
+		: () => {};
 
 	const handleKeydown = (e: KeyboardEvent) => {
 		// We're only interested in number inputs (as isbn)
@@ -74,10 +82,12 @@ export const scan = (node: HTMLInputElement) => {
 	};
 
 	window.addEventListener("keydown", handleKeydown);
+	window.addEventListener("keydown", handleSubmit);
 
 	return {
 		destroy() {
 			window.removeEventListener("keydown", handleKeydown);
+			window.removeEventListener("keydown", handleSubmit);
 		}
 	};
 };
