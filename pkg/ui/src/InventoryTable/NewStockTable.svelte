@@ -14,7 +14,7 @@
 	$: rowCount = rows.length + 1;
 </script>
 
-<table id="inventory-table" class="xs:table-fixed relative w-full divide-y divide-gray-200 bg-white" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="relative w-full divide-y divide-gray-200 bg-white xs:table-fixed" use:tableAction={{ rowCount }}>
 	<thead>
 		<tr class="whitespace-nowrap text-sm font-semibold leading-5 text-gray-900">
 			<th scope="col" class="w-[22%] py-4 px-3 text-left sm:w-[30%] lg:w-[13%] xl:w-[10%]">
@@ -23,16 +23,16 @@
 			</th>
 			<th scope="col" class="hidden py-4 px-3 text-left lg:table-cell"> Title </th>
 			<th scope="col" class="hidden py-4 px-3 text-left lg:table-cell"> Authors </th>
-			<th scope="col" class="xs:text-left w-[6%] py-4 px-3 text-center lg:w-[8%]">
-				<span class="xs:inline hidden">Price</span>
-				<span class="xs:hidden inline">
+			<th scope="col" class="w-[6%] py-4 px-3 text-center xs:text-left lg:w-[8%]">
+				<span class="hidden xs:inline">Price</span>
+				<span class="inline xs:hidden">
 					<span class="sr-only">Price</span>
 					€
 				</span>
 			</th>
-			<th scope="col" class="xs:text-left w-[6%] py-4 px-3 text-center lg:w-[8%]">
-				<span class="xs:inline hidden">Quantity</span>
-				<span class="xs:hidden inline">
+			<th scope="col" class="w-[6%] py-4 px-3 text-center xs:text-left lg:w-[8%]">
+				<span class="hidden xs:inline">Quantity</span>
+				<span class="inline xs:hidden">
 					<span class="sr-only">Quantity</span>
 					Qty
 				</span>
@@ -66,7 +66,7 @@
 			} = row}
 
 			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
-				<th scope="row" class="xs:max-w-full max-w-[5rem] truncate p-3 text-left font-medium text-gray-800 ">
+				<th scope="row" class="max-w-[5rem] truncate p-3 text-left font-medium text-gray-800 xs:max-w-full">
 					<span data-property="isbn">{isbn}</span>
 					<dl class="font-normal lg:hidden">
 						<dt class="sr-only">Title:</dt>
@@ -83,7 +83,7 @@
 				<td data-property="authors" class="hidden truncate py-4 px-3 lg:table-cell">
 					{authors}
 				</td>
-				<td data-property="price" class="xs:text-left truncate py-4 px-3 text-center">
+				<td data-property="price" class="truncate py-4 px-3 text-center xs:text-left">
 					{#if price !== "N/A" && warehouseDiscount}
 						<div class="flex flex-col items-start gap-1">
 							<span class="sr-only">Discounted price:</span>
@@ -95,7 +95,7 @@
 						{price}
 					{/if}
 				</td>
-				<td data-property="quantity" class="xs:text-left py-4 px-3 text-center">
+				<td data-property="quantity" class="py-4 px-3 text-center xs:text-left">
 					<slot name="row-quantity" {row} {rowIx}>
 						<Badge label={quantity.toString()} size={BadgeSize.LG} />
 					</slot>
