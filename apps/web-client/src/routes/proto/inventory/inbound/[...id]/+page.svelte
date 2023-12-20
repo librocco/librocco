@@ -209,7 +209,7 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<NewStockTable {table}>
 					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
 						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}

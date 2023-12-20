@@ -124,11 +124,7 @@
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div
-				use:scroll.container={{ rootMargin: "400px" }}
-				class="[scrollbar-width: thin] h-full overflow-y-auto"
-				style="scrollbar-width: thin"
-			>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<NewStockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button

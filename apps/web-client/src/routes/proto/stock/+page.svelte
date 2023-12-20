@@ -1,20 +1,28 @@
 <script lang="ts">
-	import { Search, Loader2 as Loader } from "lucide-svelte";
-	import { writable } from "svelte/store";
 	import { tick } from "svelte";
+	import { writable } from "svelte/store";
+	import { fade, fly } from "svelte/transition";
 
-	import type { SearchIndex } from "@librocco/db";
-	import { InventoryTable, createTable } from "@librocco/ui";
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { Page, PlaceholderBox } from "$lib/components";
+	import type { SearchIndex, BookEntry } from "@librocco/db";
+	import { NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { newBookFormStore } from "$lib/stores/book_form";
 
+	import { Page, PlaceholderBox } from "$lib/components";
+	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 	import { createIntersectionObserver } from "$lib/actions";
+	import { readableFromStream } from "$lib/utils/streams";
 
 	import { getDB } from "$lib/db";
 
 	const db = getDB();
+
+	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
 	// Create a search index for books in the db. Each time the books change, we recreate the index.
 	// This is more/less inexpensive (around 2sec), considering it runs in the background.
@@ -27,6 +35,8 @@
 
 	$: search = stores.search;
 	$: entries = stores.entries;
+
+	$: toasts = warehouseToastMessages("All");
 
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
@@ -47,6 +57,23 @@
 	$: tick().then(() => searchField?.focus());
 
 	const autofocus = (node?: HTMLInputElement) => node?.focus();
+
+	// #region book-form
+	$: bookForm = newBookFormStore();
+
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
+
+	const {
+		elements: { trigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = createDialog({
+		forceVisible: true
+	});
 </script>
 
 <Page>
@@ -77,8 +104,21 @@
 				</PlaceholderBox>
 			{/await}
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
-				<InventoryTable {table} />
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<NewStockTable {table}>
+					<div slot="row-actions" let:row let:rowIx>
+						<button
+							use:melt={$trigger}
+							on:m-click={async () => await bookForm.open(row)}
+							class="rounded p-3 text-gray-500 hover:text-gray-900"
+						>
+							<span class="sr-only">Edit row {rowIx}</span>
+							<span class="aria-hidden">
+								<FileEdit />
+							</span>
+						</button>
+					</div>
+				</NewStockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -88,3 +128,38 @@
 		{/if}
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
+				shadow-lg focus:outline-none"
+				transition:fly={{
+					x: 350,
+					duration: 300,
+					opacity: 1
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<BookDetailForm
+						publisherList={$publisherList}
+						book={$bookForm.open ? $bookForm.book : {}}
+						on:submit={({ detail }) => handleBookFormSubmit(detail)}
+						on:cancel={() => open.set(false)}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
