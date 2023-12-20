@@ -1,0 +1,1 @@
+export { createIntersectionObserver } from "./infiniteScroll";

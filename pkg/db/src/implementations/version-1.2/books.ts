@@ -1,4 +1,4 @@
-import { concat, from, map, Observable, share, Subject, switchMap, tap } from "rxjs";
+import { concat, from, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
 import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
@@ -80,7 +80,7 @@ class Books implements BooksInterface {
 	 * Returns the created stream.
 	 */
 	private createSearchIndexStream() {
-		const searchStreamCache = new Subject<SearchIndex>();
+		const searchStreamCache = new ReplaySubject<SearchIndex>();
 		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
 			switchMap(() => from(this.getAllBooks())),
 			map(createSearchIndex),
