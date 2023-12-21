@@ -1,22 +1,26 @@
 <script lang="ts">
-	import { Search, Loader2 as Loader } from "lucide-svelte";
+	import { fade, fly } from "svelte/transition";
+	import { writable } from "svelte/store";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
+
+	import { NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
+	import { debug } from "@librocco/shared";
+	import type { BookEntry } from "@librocco/db";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs } from "$lib/components";
 
 	import { goto } from "$app/navigation";
 
-	import { writable } from "svelte/store";
-
-	import { InventoryTable, createTable, ProgressBar } from "@librocco/ui";
-	import { debug } from "@librocco/shared";
-
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
+	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { createIntersectionObserver } from "$lib/actions";
 
@@ -46,6 +50,8 @@
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 
+	$: toasts = warehouseToastMessages(warehouse?.displayName);
+
 	// #region warehouse-actions
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
@@ -58,6 +64,16 @@
 		toastSuccess(noteToastMessages("Note").inNoteCreated);
 	};
 	// #endregion warehouse-actions
+
+	// #region book-form
+	$: bookForm = newBookFormStore();
+
+	const handleBookFormSubmit = async (book: BookEntry) => {
+		await db.books().upsert([book]);
+		toastSuccess(toasts.bookDataUpdated(book.isbn));
+		bookForm.close();
+	};
+	// #endregion book-form
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -78,6 +94,13 @@
 	// #endregion table
 
 	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?._id, displayName: warehouse?.displayName });
+
+	const {
+		elements: { trigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = createDialog({
+		forceVisible: true
+	});
 </script>
 
 <Page>
@@ -101,8 +124,21 @@
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
-				<InventoryTable {table} />
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<NewStockTable {table}>
+					<div slot="row-actions" let:row let:rowIx>
+						<button
+							use:melt={$trigger}
+							on:m-click={async () => await bookForm.open(row)}
+							class="rounded p-3 text-gray-500 hover:text-gray-900"
+						>
+							<span class="sr-only">Edit row {rowIx}</span>
+							<span class="aria-hidden">
+								<FileEdit />
+							</span>
+						</button>
+					</div>
+				</NewStockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -112,3 +148,38 @@
 		{/if}
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
+				shadow-lg focus:outline-none"
+				transition:fly={{
+					x: 350,
+					duration: 300,
+					opacity: 1
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<BookDetailForm
+						publisherList={$publisherList}
+						book={$bookForm.open ? $bookForm.book : {}}
+						on:submit={({ detail }) => handleBookFormSubmit(detail)}
+						on:cancel={() => open.set(false)}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
