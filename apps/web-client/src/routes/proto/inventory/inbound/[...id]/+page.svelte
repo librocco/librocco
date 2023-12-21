@@ -182,7 +182,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -190,7 +190,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handleDeleteSelf}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
 					</div>
@@ -237,12 +237,7 @@
 							let:trigger
 							let:open
 						>
-							<button
-								{...trigger}
-								use:trigger.action
-								on:mouseenter={() => open.set(true)}
-								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-							>
+							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 								<span class="sr-only">Edit row {rowIx}</span>
 								<span class="aria-hidden">
 									<MoreVertical />
