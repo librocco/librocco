@@ -15,8 +15,7 @@
 
 {#if $open}
 	<div use:melt={$content} transition:fade={{ duration: 100 }} class="z-10 rounded-md bg-gray-900 shadow">
-		<slot name="tooltip-content">
-			<div use:melt={$arrow} />
-		</slot>
+		<div use:melt={$arrow} />
+		<slot name="tooltip-content" />
 	</div>
 {/if}

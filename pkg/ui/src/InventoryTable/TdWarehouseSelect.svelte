@@ -59,7 +59,7 @@
 	{:else}
 		<div class="flex items-center rounded-md bg-gray-100 shadow-sm">
 			<span class="ml-3 rounded-full bg-teal-400 p-1" />
-			<input disabled type="text" value={warehouseName} class="border-0 bg-gray-100 text-sm text-gray-500" />
+			<input disabled type="text" value={warehouseName} class="w-full border-0 bg-gray-100 text-sm text-gray-500" />
 		</div>
 	{/if}
 </td>

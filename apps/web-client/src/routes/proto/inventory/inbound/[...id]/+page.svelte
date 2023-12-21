@@ -1,24 +1,20 @@
 <script lang="ts">
-	import { Printer, QrCode, Trash2, Loader2 as Loader } from "lucide-svelte";
+	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import {
-		Badge,
-		BadgeColor,
-		createTable,
-		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail,
-		InventoryTable
-	} from "@librocco/ui";
+	import { Badge, BadgeColor, NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
 
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
 
-	import { Breadcrumbs, DropdownWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+	import { Breadcrumbs, DropdownWrapper, PopoverWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -108,18 +104,24 @@
 		bookForm.close();
 	};
 
-	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
-		const { matchTxn, updateTxn } = detail;
+	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+		const data = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(data.get("quantity"));
 
-		await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
+		const transaction = { isbn, warehouseId };
 
-		// TODO: This doesn't seem to work / get called?
-		toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
+		if (currentQty == nextQty) {
+			return;
+		}
+
+		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
+		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
-	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
-		await note.removeTransactions(...e.detail);
-		toastSuccess(toasts.volumeRemoved(e.detail.length));
+	const deleteRow = async (isbn: string, warehouseId: string) => {
+		await note.removeTransactions({ isbn, warehouseId });
+		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
@@ -142,6 +144,13 @@
 	const handlePrint = () => {};
 
 	// #endregion temp
+
+	const {
+		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = createDialog({
+		forceVisible: true
+	});
 </script>
 
 <Page>
@@ -200,14 +209,61 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-scroll">
-				<InventoryTable
-					{table}
-					on:transactionupdate={handleTransactionUpdate}
-					on:removetransactions={handleRemoveTransactions}
-					onEdit={bookForm.open}
-					interactive
-				/>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<NewStockTable {table}>
+					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
+						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
+
+						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
+							<input
+								name="quantity"
+								id="quantity"
+								value={quantity}
+								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
+								type="number"
+								min="1"
+								required
+							/>
+						</form>
+					</div>
+					<div slot="row-actions" let:row let:rowIx>
+						<PopoverWrapper
+							options={{
+								forceVisible: true,
+								positioning: {
+									placement: "left"
+								}
+							}}
+							let:trigger
+							let:open
+						>
+							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+								<span class="sr-only">Edit row {rowIx}</span>
+								<span class="aria-hidden">
+									<MoreVertical />
+								</span>
+							</button>
+
+							<div slot="popover-content" class="rounded bg-gray-900" on:mouseleave={() => open.set(false)}>
+								<button use:melt={$dialogTrigger} class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0">
+									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="aria-hidden">
+										<FileEdit />
+									</span>
+								</button>
+								<button
+									on:click={() => deleteRow(row.isbn, row.warehouseId)}
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+								>
+									<span class="sr-only">Delete row {rowIx}</span>
+									<span class="aria-hidden">
+										<Trash2 />
+									</span>
+								</button>
+							</div>
+						</PopoverWrapper>
+					</div>
+				</NewStockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -217,3 +273,38 @@
 		{/if}
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
+				shadow-lg focus:outline-none"
+				transition:fly={{
+					x: 350,
+					duration: 300,
+					opacity: 1
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<BookDetailForm
+						publisherList={$publisherList}
+						book={$bookForm.open ? $bookForm.book : {}}
+						on:submit={({ detail }) => handleBookFormSubmit(detail)}
+						on:cancel={() => open.set(false)}
+					/>
+				</div>
+			</div>
+		</div>
+	{/if}
+</div>
