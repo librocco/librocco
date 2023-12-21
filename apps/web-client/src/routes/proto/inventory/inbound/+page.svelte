@@ -1,12 +1,15 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+	import { fade, fly } from "svelte/transition";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
-	import { onMount } from "svelte";
 
 	import { Badge, BadgeColor } from "@librocco/ui";
 	import { wrapIter } from "@librocco/shared";
 
-	import { PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -16,6 +19,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { writable } from "svelte/store";
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
@@ -47,6 +51,14 @@
 		await note?.delete({});
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
+
+	const dialog = createDialog({ open: writable(true) });
+	const {
+		elements: { portalled, overlay, trigger },
+		states: { open }
+	} = dialog;
+
+	$: handleDialogConfirm = async () => {};
 </script>
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
@@ -94,10 +106,28 @@
 
 					<div class="flex items-center justify-end gap-3">
 						<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-						<button on:click={handleDeleteNote(noteId)} class="button button-white"><Trash size={20} /></button>
+						<button use:melt={$trigger} on:m-click={() => (handleDialogConfirm = handleDeleteNote(noteId))} class="button button-white"
+							><Trash size={20} /></button
+						>
 					</div>
 				</div>
 			</li>
 		{/each}
 	</ul>
 {/if}
+
+<div use:melt={$portalled}>
+	{#if $open}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }} />
+		<Dialog
+			{dialog}
+			onConfirm={async (closeDialog) => {
+				await handleDialogConfirm();
+				closeDialog();
+			}}
+		>
+			<svelte:fragment slot="title">Permenantly delete note-8?</svelte:fragment>
+			<svelte:fragment slot="description">Once you delete this note, you will not be able to access it again</svelte:fragment>
+		</Dialog>
+	{/if}
+</div>
