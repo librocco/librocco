@@ -39,10 +39,9 @@
 		firstValueFrom(warehouseListStream).then(() => (initialized = true));
 	});
 
-	const handleDeleteWarehouse = (warehouseId: string) => async () => {
+	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
-		// TODO: There should be a 'Warehouse deleted' toast
-		// toastSuccess(warehouseToastMessages("Warehouse").);
+		toastSuccess(warehouseToastMessages(warehouseName).warehouseDeleted);
 	};
 
 	/**
@@ -154,16 +153,16 @@
 							use:melt={$trigger}
 							on:m-click={() => {
 								dialogContent = {
-									onConfirm: handleDeleteWarehouse(warehouseId),
-									title: dialogTitle.delete(warehouse.displayName),
+									onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+									title: dialogTitle.delete(displayName),
 									description: dialogDescription.deleteWarehouse(totalBooks),
 									type: "delete"
 								};
 							}}
 							on:m-keydown={() => {
 								dialogContent = {
-									onConfirm: handleDeleteWarehouse(warehouseId),
-									title: dialogTitle.delete(warehouse.displayName),
+									onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+									title: dialogTitle.delete(displayName),
 									description: dialogDescription.deleteWarehouse(totalBooks),
 									type: "delete"
 								};
@@ -230,8 +229,8 @@
 					closeDialog();
 				}}
 			>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 			</ConfirmActionDialog>
 		{/if}
 	{/if}
