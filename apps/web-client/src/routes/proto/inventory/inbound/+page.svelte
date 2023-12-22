@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
-	import { fade, fly } from "svelte/transition";
+	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
