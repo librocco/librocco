@@ -191,16 +191,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.confirm(note.displayName),
-							description: dialogDescription.commitNote($entries.length, warehouse.displayName),
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.confirm(note.displayName),
-							description: dialogDescription.commitNote($entries.length, warehouse.displayName),
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
 							type: "commit"
 						};
 					}}
