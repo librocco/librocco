@@ -1,17 +1,21 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+	import { fade } from "svelte/transition";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
 	import { firstValueFrom, map } from "rxjs";
 	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
-	import { onMount } from "svelte";
 
 	import { filter } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -47,6 +51,14 @@
 		toastSuccess(noteToastMessages("Note").inNoteCreated);
 		await goto(appPath("inbound", note._id));
 	};
+
+	const dialog = createDialog({ forceVisible: true });
+	const {
+		elements: { portalled, overlay, trigger },
+		states: { open }
+	} = dialog;
+
+	let dialogContent: DialogContent | null = null;
 </script>
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
@@ -96,7 +108,7 @@
 							{...item}
 							use:item.action
 							on:m-click={() => console.log("TODO: open warehouse edit modal")}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Edit class="text-gray-400" size={20} />
 							<span class="text-gray-700">Edit</span>
@@ -108,7 +120,7 @@
 							{href}
 							{...item}
 							use:item.action
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Table2 class="text-gray-400" size={20} />
 							<span class="text-gray-700">View Stock</span>
@@ -117,8 +129,15 @@
 						<div
 							{...item}
 							use:item.action
-							on:m-click={handleDeleteWarehouse(warehouseId)}
-							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+							use:melt={$trigger}
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: handleDeleteWarehouse(warehouseId),
+									title: dialogTitle.delete(warehouse.displayName),
+									description: dialogDescription.deleteWarehouse(totalBooks)
+								};
+							}}
+							class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Trash2 class="text-white" size={20} />
 							<span class="text-white">Delete</span>
@@ -129,3 +148,22 @@
 		{/each}
 	</ul>
 {/if}
+
+<div use:melt={$portalled}>
+	{#if $open}
+		{@const { onConfirm, title, description } = dialogContent};
+
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		<ConfirmActionDialog
+			{dialog}
+			type="delete"
+			onConfirm={async (closeDialog) => {
+				await onConfirm();
+				closeDialog();
+			}}
+		>
+			<svelte:fragment slot="title">{title}</svelte:fragment>
+			<svelte:fragment slot="description">{description}</svelte:fragment>
+		</ConfirmActionDialog>
+	{/if}
+</div>
