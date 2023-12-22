@@ -14,7 +14,7 @@
 </script>
 
 <div
-	class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md p-8 
+	class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md py-6 px-4 
 	{type === 'commit' ? 'bg-white' : 'bg-rose-100'}"
 	use:melt={$content}
 >
