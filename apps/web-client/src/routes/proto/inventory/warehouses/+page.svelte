@@ -14,12 +14,15 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { noteToastMessages, warehouseToastMessages, toastError, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+
+	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
+	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 
 	const db = getDB();
 
@@ -54,11 +57,12 @@
 
 	const dialog = createDialog({ forceVisible: true });
 	const {
-		elements: { portalled, overlay, trigger },
+		elements: { portalled, overlay, trigger, content, title, description },
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent | null = null;
+	let editWarehouse: WarehouseFormData = null;
+	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 </script>
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
@@ -107,8 +111,26 @@
 						<div
 							{...item}
 							use:item.action
-							on:m-click={() => console.log("TODO: open warehouse edit modal")}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							use:melt={$trigger}
+							on:m-click={() => {
+								editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+								dialogContent = {
+									onConfirm: () => {},
+									title: dialogTitle.editWarehouse(),
+									description: dialogDescription.editWarehouse(),
+									type: "edit"
+								};
+							}}
+							on:m-keydown={() => {
+								editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+								dialogContent = {
+									onConfirm: () => {},
+									title: dialogTitle.editWarehouse(),
+									description: dialogDescription.editWarehouse(),
+									type: "edit"
+								};
+							}}
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Edit class="text-gray-400" size={20} />
 							<span class="text-gray-700">Edit</span>
@@ -120,7 +142,7 @@
 							{href}
 							{...item}
 							use:item.action
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Table2 class="text-gray-400" size={20} />
 							<span class="text-gray-700">View Stock</span>
@@ -134,10 +156,19 @@
 								dialogContent = {
 									onConfirm: handleDeleteWarehouse(warehouseId),
 									title: dialogTitle.delete(warehouse.displayName),
-									description: dialogDescription.deleteWarehouse(totalBooks)
+									description: dialogDescription.deleteWarehouse(totalBooks),
+									type: "delete"
 								};
 							}}
-							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+							on:m-keydown={() => {
+								dialogContent = {
+									onConfirm: handleDeleteWarehouse(warehouseId),
+									title: dialogTitle.delete(warehouse.displayName),
+									description: dialogDescription.deleteWarehouse(totalBooks),
+									type: "delete"
+								};
+							}}
+							class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Trash2 class="text-white" size={20} />
 							<span class="text-white">Delete</span>
@@ -151,19 +182,57 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		{@const { onConfirm, title, description } = dialogContent};
+		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent};
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
-		<ConfirmActionDialog
-			{dialog}
-			type="delete"
-			onConfirm={async (closeDialog) => {
-				await onConfirm();
-				closeDialog();
-			}}
-		>
-			<svelte:fragment slot="title">{title}</svelte:fragment>
-			<svelte:fragment slot="description">{description}</svelte:fragment>
-		</ConfirmActionDialog>
+		{#if type === "edit"}
+			<div
+				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
+				use:melt={$content}
+			>
+				<h2 class="sr-only" use:melt={$title}>
+					{dialogTitle}
+				</h2>
+				<p class="sr-only" use:melt={$description}>
+					{dialogDescription}
+				</p>
+				<WarehouseForm
+					data={editWarehouse}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: warehouseSchema,
+						validationMethod: "submit-only",
+						onUpdated: async ({ form }) => {
+							const { id, name, discount } = form?.data;
+							const warehouseInterface = db.warehouse(id);
+
+							try {
+								await warehouseInterface.setName({}, name);
+								await warehouseInterface.setDiscount({}, discount);
+
+								open.set(false);
+								toastSuccess(warehouseToastMessages(name).warehouseUpdated);
+							} catch (err) {
+								toastError(`Error: ${err.message}`);
+							}
+						}
+					}}
+					onCancel={() => open.set(false)}
+				/>
+			</div>
+		{:else}
+			<ConfirmActionDialog
+				{dialog}
+				type="delete"
+				onConfirm={async (closeDialog) => {
+					await onConfirm();
+					closeDialog();
+				}}
+			>
+				<svelte:fragment slot="title">{title}</svelte:fragment>
+				<svelte:fragment slot="description">{description}</svelte:fragment>
+			</ConfirmActionDialog>
+		{/if}
 	{/if}
 </div>
