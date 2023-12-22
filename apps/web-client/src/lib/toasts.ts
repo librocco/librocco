@@ -43,6 +43,7 @@ export const noteToastMessages = (noteName: string, warehouseName = "all") => ({
 
 export const warehouseToastMessages = (warehouseName) => ({
 	warehouseCreated: `${warehouseName} created`,
+	warehouseUpdated: `${warehouseName} updated`,
 	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`
 });
 

@@ -9,3 +9,4 @@ export { default as PopoverWrapper } from "./Melt/PopoverWrapper.svelte";
 export { default as ConfirmActionDialog } from "./ConfirmActionDialog.svelte";
 
 export * from "./Breadcrumbs";
+export * from "./FormControls";
