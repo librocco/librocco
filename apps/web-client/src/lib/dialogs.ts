@@ -8,7 +8,8 @@ export const dialogTitle = {
 	delete: (entity: string) => `Permenantly delete ${entity}?`,
 	commitInbound: (entity: string) => `Commit inbound ${entity}?`,
 	commitOutbound: (entity: string) => `Commit outbound ${entity}?`,
-	editBook: () => "Edit book details"
+	editBook: () => "Edit book details",
+	editWarehouse: () => "Update book details"
 };
 
 export const dialogDescription = {
@@ -16,5 +17,6 @@ export const dialogDescription = {
 	deleteWarehouse: (bookCount: number) => `Once you delete this warehouse ${bookCount} books will be removed from your stock`,
 	commitInbound: (bookCount: number, warehouseName: string) => `${bookCount} books will be added to ${warehouseName}`,
 	commitOutbound: (bookCount: number) => `${bookCount} books will be removed from your stock`,
-	editBook: () => "Manually edit book details"
+	editBook: () => "Update book details",
+	editWarehouse: () => "Update warehouse details"
 };
