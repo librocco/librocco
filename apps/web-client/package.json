@@ -36,7 +36,7 @@
 		"typescript": "^4.8.4",
 		"vite": "~4.0.0",
 		"@sveltejs/adapter-static": "^2.0.2",
-		"vitest": "~0.21.1",
+		"vitest": "~1.1.0",
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
 		"rollup-plugin-node-polyfills": "~0.2.1",
@@ -48,7 +48,8 @@
 		"fast-glob": "~3.3.0",
 		"@melt-ui/svelte": "~0.65.1",
 		"@melt-ui/pp": "~0.1.4",
-		"svelte-sequential-preprocessor": "~2.0.1"
+		"svelte-sequential-preprocessor": "~2.0.1",
+		"@vitest/ui": "~1.1.0"
 	},
 	"type": "module",
 	"dependencies": {
