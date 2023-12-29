@@ -50,9 +50,9 @@
 							</dl>
 						</th>
 						<td class="py-4 px-3 text-left">
-							<span class="badge badge-lg {hasCopies ? 'badge-success' : 'badge-neutral'}"
-								>{hasCopies ? `${quantity} copy(s)` : "No copies"}</span
-							>
+							<span class="badge badge-lg {hasCopies ? 'badge-success' : 'badge-neutral'}">
+								{hasCopies ? `${quantity} copy(s)` : "No copies"}
+							</span>
 						</td>
 						<td class="py-4 px-3 text-left">
 							{price}
