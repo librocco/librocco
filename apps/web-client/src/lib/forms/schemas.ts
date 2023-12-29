@@ -7,3 +7,15 @@ export const warehouseSchema = z.object({
 	name: z.string(),
 	discount: z.number()
 });
+
+export type BookFormData = SuperValidated<typeof bookScehma>["data"];
+export const bookScehma = z.object({
+	isbn: z.string(),
+	title: z.string(),
+	price: z.number(),
+	year: z.string().optional(),
+	authors: z.string().optional(),
+	publisher: z.string().optional(),
+	editedBy: z.string().optional(),
+	outOfPrint: z.boolean().optional()
+});
