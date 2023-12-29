@@ -7,19 +7,23 @@ const plugins = [
 		addComponents({
 			// Buttons
 			".button": {
-				"@apply inline-flex items-center px-4 py-2 rounded-md gap-2": {}
+				"@apply inline-flex items-center px-4 py-2 rounded-md gap-2 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 focus:ring-offset-white":
+					{}
 			},
 			".button-text": {
 				"@apply text-sm font-medium leading-5": {}
 			},
+			".button-red": {
+				"@apply bg-red-600 text-white active:bg-red-400 hover:bg-red-200": {}
+			},
 			".button-green": {
-				"@apply bg-teal-500 text-green-50 active:bg-teal-400": {}
+				"@apply bg-teal-500 text-green-50 active:bg-teal-400 hover:bg-teal-700": {}
 			},
 			".button-white": {
-				"@apply bg-white border border-gray-300 text-gray-500 active:bg-gray-50": {}
+				"@apply bg-white border border-gray-300 text-gray-500 active:bg-gray-50 hover:bg-gray-50": {}
 			},
 			".button-alert": {
-				"@apply bg-pink-50 text-pink-700 active:bg-pink-100": {}
+				"@apply bg-pink-50 text-pink-700 active:bg-pink-100 hover:bg-pink-100": {}
 			},
 
 			// Lists
