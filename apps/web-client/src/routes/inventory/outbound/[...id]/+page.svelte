@@ -7,6 +7,15 @@
 	import { writable } from "svelte/store";
 
 	import { NoteState, NoteTempState } from "@librocco/shared";
+	import type { BookEntry } from "@librocco/db";
+
+	import { noteStates } from "$lib/enums/inventory";
+
+	import type { PageData } from "./$types";
+
+	import { getDB } from "$lib/db";
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+
 	import {
 		InventoryPage,
 		Pagination,
@@ -28,16 +37,7 @@
 		ScanInput,
 		Button,
 		ButtonColor
-	} from "@librocco/ui";
-
-	import type { BookEntry } from "@librocco/db";
-
-	import { noteStates } from "$lib/enums/inventory";
-
-	import type { PageData } from "./$types";
-
-	import { getDB } from "$lib/db";
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	} from "$lib/components";
 
 	import { createNoteStores } from "$lib/stores/inventory";
 	import { newBookFormStore } from "$lib/stores/book_form";
