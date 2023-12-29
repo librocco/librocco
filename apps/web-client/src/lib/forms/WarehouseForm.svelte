@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { ZodValidation, SuperValidated } from "sveltekit-superforms";
+	import type { ZodValidation } from "sveltekit-superforms";
 	import type { SuperForm } from "sveltekit-superforms/client";
 	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
 
@@ -24,11 +24,11 @@
 	const discountProxy = numberProxy(formStore, "discount", { emptyIfZero: false, empty: "undefined" });
 </script>
 
-<form class="flex max-w-lg flex-col gap-y-6" aria-label="Edit warehouse details" use:enhance method="POST">
+<form class="flex max-w-lg flex-col gap-y-6" aria-label="Edit warehouse details" use:enhance method="POST" id="warehouse-form">
 	<div class="flex flex-col justify-between gap-y-6 p-6">
 		<input type="hidden" name="id" value={$formStore.id} />
 		<div class="basis-full">
-			<Input bind:value={$formStore.name} name="name" label="Name" placeholder="Dish " {...$constraints.name} />
+			<Input bind:value={$formStore.name} name="name" label="Name" placeholder="Warehouse name" {...$constraints.name} />
 		</div>
 		<div class="w-1/2">
 			<Input
