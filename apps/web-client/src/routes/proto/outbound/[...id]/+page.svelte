@@ -4,20 +4,10 @@
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
-	import { map } from "rxjs";
 
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import {
-		Badge,
-		BadgeColor,
-		NewOutboundTable,
-		createTable,
-		TdWarehouseSelect,
-		BookDetailForm,
-		type WarehouseChangeDetail
-	} from "@librocco/ui";
 
 	import type { BookEntry } from "@librocco/db";
 
@@ -33,6 +23,13 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		ConfirmActionDialog
+		Badge,
+		BadgeColor,
+		createTable,
+		BookDetailForm,
+		TdWarehouseSelect,
+		NewOutboundTable,
+		type WarehouseChangeDetail
 	} from "$lib/components";
 
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
@@ -235,7 +232,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -243,7 +240,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,

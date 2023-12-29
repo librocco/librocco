@@ -6,13 +6,11 @@
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 
-	import { Badge, BadgeColor } from "@librocco/ui";
-
 	import { goto } from "$app/navigation";
 
-	import { Page, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
-
 	import { getDB } from "$lib/db";
+
+	import { Page, PlaceholderBox, ConfirmActionDialog, Badge, BadgeColor } from "$lib/components";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
