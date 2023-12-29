@@ -21,7 +21,6 @@ export * from "./InventoryTable";
 export * from "./DescriptionLists";
 
 export * from "./Button"; // TODO: remove (replace with Tailwind classes)
-export * from "./Badge"; // TODO: remove (replace with Tailwind classes)
 
 // #region TEMP
 export * from "./old";

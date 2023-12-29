@@ -1,14 +1,19 @@
 <script lang="ts">
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
-	import { Badge, BadgeColor, BadgeSize } from "../Badge";
 	import { Button, ButtonColor } from "../Button";
 	import { Checkbox } from "../FormFields";
 
 	import type { RemoteDbConfig } from "$lib/components";
 
+	const stateColorLookup = {
+		success: "badge-success",
+		warning: "badge-warning",
+		error: "badge-error"
+	};
+
 	export let config: RemoteDbConfig;
-	export let status: { color: BadgeColor; message: string };
+	export let status: { state: keyof typeof stateColorLookup; message: string };
 
 	export let onEdit: () => void = () => {};
 
@@ -26,7 +31,7 @@
 		<dl class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="flex basis-full flex-col gap-y-2">
 				<dt class="text-sm font-medium text-gray-700">Status</dt>
-				<dd><Badge label={status.message} color={status.color} size={BadgeSize.LG} /></dd>
+				<dd><span class="badge badge-lg {stateColorLookup[status.state]}">{status.message}</span></dd>
 				<slot name="info" />
 			</div>
 			<div class="flex basis-full flex-col gap-y-3">

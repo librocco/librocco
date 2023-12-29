@@ -10,7 +10,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { Page, PlaceholderBox, ConfirmActionDialog, Badge, BadgeColor } from "$lib/components";
+	import { Page, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -111,7 +111,7 @@
 
 						<div class="max-w-1/2 flex w-full items-center justify-between">
 							{#if note.updatedAt}
-								<Badge label="Last updated: {updatedAt}" color={BadgeColor.Success} />
+								<span class="badge badge-base badge-success">Last updated: {updatedAt}</span>
 							{:else}
 								<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
 								<div />

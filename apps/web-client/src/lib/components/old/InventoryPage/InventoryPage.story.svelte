@@ -2,17 +2,7 @@
 	import { Search, Check, ChevronDown } from "lucide-svelte";
 	import type { Hst } from "@histoire/plugin-svelte";
 
-	import {
-		Pagination,
-		SidebarItem,
-		SidebarItemGroup,
-		NewEntitySideNavButton,
-		SideBarNav,
-		Header,
-		Badge,
-		BadgeColor,
-		TextField
-	} from "$lib/components";
+	import { Pagination, SidebarItem, SidebarItemGroup, NewEntitySideNavButton, SideBarNav, Header, TextField } from "$lib/components";
 
 	import InventoryPage from "./InventoryPage.svelte";
 
@@ -137,7 +127,7 @@
 							<Check class="h-5 w-5" slot="startAdornment" />
 							<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
 						</TextField>
-						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+						<span class="badge badge-base badge-success">Last updated: 20:58</span>
 					</div>
 				</div>
 				<TextField name="search" placeholder="Serach">
@@ -174,7 +164,7 @@
 							<Check class="h-5 w-5" slot="startAdornment" />
 							<ChevronDown class="h-5 w-5 text-gray-500" slot="endAdornment" />
 						</TextField>
-						<Badge label="Last updated: 20:58" color={BadgeColor.Success} />
+						<span class="badge badge-base badge-success">Last updated: 20:58</span>
 					</div>
 				</div>
 				<TextField name="search" placeholder="Serach">

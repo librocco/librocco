@@ -1,4 +1,4 @@
-import { createToaster, ToastType, type ToastData, BadgeColor } from "$lib/components";
+import { createToaster, ToastType, type ToastData } from "$lib/components";
 
 import type { ReplicationState } from "./stores/replication";
 
@@ -50,21 +50,21 @@ export const warehouseToastMessages = (warehouseName) => ({
 
 // Aliging with BadgeColor enum here as it this color+message combo is used in the RemoteDb Description List
 export const replicationStatusMessages = {
-	INIT: { color: BadgeColor.Success, message: "Connecting to remote database" },
-	"ACTIVE:REPLICATING": { color: BadgeColor.Success, message: "Syncing with database" },
-	"ACTIVE:INDEXING": { color: BadgeColor.Success, message: "Building indices" },
-	COMPLETED: { color: BadgeColor.Success, message: "Sync complete" },
-	PAUSED: { color: BadgeColor.Warning, message: "Sync paused. Status unknown" },
-	"PAUSED:IDLE": { color: BadgeColor.Success, message: "Sync is up-to-date. Waiting for changes..." },
-	"FAILED:CANCEL": { color: BadgeColor.Error, message: "Sync cancelled. Connection closed" },
-	"FAILED:ERROR": { color: BadgeColor.Error, message: "Sync error. Connection closed" },
-	"PAUSED:ERROR": { color: BadgeColor.Error, message: "Sync error. Retrying..." }
-};
+	INIT: { state: "success", message: "Connecting to remote database" },
+	"ACTIVE:REPLICATING": { state: "success", message: "Syncing with database" },
+	"ACTIVE:INDEXING": { state: "success", message: "Building indices" },
+	COMPLETED: { state: "success", message: "Sync complete" },
+	PAUSED: { state: "warning", message: "Sync paused. Status unknown" },
+	"PAUSED:IDLE": { state: "success", message: "Sync is up-to-date. Waiting for changes..." },
+	"FAILED:CANCEL": { state: "error", message: "Sync cancelled. Connection closed" },
+	"FAILED:ERROR": { state: "error", message: "Sync error. Connection closed" },
+	"PAUSED:ERROR": { state: "error", message: "Sync error. Retrying..." }
+} as const;
 
-export const toastReplicationStatus = (state: ReplicationState) => {
-	const { color, message } = replicationStatusMessages[state];
+export const toastReplicationStatus = (status: ReplicationState) => {
+	const { state, message } = replicationStatusMessages[status];
 
-	const toastFn = color === BadgeColor.Success ? toastSuccess : color === BadgeColor.Error ? toastError : toastWarning;
+	const toastFn = state === "success" ? toastSuccess : state === "error" ? toastError : toastWarning;
 
 	return toastFn(message);
 };
