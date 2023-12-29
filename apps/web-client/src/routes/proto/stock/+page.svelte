@@ -7,7 +7,7 @@
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
-	import { NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
+	import { NewStockTable, createTable, BookDetailForm } from "$lib/components";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 	import { newBookFormStore } from "$lib/stores/book_form";

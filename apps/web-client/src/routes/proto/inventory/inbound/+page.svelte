@@ -6,10 +6,9 @@
 	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 
-	import { Badge, BadgeColor } from "@librocco/ui";
 	import { wrapIter } from "@librocco/shared";
 
-	import { PlaceholderBox, ConfirmActionDialog } from "$lib/components";
+	import { PlaceholderBox, ConfirmActionDialog, Badge, BadgeColor } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
