@@ -3,7 +3,7 @@
 
 	import type { RemoveTransactionsDetail, TransactionUpdateDetail } from "./types";
 
-	import { Checkbox, Button, ButtonColor, BadgeSize, type BookEntry, createTable, type InventoryTableData, Badge } from "$lib/components";
+	import { Checkbox, Button, ButtonColor, type BookEntry, createTable, type InventoryTableData } from "$lib/components";
 	import QuantityInput from "./QuantityInput.svelte";
 
 	import { thRowBaseStyles } from "./utils";
@@ -196,7 +196,7 @@
 						</form>
 					{:else}
 						<!-- For non interactive variant, show only the (non-interative) badge element -->
-						<Badge label={quantity.toString()} size={BadgeSize.LG} />
+						<span class="badge badge-lg badge-neutral">{quantity.toString()}</span>
 					{/if}
 				</td>
 				<td data-property="price" class="py-4 px-3 text-left">

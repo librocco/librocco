@@ -19,8 +19,6 @@
 	import {
 		InventoryPage,
 		Pagination,
-		Badge,
-		BadgeColor,
 		OutNoteTable,
 		createTable,
 		Header,
@@ -180,7 +178,7 @@
 					</h2>
 					{#if $updatedAt}
 						<div>
-							<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+							<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 						</div>
 					{/if}
 				</div>

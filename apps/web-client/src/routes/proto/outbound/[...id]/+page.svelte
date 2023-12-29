@@ -22,9 +22,7 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog
-		Badge,
-		BadgeColor,
+		ConfirmActionDialog,
 		createTable,
 		BookDetailForm,
 		TdWarehouseSelect,
@@ -198,7 +196,7 @@
 
 				<div class="h-5">
 					{#if $updatedAt}
-						<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
