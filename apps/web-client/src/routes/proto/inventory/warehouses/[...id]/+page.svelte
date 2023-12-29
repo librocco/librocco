@@ -5,11 +5,10 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
 	import { debug } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs } from "$lib/components";
+	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, NewStockTable, createTable, BookDetailForm } from "$lib/components";
 
 	import { goto } from "$app/navigation";
 

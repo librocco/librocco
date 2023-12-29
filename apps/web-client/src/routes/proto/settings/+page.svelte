@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { Search } from "lucide-svelte";
 
-	import { RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
-
 	import { goto } from "$app/navigation";
 
-	import { Page } from "$lib/components";
+	import { Page, RemoteDbForm, RemoteDbData, ProgressBar } from "$lib/components";
 
 	import { remoteDbStore } from "$lib/stores";
 	import { replicationStatusMessages } from "$lib/toasts";
