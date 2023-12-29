@@ -2,7 +2,7 @@
 	import Transition from "svelte-transition";
 	import type { createCombobox } from "svelte-headlessui";
 
-	import { Badge, BadgeColor, BadgeSize, type BookCoreRowData } from "$lib/components";
+	import type { BookCoreRowData } from "$lib/components";
 
 	import { thRowBaseStyles } from "./utils";
 
@@ -50,11 +50,9 @@
 							</dl>
 						</th>
 						<td class="py-4 px-3 text-left">
-							<Badge
-								label={hasCopies ? `${quantity} copy(s)` : "No copies"}
-								color={hasCopies ? BadgeColor.Success : BadgeColor.Neutral}
-								size={BadgeSize.LG}
-							/>
+							<span class="badge badge-lg {hasCopies ? 'badge-success' : 'badge-neutral'}"
+								>{hasCopies ? `${quantity} copy(s)` : "No copies"}</span
+							>
 						</td>
 						<td class="py-4 px-3 text-left">
 							{price}

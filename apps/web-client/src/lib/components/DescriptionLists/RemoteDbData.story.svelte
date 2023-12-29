@@ -3,7 +3,7 @@
 	import { logEvent } from "histoire/client";
 
 	import RemoteDbData from "./RemoteDbData.svelte";
-	import { ProgressBar, BadgeColor } from "$lib/components";
+	import { ProgressBar } from "$lib/components";
 
 	export let Hst: Hst;
 
@@ -14,11 +14,6 @@
 		live: true,
 		retry: true
 	};
-
-	const status = {
-		color: BadgeColor.Success,
-		message: "Active"
-	};
 </script>
 
 <Hst.Story title="Description Lists / RemoteDbData" layout={{ type: "grid", width: 600 }}>
@@ -26,7 +21,7 @@
 		<RemoteDbData
 			{config}
 			status={{
-				color: BadgeColor.Success,
+				state: "success",
 				message: "Active"
 			}}
 			onEdit={() => logEvent("edit", "Cancel & edit")}
@@ -41,7 +36,7 @@
 		<RemoteDbData
 			{config}
 			status={{
-				color: BadgeColor.Error,
+				state: "error",
 				message: "Error"
 			}}
 			onEdit={() => logEvent("edit", "Cancel & edit")}
