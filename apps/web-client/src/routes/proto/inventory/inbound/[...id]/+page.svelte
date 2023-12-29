@@ -14,11 +14,20 @@
 
 	import type { PageData } from "./$types";
 
-	import { Breadcrumbs, DropdownWrapper, PopoverWrapper, Page, PlaceholderBox, createBreadcrumbs } from "$lib/components";
+	import {
+		Breadcrumbs,
+		DropdownWrapper,
+		PopoverWrapper,
+		Page,
+		PlaceholderBox,
+		createBreadcrumbs,
+		ConfirmActionDialog
+	} from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
 	import { newBookFormStore } from "$lib/stores/book_form";
@@ -145,12 +154,15 @@
 
 	// #endregion temp
 
+	const dialog = createDialog({
+		forceVisible: true
+	});
 	const {
 		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
 		states: { open }
-	} = createDialog({
-		forceVisible: true
-	});
+	} = dialog;
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" } = null;
 </script>
 
 <Page>
@@ -173,7 +185,26 @@
 			</div>
 
 			<div class="flex items-center gap-x-3">
-				<button on:click={handleCommitSelf} class="button button-green">
+				<button
+					class="button button-green"
+					use:melt={$dialogTrigger}
+					on:m-click={() => {
+						dialogContent = {
+							onConfirm: handleCommitSelf,
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							type: "commit"
+						};
+					}}
+					on:m-keydown={() => {
+						dialogContent = {
+							onConfirm: handleCommitSelf,
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							type: "commit"
+						};
+					}}
+				>
 					<span class="button-text">Commit</span>
 				</button>
 
@@ -189,8 +220,24 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={handleDeleteSelf}
+						use:melt={$dialogTrigger}
 						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						on:m-click={() => {
+							dialogContent = {
+								onConfirm: handleDeleteSelf,
+								title: dialogTitle.delete(note.displayName),
+								description: dialogDescription.deleteNote(),
+								type: "delete"
+							};
+						}}
+						on:m-keydown={() => {
+							dialogContent = {
+								onConfirm: handleDeleteSelf,
+								title: dialogTitle.delete(note.displayName),
+								description: dialogDescription.deleteNote(),
+								type: "delete"
+							};
+						}}
 					>
 						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
 					</div>
@@ -244,8 +291,27 @@
 								</span>
 							</button>
 
-							<div slot="popover-content" class="rounded bg-gray-900" on:mouseleave={() => open.set(false)}>
-								<button use:melt={$dialogTrigger} class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0">
+							<div slot="popover-content" class="rounded bg-gray-900">
+								<button
+									use:melt={$dialogTrigger}
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									on:m-click={() => {
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editBook(),
+											description: dialogDescription.editBook(),
+											type: "edit-row"
+										};
+									}}
+									on:m-keydown={() => {
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editBook(),
+											description: dialogDescription.editBook(),
+											type: "edit-row"
+										};
+									}}
+								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
 										<FileEdit />
@@ -276,7 +342,10 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
+		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
+
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
 				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
@@ -289,8 +358,8 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />
@@ -305,6 +374,18 @@
 					/>
 				</div>
 			</div>
-		</div>
+		{:else}
+			<ConfirmActionDialog
+				{dialog}
+				{type}
+				onConfirm={async (closeDialog) => {
+					await onConfirm();
+					closeDialog();
+				}}
+			>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+			</ConfirmActionDialog>
+		{/if}
 	{/if}
 </div>

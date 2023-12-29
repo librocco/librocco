@@ -1,17 +1,21 @@
 <script lang="ts">
+	import { onMount } from "svelte";
+	import { fade } from "svelte/transition";
+
+	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
-	import { onMount } from "svelte";
 
 	import { Badge, BadgeColor } from "@librocco/ui";
 
 	import { goto } from "$app/navigation";
 
-	import { Page, PlaceholderBox } from "$lib/components";
+	import { Page, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
@@ -49,6 +53,14 @@
 		toastSuccess(noteToastMessages("Note").outNoteCreated);
 		await goto(appPath("outbound", note._id));
 	};
+
+	const dialog = createDialog({ forceVisible: true });
+	const {
+		elements: { portalled, overlay, trigger },
+		states: { open }
+	} = dialog;
+
+	let dialogContent: DialogContent | null = null;
 </script>
 
 <Page>
@@ -109,7 +121,22 @@
 
 							<div class="flex items-center justify-end gap-3">
 								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-								<button on:click={handleDeleteNote(noteId)} class="button button-white"><Trash size={20} /></button>
+								<button
+									use:melt={$trigger}
+									class="button button-white"
+									aria-label="Delete note: {note.displayName}"
+									on:m-click={() => {
+										dialogContent = {
+											onConfirm: handleDeleteNote(noteId),
+											title: dialogTitle.delete(note.displayName),
+											description: dialogDescription.deleteNote()
+										};
+									}}
+								>
+									<span aria-hidden="true">
+										<Trash size={20} />
+									</span>
+								</button>
 							</div>
 						</div>
 					</li>
@@ -118,3 +145,22 @@
 		{/if}
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		{@const { onConfirm, title, description } = dialogContent};
+
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		<ConfirmActionDialog
+			{dialog}
+			type="delete"
+			onConfirm={async (closeDialog) => {
+				await onConfirm();
+				closeDialog();
+			}}
+		>
+			<svelte:fragment slot="title">{title}</svelte:fragment>
+			<svelte:fragment slot="description">{description}</svelte:fragment>
+		</ConfirmActionDialog>
+	{/if}
+</div>
