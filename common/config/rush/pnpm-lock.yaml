@@ -177,8 +177,8 @@ importers:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
       svelte-headlessui:
-        specifier: ~0.0.22
-        version: 0.0.33
+        specifier: 0.0.25
+        version: 0.0.25(svelte@3.58.0)
       svelte-htm:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
@@ -9870,6 +9870,14 @@ packages:
       svelte: 3.x
     dependencies:
       svelte: 3.58.0
+    dev: true
+
+  /svelte-headlessui@0.0.25(svelte@3.58.0):
+    resolution: {integrity: sha512-jJ/XX+v9IUJQShbvusudctyi5RM3z/hfpm04Bv9JkR3Nd2hyO1rWP4uGpKAEU+ltDX2/sM4yOwcTwql+wURkTA==}
+    dependencies:
+      svelte-transition: 0.0.10(svelte@3.58.0)
+    transitivePeerDependencies:
+      - svelte
     dev: true
 
   /svelte-headlessui@0.0.33:
