@@ -1,4 +1,4 @@
-import { createToaster, ToastType, type ToastData, BadgeColor } from "@librocco/ui";
+import { createToaster, ToastType, type ToastData, BadgeColor } from "$lib/components";
 
 import type { ReplicationState } from "./stores/replication";
 
