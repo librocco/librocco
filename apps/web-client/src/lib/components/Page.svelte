@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BookCopy, Library, Package, PackageMinus, Search, Settings } from "lucide-svelte";
+	import { BookCopy, Library, PackageMinus, Search, Settings } from "lucide-svelte";
 
 	import { page } from "$app/stores";
 
@@ -56,6 +56,7 @@
 						>
 							<li {...trigger} use:trigger.action>
 								<a
+									data-linkfor={label}
 									{href}
 									class="inline-block rounded-sm p-4 text-gray-400 {$page.url.pathname.startsWith(href)
 										? 'bg-gray-900'
