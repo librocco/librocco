@@ -47,7 +47,7 @@
 {#if $page.params.id}
 	<slot />
 {:else}
-	<Page>
+	<Page view="inventory">
 		<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 			<Search {...iconProps} />
 			<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
