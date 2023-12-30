@@ -32,7 +32,9 @@ test('should create a new outbound note, on "Create note" button click and show 
 	await sidebar.assertLinks(["New Note"]);
 });
 
-test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
+/** @TODO dashboard 2.0 */ test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({
+	page
+}) => {
 	const dashboard = getDashboard(page);
 
 	const sidebar = dashboard.sidebar();
