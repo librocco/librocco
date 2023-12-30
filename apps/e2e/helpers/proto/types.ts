@@ -68,13 +68,17 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 }
 
 export interface ContentInterface extends Locator {
-	heading(title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface;
+	header(): ContentHeaderInterface;
 	// updatedAt(opts?: WaitForOpts): Promise<Date>;
 	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
 	// discount(): WarehouseDiscountInterface;
 	// statePicker(): StatePickerInterface;
 	// scanField(): ScanFieldInterface;
 	// entries(view: WebClientView): EntriesTableInterface;
+}
+
+export interface ContentHeaderInterface extends Locator {
+	title: () => Asserter<string>;
 }
 
 // export interface ContentHeadingInterface extends Locator {

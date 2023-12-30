@@ -12,17 +12,17 @@ test("should navigate using the side nav", async ({ page }) => {
 
 	// Should load 'stock' page as default
 	await dashboard.view("search").waitFor();
-	await dashboard.content().heading("Stock").waitFor();
+	await dashboard.content().header().title().assert("Stock");
 
 	// Navigate to 'inventory' page
 	await dashboard.navigate("inventory");
-	await dashboard.content().heading("Inventory").waitFor();
+	await dashboard.content().header().title().assert("Inventory");
 
 	// Navigate to 'outbound' page
 	await dashboard.navigate("outbound");
-	await dashboard.content().heading("Outbound").waitFor();
+	await dashboard.content().header().title().assert("Outbound");
 
 	// Navigate to 'settings' page
 	await dashboard.navigate("settings");
-	await dashboard.content().heading("Settings").waitFor();
+	await dashboard.content().header().title().assert("Settings");
 });

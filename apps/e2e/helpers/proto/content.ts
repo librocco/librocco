@@ -5,12 +5,15 @@ import { type Locator, type Page } from "@playwright/test";
 import type {
 	WaitForOpts,
 	ContentInterface,
-	ContentHeadingInterface,
+	// ContentHeadingInterface,
 	// StatePickerInterface,
-	GetByTextOpts
+	// GetByTextOpts,
+	ContentHeaderInterface
 	// ScanFieldInterface
 	// ViewName
 } from "./types";
+
+import { assertionTimeout } from "@/constants";
 
 // import { assertionTimeout } from "@/constants";
 
@@ -22,7 +25,7 @@ import type {
 export function getContent(page: Page): ContentInterface {
 	const container = page.locator("#content");
 
-	const heading = (title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface => getHeading(container, title, opts);
+	const header = () => getHeader(container);
 
 	// 	const updatedAt = async (opts?: WaitForOpts): Promise<Date> => {
 	// 		const updatedAtElement = container.getByText("Last updated:");
@@ -63,40 +66,20 @@ export function getContent(page: Page): ContentInterface {
 	// const discount = () => getDiscount(container);
 
 	// return Object.assign(container, { heading, updatedAt, assertUpdatedAt, statePicker, scanField, entries, discount });
-	return Object.assign(container, { heading });
+	return Object.assign(container, { header });
 }
 
-function getHeading(content: Locator, title?: string, opts?: GetByTextOpts): ContentHeadingInterface {
-	const container = content.getByRole("heading");
+function getHeader(content: Locator): ContentHeaderInterface {
+	const container = content.locator("header");
 
-	// const element = title ? container.getByText(title, opts) : container.locator("p");
-	const element = title ? container.getByText(title, opts) : container;
+	const titleElement = container.locator("h1");
 
-	// 	const getTitle = async (opts?: WaitForOpts) => {
-	// 		try {
-	// 			const textContent = await element.textContent({ timeout: assertionTimeout, ...opts });
-	// 			return textContent.trim();
-	// 		} catch {
-	// 			return "";
-	// 		}
-	// 	};
+	const title = () => ({
+		assert: (text: string, opts?: WaitForOpts) =>
+			titleElement.getByText(text, { exact: true }).waitFor({ timeout: assertionTimeout, ...opts })
+	});
 
-	// const textInput = () => container.getByRole("textbox");
-
-	// 	const rename = async (newName: string, opts?: WaitForOpts) => {
-	// 		await element.click();
-	//
-	// 		await textInput().fill(newName);
-	// 		await textInput().press("Enter");
-	//
-	// 		await getDashboard(container.page())
-	// 			.sidebar()
-	// 			.link(newName)
-	// 			.waitFor({ timeout: assertionTimeout, ...opts });
-	// 	};
-
-	// return Object.assign(element, { getTitle, rename, textInput });
-	return element;
+	return Object.assign(container, { title });
 }
 
 // function getStatePicker(content: Locator): StatePickerInterface {
