@@ -1,13 +1,11 @@
 import type { Locator } from "@playwright/test";
 
-import type { NoteState, NoteTempState } from "@librocco/shared";
+import type { NoteState, NoteTempState, WebClientView } from "@librocco/shared";
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 /** A type of display row property names, without 'warehouseId' as it's never displayed */
 export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
-
-export type ViewName = "search" | "inventory" | "outbound" | "settings";
 
 interface Asserter<T> {
 	assert: (value: T, opts?: WaitForOpts) => Promise<void>;
@@ -37,10 +35,10 @@ export interface DisplayRow {
 export interface DashboardInterface {
 	// waitFor: Locator["waitFor"];
 	nav(): MainNavInterface;
-	navigate(to: ViewName, opts?: WaitForOpts): Promise<void>;
-	// view(name: ViewName): ViewInterface;
+	navigate(to: WebClientView, opts?: WaitForOpts): Promise<void>;
+	view(name: WebClientView): ViewInterface;
 	// sidebar(): SidebarInterface;
-	// content(): ContentInterface;
+	content(): ContentInterface;
 	// bookForm(): BookFormInterface;
 }
 
@@ -49,7 +47,7 @@ export interface NavInterface extends Locator {
 }
 
 export interface MainNavInterface extends Locator {
-	navigate(to: ViewName): Promise<void>;
+	navigate(to: WebClientView): Promise<void>;
 }
 
 export type ViewInterface = Locator;
@@ -71,19 +69,20 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 
 export interface ContentInterface extends Locator {
 	heading(title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface;
-	updatedAt(opts?: WaitForOpts): Promise<Date>;
-	assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
-	discount(): WarehouseDiscountInterface;
-	statePicker(): StatePickerInterface;
-	scanField(): ScanFieldInterface;
-	entries(view: ViewName): EntriesTableInterface;
+	// updatedAt(opts?: WaitForOpts): Promise<Date>;
+	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
+	// discount(): WarehouseDiscountInterface;
+	// statePicker(): StatePickerInterface;
+	// scanField(): ScanFieldInterface;
+	// entries(view: WebClientView): EntriesTableInterface;
 }
 
-export interface ContentHeadingInterface extends Locator {
-	getTitle(opts?: WaitForOpts): Promise<string>;
-	textInput(): Locator;
-	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
-}
+// export interface ContentHeadingInterface extends Locator {
+// 	getTitle(opts?: WaitForOpts): Promise<string>;
+// 	textInput(): Locator;
+// 	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
+// }
+export type ContentHeadingInterface = Locator;
 
 export interface StatePickerInterface extends Locator {
 	getState(opts?: WaitForOpts): Promise<NoteState | NoteTempState>;
