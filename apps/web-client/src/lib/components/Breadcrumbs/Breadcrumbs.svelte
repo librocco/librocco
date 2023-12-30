@@ -6,7 +6,7 @@
 	export let links: Breadcrumb[];
 </script>
 
-<nav {...$$restProps}>
+<nav id="breadcrumbs" {...$$restProps}>
 	<ul class="flex select-none items-center gap-2 text-sm font-medium leading-5 text-gray-500">
 		{#each links as { label, href }, i}
 			{@const isLast = i === links.length - 1}

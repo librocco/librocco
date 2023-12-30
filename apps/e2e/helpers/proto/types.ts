@@ -1,4 +1,5 @@
-import type { Locator } from "@playwright/test";
+/* eslint-disable @typescript-eslint/ban-types */
+import type { Locator, Page } from "@playwright/test";
 
 import type { NoteState, NoteTempState, WebClientView } from "@librocco/shared";
 
@@ -6,6 +7,11 @@ export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 /** A type of display row property names, without 'warehouseId' as it's never displayed */
 export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
+
+export type DashboardNode<T = {}> = T &
+	Locator & {
+		dashboard: () => DashboardInterface;
+	};
 
 interface Asserter<T> {
 	assert: (value: T, opts?: WaitForOpts) => Promise<void>;
@@ -33,12 +39,14 @@ export interface DisplayRow {
 }
 
 export interface DashboardInterface {
-	// waitFor: Locator["waitFor"];
+	page(): Page;
+	waitFor: Locator["waitFor"];
 	nav(): MainNavInterface;
 	navigate(to: WebClientView, opts?: WaitForOpts): Promise<void>;
 	view(name: WebClientView): ViewInterface;
-	// sidebar(): SidebarInterface;
 	content(): ContentInterface;
+	// sidebar(): SidebarInterface;
+	disableNotifications: () => Promise<void>;
 	// bookForm(): BookFormInterface;
 }
 
@@ -46,11 +54,11 @@ export interface NavInterface extends Locator {
 	link(label: string, opts?: { active?: boolean }): Locator;
 }
 
-export interface MainNavInterface extends Locator {
+export type MainNavInterface = DashboardNode<{
 	navigate(to: WebClientView): Promise<void>;
-}
+}>;
 
-export type ViewInterface = Locator;
+export type ViewInterface = DashboardNode;
 
 export interface SidebarInterface extends Locator {
 	createWarehouse(opts?: WaitForOpts): Promise<void>;
@@ -67,7 +75,7 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 	assertClosed(): Promise<void>;
 }
 
-export interface ContentInterface extends Locator {
+export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
 	// updatedAt(opts?: WaitForOpts): Promise<Date>;
 	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
@@ -75,18 +83,17 @@ export interface ContentInterface extends Locator {
 	// statePicker(): StatePickerInterface;
 	// scanField(): ScanFieldInterface;
 	// entries(view: WebClientView): EntriesTableInterface;
-}
+}>;
 
-export interface ContentHeaderInterface extends Locator {
+export type ContentHeaderInterface = DashboardNode<{
 	title: () => Asserter<string>;
-}
+}>;
 
 // export interface ContentHeadingInterface extends Locator {
 // 	getTitle(opts?: WaitForOpts): Promise<string>;
 // 	textInput(): Locator;
 // 	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
 // }
-export type ContentHeadingInterface = Locator;
 
 export interface StatePickerInterface extends Locator {
 	getState(opts?: WaitForOpts): Promise<NoteState | NoteTempState>;
