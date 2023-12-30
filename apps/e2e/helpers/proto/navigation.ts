@@ -9,6 +9,7 @@ import { assertionTimeout } from "@/constants";
 import { getDashboard } from "./dashboard";
 
 export function getMainNav(page: Page): MainNavInterface {
+	const dashboard = () => getDashboard(page);
 	const container = page.getByRole("navigation", { name: "Main navigation" });
 
 	// const link = (label: string) => container.getByRole("link", { name: label, exact: true });
@@ -22,5 +23,5 @@ export function getMainNav(page: Page): MainNavInterface {
 			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
-	return Object.assign(container, { navigate });
+	return Object.assign(container, { navigate, dashboard });
 }

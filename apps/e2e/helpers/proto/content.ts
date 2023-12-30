@@ -1,4 +1,4 @@
-import { type Locator, type Page } from "@playwright/test";
+import { type Page } from "@playwright/test";
 
 // import { NoteTempState, type NoteState } from "@librocco/shared";
 
@@ -8,12 +8,15 @@ import type {
 	// ContentHeadingInterface,
 	// StatePickerInterface,
 	// GetByTextOpts,
-	ContentHeaderInterface
+	ContentHeaderInterface,
+	DashboardNode
 	// ScanFieldInterface
 	// ViewName
 } from "./types";
 
 import { assertionTimeout } from "@/constants";
+
+import { getDashboard } from "./dashboard";
 
 // import { assertionTimeout } from "@/constants";
 
@@ -23,7 +26,8 @@ import { assertionTimeout } from "@/constants";
 // import { useExpandButton } from "./utils";
 
 export function getContent(page: Page): ContentInterface {
-	const container = page.locator("#content");
+	const dashboard = () => getDashboard(page);
+	const container = Object.assign(page.locator("#content"), { dashboard });
 
 	const header = () => getHeader(container);
 
@@ -69,8 +73,9 @@ export function getContent(page: Page): ContentInterface {
 	return Object.assign(container, { header });
 }
 
-function getHeader(content: Locator): ContentHeaderInterface {
-	const container = content.locator("header");
+function getHeader(content: DashboardNode): ContentHeaderInterface {
+	const dashboard = content.dashboard;
+	const container = Object.assign(content.locator("header"), { dashboard });
 
 	const titleElement = container.locator("h1");
 

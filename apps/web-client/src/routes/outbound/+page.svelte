@@ -61,7 +61,7 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page view="outbound">
+<Page view="outbound" loaded={initialized}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
@@ -92,7 +92,7 @@
 				>
 			</PlaceholderBox>
 		{:else}
-			<ul class="entity-list-container">
+			<ul id="entity-list" class="entity-list-container">
 				{#each $outNoteList as [noteId, note]}
 					{@const displayName = note.displayName || noteId}
 					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
