@@ -6,21 +6,6 @@
 
 	import { writable } from "svelte/store";
 
-	import {
-		InventoryPage,
-		Pagination,
-		InventoryTable,
-		createTable,
-		Header,
-		TextEditable,
-		SidebarItem,
-		SideBarNav,
-		NewEntitySideNavButton,
-		ProgressBar,
-		Slideover,
-		BookDetailForm,
-		DiscountInput
-	} from "@librocco/ui";
 	import { NEW_WAREHOUSE, type BookEntry, versionId, type SearchIndex } from "@librocco/db";
 	import { debug } from "@librocco/shared";
 
@@ -28,6 +13,22 @@
 
 	import { getDB } from "$lib/db";
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
+
+	import {
+		InventoryPage,
+		Pagination,
+		InventoryTable,
+		createTable,
+		Header,
+		TextEditable,
+		SideBarNav,
+		NewEntitySideNavButton,
+		ProgressBar,
+		Slideover,
+		BookDetailForm,
+		SidebarItem,
+		DiscountInput
+	} from "$lib/components";
 
 	import { createWarehouseStores } from "$lib/stores/inventory";
 	import { newBookFormStore } from "$lib/stores/book_form";

@@ -4,20 +4,10 @@
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
-	import { map } from "rxjs";
 
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import {
-		Badge,
-		BadgeColor,
-		NewOutboundTable,
-		createTable,
-		TdWarehouseSelect,
-		BookDetailForm,
-		type WarehouseChangeDetail
-	} from "@librocco/ui";
 
 	import type { BookEntry } from "@librocco/db";
 
@@ -32,7 +22,12 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog
+		ConfirmActionDialog,
+		createTable,
+		BookDetailForm,
+		TdWarehouseSelect,
+		NewOutboundTable,
+		type WarehouseChangeDetail
 	} from "$lib/components";
 
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
@@ -201,7 +196,7 @@
 
 				<div class="h-5">
 					{#if $updatedAt}
-						<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
