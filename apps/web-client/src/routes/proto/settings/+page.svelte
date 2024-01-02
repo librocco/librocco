@@ -1,11 +1,9 @@
 <script lang="ts">
 	import { Search } from "lucide-svelte";
 
-	import { RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
-
 	import { goto } from "$app/navigation";
 
-	import { Page } from "$lib/components";
+	import { Page, RemoteDbForm, RemoteDbData, ProgressBar } from "$lib/components";
 
 	import { remoteDbStore } from "$lib/stores";
 	import { replicationStatusMessages } from "$lib/toasts";
@@ -35,14 +33,7 @@
 				</div>
 				<div class="w-full max-w-3xl">
 					{#if $hasActiveHandler}
-						<RemoteDbData
-							config={$config}
-							status={{
-								color: replicationStatusMessages[$status.state].color,
-								message: replicationStatusMessages[$status.state].message
-							}}
-							onEdit={() => remoteDbStore.destroyHandler()}
-						>
+						<RemoteDbData config={$config} status={replicationStatusMessages[$status.state]} onEdit={() => remoteDbStore.destroyHandler()}>
 							<div slot="info" class="flex flex-col gap-y-2 pt-2">
 								{#if $status.state === "ACTIVE:REPLICATING"}
 									<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined} />

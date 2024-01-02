@@ -26,6 +26,29 @@ const plugins = [
 				"@apply bg-pink-50 text-pink-700 active:bg-pink-100 hover:bg-pink-100": {}
 			},
 
+			// Badge
+			".badge": {
+				"@apply inline-flex items-center rounded": {}
+			},
+			".badge-base": {
+				"@apply px-2.5 py-0.5 text-xs": {}
+			},
+			".badge-lg": {
+				"@apply px-3 py-0.5 text-sm": {}
+			},
+			".badge-neutral": {
+				"@apply bg-gray-100 text-gray-800": {}
+			},
+			".badge-error": {
+				"@apply bg-red-100 px-2.5 text-red-800": {}
+			},
+			".badge-warning": {
+				"@apply bg-yellow-100 text-yellow-800": {}
+			},
+			".badge-success": {
+				"@apply bg-teal-100 text-teal-800": {}
+			},
+
 			// Lists
 			".entity-list-container": {
 				"@apply select-none divide-y divide-gray-300 overflow-y-auto px-6": {}

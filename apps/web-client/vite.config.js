@@ -1,5 +1,7 @@
-import { sveltekit } from "@sveltejs/kit/vite";
 import path from "path";
+import { searchForWorkspaceRoot } from "vite";
+import { sveltekit } from "@sveltejs/kit/vite";
+import { HstSvelte } from "@histoire/plugin-svelte";
 import { SvelteKitPWA } from "@vite-pwa/sveltekit";
 
 import RollupNodePolyfill from "rollup-plugin-node-polyfills";
@@ -21,8 +23,27 @@ if (typeof BASE_PATH === "undefined") {
 	process.env.BASE_PATH = BASE_PATH;
 }
 
+// #region histoire
+const componentsPath = path.join(__dirname, "src", "lib", "components");
+// #endregion histoire
+
 /** @type {import('vite').UserConfig} */
 const config = {
+	histoire: {
+		plugins: [HstSvelte()],
+		setupFile: `${componentsPath}/histoire.setup.ts`,
+		storyMatch: [`${componentsPath}/**/*.story.svelte`],
+		vite: {
+			base: "/",
+			server: {
+				open: true,
+				fs: {
+					// Allow serving files from workspace root with dev server
+					allow: [searchForWorkspaceRoot(process.cwd()), "../.."]
+				}
+			}
+		}
+	},
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
@@ -84,9 +105,6 @@ const config = {
 				})
 			]
 		}
-	},
-	test: {
-		exclude: ["**/__e2eTests__/**/*", "**/node_modules/**", "**/dist/**"]
 	}
 };
 
