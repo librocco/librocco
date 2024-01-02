@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronLeft as SA } from "lucide-svelte";
 
-	import { Button, ButtonColor, Header, InventoryPage } from "@librocco/ui";
+	import { Button, ButtonColor, Header, InventoryPage } from "$lib/components";
 
 	import { createDB, destroyDB } from "$lib/db";
 	import { base } from "$app/paths";

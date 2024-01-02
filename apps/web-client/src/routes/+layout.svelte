@@ -1,10 +1,10 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
-	import "../main.css";
+	import "$lib/main.css";
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
-	import { Toast } from "@librocco/ui";
+	import { Toast } from "$lib/components";
 
 	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
 	import { remoteDbStore } from "$lib/stores";
