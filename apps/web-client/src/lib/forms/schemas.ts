@@ -8,8 +8,8 @@ export const warehouseSchema = z.object({
 	discount: z.number()
 });
 
-export type BookFormData = SuperValidated<typeof bookScehma>["data"];
-export const bookScehma = z.object({
+export type BookFormData = SuperValidated<typeof bookSchema>["data"];
+export const bookSchema = z.object({
 	isbn: z.string(),
 	title: z.string(),
 	price: z.number(),

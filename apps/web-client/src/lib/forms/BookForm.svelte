@@ -3,20 +3,20 @@
 	import type { SuperForm } from "sveltekit-superforms/client";
 	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
 
-	import { bookScehma, type BookFormData } from "$lib/forms/schemas";
+	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
 
-	type Form = SuperForm<ZodValidation<typeof bookScehma>, unknown>;
+	type Form = SuperForm<ZodValidation<typeof bookSchema>, unknown>;
 
-	export let data: BookFormData;
+	export let data: BookFormData | null;
 	export let options: Form["options"];
 	/**
 	 * Handle click of "X" icon button
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	const form = superForm(superValidateSync(data, bookScehma), options);
+	const form = superForm(superValidateSync(data, bookSchema), options);
 
 	const { form: formStore, constraints, enhance } = form;
 
