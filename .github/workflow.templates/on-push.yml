@@ -14,8 +14,6 @@ name: Checks
 jobs:
   js-search-test: #@ test_job("JS-Search Tests", "pkg/js-search", "jest-junit")
 
-  ui-test: #@ test_job("UI Tests", "pkg/ui")
-
   web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
 
   db-test: #@ test_job("DB Tests", "pkg/db")
