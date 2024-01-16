@@ -371,10 +371,14 @@
 				use:melt={$content}
 				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
 				bg-white shadow-lg focus:outline-none"
-				transition:fly={{
+				in:fly={{
 					x: 350,
 					duration: 150,
 					opacity: 1
+				}}
+				out:fly={{
+					x: 350,
+					duration: 100
 				}}
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
