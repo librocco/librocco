@@ -3,8 +3,8 @@
 	import type { SuperForm } from "sveltekit-superforms/client";
 	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
 
-	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
-	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
+	import { createCombobox, melt } from "@melt-ui/svelte";
+	import { Check, ChevronsUpDown } from "lucide-svelte";
 	import { fly } from "svelte/transition";
 
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
@@ -28,48 +28,23 @@
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
 
-	/**
-	 * Publisher combobox
-	 */
+	$: publishers = publisherList.map(
+		(option) => (typeof option === "string" ? { value: option, label: option } : option) as { value: string; label: string }
+	);
+
 	const {
-		elements: { menu, input, option },
-		states: { open, inputValue, touchedInput, selected },
-		helpers: { isSelected, isHighlighted }
-	} = createCombobox<string>({
+		elements: { menu, input, option, label },
+		states: { open, inputValue, touchedInput, selected }
+	} = createCombobox<{ value: string; label: string }>({
 		forceVisible: true,
-		onSelectedChange: ({ next }) => {
-			/**
-			 * Without this inputValue will not matched selected options
-			 */
-			inputValue.set(next!.value);
-			return next;
-		}
+		onSelectedChange: ({ next }) => inputValue.set(next!.value)
 	});
 
-	/**
-	 * Maps publisher strings to select options
-	 * @param publisher
-	 */
-	const toOption = (publisher: string): ComboboxOptionProps<string> => ({
-		value: publisher,
-		label: publisher,
-		disabled: false
-	});
-
-	/**
-	 * Update selected as the publisher value changes in the formStore
-	 * This way a user could selected e.g "Publisher 2", but then edit the value to "Publisher"
-	 * and the initial value will not be shown as selected in the combobox menu
-	 */
 	$: {
-		const { publisher = "" } = $formStore;
-		$selected = toOption(publisher);
+		$inputValue = $formStore.publisher;
 	}
 
-	/**
-	 * Filters the combobox list to show relevant options as input is provided
-	 */
-	$: filteredPublishers = $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
+	$: filteredPublishers = $touchedInput ? publishers.filter(({ value }) => value.includes($inputValue)) : publishers;
 </script>
 
 <form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 px-4" aria-label="Edit book details" use:enhance method="POST" id="book-form">
@@ -100,11 +75,7 @@
 					bind:value={$formStore.publisher}
 				>
 					<div slot="end-adornment">
-						{#if $open}
-							<ChevronUp class="square-4" />
-						{:else}
-							<ChevronDown class="square-4" />
-						{/if}
+						<ChevronsUpDown class="text-gray-400" />
 					</div>
 				</Input>
 				{#if $open}
@@ -113,17 +84,14 @@
 						class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-md"
 						transition:fly={{ duration: 150, y: -5 }}
 					>
-						{#each filteredPublishers as publisher}
-							{@const isSelected = $isSelected(publisher)}
-							{@const isHighlighed = $isHighlighted(publisher)}
-
+						{#each filteredPublishers as _option}
 							<li
 								class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900"
-								use:melt={$option(toOption(publisher))}
+								use:melt={$option(_option)}
 							>
-								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
-								{#if isSelected}
-									<span class="absolute inset-y-0 left-0 flex items-center pl-3 {isHighlighed ? 'text-white' : 'text-teal-500'}">
+								<span class="block truncate {selected ? 'font-medium' : 'font-normal'}">{_option.label}</span>
+								{#if selected}
+									<span class="data-[highlighted]:text-white absolute inset-y-0 left-0 flex items-center pl-3 text-teal-500">
 										<Check />
 									</span>
 								{/if}
