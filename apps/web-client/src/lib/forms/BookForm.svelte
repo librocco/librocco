@@ -75,7 +75,13 @@
 	$: filteredPublishers = $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
 </script>
 
-<form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 px-4" aria-label="Edit book details" use:enhance method="POST" id="book-form">
+<form
+	class="divide-y-gray-50 flex h-auto flex-col gap-y-6 px-4 py-4"
+	aria-label="Edit book details"
+	use:enhance
+	method="POST"
+	id="book-form"
+>
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div id="isbn-field-container" class="basis-full">
