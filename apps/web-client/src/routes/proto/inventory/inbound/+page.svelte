@@ -36,7 +36,7 @@
 					.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
 					.array()
 			)
-		);
+		)!;
 	const inNoteList = readableFromStream(inNoteListCtx, inNoteListStream, []);
 
 	let initialized = false;
@@ -46,8 +46,12 @@
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
 	const handleDeleteNote = (noteId: string) => async () => {
-		const { note } = await db?.findNote(noteId);
-		await note?.delete({});
+		const result = await db?.findNote(noteId);
+
+		if (!result) {
+			return;
+		}
+		await result.note.delete({});
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 
@@ -57,7 +61,7 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent | null = null;
+	let dialogContent: DialogContent;
 </script>
 
 <!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->

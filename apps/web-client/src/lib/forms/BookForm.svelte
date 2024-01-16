@@ -1,6 +1,11 @@
+<script lang="ts" context="module">
+	import type { SuperForm } from "sveltekit-superforms/client";
+
+	export type BookFormOptions = SuperForm<ZodValidation<typeof bookSchema>, unknown>["options"];
+</script>
+
 <script lang="ts">
 	import type { ZodValidation } from "sveltekit-superforms";
-	import type { SuperForm } from "sveltekit-superforms/client";
 	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt } from "@melt-ui/svelte";
@@ -9,12 +14,10 @@
 
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
-	import { Input, Checkbox } from "$lib/components/FormControls";
-
-	type Form = SuperForm<ZodValidation<typeof bookSchema>, unknown>;
+	import { Input, NewCheckbox } from "$lib/components/FormControls";
 
 	export let data: BookFormData | null;
-	export let options: Form["options"];
+	export let options: BookFormOptions;
 	export let publisherList: string[] = [];
 
 	/**
@@ -108,7 +111,7 @@
 				<Input bind:value={$formStore.editedBy} name="editedBy" label="Edited by" placeholder="" {...$constraints.editedBy} />
 			</div>
 			<div id="outOfPrint-field-container" class="basis-full">
-				<Checkbox
+				<NewCheckbox
 					bind:checked={$formStore.outOfPrint}
 					id="outOfPrint"
 					name="outOfPrint"
