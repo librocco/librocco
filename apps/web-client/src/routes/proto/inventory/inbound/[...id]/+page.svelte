@@ -8,8 +8,6 @@
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
-	import { Badge, BadgeColor, NewStockTable, createTable, BookDetailForm } from "@librocco/ui";
-
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -21,7 +19,10 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog
+		ConfirmActionDialog,
+		NewStockTable,
+		createTable,
+		BookDetailForm
 	} from "$lib/components";
 
 	import { getDB } from "$lib/db";
@@ -179,7 +180,7 @@
 
 				<div class="h-5">
 					{#if $updatedAt}
-						<Badge label="Last updated: {generateUpdatedAtString($updatedAt)}" color={BadgeColor.Success} />
+						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>

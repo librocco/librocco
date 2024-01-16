@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { base } from "$app/paths";
 
-	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, ProgressBar } from "@librocco/ui";
+	import { Header, InventoryPage, RemoteDbForm, RemoteDbData, ProgressBar } from "$lib/components";
 
 	import { links } from "$lib/data";
 	import { remoteDbStore } from "$lib/stores";
@@ -22,14 +22,7 @@
 			</div>
 			<div class="w-full max-w-3xl">
 				{#if $hasActiveHandler}
-					<RemoteDbData
-						config={$config}
-						status={{
-							color: replicationStatusMessages[$status.state].color,
-							message: replicationStatusMessages[$status.state].message
-						}}
-						onEdit={() => remoteDbStore.destroyHandler()}
-					>
+					<RemoteDbData config={$config} status={replicationStatusMessages[$status.state]} onEdit={() => remoteDbStore.destroyHandler()}>
 						<div slot="info" class="flex flex-col gap-y-2 pt-2">
 							{#if $status.state === "ACTIVE:REPLICATING"}
 								<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined} />
