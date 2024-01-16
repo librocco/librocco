@@ -22,7 +22,16 @@
 
 <div class="relative flex max-w-max items-start gap-x-2 p-1">
 	<div class="inline-flex h-5 items-center">
-		<input type="checkbox" {id} {name} value={id} aria-describedby={`${name}-description`} class={inputBaseClasses} {checked} {disabled} />
+		<input
+			type="checkbox"
+			{id}
+			{name}
+			value={id}
+			aria-describedby={`${name}-description`}
+			class={inputBaseClasses}
+			bind:checked
+			{disabled}
+		/>
 	</div>
 	<div>
 		<label for={id} class={labelBaseClasses}>
