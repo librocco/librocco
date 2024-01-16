@@ -7,7 +7,8 @@
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
-	import { NewStockTable, createTable, BookDetailForm } from "$lib/components";
+	import { NewStockTable, createTable } from "$lib/components";
+	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 	import { newBookFormStore } from "$lib/stores/book_form";
@@ -59,12 +60,29 @@
 	const autofocus = (node?: HTMLInputElement) => node?.focus();
 
 	// #region book-form
-	$: bookForm = newBookFormStore();
+	const bookForm = newBookFormStore();
 
-	const handleBookFormSubmit = async (book: BookEntry) => {
-		await db.books().upsert([book]);
-		toastSuccess(toasts.bookDataUpdated(book.isbn));
-		bookForm.close();
+	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+		/**
+		 * This is a quick fix for `form.data` having all optional properties
+		 *
+		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+		 * to fix these properly.
+		 *
+		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 */
+		const data = form?.data as BookEntry;
+
+		try {
+			await db.books().upsert([data]);
+
+			toastSuccess(toasts.bookDataUpdated(data.isbn));
+			bookForm.closeEdit();
+			open.set(false);
+		} catch (err) {
+			// toastError(`Error: ${err.message}`);
+		}
 	};
 	// #endregion book-form
 
@@ -109,7 +127,7 @@
 					<div slot="row-actions" let:row let:rowIx>
 						<button
 							use:melt={$trigger}
-							on:m-click={async () => await bookForm.open(row)}
+							on:m-click={async () => await bookForm.openEdit(row)}
 							class="rounded p-3 text-gray-500 hover:text-gray-900"
 						>
 							<span class="sr-only">Edit row {rowIx}</span>
@@ -152,11 +170,17 @@
 					</button>
 				</div>
 				<div class="px-6">
-					<BookDetailForm
+					<BookForm
+						data={$bookForm}
 						publisherList={$publisherList}
-						book={$bookForm.open ? $bookForm.book : {}}
-						on:submit={({ detail }) => handleBookFormSubmit(detail)}
-						on:cancel={() => open.set(false)}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: bookSchema,
+							validationMethod: "submit-only",
+							onUpdated
+						}}
+						onCancel={() => open.set(false)}
 					/>
 				</div>
 			</div>

@@ -8,6 +8,7 @@
 	import { goto } from "$app/navigation";
 
 	import { NoteState } from "@librocco/shared";
+
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -21,9 +22,9 @@
 		createBreadcrumbs,
 		ConfirmActionDialog,
 		NewStockTable,
-		createTable,
-		BookDetailForm
+		createTable
 	} from "$lib/components";
+	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
 
@@ -46,7 +47,7 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB();
+	const db = getDB()!;
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -55,8 +56,8 @@
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: note = data.note;
-	$: warehouse = data.warehouse;
+	$: note = data.note!;
+	$: warehouse = data.warehouse!;
 
 	$: noteStores = createNoteStores(note);
 
@@ -111,7 +112,6 @@
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
 		toastSuccess(toasts.volumeAdded(isbn));
-		bookForm.close();
 	};
 
 	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
@@ -136,13 +136,31 @@
 	// #region transaction-actions
 
 	// #region book-form
-	$: bookForm = newBookFormStore();
+	const bookForm = newBookFormStore();
 
-	const handleBookFormSubmit = async (book: BookEntry) => {
-		await db.books().upsert([book]);
-		toastSuccess(toasts.bookDataUpdated(book.isbn));
-		bookForm.close();
+	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+		/**
+		 * This is a quick fix for `form.data` having all optional properties
+		 *
+		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+		 * to fix these properly.
+		 *
+		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 */
+		const data = form?.data as BookEntry;
+
+		try {
+			await db.books().upsert([data]);
+
+			toastSuccess(toasts.bookDataUpdated(data.isbn));
+			bookForm.closeEdit();
+			open.set(false);
+		} catch (err) {
+			// toastError(`Error: ${err.message}`);
+		}
 	};
+
 	// #endregion book-form
 
 	$: breadcrumbs =
@@ -163,7 +181,7 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" } = null;
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
 <Page>
@@ -214,7 +232,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -222,7 +240,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -297,6 +315,7 @@
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 									on:m-click={() => {
+										bookForm.openEdit(row);
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editBook(),
@@ -305,6 +324,7 @@
 										};
 									}}
 									on:m-keydown={() => {
+										bookForm.openEdit(row);
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editBook(),
@@ -345,15 +365,15 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }} />
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
-				shadow-lg focus:outline-none"
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
+				bg-white shadow-lg focus:outline-none"
 				transition:fly={{
 					x: 350,
-					duration: 300,
+					duration: 150,
 					opacity: 1
 				}}
 			>
@@ -367,11 +387,17 @@
 					</button>
 				</div>
 				<div class="px-6">
-					<BookDetailForm
+					<BookForm
+						data={$bookForm}
 						publisherList={$publisherList}
-						book={$bookForm.open ? $bookForm.book : {}}
-						on:submit={({ detail }) => handleBookFormSubmit(detail)}
-						on:cancel={() => open.set(false)}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: bookSchema,
+							validationMethod: "submit-only",
+							onUpdated
+						}}
+						onCancel={() => open.set(false)}
 					/>
 				</div>
 			</div>
