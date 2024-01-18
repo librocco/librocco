@@ -6,7 +6,7 @@ import userEvent from "@testing-library/user-event";
 
 import { createTable } from "../table";
 
-import { InventoryTable } from "$lib/components";
+import { StockTable } from "$lib/components";
 
 import { rows } from "./data";
 
@@ -101,7 +101,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 
 	const table = createTable(tableOptions);
 
-	render(html` <${InventoryTable} interactive table=${table} /> `);
+	render(html` <${StockTable} interactive table=${table} /> `);
 
 	const row2 = rows[1];
 	// TODO: Fix table data row aria labels

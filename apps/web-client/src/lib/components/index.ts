@@ -17,5 +17,3 @@ export * from "./ProgressBar";
 export * from "./InventoryTable";
 export * from "./DescriptionLists";
 export * from "./TextEditable";
-
-export * from "./Button"; // TODO: remove (replace with Tailwind classes)
