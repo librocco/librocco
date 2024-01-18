@@ -10,7 +10,6 @@ export { default as ConfirmActionDialog } from "./ConfirmActionDialog.svelte";
 
 export * from "./Breadcrumbs";
 export * from "./FormControls";
-export * from "./BookDetailForm";
 export * from "./FormFields";
 export * from "./ComboboxMenu";
 export * from "./Toast";
@@ -19,9 +18,6 @@ export * from "./RemoteDbForm";
 export * from "./ProgressBar";
 export * from "./InventoryTable";
 export * from "./DescriptionLists";
+export * from "./TextEditable";
 
 export * from "./Button"; // TODO: remove (replace with Tailwind classes)
-
-// #region TEMP
-export * from "./old";
-// #endregion TEMP
