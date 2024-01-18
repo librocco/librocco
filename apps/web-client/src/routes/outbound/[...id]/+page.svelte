@@ -117,23 +117,21 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	// TODO: toast messsage for quantity is mispelt
-	// TODO: need toast message for warehouse name update
 	const updateRowWarehouse =
 		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
 			const { warehouseId: nextWarehouseId } = e.detail;
 			// Number form control validation means this string->number conversion should yield a valid result
-
-			const transaction = { isbn, warehouseId: nextWarehouseId, quantity };
+;
+			const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
 			// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
 			if (currentWarehouseId === nextWarehouseId) {
 				return;
 			}
 
-			const t = await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
-			console.log(t);
-			toastSuccess(toasts.volumeUpdated(isbn));
+			// TODO: error handling
+			await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+			toastSuccess(toasts.warehouseUpdated(isbn));
 		};
 
 	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
