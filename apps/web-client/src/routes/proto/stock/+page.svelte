@@ -7,6 +7,8 @@
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
+	import { bookDataPlugin } from "$lib/db/plugins";
+
 	import { NewStockTable, createTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
@@ -60,7 +62,7 @@
 	const autofocus = (node?: HTMLInputElement) => node?.focus();
 
 	// #region book-form
-	const bookForm = newBookFormStore();
+	let bookFormData = null;
 
 	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
 		/**
@@ -78,7 +80,7 @@
 			await db.books().upsert([data]);
 
 			toastSuccess(toasts.bookDataUpdated(data.isbn));
-			bookForm.closeEdit();
+			bookFormData = null;
 			open.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
@@ -125,11 +127,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<NewStockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
-						<button
-							use:melt={$trigger}
-							on:m-click={async () => await bookForm.openEdit(row)}
-							class="rounded p-3 text-gray-500 hover:text-gray-900"
-						>
+						<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
 							<span class="sr-only">Edit row {rowIx}</span>
 							<span class="aria-hidden">
 								<FileEdit />
@@ -171,7 +169,7 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={$bookForm}
+						data={bookFormData}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
@@ -181,6 +179,15 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
+						onFetch={async (isbn, form) => {
+							const result = await bookDataPlugin.fetchBookData(isbn);
+
+							if (result) {
+								const [bookData] = result;
+								form.update((data) => ({ ...data, ...bookData }));
+							}
+							// TODO: handle loading and errors
+						}}
 					/>
 				</div>
 			</div>
