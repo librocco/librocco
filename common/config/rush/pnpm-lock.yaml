@@ -46,9 +46,6 @@ importers:
       '@librocco/db':
         specifier: workspace:*
         version: link:../../pkg/db
-      just-compare:
-        specifier: ~2.3.0
-        version: 2.3.0
       librocco-extension:
         specifier: git+https://github.com/librocco/bookdata-extension.git
         version: github.com/librocco/bookdata-extension/06fc4051d63af89306d5830f78da2149e67ffec9
@@ -7701,10 +7698,6 @@ packages:
       array.prototype.flat: 1.3.2
       object.assign: 4.1.5
       object.values: 1.1.7
-    dev: false
-
-  /just-compare@2.3.0:
-    resolution: {integrity: sha512-6shoR7HDT+fzfL3gBahx1jZG3hWLrhPAf+l7nCwahDdT9XDtosB9kIF0ZrzUp5QY8dJWfQVr5rnsPqsbvflDzg==}
     dev: false
 
   /keyv@4.5.4:

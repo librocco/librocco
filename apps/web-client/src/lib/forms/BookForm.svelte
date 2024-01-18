@@ -13,11 +13,11 @@
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
 	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
-	import compare from "just-compare";
 
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, NewCheckbox } from "$lib/components/FormControls";
+	import { get } from "svelte/store";
 
 	export let data: BookFormData | null;
 	export let options: BookFormOptions;
@@ -37,19 +37,6 @@
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
 	const publisherProxy = stringProxy(formStore, "publisher", { empty: "undefined" });
-
-	const initialValues = _form.data;
-	$: hasChanges = !compare(initialValues, $formStore);
-
-	/**
-	 * As far as superforms is concerned $tainted = dirty even if a field has been edited then reverted to its initial value
-	 * => if $tainted is tracking fields, but we have compared and there are no changes, the tainted store needs to be manually reset
-	 */
-	$: {
-		if ($tainted && !hasChanges) {
-			tainted.set(undefined);
-		}
-	}
 
 	/**
 	 * Publisher combobox
@@ -191,6 +178,6 @@
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
 		<button class="button button-white" on:click={onCancel} type="button"> Cancel </button>
-		<button class="button button-green disabled:bg-gray-400" type="submit" disabled={!hasChanges}> Save </button>
+		<button class="button button-green disabled:bg-gray-400" type="submit"> Save </button>
 	</div>
 </form>
