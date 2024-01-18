@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount, tick } from "svelte";
+	import { createEventDispatcher } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
 	import { Check, ChevronsUpDown } from "lucide-svelte";
@@ -9,23 +9,12 @@
 	export let data: OutNoteTableData;
 	export let rowIx: number;
 
-	/** @TODO mvp quick integration */
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
 	const dispatchChange = (warehouseId: string) => dispatch("change", { warehouseId });
 
-	// If there's only one warehouse the book is available in, and no warehouseId is specified, select it automatically.
-	// onMount(() => {
-	// 	if (!warehouseId && availableWarehouses.size === 1) {
-	// 		// Tick isn't necessary here, but it's much easier when testing
-	// 		tick().then(() => dispatchChange(availableWarehouses.keys().next().value));
-	// 	}
-	// });
-
-	console.log(data);
-
 	const {
 		elements: { trigger, menu, option, label },
-		states: { selectedLabel, open },
+		states: { selectedLabel, open, selected },
 		helpers: { isSelected }
 	} = createSelect<string>({
 		forceVisible: true,
@@ -44,11 +33,13 @@
 
 	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
 
-	// $: selectedLabel = availableWarehouses.get($combobox.selected)?.displayName;
-
-	// /** @TODO 'warehouses' type: NavMap */
 	const mapWarehousesToOptions = (warehouses: OutNoteTableData["availableWarehouses"]) =>
 		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
+
+	/**
+	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
+	 */
+	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
 
 	$: options = mapWarehousesToOptions(availableWarehouses);
 </script>
@@ -56,12 +47,14 @@
 {#if options.length > 1}
 	<!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
 	<label class="hidden" {...$label} use:label>Select a warehouse to withdraw book {rowIx} from</label>
-	<button class="flex w-full gap-x-3 rounded bg-white p-2 shadow" {...$trigger} use:trigger aria-label="Warehouse">
+	<button class="flex w-full gap-x-2 rounded bg-white p-2 shadow" {...$trigger} use:trigger aria-label="Warehouse">
 		<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}" />
 		{#if $selectedLabel}
-			{$selectedLabel}
+			<span class="truncate">
+				{$selectedLabel}
+			</span>
 		{:else}
-			<span class="truncate text-gray-400"> Select a warehouse </span>
+			<span class="truncate text-gray-400">Select a warehouse</span>
 		{/if}
 		<ChevronsUpDown size={18} class="ml-auto shrink-0 self-end" />
 	</button>
@@ -72,17 +65,17 @@
 			use:menu
 		>
 			{#each options as warehouse}
-				{@const { label } = warehouse}
+				{@const { label, value } = warehouse}
 				<div
-					class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative cursor-pointer rounded p-1 text-gray-600 focus:z-10"
+					class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10"
 					{...$option(warehouse)}
 					use:option
 				>
-					<div class="check {$isSelected(warehouse) ? 'block' : 'hidden'}">
-						<Check class="square-4" />
-					</div>
-
 					{label}
+
+					<div class="check {$isSelected(value) ? 'block' : 'hidden'}">
+						<Check size={18} />
+					</div>
 				</div>
 			{/each}
 		</div>
