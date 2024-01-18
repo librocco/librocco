@@ -1,7 +1,7 @@
-export { default as NewStockTable } from "./NewStockTable.svelte";
-export { default as NewOutboundTable } from "./NewOutboundTable.svelte";
+export { default as StockTable } from "./StockTable.svelte";
+export { default as OutboundTable } from "./OutboundTable.svelte";
 
-export { default as TdWarehouseSelect } from "./TdWarehouseSelect.svelte";
+export { default as WarehouseSelect } from "./WarehouseSelect.svelte";
 
 export { createTable } from "./table";
 

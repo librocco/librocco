@@ -4,8 +4,8 @@
 
 	import { FileEdit } from "lucide-svelte";
 
-	import NewStockTable from "../NewStockTable.svelte";
-	import NewOutboundTable from "../NewOutboundTable.svelte";
+	import StockTable from "../StockTable.svelte";
+	import OutboundTable from "../OutboundTable.svelte";
 
 	import { createTable } from "../table";
 
@@ -20,9 +20,9 @@
 	const defaultStockTable = createTable(tableOptions);
 </script>
 
-<Hst.Story title="Tables / New Tables">
+<Hst.Story title="Tables">
 	<Hst.Variant title="Stock">
-		<NewStockTable table={defaultStockTable}>
+		<StockTable table={defaultStockTable}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
@@ -31,11 +31,11 @@
 					</span>
 				</button>
 			</div>
-		</NewStockTable>
+		</StockTable>
 	</Hst.Variant>
 
 	<Hst.Variant title="Inbound">
-		<NewStockTable table={defaultStockTable}>
+		<StockTable table={defaultStockTable}>
 			<div slot="row-quantity" let:row class="odd:bg-gray-50 even:bg-white">
 				<input
 					value={row.quantity}
@@ -51,10 +51,10 @@
 					</span>
 				</button>
 			</div>
-		</NewStockTable>
+		</StockTable>
 	</Hst.Variant>
 	<Hst.Variant title="Outbound">
-		<NewOutboundTable table={defaultStockTable}>
+		<OutboundTable table={defaultStockTable}>
 			<div slot="row-quantity" let:row class="odd:bg-gray-50 even:bg-white">
 				<input
 					value={row.quantity}
@@ -76,7 +76,7 @@
 					</span>
 				</button>
 			</div>
-		</NewOutboundTable>
+		</OutboundTable>
 	</Hst.Variant>
 </Hst.Story>
 

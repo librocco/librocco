@@ -22,7 +22,7 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		ConfirmActionDialog,
-		NewStockTable,
+		StockTable,
 		createTable
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
@@ -232,7 +232,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -240,7 +240,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -276,7 +276,7 @@
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<NewStockTable {table}>
+				<StockTable {table}>
 					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
 						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
 
@@ -349,7 +349,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</NewStockTable>
+				</StockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
