@@ -1,6 +1,6 @@
 import { base } from "$app/paths";
 
-const basepath = `${base}/proto`;
+const basepath = `${base}`;
 
 const PROTO_PATHS = {
 	stock: `${basepath}/stock/`,
