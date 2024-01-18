@@ -2,7 +2,7 @@
 	import { createForm } from "felte";
 	import { ChevronUp, ChevronDown } from "lucide-svelte";
 
-	import { Input, Checkbox, Button, ButtonColor } from "$lib/components";
+	import { Input, Checkbox } from "$lib/components";
 
 	import type { RemoteDbConfig } from "./types";
 
@@ -79,7 +79,7 @@
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<Button type="submit" color={ButtonColor.Primary}>Start sync</Button>
+		<button type="submit" class="button button-green">Start sync</button>
 	</div>
 </form>
 

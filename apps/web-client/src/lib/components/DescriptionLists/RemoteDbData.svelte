@@ -1,7 +1,6 @@
 <script lang="ts">
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
-	import { Button, ButtonColor } from "../Button";
 	import { Checkbox, type RemoteDbConfig } from "$lib/components";
 
 	const stateColorLookup = {
@@ -89,7 +88,7 @@
 		</dl>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<Button type="submit" color={ButtonColor.Secondary} on:click={() => onEdit()}>Cancel & edit</Button>
+		<button type="submit" class="button button-alert" on:click={() => onEdit()}>Cancel & edit</button>
 	</div>
 </div>
 
