@@ -2,7 +2,7 @@ import { base } from "$app/paths";
 
 const basepath = `${base}`;
 
-const PROTO_PATHS = {
+const PATHS = {
 	stock: `${basepath}/stock/`,
 	warehouses: `${basepath}/inventory/warehouses/`,
 	inventory: `${basepath}/inventory/`,
@@ -22,5 +22,5 @@ const PROTO_PATHS = {
  * @param location - the location key (e.g. "stock", "inventory", etc.)
  * @param segments - the dynamic segments of the path
  */
-export const appPath = (location: keyof typeof PROTO_PATHS, ...segments: string[]) =>
-	[PROTO_PATHS[location], ...segments].join("/").concat("/").replaceAll("//", "/");
+export const appPath = (location: keyof typeof PATHS, ...segments: string[]) =>
+	[PATHS[location], ...segments].join("/").concat("/").replaceAll("//", "/");
