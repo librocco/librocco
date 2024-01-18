@@ -5,12 +5,14 @@
 </script>
 
 <script lang="ts">
+	import { fly } from "svelte/transition";
+
 	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
+	import { superForm, superValidateSync, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
 	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
-	import { fly } from "svelte/transition";
+	import compare from "just-compare";
 
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
@@ -25,11 +27,26 @@
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	const form = superForm(superValidateSync(data, bookSchema), options);
+	const _form = superValidateSync(data, bookSchema);
+	const form = superForm(_form, options);
 
-	const { form: formStore, constraints, enhance } = form;
+	const { form: formStore, constraints, tainted, enhance } = form;
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
+	const publisherProxy = stringProxy(formStore, "publisher", { empty: "undefined" });
+
+	const initialValues = _form.data;
+	$: hasChanges = !compare(initialValues, $formStore);
+
+	/**
+	 * As far as superforms is concerned $tainted = dirty even if a field has been edited then reverted to its initial value
+	 * => if $tainted is tracking fields, but we have compared and there are no changes, the tainted store needs to be manually reset
+	 */
+	$: {
+		if ($tainted && !hasChanges) {
+			tainted.set(undefined);
+		}
+	}
 
 	/**
 	 * Publisher combobox
@@ -41,10 +58,15 @@
 	} = createCombobox<string>({
 		forceVisible: true,
 		onSelectedChange: ({ next }) => {
+			const { value } = next;
+
+			console.log("firing");
 			/**
 			 * Without this inputValue will not matched selected options
 			 */
-			inputValue.set(next!.value);
+			inputValue.set(value);
+			publisherProxy.set(value);
+
 			return next;
 		}
 	});
@@ -162,6 +184,6 @@
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
 		<button class="button button-alert" on:click={onCancel} type="button"> Cancel </button>
-		<button class="button button-green" type="submit"> Save </button>
+		<button class="button button-green disabled:bg-gray-400" type="submit" disabled={!hasChanges}> Save </button>
 	</div>
 </form>
