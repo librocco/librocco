@@ -10,6 +10,7 @@
 	import { NoteState } from "@librocco/shared";
 
 	import type { BookEntry } from "@librocco/db";
+	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
 
@@ -32,7 +33,6 @@
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
-	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { scan } from "$lib/actions/scan";
 	import { createIntersectionObserver } from "$lib/actions";
@@ -136,7 +136,7 @@
 	// #region transaction-actions
 
 	// #region book-form
-	const bookForm = newBookFormStore();
+	let bookFormData = null;
 
 	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
 		/**
@@ -154,7 +154,7 @@
 			await db.books().upsert([data]);
 
 			toastSuccess(toasts.bookDataUpdated(data.isbn));
-			bookForm.closeEdit();
+			bookFormData = null;
 			open.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
@@ -314,7 +314,7 @@
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 									on:m-click={() => {
-										bookForm.openEdit(row);
+										bookFormData = row;
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editBook(),
@@ -323,7 +323,7 @@
 										};
 									}}
 									on:m-keydown={() => {
-										bookForm.openEdit(row);
+										bookFormData = row;
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editBook(),
@@ -391,7 +391,7 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={$bookForm}
+						data={bookFormData}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
@@ -401,6 +401,15 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
+						onFetch={async (isbn, form) => {
+							const result = await bookDataPlugin.fetchBookData(isbn);
+
+							if (result) {
+								const [bookData] = result;
+								form.update((data) => ({ ...data, ...bookData }));
+							}
+							// TODO: handle loading and errors
+						}}
 					/>
 				</div>
 			</div>
