@@ -1,9 +1,7 @@
 <script lang="ts">
 	import type { Hst } from "@histoire/plugin-svelte";
 
-	import { Mail, Search, Edit, QrCode } from "lucide-svelte";
-
-	import { Button, ButtonSize } from "$lib/components";
+	import { Mail } from "lucide-svelte";
 
 	import Input from "../Input.svelte";
 
@@ -27,27 +25,6 @@
 		<Input name="start-end-adornment" placeholder="placeholderemail@gmail.com" label="Start & End Adornments">
 			<span slot="startAdornment">$</span>
 			<span slot="endAdornment">USD</span>
-		</Input>
-	</Hst.Variant>
-	<Hst.Variant title="Prototype: Scan input ">
-		<Input name="scan-input" placeholder="Scan to add books...">
-			<span slot="startAdornment">
-				<QrCode />
-			</span>
-			<div slot="endAdornment" class="flex gap-x-2">
-				<Button size={ButtonSize.SM}>
-					<span slot="startAdornment">
-						<Search size={16} />
-					</span>
-					Search
-				</Button>
-				<Button size={ButtonSize.SM}>
-					<span slot="startAdornment">
-						<Edit size={16} />
-					</span>
-					Create
-				</Button>
-			</div>
 		</Input>
 	</Hst.Variant>
 </Hst.Story>
