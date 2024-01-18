@@ -2,7 +2,7 @@
 	import { createForm } from "felte";
 	import { ChevronUp, ChevronDown } from "lucide-svelte";
 
-	import { TextField, Checkbox, Button, ButtonColor } from "$lib/components";
+	import { Input, Checkbox, Button, ButtonColor } from "$lib/components";
 
 	import type { RemoteDbConfig } from "./types";
 
@@ -31,9 +31,9 @@
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<TextField id="url" name="url" label="Remote CouchDB URL" required={true} pattern="^(https?://)(.+):(.+)@(.+):(.+)$">
+				<Input id="url" name="url" label="Remote CouchDB URL" required={true} pattern="^(https?://)(.+):(.+)@(.+):(.+)$">
 					<p slot="helpText">URL format: <span class="italic">https://user:password@host:post/db_name</span></p>
-				</TextField>
+				</Input>
 			</div>
 			<div>
 				<details>
