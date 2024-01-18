@@ -1,7 +1,8 @@
 <script lang="ts" context="module">
 	import type { SuperForm } from "sveltekit-superforms/client";
 
-	export type BookFormOptions = SuperForm<ZodValidation<typeof bookSchema>, unknown>["options"];
+	type BookForm = SuperForm<ZodValidation<typeof bookSchema>, unknown>;
+	export type BookFormOptions = BookForm["options"];
 </script>
 
 <script lang="ts">
@@ -26,6 +27,8 @@
 	 * Handle click of "X" icon button
 	 */
 	export let onCancel: (e: Event) => void = () => {};
+
+	export let onFetch: (isbn: string, form: BookForm["form"]) => void = () => {};
 
 	const _form = superValidateSync(data, bookSchema);
 	const form = superForm(_form, options);
@@ -60,7 +63,6 @@
 		onSelectedChange: ({ next }) => {
 			const { value } = next;
 
-			console.log("firing");
 			/**
 			 * Without this inputValue will not matched selected options
 			 */
@@ -106,8 +108,13 @@
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div id="isbn-field-container" class="basis-full">
-				<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
+			<div id="isbn-field-container" class="flex basis-full gap-x-4">
+				<div class="grow">
+					<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
+				</div>
+				<button type="button" class="button button-alert mb-0.5 self-end" on:click={() => onFetch($formStore.isbn, formStore)}>
+					Fill details
+				</button>
 			</div>
 			<div id="title-field-container" class="basis-full">
 				<Input bind:value={$formStore.title} name="title" label="Title" placeholder="" {...$constraints.title} />
@@ -183,7 +190,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="button button-alert" on:click={onCancel} type="button"> Cancel </button>
+		<button class="button button-white" on:click={onCancel} type="button"> Cancel </button>
 		<button class="button button-green disabled:bg-gray-400" type="submit" disabled={!hasChanges}> Save </button>
 	</div>
 </form>
