@@ -143,7 +143,7 @@
 							{@const isHighlighed = $isHighlighted(publisher)}
 
 							<li
-								class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900"
+								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
