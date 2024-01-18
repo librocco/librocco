@@ -17,7 +17,6 @@
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
-	import { get } from "svelte/store";
 
 	export let data: BookFormData | null;
 	export let options: BookFormOptions;
