@@ -1,78 +1,63 @@
 <script lang="ts">
-	import { page } from "$app/stores";
-	import { goto } from "$app/navigation";
+	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
-	import { base } from "$app/paths";
-	import { map } from "rxjs";
 
-	import { NoteState, NoteTempState } from "@librocco/shared";
-	import type { BookEntry, NavMap } from "@librocco/db";
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { noteStates } from "$lib/enums/inventory";
+	import { goto } from "$app/navigation";
+
+	import { NoteState } from "@librocco/shared";
+
+	import type { BookEntry } from "@librocco/db";
+	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
 
-	import { getDB } from "$lib/db";
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
-
 	import {
-		InventoryPage,
-		Pagination,
-		InventoryTable,
-		createTable,
-		Header,
-		SelectMenu,
-		TextEditable,
-		SideBarNav,
-		SidebarItemGroup,
-		NewEntitySideNavButton,
-		ScanInput,
-		type TransactionUpdateDetail,
-		type RemoveTransactionsDetail,
-		ProgressBar,
-		BookDetailForm,
-		Slideover,
-		Button,
-		ButtonColor
+		Breadcrumbs,
+		DropdownWrapper,
+		PopoverWrapper,
+		Page,
+		PlaceholderBox,
+		createBreadcrumbs,
+		ConfirmActionDialog,
+		NewStockTable,
+		createTable
 	} from "$lib/components";
+	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
-	import { createNoteStores } from "$lib/stores/inventory";
-	import { newBookFormStore } from "$lib/stores/book_form";
+	import { getDB } from "$lib/db";
+
+	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+
+	import { createNoteStores } from "$lib/stores/proto";
+
+	import { scan } from "$lib/actions/scan";
+	import { createIntersectionObserver } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
-	import { comparePaths } from "$lib/utils/misc";
-	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
-	import { links } from "$lib/data";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB();
-	const plugin = createBookDataExtensionPlugin();
-
-	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteList = readableFromStream(
-		inNoteListCtx,
-		db
-			?.stream()
-			.inNoteList(inNoteListCtx)
-			.pipe(map((m) => [...m])),
-		[]
-	);
+	const db = getDB()!;
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
-	// and reset the loading state when the data changes (should always be truthy -> th 	us, loading false).
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: note = data.note;
-	$: warehouse = data.warehouse;
+	$: note = data.note!;
+	$: warehouse = data.warehouse!;
 
 	$: noteStores = createNoteStores(note);
 
@@ -80,200 +65,366 @@
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
-	$: currentPage = noteStores.currentPage;
-	$: paginationData = noteStores.paginationData;
 
-	$: toasts = noteToastMessages(note?.displayName, warehouse?.displayName);
+	$: toasts = noteToastMessages(note?.displayName);
 
 	// #region note-actions
 	//
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(`${base}/inventory/inbound`);
-
-			const message = $state === NoteState.Committed ? toasts.inNoteCommited : toasts.noteDeleted;
-
+			goto(appPath("inbound"));
+			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
 			toastSuccess(message);
 		}
 	}
 
-	/**
-	 * Handle create note returns an `on:click` handler enclosed with the id of the warehouse
-	 * the new inbound note should be added to.
-	 * _(The handler navigates to the newly created note page after the note has been created)_.
-	 */
-	const handleCreateNote = (warehousId: string) => async () => {
-		loading = true;
-		const note = db.warehouse(warehousId).note();
-		await note.create();
-		await goto(`${base}/inventory/inbound/${note._id}`);
-
-		toastSuccess(toasts.inNoteCreated);
+	const handleCommitSelf = async () => {
+		await note.commit({});
+		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
-	// #endregion note-actions
+
+	const handleDeleteSelf = async () => {
+		await note.delete({});
+		toastSuccess(noteToastMessages("Note").noteDeleted);
+	};
+	// #region note-actions
+
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
 
 	// #region table
 	const tableOptions = writable({
-		data: $entries
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.update(() => ({ data: $entries }));
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
+		toastSuccess(toasts.volumeAdded(isbn));
+	};
 
-		const book = await plugin.fetchBookData([isbn]);
+	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+		const data = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(data.get("quantity"));
 
-		if (book.length) {
-			toastSuccess(toasts.bookDataFetched(isbn));
-			await db.books().upsert(book);
+		const transaction = { isbn, warehouseId };
+
+		if (currentQty == nextQty) {
+			return;
 		}
 
-		toastSuccess(toasts.volumeAdded(isbn));
-		bookForm.close();
+		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
+		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
-	const handleTransactionUpdate = async ({ detail }: CustomEvent<TransactionUpdateDetail>) => {
-		const { matchTxn, updateTxn } = detail;
-
-		await note.updateTransaction(matchTxn, { quantity: matchTxn.quantity, warehouseId: "", ...updateTxn });
-
-		// TODO: This doesn't seem to work / get called?
-		toastSuccess(toasts.volumeUpdated(matchTxn.isbn));
-	};
-
-	const handleRemoveTransactions = async (e: CustomEvent<RemoveTransactionsDetail>) => {
-		await note.removeTransactions(...e.detail);
-		toastSuccess(toasts.volumeRemoved(e.detail.length));
+	const deleteRow = async (isbn: string, warehouseId: string) => {
+		await note.removeTransactions({ isbn, warehouseId });
+		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
 	// #region book-form
-	$: bookForm = newBookFormStore();
+	let bookFormData = null;
 
-	const handleBookFormSubmit = async (book: BookEntry) => {
-		await db.books().upsert([book]);
-		toastSuccess(toasts.bookDataUpdated(book.isbn));
-		bookForm.close();
+	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+		/**
+		 * This is a quick fix for `form.data` having all optional properties
+		 *
+		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+		 * to fix these properly.
+		 *
+		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 */
+		const data = form?.data as BookEntry;
+
+		try {
+			await db.books().upsert([data]);
+
+			toastSuccess(toasts.bookDataUpdated(data.isbn));
+			bookFormData = null;
+			open.set(false);
+		} catch (err) {
+			// toastError(`Error: ${err.message}`);
+		}
 	};
+
 	// #endregion book-form
 
-	// #region helpers
-	const mapNotesToNavItems = (notes: NavMap, currentId: string) =>
-		[...notes].map(([id, { displayName }]) => ({
-			name: displayName || id,
-			href: `${base}/inventory/inbound/${id}`,
-			current: comparePaths(id, currentId)
-		}));
-	// #endregion helpers
+	$: breadcrumbs =
+		note?._id && warehouse?._id
+			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
+			: [];
+
+	// #region temp
+	const handlePrint = () => {};
+
+	// #endregion temp
+
+	const dialog = createDialog({
+		forceVisible: true
+	});
+	const {
+		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = dialog;
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
-<!-- svelte-ignore missing-declaration -->
-<InventoryPage view="inbound">
-	<!-- Header slot -->
-	<Header {links} currentLocation={`${base}/inventory/inbound/`} slot="header" />
+<Page>
+	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
+		<QrCode {...iconProps} />
+		<input use:scan={handleAddTransaction} placeholder="Scan to add books" {...inputProps} />
+	</svelte:fragment>
 
-	<!-- Sidebar slot -->
-	<SideBarNav slot="sidebar">
-		{#each $inNoteList as [id, { displayName, notes }], index (id)}
-			<SidebarItemGroup
-				name={displayName || id}
-				expand={$page.params.id.includes(id)}
-				{index}
-				items={mapNotesToNavItems(notes, $page.params.id)}
-			>
-				<svelte:fragment slot="actions">
-					{#if !id.includes("0-all")}
-						<NewEntitySideNavButton label="Create note" on:click={handleCreateNote(id)} />
+	<svelte:fragment slot="heading">
+		<Breadcrumbs class="mb-3" links={breadcrumbs} />
+		<div class="flex w-full items-center justify-between">
+			<div>
+				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+
+				<div class="h-5">
+					{#if $updatedAt}
+						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
-				</svelte:fragment>
-			</SidebarItemGroup>
-		{/each}
-	</SideBarNav>
-
-	<!-- Table header slot -->
-	<svelte:fragment slot="tableHeader">
-		{#if !loading && note}
-			{#if $state && $state !== NoteState.Deleted}
-				<div class="mb-10 flex w-full items-end justify-between">
-					<div>
-						<h2 class="cursor-normal mb-2.5 select-none text-lg font-medium text-gray-900">
-							<TextEditable class="inline-block" bind:value={$displayName} disabled={$state === NoteState.Committed} />
-							{#if warehouse}
-								<span class="align-middle text-sm font-normal text-gray-500">in {warehouse.displayName}</span>
-							{/if}
-						</h2>
-						{#if $updatedAt}
-							<div>
-								<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
-							</div>
-						{/if}
-					</div>
-					<div class="flex gap-x-4">
-						<Button color={ButtonColor.White} on:click={() => note?.printReceipt()}>Print receipt</Button>
-						<SelectMenu
-							id="note-state-picker"
-							class="w-[138px]"
-							options={noteStates}
-							bind:value={$state}
-							disabled={[...Object.values(NoteTempState), NoteState.Committed].includes($state)}
-							align="right"
-						/>
-					</div>
 				</div>
-				<ScanInput onAdd={handleAddTransaction} />
-			{/if}
-		{/if}
+			</div>
+
+			<div class="flex items-center gap-x-3">
+				<button
+					class="button button-green"
+					use:melt={$dialogTrigger}
+					on:m-click={() => {
+						dialogContent = {
+							onConfirm: handleCommitSelf,
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							type: "commit"
+						};
+					}}
+					on:m-keydown={() => {
+						dialogContent = {
+							onConfirm: handleCommitSelf,
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							type: "commit"
+						};
+					}}
+				>
+					<span class="button-text">Commit</span>
+				</button>
+
+				<DropdownWrapper let:item>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={handlePrint}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+					>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
+						use:melt={$dialogTrigger}
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						on:m-click={() => {
+							dialogContent = {
+								onConfirm: handleDeleteSelf,
+								title: dialogTitle.delete(note.displayName),
+								description: dialogDescription.deleteNote(),
+								type: "delete"
+							};
+						}}
+						on:m-keydown={() => {
+							dialogContent = {
+								onConfirm: handleDeleteSelf,
+								title: dialogTitle.delete(note.displayName),
+								description: dialogDescription.deleteNote(),
+								type: "delete"
+							};
+						}}
+					>
+						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
+					</div>
+				</DropdownWrapper>
+			</div>
+		</div>
 	</svelte:fragment>
 
-	<!-- Table slot -->
-	<svelte:fragment slot="table">
-		{#if !loading}
-			{#if Boolean($entries.length)}
-				<InventoryTable
-					{table}
-					on:transactionupdate={handleTransactionUpdate}
-					on:removetransactions={handleRemoveTransactions}
-					onEdit={bookForm.open}
-					interactive
-				/>
-			{/if}
+	<svelte:fragment slot="main">
+		{#if loading}
+			<div class="center-absolute">
+				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			</div>
+		{:else if !$entries.length}
+			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
+				<QrCode slot="icon" let:iconProps {...iconProps} />
+			</PlaceholderBox>
 		{:else}
-			<ProgressBar class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2" />
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<NewStockTable {table}>
+					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
+						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
+
+						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
+							<input
+								name="quantity"
+								id="quantity"
+								value={quantity}
+								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
+								type="number"
+								min="1"
+								required
+							/>
+						</form>
+					</div>
+					<div slot="row-actions" let:row let:rowIx>
+						<PopoverWrapper
+							options={{
+								forceVisible: true,
+								positioning: {
+									placement: "left"
+								}
+							}}
+							let:trigger
+						>
+							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+								<span class="sr-only">Edit row {rowIx}</span>
+								<span class="aria-hidden">
+									<MoreVertical />
+								</span>
+							</button>
+
+							<div slot="popover-content" class="rounded bg-gray-900">
+								<button
+									use:melt={$dialogTrigger}
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									on:m-click={() => {
+										bookFormData = row;
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editBook(),
+											description: dialogDescription.editBook(),
+											type: "edit-row"
+										};
+									}}
+									on:m-keydown={() => {
+										bookFormData = row;
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editBook(),
+											description: dialogDescription.editBook(),
+											type: "edit-row"
+										};
+									}}
+								>
+									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="aria-hidden">
+										<FileEdit />
+									</span>
+								</button>
+								<button
+									on:click={() => deleteRow(row.isbn, row.warehouseId)}
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+								>
+									<span class="sr-only">Delete row {rowIx}</span>
+									<span class="aria-hidden">
+										<Trash2 />
+									</span>
+								</button>
+							</div>
+						</PopoverWrapper>
+					</div>
+				</NewStockTable>
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if $entries?.length > maxResults}
+					<div use:scroll.trigger />
+				{/if}
+			</div>
 		{/if}
 	</svelte:fragment>
+</Page>
 
-	<!-- Table footer slot -->
-	<div class="flex h-full flex-col items-center justify-between gap-y-2 lg:flex-row" slot="tableFooter">
-		{#if !loading && note}
-			{#if $paginationData.totalItems}
-				<p class="cursor-normal select-none text-sm font-medium leading-5">
-					Showing <strong>{$paginationData.firstItem}</strong> to <strong>{$paginationData.lastItem}</strong> of
-					<strong>{$paginationData.totalItems}</strong> results
-				</p>
-			{/if}
-			{#if $paginationData.numPages > 1}
-				<Pagination maxItems={7} bind:value={$currentPage} numPages={$paginationData.numPages} />
-			{/if}
-		{/if}
-	</div>
+<div use:melt={$portalled}>
+	{#if $open}
+		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-	<svelte:fragment slot="slideOver">
-		{#if $bookForm.open}
-			<Slideover {...$bookForm.slideoverText} handleClose={bookForm.close}>
-				<BookDetailForm
-					publisherList={$publisherList}
-					book={$bookForm.book}
-					on:submit={({ detail }) => handleBookFormSubmit(detail)}
-					on:cancel={bookForm.close}
-					on:fetch={({ detail }) => bookForm.fetch(detail)}
-				/>
-			</Slideover>
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }} />
+		{#if type === "edit-row"}
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
+				bg-white shadow-lg focus:outline-none"
+				in:fly={{
+					x: 350,
+					duration: 150,
+					opacity: 1
+				}}
+				out:fly={{
+					x: 350,
+					duration: 100
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<BookForm
+						data={bookFormData}
+						publisherList={$publisherList}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: bookSchema,
+							validationMethod: "submit-only",
+							onUpdated
+						}}
+						onCancel={() => open.set(false)}
+						onFetch={async (isbn, form) => {
+							const result = await bookDataPlugin.fetchBookData(isbn);
+
+							if (result) {
+								const [bookData] = result;
+								form.update((data) => ({ ...data, ...bookData }));
+							}
+							// TODO: handle loading and errors
+						}}
+					/>
+				</div>
+			</div>
+		{:else}
+			<ConfirmActionDialog
+				{dialog}
+				{type}
+				onConfirm={async (closeDialog) => {
+					await onConfirm();
+					closeDialog();
+				}}
+			>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+			</ConfirmActionDialog>
 		{/if}
-	</svelte:fragment>
-</InventoryPage>
+	{/if}
+</div>
