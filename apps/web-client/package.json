@@ -78,6 +78,7 @@
 		"rxjs": "~7.8.0",
 		"uuid": "~9.0.0",
 		"svelte-local-storage-store": "~0.4.0",
-		"librocco-extension": "git+https://github.com/librocco/bookdata-extension.git"
+		"librocco-extension": "git+https://github.com/librocco/bookdata-extension.git",
+		"just-compare": "~2.3.0"
 	}
 }
