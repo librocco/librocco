@@ -47,7 +47,12 @@
 {#if options.length > 1}
 	<!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
 	<label class="hidden" {...$label} use:label>Select a warehouse to withdraw book {rowIx} from</label>
-	<button class="flex w-full gap-x-2 rounded bg-white p-2 shadow" {...$trigger} use:trigger aria-label="Warehouse">
+	<button
+		class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
+		{...$trigger}
+		use:trigger
+		aria-label="Warehouse"
+	>
 		<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}" />
 		{#if $selectedLabel}
 			<span class="truncate">
@@ -60,7 +65,7 @@
 	</button>
 	{#if $open}
 		<div
-			class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-white p-1 shadow focus:!ring-0"
+			class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-white p-1 shadow-md focus:!ring-0"
 			{...$menu}
 			use:menu
 		>
