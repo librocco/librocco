@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
-	import { Checkbox, type RemoteDbConfig } from "$lib/components";
+	import { Checkbox } from "$lib/components";
+	import type { ReplicationConfig } from "$lib/stores/replication";
 
 	const stateColorLookup = {
 		success: "badge-success",
@@ -9,7 +10,7 @@
 		error: "badge-error"
 	};
 
-	export let config: RemoteDbConfig;
+	export let config: ReplicationConfig;
 	export let status: { state: keyof typeof stateColorLookup; message: string };
 
 	export let onEdit: () => void = () => {};
