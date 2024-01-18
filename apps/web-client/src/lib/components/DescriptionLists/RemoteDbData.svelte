@@ -2,9 +2,7 @@
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
 	import { Button, ButtonColor } from "../Button";
-	import { Checkbox } from "../FormFields";
-
-	import type { RemoteDbConfig } from "$lib/components";
+	import { Checkbox, type RemoteDbConfig } from "$lib/components";
 
 	const stateColorLookup = {
 		success: "badge-success",
@@ -66,7 +64,7 @@
 							</dt>
 							<dd>
 								<span aria-hidden="true">
-									<Checkbox disabled checked={config.live} name="live" />
+									<Checkbox disabled checked={config.live} name="live" id="live" label="" />
 								</span>
 								<span class="sr-only">{config.live}</span>
 							</dd>
@@ -80,7 +78,7 @@
 							</dt>
 							<dd>
 								<span aria-hidden="true">
-									<Checkbox disabled checked={config.retry} name="retry" />
+									<Checkbox disabled checked={config.retry} name="retry" id="retry" label="" />
 								</span>
 								<span class="sr-only">{config.retry}</span>
 							</dd>
