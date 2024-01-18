@@ -176,9 +176,6 @@ importers:
       svelte-fragment-component:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
-      svelte-headlessui:
-        specifier: 0.0.25
-        version: 0.0.25(svelte@3.58.0)
       svelte-htm:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
@@ -188,9 +185,6 @@ importers:
       svelte-sequential-preprocessor:
         specifier: ~2.0.1
         version: 2.0.1
-      svelte-transition:
-        specifier: ~0.0.7
-        version: 0.0.10(svelte@3.58.0)
       sveltekit-superforms:
         specifier: ~1.10.2
         version: 1.10.2(@sveltejs/kit@1.15.11)(svelte@3.58.0)(zod@3.22.4)
@@ -520,9 +514,6 @@ importers:
       svelte-fragment-component:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
-      svelte-headlessui:
-        specifier: ~0.0.22
-        version: 0.0.33
       svelte-htm:
         specifier: ~1.2.0
         version: 1.2.0(svelte@3.58.0)
@@ -532,9 +523,6 @@ importers:
       svelte-preprocess:
         specifier: ^5.0.3
         version: 5.1.3(@babel/core@7.23.6)(postcss@8.4.32)(svelte@3.58.0)(typescript@4.9.5)
-      svelte-transition:
-        specifier: ~0.0.7
-        version: 0.0.10(svelte@3.58.0)
       svelte2tsx:
         specifier: ~0.6.8
         version: 0.6.27(svelte@3.58.0)(typescript@4.9.5)
@@ -9872,18 +9860,6 @@ packages:
       svelte: 3.58.0
     dev: true
 
-  /svelte-headlessui@0.0.25(svelte@3.58.0):
-    resolution: {integrity: sha512-jJ/XX+v9IUJQShbvusudctyi5RM3z/hfpm04Bv9JkR3Nd2hyO1rWP4uGpKAEU+ltDX2/sM4yOwcTwql+wURkTA==}
-    dependencies:
-      svelte-transition: 0.0.10(svelte@3.58.0)
-    transitivePeerDependencies:
-      - svelte
-    dev: true
-
-  /svelte-headlessui@0.0.33:
-    resolution: {integrity: sha512-GYEkYtXLrF1Yqyea7K6U63HMhNtZG9YSFwhedlQ8DpYsHmHztwSTZaLlEJIoygeyIKCSDmgomSTai7t8fj2yIw==}
-    dev: true
-
   /svelte-hmr@0.14.12(svelte@3.58.0):
     resolution: {integrity: sha512-4QSW/VvXuqVcFZ+RhxiR8/newmwOCTlbYIezvkeN6302YFRE8cXy0naamHcjz8Y9Ce3ITTZtrHrIL0AGfyo61w==}
     engines: {node: ^12.20 || ^14.13.1 || >= 16}
@@ -10051,14 +10027,6 @@ packages:
     dependencies:
       svelte: 4.2.8
       tslib: 2.6.2
-    dev: true
-
-  /svelte-transition@0.0.10(svelte@3.58.0):
-    resolution: {integrity: sha512-BN8XDA7dKyuh+Lmdn3vxCzJd3M7L4BLdRziIAJew2AiBFMcrJJg8srEMYYoTCOLtYJ2Oqlv3+3/K5b6uHM8LSg==}
-    peerDependencies:
-      svelte: ^3.59.1 || ^4.0.0
-    dependencies:
-      svelte: 3.58.0
     dev: true
 
   /svelte2tsx@0.6.27(svelte@3.58.0)(typescript@4.9.5):
