@@ -9,11 +9,10 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { NewStockTable, createTable } from "$lib/components";
+	import { StockTable, createTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
-	import { newBookFormStore } from "$lib/stores/book_form";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
@@ -125,7 +124,7 @@
 			{/await}
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<NewStockTable {table}>
+				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
 							<span class="sr-only">Edit row {rowIx}</span>
@@ -134,7 +133,7 @@
 							</span>
 						</button>
 					</div>
-				</NewStockTable>
+				</StockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}

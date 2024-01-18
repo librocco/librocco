@@ -1,8 +1,8 @@
 <script lang="ts">
 	export let name: string;
 	export let id: string;
-	export let label: string;
 
+	export let label = "";
 	export let helpText = "";
 	export let checked = false;
 	export let disabled = false;
@@ -22,22 +22,13 @@
 
 <div class="relative flex max-w-max items-start gap-x-2 p-1">
 	<div class="inline-flex h-5 items-center">
-		<input
-			type="checkbox"
-			{id}
-			{name}
-			value={id}
-			aria-describedby={`${name}-description`}
-			class={inputBaseClasses}
-			bind:checked
-			{disabled}
-		/>
+		<input type="checkbox" {id} {name} value={id} aria-describedby="{name}-description" class={inputBaseClasses} bind:checked {disabled} />
 	</div>
 	<div>
 		<label for={id} class={labelBaseClasses}>
 			{label}
 		</label>
-		<p id={`${name}-description`} class={helpTextClasses}>
+		<p id="{name}-description" class={helpTextClasses}>
 			{helpText}
 		</p>
 	</div>

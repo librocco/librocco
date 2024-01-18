@@ -25,8 +25,8 @@
 		createBreadcrumbs,
 		ConfirmActionDialog,
 		createTable,
-		TdWarehouseSelect,
-		NewOutboundTable,
+		WarehouseSelect,
+		OutboundTable,
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
@@ -117,6 +117,8 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
+	// TODO: toast messsage for quantity is mispelt
+	// TODO: need toast message for warehouse name update
 	const updateRowWarehouse =
 		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
 			const { warehouseId: nextWarehouseId } = e.detail;
@@ -129,7 +131,8 @@
 				return;
 			}
 
-			await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+			const t = await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+			console.log(t);
 			toastSuccess(toasts.volumeUpdated(isbn));
 		};
 
@@ -246,7 +249,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -254,7 +257,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -290,7 +293,7 @@
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<NewOutboundTable {table}>
+				<OutboundTable {table}>
 					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
 						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
 
@@ -310,7 +313,7 @@
 					<svelte:fragment slot="row-warehouse" let:row let:rowIx>
 						{@const handleWarehouseUpdate = updateRowWarehouse(row.isbn, row.quantity, row.warehouseId)}
 
-						<TdWarehouseSelect on:change={handleWarehouseUpdate} data={row} {rowIx} />
+						<WarehouseSelect on:change={handleWarehouseUpdate} data={row} {rowIx} />
 					</svelte:fragment>
 
 					<div slot="row-actions" let:row let:rowIx>
@@ -371,7 +374,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</NewOutboundTable>
+				</OutboundTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
