@@ -9,7 +9,7 @@
 	import type { BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, NewStockTable, createTable } from "$lib/components";
+	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, createTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { goto } from "$app/navigation";
@@ -142,7 +142,7 @@
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<NewStockTable {table}>
+				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button
 							use:melt={$trigger}
@@ -158,7 +158,7 @@
 							</span>
 						</button>
 					</div>
-				</NewStockTable>
+				</StockTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}

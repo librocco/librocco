@@ -3,7 +3,7 @@ import { render, waitFor } from "@testing-library/svelte";
 
 import type { WarehouseChangeDetail } from "../types";
 
-import TdWarehouseSelect from "../TdWarehouseSelect.svelte";
+import TdWarehouseSelect from "../WarehouseSelect.svelte";
 
 describe("TdWarehouseSelect", async () => {
 	// See comment below
