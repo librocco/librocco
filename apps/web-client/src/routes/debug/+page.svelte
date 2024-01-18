@@ -6,6 +6,8 @@
 	import { createDB, destroyDB } from "$lib/db";
 	import { base } from "$app/paths";
 
+	import { appPath } from "$lib/paths";
+
 	let destroyingDb = false;
 	const handleDestroyDB = () => {
 		destroyingDb = true;
@@ -23,7 +25,7 @@
 
 	<section class="px-48 pt-14" slot="table">
 		<div class="mb-12">
-			<a href="{base}/inventory/stock">
+			<a href={appPath("inventory")}>
 				<Button color={ButtonColor.White}><SA slot="startAdornment" />Back to inventory</Button>
 			</a>
 		</div>
