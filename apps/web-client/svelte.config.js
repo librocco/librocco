@@ -4,6 +4,21 @@ import preprocess from "svelte-preprocess";
 import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
+const entries = [
+	"/",
+	"/inventory",
+	"/inventory/",
+	"/inventory/inbound/",
+	"/inventory/inbound/1/",
+	"/inventory/warehouses/",
+	"/inventory/warehouses/1/",
+	"/stock/",
+	"/outbound/",
+	"/outbound/1/",
+	"/settings/",
+	"/debug"
+].map((path) => `${process.env.BASE_PATH}${path}`);
+
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
@@ -15,25 +30,7 @@ const config = {
 		},
 		adapter: adapter(),
 		prerender: {
-			entries: [
-				// TODO: update once rehaul is finished
-				"/proto/inventory/inbound/",
-				"/proto/inventory/inbound/1/",
-				"/proto/inventory/warehouses/",
-				"/proto/inventory/warehouses/1/",
-				"/proto/stock/",
-				"/proto/outbound/",
-				"/proto/outbound/1/",
-				"/proto/settings/",
-				"/",
-				"/inventory",
-				"/inventory/",
-				"/inventory/stock",
-				"/inventory/stock/",
-				"/inventory/inbound/",
-				"/inventory/outbound/",
-				"/debug"
-			]
+			entries
 		},
 		paths: {
 			base: process.env.BASE_PATH,
