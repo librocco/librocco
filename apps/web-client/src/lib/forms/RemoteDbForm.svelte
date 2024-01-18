@@ -1,37 +1,49 @@
+<script lang="ts" context="module">
+	import type { SuperForm } from "sveltekit-superforms/client";
+
+	type RemoteDbForm = SuperForm<ZodValidation<typeof remoteDbSchema>, unknown>;
+	export type RemoteDbFormOptions = RemoteDbForm["options"];
+</script>
+
 <script lang="ts">
-	import { createForm } from "felte";
+	import type { ZodValidation } from "sveltekit-superforms";
+	import { superForm, superValidateSync, fieldProxy } from "sveltekit-superforms/client";
+
 	import { ChevronUp, ChevronDown } from "lucide-svelte";
 
 	import { Input, Checkbox } from "$lib/components";
 
-	import type { RemoteDbConfig } from "./types";
+	import { remoteDbSchema, type RemoteDbData } from "$lib/forms/schemas";
 
-	export let data: Partial<RemoteDbConfig> = {};
-	export let onSubmit: (values: RemoteDbConfig) => void = () => {};
+	export let data: RemoteDbData | null;
+	export let options: RemoteDbFormOptions;
 
-	const defaultValues = {
-		direction: "sync" as const,
-		live: true,
-		retry: true
-	};
+	const _form = superValidateSync(data, remoteDbSchema);
+	const form = superForm(_form, options);
 
-	const {
-		form,
-		data: dataStore,
-		setFields
-	} = createForm({
-		initialValues: { ...defaultValues, ...data },
-		onSubmit: (values) => {
-			onSubmit(values);
-		}
-	});
+	const { form: formStore, enhance } = form;
+
+	const liveProxy = fieldProxy(formStore, "live");
+	const retryProxy = fieldProxy(formStore, "retry");
 </script>
 
-<form class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2" use:form aria-label="Edit remote database connection config">
+<form
+	class="divide-y-gray-50 flex h-auto flex-col gap-y-6 divide-y-2"
+	use:enhance
+	method="POST"
+	aria-label="Edit remote database connection config"
+>
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<Input id="url" name="url" label="Remote CouchDB URL" required={true} pattern="^(https?://)(.+):(.+)@(.+):(.+)$">
+				<Input
+					id="url"
+					name="url"
+					label="Remote CouchDB URL"
+					required={true}
+					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
+					bind:value={$formStore.url}
+				>
 					<p slot="helpText">URL format: <span class="italic">https://user:password@host:post/db_name</span></p>
 				</Input>
 			</div>
@@ -48,7 +60,7 @@
 					<div class="flex flex-col gap-y-6 pl-8">
 						<div class="flex flex-col gap-y-2">
 							<label for="direction" class={"text-sm font-medium text-gray-700"}> Sync direction </label>
-							<select id="direction" name="direction" class="appearance-none">
+							<select id="direction" name="direction" class="appearance-none" bind:value={$formStore.direction}>
 								<option value="to">➡️ To remote</option>
 								<option value="from">⬅️ From remote</option>
 								<option value="sync">↔️ Sync with remote</option>
@@ -59,10 +71,11 @@
 							name="live"
 							label="Live"
 							helpText="Watch for and sync new changes as they become available."
+							bind:checked={$formStore.live}
 							on:change={() => {
-								if ($dataStore.retry) {
-									setFields("retry", false);
-									setFields("live", false);
+								if ($formStore.retry) {
+									retryProxy.set(false);
+									liveProxy.set(false);
 								}
 							}}
 						/>
@@ -71,7 +84,8 @@
 							name="retry"
 							label="Retry"
 							helpText="Automatically retry sync on failure. Otherwise connections will have to be manually restarted."
-							disabled={!$dataStore.live}
+							disabled={!$formStore.live}
+							bind:checked={$formStore.retry}
 						/>
 					</div>
 				</details>

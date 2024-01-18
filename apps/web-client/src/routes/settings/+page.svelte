@@ -3,15 +3,24 @@
 
 	import { goto } from "$app/navigation";
 
-	import { Page, RemoteDbForm, RemoteDbData, ProgressBar } from "$lib/components";
+	import { Page, RemoteDbData, ProgressBar } from "$lib/components";
+	import { RemoteDbForm, type RemoteDbFormOptions } from "$lib/forms";
 
 	import { remoteDbStore } from "$lib/stores";
 	import { replicationStatusMessages } from "$lib/toasts";
 
 	import { appPath } from "$lib/paths";
+	import { remoteDbSchema } from "$lib/forms";
+	import type { ReplicationConfig } from "$lib/stores/replication";
 
 	$: ({ replicator } = remoteDbStore);
 	$: ({ status, config, progress, hasActiveHandler } = replicator);
+
+	const onUpdated: RemoteDbFormOptions["onUpdated"] = ({ form }) => {
+		const data = form?.data as ReplicationConfig;
+
+		return remoteDbStore.createHandler(data);
+	};
 </script>
 
 <Page>
@@ -21,17 +30,17 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Stock</h1>
+		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
 		<div class="space-y-12 p-6">
-			<div class="flex flex-col gap-6 px-16 sm:flex-row">
-				<div>
+			<div class="flex flex-col gap-6 px-4 md:flex-row">
+				<div class="basis-1/3">
 					<h2 class="text-base font-semibold leading-7 text-gray-900">Database settings</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">Manage a connection to a remote database</p>
 				</div>
-				<div class="w-full max-w-3xl">
+				<div class="w-full basis-2/3">
 					{#if $hasActiveHandler}
 						<RemoteDbData config={$config} status={replicationStatusMessages[$status.state]} onEdit={() => remoteDbStore.destroyHandler()}>
 							<div slot="info" class="flex flex-col gap-y-2 pt-2">
@@ -48,7 +57,16 @@
 							</div>
 						</RemoteDbData>
 					{:else}
-						<RemoteDbForm data={$config} onSubmit={(values) => remoteDbStore.createHandler(values)} />
+						<RemoteDbForm
+							data={$config}
+							options={{
+								SPA: true,
+								dataType: "json",
+								validators: remoteDbSchema,
+								validationMethod: "submit-only",
+								onUpdated
+							}}
+						/>
 					{/if}
 				</div>
 			</div>

@@ -32,7 +32,7 @@
 	const _form = superValidateSync(data, bookSchema);
 	const form = superForm(_form, options);
 
-	const { form: formStore, constraints, tainted, enhance } = form;
+	const { form: formStore, constraints, enhance } = form;
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
 	const publisherProxy = stringProxy(formStore, "publisher", { empty: "undefined" });
