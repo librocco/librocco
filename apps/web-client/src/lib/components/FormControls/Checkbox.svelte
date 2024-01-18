@@ -7,8 +7,8 @@
 	export let checked = false;
 	export let disabled = false;
 
-	const labelBaseClasses = ["text-base font-medium", disabled ? "text-gray-400" : "text-gray-800"].join(" ");
-	const helpTextClasses = ["text-sm", disabled ? "text-gray-300" : "text-gray-500"].join(" ");
+	$: labelBaseClasses = ["text-base font-medium", disabled ? "text-gray-400" : "text-gray-800"].join(" ");
+	$: helpTextClasses = ["text-sm", disabled ? "text-gray-300" : "text-gray-500"].join(" ");
 	const inputBaseClasses = [
 		"focus:ring-gray-400",
 		"h-4",
@@ -22,7 +22,17 @@
 
 <div class="relative flex max-w-max items-start gap-x-2 p-1">
 	<div class="inline-flex h-5 items-center">
-		<input type="checkbox" {id} {name} value={id} aria-describedby="{name}-description" class={inputBaseClasses} bind:checked {disabled} />
+		<input
+			type="checkbox"
+			{id}
+			{name}
+			value={id}
+			aria-describedby="{name}-description"
+			class={inputBaseClasses}
+			bind:checked
+			{disabled}
+			on:change
+		/>
 	</div>
 	<div>
 		<label for={id} class={labelBaseClasses}>

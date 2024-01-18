@@ -19,3 +19,11 @@ export const bookSchema = z.object({
 	editedBy: z.string().optional(),
 	outOfPrint: z.boolean().optional()
 });
+
+export type RemoteDbData = SuperValidated<typeof remoteDbSchema>["data"];
+export const remoteDbSchema = z.object({
+	url: z.string(),
+	direction: z.enum(["to", "from", "sync"]).default("sync"),
+	live: z.boolean().default(true),
+	retry: z.boolean().default(true)
+});
