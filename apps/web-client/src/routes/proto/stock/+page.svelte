@@ -150,7 +150,7 @@
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }}>
 			<div
 				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 bg-white
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
 				shadow-lg focus:outline-none"
 				transition:fly={{
 					x: 350,
