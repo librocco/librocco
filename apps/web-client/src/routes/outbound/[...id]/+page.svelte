@@ -121,7 +121,6 @@
 		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
 			const { warehouseId: nextWarehouseId } = e.detail;
 			// Number form control validation means this string->number conversion should yield a valid result
-;
 			const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
 			// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
@@ -247,7 +246,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -255,7 +254,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
