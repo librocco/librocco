@@ -16,7 +16,7 @@
 
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
-	import { Input, NewCheckbox } from "$lib/components/FormControls";
+	import { Input, Checkbox } from "$lib/components/FormControls";
 	import { get } from "svelte/store";
 
 	export let data: BookFormData | null;
@@ -143,7 +143,7 @@
 							{@const isHighlighed = $isHighlighted(publisher)}
 
 							<li
-								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+								class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
@@ -165,7 +165,7 @@
 				<Input bind:value={$formStore.editedBy} name="editedBy" label="Edited by" placeholder="" {...$constraints.editedBy} />
 			</div>
 			<div id="outOfPrint-field-container" class="basis-full">
-				<NewCheckbox
+				<Checkbox
 					bind:checked={$formStore.outOfPrint}
 					id="outOfPrint"
 					name="outOfPrint"

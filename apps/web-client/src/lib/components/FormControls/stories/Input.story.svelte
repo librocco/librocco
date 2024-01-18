@@ -4,34 +4,33 @@
 	import { Mail, Search, Edit, QrCode } from "lucide-svelte";
 
 	import { Button, ButtonSize } from "$lib/components";
-	import { TextFieldSize } from "../enums";
 
-	import TextField from "./TextField.svelte";
+	import Input from "../Input.svelte";
 
 	export let Hst: Hst;
 </script>
 
-<Hst.Story title="Form Fields / TextField" layout={{ type: "grid", width: 700 }}>
+<Hst.Story title="Form Controls / Input" layout={{ type: "grid", width: 700 }}>
 	<Hst.Variant title="Default">
-		<TextField name="default-placeholder" label="Default with placeholder" placeholder="placeholder">
+		<Input name="default-placeholder" label="Default with placeholder" placeholder="placeholder">
 			<p slot="helpText">And some help text</p>
-		</TextField>
+		</Input>
 	</Hst.Variant>
 	<Hst.Variant title="Start Adornment">
-		<TextField name="start-adornment" placeholder="placeholderemail@gmail.com" label="Start Adornment">
+		<Input name="start-adornment" placeholder="placeholderemail@gmail.com" label="Start Adornment">
 			<span slot="startAdornment">
 				<Mail />
 			</span>
-		</TextField>
+		</Input>
 	</Hst.Variant>
 	<Hst.Variant title="Start & End Adornments">
-		<TextField name="start-end-adornment" placeholder="placeholderemail@gmail.com" label="Start & End Adornments">
+		<Input name="start-end-adornment" placeholder="placeholderemail@gmail.com" label="Start & End Adornments">
 			<span slot="startAdornment">$</span>
 			<span slot="endAdornment">USD</span>
-		</TextField>
+		</Input>
 	</Hst.Variant>
 	<Hst.Variant title="Prototype: Scan input ">
-		<TextField name="scan-input" placeholder="Scan to add books..." variant={TextFieldSize.LG}>
+		<Input name="scan-input" placeholder="Scan to add books...">
 			<span slot="startAdornment">
 				<QrCode />
 			</span>
@@ -49,6 +48,6 @@
 					Create
 				</Button>
 			</div>
-		</TextField>
+		</Input>
 	</Hst.Variant>
 </Hst.Story>
