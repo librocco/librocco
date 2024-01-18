@@ -102,7 +102,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Stock</h1>
+		<h1 class="text-2xl font-bold leading-7 text-gray-900">Search</h1>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
