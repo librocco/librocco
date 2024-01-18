@@ -301,7 +301,6 @@
 								}
 							}}
 							let:trigger
-							let:open
 						>
 							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 								<span class="sr-only">Edit row {rowIx}</span>
