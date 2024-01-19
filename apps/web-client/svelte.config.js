@@ -4,6 +4,8 @@ import preprocess from "svelte-preprocess";
 import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
+const BASE_PATH = process.env.BASE_PATH ?? "";
+
 const entries = [
 	"/",
 	"/inventory",
@@ -17,7 +19,7 @@ const entries = [
 	"/outbound/1/",
 	"/settings/",
 	"/debug"
-].map((path) => `${process.env.BASE_PATH}${path}`);
+].map((path) => `${BASE_PATH}${path}`);
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -33,7 +35,7 @@ const config = {
 			entries
 		},
 		paths: {
-			base: process.env.BASE_PATH,
+			base: BASE_PATH,
 			relative: false
 		},
 		typescript: {
