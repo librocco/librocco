@@ -6,21 +6,6 @@ import sequence from "svelte-sequential-preprocessor";
 
 const BASE_PATH = process.env.BASE_PATH ?? "";
 
-const entries = [
-	"/",
-	"/inventory",
-	"/inventory/",
-	"/inventory/inbound/",
-	"/inventory/inbound/1/",
-	"/inventory/warehouses/",
-	"/inventory/warehouses/1/",
-	"/stock/",
-	"/outbound/",
-	"/outbound/1/",
-	"/settings/",
-	"/debug"
-].map((path) => `${BASE_PATH}${path}`);
-
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
 	// Consult https://github.com/sveltejs/svelte-preprocess
@@ -32,7 +17,20 @@ const config = {
 		},
 		adapter: adapter(),
 		prerender: {
-			entries
+			entries: [
+				"/",
+				"/inventory",
+				"/inventory/",
+				"/inventory/inbound/",
+				"/inventory/inbound/1/",
+				"/inventory/warehouses/",
+				"/inventory/warehouses/1/",
+				"/stock/",
+				"/outbound/",
+				"/outbound/1/",
+				"/settings/",
+				"/debug"
+			]
 		},
 		paths: {
 			base: BASE_PATH,
