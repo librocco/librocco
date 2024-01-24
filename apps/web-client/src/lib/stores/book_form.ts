@@ -2,72 +2,45 @@ import { writable, type Readable } from "svelte/store";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
+import type { BookFormData } from "$lib/forms";
+
 import type { BookEntry } from "@librocco/db";
 
-interface SlideoverText {
-	title: string;
-	description: string;
-}
-
-type BookFormClosedState = {
-	open: false;
-};
-
-type BookFormOpenState = {
-	open: true;
-	slideoverText: SlideoverText;
-	book?: Partial<BookEntry>;
-};
-
-type BookFormState = BookFormClosedState | BookFormOpenState;
-
-interface BookFormStore extends Readable<BookFormState> {
-	open: (book: Partial<BookEntry>) => void;
-	close: () => void;
-	fetch: (book: Partial<BookEntry>) => void;
+interface BookFormStore extends Readable<BookFormData | null> {
+	openEdit: (book: BookFormData) => void;
+	closeEdit: () => void;
+	fetch: (book: BookFormData) => void;
 }
 
 export function newBookFormStore(): BookFormStore {
 	const plugin = createBookDataExtensionPlugin();
 
-	const internalStore = writable<BookFormState>({
-		open: false
-	});
+	const internalStore = writable<BookFormData | null>(null);
 
-	// Open the book form in 'create' mode
-	const open = async (book: Partial<BookEntry>) => {
-		// Open the form
-		internalStore.set({
-			open: true,
-			slideoverText: {
-				title: "Create a new book",
-				description: "Use this form to manually add a new book to the note"
-			},
-			book
-		});
-	};
+	/**
+	 * Set book details to be edited
+	 */
+	const openEdit = (book: BookFormData | null) => internalStore.set(book);
 
-	// Close the form
-	const close = () => internalStore.set({ open: false });
+	/**
+	 * Clear book details
+	 */
+	const closeEdit = () => internalStore.set(null);
 
-	const fetch = async (book: Partial<BookEntry>) =>
+	/**
+	 * Fetch and fill-in book details via book data extension plugin
+	 */
+	const fetch = async (book: BookFormData) =>
 		plugin.fetchBookData([book.isbn]).then((bookData: BookEntry[]) => {
 			if (bookData.length) {
-				internalStore.set({
-					open: true,
-					slideoverText: {
-						title: "Create a new book",
-						description: "Use this form to manually add a new book to the note"
-					},
-					book: bookData[0]
-				});
+				internalStore.set(bookData[0]);
 			}
 		});
 
 	return {
 		subscribe: internalStore.subscribe,
-		open,
-		close,
+		openEdit,
+		closeEdit,
 		fetch
 	};
 }
