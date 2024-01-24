@@ -95,7 +95,7 @@
 		<!-- Heading section end -->
 
 		<!-- Main section -->
-		<main class="relative h-full w-full overflow-hidden border-t bg-white">
+		<main class="relative h-full w-full overflow-y-auto border-t bg-white">
 			<slot name="main" />
 		</main>
 		<!-- Main section end -->
