@@ -64,7 +64,7 @@
 				warehouseDiscount
 			} = row}
 
-			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50">
+			<tr class="whitespace-nowrap text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50" use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" class="max-w-[5rem] truncate p-3 text-left font-medium text-gray-800 xs:max-w-full">
 					<span data-property="isbn">{isbn}</span>
 					<dl class="font-normal lg:hidden">
