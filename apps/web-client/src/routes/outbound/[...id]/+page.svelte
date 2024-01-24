@@ -14,6 +14,8 @@
 
 	import type { PageData } from "./$types";
 
+	import { getDB } from "$lib/db";
+
 	import {
 		Breadcrumbs,
 		DropdownWrapper,
@@ -22,12 +24,12 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		ConfirmActionDialog,
-		StockTable,
-		createTable
+		createTable,
+		WarehouseSelect,
+		OutboundTable,
+		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
-
-	import { getDB } from "$lib/db";
 
 	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -47,7 +49,7 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB()!;
+	const db = getDB();
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -56,8 +58,7 @@
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: note = data.note!;
-	$: warehouse = data.warehouse!;
+	$: note = data.note;
 
 	$: noteStores = createNoteStores(note);
 
@@ -70,11 +71,13 @@
 
 	// #region note-actions
 	//
-	// When the note is committed or deleted, automatically redirect to 'inbound' page.
+	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(appPath("inbound"));
+			goto(appPath("outbound"));
+
 			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
+
 			toastSuccess(message);
 		}
 	}
@@ -113,6 +116,22 @@
 		await note.addVolumes({ isbn, quantity: 1 });
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
+
+	const updateRowWarehouse =
+		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
+			const { warehouseId: nextWarehouseId } = e.detail;
+			// Number form control validation means this string->number conversion should yield a valid result
+			const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
+
+			// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+			if (currentWarehouseId === nextWarehouseId) {
+				return;
+			}
+
+			// TODO: error handling
+			await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+			toastSuccess(toasts.warehouseUpdated(isbn));
+		};
 
 	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
@@ -160,17 +179,12 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
-
 	// #endregion book-form
 
-	$: breadcrumbs =
-		note?._id && warehouse?._id
-			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
-			: [];
+	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
 
 	// #region temp
 	const handlePrint = () => {};
-
 	// #endregion temp
 
 	const dialog = createDialog({
@@ -181,7 +195,7 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" } = null;
 </script>
 
 <Page>
@@ -210,16 +224,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(note.displayName),
-							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							title: dialogTitle.commitOutbound(note.displayName),
+							description: dialogDescription.commitOutbound($entries.length),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(note.displayName),
-							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							title: dialogTitle.commitOutbound(note.displayName),
+							description: dialogDescription.commitOutbound($entries.length),
 							type: "commit"
 						};
 					}}
@@ -276,7 +290,7 @@
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
+				<OutboundTable {table}>
 					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
 						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
 
@@ -292,6 +306,13 @@
 							/>
 						</form>
 					</div>
+
+					<svelte:fragment slot="row-warehouse" let:row let:rowIx>
+						{@const handleWarehouseUpdate = updateRowWarehouse(row.isbn, row.quantity, row.warehouseId)}
+
+						<WarehouseSelect on:change={handleWarehouseUpdate} data={row} {rowIx} />
+					</svelte:fragment>
+
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{
@@ -301,6 +322,7 @@
 								}
 							}}
 							let:trigger
+							let:open
 						>
 							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 								<span class="sr-only">Edit row {rowIx}</span>
@@ -309,7 +331,7 @@
 								</span>
 							</button>
 
-							<div slot="popover-content" class="rounded bg-gray-900">
+							<div slot="popover-content" class="rounded bg-gray-900" on:mouseleave={() => open.set(false)}>
 								<button
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
@@ -349,7 +371,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</StockTable>
+				</OutboundTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -364,20 +386,16 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
-				bg-white shadow-lg focus:outline-none"
-				in:fly={{
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
+				shadow-lg focus:outline-none"
+				transition:fly={{
 					x: 350,
-					duration: 150,
+					duration: 300,
 					opacity: 1
-				}}
-				out:fly={{
-					x: 350,
-					duration: 100
 				}}
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">

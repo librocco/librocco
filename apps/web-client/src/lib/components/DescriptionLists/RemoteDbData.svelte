@@ -1,10 +1,8 @@
 <script lang="ts">
 	import { ChevronUp, ChevronDown, Database, ArrowRight, ArrowLeft, ArrowLeftRight } from "lucide-svelte";
 
-	import { Button, ButtonColor } from "../Button";
-	import { Checkbox } from "../FormFields";
-
-	import type { RemoteDbConfig } from "$lib/components";
+	import { Checkbox } from "$lib/components";
+	import type { ReplicationConfig } from "$lib/stores/replication";
 
 	const stateColorLookup = {
 		success: "badge-success",
@@ -12,7 +10,7 @@
 		error: "badge-error"
 	};
 
-	export let config: RemoteDbConfig;
+	export let config: ReplicationConfig;
 	export let status: { state: keyof typeof stateColorLookup; message: string };
 
 	export let onEdit: () => void = () => {};
@@ -66,7 +64,7 @@
 							</dt>
 							<dd>
 								<span aria-hidden="true">
-									<Checkbox disabled checked={config.live} name="live" />
+									<Checkbox disabled checked={config.live} name="live" id="live" label="" />
 								</span>
 								<span class="sr-only">{config.live}</span>
 							</dd>
@@ -80,7 +78,7 @@
 							</dt>
 							<dd>
 								<span aria-hidden="true">
-									<Checkbox disabled checked={config.retry} name="retry" />
+									<Checkbox disabled checked={config.retry} name="retry" id="retry" label="" />
 								</span>
 								<span class="sr-only">{config.retry}</span>
 							</dd>
@@ -91,7 +89,7 @@
 		</dl>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<Button type="submit" color={ButtonColor.Secondary} on:click={() => onEdit()}>Cancel & edit</Button>
+		<button type="submit" class="button button-alert" on:click={() => onEdit()}>Cancel & edit</button>
 	</div>
 </div>
 
