@@ -89,7 +89,7 @@ export function createTable<T = object>(options: Options<T>) {
 			on?: keyof HTMLElementEventMap;
 			handleSelect?: (event: HTMLElementEventMap[typeof on], selected: typeof selectedData) => void;
 			position?: number;
-		}
+		} = {}
 	) => {
 		const onSelect = (event: HTMLElementEventMap[typeof on]) => {
 			handleSelect(event, selectedData);

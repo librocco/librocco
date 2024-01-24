@@ -104,9 +104,12 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	render(html` <${StockTable} interactive table=${table} /> `);
 
 	const row2 = rows[1];
-	// TODO: Fix table data row aria labels
-	// TODO: Removed 'quantity' as it's an input field (and thus, doesn't show in the result), check if necessary
-	const row2Name = `${row2.isbn} Title: ${row2.title} Authors: ${row2.authors} Year: ${row2.year} ${row2.title} ${row2.authors} ${row2.price} ${row2.year} ${row2.publisher} Edit`;
+
+	const row2Name = `${row2.isbn} Title: ${row2.title} Authors: ${row2.authors} Year: ${row2.year} ${row2.title} ${
+		row2.authors
+	} Discounted price: ${row2.price - row2.warehouseDiscount / 100} Original price: (${row2.price}) ${row2.quantity} ${row2.publisher} ${
+		row2.year
+	}`;
 
 	const dataRow2 = screen.getByRole("row", { name: row2Name });
 
@@ -117,7 +120,7 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
 	// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 	// @ts-ignore
-	expect(dataRow2).toHaveAttribute("aria-rowindex", "3");
+	expect(dataRow2).toHaveAttribute("aria-rowindex", "2");
 
 	// Remove data row 1
 	const dataRow1 = get(table).rows[0];
@@ -141,6 +144,6 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 		// TODO: Fix types (jest matchers - installed, but, for some reason, not picked up by TS)
 		// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 		// @ts-ignore
-		expect(dataRow2).toHaveAttribute("aria-rowindex", "2");
+		expect(dataRow2).toHaveAttribute("aria-rowindex", "1");
 	});
 });
