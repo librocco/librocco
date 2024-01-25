@@ -322,12 +322,24 @@ export interface DbStream {
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 }
 
+export interface BaseDatabaseInterface {
+	/** A reference to the pouch db instance the db interface was built around. */
+	_pouch: PouchDB.Database;
+	/**
+	 * Books constructs an interface used for book operations agains the db:
+	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
+	 * - `upsert` - accepts an array of book data and upserts them into the db. If a book data already exists, it will be
+	 * updated, otherwise it will be created.
+	 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
+	 */
+	books: () => BooksInterface;
+	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
+}
 /**
  * A standardized interface (interface of methods) for a db.
  */
-export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInterface, N extends NoteInterface = NoteInterface> {
-	/** A reference to the pouch db instance the db interface was built around. */
-	_pouch: PouchDB.Database;
+export type DatabaseInterface<W extends WarehouseInterface = WarehouseInterface, N extends NoteInterface = NoteInterface> = BaseDatabaseInterface & {
+
 	/** Update design doc is here more for internal usage and, shouldn't really be called explicitly (call `db.init` instead). */
 	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	/**
@@ -374,17 +386,13 @@ export interface DatabaseInterface<W extends WarehouseInterface = WarehouseInter
 	 * This should be ran after the initial replication to build local views with the data received from the replication.
 	 */
 	buildIndices: () => Promise<void>;
-	/**
-	 * Books constructs an interface used for book operations agains the db:
-	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
-	 * - `upsert` - accepts an array of book data and upserts them into the db. If a book data already exists, it will be
-	 * updated, otherwise it will be created.
-	 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
-	 */
-	books: () => BooksInterface;
-	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
 	receipts: () => RecepitsInterface;
 }
+
+/**
+ * A standardized interface (interface of methods) for orders db.
+ */
+export type OrdersDatabaseInterface = BaseDatabaseInterface
 
 /**
  * An interface for books in a db
@@ -423,6 +431,9 @@ export interface BooksInterface {
 
 export interface NewDatabase {
 	(db: PouchDB.Database): DatabaseInterface;
+}
+export interface NewOrdersDatabase {
+	(db: PouchDB.Database): OrdersDatabaseInterface;
 }
 // #endregion db
 
