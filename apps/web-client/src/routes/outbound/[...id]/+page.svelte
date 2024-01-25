@@ -331,6 +331,7 @@
 								</span>
 							</button>
 
+							<!-- svelte-ignore a11y-no-static-element-interactions -->
 							<div slot="popover-content" class="rounded bg-gray-900" on:mouseleave={() => open.set(false)}>
 								<button
 									use:melt={$dialogTrigger}
@@ -386,13 +387,13 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
 				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
 				shadow-lg focus:outline-none"
-				transition:fly={{
+				transition:fly|global={{
 					x: 350,
 					duration: 300,
 					opacity: 1

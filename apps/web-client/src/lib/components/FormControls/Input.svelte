@@ -7,7 +7,7 @@
 		label?: string;
 		helpText?: string;
 		inputRef?: HTMLInputElement | null;
-		inputAction?: Action | (() => void);
+		inputAction?: Action<HTMLElement, any> | (() => void);
 	}
 
 	let className = "";
@@ -22,7 +22,7 @@
 	export let helpText = "";
 	export let required = false;
 	export let inputRef = null;
-	export let inputAction: Action = () => {};
+	export let inputAction: Action<HTMLElement, any> = () => {};
 
 	const labelBaseClasses = ["block", "text-base", "font-medium", "text-gray-800"];
 	const helpTextBaseClasses = ["mt-2", "text-sm", "min-h-[20px]", "text-gray-500"];
