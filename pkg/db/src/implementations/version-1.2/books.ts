@@ -4,16 +4,16 @@ import { Search } from "js-search";
 import { debug, wrapIter } from "@librocco/shared";
 
 import { BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
-import { DatabaseInterface, PublishersListRow } from "./types";
+import { BaseDatabaseInterface, PublishersListRow } from "./types";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
 class Books implements BooksInterface {
-	#db: DatabaseInterface;
+	#db: BaseDatabaseInterface;
 
 	#searchIndexStream?: Observable<SearchIndex>;
 
-	constructor(db: DatabaseInterface) {
+	constructor(db: BaseDatabaseInterface) {
 		this.#db = db;
 	}
 
@@ -131,7 +131,7 @@ class Books implements BooksInterface {
 	}
 }
 
-export const newBooksInterface = (db: DatabaseInterface): BooksInterface => {
+export const newBooksInterface = (db: BaseDatabaseInterface): BooksInterface => {
 	return new Books(db);
 };
 

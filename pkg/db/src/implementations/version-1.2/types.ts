@@ -5,6 +5,8 @@ import { debug, StockMap } from "@librocco/shared";
 
 import {
 	DatabaseInterface as DI,
+	OrdersDatabaseInterface as ODI,
+	BaseDatabaseInterface as BDI,
 	WarehouseInterface as WI,
 	WarehouseData as WD,
 	NoteInterface as NI,
@@ -32,13 +34,16 @@ export type NoteInterface = NI<AdditionalData>;
 /** Warehouse data (extended with additional fields) for internal implementation usage. */
 export type WarehouseData = WD;
 export type WarehouseInterface = WI<NoteInterface>;
-
-export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & {
+export type BaseDatabaseInterface = BDI & {
 	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
+
+}
+export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & BaseDatabaseInterface & {
 	stock: () => Observable<StockMap>;
 	getStock: () => Promise<StockMap>;
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 };
+export type OrdersDatabaseInterface = BaseDatabaseInterface & ODI;
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
 	query: (opts?: PouchDB.Query.Options<M, R>) => Promise<MapReduceRes<R, M>>;
