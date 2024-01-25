@@ -6,7 +6,8 @@ module.exports = {
 	ignorePatterns: ["*.cjs", "*.config.js", "*.setup.*", "dist/*", "build/*"],
 	parserOptions: {
 		sourceType: "module",
-		ecmaVersion: 2020
+		ecmaVersion: 2020,
+		extraFileExtensions: [".svelte"] // This is a required setting in `@typescript-eslint/parser` v4.24.0.
 	},
 	env: {
 		es2017: true,
