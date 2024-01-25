@@ -1,6 +1,6 @@
 import pouchdb from "pouchdb";
 
-import { newDatabaseInterface, type DatabaseInterface } from "@librocco/db";
+import { newInventoryDatabaseInterface, type DatabaseInterface } from "@librocco/db";
 
 import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 
@@ -20,7 +20,7 @@ export const createDB = async (): Promise<DatabaseInterface> => {
 	}
 
 	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
-	db = newDatabaseInterface(pouch);
+	db = newInventoryDatabaseInterface(pouch);
 	await db.init();
 
 	return db;
