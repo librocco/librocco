@@ -183,7 +183,7 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent};
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 100 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
 		{#if type === "edit"}
 			<div
 				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
