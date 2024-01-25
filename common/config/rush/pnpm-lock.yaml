@@ -72,11 +72,11 @@ importers:
         specifier: ~0.1.4
         version: 0.1.4(esbuild@0.19.10)
       '@histoire/controls':
-        specifier: ~0.11.3
-        version: 0.11.9
+        specifier: ~0.17.0
+        version: 0.17.8(vite@4.0.5)
       '@histoire/plugin-svelte':
-        specifier: ~0.15.8
-        version: 0.15.9(histoire@0.15.9)(svelte@4.2.9)(vite@4.0.5)
+        specifier: ~0.17.0
+        version: 0.17.8(histoire@0.17.8)(svelte@4.2.9)(vite@4.0.5)
       '@librocco/book-data-extension':
         specifier: workspace:*
         version: link:../../plugins/book-data-extension
@@ -96,17 +96,17 @@ importers:
         specifier: ^1.20.4
         version: 1.30.3(svelte@4.2.9)(vite@4.0.5)
       '@testing-library/dom':
-        specifier: ~8.20.0
-        version: 8.20.1
+        specifier: ~9.3.3
+        version: 9.3.4
       '@testing-library/jest-dom':
         specifier: ~5.16.5
         version: 5.16.5
       '@testing-library/svelte':
-        specifier: ~3.1.3
-        version: 3.1.3(svelte@4.2.9)
+        specifier: ~4.0.6
+        version: 4.0.6(svelte@4.2.9)
       '@testing-library/user-event':
         specifier: ~14.4.3
-        version: 14.4.3(@testing-library/dom@8.20.1)
+        version: 14.4.3(@testing-library/dom@9.3.4)
       '@types/pouchdb':
         specifier: ~6.4.0
         version: 6.4.2
@@ -144,8 +144,8 @@ importers:
         specifier: ~3.3.0
         version: 3.3.2
       histoire:
-        specifier: ~0.15.8
-        version: 0.15.9(vite@4.0.5)
+        specifier: ~0.17.0
+        version: 0.17.8(vite@4.0.5)
       postcss:
         specifier: ~8.4.13
         version: 8.4.32
@@ -2405,6 +2405,19 @@ packages:
       - vite
     dev: true
 
+  /@histoire/app@0.17.8(vite@4.0.5):
+    resolution: {integrity: sha512-aQA+qzYP4kVvZwwjPWZDO+5+2FsON9uBcY5IvAlgpIkfxNfnBtWSFNr2DmS22Hy5DQx74Ugt6aCil+g+xOTbTA==}
+    dependencies:
+      '@histoire/controls': 0.17.8(vite@4.0.5)
+      '@histoire/shared': 0.17.8(vite@4.0.5)
+      '@histoire/vendors': 0.17.8
+      '@types/flexsearch': 0.7.6
+      flexsearch: 0.7.21
+      shiki-es: 0.2.0
+    transitivePeerDependencies:
+      - vite
+    dev: true
+
   /@histoire/controls@0.11.9:
     resolution: {integrity: sha512-CnUW7DfC5TLy7zKUqYKiDKqef7ookbAtTN4lPPtR2JvFpF6DOhfpwOcrRxePentxzB6jpnEBP7wCUci+0kR3eQ==}
     dependencies:
@@ -2434,6 +2447,22 @@ packages:
       - vite
     dev: true
 
+  /@histoire/controls@0.17.8(vite@4.0.5):
+    resolution: {integrity: sha512-XYQ59oj+kjtx6aCy64ofOY1IDWWVxywaC9cPHBMcpDFg8vzdFGvKMKDPGw5Gb2eFX0+yY7b4NIKwbNsvzwtZAQ==}
+    dependencies:
+      '@codemirror/commands': 6.3.3
+      '@codemirror/lang-json': 6.0.1
+      '@codemirror/language': 6.10.0
+      '@codemirror/lint': 6.4.2
+      '@codemirror/state': 6.4.0
+      '@codemirror/theme-one-dark': 6.1.2
+      '@codemirror/view': 6.23.0
+      '@histoire/shared': 0.17.8(vite@4.0.5)
+      '@histoire/vendors': 0.17.8
+    transitivePeerDependencies:
+      - vite
+    dev: true
+
   /@histoire/plugin-svelte@0.15.9(histoire@0.15.9)(svelte@3.58.0)(vite@4.0.5):
     resolution: {integrity: sha512-5j+82mCgHn77zt/WPb/OGtmD/zfLnm/4ulPPo0sdYnC0KF0joC0NcUr2fshfHFIyeZcWsfVHFN44N7rahyYJpg==}
     peerDependencies:
@@ -2452,19 +2481,20 @@ packages:
       - vite
     dev: true
 
-  /@histoire/plugin-svelte@0.15.9(histoire@0.15.9)(svelte@4.2.9)(vite@4.0.5):
-    resolution: {integrity: sha512-5j+82mCgHn77zt/WPb/OGtmD/zfLnm/4ulPPo0sdYnC0KF0joC0NcUr2fshfHFIyeZcWsfVHFN44N7rahyYJpg==}
+  /@histoire/plugin-svelte@0.17.8(histoire@0.17.8)(svelte@4.2.9)(vite@4.0.5):
+    resolution: {integrity: sha512-484JytiS9/hQSD1c8DbvvkAJWqx3bUiMPyz4qPTB/Xglf4VCOGHkvkU9alAlZApKHOtaxQKqM7gtVZ49m3aZQQ==}
     peerDependencies:
-      histoire: ^0.15.8
-      svelte: ^3.0.0
+      histoire: ^0.17.8
+      svelte: ^3.0.0 || ^4.0.0
     dependencies:
-      '@histoire/controls': 0.15.9(vite@4.0.5)
-      '@histoire/shared': 0.15.8(vite@4.0.5)
-      '@histoire/vendors': 0.15.8
+      '@histoire/controls': 0.17.8(vite@4.0.5)
+      '@histoire/shared': 0.17.8(vite@4.0.5)
+      '@histoire/vendors': 0.17.8
       change-case: 4.1.2
-      histoire: 0.15.9(vite@4.0.5)
+      globby: 13.2.2
+      histoire: 0.17.8(vite@4.0.5)
       launch-editor: 2.6.1
-      pathe: 0.2.0
+      pathe: 1.1.1
       svelte: 4.2.9
     transitivePeerDependencies:
       - vite
@@ -2484,12 +2514,30 @@ packages:
       vite: 4.0.5(@types/node@16.18.68)
     dev: true
 
+  /@histoire/shared@0.17.8(vite@4.0.5):
+    resolution: {integrity: sha512-S2lQlob5tilxHqNhCyKIzk7fNj7/owyp4ISC50sX+xFymdu34ZEY3HtvGuC5TG2hV9lVEXEc+jmilSney79csg==}
+    peerDependencies:
+      vite: ^2.9.0 || ^3.0.0 || ^4.0.0
+    dependencies:
+      '@histoire/vendors': 0.17.8
+      '@types/fs-extra': 9.0.13
+      '@types/markdown-it': 12.2.3
+      chokidar: 3.5.3
+      pathe: 1.1.1
+      picocolors: 1.0.0
+      vite: 4.0.5(@types/node@16.18.68)
+    dev: true
+
   /@histoire/vendors@0.11.9:
     resolution: {integrity: sha512-PnlPB1dAgLRcA+dSGPB/27zewREHCmO4nUCOQWu7rFNMO1wfB2EOn53hxkkBgzej3toa1u1knIRpHzQRSaUSUw==}
     dev: true
 
   /@histoire/vendors@0.15.8:
     resolution: {integrity: sha512-RVvJmWlpRHa5dEdcAB+IB8OYKvw2Mv/tXF/Xu42SP2PwKkgQnTkDXmg+2HPMu9Uc+2i0u2cc9Lz+hqvkvS34kQ==}
+    dev: true
+
+  /@histoire/vendors@0.17.8:
+    resolution: {integrity: sha512-kyNy1yvA8tuEXVuUUdO5k8yQgp1XkcktcLAM4XB3B0mk9qUge7n85bUfGJYPk3ovLeX4RBJHsxh4RzzQ4LBCvg==}
     dev: true
 
   /@humanwhocodes/config-array@0.9.5:
@@ -3248,6 +3296,20 @@ packages:
       pretty-format: 27.5.1
     dev: true
 
+  /@testing-library/dom@9.3.4:
+    resolution: {integrity: sha512-FlS4ZWlp97iiNWig0Muq8p+3rVDjRiYE+YKGbAqXOu9nwJFFOdL00kFpz42M+4huzYi86vAK1sOOfyOG45muIQ==}
+    engines: {node: '>=14'}
+    dependencies:
+      '@babel/code-frame': 7.23.5
+      '@babel/runtime': 7.23.6
+      '@types/aria-query': 5.0.4
+      aria-query: 5.1.3
+      chalk: 4.1.2
+      dom-accessibility-api: 0.5.16
+      lz-string: 1.5.0
+      pretty-format: 27.5.1
+    dev: true
+
   /@testing-library/jest-dom@5.16.5:
     resolution: {integrity: sha512-N5ixQ2qKpi5OLYfwQmUb/5mSV9LneAcaUfp32pn4yCnpb8r/Yz0pXFPck21dIicKmi+ta5WRAknkZCfA8refMA==}
     engines: {node: '>=8', npm: '>=6', yarn: '>=1'}
@@ -3273,13 +3335,13 @@ packages:
       svelte: 3.58.0
     dev: true
 
-  /@testing-library/svelte@3.1.3(svelte@4.2.9):
-    resolution: {integrity: sha512-pyed3yMnTu7wG9Z4XKoIxdrx52hSEFDC8qUaiSsiSh8tBVj3ZjqEKnV2Nfc0IF2llEkT0B7QOXnOVTLJ3O5RCw==}
+  /@testing-library/svelte@4.0.6(svelte@4.2.9):
+    resolution: {integrity: sha512-4Niit+F/V3/AC03+/hsTrUJjXeoLFgd2KYjlz9nKFVELZR0dApHtc+tILe7NHiBctTAKTEzoM2VDLn1mBOqn3w==}
     engines: {node: '>= 10'}
     peerDependencies:
-      svelte: 3.x
+      svelte: ^3 || ^4
     dependencies:
-      '@testing-library/dom': 8.20.1
+      '@testing-library/dom': 9.3.4
       svelte: 4.2.9
     dev: true
 
@@ -3290,6 +3352,15 @@ packages:
       '@testing-library/dom': '>=7.21.4'
     dependencies:
       '@testing-library/dom': 8.20.1
+    dev: true
+
+  /@testing-library/user-event@14.4.3(@testing-library/dom@9.3.4):
+    resolution: {integrity: sha512-kCUc5MEwaEMakkO5x7aoD+DLi02ehmEM2QCGWvNqAS1dV/fAvORWEjnjsEIvml59M7Y5kCkWN6fCCyPOe8OL6Q==}
+    engines: {node: '>=12', npm: '>=6'}
+    peerDependencies:
+      '@testing-library/dom': '>=7.21.4'
+    dependencies:
+      '@testing-library/dom': 9.3.4
     dev: true
 
   /@tootallnate/once@1.1.2:
@@ -6713,6 +6784,57 @@ packages:
       - utf-8-validate
     dev: true
 
+  /histoire@0.17.8(vite@4.0.5):
+    resolution: {integrity: sha512-8OeLoi7rjtLVR7LixAnVEXQVoGETYmLigm+yt+1KshQ63hBmiPt4e3/qDsS12hxEWGhY5a9Z5Wi2UFSPB5Ifkg==}
+    hasBin: true
+    peerDependencies:
+      vite: ^2.9.0 || ^3.0.0 || ^4.0.0 || ^5.0.0
+    dependencies:
+      '@akryum/tinypool': 0.3.1
+      '@histoire/app': 0.17.8(vite@4.0.5)
+      '@histoire/controls': 0.17.8(vite@4.0.5)
+      '@histoire/shared': 0.17.8(vite@4.0.5)
+      '@histoire/vendors': 0.17.8
+      '@types/flexsearch': 0.7.6
+      '@types/markdown-it': 12.2.3
+      birpc: 0.1.1
+      change-case: 4.1.2
+      chokidar: 3.5.3
+      connect: 3.7.0
+      defu: 6.1.3
+      diacritics: 1.3.0
+      flexsearch: 0.7.21
+      fs-extra: 10.1.0
+      globby: 13.2.2
+      gray-matter: 4.0.3
+      jiti: 1.21.0
+      jsdom: 20.0.3
+      markdown-it: 12.3.2
+      markdown-it-anchor: 8.6.7(@types/markdown-it@12.2.3)(markdown-it@12.3.2)
+      markdown-it-attrs: 4.1.6(markdown-it@12.3.2)
+      markdown-it-emoji: 2.0.2
+      micromatch: 4.0.5
+      mrmime: 1.0.1
+      pathe: 1.1.1
+      picocolors: 1.0.0
+      sade: 1.8.1
+      shiki-es: 0.2.0
+      sirv: 2.0.4
+      vite: 4.0.5(@types/node@16.18.68)
+      vite-node: 0.34.7
+    transitivePeerDependencies:
+      - '@types/node'
+      - bufferutil
+      - canvas
+      - less
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+      - utf-8-validate
+    dev: true
+
   /htm@3.1.1:
     resolution: {integrity: sha512-983Vyg8NwUE7JkZ6NmOqpCZ+sh1bKv2iYTlUkzlWmA5JD2acKoxd4KVxbMmxX/85mtfdnDmTFoNKcg5DGAvxNQ==}
     dev: true
@@ -9822,6 +9944,7 @@ packages:
 
   /shiki-es@0.2.0:
     resolution: {integrity: sha512-RbRMD+IuJJseSZljDdne9ThrUYrwBwJR04FvN4VXpfsU3MNID5VJGHLAD5je/HGThCyEKNgH+nEkSFEWKD7C3Q==}
+    deprecated: Please migrate to https://github.com/antfu/shikiji
     dev: true
 
   /side-channel@1.0.4:
@@ -11117,6 +11240,27 @@ packages:
       picocolors: 1.0.0
       source-map: 0.6.1
       source-map-support: 0.5.21
+      vite: 4.0.5(@types/node@16.18.68)
+    transitivePeerDependencies:
+      - '@types/node'
+      - less
+      - sass
+      - stylus
+      - sugarss
+      - supports-color
+      - terser
+    dev: true
+
+  /vite-node@0.34.7:
+    resolution: {integrity: sha512-0Yzb96QzHmqIKIs/x2q/sqG750V/EF6yDkS2p1WjJc1W2bgRSuQjf5vB9HY8h2nVb5j4pO5paS5Npcv3s69YUg==}
+    engines: {node: '>=v14.18.0'}
+    hasBin: true
+    dependencies:
+      cac: 6.7.14
+      debug: 4.3.4
+      mlly: 1.4.2
+      pathe: 1.1.1
+      picocolors: 1.0.0
       vite: 4.0.5(@types/node@16.18.68)
     transitivePeerDependencies:
       - '@types/node'
