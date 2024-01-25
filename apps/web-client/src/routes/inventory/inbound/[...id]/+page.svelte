@@ -364,18 +364,18 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade={{ duration: 150 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }} />
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
 				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
 				bg-white shadow-lg focus:outline-none"
-				in:fly={{
+				in:fly|global={{
 					x: 350,
 					duration: 150,
 					opacity: 1
 				}}
-				out:fly={{
+				out:fly|global={{
 					x: 350,
 					duration: 100
 				}}

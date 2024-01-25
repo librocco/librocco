@@ -135,7 +135,7 @@
 					<ul
 						use:melt={$menu}
 						class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-md"
-						transition:fly={{ duration: 150, y: -5 }}
+						transition:fly|global={{ duration: 150, y: -5 }}
 					>
 						{#each filteredPublishers as publisher}
 							{@const isSelected = $isSelected(publisher)}
