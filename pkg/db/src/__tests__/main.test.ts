@@ -9,7 +9,7 @@ import { newTestRunner } from "@test-runner/runner";
 import * as couchdbImageLoader from "@data-loaders/couchdb-image-loader";
 import * as fsDataLoader from "@data-loaders/fs-data-loader";
 
-import * as implementations from "@/implementations";
+import * as implementations from "@/implementations/inventory";
 import * as benchmarks from "./benchmarks";
 import * as tests from "./tests";
 
