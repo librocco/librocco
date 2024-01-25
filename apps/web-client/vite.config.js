@@ -29,21 +29,6 @@ const componentsPath = path.join(__dirname, "src", "lib", "components");
 
 /** @type {import('vite').UserConfig} */
 const config = {
-	histoire: {
-		plugins: [HstSvelte()],
-		setupFile: `${componentsPath}/histoire.setup.ts`,
-		storyMatch: [`${componentsPath}/**/*.story.svelte`],
-		vite: {
-			base: "/",
-			server: {
-				open: true,
-				fs: {
-					// Allow serving files from workspace root with dev server
-					allow: [searchForWorkspaceRoot(process.cwd()), "../.."]
-				}
-			}
-		}
-	},
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
@@ -105,6 +90,29 @@ const config = {
 				})
 			]
 		}
+	},
+	histoire: {
+		plugins: [HstSvelte()],
+		setupFile: `${componentsPath}/histoire.setup.ts`,
+		storyMatch: [`${componentsPath}/**/*.story.svelte`],
+		vite: {
+			base: "/",
+			server: {
+				open: true,
+				fs: {
+					// Allow serving files from workspace root with dev server
+					allow: [searchForWorkspaceRoot(process.cwd()), "../.."]
+				}
+			}
+		}
+	},
+	test: {
+		include: ["./src/**/*.(test|spec).ts"],
+		globals: true,
+		environment: "jsdom",
+		// deps: { inline: true },
+		// Add @testing-library/jest-dom matchers and mock modules
+		setupFiles: ["./vitest.setup.ts"]
 	}
 };
 
