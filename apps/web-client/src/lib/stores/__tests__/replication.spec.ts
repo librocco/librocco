@@ -223,7 +223,7 @@ describe("Replicate (to/from) remote, when `live == true`", () => {
 
 		const errorInfo = get(replicationStore.status).info;
 
-		expect(errorInfo).toEqual("request to http://127.0.0.1:5000/dev/ failed, reason: connect ECONNREFUSED 127.0.0.1:5000");
+		expect(errorInfo).toEqual("fetch failed");
 
 		replicationStore.cancel();
 		unsubscribe();
@@ -378,7 +378,7 @@ describe("Sync remote, when `live == true`", () => {
 
 		const errorInfo = get(replicationStore.status).info;
 
-		expect(errorInfo).toEqual("request to http://127.0.0.1:5000/dev/ failed, reason: connect ECONNREFUSED 127.0.0.1:5000");
+		expect(errorInfo).toEqual("fetch failed");
 
 		replicationStore.cancel();
 		unsubscribe();
