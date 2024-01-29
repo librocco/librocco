@@ -69,9 +69,9 @@ _Note: all new packages need to have the same "core" bulk commands available in 
 **Depending on local packages:**
 
 If one package depends on another (local) package, it should be specified in `dependencies`/`devDependencies`, as `"<package-name>": "workspace:*"`.
-For example, `@librocco/web-client` depends on `@librocco/ui`, so `apps/web-client/package.json` contain this in it's dependencies: `"@librocco/ui": "workspace:*"`.
+For example, `@librocco/web-client` depends on `@librocco/db`, so `apps/web-client/package.json` contain this in it's dependencies: `"@librocco/db": "workspace:*"`.
 
-This makes rush link the package depended upon (`@librocco/ui` in this case) in the the depending package's (`@librocco/web-client` in this case) `node_modules`.
+This makes rush link the package depended upon (`@librocco/db` in this case) in the the depending package's (`@librocco/web-client` in this case) `node_modules`.
 
 After adding a new local dependency `rush update` needs to be ran to apply the changes.
 
@@ -80,12 +80,6 @@ After adding a new local dependency `rush update` needs to be ran to apply the c
 This is a client web app (Svelte kit) containing the aplication logic, assembling the UI and connecting it with the backend. To start the local dev server, run `rushx start`.
 
 This package isn't built with the bulk `build` command (for `build` command efficiency), but rather by running `rushx build:prod`
-
-#### UI
-
-This package contains the presentation layer components, developed as atomic Svelte components. The development is done using Histoire (for previews) and Vitest (for unit tests). To run histoire, run `rushx story:dev` and to run all unit tests, simply run `rushx test`.
-
-**Important note: As UI package's CSS file is built by tailwind, to be able to use the styles, one needs to also import a built css file from `@librocco/ui/dist/style.css`**
 
 ## 3. CI
 
