@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
-import { getDashboard } from "@/helpers/proto";
+import { getDashboard } from "@/helpers";
 
 test("should navigate using the side nav", async ({ page }) => {
 	// Load the app
@@ -12,7 +12,7 @@ test("should navigate using the side nav", async ({ page }) => {
 
 	// Should load 'stock' page as default
 	await dashboard.view("search").waitFor();
-	await dashboard.content().header().title().assert("Stock");
+	await dashboard.content().header().title().assert("Search");
 
 	// Navigate to 'inventory' page
 	await dashboard.navigate("inventory");
