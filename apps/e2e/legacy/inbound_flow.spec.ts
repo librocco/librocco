@@ -5,7 +5,7 @@ import { versionId } from "@librocco/db";
 
 import { baseURL } from "../constants";
 
-import { getDashboard, getDbHandle } from "../helpers";
+import { getDashboard, getDbHandle } from "@/helpers/legacy";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app

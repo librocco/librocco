@@ -2,7 +2,7 @@ import type { Locator, Page } from "@playwright/test";
 
 import type { NavInterface, SidebarInterface, SideLinkGroupInterface, WaitForOpts } from "./types";
 
-import { assertionTimeout } from "../constants";
+import { assertionTimeout } from "@/constants";
 
 import { getDashboard } from "./dashboard";
 

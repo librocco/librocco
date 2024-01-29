@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
-import { getDashboard } from "../helpers";
+import { getDashboard } from "@/helpers/legacy";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
