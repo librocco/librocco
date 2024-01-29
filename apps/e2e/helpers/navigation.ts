@@ -1,29 +1,27 @@
 import type { Page } from "@playwright/test";
 
-import type { ViewName, MainNavInterface, WaitForOpts } from "./types";
+import { WebClientView } from "@librocco/shared";
 
-import { assertionTimeout } from "../constants";
+import type { MainNavInterface, WaitForOpts } from "./types";
+
+import { assertionTimeout } from "@/constants";
 
 import { getDashboard } from "./dashboard";
 
-const viewLinkLookup: Record<ViewName, string> = {
-	inbound: "Inbound",
-	outbound: "Outbound",
-	stock: "Stock"
-};
-
 export function getMainNav(page: Page): MainNavInterface {
+	const dashboard = () => getDashboard(page);
 	const container = page.getByRole("navigation", { name: "Main navigation" });
 
-	const link = (label: string) => container.getByRole("link", { name: label, exact: true });
+	// const link = (label: string) => container.getByRole("link", { name: label, exact: true });
 
-	const navigate = async (to: ViewName, opts?: WaitForOpts) => {
-		const label = viewLinkLookup[to];
-		container.getByRole("link", { name: label, exact: true }).click();
+	const navigate = async (to: WebClientView, opts?: WaitForOpts) => {
+		// TODO: There's probably a better way to do this: Ideally, we would go through the links, hover them and
+		// see which tooltip is displayed (testing full UX)
+		await container.locator(`[data-linkto="${to}"]`).click();
 		await getDashboard(page)
 			.view(to)
 			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
-	return Object.assign(container, { link, navigate });
+	return Object.assign(container, { navigate, dashboard });
 }

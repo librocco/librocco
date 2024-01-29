@@ -13,7 +13,7 @@ import {
 	WaitForOpts
 } from "./types";
 
-import { assertionTimeout } from "../constants";
+import { assertionTimeout } from "@/constants";
 
 import { useExpandButton } from "./utils";
 

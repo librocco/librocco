@@ -14,5 +14,3 @@ export const LOCAL_STORAGE_COUCH_CONFIG = "librocco:couchdb-config";
 export const LOCAL_POUCH_DB_NAME = "librocco-client";
 
 export const IS_E2E = PUBLIC_IS_E2E === "true";
-
-console.log("IS_E2E", IS_E2E);

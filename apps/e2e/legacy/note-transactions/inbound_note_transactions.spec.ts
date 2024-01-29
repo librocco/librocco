@@ -2,9 +2,9 @@ import { test } from "@playwright/test";
 
 import { NoteState, NoteTempState } from "@librocco/shared";
 
-import { baseURL } from "../../constants";
+import { baseURL } from "@/constants";
 
-import { getDashboard, getDbHandle } from "../../helpers";
+import { getDashboard, getDbHandle } from "@/helpers/legacy";
 
 import { book1 } from "../data";
 

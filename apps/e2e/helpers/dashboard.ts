@@ -1,27 +1,35 @@
 import type { Page } from "@playwright/test";
 
-import type { DashboardInterface, ViewName, WaitForOpts } from "./types";
+import { WebClientView } from "@librocco/shared";
+
+import type { DashboardInterface, WaitForOpts } from "./types";
+
+import { assertionTimeout } from "@/constants";
 
 import { getMainNav } from "./navigation";
-import { getSidebar } from "./sidebar";
+// import { getSidebar } from "./sidebar";
 import { getContent } from "./content";
-import { getBookForm } from "./bookForm";
+// import { getBookForm } from "./bookForm";
+import { disableNotifications } from "./notifications";
 
 export function getDashboard(page: Page): DashboardInterface {
+	// As soon as some view is loaded, we can assume the dashboard is loaded
+	const waitFor = (opts?: WaitForOpts) => page.locator('[data-loaded="true"]').waitFor({ timeout: assertionTimeout, ...opts });
+
 	const nav = () => getMainNav(page);
 
-	const navigate = (to: ViewName) => nav().navigate(to);
+	const navigate = (to: WebClientView) => nav().navigate(to);
 
-	const view = (name: ViewName) => page.locator(`[data-view="${name}"]`);
+	const view = (name: WebClientView) =>
+		Object.assign(page.locator(`[data-view="${name}"][data-loaded="true"]`), { dashboard: () => getDashboard(page) });
 
-	const sidebar = () => getSidebar(page);
+	// const sidebar = () => getSidebar(page);
 
 	const content = () => getContent(page);
 
-	const bookForm = () => getBookForm(page);
+	// const bookForm = () => getBookForm(page);
 
-	// The dashboard is ready (as well as the app when the default warehouse is loaded - shown in the side nav)
-	const waitFor = (opts?: WaitForOpts) => sidebar().link("All").waitFor(opts);
+	// return { waitFor, nav, navigate, view, sidebar, content, bookForm };
 
-	return { waitFor, nav, navigate, view, sidebar, content, bookForm };
+	return { page: () => page, nav, navigate, view, content, waitFor, disableNotifications: () => disableNotifications(page) };
 }

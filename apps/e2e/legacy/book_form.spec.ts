@@ -2,7 +2,7 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
-import { getDashboard, getDbHandle } from "../helpers";
+import { getDashboard, getDbHandle } from "@/helpers/legacy";
 
 import { book1 } from "./data";
 
