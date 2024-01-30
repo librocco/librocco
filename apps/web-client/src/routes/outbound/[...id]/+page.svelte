@@ -23,7 +23,7 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog,
+		Dialog,
 		createTable,
 		WarehouseSelect,
 		OutboundTable,
@@ -433,7 +433,7 @@
 				</div>
 			</div>
 		{:else}
-			<ConfirmActionDialog
+			<Dialog
 				{dialog}
 				{type}
 				onConfirm={async (closeDialog) => {
@@ -443,7 +443,7 @@
 			>
 				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</ConfirmActionDialog>
+			</Dialog>
 		{/if}
 	{/if}
 </div>

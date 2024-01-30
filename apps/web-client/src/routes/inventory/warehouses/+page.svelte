@@ -10,7 +10,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -221,7 +221,7 @@
 				/>
 			</div>
 		{:else}
-			<ConfirmActionDialog
+			<Dialog
 				{dialog}
 				type="delete"
 				onConfirm={async (closeDialog) => {
@@ -231,7 +231,7 @@
 			>
 				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</ConfirmActionDialog>
+			</Dialog>
 		{/if}
 	{/if}
 </div>

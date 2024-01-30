@@ -8,7 +8,7 @@
 
 	import { wrapIter } from "@librocco/shared";
 
-	import { PlaceholderBox, ConfirmActionDialog } from "$lib/components";
+	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -137,7 +137,7 @@
 		{@const { onConfirm, title, description } = dialogContent};
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		<ConfirmActionDialog
+		<Dialog
 			{dialog}
 			type="delete"
 			onConfirm={async (closeDialog) => {
@@ -147,6 +147,6 @@
 		>
 			<svelte:fragment slot="title">{title}</svelte:fragment>
 			<svelte:fragment slot="description">{description}</svelte:fragment>
-		</ConfirmActionDialog>
+		</Dialog>
 	{/if}
 </div>

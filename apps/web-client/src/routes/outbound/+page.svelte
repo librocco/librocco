@@ -10,7 +10,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { Page, PlaceholderBox, ConfirmActionDialog } from "$lib/components";
+	import { Page, PlaceholderBox, Dialog } from "$lib/components";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -149,7 +149,7 @@
 		{@const { onConfirm, title, description } = dialogContent};
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		<ConfirmActionDialog
+		<Dialog
 			{dialog}
 			type="delete"
 			onConfirm={async (closeDialog) => {
@@ -159,6 +159,6 @@
 		>
 			<svelte:fragment slot="title">{title}</svelte:fragment>
 			<svelte:fragment slot="description">{description}</svelte:fragment>
-		</ConfirmActionDialog>
+		</Dialog>
 	{/if}
 </div>
