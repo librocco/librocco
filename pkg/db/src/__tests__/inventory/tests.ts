@@ -5,7 +5,7 @@ import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
-import { DocType } from "../enums";
+import { DocType } from "@/enums";
 
 import { BookEntry, InNoteMap, NavMap, VersionedString, VolumeStockClient, WarehouseData } from "@/types";
 import { TestFunction } from "@/test-runner/types";
