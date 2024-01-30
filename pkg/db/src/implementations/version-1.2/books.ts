@@ -3,8 +3,11 @@ import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
-import { BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
-import { BaseDatabaseInterface, PublishersListRow } from "./types";
+import { DatabaseInterface as BaseDatabaseInterface, BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
+
+import { PublishersListRow } from "./types";
+
+import { newView } from "./view";
 
 import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 
@@ -120,8 +123,7 @@ class Books implements BooksInterface {
 	}
 
 	streamPublishers(ctx: debug.DebugCtx): Observable<string[]> {
-		return this.#db
-			.view<PublishersListRow>("v1_list/publishers")
+		return newView<PublishersListRow>(this.#db._pouch, "v1_list/publishers")
 			.stream(ctx, { group_level: 1 })
 			.pipe(
 				tap(debug.log(ctx, "books:publishers_stream:raw")),
