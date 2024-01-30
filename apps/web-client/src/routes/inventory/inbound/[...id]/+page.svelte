@@ -21,7 +21,7 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog,
+		Dialog,
 		StockTable,
 		createTable
 	} from "$lib/components";
@@ -232,7 +232,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -240,7 +240,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -414,7 +414,7 @@
 				</div>
 			</div>
 		{:else}
-			<ConfirmActionDialog
+			<Dialog
 				{dialog}
 				{type}
 				onConfirm={async (closeDialog) => {
@@ -424,7 +424,7 @@
 			>
 				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</ConfirmActionDialog>
+			</Dialog>
 		{/if}
 	{/if}
 </div>
