@@ -1,22 +1,18 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { Observable } from "rxjs";
 
-import { debug, StockMap } from "@librocco/shared";
+import { debug, type StockMap, type VolumeStock } from "@librocco/shared";
 
 import {
-	DatabaseInterface as DI,
+	InventoryDatabaseInterface as IDI,
 	OrdersDatabaseInterface as ODI,
-	BaseDatabaseInterface as BDI,
 	WarehouseInterface as WI,
 	WarehouseData as WD,
 	NoteInterface as NI,
 	NoteData as ND,
-	VolumeStock,
 	MapReduceRow,
 	CouchDocument,
 	MapReduceRes,
-	PluginInterfaceLookup,
-	LibroccoPlugin,
 	WarehouseDataMap,
 	NavEntry
 } from "@/types";
@@ -34,16 +30,12 @@ export type NoteInterface = NI<AdditionalData>;
 /** Warehouse data (extended with additional fields) for internal implementation usage. */
 export type WarehouseData = WD;
 export type WarehouseInterface = WI<NoteInterface>;
-export type BaseDatabaseInterface = BDI & {
-	view: <R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string) => ViewInterface<R, M>;
-
-}
-export type DatabaseInterface = DI<WarehouseInterface, NoteInterface> & BaseDatabaseInterface & {
+export type InventoryDatabaseInterface = IDI<WarehouseInterface, NoteInterface> & {
+	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string): ViewInterface<R, M>;
 	stock: () => Observable<StockMap>;
 	getStock: () => Promise<StockMap>;
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 };
-export type OrdersDatabaseInterface = BaseDatabaseInterface & ODI;
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
 	query: (opts?: PouchDB.Query.Options<M, R>) => Promise<MapReduceRes<R, M>>;
@@ -58,7 +50,4 @@ export type OutNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean
 export type InNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean; type: DocType }>>;
 export type PublishersListRow = MapReduceRow<string, number>;
 
-// Plugins
-export type PluginLookup = {
-	[K in keyof PluginInterfaceLookup]: LibroccoPlugin<PluginInterfaceLookup[K]>;
-};
+export type OrdersDatabaseInterface = ODI;

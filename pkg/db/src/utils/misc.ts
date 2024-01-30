@@ -1,6 +1,8 @@
 import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from "rxjs";
 
-import { VersionedString, VersionString, VolumeStock } from "../types";
+import type { VolumeStock } from "@librocco/shared";
+
+import { VersionedString, VersionString } from "../types";
 
 export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
 	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
