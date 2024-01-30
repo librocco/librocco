@@ -194,7 +194,9 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" } = null;
+	$: console.log($open);
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
 <Page>
@@ -344,7 +346,7 @@
 							</button>
 
 							<!-- svelte-ignore a11y-no-static-element-interactions -->
-							<div slot="popover-content" class="rounded bg-gray-900" on:mouseleave={() => open.set(false)}>
+							<div slot="popover-content" class="rounded bg-gray-900">
 								<button
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
@@ -405,10 +407,14 @@
 				use:melt={$content}
 				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
 				shadow-lg focus:outline-none"
-				transition:fly|global={{
+				in:fly|global={{
 					x: 350,
-					duration: 300,
+					duration: 150,
 					opacity: 1
+				}}
+				out:fly|global={{
+					x: 350,
+					duration: 100
 				}}
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
