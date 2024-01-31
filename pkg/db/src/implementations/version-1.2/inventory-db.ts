@@ -30,7 +30,7 @@ import {
 
 import { NEW_WAREHOUSE } from "@/constants";
 
-import designDocs from "./designDocuments";
+import { inventory as designDocs } from "./designDocuments";
 import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";

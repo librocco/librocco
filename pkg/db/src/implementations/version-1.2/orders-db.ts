@@ -3,12 +3,9 @@
 import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin } from "@/types";
 import { OrdersDatabaseInterface } from "./types";
 
-import designDocs from "./designDocuments";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
-
-import { scanDesignDocuments } from "@/utils/pouchdb";
 
 class Database implements OrdersDatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -31,8 +28,7 @@ class Database implements OrdersDatabaseInterface {
 	}
 
 	async buildIndices() {
-		const indexes = scanDesignDocuments(designDocs);
-		await Promise.all(indexes.map((view) => this._pouch.query(view)));
+		// NOOP for now
 	}
 
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
@@ -43,13 +39,6 @@ class Database implements OrdersDatabaseInterface {
 		// Start initialisation with db setup:
 		// - update design documents
 		const dbSetup: Promise<any>[] = [];
-
-		// Upload design documents if any
-		if (designDocs.length) {
-			designDocs.forEach((dd) => {
-				dbSetup.push(this.updateDesignDoc(dd));
-			});
-		}
 
 		await Promise.all(dbSetup);
 		return this;
