@@ -4,7 +4,7 @@ import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest } 
 import { debug, wrapIter } from "@librocco/shared";
 import type {
 	BookEntry,
-	DatabaseInterface,
+	InventoryDatabaseInterface,
 	EntriesStreamResult,
 	NoteInterface,
 	SearchIndex,
@@ -19,7 +19,7 @@ import { observableFromStore, readableFromStream } from "$lib/utils/streams";
 interface CreateDisplayEntriesStore {
 	(
 		ctx: debug.DebugCtx,
-		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+		db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		searchIndex?: SearchIndex
 	): {
 		entries: Readable<DisplayRow[]>;

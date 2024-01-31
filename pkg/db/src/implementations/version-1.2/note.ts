@@ -1,11 +1,11 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { NoteState, debug } from "@librocco/shared";
+import { NoteState, debug, VolumeStock } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VolumeStock, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, NoteData, DatabaseInterface } from "./types";
+import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
+import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
@@ -17,7 +17,7 @@ class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
 	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
 	#w: WarehouseInterface;
-	#db: DatabaseInterface;
+	#db: InventoryDatabaseInterface;
 
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
@@ -43,7 +43,7 @@ class Note implements NoteInterface {
 	displayName = "";
 	updatedAt: string | null = null;
 
-	constructor(warehouse: WarehouseInterface, db: DatabaseInterface, id?: string) {
+	constructor(warehouse: WarehouseInterface, db: InventoryDatabaseInterface, id?: string) {
 		this.#w = warehouse;
 		this.#db = db;
 
@@ -432,6 +432,6 @@ class Note implements NoteInterface {
 	}
 }
 
-export const newNote = (w: WarehouseInterface, db: DatabaseInterface, id?: string): NoteInterface => {
+export const newNote = (w: WarehouseInterface, db: InventoryDatabaseInterface, id?: string): NoteInterface => {
 	return new Note(w, db, id);
 };
