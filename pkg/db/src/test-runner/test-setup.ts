@@ -4,7 +4,7 @@ import PouchDB from "pouchdb";
 
 import { __withDocker__ } from "./env";
 
-import { DatabaseInterface } from "@/types";
+import { InventoryDatabaseInterface as DatabaseInterface } from "@/types";
 import { RawSnap, RawNote, GetNotesAndWarehouses, TestTask, TestStock, MapWarehouses, ImplementationSetup } from "./types";
 
 import { sortBooks } from "@/utils/misc";

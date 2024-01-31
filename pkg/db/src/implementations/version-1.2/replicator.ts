@@ -1,5 +1,4 @@
-import { Replicator } from "@/types";
-import { BaseDatabaseInterface } from "./types";
+import { DatabaseInterface as BaseDatabaseInterface, Replicator } from "@/types";
 
 export class DbReplicator implements Replicator {
 	#db: BaseDatabaseInterface;
