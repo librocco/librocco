@@ -18,11 +18,19 @@ import {
 	RecepitsInterface,
 	WarehouseDataMap
 } from "@/types";
-import { DatabaseInterface, WarehouseInterface, WarehouseListRow, OutNoteListRow, InNoteListRow, WarehouseData } from "./types";
+import {
+	InventoryDatabaseInterface,
+	WarehouseInterface,
+	WarehouseListRow,
+	OutNoteListRow,
+	InNoteListRow,
+	WarehouseData,
+	ViewInterface
+} from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
-import designDocs from "./designDocuments";
+import { inventory as designDocs } from "./designDocuments";
 import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
@@ -34,7 +42,7 @@ import { newReceiptsInterface } from "./receipts";
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
 
-class Database implements DatabaseInterface {
+class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
@@ -130,7 +138,7 @@ class Database implements DatabaseInterface {
 		await Promise.all(indexes.map((view) => this._pouch.query(view)));
 	}
 
-	async init(): Promise<DatabaseInterface> {
+	async init(): Promise<InventoryDatabaseInterface> {
 		// Start initialisation with db setup:
 		// - create the default warehouse (if it doesn't exist)
 		// - update design documents
@@ -163,7 +171,7 @@ class Database implements DatabaseInterface {
 	// #endregion setup
 
 	// #region instances
-	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string) {
+	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(view: string): ViewInterface<R, M> {
 		return newView<R, M>(this._pouch, view);
 	}
 
@@ -230,7 +238,7 @@ class Database implements DatabaseInterface {
 	}
 }
 
-export const newDatabase = (db: PouchDB.Database): DatabaseInterface => {
+export const newDatabase = (db: PouchDB.Database): InventoryDatabaseInterface => {
 	return new Database(db);
 };
 
