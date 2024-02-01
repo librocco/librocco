@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-namespace */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
-import { DatabaseInterface, VolumeStock, NoteType, VersionString } from "@/types";
+import type { VolumeStock } from "@librocco/shared";
+
+import { InventoryDatabaseInterface, NoteType, VersionString } from "@/types";
 
 // #region rawData
 export interface RawNote {
@@ -48,7 +50,7 @@ export interface GetNotesAndWarehouses {
 }
 
 export interface TestFunction {
-	(db: DatabaseInterface, version: VersionString, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
+	(db: InventoryDatabaseInterface, version: VersionString, getNotesAndWarehouses: GetNotesAndWarehouses): Promise<void>;
 }
 
 export interface TestTask {
@@ -57,6 +59,6 @@ export interface TestTask {
 
 export interface ImplementationSetup {
 	version: VersionString;
-	newDatabase: (db: PouchDB.Database) => DatabaseInterface;
+	newDatabase: (db: PouchDB.Database) => InventoryDatabaseInterface;
 }
 // #endregion testSetup

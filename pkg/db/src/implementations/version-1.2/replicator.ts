@@ -1,10 +1,9 @@
-import { Replicator } from "@/types";
-import { DatabaseInterface } from "./types";
+import { DatabaseInterface as BaseDatabaseInterface, Replicator } from "@/types";
 
 export class DbReplicator implements Replicator {
-	#db: DatabaseInterface;
+	#db: BaseDatabaseInterface;
 
-	constructor(db: DatabaseInterface) {
+	constructor(db: BaseDatabaseInterface) {
 		this.#db = db;
 	}
 
@@ -21,4 +20,4 @@ export class DbReplicator implements Replicator {
 	}
 }
 
-export const newDbReplicator = (db: DatabaseInterface) => new DbReplicator(db);
+export const newDbReplicator = (db: BaseDatabaseInterface) => new DbReplicator(db);
