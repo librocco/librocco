@@ -1,12 +1,12 @@
 import { describe, test, expect, beforeEach, beforeAll } from "vitest";
 import { firstValueFrom } from "rxjs";
 
+import { __withDocker__ } from "@/__tests__/constants";
+
 import * as implementations from "@/implementations/inventory";
 
 import { newTestDB } from "@/__testUtils__/db";
 import newInventoryDataLoader from "@/__testUtils__/inventoryDataLoader";
-
-import { __withDocker__ } from "@/test-runner/env";
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
