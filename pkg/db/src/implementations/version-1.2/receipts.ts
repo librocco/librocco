@@ -1,7 +1,7 @@
 import { wrapIter } from "@librocco/shared";
 
 import type { PrintJob, ReceiptData, RecepitsInterface } from "@/types";
-import type { DatabaseInterface, NoteData } from "./types";
+import type { InventoryDatabaseInterface, NoteData } from "./types";
 
 import { DocType, PrintJobStatus } from "@/enums";
 
@@ -9,12 +9,12 @@ import { uniqueTimestamp } from "@/utils/misc";
 import { versionId } from "./utils";
 
 class Receipts implements RecepitsInterface {
-	#db: DatabaseInterface;
+	#db: InventoryDatabaseInterface;
 
 	// TODO: Printer id could be optional - if no ID, the printer is not registered, noop
 	#id: string;
 
-	constructor(db: DatabaseInterface, printerId: string) {
+	constructor(db: InventoryDatabaseInterface, printerId: string) {
 		this.#db = db;
 		this.#id = printerId;
 	}
@@ -64,4 +64,4 @@ class Receipts implements RecepitsInterface {
 	}
 }
 
-export const newReceiptsInterface = (db: DatabaseInterface, printerId: string): RecepitsInterface => new Receipts(db, printerId);
+export const newReceiptsInterface = (db: InventoryDatabaseInterface, printerId: string): RecepitsInterface => new Receipts(db, printerId);
