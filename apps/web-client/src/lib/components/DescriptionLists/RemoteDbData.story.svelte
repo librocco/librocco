@@ -12,7 +12,8 @@
 		url: "admin:admin@127.0.0.1:5000/dev",
 		direction: "sync" as const,
 		live: true,
-		retry: true
+		retry: true,
+		batch_size: 2000
 	};
 </script>
 
