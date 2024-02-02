@@ -14,7 +14,7 @@
 <slot trigger={$trigger} />
 
 {#if $open}
-	<div use:melt={$content} transition:fade={{ duration: 100 }} class="z-10 rounded-md bg-gray-900 shadow">
+	<div use:melt={$content} transition:fade|global={{ duration: 100 }} class="z-10 rounded-md bg-gray-900 shadow">
 		<div use:melt={$arrow} />
 		<slot name="tooltip-content" />
 	</div>

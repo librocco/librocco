@@ -44,6 +44,7 @@ export function slice<T>(iterable: Iterable<T>, start: number, end: number): Reu
 			}
 
 			if (i >= start) {
+				// @ts-expect-error TODO @IVAN: `Iterable<T>` does not define an index signature
 				yield iterable[i];
 			}
 

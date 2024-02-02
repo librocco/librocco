@@ -20,7 +20,7 @@ export const load: PageLoad = async ({ params, parent }): Promise<Partial<NoteLo
 
 	const findNoteRes = await db.findNote(docId);
 	if (!findNoteRes) {
-		throw redirect(307, appPath("outbound"));
+		redirect(307, appPath("outbound"));
 	}
 	return findNoteRes;
 };

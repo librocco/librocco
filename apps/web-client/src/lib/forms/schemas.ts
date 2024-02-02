@@ -27,3 +27,8 @@ export const remoteDbSchema = z.object({
 	live: z.boolean().default(true),
 	retry: z.boolean().default(true)
 });
+
+export type ScannerData = SuperValidated<typeof scannerSchema>["data"];
+export const scannerSchema = z.object({
+	isbn: z.string()
+});
