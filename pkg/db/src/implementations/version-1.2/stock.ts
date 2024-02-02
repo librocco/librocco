@@ -2,7 +2,7 @@ import { concat, from, Observable, switchMap } from "rxjs";
 
 import { debug, StockMap, wrapIter } from "@librocco/shared";
 
-import { DatabaseInterface, WarehouseData, NoteData } from "./types";
+import { InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { newChangesStream } from "@/utils/pouchdb";
 import { versionId } from "./utils";
@@ -16,11 +16,11 @@ export interface StockInterface {
 type Doc = NoteData | WarehouseData;
 
 class Stock implements StockInterface {
-	#db: DatabaseInterface;
+	#db: InventoryDatabaseInterface;
 
 	options: PouchDB.Core.AllDocsWithinRangeOptions;
 
-	constructor(db: DatabaseInterface) {
+	constructor(db: InventoryDatabaseInterface) {
 		this.#db = db;
 
 		// Start from "v1/" (to collect the outbound notes, belonging to the default warehouse)
@@ -66,4 +66,4 @@ class Stock implements StockInterface {
 	}
 }
 
-export const newStock = (db: DatabaseInterface) => new Stock(db);
+export const newStock = (db: InventoryDatabaseInterface) => new Stock(db);

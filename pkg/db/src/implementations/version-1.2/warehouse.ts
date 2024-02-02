@@ -5,7 +5,7 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 import { DocType } from "@/enums";
 
 import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, DatabaseInterface, WarehouseData } from "./types";
+import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -20,7 +20,7 @@ import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./ut
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
 	// Prepending the property with "#" achieves the desired result by making the property non-enumerable.
-	#db: DatabaseInterface;
+	#db: InventoryDatabaseInterface;
 
 	#initialized = new BehaviorSubject(false);
 	#exists = false;
@@ -44,7 +44,7 @@ class Warehouse implements WarehouseInterface {
 	displayName = "";
 	discountPercentage = 0;
 
-	constructor(db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
+	constructor(db: InventoryDatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
 
 		this._id = !id
@@ -293,4 +293,5 @@ class Warehouse implements WarehouseInterface {
 	}
 }
 
-export const newWarehouse = (db: DatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface => new Warehouse(db, id);
+export const newWarehouse = (db: InventoryDatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface =>
+	new Warehouse(db, id);

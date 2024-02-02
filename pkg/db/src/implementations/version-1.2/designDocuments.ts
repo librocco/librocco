@@ -120,4 +120,4 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export default [stockDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
+export const inventory = [stockDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];

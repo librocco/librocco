@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import type { DatabaseInterface } from "@librocco/db";
+import type { InventoryDatabaseInterface } from "@librocco/db";
 
 /**
  * Returns the database handle from the db interface registered in the window object
@@ -16,5 +16,5 @@ import type { DatabaseInterface } from "@librocco/db";
  * ```
  */
 export function getDbHandle(page: Page) {
-	return page.evaluateHandle(() => (window as { [key: string]: any })["_db"] as DatabaseInterface);
+	return page.evaluateHandle(() => (window as { [key: string]: any })["_db"] as InventoryDatabaseInterface);
 }
