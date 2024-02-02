@@ -55,7 +55,7 @@ describe("Replicate (to/from) remote, when `live == false`", () => {
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to", batch_size: 2000 });
 
 		await replication.promise;
 
@@ -78,7 +78,7 @@ describe("Replicate (to/from) remote, when `live == false`", () => {
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to", batch_size: 800 });
 
 		// Explicitly cancel replication
 		replicationStore.cancel();
@@ -105,7 +105,7 @@ describe("Replicate (to/from) remote, when `live == false`", () => {
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
 
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to", batch_size: 2000 });
 		// Invoke an error by closing remote Db
 		remoteDb._pouch.close();
 
@@ -127,7 +127,7 @@ describe("Replicate (to/from) remote, when `live == false`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "to", batch_size: 2000 });
 
 		await replication.promise;
 
@@ -145,7 +145,7 @@ describe("Replicate (to/from) remote, when `live == true`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "to" });
+		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "to", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
@@ -184,7 +184,7 @@ describe("Replicate (to/from) remote, when `live == true`", () => {
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "to" });
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "to", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -210,7 +210,7 @@ describe("Replicate (to/from) remote, when `live == true`", () => {
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "to" });
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "to", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe(({ state }) => statusFlow.push(state));
@@ -236,7 +236,12 @@ describe("Sync remote, when `live == false`", () => {
 		const booksInterface = remoteDb.books();
 
 		const replicationStore = createReplicationStore();
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, {
+			live: false,
+			retry: false,
+			direction: "sync",
+			batch_size: 2000
+		});
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -256,7 +261,12 @@ describe("Sync remote, when `live == false`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, {
+			live: false,
+			retry: false,
+			direction: "sync",
+			batch_size: 2000
+		});
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -281,7 +291,12 @@ describe("Sync remote, when `live == false`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, {
+			live: false,
+			retry: false,
+			direction: "sync",
+			batch_size: 2000
+		});
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -307,7 +322,12 @@ describe("Sync remote, when `live == false`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		const replication = replicationStore.start(sourceDb, remoteDb._pouch, { live: false, retry: false, direction: "sync" });
+		const replication = replicationStore.start(sourceDb, remoteDb._pouch, {
+			live: false,
+			retry: false,
+			direction: "sync",
+			batch_size: 2000
+		});
 
 		await replication.promise;
 
@@ -325,7 +345,7 @@ describe("Sync remote, when `live == true`", () => {
 		const { remoteDb, sourceDb } = ctx;
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "sync" });
+		replicationStore.start(sourceDb, remoteDb._pouch, { live: true, retry: false, direction: "sync", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -364,7 +384,7 @@ describe("Sync remote, when `live == true`", () => {
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "sync" });
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: false, direction: "sync", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));
@@ -391,7 +411,7 @@ describe("Sync remote, when `live == true`", () => {
 		const errorRemote = "http://admin:admin@127.0.0.1:5000/dev";
 
 		const replicationStore = createReplicationStore();
-		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "sync" });
+		replicationStore.start(sourceDb, errorRemote, { live: true, retry: true, direction: "sync", batch_size: 2000 });
 
 		const statusFlow = [];
 		const unsubscribe = replicationStore.status.subscribe((status) => status && statusFlow.push(status?.state));

@@ -34,7 +34,7 @@ export const load: LayoutLoad = async ({ url }) => {
 			// This should only run in dev to connect us to our couch test container
 			// and only run once, so that we can test updates via settings page
 			if (process.env.NODE_ENV === "development" && !remoteDbPersistedConfig) {
-				remoteDbStore.createHandler({ url: DEV_COUCH_URL, direction: "sync", live: true, retry: true });
+				remoteDbStore.createHandler({ url: DEV_COUCH_URL, direction: "sync", live: true, retry: true, batch_size: 2000 });
 			}
 
 			// If there is a persisted remote config, we should create the handler here so that the settings page loads

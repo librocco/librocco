@@ -21,7 +21,7 @@ export const createReplicationStore = () => {
 	const start = (
 		local: DatabaseInterface,
 		remote: string | PouchDB.Database,
-		config: ReplicationOptions = { live: true, retry: true, direction: "sync" }
+		config: ReplicationOptions = { live: true, retry: true, direction: "sync", batch_size: 2000 }
 	) => {
 		const replicationHandlers = createReplicationHandlers(local, replicationStores);
 
@@ -286,6 +286,7 @@ type ReplicationOptions = PouchDB.Replication.ReplicateOptions & {
 	direction: "to" | "from" | "sync";
 	live: boolean;
 	retry: boolean;
+	batch_size: number;
 };
 
 type ReplicationInfo = {
