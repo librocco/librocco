@@ -3,37 +3,43 @@ import { render, waitFor } from "@testing-library/svelte";
 
 import type { WarehouseChangeDetail } from "../types";
 
-import TdWarehouseSelect from "../WarehouseSelect.svelte";
+import WarehouseSelect from "../WarehouseSelect.svelte";
 
-describe("TdWarehouseSelect", async () => {
+import { rows, availableWarehouses } from "./data";
+
+describe("WarehouseSelect", async () => {
 	// See comment below
 	test.skip("should dispatch change with the only available warehouse (if only one available and no warehouse selected)", async () => {
 		const mockOnChange = vi.fn();
 
-		const { component } = render(TdWarehouseSelect, {
-			roxIx: 0,
+		const row = rows[0];
+		const { warehouseId, warehouseName } = row;
+
+		const { component } = render(WarehouseSelect, {
+			rowIx: 0,
 			data: {
-				warehouseId: "",
-				warehouseName: "not-found",
-				availableWarehouses: new Map([["wh-1", { displayName: "Warehouse 1" }]])
+				...row,
+				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName }]])
 			}
 		});
 		// We're testing for an event that should be dispatched onMount, and it seems the event gets dispatched before we assign the listener.
 		// TODO: This probably isn't the best way to handle this anyway (should happen on db side of things probably)
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));
 
-		await waitFor(() => expect(mockOnChange).toHaveBeenCalledWith("wh-1"));
+		await waitFor(() => expect(mockOnChange).toHaveBeenCalledWith(warehouseId));
 	});
 
 	test("should not dispatch any automatic change if warehouse already selected", async () => {
 		const mockOnChange = vi.fn();
 
-		const { component } = render(TdWarehouseSelect, {
-			roxIx: 0,
+		const row = rows[0];
+		const { warehouseId, warehouseName } = row;
+
+		const { component } = render(WarehouseSelect, {
+			rowIx: 0,
 			data: {
-				warehouseId: "wh-1",
-				warehouseName: "not-found",
-				availableWarehouses: new Map([["wh-1", { displayName: "Warehouse 1" }]])
+				...row,
+				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName }]])
 			}
 		});
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));
@@ -46,15 +52,13 @@ describe("TdWarehouseSelect", async () => {
 	test("should not dispatch any automatic change if there's more than one warehouse for selection", async () => {
 		const mockOnChange = vi.fn();
 
-		const { component } = render(TdWarehouseSelect, {
-			roxIx: 0,
+		const row = rows[0];
+
+		const { component } = render(WarehouseSelect, {
+			rowIx: 0,
 			data: {
-				warehouseId: "",
-				warehouseName: "not-found",
-				availableWarehouses: new Map([
-					["wh-1", { displayName: "Warehouse 1" }],
-					["wh-2", { displayName: "Warehouse 2" }]
-				])
+				...row,
+				availableWarehouses
 			}
 		});
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));

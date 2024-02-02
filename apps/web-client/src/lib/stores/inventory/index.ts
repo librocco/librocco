@@ -83,9 +83,9 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 		searchIndex
 			? {
 					searchString,
-					isbns: new Set(searchIndex.search(searchString).map(({ isbn }) => isbn))
+					isbns: new Set<string>(searchIndex.search(searchString).map(({ isbn }) => isbn))
 			  }
-			: { searchString: "", isbns: new Set() }
+			: { searchString: "", isbns: new Set<string>() }
 	);
 
 	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };

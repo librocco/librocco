@@ -60,7 +60,7 @@ export function createTable<T = object>(options: Options<T>) {
 	/**
 	 * Table action
 	 */
-	const table: Action<HTMLTableElement> = (node, { rowCount }: { rowCount: number }) => {
+	const table: Action<HTMLTableElement, any> = (node, { rowCount }: { rowCount: number }) => {
 		node.setAttribute("aria-rowcount", `${rowCount}`);
 
 		return {

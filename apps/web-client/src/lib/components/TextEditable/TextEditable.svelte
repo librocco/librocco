@@ -45,6 +45,7 @@
 
 <div {...$$restProps}>
 	{#if !isEditing}
+		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
 		<p
 			on:click={edit}
 			on:keydown

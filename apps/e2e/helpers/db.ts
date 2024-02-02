@@ -16,5 +16,5 @@ import type { InventoryDatabaseInterface } from "@librocco/db";
  * ```
  */
 export function getDbHandle(page: Page) {
-	return page.evaluateHandle(() => window["_db"] as InventoryDatabaseInterface);
+	return page.evaluateHandle(() => (window as { [key: string]: any })["_db"] as InventoryDatabaseInterface);
 }

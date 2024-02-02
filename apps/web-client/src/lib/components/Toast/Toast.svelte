@@ -19,7 +19,7 @@
 <div
 	class="flex max-w-fit items-center justify-between gap-x-4 rounded-lg px-4 py-2 shadow-md {colourLookup[toast.type]}"
 	role="alert"
-	transition:fade={{ duration: 200 }}
+	transition:fade|global={{ duration: 200 }}
 	use:t.toast
 >
 	<p class="text-left text-base font-normal">
