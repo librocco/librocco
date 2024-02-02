@@ -2,34 +2,35 @@ import type { Page } from "@playwright/test";
 
 import { WebClientView } from "@librocco/shared";
 
-import type { DashboardInterface, WaitForOpts } from "./types";
-
-import { assertionTimeout } from "@/constants";
+import type { DashboardInterface } from "./types";
 
 import { getMainNav } from "./navigation";
-// import { getSidebar } from "./sidebar";
 import { getContent } from "./content";
-// import { getBookForm } from "./bookForm";
-import { disableNotifications } from "./notifications";
+import { getDialog } from "./dialog";
 
-export function getDashboard(page: Page): DashboardInterface {
+export function getDashboard(_page: Page): DashboardInterface {
+	const page = () => _page;
+	const dashboard = () => getDashboard(_page);
+
 	// As soon as some view is loaded, we can assume the dashboard is loaded
-	const waitFor = (opts?: WaitForOpts) => page.locator('[data-loaded="true"]').waitFor({ timeout: assertionTimeout, ...opts });
+	const container = _page.locator('[data-loaded="true"]');
 
-	const nav = () => getMainNav(page);
+	// Created so that the dashboard (even though being root of the API) satisfies the same
+	// interface required by all other nodes, DashboardNode:
+	// - being a locator
+	// - having a dashboard method (creating a new instance of itself)
+	const node = Object.assign(container, { dashboard });
+
+	const nav = () => getMainNav(node);
 
 	const navigate = (to: WebClientView) => nav().navigate(to);
 
 	const view = (name: WebClientView) =>
-		Object.assign(page.locator(`[data-view="${name}"][data-loaded="true"]`), { dashboard: () => getDashboard(page) });
+		Object.assign(_page.locator(`[data-view="${name}"][data-loaded="true"]`), { dashboard: () => getDashboard(_page) });
 
-	// const sidebar = () => getSidebar(page);
+	const content = () => getContent(node);
 
-	const content = () => getContent(page);
+	const dialog = () => getDialog(node);
 
-	// const bookForm = () => getBookForm(page);
-
-	// return { waitFor, nav, navigate, view, sidebar, content, bookForm };
-
-	return { page: () => page, nav, navigate, view, content, waitFor, disableNotifications: () => disableNotifications(page) };
+	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog });
 }
