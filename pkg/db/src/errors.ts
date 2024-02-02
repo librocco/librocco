@@ -1,4 +1,4 @@
-import { VolumeStock } from "./types";
+import { VolumeStock } from "@librocco/shared";
 
 export class TransactionWarehouseMismatchError extends Error {
 	parentWarehouse: string;

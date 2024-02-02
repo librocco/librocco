@@ -6,7 +6,7 @@ import { newTestRunner } from "@test-runner/runner";
 
 import * as testDataLoader from "@data-loaders/couchdb-image-loader";
 
-import * as implementations from "@/implementations";
+import * as implementations from "@/implementations/inventory";
 import * as tests from "./benchmarks";
 
 import { processTestName, processVersionName } from "@/utils/misc";

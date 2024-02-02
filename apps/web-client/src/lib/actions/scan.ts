@@ -15,7 +15,7 @@ const initialState: ScanState = {
 	target: null
 };
 
-export const scan = (node?: HTMLInputElement, onSubmit?: (value: string) => void) => {
+export const scan = (node?: HTMLInputElement) => {
 	const store = (() => {
 		const store = writable<ScanState>(initialState);
 
@@ -30,17 +30,12 @@ export const scan = (node?: HTMLInputElement, onSubmit?: (value: string) => void
 		return Object.assign(store, { reset, cancel });
 	})();
 
-	const handleSubmit = onSubmit
-		? (e: KeyboardEvent) => {
-				if (e.key !== "Enter") return;
-				e.preventDefault();
-				onSubmit(node.value);
-		  }
-		: () => {};
-
 	const handleKeydown = (e: KeyboardEvent) => {
 		// We're only interested in number inputs (as isbn)
 		if (!/[0-9]/.test(e.key)) return;
+
+		// If the scan input is already focussed, we do not need to buffer input
+		if (document.activeElement === node) return;
 
 		// Capture the event
 		e.preventDefault();
@@ -53,9 +48,10 @@ export const scan = (node?: HTMLInputElement, onSubmit?: (value: string) => void
 			const buffer = state.buffer + e.key;
 			const timeout = setTimeout(store.cancel, MAXIMUM_SCANNER_KEY_GAP);
 
-			// If we receive 3 or more consecutive inputs with
+			// If we receive 7 or more consecutive inputs with
 			// frequency of using a scanner, we can safely assume the input is comming from a scanner
-			if (buffer.length >= 3) {
+			if (buffer.length >= 7) {
+				node.focus();
 				// Reset the value of scan input field
 				// as we're flushing a full buffer each time
 				node.value = "";
@@ -82,12 +78,10 @@ export const scan = (node?: HTMLInputElement, onSubmit?: (value: string) => void
 	};
 
 	window.addEventListener("keydown", handleKeydown);
-	window.addEventListener("keydown", handleSubmit);
 
 	return {
 		destroy() {
 			window.removeEventListener("keydown", handleKeydown);
-			window.removeEventListener("keydown", handleSubmit);
 		}
 	};
 };
@@ -100,8 +94,4 @@ const flush = (target: HTMLInputElement | undefined, value: string) => {
 	if (!target) return;
 	// Append the buffer value to the target
 	target.value += value;
-	// Dispatch the input event (to trigger any listeners)
-	target.dispatchEvent(new Event("input"));
-	// Focus the target
-	target.focus();
 };
