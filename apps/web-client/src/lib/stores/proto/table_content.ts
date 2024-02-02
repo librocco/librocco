@@ -2,7 +2,14 @@ import type { Readable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap } from "rxjs";
 
 import { debug, wrapIter } from "@librocco/shared";
-import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, VolumeStockClient, WarehouseInterface } from "@librocco/db";
+import type {
+	BookEntry,
+	InventoryDatabaseInterface,
+	EntriesStreamResult,
+	NoteInterface,
+	VolumeStockClient,
+	WarehouseInterface
+} from "@librocco/db";
 
 import type { DisplayRow } from "$lib/types/inventory";
 
@@ -11,7 +18,7 @@ import { readableFromStream } from "$lib/utils/streams";
 interface CreateDisplayEntriesStore {
 	(
 		ctx: debug.DebugCtx,
-		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+		db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined
 	): Readable<DisplayRow[]>;
 }

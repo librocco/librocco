@@ -1,7 +1,7 @@
 import { test, expect, describe, beforeEach, afterEach } from "vitest";
 import { get } from "svelte/store";
 
-import type { BookEntry, DatabaseInterface } from "@librocco/db";
+import type { BookEntry, InventoryDatabaseInterface } from "@librocco/db";
 import { testUtils } from "@librocco/shared";
 
 import { newTestDB } from "$lib/__testUtils__/db";
@@ -17,8 +17,8 @@ const bookIds = books.map(({ isbn }) => isbn);
 // Let TS know we're extending TestContext
 declare module "vitest" {
 	export interface TestContext {
-		sourceDb?: DatabaseInterface;
-		remoteDb?: DatabaseInterface;
+		sourceDb?: InventoryDatabaseInterface;
+		remoteDb?: InventoryDatabaseInterface;
 	}
 }
 

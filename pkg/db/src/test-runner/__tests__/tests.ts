@@ -1,9 +1,9 @@
 import { firstValueFrom } from "rxjs";
 import { expect } from "vitest";
 
-import { testUtils } from "@librocco/shared";
+import { testUtils, type VolumeStock } from "@librocco/shared";
 
-import { DesignDocument, CouchDocument, VolumeStock, WarehouseInterface } from "@/types";
+import { DesignDocument, CouchDocument, WarehouseInterface } from "@/types";
 import { TestFunction } from "../types";
 
 const { waitFor } = testUtils;

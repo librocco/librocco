@@ -2,7 +2,14 @@ import { derived, get, readable, type Readable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest, of } from "rxjs";
 
 import { debug, wrapIter } from "@librocco/shared";
-import type { BookEntry, DatabaseInterface, EntriesStreamResult, NoteInterface, VolumeStockClient, WarehouseInterface } from "@librocco/db";
+import type {
+	BookEntry,
+	InventoryDatabaseInterface,
+	EntriesStreamResult,
+	NoteInterface,
+	VolumeStockClient,
+	WarehouseInterface
+} from "@librocco/db";
 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
 
@@ -18,7 +25,7 @@ type SearchFilter = {
 interface CreateDisplayEntriesStore {
 	(
 		ctx: debug.DebugCtx,
-		db: DatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+		db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		entity: NoteInterface | WarehouseInterface | undefined,
 		currentPageStore: Readable<number>,
 		searchFilterStore?: Readable<SearchFilter>
