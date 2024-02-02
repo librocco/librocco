@@ -137,16 +137,18 @@
 		{@const { onConfirm, title, description } = dialogContent};
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		<Dialog
-			{dialog}
-			type="delete"
-			onConfirm={async (closeDialog) => {
-				await onConfirm();
-				closeDialog();
-			}}
-		>
-			<svelte:fragment slot="title">{title}</svelte:fragment>
-			<svelte:fragment slot="description">{description}</svelte:fragment>
-		</Dialog>
+		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+			<Dialog
+				{dialog}
+				type="delete"
+				onConfirm={async (closeDialog) => {
+					await onConfirm();
+					closeDialog();
+				}}
+			>
+				<svelte:fragment slot="title">{title}</svelte:fragment>
+				<svelte:fragment slot="description">{description}</svelte:fragment>
+			</Dialog>
+		</div>
 	{/if}
 </div>

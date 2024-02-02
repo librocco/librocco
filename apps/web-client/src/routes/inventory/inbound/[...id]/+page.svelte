@@ -426,17 +426,19 @@
 				</div>
 			</div>
 		{:else}
-			<Dialog
-				{dialog}
-				{type}
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
-				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</Dialog>
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<Dialog
+					{dialog}
+					{type}
+					onConfirm={async (closeDialog) => {
+						await onConfirm();
+						closeDialog();
+					}}
+				>
+					<svelte:fragment slot="title">{title}</svelte:fragment>
+					<svelte:fragment slot="description">{description}</svelte:fragment>
+				</Dialog>
+			</div>
 		{/if}
 	{/if}
 </div>
