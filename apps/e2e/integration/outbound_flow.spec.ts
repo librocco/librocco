@@ -1,13 +1,9 @@
-import { Locator, expect, test } from "@playwright/test";
-
-// import { NoteState } from "@librocco/shared";
+import { test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { assertionTimeout } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
-import { WaitForOpts, ContentHeaderInterface, ContentInterface, DashboardInterface } from "@/helpers/types";
-import { compareEntries } from "@/helpers/utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -15,8 +11,6 @@ test.beforeEach(async ({ page }) => {
 
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
-	// TODO: Make this run before each test (globally) once the old tests are replaced with new ones
-	await dashboard.disableNotifications();
 
 	// Navigate to the outbound note page
 	await dashboard.navigate("outbound");
@@ -33,9 +27,9 @@ test('should create a new outbound note, on "Create note" and redirect to it', a
 });
 
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
-	const dashboard = wrapDashboard(getDashboard(page));
+	const dashboard = getDashboard(page);
 
-	const content = wrapContent(dashboard.content());
+	const content = dashboard.content();
 
 	// Create two notes to work with
 	const dbHandle = await getDbHandle(page);
@@ -68,25 +62,25 @@ test("should delete the note on delete button click (after confirming the prompt
 test("note heading should display note name, 'updated at' timestamp and note state", async ({ page }) => {
 	const dasbboard = getDashboard(page);
 
-	const header = wrapHeader(dasbboard.content().header());
+	const header = dasbboard.content().header();
 
 	await header.createNote();
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
-	await header.assertUpdatedAt(updatedAt, { timeout: assertionTimeout });
+	await header.updatedAt().assert(updatedAt, { timeout: assertionTimeout });
 });
 
 test("note should display breadcrumbs leading back to outbound page", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const header = wrapHeader(dashboard.content().header());
+	const header = dashboard.content().header();
 
 	await header.createNote();
 
 	await header.breadcrumbs().waitFor();
 
-	await header.breadcrumbs().assertElements(["Outbound", "New Note"]);
+	await header.breadcrumbs().assert(["Outbound", "New Note"]);
 
 	await header.breadcrumbs().getByText("Outbound").click();
 
@@ -96,20 +90,20 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 test("should assign default name to notes in sequential order", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const content = wrapContent(dashboard.content());
-	const header = wrapHeader(dashboard.content().header());
+	const content = dashboard.content();
+	const header = dashboard.content().header();
 
 	// First note
 	await header.createNote();
 	await header.title().assert("New Note");
-	const note1UpdatedAt = await header.updatedAt();
+	const note1UpdatedAt = await header.updatedAt().value();
 
 	await dashboard.navigate("outbound");
 
 	// Second note
 	await header.createNote();
 	await header.title().assert("New Note (2)");
-	const note2UpdatedAt = await header.updatedAt();
+	const note2UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the outbound note list
 	await dashboard.navigate("outbound");
@@ -129,7 +123,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 }) => {
 	const dashboard = getDashboard(page);
 
-	const content = wrapContent(dashboard.content());
+	const content = dashboard.content();
 
 	const dbHandle = await getDbHandle(page);
 
@@ -172,7 +166,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const content = wrapContent(dashboard.content());
+	const content = dashboard.content();
 
 	// Create two notes to work with
 	//
@@ -214,7 +208,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 test("should display book count for each respective note in the list", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const content = wrapContent(dashboard.content());
+	const content = dashboard.content();
 
 	const dbHandle = await getDbHandle(page);
 
@@ -266,130 +260,3 @@ test("should display book count for each respective note in the list", async ({ 
 		{ name: "Note 2", numBooks: 3 }
 	]);
 });
-
-const wrapHeader = (header: ContentHeaderInterface) => {
-	const createNote = async () => {
-		// Create a new note by clicking the button
-		await header.getByRole("button", { name: "New note" }).click();
-		// Wait for the outbound note view to load (signaling that we've been successfully redirected and can continue with the test)
-		await header.dashboard().view("outbound-note").waitFor();
-	};
-
-	const breadcrumbs = () => getBreadcrumbs(header);
-
-	return Object.assign(header, {
-		createNote,
-		breadcrumbs,
-		updatedAt: (opts?: WaitForOpts) => updatedAt(header, opts),
-		assertUpdatedAt: (date: Date, opts?: WaitForOpts & { precision?: number }) => assertUpdatedAt(header, date, opts)
-	});
-};
-
-function wrapContent(content: ContentInterface) {
-	const entityList = () => getEntityList(content);
-	return Object.assign(content, { entityList });
-}
-
-function getBreadcrumbs(header: Locator) {
-	const container = header.locator("nav#breadcrumbs");
-
-	const assertElements = async (labels: string[], opts?: WaitForOpts) => compareEntries(container, labels, "li", opts);
-
-	return Object.assign(container, { assertElements });
-}
-
-interface ElementMatcher {
-	name?: string;
-	updatedAt?: Date;
-	numBooks?: number;
-}
-
-function getEntityList(parent: Locator) {
-	const container = parent.locator("ul#entity-list");
-
-	async function assertElement(element: null, nth: number): Promise<void>;
-	async function assertElement(element: ElementMatcher, nth?: number): Promise<void>;
-	async function assertElement(element: ElementMatcher | null, nth?: number): Promise<void> {
-		let locator = container.locator("li");
-		// If nth provided, we're explicitly checking for the nth element, otherwise, we're checking that the element exists
-		locator = nth !== undefined ? locator.nth(nth) : locator;
-
-		// If element is null, we're asserting that it doesn't exist. This is helpful in cases where we want to assert that there
-		// are no more elements (than specified) in a list (when asserting for the entire list)
-		if (element === null) return locator.waitFor({ state: "detached" });
-
-		const { name, updatedAt, numBooks } = element;
-
-		if (name) await locator.getByText(name, { exact: true }).waitFor();
-		if (updatedAt) await assertUpdatedAt(locator, updatedAt);
-		if (numBooks) await locator.getByText(`${numBooks} books`).waitFor();
-	}
-
-	async function assertElements(elements: ElementMatcher[]): Promise<void> {
-		for (let i = 0; i <= elements.length; i++) {
-			// For the element after the last, we're asserting that there are no more elements in the list.
-			// This is a more Playwright-friendly way of asserting the list than checking for length explicitly.
-			const element = i === elements.length ? null : elements[i];
-			await assertElement(element, i);
-		}
-	}
-
-	function item(nth: number) {
-		const locator = container.locator("li").nth(nth);
-
-		const edit = () => locator.getByText("Edit").click();
-		const deleteItem = () => locator.locator('button[aria-label*="Delete note"]').click();
-
-		return Object.assign(locator, { edit, delete: deleteItem });
-	}
-
-	return Object.assign(container, { assertElement, assertElements, item });
-}
-
-async function updatedAt(container: Locator, opts?: WaitForOpts): Promise<Date> {
-	const updatedAtElement = container.getByText("Last updated:");
-	await updatedAtElement.waitFor({ timeout: assertionTimeout, ...opts });
-
-	const updatedAtString = await updatedAtElement.evaluate((element) => element.textContent, null, {
-		timeout: assertionTimeout,
-		...opts
-	});
-
-	return new Date(
-		updatedAtString
-			// Replace the " at " separator (webkit formatted date) to a regular date string
-			.replace(" at ", ", ")
-			.replace("Last updated: ", "")
-	);
-}
-
-async function assertUpdatedAt(container: Locator, date: Date, opts?: WaitForOpts & { precision?: number }): Promise<void> {
-	const updatedAtDate = await updatedAt(container, opts);
-	const updatedAtMillis = updatedAtDate.getTime();
-
-	// Without mocking the date, we can't assert the exact date, but we can expect the 'updatedAt' to be close to the want date
-	const { precision = 60 * 1000 } = opts || {};
-	const dateCheckMillis = date.getTime() - precision;
-
-	expect(updatedAtMillis).toBeGreaterThan(dateCheckMillis);
-}
-
-function wrapDashboard(dashboard: DashboardInterface) {
-	const dialog = () => getDialog(dashboard);
-	return Object.assign(dashboard, { dialog });
-}
-
-function getDialog(dashboard: DashboardInterface) {
-	const container = dashboard.page().locator('[role="dialog"]');
-
-	const cancel = async () => {
-		await container.getByRole("button", { name: "Cancel" }).click();
-		return container.waitFor({ state: "detached" });
-	};
-	const confirm = async () => {
-		await container.getByRole("button", { name: "Confirm" }).click();
-		return container.waitFor({ state: "detached" });
-	};
-
-	return Object.assign(container, { cancel, confirm });
-}

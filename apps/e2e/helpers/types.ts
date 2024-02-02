@@ -13,8 +13,8 @@ export type DashboardNode<T = {}> = T &
 		dashboard: () => DashboardInterface;
 	};
 
-interface Asserter<T> {
-	assert: (value: T, opts?: WaitForOpts) => Promise<void>;
+export interface Asserter<T> {
+	assert(value: T, opts?: WaitForOpts): Promise<void>;
 }
 
 interface Setter<T> {
@@ -38,21 +38,24 @@ export interface DisplayRow {
 	warehouseName: string;
 }
 
-export interface DashboardInterface {
+export interface DashboardInterface extends Locator {
 	page(): Page;
-	waitFor: Locator["waitFor"];
+	dashboard(): DashboardInterface;
 	nav(): MainNavInterface;
 	navigate(to: WebClientView, opts?: WaitForOpts): Promise<void>;
 	view(name: WebClientView): ViewInterface;
 	content(): ContentInterface;
-	// sidebar(): SidebarInterface;
-	disableNotifications: () => Promise<void>;
-	// bookForm(): BookFormInterface;
+	dialog(): DialogInterface;
 }
 
 export interface NavInterface extends Locator {
 	link(label: string, opts?: { active?: boolean }): Locator;
 }
+
+export type DialogInterface = DashboardNode<{
+	cancel(): Promise<void>;
+	confirm(): Promise<void>;
+}>;
 
 export type MainNavInterface = DashboardNode<{
 	navigate(to: WebClientView): Promise<void>;
@@ -75,8 +78,22 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 	assertClosed(): Promise<void>;
 }
 
+export interface EntityListMatcher {
+	name?: string;
+	updatedAt?: Date;
+	numBooks?: number;
+}
+
+export type EntityListInterface = DashboardNode<{
+	assertElement(element: null, nth: number): Promise<void>;
+	assertElement(element: EntityListMatcher, nth?: number): Promise<void>;
+	assertElements(elements: EntityListMatcher[]): Promise<void>;
+	item(nth: number): DashboardNode<{ edit(): Promise<void>; delete(): Promise<void> }>;
+}>;
+
 export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
+	entityList(): EntityListInterface;
 	// updatedAt(opts?: WaitForOpts): Promise<Date>;
 	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
 	// discount(): WarehouseDiscountInterface;
@@ -85,8 +102,18 @@ export type ContentInterface = DashboardNode<{
 	// entries(view: WebClientView): EntriesTableInterface;
 }>;
 
+export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
+
+export type UpdatedAtInterface = Asserter<Date | string> &
+	DashboardNode<{
+		value(opts?: WaitForOpts): Promise<Date>;
+	}>;
+
 export type ContentHeaderInterface = DashboardNode<{
 	title: () => Asserter<string>;
+	createNote(): Promise<void>;
+	breadcrumbs(): BreadcrumbsInterface;
+	updatedAt(): UpdatedAtInterface;
 }>;
 
 // export interface ContentHeadingInterface extends Locator {
