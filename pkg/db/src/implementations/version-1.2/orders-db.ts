@@ -1,16 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin } from "@/types";
+import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
 import { OrdersDatabaseInterface } from "./types";
 
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
+import { newCustomerOrder } from "./customer-orders";
 
 class Database implements OrdersDatabaseInterface {
 	_pouch: PouchDB.Database;
 
 	#booksInterface?: BooksInterface;
+	#customerOrderInterface?: CustomerOrderInterface;
 
 	#plugins: PluginsInterface;
 
@@ -61,6 +63,11 @@ class Database implements OrdersDatabaseInterface {
 		// We're caching the books interface to avoid creating multiple instances
 		return this.#booksInterface ?? (this.#booksInterface = newBooksInterface(this));
 	}
+
+	customerOrder(): CustomerOrderInterface {
+		return this.#customerOrderInterface ?? (this.#customerOrderInterface = newCustomerOrder(this))
+	}
+
 	// #endregion instances
 }
 
