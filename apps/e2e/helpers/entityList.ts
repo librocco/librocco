@@ -1,6 +1,8 @@
 import { EntityListView } from "@librocco/shared";
 
-import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, WarehouseItemDropdown } from "./types";
+import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, WaitForOpts, WarehouseItemDropdown } from "./types";
+
+import { assertionTimeout } from "@/constants";
 
 import { getUpdatedAt } from "./updatedAt";
 import { classSelector, entityListViewSelector, loadedSelector, selector, testIdSelector } from "./utils";
@@ -51,7 +53,16 @@ function getEntityListItem(parent: DashboardNode, nth: number): EntityListItem {
 
 	const dropdown = () => getWarehouseDropdown(getEntityListItem(parent, nth));
 
-	return Object.assign(container, { dashboard, edit, delete: _delete, dropdown });
+	const createNote = async (opts: WaitForOpts = {}) => {
+		// Create a new note by clicking the button
+		await container.getByRole("button", { name: "New note" }).click();
+		// Wait for the outbound note view to load (signaling that we've been successfully redirected and can continue with the test)
+		await dashboard()
+			.view("inbound-note")
+			.waitFor({ timeout: assertionTimeout, ...opts });
+	};
+
+	return Object.assign(container, { dashboard, edit, delete: _delete, dropdown, createNote });
 }
 
 function getWarehouseDropdown(parent: DashboardNode): WarehouseItemDropdown {

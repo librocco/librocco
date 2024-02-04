@@ -59,12 +59,15 @@ test("should delete the note on delete button click (after confirming the prompt
 	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }]);
 });
 
-test("note heading should display note name, 'updated at' timestamp and note state", async ({ page }) => {
+test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
 	const dasbboard = getDashboard(page);
 
 	const header = dasbboard.content().header();
 
 	await header.createNote();
+
+	// Check the title
+	await header.title().assert("New Note");
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
@@ -264,3 +267,5 @@ test("should display book count for each respective note in the list", async ({ 
 		{ name: "Note 2", numBooks: 3 }
 	]);
 });
+
+// TODO: Test renaming using the editable title
