@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { BookCopy, Library, PackageMinus, Search, Settings } from "lucide-svelte";
 
-	import type { WebClientView } from "@librocco/shared";
+	import { testId, type WebClientView } from "@librocco/shared";
 
 	import { page } from "$app/stores";
 
@@ -22,7 +22,7 @@
 			label: "Search stock",
 			href: appPath("stock"),
 			icon: Search,
-			linkto: "search"
+			linkto: "stock"
 		},
 		{
 			label: "Manage inventory",
@@ -44,11 +44,11 @@
 		}
 	];
 
-	export let view: WebClientView | undefined = undefined;
-	export let loaded: boolean = true;
+	export let view: WebClientView;
+	export let loaded: boolean;
 </script>
 
-<div class="flex h-screen w-screen overflow-hidden">
+<div id={testId("page-container")} data-view={view} data-loaded={loaded} class="flex h-screen w-screen overflow-hidden">
 	<!-- Sidenav -->
 	<div class="flex">
 		<div class="inline-block h-screen bg-gray-800">
@@ -93,7 +93,7 @@
 	<!-- Sidenav end -->
 
 	<!-- Main content -->
-	<div id="content" data-view={view} data-loaded={loaded} class="relative flex h-screen w-full flex-col overflow-hidden bg-gray-50">
+	<div id="content" data-loaded={loaded} class="relative flex h-screen w-full flex-col overflow-hidden bg-gray-50">
 		<!-- Top bar input -->
 		<div
 			class="relative flex h-[66px] w-full flex-shrink-0 items-center bg-white px-4 shadow-[0px_1px_2px_0px_rgba(0,0,0,0.6),0px_1px_3px_0px_rgba(0,0,0,0.1)] focus-within:ring-2 focus-within:ring-inset"
