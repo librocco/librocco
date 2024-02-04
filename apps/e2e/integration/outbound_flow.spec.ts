@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.navigate("outbound");
 });
 
-test('should create a new outbound note, on "Create note" and redirect to it', async ({ page }) => {
+test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
 	const dasbboard = getDashboard(page);
 
 	// Create a new note
@@ -49,14 +49,14 @@ test("should delete the note on delete button click (after confirming the prompt
 	);
 
 	// Wait for the notes to appear
-	await content.entityList().assertElements([{ name: "Note 1" }, { name: "Note 2" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Note 1" }, { name: "Note 2" }]);
 
 	// Delete the first note
-	await content.entityList().item(0).delete();
+	await content.entityList("outbound-list").item(0).delete();
 	await dashboard.dialog().confirm();
 
 	// Check that the note has been deleted
-	await content.entityList().assertElements([{ name: "Note 2" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }]);
 });
 
 test("note heading should display note name, 'updated at' timestamp and note state", async ({ page }) => {
@@ -108,7 +108,7 @@ test("should assign default name to notes in sequential order", async ({ page })
 	// Should display created notes in the outbound note list
 	await dashboard.navigate("outbound");
 
-	const entityList = content.entityList();
+	const entityList = content.entityList("outbound-list");
 
 	await entityList.waitFor();
 
@@ -141,25 +141,29 @@ test("should continue the naming sequence from the highest sequenced note name (
 	);
 
 	// Check names
-	await content.entityList().assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "New Note (3)" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "New Note (3)" }]);
 
 	// TODO: the following should be refactored to use the dashboard (when the renaming functionality is in).
 	// For now we're using the db directly (not really e2e way).
 	//
 	// Create a new note (should continue the sequence)
 	await dbHandle.evaluate((db) => db.warehouse().note("note-4").create());
-	await content.entityList().assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "New Note (3)" }, { name: "New Note (4)" }]);
+	await content
+		.entityList("outbound-list")
+		.assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "New Note (3)" }, { name: "New Note (4)" }]);
 
 	// Rename the remaining notes with default names
 	await dbHandle.evaluate((db) =>
 		Promise.all([db.warehouse().note("note-3").setName({}, "Note 3"), db.warehouse().note("note-4").setName({}, "Note 4")])
 	);
-	await content.entityList().assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "Note 3" }, { name: "Note 4" }]);
+	await content
+		.entityList("outbound-list")
+		.assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "Note 3" }, { name: "Note 4" }]);
 
 	// Create a new note (should reset the sequence)
 	await dbHandle.evaluate((db) => db.warehouse().note("note-5").create());
 	await content
-		.entityList()
+		.entityList("outbound-list")
 		.assertElements([{ name: "Note 1" }, { name: "Note 2" }, { name: "Note 3" }, { name: "Note 4" }, { name: "New Note" }]);
 });
 
@@ -187,10 +191,10 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
 	);
-	await content.entityList().assertElements([{ name: "Note 1" }, { name: "Note 2" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Note 1" }, { name: "Note 2" }]);
 
 	// Navigate to first note
-	await content.entityList().item(0).edit();
+	await content.entityList("outbound-list").item(0).edit();
 
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
@@ -198,7 +202,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Navigate back to outbond page and to second note
 	await dashboard.navigate("outbound");
-	await content.entityList().item(1).edit();
+	await content.entityList("outbound-list").item(1).edit();
 
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
@@ -232,7 +236,7 @@ test("should display book count for each respective note in the list", async ({ 
 	);
 
 	// Both should display 0 books
-	await content.entityList().assertElements([
+	await content.entityList("outbound-list").assertElements([
 		{ name: "Note 1", numBooks: 0 },
 		{ name: "Note 2", numBooks: 0 }
 	]);
@@ -242,7 +246,7 @@ test("should display book count for each respective note in the list", async ({ 
 		db.warehouse().note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
 	);
 
-	await content.entityList().assertElements([
+	await content.entityList("outbound-list").assertElements([
 		{ name: "Note 1", numBooks: 2 },
 		{ name: "Note 2", numBooks: 0 }
 	]);
@@ -255,7 +259,7 @@ test("should display book count for each respective note in the list", async ({ 
 			.addVolumes({ isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
 	);
 
-	await content.entityList().assertElements([
+	await content.entityList("outbound-list").assertElements([
 		{ name: "Note 1", numBooks: 2 },
 		{ name: "Note 2", numBooks: 3 }
 	]);

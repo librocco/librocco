@@ -11,7 +11,7 @@ test("should navigate using the side nav", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Should load 'stock' page as default
-	await dashboard.view("search").waitFor();
+	await dashboard.view("stock").waitFor();
 	await dashboard.content().header().title().assert("Search");
 
 	// Navigate to 'inventory' page

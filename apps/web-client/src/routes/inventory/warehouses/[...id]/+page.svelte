@@ -7,6 +7,7 @@
 
 	import { debug } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
+
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, createTable } from "$lib/components";
@@ -120,7 +121,7 @@
 	});
 </script>
 
-<Page>
+<Page view="warehouse" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input placeholder="Search" {...inputProps} />

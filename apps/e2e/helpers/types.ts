@@ -1,7 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Locator, Page } from "@playwright/test";
 
-import type { NoteState, NoteTempState, WebClientView } from "@librocco/shared";
+import type { NoteState, NoteTempState, EntityListView, WebClientView } from "@librocco/shared";
+
+/** A util type used to "pick" a subset of the given (union type) */
+export type Subset<T, S extends T> = S;
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
@@ -78,22 +81,36 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 	assertClosed(): Promise<void>;
 }
 
+// #region entityList
 export interface EntityListMatcher {
 	name?: string;
 	updatedAt?: Date;
 	numBooks?: number;
 }
 
+export type WarehouseItemDropdown = DashboardNode<{
+	edit: () => Promise<void>;
+	viewStock: () => Promise<void>;
+	delete: () => Promise<void>;
+}>;
+
+export type EntityListItem = DashboardNode<{
+	edit(): Promise<void>;
+	delete(): Promise<void>;
+	dropdown(): WarehouseItemDropdown;
+}>;
+
 export type EntityListInterface = DashboardNode<{
 	assertElement(element: null, nth: number): Promise<void>;
 	assertElement(element: EntityListMatcher, nth?: number): Promise<void>;
 	assertElements(elements: EntityListMatcher[]): Promise<void>;
-	item(nth: number): DashboardNode<{ edit(): Promise<void>; delete(): Promise<void> }>;
+	item(nth: number): EntityListItem;
 }>;
+// #endregion entityList
 
 export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
-	entityList(): EntityListInterface;
+	entityList(view: EntityListView): EntityListInterface;
 	// updatedAt(opts?: WaitForOpts): Promise<Date>;
 	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
 	// discount(): WarehouseDiscountInterface;
