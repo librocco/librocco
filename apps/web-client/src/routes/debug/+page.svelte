@@ -18,7 +18,7 @@
 	};
 </script>
 
-<Page>
+<Page view="debug" loaded={true}>
 	<!-- Header slot -->
 	<svelte:fragment slot="main">
 		<section class="px-48 pt-14" slot="table">

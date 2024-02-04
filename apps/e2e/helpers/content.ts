@@ -1,3 +1,5 @@
+import type { EntityListView } from "@librocco/shared";
+
 import type { ContentInterface, DashboardNode } from "./types";
 
 import { getHeader } from "./header";
@@ -10,7 +12,7 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 
 	const header = () => getHeader(getContent(_parent));
 
-	const entityList = () => getEntityList(container);
+	const entityList = (view: EntityListView) => getEntityList(container, view);
 
 	return Object.assign(container, { header, entityList });
 }
