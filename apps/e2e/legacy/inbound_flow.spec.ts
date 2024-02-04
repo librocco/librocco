@@ -287,3 +287,5 @@ test("should not close the side link group (open by clicking on it) on route cha
 	await sidebar.linkGroup("All").assertOpen();
 	await sidebar.linkGroup("Warehouse 1").assertOpen();
 });
+
+// TODO: Test renaming using the editable title
