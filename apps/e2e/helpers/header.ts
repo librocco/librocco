@@ -18,6 +18,15 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
+	const createWarehouse = async (opts: WaitForOpts = {}) => {
+		// Create a new note by clicking the button
+		await header.getByRole("button", { name: "New warehouse" }).click();
+		// Wait for the outbound note view to load (signaling that we've been successfully redirected and can continue with the test)
+		await dashboard()
+			.view("warehouse")
+			.waitFor({ timeout: assertionTimeout, ...opts });
+	};
+
 	const breadcrumbs = () => getBreadcrumbs(getHeader(_parent));
 
 	const titleElement = header.locator("h1");
@@ -33,6 +42,7 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 		dashboard,
 		title,
 		createNote,
+		createWarehouse,
 		breadcrumbs,
 		updatedAt
 	});

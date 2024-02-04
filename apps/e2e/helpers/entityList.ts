@@ -20,11 +20,12 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 		// are no more elements (than specified) in a list (when asserting for the entire list)
 		if (element === null) return locator.waitFor({ state: "detached" });
 
-		const { name, updatedAt, numBooks } = element;
+		const { name, updatedAt, numBooks, discount } = element;
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
 		if (updatedAt) await getUpdatedAt(Object.assign(locator, { dashboard })).assert(updatedAt);
 		if (numBooks) await locator.getByText(`${numBooks} books`).waitFor();
+		if (discount) await locator.getByText(`${discount}% discount`).waitFor();
 	}
 
 	async function assertElements(elements: EntityListMatcher[]): Promise<void> {

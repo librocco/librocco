@@ -86,6 +86,7 @@ export interface EntityListMatcher {
 	name?: string;
 	updatedAt?: Date;
 	numBooks?: number;
+	discount?: number;
 }
 
 export type WarehouseItemDropdown = DashboardNode<{
@@ -129,6 +130,7 @@ export type UpdatedAtInterface = Asserter<Date | string> &
 export type ContentHeaderInterface = DashboardNode<{
 	title: () => Asserter<string>;
 	createNote(): Promise<void>;
+	createWarehouse(): Promise<void>;
 	breadcrumbs(): BreadcrumbsInterface;
 	updatedAt(): UpdatedAtInterface;
 }>;
