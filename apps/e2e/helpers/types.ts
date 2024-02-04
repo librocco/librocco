@@ -99,6 +99,7 @@ export type EntityListItem = DashboardNode<{
 	edit(): Promise<void>;
 	delete(): Promise<void>;
 	dropdown(): WarehouseItemDropdown;
+	createNote(): Promise<void>;
 }>;
 
 export type EntityListInterface = DashboardNode<{
@@ -112,6 +113,7 @@ export type EntityListInterface = DashboardNode<{
 export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
 	entityList(view: EntityListView): EntityListInterface;
+	navigate(to: Subset<EntityListView, "warehouse-list" | "inbound-list">): Promise<void>;
 	// updatedAt(opts?: WaitForOpts): Promise<Date>;
 	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
 	// discount(): WarehouseDiscountInterface;

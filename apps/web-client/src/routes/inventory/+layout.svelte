@@ -13,17 +13,20 @@
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { appPath } from "$lib/paths";
+	import { entityListView } from "@librocco/shared";
 
 	const tabs = [
 		{
 			icon: Building,
 			label: "Warehouses",
-			href: appPath("warehouses")
+			href: appPath("warehouses"),
+			linkto: entityListView("warehouse-list")
 		},
 		{
 			icon: CopyPlus,
 			label: "Inbound",
-			href: appPath("inbound")
+			href: appPath("inbound"),
+			linkto: entityListView("inbound-list")
 		}
 	];
 
@@ -66,11 +69,12 @@
 		<svelte:fragment slot="main">
 			<div class="flex h-full w-full flex-col overflow-hidden">
 				<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
-					{#each tabs as { label, icon, href }}
+					{#each tabs as { label, icon, href, linkto }}
 						{@const active = $page.url.pathname.startsWith(href)}
 						<svelte:element
 							this={active ? "div" : "a"}
 							class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
+							data-linkto={linkto}
 							{href}
 						>
 							<svelte:component this={icon} size={20} />
