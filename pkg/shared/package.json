@@ -4,9 +4,14 @@
 	"main": "./dist/index.js",
 	"exports": {
 		".": {
-			"import": "./dist/index.es.js",
-			"require": "./dist/index.js",
-			"default": "./dist.index.es.js"
+			"import": {
+				"default": "./dist/index.es.js",
+				"types": "./dist/index.d.ts"
+			}, 
+			"require": {
+				"default": "./dist/index.js",
+				"types": "./dist/index.d.ts"
+			}
 		}
 	},
 	"types": "dist/index.d.ts",
