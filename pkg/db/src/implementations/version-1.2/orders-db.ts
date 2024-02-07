@@ -12,7 +12,6 @@ class Database implements OrdersDatabaseInterface {
 	_pouch: PouchDB.Database;
 
 	#booksInterface?: BooksInterface;
-	#customerOrderInterface?: CustomerOrderInterface;
 
 	#plugins: PluginsInterface;
 
@@ -64,8 +63,14 @@ class Database implements OrdersDatabaseInterface {
 		return this.#booksInterface ?? (this.#booksInterface = newBooksInterface(this));
 	}
 
-	customerOrder(): CustomerOrderInterface {
-		return this.#customerOrderInterface ?? (this.#customerOrderInterface = newCustomerOrder(this))
+	/**
+	 * Instantiate a new customer order instance, with the provided id.
+	1. db.customerorder()
+	2. db.customerorder("order-1")
+	3. db.customerorder("order-1").create()
+	 */
+	customerOrder(id?: string): CustomerOrderInterface {
+		return newCustomerOrder(this, id);
 	}
 
 	// #endregion instances
