@@ -114,12 +114,8 @@ export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
 	entityList(view: EntityListView): EntityListInterface;
 	navigate(to: Subset<EntityListView, "warehouse-list" | "inbound-list">): Promise<void>;
-	// updatedAt(opts?: WaitForOpts): Promise<Date>;
-	// assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
-	// discount(): WarehouseDiscountInterface;
-	// statePicker(): StatePickerInterface;
-	// scanField(): ScanFieldInterface;
-	// entries(view: WebClientView): EntriesTableInterface;
+	scanField(): ScanFieldInterface;
+	table(view: TableView): EntriesTableInterface;
 }>;
 
 export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
@@ -149,9 +145,9 @@ export interface StatePickerInterface extends Locator {
 	select(state: NoteState): Promise<void>;
 }
 
-export interface ScanFieldInterface extends Locator {
+export type ScanFieldInterface = DashboardNode<{
 	add(isbn: string): Promise<void>;
-}
+}>;
 
 export interface WarehouseDiscountInterface extends Locator {
 	set(value: number): Promise<void>;
@@ -182,25 +178,24 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 // #endregion book form
 
 // #region inventory table
+export type TableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse">;
+
 export interface AssertRowFieldsOpts {
 	strict?: boolean;
 	timeout?: number;
 }
 
-export interface EntriesTableInterface extends Locator {
+export type EntriesTableInterface = DashboardNode<{
 	row(index: number): EntriesRowInterface;
 	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
-	selectAll(): Promise<void>;
-	unselectAll(): Promise<void>;
-	deleteSelected(): Promise<void>;
-}
+}>;
 
-export interface EntriesRowInterface extends Locator {
+export type EntriesRowInterface = DashboardNode<{
 	field<K extends keyof TransactionFieldInterfaceLookup>(name: K): TransactionFieldInterfaceLookup[K];
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
-	select(): Promise<void>;
-	unselect(): Promise<void>;
-}
+	edit(): Promise<void>;
+	delete(): Promise<void>;
+}>;
 
 export type TransactionRowValues = {
 	[K in keyof TransactionFieldInterfaceLookup]: DisplayRow[K];
