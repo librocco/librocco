@@ -102,7 +102,7 @@
 					{year}
 				</td>
 				{#if $$slots["row-warehouse"]}
-					<td class="py-4 text-center">
+					<td data-property="warehouseName" class="py-4 text-center">
 						<slot name="row-warehouse" {row} {rowIx} />
 					</td>
 				{/if}

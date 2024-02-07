@@ -19,7 +19,17 @@ export const view = (name: WebClientView) => name;
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-view] property to the entity list container element */
 export const entityListView = (name: EntityListView) => name;
 
-export type TestId = "page-container" | "content-container" | "entity-list-container" | "dropdown-control" | "dropdown-menu";
+export type TestId =
+	| "page-container"
+	| "content-container"
+	| "entity-list-container"
+	| "dropdown-control"
+	| "dropdown-menu"
+	| "scan-input"
+	| "popover-control"
+	| "popover-container"
+	| "edit-row"
+	| "delete-row";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;

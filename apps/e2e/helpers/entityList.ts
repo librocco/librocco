@@ -5,7 +5,8 @@ import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, 
 import { assertionTimeout } from "@/constants";
 
 import { getUpdatedAt } from "./updatedAt";
-import { classSelector, entityListViewSelector, loadedSelector, selector, testIdSelector } from "./utils";
+import { classSelector, entityListViewSelector, loadedSelector, selector } from "./utils";
+import { getDropdown } from "./dropdown";
 
 export function getEntityList(_parent: DashboardNode, view: EntityListView): EntityListInterface {
 	const dashboard = _parent.dashboard;
@@ -66,44 +67,12 @@ function getEntityListItem(parent: DashboardNode, nth: number): EntityListItem {
 }
 
 function getWarehouseDropdown(parent: DashboardNode): WarehouseItemDropdown {
-	const dashboard = parent.dashboard;
+	const dropdown = getDropdown(parent);
+	const opened = dropdown.opened;
 
-	const page = dashboard().page();
+	const edit = opened(() => dropdown.getByText("Edit").click());
+	const viewStock = opened(() => dropdown.getByText("View Stock").click());
+	const _delete = opened(() => dropdown.getByText("Delete").click());
 
-	// Dropdown control button
-	const control = parent.locator(selector(testIdSelector("dropdown-control")));
-
-	// Note: container will be present only if the dropdown is open
-	//
-	// We're matching the dropdown menu from the root node (page) as it'a portalled to the end of the HTML
-	const container = page.locator(selector(testIdSelector("dropdown-menu")));
-
-	// We could, in theory, use the 'waitFor' (and 'waitFor({ state: "detached" })') for the checks,
-	// but that would be an assertion and can't be used (error-safe) for mere (soft) checks
-	const isOpen = () => control.getAttribute("data-open").then((value) => value === "true");
-
-	const open = async () => {
-		// Noop if the dropdown is already open
-		if (await isOpen()) return;
-		await control.click();
-		return container.waitFor();
-	};
-
-	const close = async () => {
-		// Noop if the dropdown is already closed
-		if (!(await isOpen())) return;
-		await control.click();
-		return container.waitFor({ state: "detached" });
-	};
-
-	const opened = (fn: () => Promise<any>) => async () => {
-		await open();
-		return fn();
-	};
-
-	const edit = opened(() => container.getByText("Edit").click());
-	const viewStock = opened(() => container.getByText("View Stock").click());
-	const _delete = opened(() => container.getByText("Delete").click());
-
-	return Object.assign(container, { dashboard, open, close, edit, viewStock, delete: _delete });
+	return Object.assign(dropdown, { edit, viewStock, delete: _delete });
 }
