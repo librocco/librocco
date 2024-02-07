@@ -7,7 +7,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState } from "@librocco/shared";
+	import { NoteState, testId } from "@librocco/shared";
 
 	import type { BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
@@ -244,7 +244,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -252,7 +252,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -314,17 +314,23 @@
 							}}
 							let:trigger
 						>
-							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+							<button
+								data-testid={testId("popover-control")}
+								{...trigger}
+								use:trigger.action
+								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+							>
 								<span class="sr-only">Edit row {rowIx}</span>
 								<span class="aria-hidden">
 									<MoreVertical />
 								</span>
 							</button>
 
-							<div slot="popover-content" class="rounded bg-gray-900">
+							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 								<button
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("edit-row")}
 									on:m-click={() => {
 										bookFormData = row;
 										dialogContent = {
@@ -352,6 +358,7 @@
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("delete-row")}
 								>
 									<span class="sr-only">Delete row {rowIx}</span>
 									<span class="aria-hidden">
