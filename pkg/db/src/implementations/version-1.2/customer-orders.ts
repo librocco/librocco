@@ -1,8 +1,11 @@
-import { BehaviorSubject, firstValueFrom, Observable, ReplaySubject, share, Subject } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
+
+import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
 import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData } from "@/types";
+import { EmptyCustomerOrderError } from "@/errors";
 
 import { versionId } from "./utils";
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -29,7 +32,10 @@ class CustomerOrder implements CustomerOrderInterface {
 	draft = true;
 	email = "";
 	deposit = 0;
-	books = [];
+	books: { isbn: string; status: string }[] = [];
+	// ordered or ready for pickup => boolean?
+
+	status = "ordered";
 	docType = DocType.CustomerOrder;
 	updatedAt: string | null = null;
 
@@ -60,6 +66,28 @@ class CustomerOrder implements CustomerOrderInterface {
 		// If data is not empty (customer order exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
 		this.#stream.subscribe((w) => this.updateInstance(w));
 		return this;
+	}
+
+	private update(ctx: debug.DebugCtx, data: Partial<CustomerOrderInterface>) {
+		return runAfterCondition(async () => {
+			debug.log(ctx, "customerOrder:update")({ data });
+
+			// Committed notes cannot be updated.
+			if (!this.draft) {
+				debug.log(ctx, "customerOrder:update:customerOrder_not_draft")(this);
+				return this;
+			}
+
+			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
+			debug.log(ctx, "customerOrder:updating")({ updatedData });
+			const { rev } = await this.#db._pouch.put<CustomerOrderData>(updatedData);
+			debug.log(ctx, "customerOrder:updated")({ updatedData, rev });
+
+			// We're waiting for the first value from stream (updating local instance) before resolving the
+			// update promise.
+			await firstValueFrom(this.#updateStream);
+			return this;
+		}, this.#initialized);
 	}
 
 	/**
@@ -115,11 +143,89 @@ class CustomerOrder implements CustomerOrderInterface {
 		}, this.#initialized);
 	}
 
-	// get(): Promise<CustomerOrderInterface | undefined> {}
+	get(): Promise<CustomerOrderInterface | undefined> {
+		return runAfterCondition(async () => {
+			if (this.#exists) {
+				return this;
+			}
 
-	// async commit(ctx: debug.DebugCtx, options?: { force: boolean }): Promise<CustomerOrderInterface> {}
+			return Promise.resolve(undefined);
+		}, this.#initialized);
+	}
 
-	// stream() {}
+	/**
+	 * Update customer order status (so far there's ordered and ready-for-pickup).
+	 * ready for pickup when all books have been received from supplier
+	 * (or some are received and others have to be re-ordered?)
+	 */
+	updateStatus(ctx: debug.DebugCtx, status: string): Promise<CustomerOrderInterface> {
+		const currentStatus = this.status;
+		debug.log(ctx, "customerOrder:updateStatus")({ status, currentStatus });
+
+		if (status === currentStatus || !status) {
+			debug.log(ctx, "customerOrder:updateStatus:noop")({ status, currentStatus });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "customerOrder:updateStatus:updating")({ status });
+		return this.update(ctx, { status });
+	}
+
+	/**
+	 * Update individual book on customer order status.
+	 * only the client state (the supplier state is handled elsewere)
+	 * @TEMP book status: ordered, received or re-order
+	 */
+	updateBookStatus(ctx: debug.DebugCtx, isbn: string, status: string): Promise<CustomerOrderInterface> {
+		const index = this.books.findIndex((book) => book.isbn === isbn);
+		if (index === -1 || this.books[index].status === status) Promise.resolve(this);
+
+		const updatedBooks = [...this.books];
+		updatedBooks[index] = { ...updatedBooks[index], status };
+
+		return this.update(ctx, { books: updatedBooks });
+	}
+
+	async commit(ctx: debug.DebugCtx): Promise<CustomerOrderInterface> {
+		debug.log(ctx, "customerOrder:commit")({});
+
+		if (!this.books.length || !this.email) throw new EmptyCustomerOrderError();
+
+		//sets draft to false
+		return this.update(ctx, { draft: false });
+	}
+
+	stream() {
+		return {
+			books: (ctx: debug.DebugCtx) => {
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customerOrder_streams: books: input")),
+					map(({ books }) => books),
+					tap(debug.log(ctx, "customerOrder_streams: books: res"))
+				);
+			},
+
+			state: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customerOrder_streams: state: input")),
+					map(({ draft }) => draft),
+					tap(debug.log(ctx, "customerOrder_streams: state: res"))
+				),
+			status: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customerOrder_streams: status: input")),
+					map(({ status }) => status),
+					tap(debug.log(ctx, "customerOrder_streams: status: res"))
+				),
+
+			updatedAt: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customerOrder_streams: updated_at: input")),
+					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
+					tap(debug.log(ctx, "customerOrder_streams: updated_at: res"))
+				)
+		};
+	}
 }
 
 export const newCustomerOrder = (db: OrdersDatabaseInterface, id?: string): CustomerOrderInterface => {
