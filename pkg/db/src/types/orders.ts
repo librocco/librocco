@@ -34,6 +34,7 @@ export type CustomerOrderData<A extends Record<string, any> = {}> = CouchDocumen
 		draft: boolean;
 		email: string;
 		deposit: number;
+		status: string;
 
 		books: { isbn: string }[];
 	} & A
