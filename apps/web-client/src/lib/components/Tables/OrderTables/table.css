@@ -1,0 +1,16 @@
+table {
+    @apply relative h-full w-full table-auto divide-y divide-gray-400
+}
+
+tbody {
+   @apply gap-y-4 divide-y
+}
+
+th[scope="col"] {
+    @apply p-4 text-left
+}
+
+td,
+th[scope="row"] {
+    @apply h-full py-6 px-4
+}
