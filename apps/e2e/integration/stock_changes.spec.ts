@@ -56,15 +56,14 @@ test("should update the stock when the inbound note is committed", async ({ page
 	await content.getByText("Inbound").click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
-	// TODO: This should be part of the dashboard API
-	await content.header().getByText("Commit").click();
+	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Committed transactions should be reflected in "Warehouse 1" stock
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	await content.getByText("Warehouses").click();
+	await content.navigate("warehouse-list");
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -111,18 +110,17 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	// TODO: This should be part of the dashboard API (warehouse / inbound inventory view switching)
-	await content.getByText("Inbound").click();
+	await content.navigate("inbound-list");
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
-	await content.header().getByText("Commit").click();
+	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Committed transactions should be aggregated in "Warehouse 1" stock
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	await content.getByText("Warehouses").click();
+	await content.navigate("warehouse-list");
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -216,7 +214,7 @@ test("committing an outbound note should decrement the stock by the quantities i
 	await dashboard.navigate("outbound");
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().getByText("Commit").click();
+	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Navigate back to "Warehouse 1" page and check the updated stock
@@ -263,11 +261,11 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 		{ isbn: "1234567891", quantity: 5 }
 	]);
 
-	//  Commit the outbound note
+	// Commit the outbound note
 	await dashboard.navigate("outbound");
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().getByText("Commit").click();
+	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	//  Check the updated stock
@@ -326,7 +324,7 @@ test("committing an outbound note with transactions in two warehouses should dec
 	await dashboard.navigate("outbound");
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().getByText("Commit").click();
+	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Check the updated stock - warehouse 1

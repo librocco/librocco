@@ -131,9 +131,6 @@ test("should continue the naming sequence from the highest sequenced note name (
 	const dbHandle = await getDbHandle(page);
 
 	// Create three notes (default names: "New Note", "New Note (2)", "New Note (3)")
-	//
-	// TODO: Check this: this expects notes to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	await dbHandle.evaluate((db) => db.warehouse().note("note-1").create());
 	await dbHandle.evaluate((db) => db.warehouse().note("note-2").create());
 	await dbHandle.evaluate((db) => db.warehouse().note("note-3").create());
@@ -176,9 +173,6 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	const content = dashboard.content();
 
 	// Create two notes to work with
-	//
-	// TODO: Check this: this expects notes to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
@@ -220,9 +214,6 @@ test("should display book count for each respective note in the list", async ({ 
 	const dbHandle = await getDbHandle(page);
 
 	// Create two notes for display
-	//
-	// TODO: Check this: this expects notes to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	await dbHandle.evaluate((db) =>
 		db
 			.warehouse()
