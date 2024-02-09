@@ -9,6 +9,17 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 	const dashboard = _parent.dashboard;
 	const header = Object.assign(_parent.locator("header"), {});
 
+	const breadcrumbs = () => getBreadcrumbs(getHeader(_parent));
+
+	const titleElement = header.locator("h1");
+
+	const title = () => ({
+		assert: (text: string, opts?: WaitForOpts) =>
+			titleElement.getByText(text, { exact: true }).waitFor({ timeout: assertionTimeout, ...opts })
+	});
+
+	const updatedAt = () => getUpdatedAt(getHeader(_parent));
+
 	const createNote = async (opts: WaitForOpts = {}) => {
 		// Create a new note by clicking the button
 		await header.getByRole("button", { name: "New note" }).click();
@@ -27,23 +38,15 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 			.waitFor({ timeout: assertionTimeout, ...opts });
 	};
 
-	const breadcrumbs = () => getBreadcrumbs(getHeader(_parent));
-
-	const titleElement = header.locator("h1");
-
-	const title = () => ({
-		assert: (text: string, opts?: WaitForOpts) =>
-			titleElement.getByText(text, { exact: true }).waitFor({ timeout: assertionTimeout, ...opts })
-	});
-
-	const updatedAt = () => getUpdatedAt(getHeader(_parent));
+	const commit = async (opts: WaitForOpts = {}) => header.getByText("Commit").click({ timeout: assertionTimeout, ...opts });
 
 	return Object.assign(header, {
 		dashboard,
 		title,
+		breadcrumbs,
+		updatedAt,
 		createNote,
 		createWarehouse,
-		breadcrumbs,
-		updatedAt
+		commit
 	});
 }

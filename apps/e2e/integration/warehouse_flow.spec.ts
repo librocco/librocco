@@ -124,9 +124,6 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	const dbHandle = await getDbHandle(page);
 
 	// Create three warehouses (default names: "New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	//
-	// TODO: Check this: this expects warehouses to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").create());
 	await dbHandle.evaluate((db) => db.warehouse("warehouse-2").create());
 	await dbHandle.evaluate((db) => db.warehouse("warehouse-3").create());
@@ -177,9 +174,6 @@ test("should navigate to warehouse page on 'View stock' button click", async ({ 
 	const content = dashboard.content();
 
 	// Create two warehouses to work with
-	//
-	// TODO: Check this: this expects warehouses to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
@@ -219,9 +213,6 @@ test("should display book count and warehouse discount for each respective wareh
 	const dbHandle = await getDbHandle(page);
 
 	// Create two warehouses for display
-	//
-	// TODO: Check this: this expects warehouses to be displayed in the order they were created,
-	// maybe we want the reverse order (or lexicographical order)
 	await dbHandle.evaluate((db) =>
 		db
 			.warehouse("warehouse-1")
@@ -330,3 +321,5 @@ test("should update the warehouse using the 'Edit' dialog", async ({ page }) => 
 	// Check that the warehouse has been updated
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse (edited)", numBooks: 2, discount: 15 }]);
 });
+
+// TODO: Test renaming using the editable title
