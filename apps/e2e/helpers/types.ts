@@ -128,17 +128,12 @@ export type UpdatedAtInterface = Asserter<Date | string> &
 
 export type ContentHeaderInterface = DashboardNode<{
 	title: () => Asserter<string>;
-	createNote(): Promise<void>;
-	createWarehouse(): Promise<void>;
 	breadcrumbs(): BreadcrumbsInterface;
 	updatedAt(): UpdatedAtInterface;
+	createNote(): Promise<void>;
+	createWarehouse(): Promise<void>;
+	commit(): Promise<void>;
 }>;
-
-// export interface ContentHeadingInterface extends Locator {
-// 	getTitle(opts?: WaitForOpts): Promise<string>;
-// 	textInput(): Locator;
-// 	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
-// }
 
 export interface StatePickerInterface extends Locator {
 	getState(opts?: WaitForOpts): Promise<NoteState | NoteTempState>;

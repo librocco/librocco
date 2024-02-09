@@ -210,3 +210,5 @@ test("should delete the transaction from the note on delete button click", async
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567892" }]);
 });
+
+// TODO: Should not allow committing of an empty note ??

@@ -397,3 +397,5 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
 });
+
+// TODO: Should not allow committing of an empty note ??
