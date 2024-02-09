@@ -5,7 +5,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { debug } from "@librocco/shared";
+	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
 	import { bookDataPlugin } from "$lib/db/plugins";
@@ -146,6 +146,7 @@
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button
+							data-testid={testId("edit-row")}
 							use:melt={$trigger}
 							on:m-click={() => {
 								console.log(row);
