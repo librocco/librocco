@@ -30,23 +30,23 @@ const plugins = [
 			".badge": {
 				"@apply inline-flex items-center rounded": {}
 			},
-			".badge-base": {
+			".badge-sm": {
 				"@apply px-2.5 py-0.5 text-xs": {}
 			},
-			".badge-lg": {
+			".badge-md": {
 				"@apply px-3 py-0.5 text-sm": {}
 			},
-			".badge-neutral": {
-				"@apply bg-gray-100 text-gray-800": {}
+			".badge-red": {
+				"@apply bg-red-200 px-2.5 text-red-800": {}
 			},
-			".badge-error": {
-				"@apply bg-red-100 px-2.5 text-red-800": {}
+			".badge-yellow": {
+				"@apply bg-yellow-200 text-yellow-800": {}
 			},
-			".badge-warning": {
-				"@apply bg-yellow-100 text-yellow-800": {}
-			},
-			".badge-success": {
+			".badge-green": {
 				"@apply bg-teal-100 text-teal-800": {}
+			},
+			".badge-gray": {
+				"@apply bg-gray-200 text-gray-800": {}
 			},
 
 			// Lists
