@@ -37,7 +37,7 @@
 					<BodyHead borderStyle="yellow">
 						<BodyMultiRow
 							rows={{
-								name: { data: name, className: "text-md font-medium" }
+								name: { data: name, className: "text-lg font-normal" }
 							}}
 						/>
 					</BodyHead>
