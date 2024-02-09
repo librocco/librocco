@@ -129,7 +129,7 @@
 									type: "edit"
 								};
 							}}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Edit class="text-gray-400" size={20} />
 							<span class="text-gray-700">Edit</span>
@@ -141,7 +141,7 @@
 							{href}
 							{...item}
 							use:item.action
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Table2 class="text-gray-400" size={20} />
 							<span class="text-gray-700">View Stock</span>
@@ -167,7 +167,7 @@
 									type: "delete"
 								};
 							}}
-							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+							class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Trash2 class="text-white" size={20} />
 							<span class="text-white">Delete</span>
@@ -221,17 +221,19 @@
 				/>
 			</div>
 		{:else}
-			<Dialog
-				{dialog}
-				type="delete"
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
-				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</Dialog>
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<Dialog
+					{dialog}
+					type="delete"
+					onConfirm={async (closeDialog) => {
+						await onConfirm();
+						closeDialog();
+					}}
+				>
+					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+				</Dialog>
+			</div>
 		{/if}
 	{/if}
 </div>
