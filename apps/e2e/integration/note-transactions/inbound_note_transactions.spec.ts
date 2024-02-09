@@ -4,7 +4,7 @@ import { baseURL } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
 
-import { book1 } from "../../legacy/data";
+import { book1 } from "../data";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
