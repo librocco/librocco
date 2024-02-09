@@ -9,6 +9,7 @@ import { getContent } from "./content";
 import { getDialog } from "./dialog";
 
 import { idSelector, loadedSelector, selector, viewSelector } from "./utils";
+import { getBookForm } from "./bookForm";
 
 export function getDashboard(_page: Page): DashboardInterface {
 	const page = () => _page;
@@ -36,5 +37,7 @@ export function getDashboard(_page: Page): DashboardInterface {
 
 	const dialog = () => getDialog(node);
 
-	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog });
+	const bookForm = () => getBookForm(node);
+
+	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog, bookForm });
 }

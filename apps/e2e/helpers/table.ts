@@ -65,7 +65,12 @@ function getEntriesRow(parent: DashboardNode, view: TableView, index: number): E
 
 	const actions = () => getRowActions(getEntriesRow(parent, view, index));
 
-	const edit = () => actions().edit();
+	const edit = () => {
+		if (view === "warehouse") {
+			return container.locator(testIdSelector("edit-row")).click();
+		}
+		return actions().edit();
+	};
 	const _delete = () => actions().delete();
 
 	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts) => {

@@ -49,6 +49,7 @@ export interface DashboardInterface extends Locator {
 	view(name: WebClientView): ViewInterface;
 	content(): ContentInterface;
 	dialog(): DialogInterface;
+	bookForm(): BookFormInterface;
 }
 
 export interface NavInterface extends Locator {
@@ -165,12 +166,12 @@ export interface BookFormValues {
 	outOfPrint: boolean;
 }
 
-export interface BookFormInterface extends Locator {
+export type BookFormInterface = DashboardNode<{
 	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
 	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
 	fillExistingData(): Promise<void>;
 	submit(kind?: "keyboard" | "click"): Promise<void>;
-}
+}>;
 
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
 	set: (value: T) => Promise<void>;
