@@ -28,7 +28,7 @@ const plugins = [
 
 			// Badge
 			".badge": {
-				"@apply inline-flex items-center rounded": {}
+				"@apply inline-flex items-center rounded whitespace-nowrap": {}
 			},
 			".badge-sm": {
 				"@apply px-2.5 py-0.5 text-xs": {}
