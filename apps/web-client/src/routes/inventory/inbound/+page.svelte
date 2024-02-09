@@ -101,7 +101,7 @@
 
 				<div class="max-w-1/2 flex w-full items-center justify-between">
 					{#if note.updatedAt}
-						<span class="badge badge-base badge-success">Last updated: {updatedAt}</span>
+						<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
 					{:else}
 						<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
 						<div />
