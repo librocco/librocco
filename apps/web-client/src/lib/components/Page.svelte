@@ -9,7 +9,7 @@
 
 	export const links = [
 		{
-			label: "Stock",
+			label: "Search stock",
 			href: appPath("stock"),
 			icon: Search
 		},
