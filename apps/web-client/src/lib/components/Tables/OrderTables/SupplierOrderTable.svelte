@@ -29,7 +29,7 @@
 			</th>
 		</tr>
 	</thead>
-	<tbody class="gap-y-4 divide-y">
+	<tbody>
 		{#each $data as row (row.id)}
 			{@const { name, id, lastUpdated, actionLink } = row}
 			<tr>
