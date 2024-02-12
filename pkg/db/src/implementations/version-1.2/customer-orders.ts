@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData } from "@/types";
+import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, CustomerOrderBook } from "@/types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { versionId } from "./utils";
@@ -32,10 +32,8 @@ class CustomerOrder implements CustomerOrderInterface {
 	draft = true;
 	email = "";
 	deposit = 0;
-	books: { isbn: string; status: string }[] = [];
-	// ordered or ready for pickup => boolean?
+	books: CustomerOrderBook[] = [];
 
-	status = "ordered";
 	docType = DocType.CustomerOrder;
 	updatedAt: string | null = null;
 
@@ -72,7 +70,7 @@ class CustomerOrder implements CustomerOrderInterface {
 		return runAfterCondition(async () => {
 			debug.log(ctx, "customerOrder:update")({ data });
 
-			// Committed notes cannot be updated.
+			// Only draft orders can be updated.
 			if (!this.draft) {
 				debug.log(ctx, "customerOrder:update:customerOrder_not_draft")(this);
 				return this;
@@ -153,37 +151,28 @@ class CustomerOrder implements CustomerOrderInterface {
 		}, this.#initialized);
 	}
 
-	/**
-	 * Update customer order status (so far there's ordered and ready-for-pickup).
-	 * ready for pickup when all books have been received from supplier
-	 * (or some are received and others have to be re-ordered?)
-	 */
-	updateStatus(ctx: debug.DebugCtx, status: string): Promise<CustomerOrderInterface> {
-		const currentStatus = this.status;
-		debug.log(ctx, "customerOrder:updateStatus")({ status, currentStatus });
 
-		if (status === currentStatus || !status) {
-			debug.log(ctx, "customerOrder:updateStatus:noop")({ status, currentStatus });
-			return Promise.resolve(this);
-		}
-
-		debug.log(ctx, "customerOrder:updateStatus:updating")({ status });
-		return this.update(ctx, { status });
-	}
 
 	/**
 	 * Update individual book on customer order status.
 	 * only the client state (the supplier state is handled elsewere)
 	 * @TEMP book status: ordered, received or re-order
 	 */
-	updateBookStatus(ctx: debug.DebugCtx, isbn: string, status: string): Promise<CustomerOrderInterface> {
-		const index = this.books.findIndex((book) => book.isbn === isbn);
-		if (index === -1 || this.books[index].status === status) Promise.resolve(this);
+	updateBookStatus(ctx: debug.DebugCtx, isbns: string[], status: string): Promise<CustomerOrderInterface> {
 
-		const updatedBooks = [...this.books];
-		updatedBooks[index] = { ...updatedBooks[index], status };
+		const updatedBooks = [...this.books]
+		let booksUpdated = false;
 
-		return this.update(ctx, { books: updatedBooks });
+		isbns.forEach((isbn) => {
+			const index = this.books.findIndex((book) => book.isbn === isbn);
+			if (index === -1 || this.books[index].status === status) return;
+			booksUpdated = true;
+
+			updatedBooks[index] = { ...updatedBooks[index], status };
+
+		})
+
+		return booksUpdated ? this.update(ctx, { books: updatedBooks }) : Promise.resolve(this);
 	}
 
 	async commit(ctx: debug.DebugCtx): Promise<CustomerOrderInterface> {
@@ -210,12 +199,6 @@ class CustomerOrder implements CustomerOrderInterface {
 					tap(debug.log(ctx, "customerOrder_streams: state: input")),
 					map(({ draft }) => draft),
 					tap(debug.log(ctx, "customerOrder_streams: state: res"))
-				),
-			status: (ctx: debug.DebugCtx) =>
-				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: status: input")),
-					map(({ status }) => status),
-					tap(debug.log(ctx, "customerOrder_streams: status: res"))
 				),
 
 			updatedAt: (ctx: debug.DebugCtx) =>
