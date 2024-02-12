@@ -99,7 +99,7 @@ export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Obse
 export const createVersioningFunction =
 	(version: VersionString) =>
 	(id: string): VersionedString =>
-		isVersioned(id, version) ? id : `v1/${id}`;
+		isVersioned(id, version) ? id : `${version}/${id}`;
 
 /**
  * Returns true if the id is a versioned string.
