@@ -5,9 +5,9 @@
 	import { Check, ChevronsUpDown } from "lucide-svelte";
 
 	import type { WarehouseChangeDetail } from "./types";
-	import type { OutNoteTableData } from "$lib/components/Tables/types";
+	import type { OutboundTableData } from "$lib/components/Tables/types";
 
-	export let data: OutNoteTableData;
+	export let data: OutboundTableData;
 	export let rowIx: number;
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
@@ -34,7 +34,7 @@
 
 	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
 
-	const mapWarehousesToOptions = (warehouses: OutNoteTableData["availableWarehouses"]) =>
+	const mapWarehousesToOptions = (warehouses: OutboundTableData["availableWarehouses"]) =>
 		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
 
 	/**

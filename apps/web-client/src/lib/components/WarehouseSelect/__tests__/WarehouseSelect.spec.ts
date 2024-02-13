@@ -5,7 +5,7 @@ import type { WarehouseChangeDetail } from "../types";
 
 import WarehouseSelect from "../../WarehouseSelect/WarehouseSelect.svelte";
 
-import { rows, availableWarehouses } from "$lib/__testUtils__/rowData";
+import { rows, availableWarehouses } from "$lib/__testData__/rowData";
 
 describe("WarehouseSelect", async () => {
 	// See comment below

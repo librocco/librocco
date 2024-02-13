@@ -10,7 +10,7 @@
 
 	import { createTable } from "$lib/actions";
 
-	import { rows } from "../../InventoryTable/__tests__/data";
+	import { rows } from "$lib/__testData__/rowData";
 
 	export let Hst: Hst;
 
