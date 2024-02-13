@@ -18,7 +18,7 @@
 	$: rowCount = rows.length + 1;
 </script>
 
-<table id="inventory-table" class="xs:table-fixed table" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
 	<thead>
 		<tr>
 			<th scope="col" class="w-[20%] lg:w-[13%] xl:w-[10%]">
@@ -27,14 +27,14 @@
 			</th>
 			<th scope="col" class="show-col-lg"> Title </th>
 			<th scope="col" class="show-col-lg"> Authors </th>
-			<th scope="col" class="w-[6%] lg:w-[8%]"> Price </th>
-			<th scope="col" class="w-[6%] lg:w-[8%]"> Quantity </th>
-			<th scope="col" class="show-col-md w-[10%]"> Publisher </th>
-			<th scope="col" class="show-col-md w-[6%]"> Year </th>
-			<th scope="col" class="show-col-xl w-[10%]"> Edited By </th>
-			<th scope="col" class="show-col-xl w-[4%]"> O.P </th>
+			<th scope="col"> Price </th>
+			<th scope="col"> Quantity </th>
+			<th scope="col"> Publisher </th>
+			<th scope="col" class="show-col-lg"> Year </th>
+			<th scope="col" class="show-col-xl "> Edited By </th>
+			<th scope="col" class="show-col-xl"> O.P </th>
 			{#if $$slots["row-actions"]}
-				<th scope="col" class="w-[5%]"> <HeadCol label="Row Actions" srOnly /> </th>
+				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
 		</tr>
 	</thead>
@@ -54,38 +54,38 @@
 				warehouseDiscount
 			} = row}
 			<tr use:table.tableRow={{ position: rowIx }}>
-				<th scope="row" data-property="isbn">
+				<th scope="row" data-property="isbn" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>
 
-				<td data-property="title" class="show-col-lg">
+				<td data-property="title" class="show-col-lg table-cell-max">
 					{title}
 				</td>
-				<td data-property="authors" class="show-col-lg">
+				<td data-property="authors" class="show-col-lg table-cell-max">
 					{authors}
 				</td>
-				<td data-property="price">
+				<td data-property="price" class="">
 					<BookPriceCell data={{ price, warehouseDiscount }} />
 				</td>
-				<td data-property="quantity">
+				<td data-property="quantity" class="">
 					<span class="badge badge-md badge-gray">
 						{quantity}
 					</span>
 				</td>
-				<td data-property="publisher" class="show-col-md">
+				<td data-property="publisher" class="show-col-sm table-cell-max">
 					{publisher}
 				</td>
-				<td data-property="year" class="show-col-md">
+				<td data-property="year" class="show-col-lg">
 					{year}
 				</td>
-				<td data-property="editedBy" class="show-col-xl">
+				<td data-property="editedBy" class="show-col-xl table-cell-max">
 					{editedBy}
 				</td>
 				<td data-property="outOfPrint" class="show-col-xl">
 					<BookOutPrintCell {rowIx} {outOfPrint} />
 				</td>
 				{#if $$slots["row-actions"]}
-					<td>
+					<td class="table-cell-fit">
 						<slot name="row-actions" {row} {rowIx} />
 					</td>
 				{/if}
