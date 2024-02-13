@@ -1,6 +1,9 @@
 <script lang="ts">
-	import type { Hst } from "@histoire/plugin-svelte";
 	import { writable } from "svelte/store";
+
+	import type { Hst } from "@histoire/plugin-svelte";
+	import { logEvent } from "histoire/client";
+
 	import { FileEdit } from "lucide-svelte";
 
 	import { StockTable, InboundTable, OutboundTable } from "../InventoryTables";
@@ -32,7 +35,7 @@
 		</StockTable>
 	</Hst.Variant>
 	<Hst.Variant title="Inbound">
-		<InboundTable table={defaultStockTable} on:edit-quantity={(e) => console.log(e)}>
+		<InboundTable table={defaultStockTable} on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
@@ -45,7 +48,11 @@
 	</Hst.Variant>
 
 	<Hst.Variant title="Outbound">
-		<OutboundTable table={defaultStockTable} on:edit-warehouse={(e) => console.log(e)}>
+		<OutboundTable
+			table={defaultStockTable}
+			on:edit-row-warehouse={({ detail }) => logEvent("Edit Warehouse", detail)}
+			on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}
+		>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
