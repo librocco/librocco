@@ -31,10 +31,10 @@
 	</thead>
 	<tbody>
 		{#each $data as row (row.id)}
-			{@const { name, id, lastUpdated, actionLink } = row}
+			{@const { name, id, lastUpdated, draft, actionLink } = row}
 			<tr>
 				<th scope="row">
-					<BodyHead borderStyle="yellow">
+					<BodyHead borderStyle={draft ? "gray" : "yellow"}>
 						<BodyMultiRow
 							rows={{
 								name: { data: name, className: "text-lg font-normal" }
@@ -44,12 +44,12 @@
 				</th>
 				<td>{id}</td>
 				<td>
-					<span class="badge badge-md badge-yellow">
+					<span class="badge badge-md {draft ? 'badge-gray' : 'badge-yellow'}">
 						{lastUpdated}
 					</span>
 				</td>
 				<td>
-					<BodyLink link={actionLink} label="Manage" style="yellow" />
+					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
 				</td>
 			</tr>
 		{/each}
