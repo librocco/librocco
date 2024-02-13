@@ -22,14 +22,14 @@ td {
     @apply truncate
 }
 
-.hide-xl {
+.show-col-xl {
     @apply hidden xl:table-cell
 }
 
-.hide-lg {
+.show-col-lg {
     @apply hidden lg:table-cell
 }
 
-.hide-md {
+.show-col-md {
     @apply hidden md:table-cell
 }

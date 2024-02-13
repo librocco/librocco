@@ -25,14 +25,14 @@
 				<span class="hidden lg:inline">ISBN</span>
 				<span class="inline lg:hidden">Book</span>
 			</th>
-			<th scope="col" class="hide-lg"> Title </th>
-			<th scope="col" class="hide-lg"> Authors </th>
+			<th scope="col" class="show-col-lg"> Title </th>
+			<th scope="col" class="show-col-lg"> Authors </th>
 			<th scope="col" class="w-[6%] lg:w-[8%]"> Price </th>
 			<th scope="col" class="w-[6%] lg:w-[8%]"> Quantity </th>
-			<th scope="col" class="hide-md w-[10%]"> Publisher </th>
-			<th scope="col" class="hide-md w-[6%]"> Year </th>
-			<th scope="col" class="hide-xl w-[10%]"> Edited By </th>
-			<th scope="col" class="hide-xl w-[4%]"> O.P </th>
+			<th scope="col" class="show-col-md w-[10%]"> Publisher </th>
+			<th scope="col" class="show-col-md w-[6%]"> Year </th>
+			<th scope="col" class="show-col-xl w-[10%]"> Edited By </th>
+			<th scope="col" class="show-col-xl w-[4%]"> O.P </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="w-[5%]"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
@@ -58,10 +58,10 @@
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>
 
-				<td data-property="title" class="hide-lg">
+				<td data-property="title" class="show-col-lg">
 					{title}
 				</td>
-				<td data-property="authors" class="hide-lg">
+				<td data-property="authors" class="show-col-lg">
 					{authors}
 				</td>
 				<td data-property="price">
@@ -72,16 +72,16 @@
 						{quantity}
 					</span>
 				</td>
-				<td data-property="publisher" class="hide-md">
+				<td data-property="publisher" class="show-col-md">
 					{publisher}
 				</td>
-				<td data-property="year" class="hide-md">
+				<td data-property="year" class="show-col-md">
 					{year}
 				</td>
-				<td data-property="editedBy" class="hide-xl">
+				<td data-property="editedBy" class="show-col-xl">
 					{editedBy}
 				</td>
-				<td data-property="outOfPrint" class="hide-xl">
+				<td data-property="outOfPrint" class="show-col-xl">
 					<BookOutPrintCell {rowIx} {outOfPrint} />
 				</td>
 				{#if $$slots["row-actions"]}
