@@ -17,10 +17,6 @@ export type BookCoreRowData = {
 	year?: string;
 };
 
-export type WarehouseChangeDetail = {
-	warehouseId: string;
-};
-
 // TODO: Align with DB types =>
 // VolumeStockClient has warehouseName as a string, but it should expect an array where
 // a volume in an Out Note can potentially come out of multiple warehouses

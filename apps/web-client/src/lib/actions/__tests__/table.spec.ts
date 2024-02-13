@@ -8,7 +8,7 @@ import { createTable } from "../table";
 
 import { StockTable } from "$lib/components";
 
-import { rows } from "./data";
+import { rows } from "$lib/__testUtils__/rowData";
 
 describe("Manages row data:", () => {
 	const tableOptions = writable({

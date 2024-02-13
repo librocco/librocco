@@ -3,9 +3,9 @@ import { render, waitFor } from "@testing-library/svelte";
 
 import type { WarehouseChangeDetail } from "../types";
 
-import WarehouseSelect from "../WarehouseSelect.svelte";
+import WarehouseSelect from "../../WarehouseSelect/WarehouseSelect.svelte";
 
-import { rows, availableWarehouses } from "./data";
+import { rows, availableWarehouses } from "$lib/__testUtils__/rowData";
 
 describe("WarehouseSelect", async () => {
 	// See comment below
