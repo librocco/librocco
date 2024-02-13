@@ -1,0 +1,35 @@
+.table {
+    @apply relative w-full divide-y divide-gray-200 bg-white xs:table-fixed
+}
+
+thead tr {
+    @apply text-sm font-semibold leading-5 text-gray-900
+}
+
+tbody tr {
+    @apply text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50
+}
+
+th, td {
+    @apply py-4 px-3
+}
+
+th {
+    @apply text-left
+}
+
+td {
+    @apply truncate
+}
+
+.hide-xl {
+    @apply hidden xl:table-cell
+}
+
+.hide-lg {
+    @apply hidden lg:table-cell
+}
+
+.hide-md {
+    @apply hidden md:table-cell
+}
