@@ -243,7 +243,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -251,7 +251,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -286,7 +286,7 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper

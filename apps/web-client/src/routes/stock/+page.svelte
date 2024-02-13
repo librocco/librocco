@@ -123,7 +123,7 @@
 				</PlaceholderBox>
 			{/await}
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
