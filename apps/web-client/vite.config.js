@@ -93,7 +93,7 @@ const config = {
 	},
 	histoire: {
 		plugins: [HstSvelte()],
-		setupFile: `${componentsPath}/histoire.setup.ts`,
+		setupFile: "./histoire.setup.ts",
 		storyMatch: [`${componentsPath}/**/*.story.svelte`],
 		vite: {
 			base: "/",
