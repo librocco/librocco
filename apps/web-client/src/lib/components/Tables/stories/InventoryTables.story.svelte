@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 	import { FileEdit } from "lucide-svelte";
 
-	import StockTable from "../InventoryTables/StockTable.svelte";
+	import { StockTable, InboundTable } from "../InventoryTables";
 
 	import { createTable } from "$lib/actions";
 
@@ -30,5 +30,17 @@
 				</button>
 			</div>
 		</StockTable>
+	</Hst.Variant>
+	<Hst.Variant title="Inbound">
+		<InboundTable table={defaultStockTable} on:edit-quantity={(e) => console.log(e)}>
+			<div slot="row-actions" let:row let:rowIx>
+				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+					<span class="sr-only">Edit row {rowIx}</span>
+					<span class="aria-hidden">
+						<FileEdit />
+					</span>
+				</button>
+			</div>
+		</InboundTable>
 	</Hst.Variant>
 </Hst.Story>
