@@ -16,3 +16,4 @@ export * from "./ProgressBar";
 export * from "./InventoryTable";
 export * from "./DescriptionLists";
 export * from "./TextEditable";
+export * from "./WarehouseSelect";

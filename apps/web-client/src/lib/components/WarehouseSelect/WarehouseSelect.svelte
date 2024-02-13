@@ -4,7 +4,8 @@
 	import { createSelect } from "@melt-ui/svelte";
 	import { Check, ChevronsUpDown } from "lucide-svelte";
 
-	import type { OutNoteTableData, WarehouseChangeDetail } from "./types";
+	import type { WarehouseChangeDetail } from "./types";
+	import type { OutNoteTableData } from "$lib/components/Tables/types";
 
 	export let data: OutNoteTableData;
 	export let rowIx: number;
@@ -72,7 +73,7 @@
 			{#each options as warehouse}
 				{@const { label, value } = warehouse}
 				<div
-					class="relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+					class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10"
 					{...$option(warehouse)}
 					use:option
 				>
