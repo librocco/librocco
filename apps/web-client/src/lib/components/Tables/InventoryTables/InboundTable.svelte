@@ -8,9 +8,10 @@
 	import BookHeadCell from "./BookHeadCell.svelte";
 	import BookPriceCell from "./BookPriceCell.svelte";
 	import BookOutPrintCell from "./BookOutPrintCell.svelte";
-
-	import type { InventoryTableData } from "../types";
 	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
+
+	import { createInboundTableEvents, type InboundTableEvents } from "./events";
+	import type { InventoryTableData } from "../types";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -20,11 +21,8 @@
 	// table rows + one header row
 	$: rowCount = rows.length + 1;
 
-	const dispatch = createEventDispatcher();
-
-	function editQuantity(e: SubmitEvent) {
-		dispatch("edit-quantity", e);
-	}
+	const dispatch = createEventDispatcher<InboundTableEvents>();
+	const { editQuantity } = createInboundTableEvents(dispatch);
 </script>
 
 <table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
