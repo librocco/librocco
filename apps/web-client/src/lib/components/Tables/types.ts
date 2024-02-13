@@ -5,6 +5,7 @@ export interface OrderData {
 	name: string;
 	email: string;
 	id: string;
+	draft: boolean;
 	lastUpdated: string;
 	actionLink: string;
 }
