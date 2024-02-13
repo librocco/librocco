@@ -34,3 +34,12 @@ td {
 .show-col-md {
 	@apply hidden md:table-cell;
 }
+
+/* Source: https://stackoverflow.com/questions/11267154/fit-cell-width-to-content */
+.table-cell-fit {
+	@apply w-[1%] whitespace-nowrap;
+}
+
+.table-cell-max {
+	@apply max-w-[15rem];
+}
