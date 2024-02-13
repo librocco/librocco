@@ -18,7 +18,7 @@
 	$: rowCount = rows.length + 1;
 </script>
 
-<table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="xs:table-fixed table" use:tableAction={{ rowCount }}>
 	<thead>
 		<tr>
 			<th scope="col" class="w-[20%] lg:w-[13%] xl:w-[10%]">
