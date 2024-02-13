@@ -75,7 +75,7 @@
 					<BookPriceCell data={{ price, warehouseDiscount }} />
 				</td>
 				<td data-property="quantity">
-					<BookQuantityFormCell {rowIx} {quantity} on:submit={editQuantity} />
+					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />
 				</td>
 				<td data-property="publisher" class="show-col-md">
 					{publisher}

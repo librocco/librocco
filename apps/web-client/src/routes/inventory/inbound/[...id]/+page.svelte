@@ -22,8 +22,7 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
-		StockTable,
-		createTable
+		InboundTable
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
@@ -34,7 +33,7 @@
 
 	import { createNoteStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
@@ -113,7 +112,7 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -244,7 +243,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -252,7 +251,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -288,22 +287,7 @@
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
-
-						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
-							<input
-								name="quantity"
-								id="quantity"
-								value={quantity}
-								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
-								type="number"
-								min="1"
-								required
-							/>
-						</form>
-					</div>
+				<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{
@@ -361,7 +345,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</StockTable>
+				</InboundTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
