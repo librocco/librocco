@@ -9,14 +9,14 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { StockTable, createTable } from "$lib/components";
+	import { StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { getDB } from "$lib/db";
