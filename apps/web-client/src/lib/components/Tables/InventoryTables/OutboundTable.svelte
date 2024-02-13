@@ -26,7 +26,7 @@
 	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
 </script>
 
-<table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="table table-auto" use:tableAction={{ rowCount }}>
 	<thead>
 		<tr>
 			<th scope="col" class="w-[20%] lg:w-[13%] xl:w-[10%]">

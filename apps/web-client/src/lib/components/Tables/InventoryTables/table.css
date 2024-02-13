@@ -1,5 +1,5 @@
 .table {
-	@apply relative w-full divide-y divide-gray-200 bg-white xs:table-fixed;
+	@apply relative w-full divide-y divide-gray-200 bg-white;
 }
 
 thead tr {
