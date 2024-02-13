@@ -10,20 +10,22 @@
 
 	import { createTable } from "$lib/actions";
 
-	import { rows } from "$lib/__testData__/rowData";
+	import { rows, outNoteRows } from "$lib/__testData__/rowData";
 
 	export let Hst: Hst;
 
-	const tableOptions = writable({
-		data: rows
-	});
+	const stockAndInboundTable = createTable(
+		writable({
+			data: rows
+		})
+	);
 
-	const defaultStockTable = createTable(tableOptions);
+	const outboundTable = createTable(writable({ data: outNoteRows }));
 </script>
 
 <Hst.Story title="Tables / Inventory Tables">
 	<Hst.Variant title="Stock">
-		<StockTable table={defaultStockTable}>
+		<StockTable table={stockAndInboundTable}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
@@ -35,7 +37,7 @@
 		</StockTable>
 	</Hst.Variant>
 	<Hst.Variant title="Inbound">
-		<InboundTable table={defaultStockTable} on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}>
+		<InboundTable table={stockAndInboundTable} on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
@@ -49,7 +51,7 @@
 
 	<Hst.Variant title="Outbound">
 		<OutboundTable
-			table={defaultStockTable}
+			table={outboundTable}
 			on:edit-row-warehouse={({ detail }) => logEvent("Edit Warehouse", detail)}
 			on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}
 		>
