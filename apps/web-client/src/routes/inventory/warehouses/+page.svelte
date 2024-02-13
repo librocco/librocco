@@ -7,6 +7,7 @@
 	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
 
 	import { filter } from "@librocco/shared";
+	import { NEW_WAREHOUSE } from "@librocco/db";
 
 	import { goto } from "$app/navigation";
 
@@ -45,6 +46,16 @@
 	};
 
 	/**
+	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
+		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
+		await goto(appPath("warehouses", warehouse._id));
+	};
+
+	/**
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
@@ -72,7 +83,7 @@
 	</div>
 {:else if !$warehouseList.length}
 	<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-		<button class="button button-green"><span class="button-text">New warehouse</span></button>
+		<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
 	</PlaceholderBox>
 {:else}
 	<ul class="entity-list-container">
