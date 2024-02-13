@@ -44,6 +44,7 @@
 			<th scope="col" class="w-[6%] lg:w-[8%]"> Quantity </th>
 			<th scope="col" class="show-col-md w-[10%]"> Publisher </th>
 			<th scope="col" class="show-col-md w-[6%]"> Year </th>
+			<th scope="col" class="w-[9%] sm:w-[15%] xl:w-[20%]">Warehouse </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="w-[5%]"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
