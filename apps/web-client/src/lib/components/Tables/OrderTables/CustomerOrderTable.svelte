@@ -33,7 +33,7 @@
 		{#each $data as row (row.id)}
 			{@const { name, email, id, lastUpdated, draft, actionLink } = row}
 			<tr>
-				<th scope="row">
+				<th scope="row" data-property="customer">
 					<BodyHead borderStyle={draft ? "gray" : "yellow"}>
 						<BodyMultiRow
 							rows={{
@@ -43,13 +43,13 @@
 						/>
 					</BodyHead>
 				</th>
-				<td>{id}</td>
-				<td>
+				<td data-property="id">{id}</td>
+				<td data-property="last-updated">
 					<span class="badge badge-md {draft ? 'badge-gray' : 'badge-yellow'}">
 						{lastUpdated}
 					</span>
 				</td>
-				<td>
+				<td data-property="action">
 					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
 				</td>
 			</tr>
