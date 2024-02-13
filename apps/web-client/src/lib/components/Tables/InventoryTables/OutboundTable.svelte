@@ -7,10 +7,12 @@
 
 	import BookHeadCell from "./BookHeadCell.svelte";
 	import BookPriceCell from "./BookPriceCell.svelte";
+	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
+
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
+	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
 	import type { InventoryTableData } from "../types";
-	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -20,15 +22,8 @@
 	// table rows + one header row
 	$: rowCount = rows.length + 1;
 
-	const dispatch = createEventDispatcher();
-
-	function editQuantity(e: SubmitEvent) {
-		dispatch("edit-quantity", e);
-	}
-
-	function editWarehouse(e: Event) {
-		dispatch("edit-warehouse", e);
-	}
+	const dispatch = createEventDispatcher<OutboundTableEvents>();
+	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
 </script>
 
 <table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
@@ -77,7 +72,7 @@
 					{year}
 				</td>
 				<td data-property="warehouse">
-					<WarehouseSelect on:change={editWarehouse} data={row} {rowIx} />
+					<WarehouseSelect on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
 				</td>
 				{#if $$slots["row-actions"]}
 					<td>

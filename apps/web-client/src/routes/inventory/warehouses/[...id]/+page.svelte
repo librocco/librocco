@@ -147,7 +147,6 @@
 						<button
 							use:melt={$trigger}
 							on:m-click={() => {
-								console.log(row);
 								bookFormData = row;
 							}}
 							class="rounded p-3 text-gray-500 hover:text-gray-900"
