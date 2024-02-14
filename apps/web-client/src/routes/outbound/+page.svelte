@@ -8,6 +8,8 @@
 
 	import { goto } from "$app/navigation";
 
+	import { entityListView, testId } from "@librocco/shared";
+
 	import { getDB } from "$lib/db";
 
 	import { Page, PlaceholderBox, Dialog } from "$lib/components";
@@ -61,7 +63,7 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page>
+<Page view="outbound" loaded={initialized}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
@@ -85,61 +87,71 @@
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
-		{:else if !$outNoteList.length}
-			<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">New note</span></button
-				>
-			</PlaceholderBox>
 		{:else}
-			<ul class="entity-list-container">
-				{#each $outNoteList as [noteId, note]}
-					{@const displayName = note.displayName || noteId}
-					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
-					{@const totalBooks = note.totalBooks}
-					{@const href = appPath("outbound", noteId)}
+			<!-- Start entity list contaier -->
 
-					<li class="entity-list-row">
-						<div class="max-w-1/2 w-full">
-							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
+				{#if !$outNoteList.length}
+					<!-- Start entity list placeholder -->
+					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
+						<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+							><span class="text-green-50">New note</span></button
+						>
+					</PlaceholderBox>
+					<!-- End entity list placeholder -->
+				{:else}
+					<!-- Start entity list -->
+					{#each $outNoteList as [noteId, note]}
+						{@const displayName = note.displayName || noteId}
+						{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+						{@const totalBooks = note.totalBooks}
+						{@const href = appPath("outbound", noteId)}
 
-							<div class="flex items-center">
-								<Library class="mr-1 text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+						<li class="entity-list-row">
+							<div class="max-w-1/2 w-full">
+								<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+
+								<div class="flex items-center">
+									<Library class="mr-1 text-gray-700" size={20} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								</div>
 							</div>
-						</div>
 
-						<div class="max-w-1/2 flex w-full items-center justify-between">
-							{#if note.updatedAt}
-								<span class="badge badge-base badge-success">Last updated: {updatedAt}</span>
-							{:else}
-								<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
-								<div />
-							{/if}
+							<div class="max-w-1/2 flex w-full items-center justify-between">
+								{#if note.updatedAt}
+									<span class="badge badge-base badge-success">Last updated: {updatedAt}</span>
+								{:else}
+									<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
+									<div />
+								{/if}
 
-							<div class="flex items-center justify-end gap-3">
-								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-								<button
-									use:melt={$trigger}
-									class="button button-white"
-									aria-label="Delete note: {note.displayName}"
-									on:m-click={() => {
-										dialogContent = {
-											onConfirm: handleDeleteNote(noteId),
-											title: dialogTitle.delete(note.displayName),
-											description: dialogDescription.deleteNote()
-										};
-									}}
-								>
-									<span aria-hidden="true">
-										<Trash size={20} />
-									</span>
-								</button>
+								<div class="flex items-center justify-end gap-3">
+									<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+									<button
+										use:melt={$trigger}
+										class="button button-white"
+										aria-label="Delete note: {note.displayName}"
+										on:m-click={() => {
+											dialogContent = {
+												onConfirm: handleDeleteNote(noteId),
+												title: dialogTitle.delete(note.displayName),
+												description: dialogDescription.deleteNote()
+											};
+										}}
+									>
+										<span aria-hidden="true">
+											<Trash size={20} />
+										</span>
+									</button>
+								</div>
 							</div>
-						</div>
-					</li>
-				{/each}
+						</li>
+					{/each}
+					<!-- End entity list -->
+				{/if}
 			</ul>
+			<!-- End entity list contaier -->
 		{/if}
 	</svelte:fragment>
 </Page>
