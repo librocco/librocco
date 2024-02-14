@@ -8,7 +8,7 @@
 </script>
 
 <div>
-	<span class="text-gray-800">{isbn}</span>
+	<span data-property="isbn" class="text-gray-800">{isbn}</span>
 	<BodyMultiRow
 		dlClassName="flex flex-col gap-y-0.5 mt-1 font-light text-gray-500 lg:hidden"
 		rows={{
