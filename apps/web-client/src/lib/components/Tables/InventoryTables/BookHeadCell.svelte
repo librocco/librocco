@@ -12,7 +12,7 @@
 	<BodyMultiRow
 		dlClassName="flex flex-col gap-y-0.5 mt-1 font-light text-gray-500 lg:hidden"
 		rows={{
-			name: { data: title },
+			title: { data: title },
 			authors: { data: authors },
 			year: { data: year }
 		}}

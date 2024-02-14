@@ -10,7 +10,7 @@
 
 <dl class={dlClassName}>
 	{#each Object.entries(rows) as [title, { data, className }]}
-		<dt class="sr-only">{title}</dt>
+		<dt class="sr-only">{title}:</dt>
 		<dd class="truncate text-left {className}">{data}</dd>
 	{/each}
 </dl>
