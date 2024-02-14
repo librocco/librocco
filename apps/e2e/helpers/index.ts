@@ -1,2 +1,3 @@
 export { getDashboard } from "./dashboard";
-export { getDbHandle } from "./db";
+
+export { getDbHandle } from "@/helpers/db";

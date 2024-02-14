@@ -1,7 +1,7 @@
-import { type Locator, expect } from "@playwright/test";
+import { Locator, expect } from "@playwright/test";
 
-import { assertionTimeout } from "../constants";
-import { WaitForOpts } from "./types";
+import { assertionTimeout } from "@/constants";
+import { EntityListView, TestId, WebClientView } from "@librocco/shared";
 
 export async function compareEntries(container: Locator, labels: string[], selector: string, opts?: { timeout?: number }) {
 	for (let i = 0; i <= labels.length; i++) {
@@ -20,61 +20,28 @@ export async function compareEntries(container: Locator, labels: string[], selec
 	}
 }
 
-/**
- * Use expand button provides and interface to interact with the expandable field, which is expanded and closed using the
- * button with the aria-expanded attribute.
- *
- * It accepts the `container` locator and optional `opts` object.
- *
- * @param container the locator for the element containing the expand button (and the expandable field)
- * @param opts (optional) options object
- * @param opts.throttle sometimes we want to interact with the opening/closing of the expanded field a couple of times in a row.
- * This can get blocked as it doesn't allow the DOM enough time to update, which causes weird failures in tests. In those cases we
- * use the `throttle` option to add a timeout after the operation (open/close) is done to allow the DOM some time to update for the next interaction.
- */
-export const useExpandButton = (container: Locator, opts: { throttle?: number } = { throttle: 0 }) => {
-	const { throttle = 0 } = opts;
+// #region selectors
+type IdString = `#${string}`;
+type ClassString = `.${string}`;
+type TestIdString = `[data-testid="${string}"]`;
+type DataLoadedString = `[data-loaded="${boolean}"]`;
+type DataViewString = `[data-view="${string}"]`;
 
-	const getExpandButton = (state?: "open" | "closed") => {
-		switch (state) {
-			case "open":
-				return container.locator("button[aria-expanded=true]");
-			case "closed":
-				return container.locator("button[aria-expanded=false]");
-			default:
-				return container.locator("button");
-		}
-	};
+type SelectorSegment = IdString | ClassString | TestIdString | DataLoadedString | DataViewString;
 
-	const open = async (opts?: WaitForOpts) => {
-		try {
-			// If the dropdown is closed, open it
-			const button = getExpandButton("closed");
-			await button.waitFor({ timeout: 500 });
-			await button.click();
-		} catch {
-			// Already open (noop)
-		} finally {
-			// Ensure the dropdown is open
-			await getExpandButton("open").waitFor({ timeout: assertionTimeout, ...opts });
-			await container.page().waitForTimeout(throttle);
-		}
-	};
+/** Creates a typo-safe selector string for the element id */
+export const idSelector = (_id: TestId): IdString => `#${_id}`;
+/** Creates a typo-safe selector string for the element class name */
+export const classSelector = (_id: TestId): ClassString => `.${_id}`;
+/** Creates a typo-safe selector string for the element testid = [data-testid="..."] */
+export const testIdSelector = (_id: TestId): TestIdString => `[data-testid="${_id}"]`;
+/** Creates a typo-safe selector string for the loaded element - [data-loaded="..."] */
+export const loadedSelector = (_loaded: boolean): DataLoadedString => `[data-loaded="${_loaded}"]`;
+/** Creates a typo-safe selector string for the view element - [data-view="..."] */
+export const viewSelector = (_view: WebClientView): DataViewString => `[data-view="${_view}"]`;
+/** Creates a typo-safe selector string for the entity list view element - [data-view="..."] */
+export const entityListViewSelector = (_view: EntityListView): DataViewString => `[data-view="${_view}"]`;
 
-	const close = async (opts?: WaitForOpts) => {
-		try {
-			// If the dropdown is open, close it
-			const button = getExpandButton("open");
-			await button.waitFor({ timeout: 500 });
-			await button.click();
-		} catch {
-			// Already closed (noop)
-		} finally {
-			// Ensure the dropdown is closed
-			await getExpandButton("closed").waitFor({ timeout: assertionTimeout, ...opts });
-			await container.page().waitForTimeout(throttle);
-		}
-	};
-
-	return { open, close, getExpandButton };
-};
+/** Accepts typo-safe selector segments and joins them in to the selector string */
+export const selector = (...segments: SelectorSegment[]): string => segments.join("");
+// #endregion selectors
