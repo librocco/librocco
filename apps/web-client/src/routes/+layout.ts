@@ -5,7 +5,7 @@ import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
 import { createDB } from "$lib/db";
-import { DEV_COUCH_URL } from "$lib/constants";
+import { DEV_COUCH_URL, IS_E2E } from "$lib/constants";
 import { remoteDbStore } from "$lib/stores";
 
 import type { LayoutLoad } from "./$types";
@@ -33,7 +33,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		if (!hasActiveHandler) {
 			// This should only run in dev to connect us to our couch test container
 			// and only run once, so that we can test updates via settings page
-			if (process.env.NODE_ENV === "development" && !remoteDbPersistedConfig) {
+			if (process.env.NODE_ENV === "development" && !remoteDbPersistedConfig && !IS_E2E) {
 				remoteDbStore.createHandler({ url: DEV_COUCH_URL, direction: "sync", live: true, retry: true });
 			}
 

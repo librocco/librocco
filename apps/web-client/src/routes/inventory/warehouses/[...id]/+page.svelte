@@ -5,8 +5,9 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
 
-	import { debug } from "@librocco/shared";
+	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
+
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, createTable } from "$lib/components";
@@ -120,7 +121,7 @@
 	});
 </script>
 
-<Page>
+<Page view="warehouse" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input placeholder="Search" {...inputProps} />
@@ -145,6 +146,7 @@
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button
+							data-testid={testId("edit-row")}
 							use:melt={$trigger}
 							on:m-click={() => {
 								console.log(row);

@@ -1,27 +1,43 @@
 import type { Page } from "@playwright/test";
 
-import type { DashboardInterface, ViewName, WaitForOpts } from "./types";
+import { WebClientView } from "@librocco/shared";
+
+import type { DashboardInterface } from "./types";
 
 import { getMainNav } from "./navigation";
-import { getSidebar } from "./sidebar";
 import { getContent } from "./content";
+import { getDialog } from "./dialog";
+
+import { idSelector, loadedSelector, selector, viewSelector } from "./utils";
 import { getBookForm } from "./bookForm";
 
-export function getDashboard(page: Page): DashboardInterface {
-	const nav = () => getMainNav(page);
+export function getDashboard(_page: Page): DashboardInterface {
+	const page = () => _page;
+	const dashboard = () => getDashboard(_page);
 
-	const navigate = (to: ViewName) => nav().navigate(to);
+	// As soon as some view is loaded, we can assume the dashboard is loaded
+	const container = _page.locator(selector(idSelector("page-container"), loadedSelector(true)));
 
-	const view = (name: ViewName) => page.locator(`[data-view="${name}"]`);
+	// Created so that the dashboard (even though being root of the API) satisfies the same
+	// interface required by all other nodes, DashboardNode:
+	// - being a locator
+	// - having a dashboard method (creating a new instance of itself)
+	const node = Object.assign(container, { dashboard });
 
-	const sidebar = () => getSidebar(page);
+	const nav = () => getMainNav(node);
 
-	const content = () => getContent(page);
+	const navigate = (to: WebClientView) => nav().navigate(to);
 
-	const bookForm = () => getBookForm(page);
+	const view = (name: WebClientView) =>
+		Object.assign(_page.locator(selector(idSelector("page-container"), viewSelector(name), loadedSelector(true))), {
+			dashboard: () => getDashboard(_page)
+		});
 
-	// The dashboard is ready (as well as the app when the default warehouse is loaded - shown in the side nav)
-	const waitFor = (opts?: WaitForOpts) => sidebar().link("All").waitFor(opts);
+	const content = () => getContent(node);
 
-	return { waitFor, nav, navigate, view, sidebar, content, bookForm };
+	const dialog = () => getDialog(node);
+
+	const bookForm = () => getBookForm(node);
+
+	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog, bookForm });
 }
