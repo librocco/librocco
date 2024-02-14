@@ -1,16 +1,23 @@
-import type { Locator } from "@playwright/test";
+/* eslint-disable @typescript-eslint/ban-types */
+import type { Locator, Page } from "@playwright/test";
 
-import type { NoteState, NoteTempState } from "@librocco/shared";
+import type { NoteState, NoteTempState, EntityListView, WebClientView } from "@librocco/shared";
+
+/** A util type used to "pick" a subset of the given (union type) */
+export type Subset<T, S extends T> = S;
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 /** A type of display row property names, without 'warehouseId' as it's never displayed */
 export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
 
-export type ViewName = "inbound" | "outbound" | "stock";
+export type DashboardNode<T = {}> = T &
+	Locator & {
+		dashboard: () => DashboardInterface;
+	};
 
-interface Asserter<T> {
-	assert: (value: T, opts?: WaitForOpts) => Promise<void>;
+export interface Asserter<T> {
+	assert(value: T, opts?: WaitForOpts): Promise<void>;
 }
 
 interface Setter<T> {
@@ -34,13 +41,14 @@ export interface DisplayRow {
 	warehouseName: string;
 }
 
-export interface DashboardInterface {
-	waitFor: Locator["waitFor"];
+export interface DashboardInterface extends Locator {
+	page(): Page;
+	dashboard(): DashboardInterface;
 	nav(): MainNavInterface;
-	navigate(to: ViewName, opts?: WaitForOpts): Promise<void>;
-	view(name: ViewName): ViewInterface;
-	sidebar(): SidebarInterface;
+	navigate(to: WebClientView, opts?: WaitForOpts): Promise<void>;
+	view(name: WebClientView): ViewInterface;
 	content(): ContentInterface;
+	dialog(): DialogInterface;
 	bookForm(): BookFormInterface;
 }
 
@@ -48,11 +56,16 @@ export interface NavInterface extends Locator {
 	link(label: string, opts?: { active?: boolean }): Locator;
 }
 
-export interface MainNavInterface extends Locator {
-	navigate(to: ViewName): Promise<void>;
-}
+export type DialogInterface = DashboardNode<{
+	cancel(): Promise<void>;
+	confirm(): Promise<void>;
+}>;
 
-export type ViewInterface = Locator;
+export type MainNavInterface = DashboardNode<{
+	navigate(to: WebClientView): Promise<void>;
+}>;
+
+export type ViewInterface = DashboardNode;
 
 export interface SidebarInterface extends Locator {
 	createWarehouse(opts?: WaitForOpts): Promise<void>;
@@ -69,21 +82,58 @@ export interface SideLinkGroupInterface extends Omit<SidebarInterface, "assertGr
 	assertClosed(): Promise<void>;
 }
 
-export interface ContentInterface extends Locator {
-	heading(title?: string, opts?: GetByTextOpts & WaitForOpts): ContentHeadingInterface;
-	updatedAt(opts?: WaitForOpts): Promise<Date>;
-	assertUpdatedAt(date: Date, opts?: WaitForOpts & { precision: number }): Promise<void>;
-	discount(): WarehouseDiscountInterface;
-	statePicker(): StatePickerInterface;
-	scanField(): ScanFieldInterface;
-	entries(view: ViewName): EntriesTableInterface;
+// #region entityList
+export interface EntityListMatcher {
+	name?: string;
+	updatedAt?: Date;
+	numBooks?: number;
+	discount?: number;
 }
 
-export interface ContentHeadingInterface extends Locator {
-	getTitle(opts?: WaitForOpts): Promise<string>;
-	textInput(): Locator;
-	rename(newTitle: string, opts?: WaitForOpts): Promise<void>;
-}
+export type WarehouseItemDropdown = DashboardNode<{
+	edit: () => Promise<void>;
+	viewStock: () => Promise<void>;
+	delete: () => Promise<void>;
+}>;
+
+export type EntityListItem = DashboardNode<{
+	edit(): Promise<void>;
+	delete(): Promise<void>;
+	dropdown(): WarehouseItemDropdown;
+	createNote(): Promise<void>;
+}>;
+
+export type EntityListInterface = DashboardNode<{
+	assertElement(element: null, nth: number): Promise<void>;
+	assertElement(element: EntityListMatcher, nth?: number): Promise<void>;
+	assertElements(elements: EntityListMatcher[]): Promise<void>;
+	item(nth: number): EntityListItem;
+}>;
+// #endregion entityList
+
+export type ContentInterface = DashboardNode<{
+	header(): ContentHeaderInterface;
+	entityList(view: EntityListView): EntityListInterface;
+	navigate(to: Subset<EntityListView, "warehouse-list" | "inbound-list">): Promise<void>;
+	scanField(): ScanFieldInterface;
+	table(view: TableView): EntriesTableInterface;
+}>;
+
+export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
+
+export type UpdatedAtInterface = Asserter<Date | string> &
+	DashboardNode<{
+		value(opts?: WaitForOpts): Promise<Date>;
+	}>;
+
+export type ContentHeaderInterface = DashboardNode<{
+	title: () => Asserter<string>;
+	breadcrumbs(): BreadcrumbsInterface;
+	updatedAt(): UpdatedAtInterface;
+	createNote(): Promise<void>;
+	createWarehouse(): Promise<void>;
+	commit(): Promise<void>;
+}>;
 
 export interface StatePickerInterface extends Locator {
 	getState(opts?: WaitForOpts): Promise<NoteState | NoteTempState>;
@@ -91,9 +141,9 @@ export interface StatePickerInterface extends Locator {
 	select(state: NoteState): Promise<void>;
 }
 
-export interface ScanFieldInterface extends Locator {
+export type ScanFieldInterface = DashboardNode<{
 	add(isbn: string): Promise<void>;
-}
+}>;
 
 export interface WarehouseDiscountInterface extends Locator {
 	set(value: number): Promise<void>;
@@ -111,12 +161,12 @@ export interface BookFormValues {
 	outOfPrint: boolean;
 }
 
-export interface BookFormInterface extends Locator {
+export type BookFormInterface = DashboardNode<{
 	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
 	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
 	fillExistingData(): Promise<void>;
 	submit(kind?: "keyboard" | "click"): Promise<void>;
-}
+}>;
 
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
 	set: (value: T) => Promise<void>;
@@ -124,25 +174,24 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 // #endregion book form
 
 // #region inventory table
+export type TableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse">;
+
 export interface AssertRowFieldsOpts {
 	strict?: boolean;
 	timeout?: number;
 }
 
-export interface EntriesTableInterface extends Locator {
+export type EntriesTableInterface = DashboardNode<{
 	row(index: number): EntriesRowInterface;
 	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
-	selectAll(): Promise<void>;
-	unselectAll(): Promise<void>;
-	deleteSelected(): Promise<void>;
-}
+}>;
 
-export interface EntriesRowInterface extends Locator {
+export type EntriesRowInterface = DashboardNode<{
 	field<K extends keyof TransactionFieldInterfaceLookup>(name: K): TransactionFieldInterfaceLookup[K];
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
-	select(): Promise<void>;
-	unselect(): Promise<void>;
-}
+	edit(): Promise<void>;
+	delete(): Promise<void>;
+}>;
 
 export type TransactionRowValues = {
 	[K in keyof TransactionFieldInterfaceLookup]: DisplayRow[K];
