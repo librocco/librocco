@@ -4,6 +4,8 @@
 	import { createSelect } from "@melt-ui/svelte";
 	import { Check, ChevronsUpDown } from "lucide-svelte";
 
+	import { testId } from "@librocco/shared";
+
 	import type { WarehouseChangeDetail } from "./types";
 	import type { OutboundTableData } from "$lib/components/Tables/types";
 
@@ -49,6 +51,8 @@
 	<!-- svelte-ignore a11y-label-has-associated-control - $label contains the 'for' attribute -->
 	<label class="hidden" {...$label} use:label>Select a warehouse to withdraw book {rowIx} from</label>
 	<button
+		data-testid={testId("dropdown-control")}
+		data-open={open}
 		class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
 		{...$trigger}
 		use:trigger
@@ -66,6 +70,7 @@
 	</button>
 	{#if $open}
 		<div
+			data-testid={testId("dropdown-menu")}
 			class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-white p-1 shadow-md focus:!ring-0"
 			{...$menu}
 			use:menu
@@ -73,7 +78,7 @@
 			{#each options as warehouse}
 				{@const { label, value } = warehouse}
 				<div
-					class="relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+					class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10"
 					{...$option(warehouse)}
 					use:option
 				>

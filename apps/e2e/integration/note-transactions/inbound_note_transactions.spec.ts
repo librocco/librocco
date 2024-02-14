@@ -1,10 +1,8 @@
 import { test } from "@playwright/test";
 
-import { NoteState, NoteTempState } from "@librocco/shared";
+import { baseURL } from "@/constants";
 
-import { baseURL } from "../../constants";
-
-import { getDashboard, getDbHandle } from "../../helpers";
+import { getDashboard, getDbHandle } from "@/helpers";
 
 import { book1 } from "../data";
 
@@ -13,10 +11,10 @@ test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
-	const sidebar = dashboard.sidebar();
-
-	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
+
+	await dashboard.navigate("inventory");
+	await dashboard.content().navigate("inbound-list");
 
 	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
@@ -29,17 +27,15 @@ test.beforeEach(async ({ page }) => {
 			.then((n) => n.setName({}, "Note 1"))
 	);
 
-	// Navigate to the inbound view and the created note
-	await dashboard.navigate("inbound");
-	await sidebar.linkGroup("Warehouse 1").open();
-	await sidebar.linkGroup("Warehouse 1").link("Note 1").click();
-	await dashboard.content().heading("Note 1").waitFor();
+	// Navigate to the note page
+	await dashboard.content().entityList("inbound-list").item(0).edit();
+	await dashboard.content().header().title().assert("Note 1");
 });
 
-test("should display correct transaction fields for the inbound note view", async ({ page }) => {
+test("should display correct transaction fields for the inbound-note note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db, book) => db.books().upsert([book]), book1);
+	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
 
 	const content = getDashboard(page).content();
 
@@ -47,7 +43,7 @@ test("should display correct transaction fields for the inbound note view", asyn
 	await content.scanField().add(book1.isbn);
 
 	// Check the displayed transaction (field by field)
-	const row = content.entries("inbound").row(0);
+	const row = content.table("inbound-note").row(0);
 	await row.field("isbn").assert(book1.isbn);
 	await row.field("title").assert(book1.title);
 	await row.field("authors").assert(book1.authors);
@@ -69,7 +65,7 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await content.scanField().add("1234567890");
 
 	// Check the displayed transaction (field by field)
-	const row = content.entries("inbound").row(0);
+	const row = content.table("inbound-note").row(0);
 	await row.field("isbn").assert(book1.isbn);
 	await row.field("title").assert("N/A");
 	await row.field("authors").assert("N/A");
@@ -93,7 +89,7 @@ test("should add a transaction to the note by 'typing the ISBN into the 'Scan' f
 	await content.scanField().add("1234567890");
 
 	// Check updates in the entries table
-	await content.entries("inbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
 test("should capture keyboard events if typing in numbers and direct the input to the 'Scan' field even if scan field not focused", async ({
@@ -108,7 +104,7 @@ test("should capture keyboard events if typing in numbers and direct the input t
 	await page.keyboard.type("1234567890");
 	await page.keyboard.press("Enter");
 
-	await content.entries("inbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
 test("should aggregate the quantity for the same isbn", async ({ page }) => {
@@ -119,7 +115,7 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	);
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("inbound");
+	const entries = getDashboard(page).content().table("inbound-note");
 
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
@@ -149,7 +145,7 @@ test("should autofill the existing book data when adding a transaction with exis
 	await content.scanField().add(book1.isbn);
 
 	// Check that the new note contains the full book data in the transaction
-	await content.entries("inbound").row(0).assertFields(book1);
+	await content.table("inbound-note").row(0).assertFields(book1);
 });
 
 test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
@@ -158,7 +154,7 @@ test("should allow for changing of transaction quantity using the quantity field
 	await dbHandle.evaluate((db) => db.warehouse("wh-1").note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }));
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("inbound-note");
 
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
@@ -180,7 +176,7 @@ test("should allow for changing of transaction quantity using the quantity field
 
 test("should sort transactions by isbn", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("inbound");
+	const entries = getDashboard(page).content().table("inbound-note");
 
 	// We're adding books in non-alphabetical order to check if they're sorted correctly
 	await scanField.add("1234567891");
@@ -193,7 +189,7 @@ test("should sort transactions by isbn", async ({ page }) => {
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 });
 
-test("should delete the transaction from the note when when selected for deletion and deletion confirmed", async ({ page }) => {
+test("should delete the transaction from the note on delete button click", async ({ page }) => {
 	// Setup: Add three transactions to the note
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(async (db) =>
@@ -203,79 +199,16 @@ test("should delete the transaction from the note when when selected for deletio
 			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
 	);
 
-	const entries = getDashboard(page).content().entries("inbound");
+	const entries = getDashboard(page).content().table("inbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 
 	// Delete the second transaction
-	await entries.row(1).select();
-	await entries.deleteSelected();
+	await entries.row(1).delete();
 
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567892" }]);
 });
 
-test("should delete multiple transactions if so selected", async ({ page }) => {
-	// Setup: Add three transactions to the note
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			.warehouse("wh-1")
-			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
-	);
-
-	const entries = getDashboard(page).content().entries("inbound");
-
-	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
-
-	// Select all transactions
-	await entries.selectAll();
-
-	// Unselect the second transaction
-	await entries.row(1).unselect();
-
-	// Confirm the deletion
-	await entries.deleteSelected();
-
-	// Check that the first and last transactions were deleted
-	await entries.assertRows([{ isbn: "1234567891" }]);
-});
-
-test("should delete all transactions if all selected", async ({ page }) => {
-	// Setup: Add three transactions to the note
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			.warehouse("wh-1")
-			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
-	);
-
-	const entries = getDashboard(page).content().entries("inbound");
-
-	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
-
-	// Select all transactions
-	await entries.selectAll();
-
-	// Confirm the deletion
-	await entries.deleteSelected();
-
-	// Check that the second transaction was deleted
-	await entries.assertRows([]);
-});
-
-test("should not allow committing a note with no transactions", async ({ page }) => {
-	const statePicker = getDashboard(page).content().statePicker();
-
-	// Try and commit the note
-	await statePicker.select(NoteState.Committed);
-
-	/** @TODO This is a terrible way to assert this and is not really communicating anything, update when we have error display */
-	await page.waitForTimeout(1000);
-	await statePicker.assertState(NoteTempState.Committing);
-});
+// TODO: Should not allow committing of an empty note ??

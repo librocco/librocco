@@ -49,7 +49,7 @@
 		{#each rows as row (row.key)}
 			{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
 			<tr use:table.tableRow={{ position: rowIx }}>
-				<th scope="row" data-property="isbn" class="table-cell-max">
+				<th scope="row" data-property="book" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>
 
@@ -71,7 +71,7 @@
 				<td data-property="year" class="show-col-lg table-cell-fit">
 					{year}
 				</td>
-				<td data-property="warehouse" class="table-cell-max">
+				<td data-property="warehouseName" class="table-cell-max">
 					<WarehouseSelect on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
 				</td>
 				{#if $$slots["row-actions"]}

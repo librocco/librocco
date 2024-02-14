@@ -3,6 +3,8 @@
 	"version": "0.0.1",
 	"type": "module",
 	"scripts": {
+		"start": "vite dev",
+		"start:e2e": "echo \"Starting dev server for e2e purposes...\" && PUBLIC_IS_E2E=true vite dev",
 		"build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
 		"build:prod": "vite build",
 		"format": "prettier --write --plugin-search-dir=. .",
@@ -10,7 +12,6 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"preview": "vite preview",
-		"start": "vite dev",
 		"story:build": "histoire build",
 		"story:dev": "histoire dev",
 		"story:preview": "histoire preview",

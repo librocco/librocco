@@ -1,289 +1,386 @@
 import { test } from "@playwright/test";
 
-import { NoteState } from "@librocco/shared";
-import { versionId } from "@librocco/db";
+import { baseURL } from "./constants";
+import { assertionTimeout } from "@/constants";
 
-import { baseURL } from "../constants";
-
-import { getDashboard, getDbHandle } from "../helpers";
+import { getDashboard, getDbHandle } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
-
-	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
 
-	// Navigate to the inbound note page
-	await dashboard.navigate("inbound");
+	// Navigate to the inventory page
+	await dashboard.navigate("inventory");
+
+	// Wait for the view to load (warehouse list is the default sub-view)
+	const warehouseList = dashboard.content().entityList("warehouse-list");
+	await warehouseList.waitFor();
+
+	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+	);
+	await warehouseList.assertElements([{ name: "Warehouse 1" }]);
 });
 
-test('should create a new inbound note, belonging to a particular warehouse on "Create note" button click', async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		// Display name should default to "New Warehouse"
-		await db.warehouse("wh-1").create();
-		// Display name should default to "New Warehouse (2)"
-		await db.warehouse("wh-2").create();
-	});
+test('should create a new inbound note, under the particular warehouse, on warehouse row -> "New note" click and redirect to it', async ({
+	page
+}) => {
+	const dasbboard = getDashboard(page);
 
-	// Check that the sidebar shows the "All" group as well as one group per each of the created warehouses
-	const sidebar = getDashboard(page).sidebar();
-	await sidebar.assertGroups(["All", "New Warehouse", "New Warehouse (2)"]);
+	const content = dasbboard.content();
 
-	// Create a new inbound note in the first warehouse
-	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
-	await linkGroupWh1.createNote();
+	// Create a new note under "Warehouse 1"
+	await content.entityList("warehouse-list").item(0).getByRole("button", { name: "New note" }).click();
 
-	// The new note link should be visible in the sidebar in both "All" and "New Warehouse" groups
-	await sidebar.linkGroup("All").assertLinks(["New Note"]);
-	await linkGroupWh1.assertLinks(["New Note"]);
-	// The second warehouse has no notes and its link group should be empty
-	await sidebar.linkGroup("New Warehouse (2)").assertLinks([]);
+	// Check that we've been redirected to the new note's page
+	await dasbboard.view("inbound-note").waitFor();
+	await dasbboard.content().header().title().assert("New Note");
 });
 
-test("should allow for renaming of the note using the editable title and show the update in the sidebar", async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
-
+test("should display notes, namespaced to warehouses, in the inbound note list", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const sidebar = dashboard.sidebar();
 	const content = dashboard.content();
+	const inNoteList = content.entityList("inbound-list");
 
-	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
+	// Add some notes to the first (existing) warehouse
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-1")
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-2")
+			.create()
+			.then((n) => n.setName({}, "Note 2"))
+	);
 
-	// Create a new note
-	await linkGroupWh1.createNote();
+	// Navigate to inbound list
+	await content.navigate("inbound-list");
 
-	// Rename "New Note"
-	await content.heading().rename("Note 1");
+	// The notes should appear in the list
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Note 1" }, { name: "Warehouse 1 / Note 2" }]);
 
-	// The sidebar should display the updated note name in both "All" and "New Warehouse" groups
-	await sidebar.linkGroup("All").assertLinks(["Note 1"]);
-	await linkGroupWh1.assertLinks(["Note 1"]);
+	// Add another warehouse and a note to it
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"))
+			.then((w) => w.note("note-3").create())
+			.then((n) => n.setName({}, "Note 3"))
+	);
+
+	// All notes should be namespaced to their respective warehouses
+	await inNoteList.assertElements([{ name: "Warehouse 1 / Note 1" }, { name: "Warehouse 1 / Note 2" }, { name: "Warehouse 2 / Note 3" }]);
 });
 
-test("note heading should display note name, warehouse it belongs to and 'updated at' timestamp", async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => db.warehouse("test-warehouse").setName({}, "Test Warehouse"));
-
+test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	// Create a new note in the given warehouse
-	await dashboard.sidebar().linkGroup("Test Warehouse").createNote();
-
-	// Check note page contents
 	const content = dashboard.content();
-	await content.heading("New Note").waitFor();
 
-	// Check that the "Last updated: " timestamp is close to current date
-	// (should be way less than 2 minute difference, but due to the date rounding down, we allow a bit of a buffer)
-	await content.assertUpdatedAt(new Date(), { precision: 2 * 60 * 1000 });
+	// Create two notes to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-1")
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-2")
+			.create()
+			.then((n) => n.setName({}, "Note 2"))
+	);
 
-	// Should display "Draft" state
-	await content.statePicker().assertState(NoteState.Draft);
+	// Wait for the notes to appear
+	await content.navigate("inbound-list");
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 1" }, { name: "Warehouse 1 / Note 2" }]);
+
+	// Delete the first note
+	await content.entityList("inbound-list").item(0).delete();
+	await dashboard.dialog().confirm();
+
+	// Check that the note has been deleted
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 2" }]);
 });
 
-test("should assign default name to note in sequential order", async ({ page }) => {
-	// Setup
+test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const header = dashboard.content().header();
+
+	// Create a note (and wait for redirect)
+	await dashboard.content().entityList("warehouse-list").item(0).createNote();
+
+	// Check the title
+	await header.title().assert("New Note");
+
+	// Check the 'updated at' timestamp
+	const updatedAt = new Date();
+	await header.updatedAt().assert(updatedAt, { timeout: assertionTimeout });
+});
+
+test("note should display breadcrumbs leading back to inbound page, or the parent warehouse", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const header = dashboard.content().header();
+
+	// Create note (and wait for redirect)
+	await dashboard.content().entityList("warehouse-list").item(0).createNote();
+
+	await header.breadcrumbs().waitFor();
+	await header.breadcrumbs().assert(["Inbound", "Warehouse 1", "New Note"]);
+
+	await header.breadcrumbs().getByText("Inbound").click();
+
+	// Should get redirected to inbound view
+	await dashboard.view("inventory").waitFor();
+	await dashboard.content().entityList("inbound-list").waitFor();
+
+	// Go back to the node
+	await dashboard.content().entityList("inbound-list").item(0).edit();
+
+	// Click to "Warehouse 1" breadcrumb - should redirect to warehouse page
+	await header.breadcrumbs().getByText("Warehouse 1").click();
+
+	await dashboard.view("warehouse").waitFor();
+	await header.title().assert("Warehouse 1");
+});
+
+test("should assign default name to notes in sequential order (regardless of warehouse they belong to)", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const header = dashboard.content().header();
+
+	const warehouseList = content.entityList("warehouse-list");
+
+	// Create another warehouse
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		// Display name should default to "New Warehouse"
-		await db.warehouse("wh-1").create();
-		// Display name should default to "New Warehouse (2)"
-		await db.warehouse("wh-2").create();
-	});
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"))
+	);
 
-	const sidebar = getDashboard(page).sidebar();
+	// First note (Warehouse 1)
+	await warehouseList.item(0).createNote();
+	await header.title().assert("New Note");
+	const note1UpdatedAt = await header.updatedAt().value();
 
-	// Create two inbound notes, one in each warehouse
-	await sidebar.linkGroup("New Warehouse").createNote();
-	await sidebar.linkGroup("New Warehouse (2)").createNote();
+	await dashboard.navigate("inventory");
 
-	// Check the nav links
-	await sidebar.linkGroup("All").assertLinks(["New Note", "New Note (2)"]);
-	await sidebar.linkGroup("New Warehouse").assertLinks(["New Note"]);
-	await sidebar.linkGroup("New Warehouse (2)").assertLinks(["New Note (2)"]);
+	// Second note (Warehouse 1)
+	await warehouseList.item(0).createNote();
+	await header.title().assert("New Note (2)");
+	const note2UpdatedAt = await header.updatedAt().value();
+
+	await dashboard.navigate("inventory");
+
+	// Third note (Warehouse 2)
+	await warehouseList.item(1).createNote();
+	await header.title().assert("New Note (3)");
+	const note3UpdatedAt = await header.updatedAt().value();
+
+	await dashboard.navigate("inventory");
+	await content.navigate("inbound-list");
+	const entityList = content.entityList("inbound-list");
+
+	await entityList.assertElements([
+		{ name: "Warehouse 1 / New Note", numBooks: 0, updatedAt: note1UpdatedAt },
+		{ name: "Warehouse 1 / New Note (2)", numBooks: 0, updatedAt: note2UpdatedAt },
+		{ name: "Warehouse 2 / New Note (3)", numBooks: 0, updatedAt: note3UpdatedAt }
+	]);
 });
 
 test("should continue the naming sequence from the highest sequenced note name (even if lower sequenced notes have been renamed)", async ({
 	page
 }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	// Display name should default to "New Warehouse"
-	await dbHandle.evaluate(async (db) => db.warehouse("wh-1").create());
-
 	const dashboard = getDashboard(page);
-
-	const sidebar = dashboard.sidebar();
-	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	const content = dashboard.content();
 
-	// Create three notes (we can use only "New Warehouse" for this)
-	await linkGroupWh1.createNote();
-	await linkGroupWh1.createNote();
-	await linkGroupWh1.createNote();
+	const dbHandle = await getDbHandle(page);
 
-	// Check the nav links before continuing
-	await linkGroupWh1.assertLinks(["New Note", "New Note (2)", "New Note (3)"]);
+	// Navigate to inbound list
+	await content.navigate("inbound-list");
 
-	// Rename the first two notes
-	await linkGroupWh1.link("New Note").click();
-	await content.heading("New Note in New Warehouse").waitFor();
-	await content.heading().rename("Note 1");
+	// Create three notes (default names: "New Note", "New Note (2)", "New Note (3)")
+	// We're using the same warehosue as we've verified that the warehouse doesn't affect the naming sequence (in the previous test)
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-1").create());
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-2").create());
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-3").create());
 
-	await linkGroupWh1.link("New Note (2)").click();
-	await content.heading("New Note (2)").waitFor();
-	await content.heading().rename("Note 2");
+	// Rename the first two notes (leaving us with only "New Note (3)", having the default name)
+	await dbHandle.evaluate((db) =>
+		Promise.all([
+			db.warehouse("warehouse-1").note("note-1").setName({}, "Note 1"),
+			db.warehouse("warehouse-1").note("note-2").setName({}, "Note 2")
+		])
+	);
 
-	// Check the nav links for good measure
-	await linkGroupWh1.assertLinks(["Note 1", "Note 2", "New Note (3)"]);
+	// Check names
+	await content
+		.entityList("inbound-list")
+		.assertElements([{ name: "Warehouse 1 / Note 1" }, { name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / New Note (3)" }]);
 
-	// Creating a new note should continue off from "New Note (3)"
-	await linkGroupWh1.createNote();
+	// TODO: the following should be refactored to use the dashboard (when the renaming functionality is in).
+	// For now we're using the db directly (not really e2e way).
+	//
+	// Create a new note (should continue the sequence)
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-4").create());
+	await content
+		.entityList("inbound-list")
+		.assertElements([
+			{ name: "Warehouse 1 / Note 1" },
+			{ name: "Warehouse 1 / Note 2" },
+			{ name: "Warehouse 1 / New Note (3)" },
+			{ name: "Warehouse 1 / New Note (4)" }
+		]);
 
-	await sidebar.assertLinks(["Note 1", "Note 2", "New Note (3)", "New Note (4)"]);
+	// Rename the remaining notes with default names
+	await dbHandle.evaluate((db) =>
+		Promise.all([
+			db.warehouse("warehouse-1").note("note-3").setName({}, "Note 3"),
+			db.warehouse("warehouse-1").note("note-4").setName({}, "Note 4")
+		])
+	);
+	await content
+		.entityList("inbound-list")
+		.assertElements([
+			{ name: "Warehouse 1 / Note 1" },
+			{ name: "Warehouse 1 / Note 2" },
+			{ name: "Warehouse 1 / Note 3" },
+			{ name: "Warehouse 1 / Note 4" }
+		]);
+
+	// Create a new note (should reset the sequence)
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-5").create());
+	await content
+		.entityList("inbound-list")
+		.assertElements([
+			{ name: "Warehouse 1 / Note 1" },
+			{ name: "Warehouse 1 / Note 2" },
+			{ name: "Warehouse 1 / Note 3" },
+			{ name: "Warehouse 1 / Note 4" },
+			{ name: "Warehouse 1 / New Note" }
+		]);
 });
 
-test("should reset the naming sequence when all notes with default names get renamed", async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	// Display name defaults to "New Warehouse"
-	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
-
+test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
-
-	const sidebar = dashboard.sidebar();
-	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
 
 	const content = dashboard.content();
 
-	// Create three notes (we can use only "New Warehouse" for this)
-	await linkGroupWh1.createNote();
-	await linkGroupWh1.createNote();
-	await linkGroupWh1.createNote();
-
-	// Rename all of the notes
-	await linkGroupWh1.link("New Note").click();
-	await content.heading("New Note in New Warehouse").waitFor();
-	await content.heading().rename("Note 1");
-
-	await linkGroupWh1.link("New Note (2)").click();
-	await content.heading("New Note (2)").waitFor();
-	await content.heading().rename("Note 2");
-
-	await linkGroupWh1.link("New Note (3)").click();
-	await content.heading("New Note (3)").waitFor();
-	await content.heading().rename("Note 3");
-
-	// Wait for the last update to be shown in the sidebar
-	await sidebar.link("Note 3").waitFor();
-
-	// Check the nav links for good measure
-	await linkGroupWh1.assertLinks(["Note 1", "Note 2", "Note 3"]);
-
-	// Creating a new note should start over from "New Note"
-	await linkGroupWh1.createNote();
-
-	await sidebar.assertLinks(["Note 1", "Note 2", "Note 3", "New Note"]);
-});
-
-test("should remove the note from the sidebar when the note is deleted", async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
-	// Display name defaults to "New Warehouse"
-	await dbHandle.evaluate((db) => db.warehouse("wh-1").create());
-
-	const dashboard = getDashboard(page);
-
-	const sidebar = dashboard.sidebar();
-	const linkGroupWh1 = sidebar.linkGroup("New Warehouse");
-
-	const content = dashboard.content();
-
-	// Create two notes in the first warehouse
-	await linkGroupWh1.createNote();
-	await linkGroupWh1.createNote();
-
-	// Check the links
-	const linkGroupAll = sidebar.linkGroup("All");
-	await linkGroupAll.assertLinks(["New Note", "New Note (2)"]);
-	await linkGroupWh1.assertLinks(["New Note", "New Note (2)"]);
-
-	// Delete the "New Note (2)" note (we're already at "New Note (2)" page)
-	await content.statePicker().select(NoteState.Deleted);
-
-	// Check that the note has been deleted from the sidebar
-	await linkGroupAll.assertLinks(["New Note"]);
-	await linkGroupWh1.assertLinks(["New Note"]);
-});
-
-// TODO: Unskip when working on https://github.com/librocco/librocco/issues/347
-test.skip("should automatically open the warehouse group the note belongs to on page load", async ({ page }) => {
-	// Setup
+	// Create two notes to work with
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
-			// Create a warehouse to work with
-			.warehouse("wh-1")
+			.warehouse("warehouse-1")
+			.note()
 			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-			// Create a note to work with
-			.then((w) => w.note("note-1").create())
 			.then((n) => n.setName({}, "Note 1"))
 	);
-
-	// Explicitly navigate to the note page
-	await page.goto(`${baseURL}/preview/inventory/inbound/${versionId("wh-1/inbound/note-1")}`);
-
-	const sidebar = getDashboard(page).sidebar();
-
-	// The "All" group in the sidebar should be closed (as initial state)
-	await sidebar.linkGroup("All").assertClosed();
-	// The "Warehouse 1" group in the sidebar should be open
-	await sidebar.linkGroup("Warehouse 1").assertOpen();
-});
-
-test("should not close the side link group (open by clicking on it) on route change", async ({ page }) => {
-	// Setup
-	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
-			// Create a warehouse to work with
-			.warehouse("wh-1")
+			.warehouse("warehouse-1")
+			.note()
 			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-			// Create a note to work with
-			.then((w) => w.note("note-1").create())
-			.then((n) => n.setName({}, "Note 1"))
+			.then((n) => n.setName({}, "Note 2"))
 	);
 
-	const sidebar = getDashboard(page).sidebar();
+	// Naviate to the inbound list
+	await content.navigate("inbound-list");
+	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 1" }, { name: "Warehouse 1 / Note 2" }]);
 
-	// Go to the note page
-	await sidebar.linkGroup("Warehouse 1").open();
-	await sidebar.linkGroup("Warehouse 1").link("Note 1").click();
-	await getDashboard(page).content().heading("Note 1").waitFor();
+	// Navigate to first note
+	await content.entityList("inbound-list").item(0).edit();
 
-	// Open the "All" sidebar group
-	await sidebar.linkGroup("All").open();
+	// Check title
+	await dashboard.view("inbound-note").waitFor();
+	await content.header().title().assert("Note 1");
 
-	// Double check that both groups are open
-	await sidebar.linkGroup("All").assertOpen();
-	await sidebar.linkGroup("Warehouse 1").assertOpen();
+	// Navigate back to inbound page and to second note
+	await dashboard.navigate("inventory");
+	await content.navigate("inbound-list");
+	await content.entityList("inbound-list").item(1).edit();
 
-	// Add a new note: This changes the route, but should not close any of the open side groups
-	await sidebar.linkGroup("Warehouse 1").createNote();
-
-	// Check that both groups are still open
-	await sidebar.linkGroup("All").assertOpen();
-	await sidebar.linkGroup("Warehouse 1").assertOpen();
+	// Check title
+	await dashboard.view("inbound-note").waitFor();
+	await content.header().title().assert("Note 2");
 });
+
+test("should display book count for each respective note in the list", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create two notes for display
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-1")
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-2")
+			.create()
+			.then((n) => n.setName({}, "Note 2"))
+	);
+
+	await content.navigate("inbound-list");
+
+	// Both should display 0 books
+	await content.entityList("inbound-list").assertElements([
+		{ name: "Warehouse 1 / Note 1", numBooks: 0 },
+		{ name: "Warehouse 1 / Note 2", numBooks: 0 }
+	]);
+
+	// Add two books to first note
+	await dbHandle.evaluate((db) =>
+		db.warehouse("warehouse-1").note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+	);
+
+	await content.entityList("inbound-list").assertElements([
+		{ name: "Warehouse 1 / Note 1", numBooks: 2 },
+		{ name: "Warehouse 1 / Note 2", numBooks: 0 }
+	]);
+
+	// Add books to second note
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note("note-2")
+			.addVolumes({ isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
+	);
+
+	await content.entityList("inbound-list").assertElements([
+		{ name: "Warehouse 1 / Note 1", numBooks: 2 },
+		{ name: "Warehouse 1 / Note 2", numBooks: 3 }
+	]);
+});
+
+// TODO: Test renaming using the editable title

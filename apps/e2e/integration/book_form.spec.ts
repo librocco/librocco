@@ -2,19 +2,23 @@ import { test } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
-import { getDashboard, getDbHandle } from "../helpers";
+import { getDashboard, getDbHandle } from "@/helpers";
 
 import { book1 } from "./data";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
-	// Wait for the app to become responsive
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
 });
 
 test("update is reflected in table view - stock", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await dashboard.navigate("inventory");
+	await content.entityList("warehouse-list").waitFor();
+
 	// Setup
 	//
 	// Create the warehouse containing a certain book in stock
@@ -29,38 +33,33 @@ test("update is reflected in table view - stock", async ({ page }) => {
 			.then((n) => n.commit({}))
 	);
 
-	const dashboard = getDashboard(page);
+	// Navigate to the warehouse page
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
+	await content.header().title().assert("Warehouse 1");
+	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
-	const sidebar = dashboard.sidebar();
-	const content = dashboard.content();
+	// Edit the book data for the first (and only) row
+	await content.table("warehouse").row(0).edit();
+
 	const bookForm = dashboard.bookForm();
-
-	// Check warehouse stock view
-	await sidebar.link("Warehouse 1").click();
-	await content.heading("Warehouse 1").waitFor();
-	await content.entries("stock").assertRows(
-		[
-			{
-				isbn: "1234567890",
-				quantity: 1
-			}
-		],
-		{ strict: true }
-	);
-
-	// Edit the book data
-	await content.entries("stock").row(0).getByRole("button", { name: "Edit" }).click();
 	await bookForm.fillBookData(book1);
-	await bookForm.submit("click");
+	await bookForm.submit("keyboard");
 
 	// The row should have been updated
-	await content.entries("stock").assertRows([{ ...book1, quantity: 1 }], { strict: true });
+	await content.table("warehouse").assertRows([{ ...book1, quantity: 1 }], { strict: true });
 });
 
 test("update is reflected in table view - inbound", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await dashboard.navigate("inventory");
+	await content.navigate("inbound-list");
+
 	// Setup
 	//
-	// Create the warehouse containing a note
+	// Create a warehouse and a note containing a certain book in stock
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
@@ -72,38 +71,30 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
 	);
 
-	const dashboard = getDashboard(page);
+	// Navigate to the note page
+	await content.entityList("inbound-list").item(0).edit();
+	await content.header().title().assert("Note 1");
+	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
-	const sidebar = dashboard.sidebar();
-	const content = dashboard.content();
+	// Edit the book data for the first (and only) row
+	await content.table("inbound-note").row(0).edit();
+
 	const bookForm = dashboard.bookForm();
-
-	await dashboard.navigate("inbound");
-
-	// Navigate to note and check entries
-	await sidebar.linkGroup("Warehouse 1").open();
-	await sidebar.linkGroup("Warehouse 1").link("Note 1").click();
-	await content.heading("Note 1").waitFor();
-	await content.entries("inbound").assertRows(
-		[
-			{
-				isbn: "1234567890",
-				quantity: 1
-			}
-		],
-		{ strict: true }
-	);
-
-	// Edit the book data
-	await content.entries("inbound").row(0).getByRole("button", { name: "Edit" }).click();
 	await bookForm.fillBookData(book1);
-	await bookForm.submit("click");
+	await bookForm.submit("keyboard");
 
 	// The row should have been updated
-	await content.entries("inbound").assertRows([{ ...book1, quantity: 1 }], { strict: true });
+	await content.table("inbound-note").assertRows([{ ...book1, quantity: 1 }], { strict: true });
 });
 
 test("update is reflected in table view - outbound", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	// Wait for the app to become responsive
+	await dashboard.navigate("outbound");
+	await content.entityList("outbound-list").waitFor();
+
 	// Setup
 	//
 	// Create a note containing a certain book in stock
@@ -117,32 +108,18 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
 	);
 
-	const dashboard = getDashboard(page);
+	// Navigate to the note page
+	await content.entityList("outbound-list").item(0).edit();
+	await content.header().title().assert("Note 1");
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
-	const sidebar = dashboard.sidebar();
-	const content = dashboard.content();
+	// Edit the book data for the first (and only) row
+	await content.table("outbound-note").row(0).edit();
+
 	const bookForm = dashboard.bookForm();
-
-	await dashboard.navigate("outbound");
-
-	// Navigate to note and check entries
-	await sidebar.link("Note 1").click();
-	await content.heading("Note 1").waitFor();
-	await content.entries("outbound").assertRows(
-		[
-			{
-				isbn: "1234567890",
-				quantity: 1
-			}
-		],
-		{ strict: true }
-	);
-
-	// Edit the book data
-	await content.entries("outbound").row(0).getByRole("button", { name: "Edit" }).click();
 	await bookForm.fillBookData(book1);
-	await bookForm.submit("click");
+	await bookForm.submit("keyboard");
 
 	// The row should have been updated
-	await content.entries("outbound").assertRows([{ ...book1, quantity: 1 }], { strict: true });
+	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1 }], { strict: true });
 });
