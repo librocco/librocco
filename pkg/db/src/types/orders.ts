@@ -23,7 +23,10 @@ export interface CustomerOrderProto<A extends Record<string, any> = {}> {
 	create: () => Promise<CustomerOrderInterface<A>>;
 }
 
-export interface CustomerOrderBook { isbn: string; status: string };
+export interface CustomerOrderBook {
+	isbn: string;
+	status: string;
+}
 /**
  * Standardized data that should be present in any customer order
  * (different implementations might differ, but should extend this structure)
@@ -36,5 +39,6 @@ export type CustomerOrderData<A extends Record<string, any> = {}> = CouchDocumen
 		email: string;
 		deposit: number;
 		books: CustomerOrderBook[];
+		displayName: string;
 	} & A
 >;
