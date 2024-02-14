@@ -3,11 +3,15 @@
 	"compilerOptions": {
 		"rootDir": ".",
 		"baseUrl": ".",
+		"paths": {
+			"@/*": ["./*"]
+		},
 
 		"strictNullChecks": false,
 		"noEmit": true,
 		"module": "esnext",
-		"lib": ["ESNext", "DOM", "DOM.Iterable"]
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
+		"ignoreDeprecations": "5.0"
 	},
 	"exclude": ["node_modules"],
 	"include": ["./**/*.ts"]

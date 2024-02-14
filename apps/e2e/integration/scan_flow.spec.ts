@@ -1,8 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { test } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
-import { getDashboard, getDbHandle } from "../helpers";
+import { getDashboard } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -15,20 +15,11 @@ test.beforeEach(async ({ page }) => {
 
 	// We're using outbound note view, but same behaviour should apply to inbound as well
 	await dashboard.navigate("outbound");
+	await dashboard.content().entityList("outbound-list").waitFor();
 
-	// DB Setup
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse()
-			.note("note-1")
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-	);
-
-	// Navigate to the test note
-	await dashboard.sidebar().link("Note 1").click();
-	await dashboard.content().heading("Note 1").waitFor();
+	// Create new outbound note (and navigate to it)
+	await dashboard.content().header().createNote();
+	await dashboard.content().header().title().assert("New Note");
 });
 
 test('should route "keyboard" input with freqency of scan input to the scan input element even if scan element is not focused', async ({
@@ -40,7 +31,7 @@ test('should route "keyboard" input with freqency of scan input to the scan inpu
 	// The input should have been submitted and a new transaction added
 	await getDashboard(page)
 		.content()
-		.entries("outbound")
+		.table("outbound-note")
 		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
@@ -49,40 +40,45 @@ test('should route "keyboard" input with freqency of scan input to the scan inpu
 }) => {
 	const content = getDashboard(page).content();
 
-	// Open the editable heading and focus the input
-	await content.heading("Note 1").click();
-	await content.heading("Note 1").textInput().focus();
+	// Add one transaction (we'll need a quantity field)
+	await content.scanField().add("1234567890");
+
+	// Edit the quantity of the first transaction
+	await content.table("outbound-note").row(0).getByRole("spinbutton").click();
 
 	// Typing with scanning frequency should route the input to the scan element
-	await page.keyboard.type("1234567890");
+	await page.keyboard.type("1234567891");
 	await page.keyboard.press("Enter");
 
 	// The input should have been submitted and a new transaction added
 	await getDashboard(page)
 		.content()
-		.entries("outbound")
-		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
+		.table("outbound-note")
+		.assertRows([
+			{ isbn: "1234567890", quantity: 1 },
+			{ isbn: "1234567891", quantity: 1 }
+		]);
 });
 
 test('should not route "keyboard" input with freqency of human input to the scan input element (unless scan input field is focused)', async ({
 	page
 }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
+	const content = getDashboard(page).content();
 
-	// Open the editable heading and focus the input
-	await content.heading("Note 1").click();
-	await content.heading("Note 1").textInput().clear();
-	await content.heading("Note 1").textInput().focus();
+	// Add one transaction (we'll need a quantity field)
+	await content.scanField().add("1234567890");
 
-	// Typing with scanning frequency should route the input to the scan element
-	await page.keyboard.type("Note 2", { delay: 100 });
+	// Edit the quantity of the first transaction
+	await content.table("outbound-note").row(0).getByRole("spinbutton").click();
+
+	// Typing with frequency of human input should not route the input to the scan element
+	// (instead quantity should be updated)
+	await page.keyboard.type("44", { delay: 100 });
 	await page.keyboard.press("Enter");
 
-	// The raname action should have taken place (as editable heading was focused)
-	await content.heading("Note 2").waitFor();
-	await dashboard.sidebar().assertLinks(["Note 2"]);
-
-	// No new transaction should have been added
-	await expect(getDashboard(page).content().entries("outbound")).not.toBeAttached();
+	// The input should have been submitted and a new transaction added
+	await getDashboard(page)
+		.content()
+		.table("outbound-note")
+		.assertRows([{ isbn: "1234567890", quantity: 144 }]);
 });

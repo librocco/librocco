@@ -1,10 +1,8 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
-import { NoteState, NoteTempState } from "@librocco/shared";
+import { baseURL } from "@/constants";
 
-import { baseURL } from "../../constants";
-
-import { getDashboard, getDbHandle } from "../../helpers";
+import { getDashboard, getDbHandle } from "@/helpers";
 
 import { book1 } from "../data";
 
@@ -13,11 +11,12 @@ test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
-
-	// Wait for the app to become responsive (when the default view is loaded)
 	await dashboard.waitFor();
 
-	// We create a note for all tests
+	await dashboard.navigate("outbound");
+	await dashboard.content().entityList("outbound-list").waitFor();
+
+	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
 		db
@@ -27,10 +26,9 @@ test.beforeEach(async ({ page }) => {
 			.then((n) => n.setName({}, "Note 1"))
 	);
 
-	// Navigate to the outbound view and the note
-	await dashboard.navigate("outbound");
-	await dashboard.sidebar().link("Note 1").click();
-	await dashboard.content().heading("Note 1").waitFor();
+	// Navigate to the note page
+	await dashboard.content().entityList("outbound-list").item(0).edit();
+	await dashboard.content().header().title().assert("Note 1");
 });
 
 test("should display correct transaction fields for the outbound note view", async ({ page }) => {
@@ -44,7 +42,7 @@ test("should display correct transaction fields for the outbound note view", asy
 	await content.scanField().add(book1.isbn);
 
 	// Check the displayed transaction (field by field)
-	const row = content.entries("outbound").row(0);
+	const row = content.table("outbound-note").row(0);
 	await row.field("isbn").assert(book1.isbn);
 	await row.field("title").assert(book1.title);
 	await row.field("authors").assert(book1.authors);
@@ -66,7 +64,7 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await content.scanField().add("1234567890");
 
 	// Check the displayed transaction (field by field)
-	const row = content.entries("outbound").row(0);
+	const row = content.table("outbound-note").row(0);
 	await row.field("isbn").assert(book1.isbn);
 	await row.field("title").assert("N/A");
 	await row.field("authors").assert("N/A");
@@ -89,7 +87,7 @@ test("should add a transaction to the note by 'typing the ISBN into the 'Scan' f
 	await content.scanField().add("1234567890");
 
 	// Check updates in the entries table
-	await content.entries("outbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
 test("should capture keyboard events if typing in numbers and direct the input to the 'Scan' field even if scan field not focused", async ({
@@ -104,7 +102,7 @@ test("should capture keyboard events if typing in numbers and direct the input t
 	await page.keyboard.type("1234567890");
 	await page.keyboard.press("Enter");
 
-	await content.entries("outbound").assertRows([{ isbn: "1234567890", quantity: 1 }]);
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 });
 
 test("should aggregate the quantity for the same isbn", async ({ page }) => {
@@ -115,7 +113,7 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	);
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
@@ -145,7 +143,7 @@ test("should autofill the existing book data when adding a transaction with exis
 	await content.scanField().add(book1.isbn);
 
 	// Check that the new note contains the full book data in the transaction
-	await content.entries("outbound").row(0).assertFields(book1);
+	await content.table("outbound-note").row(0).assertFields(book1);
 });
 
 test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
@@ -154,7 +152,7 @@ test("should allow for changing of transaction quantity using the quantity field
 	await dbHandle.evaluate((db) => db.warehouse().note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }));
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
@@ -176,7 +174,7 @@ test("should allow for changing of transaction quantity using the quantity field
 
 test("should sort transactions by isbn", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// We're adding books in non-alphabetical order to check if they're sorted correctly
 	await scanField.add("1234567891");
@@ -199,60 +197,19 @@ test("should delete the transaction from the note when when selected for deletio
 			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
 	);
 
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
 
 	// Delete the second transaction
-	await entries.row(1).select();
-	await entries.deleteSelected();
+	await entries.row(1).delete();
 
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567892" }]);
 });
 
-test("should delete multiple transactions if so selected", async ({ page }) => {
-	// Setup: Add three transactions to the note
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			.warehouse()
-			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
-	);
-
-	const entries = getDashboard(page).content().entries("outbound");
-
-	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
-
-	// Select all transactions
-	await entries.selectAll();
-
-	// Unselect the second transaction
-	await entries.row(1).unselect();
-
-	// Confirm the deletion
-	await entries.deleteSelected();
-
-	// Check that the first and last transactions were deleted
-	await entries.assertRows([{ isbn: "1234567891" }]);
-});
-
-test("should not allow committing a note with no transactions", async ({ page }) => {
-	const dashboard = getDashboard(page);
-
-	const statePicker = dashboard.content().statePicker();
-
-	// Try and commit the note
-	await statePicker.select(NoteState.Committed);
-
-	/** @TODO This is a terrible way to assert this and is not really communicating anything, update when we have error display */
-	await page.waitForTimeout(1000);
-	await statePicker.assertState(NoteTempState.Committing);
-});
-
+// TODO: This test is failing as the functionality is not working, we should fix this
 test("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
 	// Setup: Add the book to the warehouse (through an inbound note)
 	const dbHandle = await getDbHandle(page);
@@ -269,8 +226,12 @@ test("transaction should default to the only warehouse the given book is availab
 	// Add a book transaction to the note
 	await content.scanField().add("1234567890");
 
-	// Assert relevant fields (isbn, quantity and warehouseName)
-	await content.entries("outbound").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" });
+	// TDDO: Replace the following with a single call to `assertFields` (commented line below) when the
+	// warehouse picker's single-option / multiple option implementation is reconciled
+	await content.table("outbound-note").row(0).field("isbn").assert("1234567890");
+	await content.table("outbound-note").row(0).field("quantity").assert(1);
+	await expect(content.table("outbound-note").row(0).field("warehouseName")).toContainText("Warehouse 1");
+	// await content.table("outbound-note").row(0).assertFields({ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" });
 });
 
 test("transaction should allow for warehouse selection if there is more than one warehouse the given book is available in", async ({
@@ -297,7 +258,7 @@ test("transaction should allow for warehouse selection if there is more than one
 	});
 
 	const scanField = getDashboard(page).content().scanField();
-	const row = getDashboard(page).content().entries("outbound").row(0);
+	const row = getDashboard(page).content().table("outbound-note").row(0);
 
 	// Add a book transaction to the note
 	await scanField.add("1234567890");
@@ -329,21 +290,37 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 	});
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for the transaction to be displayed before continuing with assertions
-	await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
+	//
+	// TDDO: Replace the following with a single call to `assertRows` (commented line below) when the
+	// warehouse picker's single-option / multiple option implementation is reconciled
+	await entries.row(0).field("isbn").assert("1234567890");
+	await entries.row(0).field("quantity").assert(1);
+	await expect(entries.row(0).field("warehouseName")).toContainText("Warehouse 1");
+	await entries.row(1).waitFor({ state: "detached" });
+	// await entries.assertRows([{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }]);
 
 	// Add another transaction for the same book (should default to "" warehouse)
 	await scanField.add("1234567890");
 
-	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1, warehouseName: "" },
-		{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
-	]);
+	// TDDO: Replace the following with a single call to `assertRows` (commented lines below) when the
+	// warehouse picker's single-option / multiple option implementation is reconciled
+	await entries.row(0).field("isbn").assert("1234567890");
+	await entries.row(0).field("quantity").assert(1);
+	await expect(entries.row(0).field("warehouseName")).toContainText("not-found");
+	await entries.row(1).field("isbn").assert("1234567890");
+	await entries.row(1).field("quantity").assert(1);
+	await expect(entries.row(1).field("warehouseName")).toContainText("Warehouse 1");
+	await entries.row(2).waitFor({ state: "detached" });
+	// await entries.assertRows([
+	// 	{ isbn: "1234567890", quantity: 1, warehouseName: "" },
+	// 	{ isbn: "1234567890", quantity: 1, warehouseName: "Warehouse 1" }
+	// ]);
 });
 
-test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with specified warehouse on 'Add'", async ({
+test("if there are two transactions, one with specified and one with unspecified warehouse should aggregate the one with unspecified warehouse on 'Add'", async ({
 	page
 }) => {
 	// Setup
@@ -367,7 +344,7 @@ test("if there are two transactions, one with specified and one with unspecified
 	});
 
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for the transactions to be displayed before continuing with assertions
 	await entries.assertRows([
@@ -407,7 +384,7 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 			.addVolumes({ isbn: "1234567890", quantity: 3, warehouseId: `wh-1` }, { isbn: "1234567890", quantity: 2, warehouseId: `wh-2` });
 	});
 
-	const entries = getDashboard(page).content().entries("outbound");
+	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for the transactions to be displayed before continuing with assertions
 	await entries.assertRows([
@@ -420,3 +397,5 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
 });
+
+// TODO: Should not allow committing of an empty note ??

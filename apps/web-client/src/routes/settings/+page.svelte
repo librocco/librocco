@@ -23,7 +23,7 @@
 	};
 </script>
 
-<Page>
+<Page view="settings" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
