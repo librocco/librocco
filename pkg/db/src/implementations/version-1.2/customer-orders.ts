@@ -7,9 +7,9 @@ import { DocType } from "@/enums";
 import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, CustomerOrderBook } from "@/types";
 import { EmptyCustomerOrderError } from "@/errors";
 
-import { versionId } from "./utils";
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
+import { versionId } from "./utils";
 
 class CustomerOrder implements CustomerOrderInterface {
 	_id: VersionedString;
@@ -33,6 +33,7 @@ class CustomerOrder implements CustomerOrderInterface {
 	email = "";
 	deposit = 0;
 	books: CustomerOrderBook[] = [];
+	displayName = "";
 
 	docType = DocType.CustomerOrder;
 	updatedAt: string | null = null;
@@ -112,6 +113,7 @@ class CustomerOrder implements CustomerOrderInterface {
 		this.updateField("books", data.books);
 		this.updateField("deposit", data.deposit);
 		this.updateField("docType", data.docType);
+		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 		this.updateField("email", data.email);
 
@@ -151,16 +153,12 @@ class CustomerOrder implements CustomerOrderInterface {
 		}, this.#initialized);
 	}
 
-
-
 	/**
 	 * Update individual book on customer order status.
 	 * only the client state (the supplier state is handled elsewere)
-	 * @TEMP book status: ordered, received or re-order
 	 */
 	updateBookStatus(ctx: debug.DebugCtx, isbns: string[], status: string): Promise<CustomerOrderInterface> {
-
-		const updatedBooks = [...this.books]
+		const updatedBooks = [...this.books];
 		let booksUpdated = false;
 
 		isbns.forEach((isbn) => {
@@ -169,8 +167,7 @@ class CustomerOrder implements CustomerOrderInterface {
 			booksUpdated = true;
 
 			updatedBooks[index] = { ...updatedBooks[index], status };
-
-		})
+		});
 
 		return booksUpdated ? this.update(ctx, { books: updatedBooks }) : Promise.resolve(this);
 	}
@@ -199,6 +196,13 @@ class CustomerOrder implements CustomerOrderInterface {
 					tap(debug.log(ctx, "customerOrder_streams: state: input")),
 					map(({ draft }) => draft),
 					tap(debug.log(ctx, "customerOrder_streams: state: res"))
+				),
+
+			displayName: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customerOrder_streams: displayName: input")),
+					map(({ draft }) => draft),
+					tap(debug.log(ctx, "customerOrder_streams: displayName: res"))
 				),
 
 			updatedAt: (ctx: debug.DebugCtx) =>
