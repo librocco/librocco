@@ -2,7 +2,8 @@ export enum DocType {
 	Note = "note",
 	Warehouse = "warehouse",
 	PrintJob = "print_job",
-	Supplier = "supplier"
+	Supplier = "supplier",
+	CustomerOrder = "customer_order"
 }
 
 export enum PrintJobStatus {

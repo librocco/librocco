@@ -14,6 +14,8 @@
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
 	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
 
+	import { testId } from "@librocco/shared";
+
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
@@ -90,7 +92,7 @@
 	aria-label="Edit book details"
 	use:enhance
 	method="POST"
-	id="book-form"
+	id={testId("book-form")}
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
@@ -177,6 +179,6 @@
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
 		<button class="button button-white" on:click={onCancel} type="button"> Cancel </button>
-		<button class="button button-green disabled:bg-gray-400" type="submit"> Save </button>
+		<button class="button button-green disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>
