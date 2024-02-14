@@ -1,145 +1,325 @@
 import { test } from "@playwright/test";
 
-import { baseURL } from "../constants";
+import { baseURL } from "./constants";
 
-import { getDashboard } from "../helpers";
+import { getDashboard, getDbHandle } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
-	// Wait for the app to become responsive
-	await getDashboard(page).waitFor();
+
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	// Navigate to the inventory page
+	await dashboard.navigate("inventory");
+	await dashboard.content().entityList("warehouse-list").waitFor();
 });
 
-test("should create a warehouse on 'Create warehouse' button click and show that warehouse in the sidebar nav", async ({ page }) => {
+test('should create a new warehouse, on "New warehouse" and redirect to it', async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const sidebar = dashboard.sidebar();
 
-	// Create the new warehouse by clicking the "Create warehouse" button
-	await sidebar.createWarehouse();
+	// Create a new warehouse
+	await dashboard.content().header().getByRole("button", { name: "New warehouse" }).click();
 
-	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
-	await dashboard.content().heading("New Warehouse").waitFor();
-
-	// Sidebar should display the "All" pseudo-warehouse and the newly created warehouse ("New Warehouse")
-	await sidebar.assertLinks(["All", "New Warehouse"]);
+	// Check that we've been redirected to the new warehouse's page
+	await dashboard.view("warehouse").waitFor();
+	await dashboard.content().header().title().assert("New Warehouse");
 });
 
-test("should allow for renaming of the warehouse using the editable title and show the update in the sidebar", async ({ page }) => {
+test("should delete the warehouse on delete button click (after confirming the prompt)", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const sidebar = dashboard.sidebar();
 	const content = dashboard.content();
 
-	// Create the new warehouse by clicking the "Create warehouse" button
-	await sidebar.createWarehouse();
-	// Wait for the redirect to the new warehouse's page (when the "New Warehouse" heading appears, the redirect is complete)
-	await content.heading("New Warehouse").waitFor();
+	await content.entityList("warehouse-list").waitFor();
 
-	// Rename "New Warehouse"
-	//
-	// Click the editable title
-	await content.heading("New Warehouse", { exact: true }).click();
+	// Create two warehouses to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"))
+	);
 
-	// Wait for the TextEditable to become an input
-	const input = content.getByRole("heading").getByRole("textbox");
-	await input.waitFor();
+	// Wait for the warehouses to appear
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
 
-	// Fill in the new name and submit
-	await input.clear();
-	await input.fill("Warehouse 1");
-	await input.press("Enter");
+	// Delete the first warehouse
+	await content.entityList("warehouse-list").item(0).dropdown().delete();
+	await dashboard.dialog().confirm();
 
-	// The sidebar should display the default ("All") pseudo-warehouse and the renamed warehouse ("Warehouse 1")
-	await sidebar.assertLinks(["All", "Warehouse 1"]);
+	// Check that the warehouse has been deleted
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 2" }]);
 });
 
-test("should assign default warehouse names (with sequenced index) to newly created warehouses", async ({ page }) => {
-	const sidebar = getDashboard(page).sidebar();
+test("warehouse heading should display warehouse name", async ({ page }) => {
+	const dashboard = getDashboard(page);
 
-	// Create 3 new warehouses by clicking on the 'Create warehouse' button
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
+	const header = dashboard.content().header();
 
-	// We can check the naming sequence by looking at the sidebar nav
-	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
+	await header.createWarehouse();
 });
 
-test('should continue the sequenced order from the highest numbered "New Warehouse" even if lower numbered warehouses have been renamed', async ({
+test("warehouse page: should display breadcrumbs leading back to warehouse page", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const header = dashboard.content().header();
+
+	await header.createWarehouse();
+
+	await header.breadcrumbs().waitFor();
+
+	await header.breadcrumbs().assert(["Warehouses", "New Warehouse"]);
+
+	await header.breadcrumbs().getByText("Warehouses").click();
+
+	await dashboard.view("inventory").waitFor();
+	await dashboard.content().entityList("warehouse-list").waitFor();
+});
+
+test("should assign default name to warehouses in sequential order", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+	const header = dashboard.content().header();
+
+	// First warehouse
+	await header.createWarehouse();
+	await header.title().assert("New Warehouse");
+
+	await dashboard.navigate("inventory");
+
+	// Second warehouse
+	await header.createWarehouse();
+	await header.title().assert("New Warehouse (2)");
+
+	// Should display created warehouses in the warehouse list (on inventory page)
+	await dashboard.navigate("inventory");
+
+	const entityList = content.entityList("warehouse-list");
+
+	await entityList.waitFor();
+
+	await entityList.assertElements([
+		{ name: "New Warehouse", numBooks: 0 },
+		{ name: "New Warehouse (2)", numBooks: 0 }
+	]);
+});
+
+test("should continue the naming sequence from the highest sequenced warehouse name (even if lower sequenced warehouses have been renamed)", async ({
 	page
 }) => {
 	const dashboard = getDashboard(page);
 
-	const sidebar = dashboard.sidebar();
 	const content = dashboard.content();
 
-	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
+	const dbHandle = await getDbHandle(page);
 
-	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
-	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
+	// Create three warehouses (default names: "New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").create());
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-2").create());
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-3").create());
 
-	// Rename the first two warehouses
-	await sidebar.link("New Warehouse").click();
-	await content.heading("New Warehouse", { exact: true }).waitFor();
-	await content.heading().rename("Warehouse 1");
+	// Rename the first two warehouses (leaving us with only "New Warehouse (3)", having the default name)
+	await dbHandle.evaluate((db) =>
+		Promise.all([db.warehouse("warehouse-1").setName({}, "Warehouse 1"), db.warehouse("warehouse-2").setName({}, "Warehouse 2")])
+	);
 
-	await sidebar.link("New Warehouse (2)").click();
-	await content.heading("New Warehouse (2)").waitFor();
-	await content.heading().rename("Warehouse 2");
+	// Check names
+	await content
+		.entityList("warehouse-list")
+		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "New Warehouse (3)" }]);
 
-	// The sidebar nav should display the updated warehouse names
-	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)"]);
+	// TODO: the following should be refactored to use the dashboard (when the renaming functionality is in).
+	// For now we're using the db directly (not really e2e way).
+	//
+	// Create a new warehouse (should continue the sequence)
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-4").create());
+	await content
+		.entityList("warehouse-list")
+		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "New Warehouse (3)" }, { name: "New Warehouse (4)" }]);
 
-	// Create a new warehouse
-	await sidebar.createWarehouse();
+	// Rename the remaining warehouses with default names
+	await dbHandle.evaluate((db) =>
+		Promise.all([db.warehouse("warehouse-3").setName({}, "Warehouse 3"), db.warehouse("warehouse-4").setName({}, "Warehouse 4")])
+	);
+	await content
+		.entityList("warehouse-list")
+		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "Warehouse 3" }, { name: "Warehouse 4" }]);
 
-	// When naming a new warehouse, the naming sequence picks up after (existing) "New Warehouse (3)"
-	await content.heading("New Warehouse (4)").waitFor();
-
-	// Check the nav links
-	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "New Warehouse (3)", "New Warehouse (4)"]);
+	// Create a new warehouse (should reset the sequence)
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-5").create());
+	await content
+		.entityList("warehouse-list")
+		.assertElements([
+			{ name: "Warehouse 1" },
+			{ name: "Warehouse 2" },
+			{ name: "Warehouse 3" },
+			{ name: "Warehouse 4" },
+			{ name: "New Warehouse" }
+		]);
 });
 
-test("should reset the naming sequence when all warehouses with default names get renamed", async ({ page }) => {
+test("should navigate to warehouse page on 'View stock' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	const sidebar = dashboard.sidebar();
 	const content = dashboard.content();
 
-	// Create three warehouses with default naming ("New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
-	await sidebar.createWarehouse();
+	// Create two warehouses to work with
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"))
+	);
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
 
-	// The sidebar nav should display the default ("All") pseudo-warehouse and the three newly created warehouses
-	await sidebar.assertLinks(["All", "New Warehouse", "New Warehouse (2)", "New Warehouse (3)"]);
+	// Navigate to first warehouse
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 
-	// Rename all of the warehouses (restarting the naming sequence)
-	await sidebar.link("New Warehouse").click();
-	await content.heading("New Warehouse", { exact: true }).waitFor();
-	await content.heading().rename("Warehouse 1");
+	// Check title
+	await dashboard.view("warehouse").waitFor();
+	await content.header().title().assert("Warehouse 1");
 
-	await sidebar.link("New Warehouse (2)").click();
-	await content.heading("New Warehouse (2)").waitFor();
-	await content.heading().rename("Warehouse 2");
+	// Navigate back to inventory page and to second warehouse
+	await dashboard.navigate("inventory");
+	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 
-	await sidebar.link("New Warehouse (3)").click();
-	await content.heading("New Warehouse (3)").waitFor();
-	await content.heading().rename("Warehouse 3");
-
-	// The sidebar nav should display the updated warehouse names
-	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3"]);
-
-	// Create a new warehouse
-	await sidebar.createWarehouse();
-
-	// The new warehouse should now have the default name ("New Warehouse")
-	await content.heading("New Warehouse", { exact: true }).waitFor();
-
-	// "New Warehouse" appears last as nav items are sorted in chronological order (under the hood, using timestamped ids)
-	await sidebar.assertLinks(["All", "Warehouse 1", "Warehouse 2", "Warehouse 3", "New Warehouse"]);
+	// Check title
+	await dashboard.view("warehouse").waitFor();
+	await content.header().title().assert("Warehouse 2");
 });
+
+test("should display book count and warehouse discount for each respective warehouse in the list", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create two warehouses for display
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+	);
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"))
+	);
+
+	// Both should display 0 books
+	await content.entityList("warehouse-list").assertElements([
+		{ name: "Warehouse 1", numBooks: 0 },
+		{ name: "Warehouse 2", numBooks: 0 }
+	]);
+
+	// Add two books to first warehouse
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note()
+			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+			.then((n) => n.commit({}))
+	);
+
+	await content.entityList("warehouse-list").assertElements([
+		{ name: "Warehouse 1", numBooks: 2 },
+		{ name: "Warehouse 2", numBooks: 0 }
+	]);
+
+	// Add books to second warehouse
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-2")
+			.note()
+			.addVolumes({ isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
+			.then((n) => n.commit({}))
+	);
+
+	await content.entityList("warehouse-list").assertElements([
+		{ name: "Warehouse 1", numBooks: 2 },
+		{ name: "Warehouse 2", numBooks: 3 }
+	]);
+
+	// Add discounts to warehouses
+	await dbHandle.evaluate((db) =>
+		Promise.all([db.warehouse("warehouse-1").setDiscount({}, 10), db.warehouse("warehouse-2").setDiscount({}, 20)])
+	);
+
+	await content.entityList("warehouse-list").assertElements([
+		{ name: "Warehouse 1", numBooks: 2, discount: 10 },
+		{ name: "Warehouse 2", numBooks: 3, discount: 20 }
+	]);
+});
+
+test("should update the warehouse using the 'Edit' dialog", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create a warehouse to work with
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"))
+	);
+	// Set initial discount for the warehouse
+	//
+	// TODO: This should all have been done in the previous block, but chaining 'setName' and 'setDiscount' doesn't update the discount - investigate
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").setDiscount({}, 10));
+	// Add some books to the warehouse as additional noise (to keep consistent)
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note()
+			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+			.then((n) => n.commit({}))
+	);
+
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1", numBooks: 2, discount: 10 }]);
+
+	// Update the warehouse using the edit dialog
+	await content.entityList("warehouse-list").item(0).dropdown().edit();
+
+	const dialog = dashboard.dialog();
+	await dialog.waitFor();
+
+	// Edit warehouse name
+	const nameInput = dialog.getByRole("textbox", { name: "name" });
+	await nameInput.fill("Warehouse (edited)");
+
+	// Update discount
+	const discountInput = dialog.getByRole("spinbutton", { name: "discount" });
+	await discountInput.fill("15");
+
+	// Save
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	// Check that the warehouse has been updated
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse (edited)", numBooks: 2, discount: 15 }]);
+});
+
+// TODO: Test renaming using the editable title
