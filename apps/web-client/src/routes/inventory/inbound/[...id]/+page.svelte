@@ -7,7 +7,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState } from "@librocco/shared";
+	import { NoteState, testId } from "@librocco/shared";
 
 	import type { BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
@@ -183,7 +183,7 @@
 	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
-<Page>
+<Page view="inbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
@@ -314,17 +314,23 @@
 							}}
 							let:trigger
 						>
-							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+							<button
+								data-testid={testId("popover-control")}
+								{...trigger}
+								use:trigger.action
+								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+							>
 								<span class="sr-only">Edit row {rowIx}</span>
 								<span class="aria-hidden">
 									<MoreVertical />
 								</span>
 							</button>
 
-							<div slot="popover-content" class="rounded bg-gray-900">
+							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 								<button
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("edit-row")}
 									on:m-click={() => {
 										bookFormData = row;
 										dialogContent = {
@@ -352,6 +358,7 @@
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("delete-row")}
 								>
 									<span class="sr-only">Delete row {rowIx}</span>
 									<span class="aria-hidden">

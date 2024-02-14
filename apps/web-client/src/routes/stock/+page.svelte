@@ -95,7 +95,7 @@
 	});
 </script>
 
-<Page>
+<Page view="stock" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
