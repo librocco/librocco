@@ -42,6 +42,11 @@ export class EmptyNoteError extends Error {
 		super("Trying to commit an empty note");
 	}
 }
+export class EmptyCustomerOrderError extends Error {
+	constructor() {
+		super("Trying to commit a customer order without books or an email");
+	}
+}
 
 export class EmptyTransactionError extends Error {
 	constructor() {
