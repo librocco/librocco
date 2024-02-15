@@ -9,7 +9,7 @@ export interface NewOrdersDatabase {
 }
 
 /**
- * Standardized supplier interface interface
+ * Standardized supplier interface
  */
 
 export type SupplierInterface<A extends Record<string, any> = {}> = SupplierProto<A> & SupplierData<A>;
@@ -26,14 +26,37 @@ export type SupplierData<A extends Record<string, any> = {}> = CouchDocument<
 	{
 		updatedAt: string | null;
 		publishers: string[];
+		displayName: string;
+	} & A
+>;
+/**
+ * Standardized supplier order interface
+ */
 
-	}
->
+export type SupplierOrderInterface<A extends Record<string, any> = {}> = SupplierOrderProto<A> & SupplierOrderData<A>;
+
+/**
+ * Methods interface
+ */
+export interface SupplierOrderProto<A extends Record<string, any> = {}> {
+	create: () => Promise<SupplierOrderInterface<A>>;
+}
+
+/** Data structure */
+export type SupplierOrderData<A extends Record<string, any> = {}> = CouchDocument<
+	{
+		updatedAt: string | null;
+		books: OrderBook[];
+		status: string;
+		csv: string;
+		date: string;
+	} & A
+>;
 
 /** A (standardized) customer order interface:
-	* * standard data structure
-	* * standard method interface
-	*/
+ * * standard data structure
+ * * standard method interface
+ */
 
 export type CustomerOrderInterface<A extends Record<string, any> = {}> = CustomerOrderProto<A> & CustomerOrderData<A>;
 
@@ -45,8 +68,9 @@ export interface CustomerOrderProto<A extends Record<string, any> = {}> {
 	create: () => Promise<CustomerOrderInterface<A>>;
 }
 
-export interface CustomerOrderBook {
+export interface OrderBook {
 	isbn: string;
+	// status: ordered - ready-for-pickup
 	status: string;
 }
 /**
@@ -60,7 +84,7 @@ export type CustomerOrderData<A extends Record<string, any> = {}> = CouchDocumen
 		draft: boolean;
 		email: string;
 		deposit: number;
-		books: CustomerOrderBook[];
+		books: OrderBook[];
 		displayName: string;
 	} & A
 >;

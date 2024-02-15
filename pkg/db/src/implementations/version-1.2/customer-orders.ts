@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, CustomerOrderBook } from "@/types";
+import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, OrderBook } from "@/types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -32,7 +32,7 @@ class CustomerOrder implements CustomerOrderInterface {
 	draft = true;
 	email = "";
 	deposit = 0;
-	books: CustomerOrderBook[] = [];
+	books: OrderBook[] = [];
 	displayName = "";
 
 	docType = DocType.CustomerOrder;
