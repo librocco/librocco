@@ -5,9 +5,9 @@
 	import type { ReplicationConfig } from "$lib/stores/replication";
 
 	const stateColorLookup = {
-		success: "badge-success",
-		warning: "badge-warning",
-		error: "badge-error"
+		success: "badge-green",
+		warning: "badge-yellow",
+		error: "badge-red"
 	};
 
 	export let config: ReplicationConfig;
@@ -29,7 +29,7 @@
 		<dl class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="flex basis-full flex-col gap-y-2">
 				<dt class="text-sm font-medium text-gray-700">Status</dt>
-				<dd><span class="badge badge-lg {stateColorLookup[status.state]}">{status.message}</span></dd>
+				<dd><span class="badge badge-md {stateColorLookup[status.state]}">{status.message}</span></dd>
 				<slot name="info" />
 			</div>
 			<div class="flex basis-full flex-col gap-y-3">

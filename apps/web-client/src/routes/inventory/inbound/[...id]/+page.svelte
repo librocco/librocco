@@ -22,8 +22,7 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
-		StockTable,
-		createTable
+		InboundTable
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
@@ -34,7 +33,7 @@
 
 	import { createNoteStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
@@ -113,7 +112,7 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -210,7 +209,7 @@
 
 				<div class="h-5">
 					{#if $updatedAt}
-						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -287,23 +286,8 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
-
-						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
-							<input
-								name="quantity"
-								id="quantity"
-								value={quantity}
-								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
-								type="number"
-								min="1"
-								required
-							/>
-						</form>
-					</div>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
+				<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{
@@ -368,7 +352,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</StockTable>
+				</InboundTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
