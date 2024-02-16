@@ -24,8 +24,6 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
-		createTable,
-		WarehouseSelect,
 		OutboundTable,
 		type WarehouseChangeDetail
 	} from "$lib/components";
@@ -36,12 +34,13 @@
 
 	import { createNoteStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
 
 	export let data: PageData;
 
@@ -116,23 +115,25 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const updateRowWarehouse =
-		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
-			const { warehouseId: nextWarehouseId } = e.detail;
-			// Number form control validation means this string->number conversion should yield a valid result
-			const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
+	const updateRowWarehouse = async (
+		e: CustomEvent<WarehouseChangeDetail>,
+		{ isbn, quantity, warehouseId: currentWarehouseId }: OutboundTableData
+	) => {
+		const { warehouseId: nextWarehouseId } = e.detail;
+		// Number form control validation means this string->number conversion should yield a valid result
+		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
-			// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
-			if (currentWarehouseId === nextWarehouseId) {
-				return;
-			}
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (currentWarehouseId === nextWarehouseId) {
+			return;
+		}
 
-			// TODO: error handling
-			await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
-			toastSuccess(toasts.warehouseUpdated(isbn));
-		};
+		// TODO: error handling
+		await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+		toastSuccess(toasts.warehouseUpdated(isbn));
+	};
 
-	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -224,7 +225,7 @@
 
 				<div class="h-5">
 					{#if $updatedAt}
-						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -301,30 +302,12 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<OutboundTable {table}>
-					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
-
-						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
-							<input
-								name="quantity"
-								id="quantity"
-								value={quantity}
-								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
-								type="number"
-								min="1"
-								required
-							/>
-						</form>
-					</div>
-
-					<svelte:fragment slot="row-warehouse" let:row let:rowIx>
-						{@const handleWarehouseUpdate = updateRowWarehouse(row.isbn, row.quantity, row.warehouseId)}
-
-						<WarehouseSelect on:change={handleWarehouseUpdate} data={row} {rowIx} />
-					</svelte:fragment>
-
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
+				<OutboundTable
+					{table}
+					on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
+					on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+				>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{

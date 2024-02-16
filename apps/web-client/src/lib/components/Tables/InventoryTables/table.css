@@ -1,0 +1,45 @@
+.table {
+	@apply relative w-full divide-y divide-gray-200 bg-white;
+}
+
+thead tr {
+	@apply text-sm font-semibold leading-5 text-gray-900;
+}
+
+tbody tr {
+	@apply text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50;
+}
+
+th,
+td {
+	@apply py-4 px-3;
+}
+
+th {
+	@apply text-left;
+}
+
+td {
+	@apply truncate;
+}
+
+.show-col-xl {
+	@apply hidden xl:table-cell;
+}
+
+.show-col-lg {
+	@apply hidden lg:table-cell;
+}
+
+.show-col-md {
+	@apply hidden md:table-cell;
+}
+
+/* Source: https://stackoverflow.com/questions/11267154/fit-cell-width-to-content */
+.table-cell-fit {
+	@apply w-[1%] whitespace-nowrap;
+}
+
+.table-cell-max {
+	@apply max-w-[15rem];
+}
