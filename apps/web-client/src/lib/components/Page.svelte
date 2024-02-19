@@ -11,7 +11,7 @@
 	import { TooltipWrapper } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	// import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { getDB } from "$lib/db";
 
 	interface Link {
@@ -65,7 +65,11 @@
 	 */
 	const handleCreateNote = async () => {
 		const note = await getDB()?.warehouse().note().create();
-		toastSuccess(noteToastMessages("Note").outNoteCreated);
+		// TODO: Check this: this causes problems, stating that toastSuccess is not a function.
+		// For now we can live without the notification here as we'll be redirected to the note page,
+		// but it would be nice to fix.
+		//
+		// toastSuccess(noteToastMessages("Note").outNoteCreated);
 		await goto(appPath("outbound", note._id));
 	};
 </script>
