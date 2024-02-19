@@ -51,16 +51,22 @@ const plugins = [
 
 			// Lists
 			".entity-list-container": {
-				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto px-6": {}
+				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto px-3 xs:px-6": {}
 			},
 			".entity-list-row": {
-				"@apply flex items-center justify-between py-4 px-6": {}
+				"@apply flex items-center justify-between py-4 px-3 xs:px-6": {}
 			},
 			".entity-list-text-lg": {
 				"@apply mb-1 text-base font-semibold leading-6": {}
 			},
 			".entity-list-text-sm": {
 				"@apply text-sm font-normal leading-5": {}
+			},
+			".entity-list-actions": {
+				"@apply flex w-full flex-col items-end justify-end gap-3": {},
+				["@screen xs"]: {
+					"@apply flex-row items-center": {}
+				}
 			}
 		});
 	}
