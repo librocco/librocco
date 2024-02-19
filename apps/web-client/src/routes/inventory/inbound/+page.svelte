@@ -104,17 +104,18 @@
 							<Library class="mr-1 text-gray-700" size={20} />
 							<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
 						</div>
+
+						{#if note.updatedAt}
+							<span class="badge badge-sm badge-green lg:hidden">Last updated: {updatedAt}</span>
+						{/if}
 					</div>
 
 					<div class="max-w-1/2 flex w-full items-center justify-between">
 						{#if note.updatedAt}
-							<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
-						{:else}
-							<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
-							<div />
+							<span class="badge badge-sm badge-green hidden lg:block">Last updated: {updatedAt}</span>
 						{/if}
 
-						<div class="flex items-center justify-end gap-3">
+						<div class="entity-list-actions">
 							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
 							<button
 								use:melt={$trigger}
