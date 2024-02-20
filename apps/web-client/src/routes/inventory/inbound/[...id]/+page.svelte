@@ -7,7 +7,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState } from "@librocco/shared";
+	import { NoteState, testId } from "@librocco/shared";
 
 	import type { BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
@@ -21,10 +21,9 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		ConfirmActionDialog,
-		StockTable,
-		createTable,
-		TextEditable
+		TextEditable,
+		Dialog,
+		InboundTable
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
@@ -35,7 +34,7 @@
 
 	import { createNoteStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
@@ -114,7 +113,7 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -184,7 +183,7 @@
 	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
-<Page>
+<Page view="inbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
@@ -217,7 +216,7 @@
 
 				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -294,23 +293,8 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
-
-						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
-							<input
-								name="quantity"
-								id="quantity"
-								value={quantity}
-								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
-								type="number"
-								min="1"
-								required
-							/>
-						</form>
-					</div>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
+				<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{
@@ -321,17 +305,23 @@
 							}}
 							let:trigger
 						>
-							<button {...trigger} use:trigger.action class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
+							<button
+								data-testid={testId("popover-control")}
+								{...trigger}
+								use:trigger.action
+								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+							>
 								<span class="sr-only">Edit row {rowIx}</span>
 								<span class="aria-hidden">
 									<MoreVertical />
 								</span>
 							</button>
 
-							<div slot="popover-content" class="rounded bg-gray-900">
+							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 								<button
 									use:melt={$dialogTrigger}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("edit-row")}
 									on:m-click={() => {
 										bookFormData = row;
 										dialogContent = {
@@ -359,6 +349,7 @@
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("delete-row")}
 								>
 									<span class="sr-only">Delete row {rowIx}</span>
 									<span class="aria-hidden">
@@ -368,7 +359,7 @@
 							</div>
 						</PopoverWrapper>
 					</div>
-				</StockTable>
+				</InboundTable>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -433,17 +424,19 @@
 				</div>
 			</div>
 		{:else}
-			<ConfirmActionDialog
-				{dialog}
-				{type}
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
-				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-			</ConfirmActionDialog>
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<Dialog
+					{dialog}
+					{type}
+					onConfirm={async (closeDialog) => {
+						await onConfirm();
+						closeDialog();
+					}}
+				>
+					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+				</Dialog>
+			</div>
 		{/if}
 	{/if}
 </div>
