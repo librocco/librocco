@@ -8,6 +8,7 @@
 
 	import { entityListView, testId, wrapIter } from "@librocco/shared";
 
+	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
@@ -64,98 +65,100 @@
 	let dialogContent: DialogContent;
 </script>
 
-<!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
-
-{#if !initialized}
-	<div class="center-absolute">
-		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-	</div>
-{:else}
-	<!-- Start entity list contaier -->
-
-	<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-	<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
-		{#if !$inNoteList.length}
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox
-				title="No open notes"
-				description="Get started by adding a new note with the appropriate warehouse"
-				class="center-absolute"
-			>
-				<a href={appPath("warehouses")} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">Back to warehouses</span></a
-				>
-			</PlaceholderBox>
-			<!-- End entity list placeholder -->
-		{:else}
-			<!-- Start entity list -->
-			{#each $inNoteList as [warehouseName, [noteId, note]]}
-				{@const noteName = note.displayName || noteId}
-				{@const displayName = `${warehouseName} / ${noteName}`}
-				{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
-				{@const totalBooks = note.totalBooks}
-				{@const href = appPath("inbound", noteId)}
-
-				<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
-					<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
-						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
-
-						<div class="flex items-center">
-							<Library class="mr-1 text-gray-700" size={20} />
-							<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
-						</div>
-					</div>
-
-					{#if note.updatedAt}
-						<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
-							<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
-						</div>
-					{/if}
-
-					<div class="entity-list-actions col-span-2 row-span-2 xs:col-span-6">
-						<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-						<button
-							use:melt={$trigger}
-							class="button button-white"
-							aria-label="Delete note: {note.displayName}"
-							on:m-click={() => {
-								dialogContent = {
-									onConfirm: handleDeleteNote(noteId),
-									title: dialogTitle.delete(note.displayName),
-									description: dialogDescription.deleteNote()
-								};
-							}}
-						>
-							<span aria-hidden="true">
-								<Trash size={20} />
-							</span>
-						</button>
-					</div>
-				</li>
-			{/each}
-			<!-- End entity list -->
-		{/if}
-	</ul>
-	<!-- End entity list contaier -->
-{/if}
-
-<div use:melt={$portalled}>
-	{#if $open}
-		{@const { onConfirm, title, description } = dialogContent};
-
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-			<Dialog
-				{dialog}
-				type="delete"
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
-			</Dialog>
+<InventoryManagementPage>
+	{#if !initialized}
+		<div class="center-absolute">
+			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 		</div>
+	{:else}
+		<!-- Start entity list contaier -->
+
+		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
+			{#if !$inNoteList.length}
+				<!-- Start entity list placeholder -->
+				<PlaceholderBox
+					title="No open notes"
+					description="Get started by adding a new note with the appropriate warehouse"
+					class="center-absolute"
+				>
+					<a
+						href={appPath("warehouses")}
+						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						><span class="text-green-50">Back to warehouses</span></a
+					>
+				</PlaceholderBox>
+				<!-- End entity list placeholder -->
+			{:else}
+				<!-- Start entity list -->
+				{#each $inNoteList as [warehouseName, [noteId, note]]}
+					{@const noteName = note.displayName || noteId}
+					{@const displayName = `${warehouseName} / ${noteName}`}
+					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+					{@const totalBooks = note.totalBooks}
+					{@const href = appPath("inbound", noteId)}
+
+					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
+						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
+							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+
+							<div class="flex items-center">
+								<Library class="mr-1 text-gray-700" size={20} />
+								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+							</div>
+						</div>
+
+						{#if note.updatedAt}
+							<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
+								<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
+							</div>
+						{/if}
+
+						<div class="entity-list-actions col-span-2 row-span-2 xs:col-span-6">
+							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+							<button
+								use:melt={$trigger}
+								class="button button-white"
+								aria-label="Delete note: {note.displayName}"
+								on:m-click={() => {
+									dialogContent = {
+										onConfirm: handleDeleteNote(noteId),
+										title: dialogTitle.delete(note.displayName),
+										description: dialogDescription.deleteNote()
+									};
+								}}
+							>
+								<span aria-hidden="true">
+									<Trash size={20} />
+								</span>
+							</button>
+						</div>
+					</li>
+				{/each}
+				<!-- End entity list -->
+			{/if}
+		</ul>
+		<!-- End entity list contaier -->
 	{/if}
-</div>
+
+	<div use:melt={$portalled}>
+		{#if $open}
+			{@const { onConfirm, title, description } = dialogContent};
+
+			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+			<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+				<Dialog
+					{dialog}
+					type="delete"
+					onConfirm={async (closeDialog) => {
+						await onConfirm();
+						closeDialog();
+					}}
+				>
+					<svelte:fragment slot="title">{title}</svelte:fragment>
+					<svelte:fragment slot="description">{description}</svelte:fragment>
+				</Dialog>
+			</div>
+		{/if}
+	</div>
+</InventoryManagementPage>
