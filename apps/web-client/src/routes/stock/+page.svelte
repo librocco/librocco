@@ -9,14 +9,14 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { StockTable, createTable } from "$lib/components";
+	import { StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { getDB } from "$lib/db";
@@ -95,7 +95,7 @@
 	});
 </script>
 
-<Page>
+<Page view="stock" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
@@ -123,7 +123,7 @@
 				</PlaceholderBox>
 			{/await}
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
