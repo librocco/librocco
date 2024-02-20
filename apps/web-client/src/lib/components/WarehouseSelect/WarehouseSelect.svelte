@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount, tick } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
 	import { Check, ChevronsUpDown } from "lucide-svelte";
@@ -44,6 +44,17 @@
 	 */
 	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
 
+	// If there's only one warehouse the book is available in, and the selected warehouse is not that one, change the selected warehouse
+	onMount(() => {
+		if (availableWarehouses.size !== 1) return;
+
+		const availableWarehouse = availableWarehouses.keys().next().value;
+		if (availableWarehouse !== warehouseId) {
+			// Tick isn't necessary here, but it's much easier when testing
+			tick().then(() => dispatchChange(availableWarehouse));
+		}
+	});
+
 	$: options = mapWarehousesToOptions(availableWarehouses);
 </script>
 
@@ -78,7 +89,7 @@
 			{#each options as warehouse}
 				{@const { label, value } = warehouse}
 				<div
-					class="relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+					class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10"
 					{...$option(warehouse)}
 					use:option
 				>
@@ -92,8 +103,19 @@
 		</div>
 	{/if}
 {:else}
-	<div class="gap-x-2 rounded bg-gray-100 px-2">
+	<div class="flex gap-x-2 rounded bg-gray-100 p-2">
 		<span class="rounded-full bg-teal-400 p-0.5" />
-		<input disabled type="text" value={warehouseName} class="w-full border-0 bg-gray-100 text-sm text-gray-500" />
+		<button
+			data-testid={testId("dropdown-control")}
+			data-open={open}
+			disabled
+			class="flex w-full gap-x-2 px-2 focus:border-teal-500 focus:outline-none focus:ring-0"
+			use:trigger
+			aria-label="Warehouse"
+		>
+			<span class="truncate">
+				{$selectedLabel}
+			</span>
+		</button>
 	</div>
 {/if}
