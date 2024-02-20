@@ -107,7 +107,7 @@
 					<div class="max-w-1/2 w-full">
 						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
-						<div class="flex items-center">
+						<div class="flex flex-wrap gap-y-2">
 							<div class="flex w-32 items-center gap-x-1">
 								<Library class="text-gray-700" size={20} />
 								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
@@ -124,7 +124,7 @@
 						</div>
 					</div>
 
-					<div class="max-w-1/2 flex w-full items-center justify-end gap-3">
+					<div class="entity-list-actions">
 						<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
 
 						<DropdownWrapper let:separator let:item>
