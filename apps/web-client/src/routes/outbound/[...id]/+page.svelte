@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -239,7 +239,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -262,6 +262,22 @@
 				</button>
 
 				<DropdownWrapper let:item>
+					<div
+						{...item}
+						use:item.action
+						use:melt={$dialogTrigger}
+						on:m-click={() => {
+							dialogContent = {
+								onConfirm: handleCommitSelf,
+								title: dialogTitle.commitOutbound(note.displayName),
+								description: dialogDescription.commitOutbound($entries.length),
+								type: "commit"
+							};
+						}}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+					>
+						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
+					</div>
 					<div
 						{...item}
 						use:item.action
