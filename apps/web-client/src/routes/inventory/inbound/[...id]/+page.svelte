@@ -7,11 +7,11 @@
 
 	import { goto } from "$app/navigation";
 
+	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 	import { NoteState, testId } from "@librocco/shared";
-
 	import type { BookEntry } from "@librocco/db";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
+	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
 
 	import {
@@ -46,6 +46,8 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB()!;
+
+	const plugin = createBookDataExtensionPlugin();
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -109,6 +111,12 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
+
+		const book = await plugin.fetchBookData([isbn]);
+		if (book.length) {
+			await db.books().upsert(book);
+			toastSuccess(toasts.bookDataFetched(isbn));
+		}
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
@@ -405,7 +413,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
 							if (result) {
 								const [bookData] = result;
