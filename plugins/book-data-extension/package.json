@@ -4,13 +4,18 @@
 	"main": "./dist/plugin/index.js",
 	"exports": {
 		".": {
-			"import": "./dist/plugin/index.es.js",
-			"require": "./dist/plugin/index.js",
-			"default": "./dist/plugin/index.es.js"
+			"import": {
+				"default": "./dist/plugin/index.es.js",
+				"types": "./dist/plugin/index.d.ts"
+			},
+			"require": {
+				"default": "./dist/plugin/index.js",
+				"types": "./dist/plugin/index.d.ts"
+			}
 		}
 	},
 	"scripts": {
-		"build": "vite build",
+		"build": "vite build && tsc --project tsconfig.build.json",
 		"typecheck": "tsc --noEmit",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
