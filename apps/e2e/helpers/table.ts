@@ -142,10 +142,10 @@ interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
 }
 
 const stringFieldConstructor =
-	<K extends GenericTransactionField>(name: K): FieldConstructor<K> =>
+	<K extends GenericTransactionField>(name: K, transformDisplay = (x: string) => x): FieldConstructor<K> =>
 	(row) => ({
 		assert: (want: string | number | boolean, opts?: WaitForOpts) =>
-			expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
+			expect(row.locator(`[data-property="${name}"]`)).toHaveText(transformDisplay(want.toString()), { timeout: assertionTimeout, ...opts })
 	});
 
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
@@ -211,7 +211,7 @@ const fieldConstructorLookup: {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
 	authors: stringFieldConstructor("authors"),
-	price: stringFieldConstructor("price"),
+	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${x}`)),
 	quantity: quantityFieldCostructor,
 	publisher: stringFieldConstructor("publisher"),
 	outOfPrint: outOfPrintFieldConstructor,
