@@ -3,22 +3,27 @@
 	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
+	import { Library, Loader2 as Loader, Plus, Search, Trash } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 
-	import { entityListView, testId, wrapIter } from "@librocco/shared";
+	import { goto } from "$app/navigation";
 
-	import { PlaceholderBox, Dialog } from "$lib/components";
+	import { entityListView, testId, wrapIter } from "@librocco/shared";
+	import { NEW_WAREHOUSE } from "@librocco/db";
+
+	import { PlaceholderBox, Dialog, Page } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
+	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+
+	import { inventoryTabs } from "$lib/data";
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
@@ -62,104 +67,150 @@
 	} = dialog;
 
 	let dialogContent: DialogContent;
+
+	/**
+	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
+	 * _(and navigate to the newly created warehouse page)_.
+	 */
+	const handleCreateWarehouse = async () => {
+		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
+		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
+		await goto(appPath("warehouses", warehouse._id));
+	};
 </script>
 
-<!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
+<Page view="inventory" loaded={true}>
+	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
+		<Search {...iconProps} />
+		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
+	</svelte:fragment>
 
-{#if !initialized}
-	<div class="center-absolute">
-		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-	</div>
-{:else}
-	<!-- Start entity list contaier -->
-
-	<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-	<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
-		{#if !$inNoteList.length}
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox
-				title="No open notes"
-				description="Get started by adding a new note with the appropriate warehouse"
-				class="center-absolute"
-			>
-				<a href={appPath("warehouses")} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">Back to warehouses</span></a
-				>
-			</PlaceholderBox>
-			<!-- End entity list placeholder -->
-		{:else}
-			<!-- Start entity list -->
-			{#each $inNoteList as [warehouseName, [noteId, note]]}
-				{@const noteName = note.displayName || noteId}
-				{@const displayName = `${warehouseName} / ${noteName}`}
-				{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
-				{@const totalBooks = note.totalBooks}
-				{@const href = appPath("inbound", noteId)}
-
-				<li class="entity-list-row">
-					<div class="max-w-1/2 w-full">
-						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
-
-						<div class="flex items-center">
-							<Library class="mr-1 text-gray-700" size={20} />
-							<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
-						</div>
-
-						{#if note.updatedAt}
-							<span class="badge badge-sm badge-green lg:hidden">Last updated: {updatedAt}</span>
-						{/if}
-					</div>
-
-					<div class="max-w-1/2 flex w-full items-center justify-between">
-						{#if note.updatedAt}
-							<span class="badge badge-sm badge-green hidden lg:block">Last updated: {updatedAt}</span>
-						{/if}
-
-						<div class="entity-list-actions">
-							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-							<button
-								use:melt={$trigger}
-								class="button button-white"
-								aria-label="Delete note: {note.displayName}"
-								on:m-click={() => {
-									dialogContent = {
-										onConfirm: handleDeleteNote(noteId),
-										title: dialogTitle.delete(note.displayName),
-										description: dialogDescription.deleteNote()
-									};
-								}}
-							>
-								<span aria-hidden="true">
-									<Trash size={20} />
-								</span>
-							</button>
-						</div>
-					</div>
-				</li>
-			{/each}
-			<!-- End entity list -->
-		{/if}
-	</ul>
-	<!-- End entity list contaier -->
-{/if}
-
-<div use:melt={$portalled}>
-	{#if $open}
-		{@const { onConfirm, title, description } = dialogContent};
-
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-			<Dialog
-				{dialog}
-				type="delete"
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
-				<svelte:fragment slot="title">{title}</svelte:fragment>
-				<svelte:fragment slot="description">{description}</svelte:fragment>
-			</Dialog>
+	<svelte:fragment slot="heading">
+		<div class="flex w-full items-center justify-between">
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">Inventory</h1>
+			<button on:click={handleCreateWarehouse} class="button button-white">
+				<span><Plus size={20} /></span>
+				<span class="button-text">New warehouse</span>
+			</button>
 		</div>
-	{/if}
-</div>
+	</svelte:fragment>
+
+	<svelte:fragment slot="main">
+		<div class="flex h-full w-full flex-col overflow-hidden">
+			<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
+				{#each inventoryTabs as { label, icon, href, linkto }}
+					{@const active = href === appPath("inbound")}
+					<svelte:element
+						this={active ? "div" : "a"}
+						class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
+						data-linkto={linkto}
+						{href}
+					>
+						<svelte:component this={icon} size={20} />
+						<span class="text-sm font-medium leading-5">{label}</span>
+					</svelte:element>
+				{/each}
+			</div>
+
+			{#if !initialized}
+				<div class="center-absolute">
+					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+				</div>
+			{:else}
+				<!-- Start entity list contaier -->
+
+				<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+				<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
+					{#if !$inNoteList.length}
+						<!-- Start entity list placeholder -->
+						<PlaceholderBox
+							title="No open notes"
+							description="Get started by adding a new note with the appropriate warehouse"
+							class="center-absolute"
+						>
+							<a
+								href={appPath("warehouses")}
+								class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+								><span class="text-green-50">Back to warehouses</span></a
+							>
+						</PlaceholderBox>
+						<!-- End entity list placeholder -->
+					{:else}
+						<!-- Start entity list -->
+						{#each $inNoteList as [warehouseName, [noteId, note]]}
+							{@const noteName = note.displayName || noteId}
+							{@const displayName = `${warehouseName} / ${noteName}`}
+							{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+							{@const totalBooks = note.totalBooks}
+							{@const href = appPath("inbound", noteId)}
+
+							<li class="entity-list-row">
+								<div class="max-w-1/2 w-full">
+									<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+
+									<div class="flex items-center">
+										<Library class="mr-1 text-gray-700" size={20} />
+										<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									</div>
+
+									{#if note.updatedAt}
+										<span class="badge badge-sm badge-green lg:hidden">Last updated: {updatedAt}</span>
+									{/if}
+								</div>
+
+								<div class="max-w-1/2 flex w-full items-center justify-between">
+									{#if note.updatedAt}
+										<span class="badge badge-sm badge-green hidden lg:block">Last updated: {updatedAt}</span>
+									{/if}
+
+									<div class="entity-list-actions">
+										<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+										<button
+											use:melt={$trigger}
+											class="button button-white"
+											aria-label="Delete note: {note.displayName}"
+											on:m-click={() => {
+												dialogContent = {
+													onConfirm: handleDeleteNote(noteId),
+													title: dialogTitle.delete(note.displayName),
+													description: dialogDescription.deleteNote()
+												};
+											}}
+										>
+											<span aria-hidden="true">
+												<Trash size={20} />
+											</span>
+										</button>
+									</div>
+								</div>
+							</li>
+						{/each}
+						<!-- End entity list -->
+					{/if}
+				</ul>
+				<!-- End entity list contaier -->
+			{/if}
+
+			<div use:melt={$portalled}>
+				{#if $open}
+					{@const { onConfirm, title, description } = dialogContent};
+
+					<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+					<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+						<Dialog
+							{dialog}
+							type="delete"
+							onConfirm={async (closeDialog) => {
+								await onConfirm();
+								closeDialog();
+							}}
+						>
+							<svelte:fragment slot="title">{title}</svelte:fragment>
+							<svelte:fragment slot="description">{description}</svelte:fragment>
+						</Dialog>
+					</div>
+				{/if}
+			</div>
+		</div>
+	</svelte:fragment>
+</Page>

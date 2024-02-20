@@ -1,19 +1,20 @@
-import { base } from "$app/paths";
+import { Building, CopyPlus } from "lucide-svelte";
+import { appPath } from "./paths";
+import { entityListView } from "@librocco/shared";
 
-export const links = [
+export const inventoryTabs = [
 	{
-		label: "Stock",
-		href: `${base}/inventory/stock/`
+		icon: Building,
+		label: "Warehouses",
+		href: appPath("warehouses"),
+		linkto: entityListView("warehouse-list")
 	},
 	{
+		icon: CopyPlus,
 		label: "Inbound",
-		href: `${base}/inventory/inbound/`
-	},
-	{
-		label: "Outbound",
-		href: `${base}/inventory/outbound/`
-	},
-	{ label: "Settings", href: `${base}/settings/` }
+		href: appPath("inbound"),
+		linkto: entityListView("inbound-list")
+	}
 ];
 
 export const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
