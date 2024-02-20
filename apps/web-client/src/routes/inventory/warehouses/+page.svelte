@@ -103,7 +103,7 @@
 				{@const href = appPath("warehouses", warehouseId)}
 				{@const warehouseDiscount = warehouse.discountPercentage}
 
-				<li class="entity-list-row">
+				<li class="entity-list-row flex items-center justify-between">
 					<div class="max-w-1/2 w-full">
 						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
