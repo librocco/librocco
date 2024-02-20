@@ -103,7 +103,7 @@
 				{@const href = appPath("warehouses", warehouseId)}
 				{@const warehouseDiscount = warehouse.discountPercentage}
 
-				<li class="entity-list-row">
+				<li class="entity-list-row flex items-center justify-between">
 					<div class="max-w-1/2 w-full">
 						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
@@ -150,7 +150,7 @@
 										type: "edit"
 									};
 								}}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Edit class="text-gray-400" size={20} />
 								<span class="text-gray-700">Edit</span>
@@ -162,7 +162,7 @@
 								{href}
 								{...item}
 								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Table2 class="text-gray-400" size={20} />
 								<span class="text-gray-700">View Stock</span>
@@ -188,7 +188,7 @@
 										type: "delete"
 									};
 								}}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+								class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 							>
 								<Trash2 class="text-white" size={20} />
 								<span class="text-white">Delete</span>
