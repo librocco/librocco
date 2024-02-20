@@ -54,7 +54,7 @@
 				warehouseDiscount
 			} = row}
 			<tr use:table.tableRow={{ position: rowIx }}>
-				<th scope="row" data-property="isbn" class="table-cell-max">
+				<th scope="row" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>
 
