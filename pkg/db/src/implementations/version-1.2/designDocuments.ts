@@ -34,6 +34,19 @@ const sequenceNamingDesignDocument: DesignDocument = {
 				}
 			}.toString(),
 			reduce: `_stats`
+		},
+		"customer-order": {
+			map: function (doc: NoteData) {
+				const { displayName } = doc as NoteData;
+
+				if (doc.docType === "customer_order") {
+					const match = /[0-9]+/.test(displayName) && displayName.match(/[0-9]+/);
+					if (match) {
+						emit(doc._id, parseInt(match[0]));
+					}
+				}
+			}.toString(),
+			reduce: `_stats`
 		}
 	}
 };
@@ -121,3 +134,4 @@ export const listDeisgnDocument: DesignDocument = {
 };
 
 export const inventory = [stockDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
+export const orders = [listDeisgnDocument, sequenceNamingDesignDocument];
