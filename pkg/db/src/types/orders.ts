@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 
+import { Observable } from "rxjs";
 import { DatabaseInterface as BaseDatabaseInterface, CouchDocument } from "./misc";
+import { debug } from "@librocco/shared";
 
 export type OrdersDatabaseInterface = BaseDatabaseInterface;
 
@@ -19,7 +21,29 @@ export type SupplierInterface<A extends Record<string, any> = {}> = SupplierProt
  */
 export interface SupplierProto<A extends Record<string, any> = {}> {
 	create: () => Promise<SupplierInterface<A>>;
+
+	delete: (ctx: debug.DebugCtx) => Promise<SupplierInterface>;
+	setName: (ctx: debug.DebugCtx, name: string) => Promise<SupplierInterface<A>>;
+	addPublisher: (ctx: debug.DebugCtx, publisher: string) => Promise<SupplierInterface<A>>;
+	removePublisher: (ctx: debug.DebugCtx, publisher: string) => Promise<SupplierInterface<A>>;
+	// - returning a SupplierStreams object
+	stream: () => SupplierStream;
+	//  - leading to the order batch interface
+	// batch: () => Promise<SupplierInterface<A>>
 }
+
+/**
+ * A standardized interface for streams received from a supplier
+ */
+export interface SupplierStream {
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	publishers: (ctx: debug.DebugCtx) => Observable<string[]>;
+	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
+}
+
+// state
+
+// pendingItems: (ctx: debug.DebugCtx) => Observable<void>;
 
 /** Data structure */
 export type SupplierData<A extends Record<string, any> = {}> = CouchDocument<
@@ -29,27 +53,47 @@ export type SupplierData<A extends Record<string, any> = {}> = CouchDocument<
 		displayName: string;
 	} & A
 >;
+
+/**
+ * A standardized interface for streams received from an order batch
+ */
+export interface OrderBatchStream {
+	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	state: (ctx: debug.DebugCtx) => Observable<string>;
+	// items: (ctx: debug.DebugCtx) => Observable<string[]>;
+	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
+}
+
 /**
  * Standardized supplier order interface
  */
 
-export type SupplierOrderInterface<A extends Record<string, any> = {}> = SupplierOrderProto<A> & SupplierOrderData<A>;
+export type OrderBatchInterface<A extends Record<string, any> = {}> = OrderBatchProto<A> & OrderBatchData<A>;
 
 /**
  * Methods interface
  */
-export interface SupplierOrderProto<A extends Record<string, any> = {}> {
-	create: () => Promise<SupplierOrderInterface<A>>;
+export interface OrderBatchProto<A extends Record<string, any> = {}> {
+	create: () => Promise<OrderBatchInterface<A>>;
+	delete: (ctx: debug.DebugCtx) => Promise<OrderBatchInterface>;
+	// - returning a SupplierStreams object
+	stream: () => OrderBatchStream;
+	// akin to addTransactions in the note interface
+	addItems: (isbns: string[]) => Promise<OrderBatchInterface<A>>;
+
+	commit: () => Promise<OrderBatchInterface<A>>;
+	getCsv: () => Promise<string | undefined>;
 }
 
 /** Data structure */
-export type SupplierOrderData<A extends Record<string, any> = {}> = CouchDocument<
+export type OrderBatchData<A extends Record<string, any> = {}> = CouchDocument<
 	{
 		updatedAt: string | null;
-		books: OrderBook[];
-		status: string;
+		items: OrderItem[];
+		state: string;
 		csv: string;
-		date: string;
+		date?: string;
+		displayName: string;
 	} & A
 >;
 
@@ -68,10 +112,10 @@ export interface CustomerOrderProto<A extends Record<string, any> = {}> {
 	create: () => Promise<CustomerOrderInterface<A>>;
 }
 
-export interface OrderBook {
+export interface OrderItem {
 	isbn: string;
-	// status: ordered - ready-for-pickup
-	status: string;
+	// state: ordered - ready-for-pickup
+	state: string;
 }
 /**
  * Standardized data that should be present in any customer order
@@ -84,7 +128,7 @@ export type CustomerOrderData<A extends Record<string, any> = {}> = CouchDocumen
 		draft: boolean;
 		email: string;
 		deposit: number;
-		books: OrderBook[];
+		items: OrderItem[];
 		displayName: string;
 	} & A
 >;

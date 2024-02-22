@@ -55,10 +55,10 @@ class Supplier implements SupplierInterface {
 			share({ connector: () => cache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 		);
 
-		// The first value from the stream will be either customer order data, or an empty object (if the customer order doesn't exist in the db).
-		// This is enough to signal that the customer order intsance is initialised.
+		// The first value from the stream will be either supplier data, or an empty object (if the supplier doesn't exist in the db).
+		// This is enough to signal that the supplier intsance is initialised.
 		firstValueFrom(this.#stream).then(() => this.#initialized.next(true));
-		// If data is not empty (customer order exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
+		// If data is not empty (supplier exists), setting of 'exists' flag is handled inside the 'updateInstance' method.
 		this.#stream.subscribe((w) => this.updateInstance(w));
 		return this;
 	}
@@ -110,13 +110,13 @@ class Supplier implements SupplierInterface {
 		}, this.#initialized);
 	}
 
-	/** @TODO */
-	// batch ⇒ supplier.batch(id?)
-	// stream ⇒ displayName , publihsers, pendingOrders
+	setName(ctx: debug.DebugCtx, name: string): Promise<SupplierInterface> {
 
-	batch() {
-		// stream books with status ordered
+		return this.update(ctx, { displayName: name });
 	}
+
+	/** @TODO */
+	// stream ⇒ pendingOrders
 
 	create(): Promise<SupplierInterface> {
 		return runAfterCondition(async () => {
@@ -135,7 +135,9 @@ class Supplier implements SupplierInterface {
 		}, this.#initialized);
 	}
 
-	delete() {
+	delete(ctx: debug.DebugCtx): Promise<SupplierInterface> {
+		debug.log(ctx, "supplier:delete")({});
+
 		return runAfterCondition(async () => {
 			if (!this.#exists) {
 				return this;
@@ -148,21 +150,13 @@ class Supplier implements SupplierInterface {
 	}
 
 	addPublisher(ctx: debug.DebugCtx, publisher: string): Promise<SupplierInterface> {
-		const index = this.publishers.findIndex((pub) => pub === publisher);
-		// check if publisher already exists
-		if (index !== -1) Promise.resolve(this);
-		const publishers = [...this.publishers, publisher];
+		const publishers = [...new Set(...this.publishers, publisher)];
 		// let booksUpdated = false;
 
 		return this.update(ctx, { publishers });
 	}
 	removePublisher(ctx: debug.DebugCtx, publisher: string): Promise<SupplierInterface> {
-		const publishers = [...this.publishers];
-
-		const index = this.publishers.findIndex((pub) => pub === publisher);
-		if (index === -1) Promise.resolve(this);
-
-		publishers.splice(index, 1);
+		const publishers = this.publishers.filter((p) => p !== publisher);
 
 		return this.update(ctx, { publishers });
 	}
@@ -177,29 +171,59 @@ class Supplier implements SupplierInterface {
 		}, this.#initialized);
 	}
 
+	/**
+	 * Instantiate a new supplier order instance, with the provided id.
+	 */
+	// batch(id?: string): SupplierOrderInterface {
+	// 	return newSupplierOrder(this, this.#db, id);
+	// }
+
+	/** getEntries implementation for supplier orders */
+	// async getOrders(): Promise<Iterable<VolumeStockClient>> {
+	// 	const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
+	// 	const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+	// 	return addWarehouseData(entries, warehouses);
+	// }
+
+	// async query() {
+	// 	const queryRes = await this.#db._pouch.allDocs({ include_docs: true });
+
+	// 	const mapGenerator = wrapIter(queryRes.rows)
+	// 		.map(({ doc }) => doc as SupplierData | SupplierOrderData)
+	// 		.filter((doc): doc is SupplierOrderData => doc?.docType === DocType.SupplierOrder)
+	// 		// filter by id segment?
+	// 		.filter(({ _id }) => )
+	// 		.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
+
+	// 	return StockMap.fromDbRows(mapGenerator);
+	// }
+
 	stream() {
 		return {
-			publishers: (ctx: debug.DebugCtx) => {
+			publishers: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
 					tap(debug.log(ctx, "supplier_streams: publishers: input")),
 					map(({ publishers }) => publishers),
 					tap(debug.log(ctx, "supplier_streams: publishers: res"))
-				);
-			},
-			displayName: (ctx: debug.DebugCtx) => {
+				),
+			displayName: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "supplier_streams: displayName: input")),
-					map(({ displayName }) => displayName),
-					tap(debug.log(ctx, "supplier_streams: displayName: res"))
-				);
-			},
-			pendingOrders: (ctx: debug.DebugCtx) => {
+					tap(debug.log(ctx, "supplier_streams: display_name: input")),
+					map(({ displayName }) => displayName || ""),
+					tap(debug.log(ctx, "supplier_streams: display_name: res"))
+				),
+			updatedAt: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "supplier_streams: pendingOrders: input")),
-					// map(({ }) => ),
-					tap(debug.log(ctx, "supplier_streams: pendingOrders: res"))
-				);
-			}
+					tap(debug.log(ctx, "supplier_streams: updated_at: input")),
+					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
+					tap(debug.log(ctx, "supplier_streams: updated_at: res"))
+				)
+			// pendingOrders: (ctx: debug.DebugCtx) =>
+			// 	this.#stream.pipe(
+			// 		tap(debug.log(ctx, "supplier_streams: pendingOrders: input")),
+			// 		map(({ }) => ),
+			// 		tap(debug.log(ctx, "supplier_streams: pendingOrders: res"))
+			// 	)
 		};
 	}
 }

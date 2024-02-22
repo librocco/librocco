@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, OrderBook } from "@/types";
+import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, OrderItem } from "@/types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -32,7 +32,7 @@ class CustomerOrder implements CustomerOrderInterface {
 	draft = true;
 	email = "";
 	deposit = 0;
-	books: OrderBook[] = [];
+	items: OrderItem[] = [];
 	displayName = "";
 
 	docType = DocType.CustomerOrder;
@@ -110,7 +110,7 @@ class CustomerOrder implements CustomerOrderInterface {
 
 		// Update the data with provided fields
 		this.updateField("_rev", data._rev);
-		this.updateField("books", data.books);
+		this.updateField("items", data.items);
 		this.updateField("deposit", data.deposit);
 		this.updateField("docType", data.docType);
 		this.updateField("displayName", data.displayName);
@@ -154,28 +154,28 @@ class CustomerOrder implements CustomerOrderInterface {
 	}
 
 	/**
-	 * Update individual book on customer order status.
+	 * Update individual book on customer order state.
 	 * only the client state (the supplier state is handled elsewere)
 	 */
-	updateBookStatus(ctx: debug.DebugCtx, isbns: string[], status: string): Promise<CustomerOrderInterface> {
-		const updatedBooks = [...this.books];
-		let booksUpdated = false;
+	updateitemsState(ctx: debug.DebugCtx, isbns: string[], state: string): Promise<CustomerOrderInterface> {
+		const updateditems = [...this.items];
+		let itemsUpdated = false;
 
 		isbns.forEach((isbn) => {
-			const index = this.books.findIndex((book) => book.isbn === isbn);
-			if (index === -1 || this.books[index].status === status) return;
-			booksUpdated = true;
+			const index = this.items.findIndex((book) => book.isbn === isbn);
+			if (index === -1 || this.items[index].state === state) return;
+			itemsUpdated = true;
 
-			updatedBooks[index] = { ...updatedBooks[index], status };
+			updateditems[index] = { ...updateditems[index], state };
 		});
 
-		return booksUpdated ? this.update(ctx, { books: updatedBooks }) : Promise.resolve(this);
+		return itemsUpdated ? this.update(ctx, { items: updateditems }) : Promise.resolve(this);
 	}
 
 	async commit(ctx: debug.DebugCtx): Promise<CustomerOrderInterface> {
 		debug.log(ctx, "customerOrder:commit")({});
 
-		if (!this.books.length || !this.email) throw new EmptyCustomerOrderError();
+		if (!this.items.length || !this.email) throw new EmptyCustomerOrderError();
 
 		//sets draft to false
 		return this.update(ctx, { draft: false });
@@ -183,11 +183,11 @@ class CustomerOrder implements CustomerOrderInterface {
 
 	stream() {
 		return {
-			books: (ctx: debug.DebugCtx) => {
+			items: (ctx: debug.DebugCtx) => {
 				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: books: input")),
-					map(({ books }) => books),
-					tap(debug.log(ctx, "customerOrder_streams: books: res"))
+					tap(debug.log(ctx, "customerOrder_streams: items: input")),
+					map(({ items }) => items),
+					tap(debug.log(ctx, "customerOrder_streams: items: res"))
 				);
 			},
 
