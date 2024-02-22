@@ -50,4 +50,5 @@ export type OutNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean
 export type InNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean; type: DocType }>>;
 export type PublishersListRow = MapReduceRow<string, number>;
 
+// Orders datbase interface
 export type OrdersDatabaseInterface = ODI;
