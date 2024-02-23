@@ -124,9 +124,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await content.table("outbound-note").assertRows([{ ...book1, quantity: 1 }], { strict: true });
 });
 
-// TODO: This is skipped as keyboard submission doesn't work on webkit browsers for some reason.
-// Unskip when the issue is resolved.
-test.skip("book form can be submitted using keyboard", async ({ page }) => {
+test("book form can be submitted using keyboard", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
