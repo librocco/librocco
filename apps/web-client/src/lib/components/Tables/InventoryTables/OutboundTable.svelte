@@ -12,9 +12,10 @@
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import type { InventoryTableData } from "../types";
+	import type { OutboundTableData } from "../types";
+	import { availableWarehouses } from "$lib/__testData__/rowData";
 
-	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	export let table: ReturnType<typeof createTable<OutboundTableData>>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -48,7 +49,10 @@
 	<tbody>
 		{#each rows as row (row.key)}
 			{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
-			<tr use:table.tableRow={{ position: rowIx }}>
+			{@const { warehouseId, availableWarehouses } = row}
+			{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
+			{@const outOfStock = quantityInWarehouse < quantity}
+			<tr class={outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" data-property="book" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>

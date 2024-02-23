@@ -19,7 +19,7 @@ describe("WarehouseSelect", async () => {
 			rowIx: 0,
 			data: {
 				...row,
-				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName }]])
+				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName, quantity: 1 }]])
 			}
 		});
 		// We're testing for an event that should be dispatched onMount, and it seems the event gets dispatched before we assign the listener.
@@ -39,7 +39,7 @@ describe("WarehouseSelect", async () => {
 			rowIx: 0,
 			data: {
 				...row,
-				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName }]])
+				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName, quantity: 1 }]])
 			}
 		});
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));
