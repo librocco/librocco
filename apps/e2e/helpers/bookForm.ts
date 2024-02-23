@@ -17,8 +17,10 @@ export function getBookForm(parent: DashboardNode): BookFormInterface {
 		if (kind === "keyboard") {
 			await container.press("Enter");
 		} else {
-			// TODO: This currently doesn't work (the reason completely escapes me) - use the keyboard submission
-			await container.locator('button[name="Save"]').click();
+			// Note: This might cause conflicts if there ever are multiple instances of "Save" text within the form.
+			// That's unlikely to be the case and it will be caught by tests (immediately), but for now it's the only convenient
+			// way to handle this as selector 'button[name="Save"]' doesn't yield the element.
+			await container.getByText("Save").click();
 		}
 		await container.waitFor({ state: "detached" });
 	};
