@@ -34,7 +34,7 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string; quantity: number }>() } = data);
 
 	const mapWarehousesToOptions = (warehouses: OutboundTableData["availableWarehouses"]) =>
 		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
