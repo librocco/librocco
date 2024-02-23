@@ -20,6 +20,9 @@ test.beforeEach(async ({ page }) => {
 	// Create new outbound note (and navigate to it)
 	await dashboard.content().header().createNote();
 	await dashboard.content().header().title().assert("New Note");
+
+	// Wait for a second before continuing (to ensure the app is responsive in CI)
+	await dashboard.evaluate(() => new Promise((res) => setTimeout(res, 2000)));
 });
 
 test('should route "keyboard" input with freqency of scan input to the scan input element even if scan element is not focused', async ({
