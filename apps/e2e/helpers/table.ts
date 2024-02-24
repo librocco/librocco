@@ -142,10 +142,10 @@ interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
 }
 
 const stringFieldConstructor =
-	<K extends GenericTransactionField>(name: K): FieldConstructor<K> =>
+	<K extends GenericTransactionField>(name: K, transformDisplay = (x: string) => x): FieldConstructor<K> =>
 	(row) => ({
 		assert: (want: string | number | boolean, opts?: WaitForOpts) =>
-			expect(row.locator(`[data-property="${name}"]`)).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
+			expect(row.locator(`[data-property="${name}"]`)).toHaveText(transformDisplay(want.toString()), { timeout: assertionTimeout, ...opts })
 	});
 
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
@@ -183,14 +183,7 @@ const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) =
 		return dropdown.close();
 	};
 
-	const assert = (want: string, opts?: WaitForOpts) =>
-		// TODO: This is a hacky-hack and wouldn't hold up for all cases:
-		// When there's a single warehouse the book is available in, the warehouse input is treated (and matched) as the 'not-found' variant below,
-		// whereas when there are multiple possible warehouses, the "value" is actually a button (controling the combobox dropdown).
-		// This should really be reconciled and tests updated accordingly.
-		want === "not-found"
-			? expect(row.locator('[data-property="warehouseName"]').locator("input")).toHaveValue(want, { timeout: assertionTimeout, ...opts })
-			: expect(container).toContainText(want, { timeout: assertionTimeout, ...opts });
+	const assert = (want: string, opts?: WaitForOpts) => expect(container).toContainText(want, { timeout: assertionTimeout, ...opts });
 
 	const assertOptions = async (options: string[], opts?: WaitForOpts) => {
 		// This implementation is rather dirty:
@@ -211,7 +204,7 @@ const fieldConstructorLookup: {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
 	authors: stringFieldConstructor("authors"),
-	price: stringFieldConstructor("price"),
+	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${x}`)),
 	quantity: quantityFieldCostructor,
 	publisher: stringFieldConstructor("publisher"),
 	outOfPrint: outOfPrintFieldConstructor,
