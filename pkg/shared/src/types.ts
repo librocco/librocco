@@ -7,7 +7,7 @@ export interface VolumeStock {
 
 export type VolumeStockInput = VolumeStock & { noteType: "inbound" | "outbound" };
 
-export type StockKey = [string, string];
+export type StockKey = [isbn: string, warehouseId: string];
 export type StockElement = { quantity: number };
 export type StockEntry = [StockKey, StockElement];
 export type VolumeStockMap = Map<StockKey, StockElement>;

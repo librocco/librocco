@@ -74,6 +74,10 @@ export class StockMap implements VolumeStockMap {
 		return res;
 	}
 
+	getQuantity(key: [string, string]) {
+		return this.get(key)?.quantity || 0;
+	}
+
 	clear() {
 		this.#internal.clear();
 	}

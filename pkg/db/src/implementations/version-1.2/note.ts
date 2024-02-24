@@ -1,6 +1,6 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { NoteState, debug, VolumeStock } from "@librocco/shared";
+import { NoteState, debug, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
@@ -37,6 +37,7 @@ class Note implements NoteInterface {
 	_deleted?: boolean;
 
 	noteType: NoteType;
+	reconciliationNote?: boolean;
 
 	entries: VolumeStock[] = [];
 	committed = false;
@@ -129,6 +130,7 @@ class Note implements NoteInterface {
 		this.updateField("entries", data.entries);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
+		this.updateField("reconciliationNote", data.reconciliationNote);
 
 		this.#exists = true;
 
@@ -237,6 +239,14 @@ class Note implements NoteInterface {
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
 		return this.update(ctx, { displayName });
+	}
+
+	/**
+	 * Mark the note as reconciliation note (see types for more info)
+	 */
+	setReconciliationNote(ctx: debug.DebugCtx, value: boolean) {
+		debug.log(ctx, "note:set_reconciliation_note")({ value });
+		return this.update(ctx, { reconciliationNote: value });
 	}
 
 	/**
@@ -363,6 +373,52 @@ class Note implements NoteInterface {
 		}
 
 		return this.update(ctx, { committed: true });
+	}
+
+	reconcile(ctx: debug.DebugCtx): Promise<NoteInterface> {
+		return runAfterCondition(async () => {
+			// Only outbound note can be reconciled
+			const inbound = this.noteType === "inbound";
+			// Committed notes don't need reconciliation
+			const committed = this.committed;
+			if (inbound || committed) {
+				debug.log(ctx, "note:reconcile:noop")({ noteType: this.noteType, committed });
+				return this;
+			}
+
+			const stock = await this.#db.getStock();
+
+			const toUpdate = wrapIter(this.entries)
+				// Filter out rows with no 'warehouseId' assigned - those aren't ready
+				// for reconciliation and should be handled somewhere else
+				.filter(({ warehouseId }) => Boolean(warehouseId))
+				// Check the difference in quantity available and quantity demanded
+				.map(({ isbn, warehouseId, quantity }) => ({ warehouseId, isbn, diff: stock.getQuantity([isbn, warehouseId]) - quantity }))
+				// Filter out rows that don't need to be reconciled - they are fully in stock for desired warehouse/quantity
+				.filter(({ diff }) => diff < 0)
+				// Prepare the rows for reconciliation notes - make the quantity positive
+				.map(({ diff, ...txn }) => ({ ...txn, quantity: -diff }))
+				// Group remaining rows by warehouse
+				.reduce((acc, txn) => {
+					const whId = txn.warehouseId;
+					const existing = acc.get(whId) || [];
+					return acc.set(whId, [...existing, txn]);
+				}, new Map<string, VolumeStock[]>());
+
+			// Create a reconciliation note for each warehouse
+			const updates = wrapIter(toUpdate).map(([whId, transactions]) =>
+				this.#db
+					.warehouse(whId)
+					.note()
+					.create()
+					.then((n) => n.setReconciliationNote(ctx, true))
+					.then((n) => n.addVolumes(...transactions))
+					.then((n) => n.commit(ctx))
+			);
+			await Promise.all(updates);
+
+			return this;
+		}, this.#initialized);
 	}
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {

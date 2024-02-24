@@ -40,6 +40,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		committed: boolean;
 		displayName: string;
 		updatedAt: string | null;
+		reconciliationNote?: boolean;
 	} & A
 >;
 
@@ -67,6 +68,11 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
 	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
+	/**
+	 * Marks the note as a 'reconciliationNote' - an inbound note used to reconcile the state
+	 * in case an outbound note contains some out-of-stock books (but they exist in physical state).
+	 */
+	setReconciliationNote: (ctx: debug.DebugCtx, value: boolean) => Promise<NoteInterface<A>>;
 	/**
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
@@ -102,6 +108,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 */
 	getEntries: EntriesQuery;
 	printReceipt(): Promise<string>;
+	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 }
 
 /**
