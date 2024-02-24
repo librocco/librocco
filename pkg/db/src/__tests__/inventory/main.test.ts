@@ -1573,6 +1573,78 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		).rejects.toThrow(new EmptyNoteError());
 	});
 
+	test("reconcile outbound notes", async () => {
+		// Create three warehouses and add some books
+		const warehouse1 = db.warehouse("warehouse-1");
+		const warehouse2 = db.warehouse("warehouse-2");
+		const warehouse3 = db.warehouse("warehouse-3");
+
+		await Promise.all([warehouse1.create(), warehouse2.create(), warehouse3.create()]);
+
+		// Add some books to warehouses
+		await Promise.all([
+			warehouse1
+				.note()
+				.addVolumes(
+					{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
+					{ isbn: "22222222", quantity: 3, warehouseId: "warehouse-1" }
+				)
+				.then((n) => n.commit({})),
+			warehouse2
+				.note()
+				.addVolumes({ isbn: "11111111", quantity: 1, warehouseId: "warehouse-2" })
+				.then((n) => n.commit({})),
+			warehouse3
+				.note()
+				.addVolumes({ isbn: "11111111", quantity: 1, warehouseId: "warehouse-3" })
+				.then((n) => n.commit({}))
+		]);
+
+		// Current state:
+		//
+		// 11111111, warehouse1, 2
+		// 22222222, warehouse1, 3
+		//
+		// 11111111, warehouse2, 1
+		//
+		// 11111111, warehouse3, 1
+
+		// Add books to an outbound note
+		const note = await db.warehouse().note().create();
+		await note.addVolumes(
+			// In-stock - all fine
+			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
+			// In-stock - one should remain after the note is committed
+			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-1" },
+			// Not-in-stock - reconciliation should add 2, resulting in 0 after the note is committed
+			{ isbn: "33333333", quantity: 2, warehouseId: "warehouse-1" },
+			// Not-fully-in-stock - reconciliation should add 2, resulting in 0 after the note is committed
+			{ isbn: "11111111", quantity: 3, warehouseId: "warehouse-2" },
+			// Not-in-stock - reconciliation should add 1, resulting in 0 after the note is committed
+			{ isbn: "22222222", quantity: 1, warehouseId: "warehouse-3" }
+		);
+
+		// We can't commit the note yet
+		try {
+			await note.commit({});
+		} catch (err) {
+			expect(err instanceof OutOfStockError).toEqual(true);
+		}
+
+		// Reconcile and commit the note
+		await note.reconcile({});
+		// We should be able to commit the note now
+		await note.commit({});
+
+		// Check remaining stock (all warehouses)
+		const stock = await db.warehouse().getEntries({});
+		expect([...stock]).toEqual([
+			// Stock is missing only the books that were there to begin with (and reduced by the outbond note)
+			expect.objectContaining({ isbn: "22222222", quantity: 1, warehouseId: versionId("warehouse-1") }),
+			expect.objectContaining({ isbn: "11111111", quantity: 1, warehouseId: versionId("warehouse-3") })
+		]);
+	});
+
 	test("syncNoteAndWarehouseInterfaceWithTheDb", async () => {
 		// NoteInterface should always be able to update (_rev should be in sync)
 
