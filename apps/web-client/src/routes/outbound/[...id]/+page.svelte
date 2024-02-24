@@ -8,9 +8,9 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState, filter, testId } from "@librocco/shared";
+	import { NoteState, filter, testId, type VolumeStock } from "@librocco/shared";
 
-	import type { BookEntry } from "@librocco/db";
+	import type { BookEntry, NavEntry, OutOfStockError, VolumeStockClient } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
@@ -55,8 +55,8 @@
 	const warehouseListStream = db
 		?.stream()
 		.warehouseMap(warehouseListCtx)
-		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+		.pipe(map((m) => new Map<string, NavEntry>(filter(m, ([warehouseId]) => !warehouseId.includes("0-all")))));
+	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -89,13 +89,35 @@
 		}
 	}
 
-	const handleCommitSelf = async () => {
+	const openReconciliationDialog = (invalidTransactions: (VolumeStock & { warehouseName: string; available: number })[]) => {
+		dialogContent = {
+			onConfirm: handleReconcileAndCommitSelf,
+			title: dialogTitle.reconcileOutbound(),
+			description: dialogDescription.reconcileOutbound(invalidTransactions),
+			type: "delete"
+		};
+		open.set(true);
+	};
+
+	const handleCommitSelf = async (closeDialog: () => void) => {
 		try {
 			await note.commit({});
-			toastSuccess(noteToastMessages("Note").inNoteCommited);
+			closeDialog();
+			toastSuccess(noteToastMessages("Note").outNoteCommited);
 		} catch (err) {
-			console.log(err);
+			const invalidTransactions = (err as OutOfStockError).invalidTransactions.map((t) => ({
+				...t,
+				warehouseName: $warehouseList.get(t.warehouseId)?.displayName || "unkwnown"
+			}));
+			openReconciliationDialog(invalidTransactions);
 		}
+	};
+
+	const handleReconcileAndCommitSelf = async (closeDialog: () => void) => {
+		await note.reconcile({});
+		await note.commit({});
+		closeDialog();
+		toastSuccess(noteToastMessages("Note").outNoteCommited);
 	};
 
 	const handleDeleteSelf = async () => {
@@ -475,14 +497,7 @@
 			</div>
 		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
-					{dialog}
-					{type}
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
-					}}
-				>
+				<Dialog {dialog} {type} onConfirm={dialogContent.onConfirm}>
 					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 				</Dialog>
