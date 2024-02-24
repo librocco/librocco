@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
+	import type { NavEntry } from "@librocco/db";
+
+	import type { OutboundTableData } from "../types";
+
 	import type { createTable } from "$lib/actions";
 
 	import { HeadCol } from "../Cells";
@@ -12,10 +16,9 @@
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import type { OutboundTableData } from "../types";
-	import { availableWarehouses } from "$lib/__testData__/rowData";
 
 	export let table: ReturnType<typeof createTable<OutboundTableData>>;
+	export let warehouseList: Iterable<[string, NavEntry]>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -76,7 +79,7 @@
 					{year}
 				</td>
 				<td data-property="warehouseName" class="table-cell-max">
-					<WarehouseSelect on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
+					<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
 				</td>
 				{#if $$slots["row-actions"]}
 					<td class="table-cell-fit">
