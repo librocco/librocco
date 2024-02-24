@@ -1,13 +1,14 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
+	import { map } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState, testId } from "@librocco/shared";
+	import { NoteState, filter, testId } from "@librocco/shared";
 
 	import type { BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
@@ -50,6 +51,13 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB();
 
+	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
+	const warehouseListStream = db
+		?.stream()
+		.warehouseMap(warehouseListCtx)
+		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
+	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
@@ -82,8 +90,12 @@
 	}
 
 	const handleCommitSelf = async () => {
-		await note.commit({});
-		toastSuccess(noteToastMessages("Note").inNoteCommited);
+		try {
+			await note.commit({});
+			toastSuccess(noteToastMessages("Note").inNoteCommited);
+		} catch (err) {
+			console.log(err);
+		}
 	};
 
 	const handleDeleteSelf = async () => {
@@ -328,6 +340,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<OutboundTable
 					{table}
+					warehouseList={$warehouseList}
 					on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 					on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 				>
