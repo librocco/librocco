@@ -23,7 +23,7 @@
 			<h2 class="text-lg font-semibold text-gray-800" use:melt={$title}>
 				<slot name="title" />
 			</h2>
-			<p class="text-base font-normal text-gray-600" use:melt={$description}>
+			<p class="whitespace-pre-line text-base font-normal text-gray-600" use:melt={$description}>
 				<slot name="description" />
 			</p>
 
