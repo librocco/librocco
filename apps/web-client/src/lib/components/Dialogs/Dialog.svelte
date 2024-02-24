@@ -26,6 +26,7 @@
 			<p class="text-base font-normal text-gray-600" use:melt={$description}>
 				<slot name="description" />
 			</p>
+			<slot name="confirmation" />
 		</div>
 	</slot>
 
