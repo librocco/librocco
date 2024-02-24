@@ -38,9 +38,10 @@
 	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
-	const handleDeleteNote = (noteId: string) => async () => {
+	const handleDeleteNote = (noteId: string) => async (closeDialog: () => void) => {
 		const { note } = await db?.findNote(noteId);
 		await note?.delete({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 
@@ -159,14 +160,7 @@
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
 		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-			<Dialog
-				{dialog}
-				type="delete"
-				onConfirm={async (closeDialog) => {
-					await onConfirm();
-					closeDialog();
-				}}
-			>
+			<Dialog {dialog} type="delete" {onConfirm}>
 				<svelte:fragment slot="title">{title}</svelte:fragment>
 				<svelte:fragment slot="description">{description}</svelte:fragment>
 			</Dialog>

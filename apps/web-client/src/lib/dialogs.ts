@@ -1,5 +1,7 @@
+import type { VolumeStock } from "@librocco/shared";
+
 export interface DialogContent {
-	onConfirm: () => void;
+	onConfirm: (closeDialog: () => void) => void;
 	title: string;
 	description: string;
 }
@@ -8,6 +10,7 @@ export const dialogTitle = {
 	delete: (entity: string) => `Permenantly delete ${entity}?`,
 	commitInbound: (entity: string) => `Commit inbound ${entity}?`,
 	commitOutbound: (entity: string) => `Commit outbound ${entity}?`,
+	reconcileOutbound: () => "Stock mismatch",
 	editBook: () => "Edit book details",
 	editWarehouse: () => "Update book details"
 };
@@ -17,6 +20,16 @@ export const dialogDescription = {
 	deleteWarehouse: (bookCount: number) => `Once you delete this warehouse ${bookCount} books will be removed from your stock`,
 	commitInbound: (bookCount: number, warehouseName: string) => `${bookCount} books will be added to ${warehouseName}`,
 	commitOutbound: (bookCount: number) => `${bookCount} books will be removed from your stock`,
+	reconcileOutbound: (invalidTransactions: (VolumeStock & { warehouseName: string; available: number })[]) =>
+		[
+			"Some quantities of books are greater than the available stock for their respective warehouse.",
+			"By confirming this action, the available stock will be updated to allow for the transactions to be committed.",
+			"Please review the following transactions and confirm if you want to proceed:",
+			...invalidTransactions.map(
+				({ isbn, warehouseName, quantity, available }) =>
+					`  isbn: ${isbn}, quantity: ${quantity} in ${warehouseName} (available: ${available})`
+			)
+		].join("\n"),
 	editBook: () => "Update book details",
 	editWarehouse: () => "Update warehouse details"
 };
