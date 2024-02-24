@@ -11,7 +11,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, PlaceholderBox, Dialog } from "$lib/components";
+	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -23,6 +23,7 @@
 	import { appPath } from "$lib/paths";
 
 	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
+	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 
 	const db = getDB();
@@ -45,6 +46,7 @@
 
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
+		open.set(false);
 		toastSuccess(warehouseToastMessages(warehouseName).warehouseDeleted);
 	};
 
@@ -75,6 +77,7 @@
 	} = dialog;
 
 	let editWarehouse: WarehouseFormData = null;
+	let deleteWarehouse: { id: string; displayName: string } = null;
 	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 </script>
 
@@ -173,6 +176,7 @@
 								use:item.action
 								use:melt={$trigger}
 								on:m-click={() => {
+									deleteWarehouse = { id: warehouseId, displayName };
 									dialogContent = {
 										onConfirm: handleDeleteWarehouse(warehouseId, displayName),
 										title: dialogTitle.delete(displayName),
@@ -181,6 +185,7 @@
 									};
 								}}
 								on:m-keydown={() => {
+									deleteWarehouse = { id: warehouseId, displayName };
 									dialogContent = {
 										onConfirm: handleDeleteWarehouse(warehouseId, displayName),
 										title: dialogTitle.delete(displayName),
@@ -205,7 +210,7 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent};
+		{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
 
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
 		{#if type === "edit"}
@@ -246,17 +251,18 @@
 			</div>
 		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
+				<WarehouseDeleteForm
 					{dialog}
-					type="delete"
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
+					{dialogTitle}
+					{dialogDescription}
+					{...deleteWarehouse}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validationMethod: "submit-only",
+						onUpdated: handleDeleteWarehouse(deleteWarehouse.id, deleteWarehouse.displayName)
 					}}
-				>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-				</Dialog>
+				/>
 			</div>
 		{/if}
 	{/if}

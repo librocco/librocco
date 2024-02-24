@@ -8,6 +8,7 @@
 		helpText?: string;
 		inputRef?: HTMLInputElement | null;
 		inputAction?: Action<HTMLElement, any> | (() => void);
+		error?: string;
 	}
 
 	let className = "";
@@ -16,6 +17,7 @@
 	export let name: string;
 
 	export let value: string = "";
+	export let error: string = "";
 
 	export let type = "text";
 	export let label = "";
@@ -43,6 +45,7 @@
 		"mx-[2px]",
 		"outline",
 		"outline-gray-900",
+		error ? "ring-2 ring-red-400 ring-offset-2 ring-offset-white !outline-none" : "",
 		"rounded-md",
 		"focus-within:outline-none",
 		"focus-within:ring-2",
