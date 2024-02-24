@@ -54,9 +54,26 @@ test("should delete the warehouse on delete button click (after confirming the p
 
 	// Delete the first warehouse
 	await content.entityList("warehouse-list").item(0).dropdown().delete();
-	await dashboard.dialog().confirm();
 
-	// Check that the warehouse has been deleted
+	const dialog = dashboard.dialog();
+
+	// The dialog should display the warehouse name to type in as confirmation
+	await dialog.getByPlaceholder("warehouse_1").waitFor();
+	await dialog.confirm();
+
+	// The dialog should not have been close (nor warehouse deleted) without name input as confirmation
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
+
+	// Type in the wrong text (the dialog should not close nor warehouse be deleted)
+	await dialog.getByPlaceholder("warehouse_1").fill("wrong name");
+	await dialog.confirm();
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
+
+	// Type in the correct confirmation name and complete the deletion
+	await dialog.getByPlaceholder("warehouse_1").fill("warehouse_1");
+	await dialog.confirm();
+
+	await dialog.waitFor({ state: "detached" });
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 2" }]);
 });
 
