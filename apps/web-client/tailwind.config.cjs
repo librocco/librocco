@@ -54,7 +54,7 @@ const plugins = [
 				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto px-3 xs:px-6": {}
 			},
 			".entity-list-row": {
-				"@apply flex items-center justify-between py-4 px-3 xs:px-6": {}
+				"@apply py-4 px-3 xs:px-6": {}
 			},
 			".entity-list-text-lg": {
 				"@apply mb-1 text-base font-semibold leading-6": {}
