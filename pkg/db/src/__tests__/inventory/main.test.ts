@@ -7,11 +7,11 @@ import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { BookEntry, InNoteMap, NavMap, VersionedString, VersionString, VolumeStockClient, WarehouseData } from "@/types";
+import { BookEntry, InNoteMap, NavMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
 
 import * as implementations from "@/implementations/inventory";
 
-import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 
 import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
@@ -1480,97 +1480,97 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 	});
 
-	test("dbGuards", async () => {
+	test("committing of an inbound note", async () => {
 		// The db should not allow for committing of inbound notes with transactions belonging
 		// to warehouse different then note's parent warehouse.
-		const note1 = await db.warehouse("warehouse-1").note().create();
-		await note1.addVolumes({ isbn: "12345678", quantity: 2, warehouseId: "warehouse-2" });
+		const warehouse1 = await db.warehouse("warehouse-1").create();
+		const note1 = await warehouse1.note().create();
+		await note1.addVolumes(
+			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
+			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" }
+		);
 
 		await expect(note1.commit({})).rejects.toThrow(
-			new TransactionWarehouseMismatchError(versionId("warehouse-1"), [{ isbn: "12345678", warehouseId: versionId("warehouse-2") }])
+			new TransactionWarehouseMismatchError(versionId("warehouse-1"), [
+				{ isbn: "22222222", warehouseId: versionId("warehouse-2"), quantity: 2 }
+			])
 		);
 
-		// The db should not alow for committing of outbound notes with transactions specifying a quantity
-		// greater than the quantity available, for a given isbn in the given warehouse.
-		const wh1 = db.warehouse("warehouse-1");
-
-		// Add some books to the warehouse
-		await wh1
-			.note()
-			.create()
-			.then((n) =>
-				n.addVolumes(
-					{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
-					{ isbn: "12345678", quantity: 3, warehouseId: "warehouse-1" }
-				)
-			)
+		// Fix the invalid transactions and commit the note
+		await note1
+			.updateTransaction({ isbn: "22222222", warehouseId: "warehouse-2" }, { isbn: "22222222", warehouseId: "warehouse-1", quantity: 2 })
 			.then((n) => n.commit({}));
 
-		// Current state of the warehouse is:
-		// "11111111": 2
-		// "12345678": 3
+		await waitFor(() => note1.get().then((n) => expect(n!.committed).toEqual(true)));
+	});
 
-		// Try and commit an outbound note with a quantity greater than the available quantity
-		const note2 = await db
-			.warehouse()
-			.note()
-			.create()
-			// "11111111": 4 (required) > "11111111": 2 (available in warehouse)
-			.then((n) => n.addVolumes({ isbn: "11111111", quantity: 4, warehouseId: "warehouse-1" }));
+	test("committing of an outbound note", async () => {
+		// Create two warehouses and add some stock
+		const [wh1, wh2] = await Promise.all([
+			db
+				.warehouse("warehouse-1")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 1")),
+			db
+				.warehouse("warehouse-2")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 2"))
+		]);
+		await Promise.all([
+			wh1
+				.note()
+				.addVolumes({ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" })
+				.then((n) => n.commit({})),
+			wh2
+				.note()
+				.addVolumes({ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" })
+				.then((n) => n.commit({}))
+		]);
 
-		await expect(note2.commit({})).rejects.toThrow(
-			new OutOfStockError([{ isbn: "11111111", warehouseId: versionId("warehouse-1"), quantity: 4, available: 2 }])
+		// Create an outbound note with invalid transactions
+		const note = await db.warehouse().note().addVolumes(
+			// A valid transaction - selected warehouse has enough stock
+			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
+			// Invalid transaction - no warehouse selected
+			{ isbn: "22222222", quantity: 2 },
+			// Invalid transaction - selected warehouse doesn't have enough stock
+			{ isbn: "22222222", quantity: 3, warehouseId: "warehouse-2" },
+			// Invalid transaction - selected warehouse has no stock
+			{ isbn: "11111111", quantity: 1, warehouseId: "warehouse-2" }
 		);
 
-		// Add 2 more "11111111" books to the warehouse: This way we should have 4 available, which is enough to commit the note2
-		// Note: It's important that the this note doesn't contain more that 4 books as that test case would pass even if the
-		// db didn't account for all the books in the warehouse (only the latest note): This was an actual bug, producing this test case.
-		await wh1
-			.note()
-			.create()
-			.then((n) => n.addVolumes({ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" }))
-			.then((n) => n.commit({}));
+		// Can't commit the note as one transaction has no warehouse selected
+		await expect(note.commit({})).rejects.toThrow(new NoWarehouseSelectedError([{ isbn: "22222222", quantity: 2, warehouseId: "" }]));
 
-		// Current state of the warehouse is:
-		// "11111111": 4
-		// "12345678": 3
+		// Fix warehouse selection
+		await note.updateTransaction({ isbn: "22222222" }, { isbn: "22222222", quantity: 2, warehouseId: "warehouse-1" });
+		// Current note transactions:
+		// - "11111111": 2 (warehouse-1) - valid
+		// - "22222222": 2 (warehouse-1) - invlid - no "22222222" in warehouse-1 stock
+		// - "22222222": 3 (warehouse-2) - invalid - not enough stock in warehouse-2
+		// - "11111111": 1 (warehouse-2) - invalid - no "11111111" in warehouse-2 stock
 
-		// It should commit without errors now
-		await note2.commit({});
+		// Can't commit the note as it contains out-of-stock transactions
+		await expect(note.commit({})).rejects.toThrow(
+			new OutOfStockError([
+				{ isbn: "11111111", warehouseId: versionId("warehouse-2"), warehouseName: "Warehouse 2", quantity: 1, available: 0 },
+				{ isbn: "22222222", warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", quantity: 2, available: 0 },
+				{ isbn: "22222222", warehouseId: versionId("warehouse-2"), warehouseName: "Warehouse 2", quantity: 3, available: 2 }
+			])
+		);
 
-		// Current state of the warehouse is:
-		// "11111111": 0
-		// "12345678": 3
+		// Fix the note - remove excess quantity/transactions
+		await note.removeTransactions({ isbn: "22222222", warehouseId: "warehouse-1" }, { isbn: "11111111", warehouseId: "warehouse-2" });
+		await note.updateTransaction(
+			{ isbn: "22222222", warehouseId: "warehouse-2" },
+			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" }
+		);
+		// Current note transactions:
+		// - "11111111": 2 (warehouse-1) - valid
+		// - "22222222": 2 (warehouse-2) - valid
 
-		// Test that outbond notes are also taken into account when checking for available quantities
-		expect(
-			db
-				.warehouse()
-				.note()
-				.create()
-				// There are no more "11111111" books available in the warehouse
-				.then((n) => n.addVolumes({ isbn: "11111111", quantity: 1, warehouseId: "warehouse-1" }))
-				.then((n) => n.commit({}))
-		).rejects.toThrow(new OutOfStockError([{ isbn: "11111111", warehouseId: versionId("warehouse-1"), quantity: 1, available: 0 }]));
-
-		// The validation error should be the same if warehouse not provided
-		await expect(
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.addVolumes({ isbn: "11111111", quantity: 2 }))
-				.then((n) => n.commit({}))
-		).rejects.toThrow(new OutOfStockError([{ isbn: "11111111", warehouseId: "" as VersionedString, quantity: 2, available: 0 }]));
-
-		// The db should not allow the committing of empty notes
-		await expect(
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.commit({}))
-		).rejects.toThrow(new EmptyNoteError());
+		await note.commit({});
+		await waitFor(() => note.get().then((n) => expect(n!.committed).toEqual(true)));
 	});
 
 	test("reconcile outbound notes", async () => {
