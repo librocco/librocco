@@ -1,11 +1,33 @@
-import { OrdersDatabaseInterface, SupplierInterface, SupplierData, VersionedString } from "@/types";
+import {
+	OrdersDatabaseInterface,
+	SupplierInterface,
+	SupplierData,
+	VersionedString,
+	OrderBatchInterface,
+	CustomerOrderData,
+	OrderBatchData
+} from "@/types";
 import { debug } from "@librocco/shared";
 
 import { versionId } from "./utils";
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
-import { BehaviorSubject, Observable, ReplaySubject, Subject, firstValueFrom, map, share, tap } from "rxjs";
+import {
+	BehaviorSubject,
+	Observable,
+	ReplaySubject,
+	Subject,
+	combineLatest,
+	concat,
+	firstValueFrom,
+	from,
+	map,
+	share,
+	switchMap,
+	tap
+} from "rxjs";
 import { DocType } from "@/enums";
-import { newDocumentStream } from "@/utils/pouchdb";
+import { newChangesStream, newDocumentStream, unwrapDocs } from "@/utils/pouchdb";
+import { newOrderBatch } from "./order-batch";
 
 class Supplier implements SupplierInterface {
 	_id: VersionedString;
@@ -110,13 +132,63 @@ class Supplier implements SupplierInterface {
 		}, this.#initialized);
 	}
 
-	setName(ctx: debug.DebugCtx, name: string): Promise<SupplierInterface> {
+	private customerOrderStream(ctx: debug.DebugCtx) {
+		return new Observable<CustomerOrderData["items"] | undefined>((subscriber) => {
+			const emitter = this.#db._pouch.changes<CustomerOrderData>({
+				since: "now",
+				live: true,
+				include_docs: true,
+				filter: (doc) => doc._id.startsWith("v1_sequence/customer-order/")
+			});
 
+			const initialState = from(
+				this.#db._pouch.query<CustomerOrderData>("v1_sequence/customer-order/").then((docs) => unwrapDocs(docs))
+			).pipe(
+				map((orders) => orders.flatMap((order) => order?.items || []).filter((item) => item?.state !== "draft")),
+				tap(debug.log(ctx, "customerOrders-supplier:initial_state"))
+			);
+
+			const changeStream = newChangesStream<CustomerOrderData>(ctx, emitter).pipe(
+				tap(debug.log(ctx, "customerOrders-supplier:change")),
+				switchMap(() => from(initialState).pipe(tap(debug.log(ctx, "customerOrders-supplier:change:stream"))))
+			);
+
+			concat(initialState, changeStream)
+				.pipe(tap(debug.log(ctx, "customerOrders-supplier_stream:result:raw")))
+				.subscribe((doc) => subscriber.next(doc));
+
+			return () => emitter.cancel();
+		});
+	}
+	private batchOrderStream(ctx: debug.DebugCtx) {
+		return new Observable<OrderBatchData["items"] | undefined>((subscriber) => {
+			const emitter = this.#db._pouch.changes<OrderBatchData>({
+				since: "now",
+				live: true,
+				include_docs: true,
+				filter: (doc) => doc._id.startsWith(versionId(`${this._id}/orders`))
+			});
+
+			const initialState = from(this.#db._pouch.query<OrderBatchData>(versionId(`${this._id}/orders`)).then(unwrapDocs)).pipe(
+				map((orders) => orders.flatMap((order) => order?.items || []).filter((item) => item?.state !== "ready-for-pickup")),
+				tap(debug.log(ctx, "batchOrder-supplier:initial_state"))
+			);
+
+			const changeStream = newChangesStream<OrderBatchData>(ctx, emitter).pipe(
+				tap(debug.log(ctx, "batchOrder-supplier:change")),
+				switchMap(() => from(initialState).pipe(tap(debug.log(ctx, "batchOrder-supplier:change:stream"))))
+			);
+
+			concat(initialState, changeStream)
+				.pipe(tap(debug.log(ctx, "batchOrder-supplier_stream:result:raw")))
+				.subscribe((doc) => subscriber.next(doc));
+
+			return () => emitter.cancel();
+		});
+	}
+	setName(ctx: debug.DebugCtx, name: string): Promise<SupplierInterface> {
 		return this.update(ctx, { displayName: name });
 	}
-
-	/** @TODO */
-	// stream ⇒ pendingOrders
 
 	create(): Promise<SupplierInterface> {
 		return runAfterCondition(async () => {
@@ -151,7 +223,6 @@ class Supplier implements SupplierInterface {
 
 	addPublisher(ctx: debug.DebugCtx, publisher: string): Promise<SupplierInterface> {
 		const publishers = [...new Set(...this.publishers, publisher)];
-		// let booksUpdated = false;
 
 		return this.update(ctx, { publishers });
 	}
@@ -171,32 +242,9 @@ class Supplier implements SupplierInterface {
 		}, this.#initialized);
 	}
 
-	/**
-	 * Instantiate a new supplier order instance, with the provided id.
-	 */
-	// batch(id?: string): SupplierOrderInterface {
-	// 	return newSupplierOrder(this, this.#db, id);
-	// }
-
-	/** getEntries implementation for supplier orders */
-	// async getOrders(): Promise<Iterable<VolumeStockClient>> {
-	// 	const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
-	// 	const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
-	// 	return addWarehouseData(entries, warehouses);
-	// }
-
-	// async query() {
-	// 	const queryRes = await this.#db._pouch.allDocs({ include_docs: true });
-
-	// 	const mapGenerator = wrapIter(queryRes.rows)
-	// 		.map(({ doc }) => doc as SupplierData | SupplierOrderData)
-	// 		.filter((doc): doc is SupplierOrderData => doc?.docType === DocType.SupplierOrder)
-	// 		// filter by id segment?
-	// 		.filter(({ _id }) => )
-	// 		.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
-
-	// 	return StockMap.fromDbRows(mapGenerator);
-	// }
+	batch(id?: string): OrderBatchInterface {
+		return newOrderBatch(this, this.#db, id);
+	}
 
 	stream() {
 		return {
@@ -217,13 +265,16 @@ class Supplier implements SupplierInterface {
 					tap(debug.log(ctx, "supplier_streams: updated_at: input")),
 					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
 					tap(debug.log(ctx, "supplier_streams: updated_at: res"))
+				),
+			pendingItems: (ctx: debug.DebugCtx) =>
+				combineLatest([this.customerOrderStream(ctx), this.batchOrderStream(ctx)]).pipe(
+					map(([customerOrderItems, batchOrderItems]) => {
+						return (customerOrderItems || []).map((order) => {
+							const updatedState = (batchOrderItems || []).find((item) => item.isbn === order.isbn);
+							return updatedState ? { ...order, state: updatedState.state } : order;
+						});
+					})
 				)
-			// pendingOrders: (ctx: debug.DebugCtx) =>
-			// 	this.#stream.pipe(
-			// 		tap(debug.log(ctx, "supplier_streams: pendingOrders: input")),
-			// 		map(({ }) => ),
-			// 		tap(debug.log(ctx, "supplier_streams: pendingOrders: res"))
-			// 	)
 		};
 	}
 }

@@ -62,10 +62,10 @@ class OrderBatch implements OrderBatchInterface {
 			if (supplierId !== refSupplierId) {
 				throw new Error(
 					"Supplier referenced in the order and one provided in order id mismatch:" +
-					"\n		referenced: " +
-					refSupplierId +
-					"\n		provided: " +
-					supplierId
+						"\n		referenced: " +
+						refSupplierId +
+						"\n		provided: " +
+						supplierId
 				);
 			}
 		}
@@ -76,9 +76,8 @@ class OrderBatch implements OrderBatchInterface {
 		this._id = !id
 			? versionId(`${supplier._id}/orders/${uniqueTimestamp()}`)
 			: isVersioned(id, "v1") // If id is versioned, it's a full id, assign it as is
-				? id
-				: versionId(`${supplier._id}/orders/${id}`);
-
+			? id
+			: versionId(`${supplier._id}/orders/${id}`);
 
 		const updateSubject = new Subject<OrderBatchData>();
 		const cache = new ReplaySubject<OrderBatchData>(1);
@@ -176,7 +175,7 @@ class OrderBatch implements OrderBatchInterface {
 		}, this.#initialized);
 	}
 
-	/** 
+	/**
 	 * 	changes state from committed to completed
 	 * @TODO reconcile book states to ready for pickup/reorder
 	 * */
