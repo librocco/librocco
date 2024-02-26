@@ -4,13 +4,19 @@ import { NoteState, debug, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
+import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient, OutOfStockTransaction } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
+import {
+	EmptyNoteError,
+	OutOfStockError,
+	TransactionWarehouseMismatchError,
+	EmptyTransactionError,
+	NoWarehouseSelectedError
+} from "@/errors";
 import { addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
@@ -331,6 +337,40 @@ class Note implements NoteInterface {
 	}
 
 	/**
+	 * Checks that all transactions in an inbound note are assigned to the parent warehouse.
+	 * @returns a list of all invlid transactions in that regard.
+	 */
+	private getInvalidInboundTransactions(): VolumeStock[] {
+		// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
+		return this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+	}
+
+	/**
+	 * Checks that all transactions have a warehouse assigned to them.
+	 * @returns a list of all invalid transactions in that regard.
+	 */
+	private getNoWarehouseTransactions(): VolumeStock[] {
+		return this.entries.filter(({ warehouseId }) => !warehouseId);
+	}
+
+	private async getOutOfStockTransactions(): Promise<OutOfStockTransaction[]> {
+		const stock = await this.#db.getStock();
+		const warehouseMap = await firstValueFrom(this.#db.stream().warehouseMap({}));
+		return (
+			this.entries
+				.map(({ isbn, quantity, warehouseId }) => ({
+					isbn,
+					quantity,
+					warehouseId,
+					available: stock.isbn(isbn).get([isbn, warehouseId])?.quantity || 0,
+					warehouseName: warehouseMap.get(warehouseId)?.displayName || "unkonwn"
+				}))
+				// Filter out transactions that are valid
+				.filter(({ quantity, available }) => quantity > available)
+		);
+	}
+
+	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
@@ -346,28 +386,24 @@ class Note implements NoteInterface {
 		// Check transactions before committing
 		switch (this.noteType) {
 			case "inbound": {
-				// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
-				const invalidTransactions = this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+				// Check that all transactions are assigned to the parent warehouse
+				const invalidTransactions = this.getInvalidInboundTransactions();
 				if (invalidTransactions.length) {
 					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
 				}
 				break;
 			}
 			case "outbound": {
-				const stock = await this.#db.getStock();
-
-				const invalidTransactions = this.entries
-					.map(({ isbn, quantity, warehouseId }) => ({
-						isbn,
-						quantity,
-						warehouseId,
-						available: stock.isbn(isbn).get([isbn, warehouseId])?.quantity || 0
-					}))
-					// Filter out transactions that are valid
-					.filter(({ quantity, available }) => quantity > available);
-
+				// Check for transactions without a warehouse assigned - outbound note can't be committed in this state
+				const invalidTransactions = this.getNoWarehouseTransactions();
 				if (invalidTransactions.length) {
-					throw new OutOfStockError(invalidTransactions);
+					throw new NoWarehouseSelectedError(invalidTransactions);
+				}
+
+				// Check for out-of-stock transactions - outbound note can't be committed in this state, but the state can be reconciled
+				const outOfStockTransactions = await this.getOutOfStockTransactions();
+				if (outOfStockTransactions.length) {
+					throw new OutOfStockError(outOfStockTransactions);
 				}
 			}
 		}
