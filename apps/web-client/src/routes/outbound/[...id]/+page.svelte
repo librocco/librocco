@@ -8,9 +8,9 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState, filter, testId } from "@librocco/shared";
+	import { NoteState, filter, testId, type VolumeStock } from "@librocco/shared";
 
-	import type { BookEntry, NavEntry, OutOfStockError, OutOfStockTransaction } from "@librocco/db";
+	import { OutOfStockError, type BookEntry, type NavEntry, type OutOfStockTransaction, NoWarehouseSelectedError } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
@@ -89,12 +89,18 @@
 		}
 	}
 
+	const openNoWarehouseSelectedDialog = (invalidTransactions: VolumeStock[]) => {
+		dialogContent = {
+			type: "no-warehouse-selected",
+			invalidTransactions
+		};
+		open.set(true);
+	};
+
 	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
 		dialogContent = {
-			onConfirm: handleReconcileAndCommitSelf,
-			title: dialogTitle.reconcileOutbound(),
-			description: dialogDescription.reconcileOutbound(invalidTransactions),
-			type: "delete"
+			type: "reconcile",
+			invalidTransactions
 		};
 		open.set(true);
 	};
@@ -105,11 +111,13 @@
 			closeDialog();
 			toastSuccess(noteToastMessages("Note").outNoteCommited);
 		} catch (err) {
-			const invalidTransactions = (err as OutOfStockError).invalidTransactions.map((t) => ({
-				...t,
-				warehouseName: $warehouseList.get(t.warehouseId)?.displayName || "unkwnown"
-			}));
-			openReconciliationDialog(invalidTransactions);
+			if (err instanceof NoWarehouseSelectedError) {
+				return openNoWarehouseSelectedDialog(err.invalidTransactions);
+			}
+			if (err instanceof OutOfStockError) {
+				return openReconciliationDialog(err.invalidTransactions);
+			}
+			throw err;
 		}
 	};
 
@@ -230,7 +238,10 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
+	let dialogContent:
+		| ({ type: "commit" | "delete" | "edit-row" } & DialogContent)
+		| { type: "no-warehouse-selected"; invalidTransactions: VolumeStock[] }
+		| { type: "reconcile"; invalidTransactions: OutOfStockTransaction[] };
 </script>
 
 <Page view="outbound-note" loaded={!loading}>
@@ -444,64 +455,107 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
-
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		{#if type === "edit-row"}
-			<div
-				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
-				shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 150,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
-					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
-				</div>
-				<div class="px-6">
-					<BookForm
-						data={bookFormData}
-						publisherList={$publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: bookSchema,
-							validationMethod: "submit-only",
-							onUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+		{#if dialogContent.type === "no-warehouse-selected"}
+			<!-- No warehouse selecter dialog -->
+			{@const { invalidTransactions } = dialogContent}
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
-							}
-							// TODO: handle loading and errors
-						}}
-					/>
-				</div>
-			</div>
-		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} {type} onConfirm={dialogContent.onConfirm}>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+				<Dialog {dialog} type="delete" onConfirm={() => {}}>
+					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
+					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
+					<h3 class="mt-4 mb-2 font-semibold">Please select a warehouse for each of the following transactions:</h3>
+					<ul class="pl-2">
+						{#each invalidTransactions as { isbn }}
+							<li>{isbn}</li>
+						{/each}
+					</ul>
 				</Dialog>
 			</div>
+			<!-- No warehouse selecter dialog end -->
+		{:else if dialogContent.type === "reconcile"}
+			<!-- Note reconciliation dialog -->
+			{@const { invalidTransactions } = dialogContent}
+
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf}>
+					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
+					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
+					<h3 class="mt-4 mb-2 font-semibold">Please review the following tranasctions:</h3>
+					<ul class="pl-2">
+						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
+							<li class="mb-2">
+								<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
+								<p class="pl-2">requested quantity: {quantity}</p>
+								<p class="pl-2">available: {available}</p>
+								<p class="pl-2">
+									quantity for reconciliation: <span class="font-semibold">{quantity - available}</span>
+								</p>
+							</li>
+						{/each}
+					</ul>
+				</Dialog>
+			</div>
+			<!-- Note reconciliation dialog end -->
+		{:else}
+			{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent}
+
+			{#if type === "edit-row"}
+				<div
+					use:melt={$content}
+					class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
+				shadow-lg focus:outline-none"
+					in:fly|global={{
+						x: 350,
+						duration: 150,
+						opacity: 1
+					}}
+					out:fly|global={{
+						x: 350,
+						duration: 100
+					}}
+				>
+					<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+						<div>
+							<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
+							<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
+						</div>
+						<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+							<X class="square-4" />
+						</button>
+					</div>
+					<div class="px-6">
+						<BookForm
+							data={bookFormData}
+							publisherList={$publisherList}
+							options={{
+								SPA: true,
+								dataType: "json",
+								validators: bookSchema,
+								validationMethod: "submit-only",
+								onUpdated
+							}}
+							onCancel={() => open.set(false)}
+							onFetch={async (isbn, form) => {
+								const result = await bookDataPlugin.fetchBookData(isbn);
+
+								if (result) {
+									const [bookData] = result;
+									form.update((data) => ({ ...data, ...bookData }));
+								}
+								// TODO: handle loading and errors
+							}}
+						/>
+					</div>
+				</div>
+			{:else}
+				<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+					<Dialog {dialog} {type} onConfirm={dialogContent.onConfirm}>
+						<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+						<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+					</Dialog>
+				</div>
+			{/if}
 		{/if}
 	{/if}
 </div>
