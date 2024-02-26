@@ -8,6 +8,14 @@ export const warehouseSchema = z.object({
 	discount: z.number()
 });
 
+export type WarehouseDeleteFormData = SuperValidated<ReturnType<typeof warehouseDeleteSchema>>["data"];
+export const warehouseDeleteSchema = (matchConfirmation: string) => {
+	const reg = new RegExp("^" + matchConfirmation + "$");
+	return z.object({
+		confirmation: z.string().regex(reg)
+	});
+};
+
 export type BookFormData = SuperValidated<typeof bookSchema>["data"];
 export const bookSchema = z.object({
 	isbn: z.string(),
