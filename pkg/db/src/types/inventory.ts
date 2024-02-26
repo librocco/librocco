@@ -25,6 +25,11 @@ export interface EntriesStreamResult {
 }
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
+
+export interface OutOfStockTransaction extends VolumeStock {
+	warehouseName: string;
+	available: number;
+}
 // #endregion misc
 
 // #region note

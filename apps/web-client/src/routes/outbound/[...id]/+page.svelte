@@ -8,9 +8,9 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState, filter, testId, type VolumeStock } from "@librocco/shared";
+	import { NoteState, filter, testId } from "@librocco/shared";
 
-	import type { BookEntry, NavEntry, OutOfStockError, VolumeStockClient } from "@librocco/db";
+	import type { BookEntry, NavEntry, OutOfStockError, OutOfStockTransaction } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
@@ -89,7 +89,7 @@
 		}
 	}
 
-	const openReconciliationDialog = (invalidTransactions: (VolumeStock & { warehouseName: string; available: number })[]) => {
+	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
 		dialogContent = {
 			onConfirm: handleReconcileAndCommitSelf,
 			title: dialogTitle.reconcileOutbound(),

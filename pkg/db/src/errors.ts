@@ -1,10 +1,12 @@
 import { VolumeStock } from "@librocco/shared";
 
+import { OutOfStockTransaction } from "./types";
+
 export class TransactionWarehouseMismatchError extends Error {
 	parentWarehouse: string;
-	invalidTransactions: Omit<VolumeStock, "quantity">[];
+	invalidTransactions: VolumeStock[];
 
-	constructor(parentWarehouse: string, invalidTransactions: Omit<VolumeStock, "quantity">[]) {
+	constructor(parentWarehouse: string, invalidTransactions: VolumeStock[]) {
 		const message = `Trying to commit a note containing transactions belonging to a different warehouse than the note itself.
     Note's parent warehouse: '${parentWarehouse}'
     Invalid transactions:
@@ -17,9 +19,20 @@ export class TransactionWarehouseMismatchError extends Error {
 	}
 }
 
-interface OutOfStockTransaction extends VolumeStock {
-	available: number;
+export class NoWarehouseSelectedError extends Error {
+	invalidTransactions: VolumeStock[];
+
+	constructor(invalidTransactions: VolumeStock[]) {
+		const message = `Trying to commit a note containing transactions with no warehouse selected.
+    Invalid transactions:
+    ${invalidTransactions.map(({ isbn }) => `ISBN: '${isbn}'`).join(`
+    `)}`;
+
+		super(message);
+		this.invalidTransactions = invalidTransactions;
+	}
 }
+
 export class OutOfStockError extends Error {
 	invalidTransactions: OutOfStockTransaction[];
 
