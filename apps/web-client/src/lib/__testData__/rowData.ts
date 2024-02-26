@@ -47,8 +47,8 @@ export const rows: InventoryTableData[] = [
 ];
 
 export const availableWarehouses = new Map([
-	["wh1", { displayName: "Warehouse 1" }],
-	["wh2", { displayName: "Warehouse 2" }]
+	["wh1", { displayName: "Warehouse 1", quantity: 1 }],
+	["wh2", { displayName: "Warehouse 2", quantity: 1 }]
 ]);
 
 /**
