@@ -470,6 +470,8 @@
 							<li>{isbn}</li>
 						{/each}
 					</ul>
+					<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
+					<svelte:fragment slot="confirm-button"><span /></svelte:fragment>
 				</Dialog>
 			</div>
 			<!-- No warehouse selecter dialog end -->

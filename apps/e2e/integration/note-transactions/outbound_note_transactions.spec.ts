@@ -5,6 +5,7 @@ import { baseURL } from "@/constants";
 import { getDashboard, getDbHandle } from "@/helpers";
 
 import { book1 } from "../data";
+import { compareEntries } from "@/helpers/utils";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -396,6 +397,139 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await entries.row(0).field("warehouseName").set("Warehouse 2");
 
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
+});
+
+test("should check validity of the transactions and commit the note on 'commit' button click", async ({ page }) => {
+	// Setup - add some stock
+	const db = await getDbHandle(page);
+	await db.evaluateHandle((db) =>
+		Promise.all([
+			db
+				.warehouse("warehouse-1")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 1")),
+			db
+				.warehouse("warehouse-2")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 2"))
+		])
+	);
+	await db.evaluateHandle((db) =>
+		Promise.all([
+			db
+				.warehouse("warehouse-1")
+				.note()
+				.addVolumes({ isbn: "11111111", quantity: 4 }, { isbn: "22222222", quantity: 5 })
+				.then((n) => n.commit({})),
+			db
+				.warehouse("warehouse-2")
+				.note()
+				.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 })
+				.then((n) => n.commit({}))
+		])
+	);
+
+	// Add some books to the note
+	await db.evaluateHandle((db) =>
+		db.warehouse().note("note-1").addVolumes(
+			// All fine, enough books in stock (required 3, 4 available in the warehouse)
+			{ isbn: "11111111", quantity: 3, warehouseId: "warehouse-1" },
+			// Invalid - out of stock (required 3, only 2 available in the warehouse)
+			{ isbn: "11111111", quantity: 3, warehouseId: "warehouse-2" },
+			// Invalid - no warehouse selected
+			{ isbn: "22222222", quantity: 5 },
+			// Out of stock - the book doesn't exist in warehouse
+			{ isbn: "33333333", quantity: 2, warehouseId: "warehouse-1" },
+			// Invalid - no warehouse selected
+			{ isbn: "44444444", quantity: 1 }
+		)
+	);
+
+	const dashboard = getDashboard(page);
+
+	const entries = dashboard.content().table("outbound-note");
+	const dialog = dashboard.dialog();
+
+	const invalidTransctionList = dialog.locator("ul");
+
+	// Try to commit the note
+	await dashboard.content().header().commit();
+	await dialog.confirm();
+
+	// Should display no-warehouse-selected error dialog
+	await dialog.getByText("No warehouse(s) selected").waitFor();
+	// Should display isbns for transactions with no warehouse selected
+	await compareEntries(invalidTransctionList, ["22222222", "44444444"], "li");
+	// No-warehouse-selected dialog doesn't have a 'Confirm' button
+	await dialog.getByText("Confirm").waitFor({ state: "detached" });
+
+	// Close the dialog and fix the invalid transactions
+	await dialog.cancel();
+	// "22222222"
+	await entries.row(2).field("warehouseName").set("Warehouse 1");
+	// "44444444"
+	await entries.row(4).field("warehouseName").set("Warehouse 2");
+
+	await entries.assertRows([
+		// All fine, enough books in stock (required 3, 4 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" },
+		// Invalid - out of stock (required 3, only 2 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 2" },
+		// All fine, enough books in stock (required 5, 5 available in the warehouse)
+		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
+		// Out of stock - the book doesn't exist in warehouse
+		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
+		// Out of stock - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" }
+	]);
+
+	// Try to commit the note
+	await dashboard.content().header().commit();
+	await dialog.confirm();
+
+	// Dialog should show the out-of-stock error
+	await dialog.getByText("Stock mismatch").waitFor();
+
+	// Invalid transactions:
+	// "11111111" (Warehouse 2) - required: 3, available: 2
+	await invalidTransctionList.locator("li").nth(0).getByText("11111111 in Warehouse 2").waitFor();
+	await invalidTransctionList.locator("li").nth(0).getByText("requested quantity: 3").waitFor();
+	await invalidTransctionList.locator("li").nth(0).getByText("available: 2").waitFor();
+	await invalidTransctionList.locator("li").nth(0).getByText("quantity for reconciliation: 1").waitFor();
+	// "33333333" (Warehouse 1) - required: 2, available: 0
+	await invalidTransctionList.locator("li").nth(1).getByText("33333333 in Warehouse 1").waitFor();
+	await invalidTransctionList.locator("li").nth(1).getByText("requested quantity: 2").waitFor();
+	await invalidTransctionList.locator("li").nth(1).getByText("available: 0").waitFor();
+	await invalidTransctionList.locator("li").nth(1).getByText("quantity for reconciliation: 2").waitFor();
+	// "44444444" (Warehouse 2) - required: 1, available: 0
+	await invalidTransctionList.locator("li").nth(2).getByText("44444444 in Warehouse 2").waitFor();
+	await invalidTransctionList.locator("li").nth(2).getByText("requested quantity: 1").waitFor();
+	await invalidTransctionList.locator("li").nth(2).getByText("available: 0").waitFor();
+	await invalidTransctionList.locator("li").nth(2).getByText("quantity for reconciliation: 1").waitFor();
+	// That's it, no more rows
+	await invalidTransctionList.locator("li").nth(3).waitFor({ state: "detached" });
+
+	// Confirm the reconciliation
+	await dialog.confirm();
+
+	// The note should be committed, we're redirected to '/outbound' page
+	await dashboard.view("outbound").waitFor();
+
+	// Check Wareahouse 1 stock (only the existing books should have been removed)
+	await dashboard.navigate("inventory");
+	await dashboard.content().entityList("warehouse-list").item(0).dropdown().viewStock();
+	await dashboard
+		.content()
+		.table("warehouse")
+		.assertRows([{ isbn: "11111111", quantity: 1 }]);
+
+	// Check Wareahouse 2 stock (only the existing books should have been removed)
+	await dashboard.navigate("inventory");
+	await dashboard.content().entityList("warehouse-list").item(1).dropdown().viewStock();
+	await dashboard
+		.content()
+		.table("warehouse")
+		.assertRows([{ isbn: "22222222", quantity: 2 }]);
 });
 
 // TODO: Should not allow committing of an empty note ??
