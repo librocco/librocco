@@ -15,7 +15,7 @@ import { NEW_WAREHOUSE } from "@/constants";
 export interface VolumeStockClient extends VolumeStock {
 	warehouseDiscount: number;
 	warehouseName: string;
-	availableWarehouses?: NavMap;
+	availableWarehouses?: NavMap<{ quantity: number }>;
 }
 
 export interface EntriesStreamResult {

@@ -67,8 +67,11 @@ export const addAvailableWarehouses = (
 	stock: StockMap
 ): Iterable<VolumeStockClient> => {
 	return map(entries, (e) => {
-		const availableWarehouses: NavMap = new Map(
-			map(stock.isbn(e.isbn), ([[, warehouseId]]) => [warehouseId, warehouses.get(warehouseId) || { displayName: "not-found" }])
+		const availableWarehouses: NavMap<{ quantity: number }> = new Map(
+			map(stock.isbn(e.isbn), ([[, warehouseId], { quantity = 0 }]) => [
+				warehouseId,
+				{ displayName: warehouses.get(warehouseId)?.displayName || "not-found", quantity }
+			])
 		);
 		return { ...e, availableWarehouses };
 	});
