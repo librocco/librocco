@@ -12,7 +12,7 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"postinstall": "playwright install --with-deps"
+		"postinstall": "playwright install"
 	},
 	"devDependencies": {
 		"@librocco/db": "workspace:*",
