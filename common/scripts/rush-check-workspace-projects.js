@@ -12,11 +12,49 @@ const fs_1 = __importDefault(require("fs"));
 if (process.stdin.isTTY) {
 	process.exit(-1);
 }
-process.stdin.on("data", async (d) => checkRushProjects(d));
+
+let rawData = '';
+process.stdin.on("data", (chunk) => {
+    rawData += chunk;
+});
+/*
+The output of `rush list --json` might contain non-json output.
+Here it is on my system:
+	```
+	➜ rush list --json |head
+	The rush.json configuration requests Rush version 5.102.0
+
+	Invoking "rush list --json"
+	---------------------------
+
+	{
+	"projects": [
+		{
+	```
+
+The following function makes sure only the JSON part is used.
+*/
+process.stdin.on("end", () => {
+    // Attempt to extract and parse JSON from the accumulated input
+    const jsonMatch = rawData.match(/{[\s\S]*}/); // Matches the first { to the last }
+    if (jsonMatch) {
+        try {
+            const parsedData = JSON.parse(jsonMatch[0]);
+            checkRushProjects(parsedData);
+        } catch (error) {
+            console.error("Failed to parse JSON:", error);
+            process.exit(-1);
+        }
+    } else {
+        console.error("No valid JSON found in input.");
+        process.exit(-1);
+    }
+});
+
 // The meat of the script
 // Check the files found in 'apps', 'pkg' and 'plugins' folders against rush 'projects'
-function checkRushProjects(d) {
-	const { projects } = JSON.parse(d.toString());
+function checkRushProjects(data) {
+	const { projects } = data;
 	// Get projects listed in rush.json
 	const allowedPaths = projects.reduce(
 		(acc, { fullPath: fp }) => ({
