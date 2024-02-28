@@ -1,14 +1,15 @@
 <script lang="ts">
-	import { createEventDispatcher } from "svelte";
+	import { createEventDispatcher, onMount, tick } from "svelte";
 
 	import { createSelect } from "@melt-ui/svelte";
 	import { Check, ChevronsUpDown } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
-	import type { OutNoteTableData, WarehouseChangeDetail } from "./types";
+	import type { WarehouseChangeDetail } from "./types";
+	import type { OutboundTableData } from "$lib/components/Tables/types";
 
-	export let data: OutNoteTableData;
+	export let data: OutboundTableData;
 	export let rowIx: number;
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
@@ -33,15 +34,26 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string; quantity: number }>() } = data);
 
-	const mapWarehousesToOptions = (warehouses: OutNoteTableData["availableWarehouses"]) =>
+	const mapWarehousesToOptions = (warehouses: OutboundTableData["availableWarehouses"]) =>
 		[...warehouses].map(([value, { displayName }]) => ({ value, label: displayName }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
 	 */
 	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
+
+	// If there's only one warehouse the book is available in, and the selected warehouse is not that one, change the selected warehouse
+	onMount(() => {
+		if (availableWarehouses.size !== 1) return;
+
+		const availableWarehouse = availableWarehouses.keys().next().value;
+		if (availableWarehouse !== warehouseId) {
+			// Tick isn't necessary here, but it's much easier when testing
+			tick().then(() => dispatchChange(availableWarehouse));
+		}
+	});
 
 	$: options = mapWarehousesToOptions(availableWarehouses);
 </script>
@@ -91,8 +103,19 @@
 		</div>
 	{/if}
 {:else}
-	<div class="gap-x-2 rounded bg-gray-100 px-2">
+	<div class="flex gap-x-2 rounded bg-gray-100 p-2">
 		<span class="rounded-full bg-teal-400 p-0.5" />
-		<input disabled type="text" value={warehouseName} class="w-full border-0 bg-gray-100 text-sm text-gray-500" />
+		<button
+			data-testid={testId("dropdown-control")}
+			data-open={open}
+			disabled
+			class="flex w-full gap-x-2 px-2 focus:border-teal-500 focus:outline-none focus:ring-0"
+			use:trigger
+			aria-label="Warehouse"
+		>
+			<span class="truncate">
+				{$selectedLabel}
+			</span>
+		</button>
 	</div>
 {/if}

@@ -108,8 +108,8 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", noteId)}
 
-						<li class="entity-list-row">
-							<div class="max-w-1/2 w-full">
+						<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
+							<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
 								<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
 								<div class="flex items-center">
@@ -118,33 +118,30 @@
 								</div>
 							</div>
 
-							<div class="max-w-1/2 flex w-full items-center justify-between">
-								{#if note.updatedAt}
-									<span class="badge badge-base badge-success">Last updated: {updatedAt}</span>
-								{:else}
-									<!-- Inside 'flex justify-between' container, we want the following box (buttons) to be pushed to the end, even if there's no badge -->
-									<div />
-								{/if}
-
-								<div class="flex items-center justify-end gap-3">
-									<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-									<button
-										use:melt={$trigger}
-										class="button button-white"
-										aria-label="Delete note: {note.displayName}"
-										on:m-click={() => {
-											dialogContent = {
-												onConfirm: handleDeleteNote(noteId),
-												title: dialogTitle.delete(note.displayName),
-												description: dialogDescription.deleteNote()
-											};
-										}}
-									>
-										<span aria-hidden="true">
-											<Trash size={20} />
-										</span>
-									</button>
+							{#if note.updatedAt}
+								<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
+									<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
 								</div>
+							{/if}
+
+							<div class="entity-list-actions col-span-2 row-span-2 xs:col-span-6">
+								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+								<button
+									use:melt={$trigger}
+									class="button button-white"
+									aria-label="Delete note: {note.displayName}"
+									on:m-click={() => {
+										dialogContent = {
+											onConfirm: handleDeleteNote(noteId),
+											title: dialogTitle.delete(note.displayName),
+											description: dialogDescription.deleteNote()
+										};
+									}}
+								>
+									<span aria-hidden="true">
+										<Trash size={20} />
+									</span>
+								</button>
 							</div>
 						</li>
 					{/each}

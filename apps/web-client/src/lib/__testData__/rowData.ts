@@ -1,4 +1,4 @@
-import type { InventoryTableData, OutNoteTableData } from "../types";
+import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
 
 export const rows: InventoryTableData[] = [
 	{
@@ -47,8 +47,8 @@ export const rows: InventoryTableData[] = [
 ];
 
 export const availableWarehouses = new Map([
-	["wh1", { displayName: "Warehouse 1" }],
-	["wh2", { displayName: "Warehouse 2" }]
+	["wh1", { displayName: "Warehouse 1", quantity: 1 }],
+	["wh2", { displayName: "Warehouse 2", quantity: 1 }]
 ]);
 
 /**
@@ -56,5 +56,5 @@ export const availableWarehouses = new Map([
  */
 export const outNoteRows = rows.map((r, i) => {
 	const { label: warehouseName, value: warehouseId } = availableWarehouses[i] || { label: "", value: "" };
-	return { ...r, warehouseName, warehouseId, availableWarehouses } as OutNoteTableData;
+	return { ...r, warehouseName, warehouseId, availableWarehouses } as OutboundTableData;
 });

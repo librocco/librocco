@@ -5,5 +5,5 @@
 	export let isEditing: boolean;
 </script>
 
-<input bind:value />
-<TextEditable bind:isEditing bind:value />
+<input name="other input" bind:value />
+<TextEditable name="text" bind:isEditing bind:value />

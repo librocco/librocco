@@ -1,10 +1,17 @@
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { CustomerOrderState, debug, OrderItemStatus } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { VersionedString, OrdersDatabaseInterface, CustomerOrderInterface, CustomerOrderData, OrderItem } from "@/types";
+import {
+	VersionedString,
+	OrdersDatabaseInterface,
+	CustomerOrderInterface,
+	CustomerOrderData,
+	CustomerOrderStream,
+	OrderItem
+} from "@/types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -29,10 +36,10 @@ class CustomerOrder implements CustomerOrderInterface {
 	// subscribe to this stream.
 	#stream: Observable<CustomerOrderData>;
 
-	draft = true;
+	state: CustomerOrderState = CustomerOrderState.Draft;
 	email = "";
 	deposit = 0;
-	items: OrderItem[] = [];
+	books: OrderItem[] = [];
 	displayName = "";
 
 	docType = DocType.CustomerOrder;
@@ -67,26 +74,42 @@ class CustomerOrder implements CustomerOrderInterface {
 		return this;
 	}
 
-	private update(ctx: debug.DebugCtx, data: Partial<CustomerOrderInterface>) {
+	/**
+	 * A convenience method used to update the document in the db.
+	 *
+	 * _Note: this is a general purpose update (forced, if you will), used for updates
+	 * that should bypass the "draft" state. For regular updates use `this.update` method._
+	 */
+	private updateDocument(ctx: debug.DebugCtx, update: Partial<CustomerOrderData>) {
 		return runAfterCondition(async () => {
-			debug.log(ctx, "customerOrder:update")({ data });
+			const updatedData = { ...this, ...update };
+			debug.log(ctx, "customer_order:update_document")({ updatedData });
 
-			// Only draft orders can be updated.
-			if (!this.draft) {
-				debug.log(ctx, "customerOrder:update:customerOrder_not_draft")(this);
-				return this;
-			}
-
-			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
-			debug.log(ctx, "customerOrder:updating")({ updatedData });
 			const { rev } = await this.#db._pouch.put<CustomerOrderData>(updatedData);
-			debug.log(ctx, "customerOrder:updated")({ updatedData, rev });
+			debug.log(ctx, "customer_order:updated")({ updatedData, rev });
 
 			// We're waiting for the first value from stream (updating local instance) before resolving the
 			// update promise.
 			await firstValueFrom(this.#updateStream);
+
 			return this;
 		}, this.#initialized);
+	}
+
+	/**
+	 * Update to be used for draft state operations - it performs a state check and performs the update **only** if the order is in draft state.
+	 */
+	private update(ctx: debug.DebugCtx, _update: (data: this) => Partial<CustomerOrderInterface>) {
+		// Only draft orders can be updated.
+		if (this.state === "committed") {
+			debug.log(ctx, "customer_order:update:order-already-placed")(this);
+			return Promise.resolve(this);
+		}
+
+		// Get the resulting data from update function
+		const data = _update(this);
+
+		return this.updateDocument(ctx, data);
 	}
 
 	/**
@@ -110,17 +133,19 @@ class CustomerOrder implements CustomerOrderInterface {
 
 		// Update the data with provided fields
 		this.updateField("_rev", data._rev);
-		this.updateField("items", data.items);
+		this.updateField("books", data.books);
 		this.updateField("deposit", data.deposit);
 		this.updateField("docType", data.docType);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 		this.updateField("email", data.email);
+		this.updateField("state", data.state);
 
 		this.#exists = true;
 
 		return this;
 	}
+
 	/**
 	 * If order doesn't exist in the db, create an order with initial values.
 	 * No-op otherwise.
@@ -133,10 +158,14 @@ class CustomerOrder implements CustomerOrderInterface {
 
 			const updatedAt = new Date().toISOString();
 
-			const sequentialNumber = (await this.#db._pouch.query("v1_sequence/customer-order")).rows[0];
-			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : "";
+			const seqDesignRes = await this.#db._pouch.query("v1_sequence/customer-order");
+			const seqIndex = (seqDesignRes.rows[0]?.value?.max || 0) + 1;
 
-			const initialValues = { ...this, displayName: `Order-${seqIndex}`, updatedAt };
+			const initialValues = {
+				...this,
+				displayName: `Order-${seqIndex}`,
+				updatedAt
+			};
 			const { rev } = await this.#db._pouch.put<CustomerOrderData>(initialValues);
 
 			return this.updateInstance({ ...initialValues, _rev: rev });
@@ -153,63 +182,124 @@ class CustomerOrder implements CustomerOrderInterface {
 		}, this.#initialized);
 	}
 
+	setEmail(ctx: debug.DebugCtx, email: string): Promise<CustomerOrderInterface> {
+		return this.update(ctx, () => ({ email }));
+	}
+
+	setName(ctx: debug.DebugCtx, displayName: string): Promise<CustomerOrderInterface> {
+		return this.update(ctx, () => ({ displayName }));
+	}
+
+	// TODO
+	delete(): Promise<void> {
+		console.error("TODO: Delete not implemented");
+		return Promise.resolve();
+	}
+
+	addBooks(ctx: debug.DebugCtx, ...isbns: string[]): Promise<CustomerOrderInterface> {
+		return this.update(ctx, (data) => {
+			const updates = isbns.map((isbn) => ({ isbn, status: OrderItemStatus.Draft }));
+			const books = data.books.concat(updates);
+			return { books };
+		});
+	}
+
+	removeBooks(ctx: debug.DebugCtx, ...isbns: string[]): Promise<CustomerOrderInterface> {
+		return this.update(ctx, (data) => {
+			const books = [...data.books];
+			for (const isbn of isbns) {
+				const index = this.books.findIndex((book) => book.isbn === isbn);
+				if (index === -1) continue;
+				books.splice(index, 1);
+			}
+			return { books };
+		});
+	}
+
+	/**
+	 * A helper for 'updateBookStatus' applied to a single row.
+	 * The update is applied to the first book with the matching isbn and different status (not yet updated).
+	 * Returns a boolean indicating if the update was successful.
+	 *
+	 * _Note: this method updates the local state only, the document update should be ran to persist the change._
+	 */
+	private _updateBookStatus(isbn: string, status: OrderItemStatus): boolean {
+		const index = this.books.findIndex((book) => book.isbn === isbn && book.status !== status);
+		if (index === -1) return false;
+		this.books[index].status = status;
+		return true;
+	}
+
 	/**
 	 * Update individual book on customer order state.
 	 * only the client state (the supplier state is handled elsewere)
 	 */
-	updateitemsState(ctx: debug.DebugCtx, isbns: string[], state: string): Promise<CustomerOrderInterface> {
-		const updateditems = [...this.items];
-		let itemsUpdated = false;
+	async updateBookStatus(ctx: debug.DebugCtx, isbns: string[], status: OrderItemStatus): Promise<string[]> {
+		debug.log(ctx, "customer_order:update_book_status")({ isbns, status });
 
-		isbns.forEach((isbn) => {
-			const index = this.items.findIndex((book) => book.isbn === isbn);
-			if (index === -1 || this.items[index].state === state) return;
-			itemsUpdated = true;
+		const updatedBooks = [...this.books];
 
-			updateditems[index] = { ...updateditems[index], state };
-		});
+		const toUpdate = isbns.map((isbn) => ({ isbn, updated: false }));
 
-		return itemsUpdated ? this.update(ctx, { items: updateditems }) : Promise.resolve(this);
+		for (const item of toUpdate) {
+			item.updated = this._updateBookStatus(item.isbn, status);
+		}
+
+		await this.updateDocument(ctx, { books: updatedBooks });
+
+		// Remove updated books from the list. We're returning the residual for further processing
+		const residual = toUpdate.filter(({ updated }) => !updated).map((item) => item.isbn);
+		debug.log(ctx, "customer_order:update_book_status:residual")({ residual });
+
+		return residual;
 	}
 
 	async commit(ctx: debug.DebugCtx): Promise<CustomerOrderInterface> {
-		debug.log(ctx, "customerOrder:commit")({});
+		debug.log(ctx, "customer_order:commit")({});
 
-		if (!this.items.length || !this.email) throw new EmptyCustomerOrderError();
+		if (!this.books.length || !this.email) throw new EmptyCustomerOrderError();
 
-		//sets draft to false
-		return this.update(ctx, { draft: false });
+		return this.update(ctx, () => ({
+			state: CustomerOrderState.Committed,
+			books: this.books.map(({ isbn }) => ({ isbn, status: OrderItemStatus.Placed }))
+		}));
 	}
 
-	stream() {
+	stream(): CustomerOrderStream {
 		return {
-			items: (ctx: debug.DebugCtx) => {
+			books: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: items: input")),
-					map(({ items }) => items),
-					tap(debug.log(ctx, "customerOrder_streams: items: res"))
-				);
-			},
+					tap(debug.log(ctx, "customer_order_streams: books: input")),
+					map(({ books }) => books?.sort(({ isbn: i1, status: s1 }, { isbn: i2, status: s2 }) => (i1 < i2 ? -1 : i1 > i2 ? 1 : s2 - s1))),
+					tap(debug.log(ctx, "customer_order_streams: books: res"))
+				),
 
 			state: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: state: input")),
-					map(({ draft }) => draft),
-					tap(debug.log(ctx, "customerOrder_streams: state: res"))
+					tap(debug.log(ctx, "customer_order_streams: state: input")),
+					map(({ state }) => state),
+					tap(debug.log(ctx, "customer_order_streams: state: res"))
 				),
 
 			displayName: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: displayName: input")),
-					map(({ draft }) => draft),
-					tap(debug.log(ctx, "customerOrder_streams: displayName: res"))
+					tap(debug.log(ctx, "customer_order_streams: display_name: input")),
+					map(({ displayName }) => displayName),
+					tap(debug.log(ctx, "customer_order_streams: display_name: res"))
+				),
+
+			email: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "customer_order_streams: email: input")),
+					map(({ email }) => email),
+					tap(debug.log(ctx, "customer_order_streams: email: res"))
 				),
 
 			updatedAt: (ctx: debug.DebugCtx) =>
 				this.#stream.pipe(
-					tap(debug.log(ctx, "customerOrder_streams: updated_at: input")),
+					tap(debug.log(ctx, "customer_order_streams: updated_at: input")),
 					map(({ updatedAt: ua }) => (ua ? new Date(ua) : null)),
-					tap(debug.log(ctx, "customerOrder_streams: updated_at: res"))
+					tap(debug.log(ctx, "customer_order_streams: updated_at: res"))
 				)
 		};
 	}

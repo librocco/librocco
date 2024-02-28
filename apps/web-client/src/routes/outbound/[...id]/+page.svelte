@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -24,9 +24,8 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
-		createTable,
-		WarehouseSelect,
 		OutboundTable,
+		TextEditable,
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
@@ -36,12 +35,13 @@
 
 	import { createNoteStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
 
 	export let data: PageData;
 
@@ -116,23 +116,25 @@
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
-	const updateRowWarehouse =
-		(isbn: string, quantity: number, currentWarehouseId: string) => async (e: CustomEvent<WarehouseChangeDetail>) => {
-			const { warehouseId: nextWarehouseId } = e.detail;
-			// Number form control validation means this string->number conversion should yield a valid result
-			const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
+	const updateRowWarehouse = async (
+		e: CustomEvent<WarehouseChangeDetail>,
+		{ isbn, quantity, warehouseId: currentWarehouseId }: OutboundTableData
+	) => {
+		const { warehouseId: nextWarehouseId } = e.detail;
+		// Number form control validation means this string->number conversion should yield a valid result
+		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
 
-			// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
-			if (currentWarehouseId === nextWarehouseId) {
-				return;
-			}
+		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
+		if (currentWarehouseId === nextWarehouseId) {
+			return;
+		}
 
-			// TODO: error handling
-			await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
-			toastSuccess(toasts.warehouseUpdated(isbn));
-		};
+		// TODO: error handling
+		await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
+		toastSuccess(toasts.warehouseUpdated(isbn));
+	};
 
-	const updateRowQuantity = (isbn: string, warehouseId: string, currentQty: number) => async (e: Event) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -219,19 +221,25 @@
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex w-full items-center justify-between">
-			<div>
-				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+			<div class="flex max-w-md flex-col">
+				<TextEditable
+					name="title"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Note"
+					bind:value={$displayName}
+				/>
 
-				<div class="h-5">
+				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-base badge-success">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
-			<div class="flex items-center gap-x-3">
+			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -254,6 +262,22 @@
 				</button>
 
 				<DropdownWrapper let:item>
+					<div
+						{...item}
+						use:item.action
+						use:melt={$dialogTrigger}
+						on:m-click={() => {
+							dialogContent = {
+								onConfirm: handleCommitSelf,
+								title: dialogTitle.commitOutbound(note.displayName),
+								description: dialogDescription.commitOutbound($entries.length),
+								type: "commit"
+							};
+						}}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+					>
+						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
+					</div>
 					<div
 						{...item}
 						use:item.action
@@ -301,30 +325,12 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<OutboundTable {table}>
-					<div slot="row-quantity" let:row={{ isbn, warehouseId, quantity }} let:rowIx>
-						{@const handleQuantityUpdate = updateRowQuantity(isbn, warehouseId, quantity)}
-
-						<form method="POST" id="row-{rowIx}-quantity-form" on:submit|preventDefault={handleQuantityUpdate}>
-							<input
-								name="quantity"
-								id="quantity"
-								value={quantity}
-								class="w-full rounded border-2 border-gray-500 px-2 py-1.5 text-center focus:border-teal-500 focus:ring-0"
-								type="number"
-								min="1"
-								required
-							/>
-						</form>
-					</div>
-
-					<svelte:fragment slot="row-warehouse" let:row let:rowIx>
-						{@const handleWarehouseUpdate = updateRowWarehouse(row.isbn, row.quantity, row.warehouseId)}
-
-						<WarehouseSelect on:change={handleWarehouseUpdate} data={row} {rowIx} />
-					</svelte:fragment>
-
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
+				<OutboundTable
+					{table}
+					on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
+					on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+				>
 					<div slot="row-actions" let:row let:rowIx>
 						<PopoverWrapper
 							options={{

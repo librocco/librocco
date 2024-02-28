@@ -1,6 +1,10 @@
 <script lang="ts">
 	import { tick } from "svelte";
-	import { Pencil, Check, X } from "lucide-svelte";
+	import { PencilLine } from "lucide-svelte";
+	import { clickOutside } from "$lib/actions";
+
+	export let name: string;
+	export let id: string = name;
 
 	/**
 	 * This is the exposed 'value' of the text/input element. This value accepts updates from the parent component, while
@@ -11,14 +15,16 @@
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
 	export let value = "";
+	export let placeholder = "Untitled";
+	export let isEditing = false;
+	export let disabled = false;
+	export let input: HTMLElement | null = null;
 
-	let input: HTMLElement;
+	export let textEl: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" = "p";
+	export let textClassName: string = "text-base font-normal";
 
 	/** This is the internal value, used to store the current state of the input */
 	$: text = value;
-	export let isEditing = false;
-
-	export let disabled = false;
 
 	/** Enter edit mode */
 	function edit() {
@@ -43,33 +49,61 @@
 	}
 </script>
 
-<div {...$$restProps}>
-	{#if !isEditing}
-		<!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
-		<p
-			on:click={edit}
-			on:keydown
-			class="group relative inline-block h-[38px] pt-4 pr-8 {disabled ? 'cursor-normal' : 'cursor-pointer'}"
-			on:focus={edit}
+<div
+	class="relative block w-full rounded border-2 border-transparent bg-transparent p-2 delay-75 focus-within:border-gray-500 focus-within:bg-gray-50 hover:border-gray-500"
+	use:clickOutside
+	on:clickoutside={save}
+>
+	{#if isEditing}
+		<div
+			class="absolute z-10 flex w-full flex-row items-center justify-between gap-x-2 transition-opacity duration-75
+			{isEditing ? 'visible opacity-100' : 'invisible opacity-0'}"
 		>
-			<span class="inline-block align-middle text-lg font-medium leading-6">{text}</span>
-			{#if !disabled}
-				<button class="absolute top-0 right-0 hidden h-10 w-10 -translate-y-1/4 p-2 group-hover:block" on:click={edit}>
-					<Pencil class="h-4 w-4 text-cyan-700" />
-				</button>
-			{/if}
-		</p>
-	{:else}
-		<div class="flex w-[400px] items-center gap-1 border-b-2 border-cyan-700">
 			<input
-				class="h-[38px] w-full p-2 text-lg font-medium leading-6 focus:outline-none"
+				type="text"
+				class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
+				{placeholder}
+				{name}
+				{id}
 				bind:this={input}
 				bind:value={text}
 				on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
 				on:change
 			/>
-			<button on:click={reset} class="h-8 w-8 flex-shrink-0 p-1"><X class="h-6 w-6 text-red-400" /></button>
-			<button on:click={save} class="h-8 w-8 flex-shrink-0 p-1"><Check class="h-6 w-6 text-green-400" /></button>
 		</div>
 	{/if}
+	<!-- svelte-ignore a11y-no-static-element-interactions -->
+	<div
+		class="flex flex-row items-center gap-x-2
+		{isEditing ? 'invisible' : 'visible'}
+		{text === '' || disabled ? 'text-gray-400' : 'text-gray-800'}"
+		class:cursor-pointer={!disabled}
+		role="textbox"
+		aria-label="Edit {name}"
+		tabindex="0"
+		on:keydown
+		on:click={edit}
+		on:focus={edit}
+	>
+		<svelte:element this={textEl} class="{placeholder === '' && !text ? 'hidden' : 'truncate'} {textClassName}">
+			{text === "" ? placeholder : text}
+		</svelte:element>
+		{#if !disabled}
+			<span class="text-gray-500" aria-hidden>
+				<PencilLine size={20} />
+			</span>
+		{/if}
+	</div>
 </div>
+
+<!-- svelte-ignore css-unused-selector -->
+<style>
+	/* trick to maintain textnode height when its empty https://stackoverflow.com/a/66457550 */
+	p:empty::before,
+	h1:empty::before,
+	h2:empty::before,
+	h3:empty::before h4:empty::before h5:empty::before h6:empty::before {
+		content: "";
+		display: inline-block;
+	}
+</style>

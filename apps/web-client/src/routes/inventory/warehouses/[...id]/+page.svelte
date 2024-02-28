@@ -10,7 +10,7 @@
 
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, createTable } from "$lib/components";
+	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { goto } from "$app/navigation";
@@ -23,7 +23,7 @@
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 
-	import { createIntersectionObserver } from "$lib/actions";
+	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -142,14 +142,13 @@
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
 						<button
 							data-testid={testId("edit-row")}
 							use:melt={$trigger}
 							on:m-click={() => {
-								console.log(row);
 								bookFormData = row;
 							}}
 							class="rounded p-3 text-gray-500 hover:text-gray-900"
