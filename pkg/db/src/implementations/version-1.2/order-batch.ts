@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, ReplaySubject, Subject, firstValueFrom, share, tap, map } from "rxjs";
 
-import { debug } from "@librocco/shared";
+import { debug, OrderItemStatus } from "@librocco/shared";
 import { isEmpty, isVersioned, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { OrdersDatabaseInterface, OrderBatchInterface, OrderBatchData, VersionedString, OrderItem, SupplierInterface } from "@/types";
@@ -185,7 +185,7 @@ class OrderBatch implements OrderBatchInterface {
 				return this;
 			}
 
-			const itemsReduced = items.reduce<Record<string, string>>((acc, book) => ({ ...acc, [book.isbn]: book.state }), {});
+			const itemsReduced = items.reduce<Record<string, OrderItemStatus>>((acc, book) => ({ ...acc, [book.isbn]: book.status }), {});
 
 			const updateditems = this.items.map((book) => {
 				if (!itemsReduced[book.isbn]) return book;
@@ -234,8 +234,8 @@ class OrderBatch implements OrderBatchInterface {
 				const matchIndex = this.items.findIndex((book) => book.isbn === isbn);
 
 				if (matchIndex === -1) {
-					// committed is the default state for items
-					this.items.push({ isbn, state: "committed" });
+					// committed is the default status for items/books
+					this.items.push({ isbn, status: OrderItemStatus.Draft });
 					return;
 				}
 			});

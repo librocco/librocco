@@ -7,7 +7,7 @@ import {
 	CustomerOrderData,
 	OrderBatchData
 } from "@/types";
-import { debug } from "@librocco/shared";
+import { debug, OrderItemStatus } from "@librocco/shared";
 
 import { versionId } from "./utils";
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -133,7 +133,7 @@ class Supplier implements SupplierInterface {
 	}
 
 	private customerOrderStream(ctx: debug.DebugCtx) {
-		return new Observable<CustomerOrderData["items"] | undefined>((subscriber) => {
+		return new Observable<CustomerOrderData["books"] | undefined>((subscriber) => {
 			const emitter = this.#db._pouch.changes<CustomerOrderData>({
 				since: "now",
 				live: true,
@@ -144,7 +144,7 @@ class Supplier implements SupplierInterface {
 			const initialState = from(
 				this.#db._pouch.query<CustomerOrderData>("v1_sequence/customer-order/").then((docs) => unwrapDocs(docs))
 			).pipe(
-				map((orders) => orders.flatMap((order) => order?.items || []).filter((item) => item?.state !== "draft")),
+				map((orders) => orders.flatMap((order) => order?.books || []).filter((item) => item?.status !== OrderItemStatus.Draft)),
 				tap(debug.log(ctx, "customerOrders-supplier:initial_state"))
 			);
 
@@ -170,7 +170,7 @@ class Supplier implements SupplierInterface {
 			});
 
 			const initialState = from(this.#db._pouch.query<OrderBatchData>(versionId(`${this._id}/orders`)).then(unwrapDocs)).pipe(
-				map((orders) => orders.flatMap((order) => order?.items || []).filter((item) => item?.state !== "ready-for-pickup")),
+				map((orders) => orders.flatMap((order) => order?.items || []).filter((item) => item?.status !== OrderItemStatus.Delivered)),
 				tap(debug.log(ctx, "batchOrder-supplier:initial_state"))
 			);
 
@@ -270,8 +270,8 @@ class Supplier implements SupplierInterface {
 				combineLatest([this.customerOrderStream(ctx), this.batchOrderStream(ctx)]).pipe(
 					map(([customerOrderItems, batchOrderItems]) => {
 						return (customerOrderItems || []).map((order) => {
-							const updatedState = (batchOrderItems || []).find((item) => item.isbn === order.isbn);
-							return updatedState ? { ...order, state: updatedState.state } : order;
+							const updatedStatus = (batchOrderItems || []).find((item) => item.isbn === order.isbn);
+							return updatedStatus ? { ...order, state: updatedStatus.status } : order;
 						});
 					})
 				)
