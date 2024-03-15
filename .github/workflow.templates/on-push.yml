@@ -16,6 +16,8 @@ jobs:
 
   web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
 
+  book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
+
   db-test: #@ test_job("DB Tests", "pkg/db")
 
   #! TODO: e2e need to be updated first to reflect UI-rehaul
