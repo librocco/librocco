@@ -10,10 +10,11 @@ function mockListenForExtension() {
 function mockAddEventListenerBooks(book: Record<string, string> | undefined, timeout = 0) {
 	return function (eventName: string, cb: (event: MessageEvent) => void) {
 		if (eventName === "message") {
+			const isbn = book?.title.split("-")[1];
 			const message = new MessageEvent("message", {
 				source: window,
 				data: {
-					message: "BOOK_FETCHER:RES",
+					message: `BOOK_FETCHER:RES:${isbn}`,
 					book
 				}
 			});
@@ -44,7 +45,7 @@ describe("createBookDataExtensionPlugin", () => {
 
 	test("fetchBookData returns [] when book data is not received before timeout", async () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
-		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks({ title: "book-12345" }, 900));
+		vi.spyOn(helpers, "addEventListener").mockImplementation(mockAddEventListenerBooks({ title: "book-12345" }, 5000));
 
 		const books = await createBookDataExtensionPlugin().fetchBookData(["12345"]);
 
@@ -62,23 +63,25 @@ describe("createBookDataExtensionPlugin", () => {
 
 	test("fetchBookData when called with isbns some of which are not found, returns array with only found books", async () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks(undefined));
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }));
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }));
+		vi.spyOn(helpers, "addEventListener")
+			.mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }))
+			.mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }))
+			.mockImplementationOnce(mockAddEventListenerBooks(undefined));
 
 		const books = await createBookDataExtensionPlugin().fetchBookData(["12345", "56789"]);
 
-		expect(books).toEqual([{ title: "book-56789" }, { title: "book-12345" }]);
+		expect(books).toEqual([{ title: "book-12345" }, { title: "book-56789" }]);
 	});
 
 	test("fetchBookData when called with isbns some of which timeout, returns array with only returned books", async () => {
 		vi.spyOn(listeners, "listenForExtension").mockImplementation(mockListenForExtension);
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }));
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }));
-		vi.spyOn(helpers, "addEventListener").mockImplementationOnce(mockAddEventListenerBooks({ title: "book-49857" }, 900));
+		vi.spyOn(helpers, "addEventListener")
+			.mockImplementationOnce(mockAddEventListenerBooks({ title: "book-56789" }))
+			.mockImplementationOnce(mockAddEventListenerBooks({ title: "book-12345" }))
+			.mockImplementationOnce(mockAddEventListenerBooks({ title: "book-49857" }, 4000));
 
 		const books = await createBookDataExtensionPlugin().fetchBookData(["56789", "12345", "49857"]);
 
-		expect(books).toEqual([{ title: "book-12345" }, { title: "book-56789" }]);
+		expect(books).toEqual([{ title: "book-56789" }, { title: "book-12345" }]);
 	});
 });
