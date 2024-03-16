@@ -71,6 +71,8 @@ const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterabl
 		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
+//function left if needed for future use
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const applyDiscount = <T extends Pick<VolumeStockClient, "warehouseDiscount"> & Pick<BookEntry, "price">>({
 	price,
 	warehouseDiscount,
@@ -81,7 +83,5 @@ const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient
 	o.pipe(
 		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
 		map(mergeBookData(stock)),
-		tap(debug.log(ctx, "display_entries_store:table_data:merged_books")),
-		map((transactions) => transactions.map(applyDiscount)),
-		tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
+		tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
 	);
