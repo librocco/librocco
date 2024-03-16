@@ -13,9 +13,9 @@ if (process.stdin.isTTY) {
 	process.exit(-1);
 }
 
-let rawData = '';
+let rawData = "";
 process.stdin.on("data", (chunk) => {
-    rawData += chunk;
+	rawData += chunk;
 });
 /*
 The output of `rush list --json` might contain non-json output.
@@ -35,20 +35,20 @@ Here it is on my system:
 The following function makes sure only the JSON part is used.
 */
 process.stdin.on("end", () => {
-    // Attempt to extract and parse JSON from the accumulated input
-    const jsonMatch = rawData.match(/{[\s\S]*}/); // Matches the first { to the last }
-    if (jsonMatch) {
-        try {
-            const parsedData = JSON.parse(jsonMatch[0]);
-            checkRushProjects(parsedData);
-        } catch (error) {
-            console.error("Failed to parse JSON:", error);
-            process.exit(-1);
-        }
-    } else {
-        console.error("No valid JSON found in input.");
-        process.exit(-1);
-    }
+	// Attempt to extract and parse JSON from the accumulated input
+	const jsonMatch = rawData.match(/{[\s\S]*}/); // Matches the first { to the last }
+	if (jsonMatch) {
+		try {
+			const parsedData = JSON.parse(jsonMatch[0]);
+			checkRushProjects(parsedData);
+		} catch (error) {
+			console.error("Failed to parse JSON:", error);
+			process.exit(-1);
+		}
+	} else {
+		console.error("No valid JSON found in input.");
+		process.exit(-1);
+	}
 });
 
 // The meat of the script
@@ -87,7 +87,7 @@ function getPackages(basepath, dirnames) {
 }
 // Get contents of a directory with full path prepended to each entry
 function getContents(dirpath) {
-	return fs_1.default.readdirSync(dirpath).map((c) => dirpath + "/" + c);
+	return fs_1.default.readdirSync(dirpath).map((c) => path_1.default.join(dirpath, c));
 }
 // #region outputMessages
 const colours = {
