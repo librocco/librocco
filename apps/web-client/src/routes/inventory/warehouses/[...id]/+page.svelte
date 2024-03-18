@@ -19,7 +19,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
+	import { noteToastMessages, toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 
@@ -207,10 +207,13 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							if (!result) {
+								toastError(bookFetchingMessages.bookNotFound);
 							}
+
+							const [bookData] = result;
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
 					/>
