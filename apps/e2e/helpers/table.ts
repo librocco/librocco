@@ -204,7 +204,7 @@ const fieldConstructorLookup: {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
 	authors: stringFieldConstructor("authors"),
-	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${x}`)),
+	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${Number.parseFloat(x).toFixed(2)}`)),
 	quantity: quantityFieldCostructor,
 	publisher: stringFieldConstructor("publisher"),
 	outOfPrint: outOfPrintFieldConstructor,
