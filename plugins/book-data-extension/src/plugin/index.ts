@@ -10,6 +10,8 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 		const extensionAvailable = await listenForExtension(`BOOK_FETCHER:PONG`, 500);
 
 		if (!extensionAvailable) return [];
+		console.log("Extension Available");
+		localStorage.setItem("extensionAvailable", "true");
 
 		const unfilteredBookData = await Promise.all(isbns.map((isbn) => fetchBook(isbn)));
 

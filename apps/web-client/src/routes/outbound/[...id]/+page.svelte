@@ -29,7 +29,7 @@
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { toastSuccess, noteToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
@@ -428,10 +428,13 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							if (!result) {
+								toastError(bookFetchingMessages.bookNotFound);
 							}
+
+							const [bookData] = result;
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
 					/>

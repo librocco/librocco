@@ -28,7 +28,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { toastSuccess, noteToastMessages, bookFetchingMessages, toastError } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
@@ -113,9 +113,11 @@
 		await note.addVolumes({ isbn, quantity: 1 });
 
 		const book = await plugin.fetchBookData([isbn]);
-		if (book.length) {
+		if (!book.length) {
+			toastError(bookFetchingMessages.bookNotFound);
+		} else if (book.length) {
 			await db.books().upsert(book);
-			toastSuccess(toasts.bookDataFetched(isbn));
+			toastSuccess(bookFetchingMessages.bookFound);
 		}
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
@@ -415,10 +417,14 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							if (!result) {
+								toastError(bookFetchingMessages.bookNotFound);
 							}
+
+							const [bookData] = result;
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
+
 							// TODO: handle loading and errors
 						}}
 					/>

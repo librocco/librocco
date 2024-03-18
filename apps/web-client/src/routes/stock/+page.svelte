@@ -15,7 +15,7 @@
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
+	import { toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -181,10 +181,13 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							if (!result) {
+								toastError(bookFetchingMessages.bookNotFound);
 							}
+
+							const [bookData] = result;
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
 					/>
