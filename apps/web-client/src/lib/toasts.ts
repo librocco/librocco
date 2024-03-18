@@ -49,6 +49,10 @@ export const warehouseToastMessages = (warehouseName) => ({
 	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`
 });
 
+export const bookFetchingMessages = {
+	bookFound: "Book data found",
+	bookNotFound: "Book data could not be found"
+};
 // Aliging with BadgeColor enum here as it this color+message combo is used in the RemoteDb Description List
 export const replicationStatusMessages = {
 	INIT: { state: "success", message: "Connecting to remote database" },
