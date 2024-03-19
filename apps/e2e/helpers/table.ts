@@ -148,6 +148,15 @@ const stringFieldConstructor =
 			expect(row.locator(`[data-property="${name}"]`)).toHaveText(transformDisplay(want.toString()), { timeout: assertionTimeout, ...opts })
 	});
 
+const priceFieldConstructor: FieldConstructor<"price"> = (row) => ({
+	assert: (want: string | number, opts) =>
+		typeof want === "string"
+			? expect(row.locator(`[data-property="price"]`)).toHaveText(want, { timeout: assertionTimeout, ...opts })
+			: expect(row.locator(`[data-property="price"]`)).toHaveText(`€${want.toFixed(2)}`, {
+					timeout: assertionTimeout,
+					...opts
+			  })
+});
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
 	assert: (want, opts) =>
 		view === "warehouse"
@@ -204,7 +213,7 @@ const fieldConstructorLookup: {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
 	authors: stringFieldConstructor("authors"),
-	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${Number.parseFloat(x).toFixed(2)}`)),
+	price: priceFieldConstructor,
 	quantity: quantityFieldCostructor,
 	publisher: stringFieldConstructor("publisher"),
 	outOfPrint: outOfPrintFieldConstructor,
