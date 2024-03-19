@@ -32,7 +32,7 @@ export interface DisplayRow {
 	title: string;
 	quantity: number;
 	warehouseId: string;
-	price: number;
+	price: number | string;
 	year?: string;
 	authors?: string;
 	publisher?: string;
