@@ -3,6 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "./constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
+import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -337,6 +338,41 @@ test("should update the warehouse using the 'Edit' dialog", async ({ page }) => 
 
 	// Check that the warehouse has been updated
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse (edited)", numBooks: 2, discount: 15 }]);
+});
+
+test("should display book original price and discounted price as well as the warehouse discount percentage", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create a basic warehouse with 10% discount
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((wh) => wh.setDiscount({}, 10))
+	);
+
+	// Create a new book with price
+	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
+
+	// Add book to warehouse
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note()
+			.addVolumes({ isbn: "1234567890", quantity: 1 })
+			.then((n) => n.commit({}))
+	);
+
+	// Navigate to the warehouse page
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
+
+	// Select first row and assert isbn and price
+	const priceRow = `Discounted price: €10.80 Original price: (€12.00) Percentage discount: -10%`;
+	await content.table("warehouse").assertRows([{ isbn: "1234567890", price: priceRow }]);
 });
 
 // TODO: Test renaming using the editable title
