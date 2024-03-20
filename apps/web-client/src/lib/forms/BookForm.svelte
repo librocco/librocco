@@ -19,6 +19,7 @@
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
+	import { extensionAvailable } from "$lib/stores";
 
 	export let data: BookFormData | null;
 	export let options: BookFormOptions;
@@ -71,7 +72,6 @@
 		disabled: false
 	});
 
-	$: extensionAvailable = localStorage.getItem("extensionAvailable");
 	/**
 	 * Update selected as the publisher value changes in the formStore
 	 * This way a user could selected e.g "Publisher 2", but then edit the value to "Publisher"
@@ -102,12 +102,11 @@
 					<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
 				</div>
 				<button
-					disabled={extensionAvailable !== "true"}
+					disabled={!$extensionAvailable}
 					type="button"
-					class={[
-						"button button-alert mb-0.5 self-end",
-						`${extensionAvailable !== "true" && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`
-					].join(" ")}
+					class={["button button-alert mb-0.5 self-end", `${!$extensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(
+						" "
+					)}
 					on:click={() => onFetch($formStore.isbn, formStore)}
 				>
 					Fill details

@@ -1628,7 +1628,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		// Registering a plugin implementation should return that implementation for all subsequent calls
 		const impl1 = {
-			fetchBookData: async (isbns: string[]) => isbns as any // In practice this should be a BookEntry array
+			fetchBookData: async (isbns: string[]) => isbns as any, // In practice this should be a BookEntry array
+			AvailabilitySubject: new BehaviorSubject(false),
+			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
@@ -1639,7 +1641,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		// Registering a different implementation should return that implementation for all subsequent calls
 		const impl2 = {
-			fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 }))
+			fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 })),
+			AvailabilitySubject: new BehaviorSubject(false),
+			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);

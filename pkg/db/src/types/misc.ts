@@ -4,7 +4,7 @@ import type { Search } from "js-search";
 import type { DocType } from "@/enums";
 
 import { debug } from "@librocco/shared";
-import { Observable } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 
 // #region utils
 /**
@@ -160,6 +160,8 @@ export type LibroccoPlugin<T extends {}> = {
 
 export interface BookFetcherPlugin {
 	fetchBookData(isbns: string[]): Promise<BookEntry[]>;
+	checkAvailability(): Promise<void>;
+	AvailabilitySubject: BehaviorSubject<boolean>;
 }
 
 export interface PluginInterfaceLookup {

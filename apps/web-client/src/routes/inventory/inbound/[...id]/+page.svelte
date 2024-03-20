@@ -47,8 +47,6 @@
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const db = getDB()!;
 
-	const plugin = createBookDataExtensionPlugin();
-
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
@@ -112,7 +110,7 @@
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
 
-		const book = await plugin.fetchBookData([isbn]);
+		const book = await bookDataPlugin.fetchBookData([isbn]);
 		if (!book.length) {
 			toastError(bookFetchingMessages.bookNotFound);
 		} else if (book.length) {
