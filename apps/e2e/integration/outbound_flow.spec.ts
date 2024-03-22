@@ -297,7 +297,8 @@ test("should display book original price and discounted price as well as the war
 
 	// Select first row and assert isbn and price
 	await dashboard.view("outbound-note").waitFor();
-	const priceRow = `Discounted price: €10.80 Original price: (€12.00) Percentage discount: -10%`;
-	await content.table("warehouse").assertRows([{ isbn: "1234567890", price: priceRow }]);
+	await content
+		.table("warehouse")
+		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
 // TODO: Test renaming using the editable title
