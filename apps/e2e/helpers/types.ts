@@ -26,13 +26,18 @@ interface Setter<T> {
 
 type AsserterSetter<T> = Asserter<T> & Setter<T>;
 
+export interface IBookPrice {
+	price: string;
+	discount?: string;
+	discountedPrice?: string;
+}
 /** @TODO Import this from shared (duplicate) */
 export interface DisplayRow {
 	isbn: string;
 	title: string;
 	quantity: number;
 	warehouseId: string;
-	price: number | string;
+	price: number | string | IBookPrice;
 	year?: string;
 	authors?: string;
 	publisher?: string;
@@ -208,10 +213,10 @@ export interface TransactionFieldInterfaceLookup {
 	quantity: AsserterSetter<number>;
 	year: Asserter<string>;
 	publisher: Asserter<string>;
-	price: Asserter<number>;
+	price: Asserter<number | string | IBookPrice>;
 	warehouseName: WarehouseNameTransactionField;
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
 }
-export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName">;
+export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName" | "price">;
 // #endregion inventory table
