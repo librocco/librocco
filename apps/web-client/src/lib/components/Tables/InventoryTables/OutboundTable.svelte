@@ -54,8 +54,12 @@
 			{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
 			{@const { warehouseId, availableWarehouses } = row}
 			{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
+			<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
+			{@const requiresAction = !warehouseId && availableWarehouses?.size > 1}
+			<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
 			{@const outOfStock = quantityInWarehouse < quantity}
-			<tr class={outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
+			<!-- Require action takes precedence over out of stock -->
+			<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" data-property="book" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
 				</th>
