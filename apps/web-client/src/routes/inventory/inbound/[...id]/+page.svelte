@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, PowerCircle, Power } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -40,6 +40,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { scanAutofocus } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -200,6 +201,11 @@
 				}
 			}}
 		/>
+		<button
+			on:click={scanAutofocus.toggle}
+			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
+			><Power size={18} />Scan</button
+		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -223,7 +229,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -258,7 +264,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -266,7 +272,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -274,7 +280,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,

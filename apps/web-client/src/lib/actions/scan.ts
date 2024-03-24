@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
-import { writable } from "svelte/store";
+import { writable, type Readable, readable } from "svelte/store";
 
 export const MAXIMUM_SCANNER_KEY_GAP = 100;
 
@@ -15,7 +15,7 @@ const initialState: ScanState = {
 	target: null
 };
 
-export const scan = (node?: HTMLInputElement) => {
+export const scan = (node?: HTMLInputElement, on: Readable<boolean> = readable(true)) => {
 	const store = (() => {
 		const store = writable<ScanState>(initialState);
 
@@ -77,11 +77,18 @@ export const scan = (node?: HTMLInputElement) => {
 		});
 	};
 
-	window.addEventListener("keydown", handleKeydown);
+	const scanOnUnsubscribe = on.subscribe((scanOn) => {
+		if (scanOn) {
+			window.addEventListener("keydown", handleKeydown);
+		} else {
+			window.removeEventListener("keydown", handleKeydown);
+		}
+	});
 
 	return {
 		destroy() {
 			window.removeEventListener("keydown", handleKeydown);
+			scanOnUnsubscribe();
 		}
 	};
 };
