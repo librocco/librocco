@@ -143,7 +143,7 @@
 		<!-- Topbar container end -->
 
 		<!-- Heading section -->
-		<header class="xs:px-8 w-full px-4 pt-5 pb-6">
+		<header class="w-full px-4 pt-5 pb-6 xs:px-8">
 			<slot name="heading" />
 		</header>
 		<!-- Heading section end -->
