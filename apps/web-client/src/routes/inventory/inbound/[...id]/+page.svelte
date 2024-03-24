@@ -231,7 +231,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green xs:block hidden"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -266,7 +266,7 @@
 								type: "commit"
 							};
 						}}
-						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -274,7 +274,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -282,7 +282,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
