@@ -93,7 +93,7 @@
 		{#each options as warehouse}
 			{@const { label, value } = warehouse}
 			<div
-				class="data-[highlighted]:bg-teal-500 data-[highlighted]:text-white relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10"
+				class="relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
 				{...$option(warehouse)}
 				use:option
 			>
