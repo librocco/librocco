@@ -218,6 +218,8 @@
 			}}
 		/>
 		<button
+			data-testid="scan-autofocus-toggle"
+			data-is-on={$scanAutofocus}
 			on:click={(e) => (scanAutofocus.toggle(), e.currentTarget.blur())}
 			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
 			><Power size={18} />Scan</button
