@@ -46,11 +46,12 @@
 
 	// If there's only one warehouse the book is available in, and the selected warehouse is not that one, change the selected warehouse
 	onMount(() => {
-		if (availableWarehouses.size !== 1) return;
-
-		const availableWarehouse = availableWarehouses.keys().next().value;
-		if (availableWarehouse !== warehouseId) {
+		if (availableWarehouses.size === 1 && availableWarehouses.keys().next().value !== warehouseId) {
+			const availableWarehouse = availableWarehouses.keys().next().value;
 			// Tick isn't necessary here, but it's much easier when testing
+			tick().then(() => dispatchChange(availableWarehouse));
+		} else if (availableWarehouses.size > 1 && warehouseId === "") {
+			const availableWarehouse = availableWarehouses.keys().next().value;
 			tick().then(() => dispatchChange(availableWarehouse));
 		}
 	});
