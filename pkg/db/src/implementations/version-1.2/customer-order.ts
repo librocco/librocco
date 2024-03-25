@@ -231,7 +231,7 @@ class CustomerOrder implements CustomerOrderInterface {
 	}
 
 	/**
-	 * Update individual book on customer order status.
+	 * Update individual book on customer order state.
 	 * only the client state (the supplier state is handled elsewere)
 	 */
 	async updateBookStatus(ctx: debug.DebugCtx, isbns: string[], status: OrderItemStatus): Promise<string[]> {
@@ -247,7 +247,7 @@ class CustomerOrder implements CustomerOrderInterface {
 
 		await this.updateDocument(ctx, { books: updatedBooks });
 
-		// Remove updated items from the list. We're returning the residual for further processing
+		// Remove updated books from the list. We're returning the residual for further processing
 		const residual = toUpdate.filter(({ updated }) => !updated).map((item) => item.isbn);
 		debug.log(ctx, "customer_order:update_book_status:residual")({ residual });
 
