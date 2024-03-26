@@ -3,7 +3,7 @@ module.exports = {
 	parser: "@typescript-eslint/parser",
 	extends: ["eslint:recommended", "plugin:@typescript-eslint/recommended", "prettier"],
 	plugins: ["@typescript-eslint"],
-	ignorePatterns: ["*.cjs", "*.config.js", "*.setup.*", "dist/*", "build/*"],
+	ignorePatterns: ["*.cjs", "*.config.*", "*.setup.*", "dist/*", "build/*"],
 	parserOptions: {
 		sourceType: "module",
 		ecmaVersion: 2020,

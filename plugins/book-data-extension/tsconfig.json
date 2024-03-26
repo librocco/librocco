@@ -1,12 +1,12 @@
 {
 	"extends": "../../pkg/scaffold/tsconfig.json",
 	"compilerOptions": {
-		"rootDir": "",
+		"rootDir": "src",
 		"baseUrl": ".",
 		"types": ["node"],
 		"lib": ["ESNext", "DOM"],
 		"esModuleInterop": true
 	},
 	"exclude": ["node_modules"],
-	"include": ["src", "./vite.config.ts"]
+	"include": ["src"]
 }

@@ -5,6 +5,7 @@ import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 import type { BookFormData } from "$lib/forms";
 
 import type { BookEntry } from "@librocco/db";
+import { toastSuccess, bookFetchingMessages, toastError } from "$lib/toasts";
 
 interface BookFormStore extends Readable<BookFormData | null> {
 	openEdit: (book: BookFormData) => void;
@@ -32,9 +33,11 @@ export function newBookFormStore(): BookFormStore {
 	 */
 	const fetch = async (book: BookFormData) =>
 		plugin.fetchBookData([book.isbn]).then((bookData: BookEntry[]) => {
-			if (bookData.length) {
-				internalStore.set(bookData[0]);
+			if (!bookData.length) {
+				toastError(bookFetchingMessages.bookNotFound);
 			}
+			internalStore.set(bookData[0]);
+			toastSuccess(bookFetchingMessages.bookFound);
 		});
 
 	return {

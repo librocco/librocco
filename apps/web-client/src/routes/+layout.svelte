@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import { Subscription } from "rxjs";
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
@@ -9,7 +10,8 @@
 	import { IS_E2E } from "$lib/constants";
 
 	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
-	import { remoteDbStore } from "$lib/stores";
+	import { extensionAvailable, remoteDbStore } from "$lib/stores";
+	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { LayoutData } from "./$types";
 
@@ -32,6 +34,8 @@
 	// TODO: Maybe move the toasts somewhere else on the screen as they're obscuring
 	// the dashboard for tests as well as for the user clicking through.
 	let showNotifications = !IS_E2E;
+
+	let availabilitySubscription: Subscription;
 
 	onMount(async () => {
 		// Register the db to the window object.
@@ -58,7 +62,15 @@
 				}
 			});
 		}
+
+		await bookDataPlugin.checkAvailability();
+
+		availabilitySubscription = bookDataPlugin.AvailabilitySubject.subscribe((value) => extensionAvailable.set(value));
 	});
+
+	export function onDestroy() {
+		availabilitySubscription && availabilitySubscription.unsubscribe();
+	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
 </script>

@@ -1,4 +1,5 @@
 import { LibroccoPlugin, PluginInterfaceLookup } from "@/types";
+import { BehaviorSubject } from "rxjs";
 
 export interface PluginsInterface {
 	get<T extends keyof PluginInterfaceLookup>(pluginName: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
@@ -31,7 +32,9 @@ class Plugins implements PluginsInterface {
 
 // #region fallbacks
 const bookFetcherFallback = {
-	fetchBookData: async () => []
+	fetchBookData: async () => [],
+	checkAvailability: async () => {},
+	AvailabilitySubject: new BehaviorSubject(false)
 };
 // #endregion fallbacks
 

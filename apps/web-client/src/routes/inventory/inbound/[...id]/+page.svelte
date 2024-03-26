@@ -7,11 +7,11 @@
 
 	import { goto } from "$app/navigation";
 
+	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 	import { NoteState, testId } from "@librocco/shared";
-
 	import type { BookEntry } from "@librocco/db";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
+	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
 
 	import {
@@ -29,7 +29,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { toastSuccess, noteToastMessages, bookFetchingMessages, toastError } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
@@ -112,6 +112,14 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
+
+		const book = await bookDataPlugin.fetchBookData([isbn]);
+		if (!book.length) {
+			toastError(bookFetchingMessages.bookNotFound);
+		} else if (book.length) {
+			await db.books().upsert(book);
+			toastSuccess(bookFetchingMessages.bookFound);
+		}
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
@@ -430,12 +438,16 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							if (!result) {
+								toastError(bookFetchingMessages.bookNotFound);
 							}
+
+							const [bookData] = result;
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
+
 							// TODO: handle loading and errors
 						}}
 					/>

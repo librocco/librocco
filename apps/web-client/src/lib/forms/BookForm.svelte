@@ -19,6 +19,7 @@
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
+	import { extensionAvailable } from "$lib/stores";
 
 	export let data: BookFormData | null;
 	export let options: BookFormOptions;
@@ -100,7 +101,14 @@
 				<div class="grow">
 					<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
 				</div>
-				<button type="button" class="button button-alert mb-0.5 self-end" on:click={() => onFetch($formStore.isbn, formStore)}>
+				<button
+					disabled={!$extensionAvailable}
+					type="button"
+					class={["button button-alert mb-0.5 self-end", `${!$extensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(
+						" "
+					)}
+					on:click={() => onFetch($formStore.isbn, formStore)}
+				>
 					Fill details
 				</button>
 			</div>
