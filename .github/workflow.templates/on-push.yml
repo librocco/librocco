@@ -20,29 +20,28 @@ jobs:
 
   db-test: #@ test_job("DB Tests", "pkg/db")
 
-  #! TODO: e2e need to be updated first to reflect UI-rehaul
-  #! e2e-test:
-  #!   timeout-minutes: 60
-  #!   runs-on: ubuntu-latest
-  #!  steps:
-  #!     - uses: actions/checkout@v3
-  #!     - uses: actions/setup-node@v3
-  #!       with:
-  #!         node-version: "20"
-  #!     -  #@ cache_node()
-  #!     -  #@ rush_add_path()
-  #!     -  #@ rush_install()
-  #!     -  #@ rush_build()
-  #!     - name: Build the app
-  #!       run: cd apps/web-client && rushx build:prod
-  #!     - name: Run Playwright tests
-  #!       run: cd apps/e2e && rushx test:ci
-  #!     - uses: actions/upload-artifact@v3
-  #!       if: always()
-  #!       with:
-  #!         name: playwright-test-results
-  #!         path: apps/e2e/test-results
-  #!         retention-days: 30
+  e2e-test:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-node@v3
+        with:
+          node-version: "20"
+      -  #@ cache_node()
+      -  #@ rush_add_path()
+      -  #@ rush_install()
+      -  #@ rush_build()
+      - name: Build the app
+        run: cd apps/web-client && rushx build:prod
+      - name: Run Playwright tests
+        run: cd apps/e2e && rushx test:ci
+      - uses: actions/upload-artifact@v3
+        if: always()
+        with:
+          name: playwright-test-results
+          path: apps/e2e/test-results
+          retention-days: 30
 
   lint-and-typecheck:
     runs-on: ubuntu-latest

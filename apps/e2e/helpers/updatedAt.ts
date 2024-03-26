@@ -31,7 +31,9 @@ export function getUpdatedAt(parent: DashboardNode): UpdatedAtInterface {
 
 		// Without mocking the date, we can't assert the exact date, but we can expect the 'updatedAt' to be close to the want date
 		const wantDate = typeof want === "string" ? new Date(want) : want;
-		const { precision = 60 * 1000 } = opts;
+		// In practice, this should happen a lot faster than 90 seconds (even much faster than a minute), but
+		// the updated at label rounds down on minutes, so we're accounting for the rounding error + some time between the update and the assertion
+		const { precision = 90 * 1000 } = opts;
 		const wantMillis = wantDate.getTime() - precision;
 
 		expect(updatedAtMillis).toBeGreaterThan(wantMillis);

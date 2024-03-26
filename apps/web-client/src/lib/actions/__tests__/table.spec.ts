@@ -106,12 +106,12 @@ test("Updates aria-rowcount & aria-rowindex's when rows are added/removed", asyn
 	const row2 = rows[1];
 
 	// TODO: This is a pain to fix aany time there is a slight update to the table, and it looks terribly inaccessible
-	// 917289012381 title: Hellenistic history and culture authors: Peter Green year: 2017 Hellenistic history and culture Peter Green Discounted price: €99.90 Original price: (€100) Percentage discount: -10% 3 Penguin 2017
+	// 917289012381 title: Hellenistic history and culture authors: Peter Green year: 2017 Hellenistic history and culture Peter Green Discounted price: €99.90 Original price: (€100.00) Percentage discount: -10% 3 Penguin 2017
 	const row2Name = `${row2.isbn} title: ${row2.title} authors: ${row2.authors} year: ${row2.year} ${row2.title} ${
 		row2.authors
-	} Discounted price: €${(row2.price - row2.warehouseDiscount / 100).toFixed(2)} Original price: (€${row2.price}) Percentage discount: -${
-		row2.warehouseDiscount
-	}% ${row2.quantity} ${row2.publisher} ${row2.year}`;
+	} Discounted price: €${((row2.price * (100 - row2.warehouseDiscount)) / 100).toFixed(2)} Original price: (€${row2.price.toFixed(
+		2
+	)}) Percentage discount: -${row2.warehouseDiscount}% ${row2.quantity} ${row2.publisher} ${row2.year}`;
 
 	const dataRow2 = screen.getByRole("row", { name: row2Name });
 

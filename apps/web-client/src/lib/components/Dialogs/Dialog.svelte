@@ -19,13 +19,15 @@
 	use:melt={$content}
 >
 	<slot name="content">
-		<div class="flex max-w-sm grow flex-col items-start gap-y-2">
+		<div class="flex max-w-lg grow flex-col items-start gap-y-2">
 			<h2 class="text-lg font-semibold text-gray-800" use:melt={$title}>
 				<slot name="title" />
 			</h2>
-			<p class="text-base font-normal text-gray-600" use:melt={$description}>
+			<p class="whitespace-pre-line text-base font-normal text-gray-600" use:melt={$description}>
 				<slot name="description" />
 			</p>
+
+			<slot />
 		</div>
 	</slot>
 

@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -21,6 +21,7 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
+		TextEditable,
 		Dialog,
 		InboundTable
 	} from "$lib/components";
@@ -77,13 +78,15 @@
 		}
 	}
 
-	const handleCommitSelf = async () => {
+	const handleCommitSelf = async (closeDialog: () => void) => {
 		await note.commit({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
 
-	const handleDeleteSelf = async () => {
+	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
@@ -211,20 +214,26 @@
 
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<div class="flex w-full items-center justify-between">
-			<div>
-				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+		<div class="flex w-full flex-wrap items-center justify-between gap-2">
+			<div class="flex max-w-md flex-col">
+				<TextEditable
+					name="title"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Note"
+					bind:value={$displayName}
+				/>
 
-				<div class="h-5">
+				<div class="w-fit">
 					{#if $updatedAt}
 						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
-			<div class="flex items-center gap-x-3">
+			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -247,6 +256,22 @@
 				</button>
 
 				<DropdownWrapper let:item>
+					<div
+						{...item}
+						use:item.action
+						use:melt={$dialogTrigger}
+						on:m-click={() => {
+							dialogContent = {
+								onConfirm: handleCommitSelf,
+								title: dialogTitle.commitOutbound(note.displayName),
+								description: dialogDescription.commitOutbound($entries.length),
+								type: "commit"
+							};
+						}}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+					>
+						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
+					</div>
 					<div
 						{...item}
 						use:item.action
@@ -430,14 +455,7 @@
 			</div>
 		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
-					{dialog}
-					{type}
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
-					}}
-				>
+				<Dialog {dialog} {type} {onConfirm}>
 					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 				</Dialog>

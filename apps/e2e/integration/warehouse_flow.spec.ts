@@ -3,6 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "./constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
+import { book1 } from "@/integration/data";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -54,9 +55,26 @@ test("should delete the warehouse on delete button click (after confirming the p
 
 	// Delete the first warehouse
 	await content.entityList("warehouse-list").item(0).dropdown().delete();
-	await dashboard.dialog().confirm();
 
-	// Check that the warehouse has been deleted
+	const dialog = dashboard.dialog();
+
+	// The dialog should display the warehouse name to type in as confirmation
+	await dialog.getByPlaceholder("warehouse_1").waitFor();
+	await dialog.confirm();
+
+	// The dialog should not have been close (nor warehouse deleted) without name input as confirmation
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
+
+	// Type in the wrong text (the dialog should not close nor warehouse be deleted)
+	await dialog.getByPlaceholder("warehouse_1").fill("wrong name");
+	await dialog.confirm();
+	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
+
+	// Type in the correct confirmation name and complete the deletion
+	await dialog.getByPlaceholder("warehouse_1").fill("warehouse_1");
+	await dialog.confirm();
+
+	await dialog.waitFor({ state: "detached" });
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 2" }]);
 });
 
@@ -320,6 +338,42 @@ test("should update the warehouse using the 'Edit' dialog", async ({ page }) => 
 
 	// Check that the warehouse has been updated
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse (edited)", numBooks: 2, discount: 15 }]);
+});
+
+test("should display book original price and discounted price as well as the warehouse discount percentage", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create a basic warehouse with 10% discount
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.create()
+			.then((wh) => wh.setDiscount({}, 10))
+	);
+
+	// Create a new book with price
+	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
+
+	// Add book to warehouse
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("warehouse-1")
+			.note()
+			.addVolumes({ isbn: "1234567890", quantity: 1 })
+			.then((n) => n.commit({}))
+	);
+
+	// Navigate to the warehouse page
+	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
+
+	// Select first row and assert isbn and price
+	await content
+		.table("warehouse")
+		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
 
 // TODO: Test renaming using the editable title

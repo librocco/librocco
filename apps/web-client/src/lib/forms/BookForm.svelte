@@ -186,7 +186,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="button button-white" on:click={onCancel} type="button"> Cancel </button>
+		<button class="button button-white" on:click={onCancel} type="button">Cancel</button>
 		<button class="button button-green disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

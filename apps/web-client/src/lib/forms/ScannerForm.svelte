@@ -34,5 +34,6 @@
 		required
 		placeholder="Scan to add books"
 		class="h-full w-full border-0 focus:outline-none focus:ring-0"
+		autocomplete="off"
 	/>
 </form>
