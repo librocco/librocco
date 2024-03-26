@@ -540,11 +540,11 @@
 							onCancel={() => open.set(false)}
 							onFetch={async (isbn, form) => {
 								const result = await bookDataPlugin.fetchBookData([isbn]);
-	
+
 								if (!result) {
 									toastError(bookFetchingMessages.bookNotFound);
 								}
-	
+
 								const [bookData] = result;
 								toastSuccess(bookFetchingMessages.bookFound);
 								form.update((data) => ({ ...data, ...bookData }));
