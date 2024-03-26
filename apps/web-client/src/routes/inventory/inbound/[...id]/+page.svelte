@@ -78,13 +78,15 @@
 		}
 	}
 
-	const handleCommitSelf = async () => {
+	const handleCommitSelf = async (closeDialog: () => void) => {
 		await note.commit({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
 
-	const handleDeleteSelf = async () => {
+	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
@@ -441,14 +443,7 @@
 			</div>
 		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
-					{dialog}
-					{type}
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
-					}}
-				>
+				<Dialog {dialog} {type} {onConfirm}>
 					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 				</Dialog>
