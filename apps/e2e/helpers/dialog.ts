@@ -9,8 +9,7 @@ export function getDialog(parent: DashboardNode): DialogInterface {
 		return container.waitFor({ state: "detached" });
 	};
 	const confirm = async () => {
-		await container.getByRole("button", { name: "Confirm" }).click();
-		return container.waitFor({ state: "detached" });
+		return container.getByRole("button", { name: "Confirm" }).click();
 	};
 
 	return Object.assign(container, { dashboard, cancel, confirm });

@@ -10,6 +10,14 @@ tbody tr {
 	@apply text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50;
 }
 
+tbody tr.out-of-stock {
+	@apply !border border-red-300 bg-red-200/80;
+}
+
+tbody tr.requires-action {
+	@apply bg-yellow-200/80;
+}
+
 th,
 td {
 	@apply py-4 px-3;
