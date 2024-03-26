@@ -13,6 +13,8 @@
 
 	import { scannerSchema, type ScannerData } from "$lib/forms/schemas";
 
+	import { scanAutofocus } from "$lib/stores/app";
+
 	import { scan } from "$lib/actions/scan";
 
 	export let data: ScannerData | null;
@@ -29,7 +31,7 @@
 		data-testid={testId("scan-input")}
 		name="isbn"
 		id="isbn"
-		use:scan
+		use:scan={scanAutofocus}
 		bind:value={$formStore.isbn}
 		required
 		placeholder="Scan to add books"

@@ -22,9 +22,36 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.content().header().title().assert("New Note");
 });
 
-test('should route "keyboard" input with freqency of scan input to the scan input element even if scan element is not focused', async ({
+test('should route "keyboard" input with freqency of scan input to the scan input element even if scan element is not focused (by default)', async ({
 	page
 }) => {
+	await page.keyboard.type("1234567890");
+	await page.keyboard.press("Enter");
+
+	// The input should have been submitted and a new transaction added
+	await getDashboard(page)
+		.content()
+		.table("outbound-note")
+		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
+});
+
+test("should update scan input autofocus behaviour with respect to the state in store (toggle on 'scan' button click)", async ({
+	page
+}) => {
+	const dashboard = getDashboard(page);
+
+	// Turn the scan autofocus off
+	await dashboard.content().scanField().toggleOff();
+
+	// Attempt scan
+	await page.keyboard.type("1234567890");
+	await page.keyboard.press("Enter");
+
+	// Nothing should have happened
+	await getDashboard(page).content().table("outbound-note").assertRows([]);
+
+	// Turn the scan autofocus back on and scan again
+	await dashboard.content().scanField().toggleOn();
 	await page.keyboard.type("1234567890");
 	await page.keyboard.press("Enter");
 

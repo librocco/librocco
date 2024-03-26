@@ -131,7 +131,7 @@
 			<!-- SM size menu icon end -->
 
 			<!-- Top bar input -->
-			<div class="flex h-full w-full items-center px-4 focus-within:ring-2 focus-within:ring-inset">
+			<div class="relative flex h-full w-full items-center px-4 focus-within:ring-2 focus-within:ring-inset">
 				<slot
 					name="topbar"
 					iconProps={{ class: "text-gray-400", size: 24 }}

@@ -4,7 +4,7 @@
 	import { map } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -35,6 +35,7 @@
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { createNoteStores } from "$lib/stores/proto";
+	import { scanAutofocus } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -261,6 +262,13 @@
 				}
 			}}
 		/>
+		<button
+			data-testid="scan-autofocus-toggle"
+			data-is-on={$scanAutofocus}
+			on:click={(e) => (scanAutofocus.toggle(), e.currentTarget.blur())}
+			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
+			><Power size={18} />Scan</button
+		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">

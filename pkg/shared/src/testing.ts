@@ -30,7 +30,8 @@ export type TestId =
 	| "popover-container"
 	| "edit-row"
 	| "delete-row"
-	| "book-form";
+	| "book-form"
+	| "scan-autofocus-toggle";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
