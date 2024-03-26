@@ -11,7 +11,8 @@
 
 	import { goto } from "$app/navigation";
 
-	import { DropdownWrapper, PlaceholderBox, Dialog } from "$lib/components";
+	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
+	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -23,6 +24,7 @@
 	import { appPath } from "$lib/paths";
 
 	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
+	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 
 	const db = getDB();
@@ -45,6 +47,7 @@
 
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
+		open.set(false);
 		toastSuccess(warehouseToastMessages(warehouseName).warehouseDeleted);
 	};
 
@@ -75,189 +78,194 @@
 	} = dialog;
 
 	let editWarehouse: WarehouseFormData = null;
+	let deleteWarehouse: { id: string; displayName: string } = null;
 	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 </script>
 
-<!-- The Page layout is rendered by the parent (inventory) '+layout.svelte', with inbound and warehouse page rendering only their respective entity lists -->
+<InventoryManagementPage>
+	{#if !initialized}
+		<div class="center-absolute">
+			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+		</div>
+	{:else}
+		<!-- Start entity list contaier -->
 
-{#if !initialized}
-	<div class="center-absolute">
-		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-	</div>
-{:else}
-	<!-- Start entity list contaier -->
+		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+		<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
+			{#if !$warehouseList.length}
+				<!-- Start entity list placeholder -->
+				<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
+					<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
+				</PlaceholderBox>
+				<!-- End entity list placeholder -->
+			{:else}
+				<!-- Start entity list -->
+				{#each $warehouseList as [warehouseId, warehouse]}
+					{@const displayName = warehouse.displayName || warehouseId}
+					{@const totalBooks = warehouse.totalBooks}
+					{@const href = appPath("warehouses", warehouseId)}
+					{@const warehouseDiscount = warehouse.discountPercentage}
 
-	<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-	<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
-		{#if !$warehouseList.length}
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-				<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
-			</PlaceholderBox>
-			<!-- End entity list placeholder -->
-		{:else}
-			<!-- Start entity list -->
-			{#each $warehouseList as [warehouseId, warehouse]}
-				{@const displayName = warehouse.displayName || warehouseId}
-				{@const totalBooks = warehouse.totalBooks}
-				{@const href = appPath("warehouses", warehouseId)}
-				{@const warehouseDiscount = warehouse.discountPercentage}
+					<li class="entity-list-row flex items-center justify-between">
+						<div class="max-w-1/2 w-full">
+							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
 
-				<li class="entity-list-row">
-					<div class="max-w-1/2 w-full">
-						<p class="entity-list-text-lg text-gray-900">{displayName}</p>
-
-						<div class="flex items-center">
-							<div class="flex w-32 items-center gap-x-1">
-								<Library class="text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
-							</div>
-
-							{#if warehouseDiscount}
-								<div class="flex items-center gap-x-1">
-									<div class="border border-gray-700 p-[1px]">
-										<Percent class="text-gray-700" size={14} />
-									</div>
-									<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+							<div class="flex flex-wrap gap-y-2">
+								<div class="flex w-32 items-center gap-x-1">
+									<Library class="text-gray-700" size={20} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
 								</div>
-							{/if}
+
+								{#if warehouseDiscount}
+									<div class="flex items-center gap-x-1">
+										<div class="border border-gray-700 p-[1px]">
+											<Percent class="text-gray-700" size={14} />
+										</div>
+										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+									</div>
+								{/if}
+							</div>
 						</div>
-					</div>
 
-					<div class="max-w-1/2 flex w-full items-center justify-end gap-3">
-						<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button>
-
-						<DropdownWrapper let:separator let:item>
-							<div
-								{...item}
-								use:item.action
-								use:melt={$trigger}
-								on:m-click={() => {
-									editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
-									dialogContent = {
-										onConfirm: () => {},
-										title: dialogTitle.editWarehouse(),
-										description: dialogDescription.editWarehouse(),
-										type: "edit"
-									};
-								}}
-								on:m-keydown={() => {
-									editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
-									dialogContent = {
-										onConfirm: () => {},
-										title: dialogTitle.editWarehouse(),
-										description: dialogDescription.editWarehouse(),
-										type: "edit"
-									};
-								}}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						<div class="entity-list-actions">
+							<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button
 							>
-								<Edit class="text-gray-400" size={20} />
-								<span class="text-gray-700">Edit</span>
-							</div>
 
-							<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
+							<DropdownWrapper let:separator let:item>
+								<div
+									{...item}
+									use:item.action
+									use:melt={$trigger}
+									on:m-click={() => {
+										editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editWarehouse(),
+											description: dialogDescription.editWarehouse(),
+											type: "edit"
+										};
+									}}
+									on:m-keydown={() => {
+										editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editWarehouse(),
+											description: dialogDescription.editWarehouse(),
+											type: "edit"
+										};
+									}}
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								>
+									<Edit class="text-gray-400" size={20} />
+									<span class="text-gray-700">Edit</span>
+								</div>
 
-							<a
-								{href}
-								{...item}
-								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Table2 class="text-gray-400" size={20} />
-								<span class="text-gray-700">View Stock</span>
-							</a>
+								<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
 
-							<div
-								{...item}
-								use:item.action
-								use:melt={$trigger}
-								on:m-click={() => {
-									dialogContent = {
-										onConfirm: handleDeleteWarehouse(warehouseId, displayName),
-										title: dialogTitle.delete(displayName),
-										description: dialogDescription.deleteWarehouse(totalBooks),
-										type: "delete"
-									};
-								}}
-								on:m-keydown={() => {
-									dialogContent = {
-										onConfirm: handleDeleteWarehouse(warehouseId, displayName),
-										title: dialogTitle.delete(displayName),
-										description: dialogDescription.deleteWarehouse(totalBooks),
-										type: "delete"
-									};
-								}}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-							>
-								<Trash2 class="text-white" size={20} />
-								<span class="text-white">Delete</span>
-							</div>
-						</DropdownWrapper>
-					</div>
-				</li>
-			{/each}
-			<!-- End entity list -->
-		{/if}
-	</ul>
-	<!-- End entity list contaier -->
-{/if}
+								<a
+									{href}
+									{...item}
+									use:item.action
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								>
+									<Table2 class="text-gray-400" size={20} />
+									<span class="text-gray-700">View Stock</span>
+								</a>
 
-<div use:melt={$portalled}>
-	{#if $open}
-		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent};
-
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		{#if type === "edit"}
-			<div
-				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
-				use:melt={$content}
-			>
-				<h2 class="sr-only" use:melt={$title}>
-					{dialogTitle}
-				</h2>
-				<p class="sr-only" use:melt={$description}>
-					{dialogDescription}
-				</p>
-				<WarehouseForm
-					data={editWarehouse}
-					options={{
-						SPA: true,
-						dataType: "json",
-						validators: warehouseSchema,
-						validationMethod: "submit-only",
-						onUpdated: async ({ form }) => {
-							const { id, name, discount } = form?.data;
-							const warehouseInterface = db.warehouse(id);
-
-							try {
-								await warehouseInterface.setName({}, name);
-								await warehouseInterface.setDiscount({}, discount);
-
-								open.set(false);
-								toastSuccess(warehouseToastMessages(name).warehouseUpdated);
-							} catch (err) {
-								toastError(`Error: ${err.message}`);
-							}
-						}
-					}}
-					onCancel={() => open.set(false)}
-				/>
-			</div>
-		{:else}
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
-					{dialog}
-					type="delete"
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
-					}}
-				>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-				</Dialog>
-			</div>
-		{/if}
+								<div
+									{...item}
+									use:item.action
+									use:melt={$trigger}
+									on:m-click={() => {
+										deleteWarehouse = { id: warehouseId, displayName };
+										dialogContent = {
+											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											title: dialogTitle.delete(displayName),
+											description: dialogDescription.deleteWarehouse(totalBooks),
+											type: "delete"
+										};
+									}}
+									on:m-keydown={() => {
+										deleteWarehouse = { id: warehouseId, displayName };
+										dialogContent = {
+											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											title: dialogTitle.delete(displayName),
+											description: dialogDescription.deleteWarehouse(totalBooks),
+											type: "delete"
+										};
+									}}
+									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+								>
+									<Trash2 class="text-white" size={20} />
+									<span class="text-white">Delete</span>
+								</div>
+							</DropdownWrapper>
+						</div>
+					</li>
+				{/each}
+				<!-- End entity list -->
+			{/if}
+		</ul>
+		<!-- End entity list contaier -->
 	{/if}
-</div>
+
+	<div use:melt={$portalled}>
+		{#if $open}
+			{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+
+			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+			{#if type === "edit"}
+				<div
+					class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
+					use:melt={$content}
+				>
+					<h2 class="sr-only" use:melt={$title}>
+						{dialogTitle}
+					</h2>
+					<p class="sr-only" use:melt={$description}>
+						{dialogDescription}
+					</p>
+					<WarehouseForm
+						data={editWarehouse}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: warehouseSchema,
+							validationMethod: "submit-only",
+							onUpdated: async ({ form }) => {
+								const { id, name, discount } = form?.data;
+								const warehouseInterface = db.warehouse(id);
+
+								try {
+									await warehouseInterface.setName({}, name);
+									await warehouseInterface.setDiscount({}, discount);
+
+									open.set(false);
+									toastSuccess(warehouseToastMessages(name).warehouseUpdated);
+								} catch (err) {
+									toastError(`Error: ${err.message}`);
+								}
+							}
+						}}
+						onCancel={() => open.set(false)}
+					/>
+				</div>
+			{:else}
+				<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+					<WarehouseDeleteForm
+						{dialog}
+						{dialogTitle}
+						{dialogDescription}
+						{...deleteWarehouse}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validationMethod: "submit-only",
+							onSubmit: handleDeleteWarehouse(deleteWarehouse.id, deleteWarehouse.displayName)
+						}}
+					/>
+				</div>
+			{/if}
+		{/if}
+	</div>
+</InventoryManagementPage>

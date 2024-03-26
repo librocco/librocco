@@ -3,10 +3,12 @@
 import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
 import { OrdersDatabaseInterface } from "./types";
 
+import { orders as designDocs } from "./designDocuments";
+
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
-import { newCustomerOrder } from "./customer-orders";
+import { newCustomerOrder } from "./customer-order";
 
 class Database implements OrdersDatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -41,6 +43,13 @@ class Database implements OrdersDatabaseInterface {
 		// - update design documents
 		const dbSetup: Promise<any>[] = [];
 
+		// Upload design documents if any
+		if (designDocs.length) {
+			designDocs.forEach((dd) => {
+				dbSetup.push(this.updateDesignDoc(dd));
+			});
+		}
+
 		await Promise.all(dbSetup);
 		return this;
 	}
@@ -72,7 +81,6 @@ class Database implements OrdersDatabaseInterface {
 	customerOrder(id?: string): CustomerOrderInterface {
 		return newCustomerOrder(this, id);
 	}
-
 	// #endregion instances
 }
 
