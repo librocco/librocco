@@ -23,13 +23,19 @@ type ParamsWithAvailableWarehouses = [TableData, WarehouseDataMap, StockMap];
 
 export function combineTransactionsWarehouses(opts: {
 	includeAvailableWarehouses: true;
+	defaultWarehouse?: string;
 }): (params: ParamsWithAvailableWarehouses) => EntriesStreamResult;
-export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }): (params: Params) => EntriesStreamResult;
-export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }) {
+export function combineTransactionsWarehouses(opts?: {
+	includeAvailableWarehouses: boolean;
+	defaultWarehouse?: string;
+}): (params: Params) => EntriesStreamResult;
+export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean; defaultWarehouse?: string }) {
 	return opts?.includeAvailableWarehouses
 		? ([{ rows, stats }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
 				...stats,
-				rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
+			rows: [
+				...addDefaultWarehouse(addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock), opts?.defaultWarehouse || "")
+			]
 		  })
 		: ([{ rows, stats }, warehouses]: Params): EntriesStreamResult => ({
 				...stats,
@@ -74,5 +80,21 @@ export const addAvailableWarehouses = (
 			])
 		);
 		return { ...e, availableWarehouses };
+	});
+};
+
+/**
+ * Takes in a list of VolumeStockClient entries and the note's default warehouse and assigns the default warehouse to the entries if it's in the list of available warehouses.
+ *
+ * @param entries
+ * @param defaultWarehouse
+ * @returns
+ */
+export const addDefaultWarehouse = (entries: Iterable<VolumeStockClient>, defaultWarehouseId: string): Iterable<VolumeStockClient> => {
+	return map(entries, (e) => {
+		const defaultWarehouseAvailable = defaultWarehouseId !== undefined && e.availableWarehouses?.has(defaultWarehouseId);
+		const warehouseId = defaultWarehouseAvailable ? defaultWarehouseId : e.warehouseId;
+		const warehouseName = defaultWarehouseAvailable ? e.availableWarehouses?.get(defaultWarehouseId)?.displayName || "" : e.warehouseName;
+		return { ...e, warehouseId, warehouseName };
 	});
 };
