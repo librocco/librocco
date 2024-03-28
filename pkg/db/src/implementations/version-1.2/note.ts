@@ -39,6 +39,7 @@ class Note implements NoteInterface {
 	noteType: NoteType;
 
 	entries: VolumeStock[] = [];
+	defaultWarehouseId?: string | undefined;
 	committed = false;
 	displayName = "";
 	updatedAt: string | null = null;
@@ -127,6 +128,7 @@ class Note implements NoteInterface {
 		this.updateField("noteType", data.noteType);
 		this.updateField("committed", data.committed);
 		this.updateField("entries", data.entries);
+		this.updateField("defaultWarehouseId", data.defaultWarehouseId);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 
@@ -237,6 +239,22 @@ class Note implements NoteInterface {
 
 		debug.log(ctx, "note:set_name:updating")({ displayName });
 		return this.update(ctx, { displayName });
+	}
+
+	/**
+	 * Update default warehouse.
+	 */
+	setDefaultWarehouse(ctx: debug.DebugCtx, warehouseId: string): Promise<NoteInterface> {
+		const currentDefaultWarehouseId = this.defaultWarehouseId;
+		debug.log(ctx, "note:set_default_warehouse")({ warehouseId, currentDefaultWarehouseId });
+
+		if (warehouseId === currentDefaultWarehouseId || !warehouseId || this.noteType !== "outbound") {
+			debug.log(ctx, "note:set_defaultwarehouse:noop")({ warehouseId, currentDefaultWarehouseId });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_defaultwarehouse:updating")({ warehouseId });
+		return this.update(ctx, { defaultWarehouseId: warehouseId });
 	}
 
 	/**
@@ -410,7 +428,12 @@ class Note implements NoteInterface {
 					this.#db.stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
+					map(
+						combineTransactionsWarehouses({
+							includeAvailableWarehouses: this.noteType === "outbound",
+							defaultWarehouse: this.defaultWarehouseId || ""
+						})
+					),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				);
 			},

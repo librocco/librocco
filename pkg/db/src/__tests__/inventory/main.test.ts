@@ -688,6 +688,106 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			])
 		);
 	});
+	test("outboundNoteDefaultWarehouse", async () => {
+		// Create two warehouses to work with
+		const wh1 = await db
+			.warehouse("wh-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"));
+		const wh2 = await db
+			.warehouse("wh-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"));
+
+		// Create an outbound note
+		const note = await db.warehouse().note().create();
+		await note.setDefaultWarehouse({}, "v1/wh-2");
+
+		let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+		note
+			.stream()
+			.entries({})
+			.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
+
+		// No transactions are added
+		await waitFor(() => expect(entries).toEqual([]));
+
+		// Add a tranasction with isbn not available in any warehouse
+		await note.addVolumes({ isbn: "1234567890", quantity: 1 });
+
+		// Should display the transaction, but no 'availableWarehouses'
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{ isbn: "1234567890", quantity: 1, warehouseId: "", warehouseName: "not-found", availableWarehouses: [], warehouseDiscount: 0 }
+			])
+		);
+
+		// Add a book to the first warehouse
+		await wh1
+			.note()
+			.create()
+			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+			.then((n) => n.commit({}));
+
+		// 'availableWarehouses' (in outbound note transaction) should display the first warehouse
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses: [{ id: versionId("wh-1"), displayName: "Warehouse 1" }],
+					warehouseDiscount: 0
+				}
+			])
+		);
+
+		// Add the same book to the second warehouse
+		await wh2
+			.note()
+			.create()
+			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+			.then((n) => n.commit({}));
+
+		// 'availableWarehouses' (in outbound note transaction) should now display both warehouses
+		// and warehouseId should be the default id
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: versionId("wh-2"),
+					warehouseName: "Warehouse 2",
+					availableWarehouses: [
+						{ id: versionId("wh-1"), displayName: "Warehouse 1" },
+						{ id: versionId("wh-2"), displayName: "Warehouse 2" }
+					],
+					warehouseDiscount: 0
+				}
+			])
+		);
+
+		// change default warehouse
+		// await note.setDefaultWarehouse({}, versionId("wh-1"))
+
+		// and warehouseId should be the new default id
+		// await waitFor(() =>
+		// 	expect(entries).toEqual([
+		// 		{
+		// 			isbn: "1234567890",
+		// 			quantity: 1,
+		// 			warehouseId: versionId("wh-1"),
+		// 			warehouseName: "not-found",
+		// 			availableWarehouses: [
+		// 				{ id: versionId("wh-1"), displayName: "Warehouse 1" },
+		// 				{ id: versionId("wh-2"), displayName: "Warehouse 2" }
+		// 			],
+		// 			warehouseDiscount: 0
+		// 		}
+		// 	])
+		// );
+	});
 
 	test("streamWarehouseStock", async () => {
 		const warehouse1 = await db.warehouse("warehouse-1").create();

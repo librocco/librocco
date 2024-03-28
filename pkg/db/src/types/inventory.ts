@@ -67,6 +67,8 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
 	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
+	/** Updates the `defaultWarehouse` of the note. */
+	setDefaultWarehouse: (ctx: debug.DebugCtx, warehouseId: string) => Promise<NoteInterface<A>>;
 	/**
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
