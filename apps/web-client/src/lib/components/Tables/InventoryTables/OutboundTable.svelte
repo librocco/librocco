@@ -13,7 +13,6 @@
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
 	import type { OutboundTableData } from "../types";
-	import { availableWarehouses } from "$lib/__testData__/rowData";
 
 	export let table: ReturnType<typeof createTable<OutboundTableData>>;
 
