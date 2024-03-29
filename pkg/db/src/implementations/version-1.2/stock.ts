@@ -40,7 +40,8 @@ class Stock implements StockInterface {
 			since: "now",
 			live: true,
 			// We don't care about changes to non-committed notes (as they don't affect the stock)
-			filter: (doc) => doc.committed
+			// Need to watch for warehouse deletion to show available warehouses correctly in outbound table
+			filter: (doc) => doc.committed || (doc?.docType === "warehouse" && doc?._deleted === true)
 		});
 	}
 
@@ -51,11 +52,20 @@ class Stock implements StockInterface {
 	async query() {
 		const queryRes = await this.#db._pouch.allDocs({ ...this.options, include_docs: true });
 
+		const warehouses = wrapIter(queryRes.rows)
+			.map(({ doc }) => doc as Doc)
+			.filter((doc): doc is WarehouseData => doc?.docType === "warehouse")
+			.array();
+
 		const mapGenerator = wrapIter(queryRes.rows)
 			.map(({ doc }) => doc as Doc)
 			.filter((doc): doc is NoteData => doc?.docType === "note")
 			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
-			.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
+			.flatMap(({ entries, noteType }) =>
+				wrapIter(entries)
+					.filter((entry) => warehouses.some((warehouse) => warehouse._id === entry.warehouseId))
+					.map((entry) => ({ ...entry, noteType }))
+			);
 
 		return StockMap.fromDbRows(mapGenerator);
 	}
