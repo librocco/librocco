@@ -46,15 +46,7 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, en
 			debug.log(ctx, "display_entries_store:table_data:retrieving_books")({ isbns });
 
 			// Return array of merged values of books and volume stock client
-			const rows = db
-				.books()
-				.stream(ctx, isbns)
-				.pipe(
-					mapMergeBookData(ctx, r),
-					// eslint-disable-next-line @typescript-eslint/no-unused-vars
-					map((rows) => rows.map(({ warehouseDiscount, ...rest }) => rest))
-				);
-
+			const rows = db.books().stream(ctx, isbns).pipe(mapMergeBookData(ctx, r));
 			return rows;
 		}),
 		// Multicast the stream (for both the table and pagination stores)
@@ -70,17 +62,9 @@ const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterabl
 		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
-const applyDiscount = <T extends Pick<VolumeStockClient, "warehouseDiscount"> & Pick<BookEntry, "price">>({
-	price,
-	warehouseDiscount,
-	...rest
-}: T) => ({ ...rest, price: price ? Math.round(price * (100 - warehouseDiscount)) / 100 : undefined, warehouseDiscount } as T);
-
 const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient>) => (o: Observable<Iterable<BookEntry | undefined>>) =>
 	o.pipe(
 		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
 		map(mergeBookData(stock)),
-		tap(debug.log(ctx, "display_entries_store:table_data:merged_books")),
-		map((transactions) => transactions.map(applyDiscount)),
-		tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
+		tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
 	);
