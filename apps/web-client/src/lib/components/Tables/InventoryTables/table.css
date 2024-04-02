@@ -14,6 +14,10 @@ tbody tr.out-of-stock {
 	@apply !border border-red-300 bg-red-200/80;
 }
 
+tbody tr.requires-action {
+	@apply bg-yellow-200/80;
+}
+
 th,
 td {
 	@apply py-4 px-3;
