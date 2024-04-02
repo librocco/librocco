@@ -49,6 +49,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
 	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }

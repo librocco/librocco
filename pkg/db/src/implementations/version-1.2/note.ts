@@ -266,7 +266,12 @@ class Note implements NoteInterface {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
 				if (!update.isbn) throw new EmptyTransactionError();
-				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
+
+				const warehouseId = update.warehouseId
+					? versionId(update.warehouseId)
+					: this.noteType === "inbound"
+					? this.#w._id
+					: this.defaultWarehouseId || "";
 
 				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
 
@@ -407,6 +412,12 @@ class Note implements NoteInterface {
 					tap(debug.log(ctx, "note_streams: display_name: res"))
 				),
 
+			defaultWarehouseId: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: input")),
+					map(({ defaultWarehouseId }) => defaultWarehouseId || ""),
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: res"))
+				),
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
@@ -430,8 +441,7 @@ class Note implements NoteInterface {
 					tap(debug.log(ctx, "note:entries:stream:input")),
 					map(
 						combineTransactionsWarehouses({
-							includeAvailableWarehouses: this.noteType === "outbound",
-							defaultWarehouse: this.defaultWarehouseId || ""
+							includeAvailableWarehouses: this.noteType === "outbound"
 						})
 					),
 					tap(debug.log(ctx, "note:entries:stream:output"))
