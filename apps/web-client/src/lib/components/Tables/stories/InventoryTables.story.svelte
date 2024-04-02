@@ -10,7 +10,7 @@
 
 	import { createTable } from "$lib/actions";
 
-	import { rows, outNoteRows } from "$lib/__testData__/rowData";
+	import { rows, availableWarehouses, outNoteRows } from "$lib/__testData__/rowData";
 
 	export let Hst: Hst;
 
@@ -51,6 +51,7 @@
 
 	<Hst.Variant title="Outbound">
 		<OutboundTable
+			warehouseList={availableWarehouses}
 			table={outboundTable}
 			on:edit-row-warehouse={({ detail }) => logEvent("Edit Warehouse", detail)}
 			on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}

@@ -7,6 +7,7 @@ import {
 	EntriesRowInterface,
 	EntriesTableInterface,
 	GenericTransactionField,
+	IBookPrice,
 	TableView,
 	TransactionFieldInterfaceLookup,
 	TransactionRowField,
@@ -148,6 +149,38 @@ const stringFieldConstructor =
 			expect(row.locator(`[data-property="${name}"]`)).toHaveText(transformDisplay(want.toString()), { timeout: assertionTimeout, ...opts })
 	});
 
+const priceFieldConstructor: FieldConstructor<"price"> = (row) => ({
+	assert: (want: string | number | IBookPrice, opts) => {
+		switch (typeof want) {
+			case "number":
+				return expect(row.locator(`[data-property="full-price"]`)).toHaveText(`€${want.toFixed(2)}`, {
+					timeout: assertionTimeout,
+					...opts
+				});
+			case "string":
+				return expect(row.locator(`[data-property="full-price"]`)).toHaveText(want, { timeout: assertionTimeout, ...opts });
+			case "object":
+				return new Promise<void>((resolve) => {
+					const promises = [
+						expect(row.locator(`[data-property="full-price"]`)).toHaveText(want.price, {
+							timeout: assertionTimeout,
+							...opts
+						}),
+						expect(row.locator(`[data-property="discounted-price"]`)).toHaveText(want.discountedPrice, {
+							timeout: assertionTimeout,
+							...opts
+						}),
+						expect(row.locator(`[data-property="applied-discount"]`)).toHaveText(want.discount.toString(), {
+							timeout: assertionTimeout,
+							...opts
+						})
+					];
+
+					Promise.all(promises).then(() => resolve());
+				});
+		}
+	}
+});
 const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
 	assert: (want, opts) =>
 		view === "warehouse"
@@ -204,7 +237,7 @@ const fieldConstructorLookup: {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
 	authors: stringFieldConstructor("authors"),
-	price: stringFieldConstructor("price", (x) => (x === "N/A" ? x : `€${x}`)),
+	price: priceFieldConstructor,
 	quantity: quantityFieldCostructor,
 	publisher: stringFieldConstructor("publisher"),
 	outOfPrint: outOfPrintFieldConstructor,
