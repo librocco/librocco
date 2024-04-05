@@ -40,8 +40,7 @@ class Stock implements StockInterface {
 			since: "now",
 			live: true,
 			// We don't care about changes to non-committed notes (as they don't affect the stock)
-			// Need to watch for warehouse deletion to show available warehouses correctly in outbound table
-			filter: (doc) => doc.committed || (doc?.docType === "warehouse" && doc?._deleted === true)
+			filter: (doc) => doc.committed
 		});
 	}
 
