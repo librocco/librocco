@@ -52,20 +52,11 @@ class Stock implements StockInterface {
 	async query() {
 		const queryRes = await this.#db._pouch.allDocs({ ...this.options, include_docs: true });
 
-		const warehouses = wrapIter(queryRes.rows)
-			.map(({ doc }) => doc as Doc)
-			.filter((doc): doc is WarehouseData => doc?.docType === "warehouse")
-			.array();
-
 		const mapGenerator = wrapIter(queryRes.rows)
 			.map(({ doc }) => doc as Doc)
 			.filter((doc): doc is NoteData => doc?.docType === "note")
 			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
-			.flatMap(({ entries, noteType }) =>
-				wrapIter(entries)
-					.filter((entry) => warehouses.some((warehouse) => warehouse._id === entry.warehouseId))
-					.map((entry) => ({ ...entry, noteType }))
-			);
+			.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
 
 		return StockMap.fromDbRows(mapGenerator);
 	}
