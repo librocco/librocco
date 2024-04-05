@@ -1,11 +1,11 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug, StockMap, wrapIter } from "@librocco/shared";
+import { debug, StockMap, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
 import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData } from "./types";
+import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -198,7 +198,52 @@ class Warehouse implements WarehouseInterface {
 			if (!this.#exists) {
 				return;
 			}
-			await this.#db._pouch.put({ ...this, _deleted: true } as Required<WarehouseInterface>);
+			let docsToDelete: any[] = [];
+
+			//delete inbound notes and warehouse
+			await this.#db._pouch
+				.allDocs({
+					include_docs: true,
+					attachments: true,
+					startkey: this._id,
+					endkey: `${this._id}\ufff0`
+				})
+				.then((result) => {
+					const inboundToDelete = result.rows.map(({ doc }) => {
+						return { ...doc, _deleted: true };
+					});
+					docsToDelete.push(...inboundToDelete);
+				})
+				.catch(function (err) {
+					console.log(err);
+				});
+
+			//delete outbound notes
+			const mapFunction = function (doc: NoteData) {
+				if (doc.docType === "note" && doc.noteType === "outbound" && doc.entries) {
+					doc.entries.forEach(function (entry) {
+						emit(entry.warehouseId);
+					});
+				}
+			};
+			await this.#db._pouch
+				.query(mapFunction, {
+					key: this._id,
+					include_docs: true
+				})
+				.then((result) => {
+					const outboundToDelete = result.rows.map((row) => {
+						const doc = row.doc as NoteData;
+						return { ...row.doc, entries: doc.entries.filter((entry: VolumeStock) => entry.warehouseId !== this._id) };
+					});
+
+					docsToDelete.push(...outboundToDelete);
+				})
+				.catch(function (err) {
+					console.log(err);
+				});
+
+			await this.#db._pouch.bulkDocs(docsToDelete);
 		}, this.#initialized);
 	}
 
