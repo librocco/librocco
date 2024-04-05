@@ -198,7 +198,7 @@ class Warehouse implements WarehouseInterface {
 			if (!this.#exists) {
 				return;
 			}
-			let docsToDelete: any[] = [];
+			const docsToDelete: any[] = [];
 
 			//delete inbound notes and warehouse
 			await this.#db._pouch
