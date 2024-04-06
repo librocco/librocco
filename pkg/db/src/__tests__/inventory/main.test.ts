@@ -1254,6 +1254,49 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note - Updated" }]);
 		});
 	});
+	test("allEntriesStream", async () => {
+		const ael$ = db.stream().allEntriesList({});
+		let allEntriesList: PossiblyEmpty<Map<string, VolumeStock>> = EMPTY;
+
+		const warehouse1 = db.warehouse("warehouse-1");
+		const warehouse2 = db.warehouse("warehouse-2");
+
+		const note1 = await warehouse1.note().create();
+		const note2 = await warehouse2.note().create();
+		await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await note1.commit({});
+		await note2.commit({});
+
+		const map = new Map();
+
+		map.set(`${note1._id}-11111111-inbound`, { isbn: "11111111", quantity: 2, warehouseId: warehouse1._id });
+		map.set(`${note1._id}-22222222-inbound`, { isbn: "22222222", quantity: 2, warehouseId: warehouse1._id });
+		map.set(`${note2._id}-11111111-inbound`, { isbn: "11111111", quantity: 2, warehouseId: warehouse2._id });
+		map.set(`${note2._id}-22222222-inbound`, { isbn: "22222222", quantity: 2, warehouseId: warehouse2._id });
+
+		// Subscribe after the initial update to test the initial state being streamed
+		ael$.subscribe((ael) => (allEntriesList = ael));
+
+		await waitFor(() => {
+			expect(allEntriesList).toEqual(map);
+		});
+
+		// add some outbound notes
+		const note3 = await db.warehouse().note().create();
+		await note3.addVolumes(
+			{ isbn: "11111111", quantity: 1, warehouseId: warehouse1._id },
+			{ isbn: "22222222", quantity: 1, warehouseId: warehouse2._id }
+		);
+		note3.commit({});
+
+		map.set(`${note3._id}-11111111-outbound`, { isbn: "11111111", quantity: 1, warehouseId: warehouse1._id });
+		map.set(`${note3._id}-22222222-outbound`, { isbn: "22222222", quantity: 1, warehouseId: warehouse2._id });
+
+		await waitFor(() => {
+			expect(allEntriesList).toEqual(map);
+		});
+	});
 
 	test("sequenceWarehouseDesignDocument", async () => {
 		const wh1 = await db.warehouse("0").create(); // New Warehouse

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, StockMap, VolumeStock } from "@librocco/shared";
 
 import {
 	BooksInterface,
@@ -25,7 +25,8 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface
+	ViewInterface,
+	allNotesListRow
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -50,6 +51,7 @@ class Database implements InventoryDatabaseInterface {
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
 	#inNoteListStream: Observable<InNoteMap>;
+	#allEntriesListStream: Observable<Map<string, VolumeStock>>;
 
 	#stockStream: Observable<StockMap>;
 
@@ -92,6 +94,25 @@ class Database implements InventoryDatabaseInterface {
 						)
 				),
 				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
+			);
+
+		const allEntriesListCache = new BehaviorSubject<Map<string, VolumeStock>>(new Map());
+		this.#allEntriesListStream = this.view<allNotesListRow>("v1_list/allNotes")
+			.stream({})
+			.pipe(
+				tap(({ rows }) => console.log({ rows })),
+				map(
+					({ rows }) =>
+						new Map(
+							wrapIter(rows)
+								.filter(({ value: { committed } }) => Boolean(committed))
+								.flatMap(({ key, value: { entries, noteType } }) =>
+									wrapIter(entries).map((entry) => [`${key}-${entry.isbn}-${noteType}`, entry])
+								)
+						)
+				),
+				tap((entryMap) => console.log(entryMap.keys())),
+				share({ connector: () => allEntriesListCache, resetOnRefCountZero: false })
 			);
 
 		const inNoteListCache = new BehaviorSubject<InNoteMap>(new Map());
@@ -227,12 +248,14 @@ class Database implements InventoryDatabaseInterface {
 					)
 			);
 	}
+
 	// #endregion queries
 
 	stream(): DbStream {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
+			allEntriesList: (ctx: debug.DebugCtx) => this.#allEntriesListStream.pipe(tap(debug.log(ctx, "db:all_entries_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
 		};
 	}
