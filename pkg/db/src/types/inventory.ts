@@ -249,6 +249,7 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
+	allEntriesList: (ctx: debug.DebugCtx) => Observable<Map<string, VolumeStock>>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 }
 
