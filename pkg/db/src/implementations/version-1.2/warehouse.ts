@@ -198,51 +198,29 @@ class Warehouse implements WarehouseInterface {
 			if (!this.#exists) {
 				return;
 			}
-			const docsToDelete: any[] = [];
 
-			//delete inbound notes and warehouse
+			let docsToDelete: any[] = [];
 			await this.#db._pouch
 				.allDocs({
-					include_docs: true,
-					attachments: true,
-					startkey: this._id,
-					endkey: `${this._id}\ufff0`
-				})
-				.then((result) => {
-					const inboundToDelete = result.rows.map(({ doc }) => {
-						return { ...doc, _deleted: true };
-					});
-					docsToDelete.push(...inboundToDelete);
-				})
-				.catch(function (err) {
-					console.log(err);
-				});
-
-			//delete outbound notes
-			const mapFunction = function (doc: NoteData) {
-				if (doc.docType === "note" && doc.noteType === "outbound" && doc.entries) {
-					doc.entries.forEach(function (entry) {
-						emit(entry.warehouseId);
-					});
-				}
-			};
-			await this.#db._pouch
-				.query(mapFunction, {
-					key: this._id,
 					include_docs: true
 				})
 				.then((result) => {
-					const outboundToDelete = result.rows.map((row) => {
-						const doc = row.doc as NoteData;
-						return { ...row.doc, entries: doc.entries.filter((entry: VolumeStock) => entry.warehouseId !== this._id) };
+					docsToDelete = result.rows.flatMap((row) => {
+						const doc: NoteData | WarehouseData = row.doc as NoteData | WarehouseData;
+						// warehouse and inbound notes
+						if (doc?._id === this._id || doc?._id.startsWith(`${this._id}/`)) {
+							return { ...doc, _deleted: true };
+						}
+						// outbound notes
+						if ("noteType" in doc && doc?.noteType === "outbound" && doc?.entries.some((entry) => entry.warehouseId === this._id)) {
+							return { ...row.doc, entries: doc.entries.filter((entry: VolumeStock) => entry.warehouseId !== this._id) };
+						}
+						return [];
 					});
-
-					docsToDelete.push(...outboundToDelete);
 				})
 				.catch(function (err) {
 					console.log(err);
 				});
-
 			await this.#db._pouch.bulkDocs(docsToDelete);
 		}, this.#initialized);
 	}
