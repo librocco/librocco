@@ -1,5 +1,6 @@
 import { BookEntry } from "@librocco/db";
-import { addEventListener } from "./window-helpers";
+import { addEventListener, removeEventListener } from "./window-helpers";
+
 export function listenForExtension(message: string, timeout: number): Promise<boolean> {
 	return new Promise((resolve) => {
 		const promiseTimer = setTimeout(() => {
@@ -38,4 +39,14 @@ export function listenForBook(message: string, timeout: number): Promise<BookEnt
 		};
 		addEventListener("message", handler);
 	});
+}
+
+export function continuousListener<D>(message: string, handler: (data: D) => void) {
+	const _handler = (event: MessageEvent) => {
+		if (event.source !== window) return;
+		if (!(event.data?.message === message)) return;
+		handler(event.data);
+	};
+	addEventListener("message", _handler);
+	return () => removeEventListener("message", _handler);
 }
