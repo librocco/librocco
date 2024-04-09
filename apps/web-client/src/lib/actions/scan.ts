@@ -32,7 +32,7 @@ export const scan = (node?: HTMLInputElement, on: Readable<boolean> = readable(t
 
 	const handleKeydown = (e: KeyboardEvent) => {
 		// We're only interested in number inputs (as isbn)
-		if (!/[0-9]/.test(e.key)) return;
+		if (!/^[0-9]$/.test(e.key)) return;
 
 		// If the scan input is already focussed, we do not need to buffer input
 		if (document.activeElement === node) return;
