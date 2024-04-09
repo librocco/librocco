@@ -7,7 +7,6 @@
 
 	import { goto } from "$app/navigation";
 
-	import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 	import { NoteState, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
@@ -31,6 +30,7 @@
 
 	import { toastSuccess, noteToastMessages, bookFetchingMessages, toastError } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -170,6 +170,7 @@
 		}
 	};
 
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: breadcrumbs =
@@ -440,16 +441,17 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (!result) {
+							const [bookData] = result;
+							if (!bookData) {
 								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
 
-							const [bookData] = result;
 							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
-
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>
