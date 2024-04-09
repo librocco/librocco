@@ -13,6 +13,7 @@
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
@@ -85,6 +86,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	const {
@@ -181,15 +184,17 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (!result) {
+							const [bookData] = result;
+							if (!bookData) {
 								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
 
-							const [bookData] = result;
 							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>
