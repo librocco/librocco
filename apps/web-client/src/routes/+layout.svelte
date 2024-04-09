@@ -10,7 +10,7 @@
 	import { IS_E2E } from "$lib/constants";
 
 	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
-	import { extensionAvailable, remoteDbStore } from "$lib/stores";
+	import { remoteDbStore } from "$lib/stores";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { LayoutData } from "./$types";
@@ -62,10 +62,6 @@
 				}
 			});
 		}
-
-		await bookDataPlugin.checkAvailability();
-
-		availabilitySubscription = bookDataPlugin.AvailabilitySubject.subscribe((value) => extensionAvailable.set(value));
 	});
 
 	export function onDestroy() {

@@ -12,6 +12,7 @@
 
 	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { goto } from "$app/navigation";
 
@@ -91,6 +92,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	// #region infinite-scroll
@@ -207,15 +210,17 @@
 						onFetch={async (isbn, form) => {
 							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (!result) {
+							const [bookData] = result;
+							if (!bookData) {
 								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
 
-							const [bookData] = result;
 							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

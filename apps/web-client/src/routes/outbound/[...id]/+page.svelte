@@ -33,6 +33,7 @@
 
 	import { toastSuccess, noteToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -222,6 +223,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
@@ -541,15 +544,17 @@
 							onFetch={async (isbn, form) => {
 								const result = await bookDataPlugin.fetchBookData([isbn]);
 
-								if (!result) {
+								const [bookData] = result;
+								if (!bookData) {
 									toastError(bookFetchingMessages.bookNotFound);
+									return;
 								}
 
-								const [bookData] = result;
 								toastSuccess(bookFetchingMessages.bookFound);
 								form.update((data) => ({ ...data, ...bookData }));
 								// TODO: handle loading and errors
 							}}
+							isExtensionAvailable={$bookDataExtensionAvailable}
 						/>
 					</div>
 				</div>

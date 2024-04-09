@@ -7,6 +7,7 @@
 
 <script lang="ts">
 	import { fly } from "svelte/transition";
+	import { readable, type Readable } from "svelte/store";
 
 	import type { ZodValidation } from "sveltekit-superforms";
 	import { superForm, superValidateSync, numberProxy, stringProxy } from "sveltekit-superforms/client";
@@ -19,11 +20,12 @@
 	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
-	import { extensionAvailable } from "$lib/stores";
 
 	export let data: BookFormData | null;
 	export let options: BookFormOptions;
 	export let publisherList: string[] = [];
+
+	export let isExtensionAvailable: boolean;
 
 	/**
 	 * Handle click of "X" icon button
@@ -102,9 +104,9 @@
 					<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
 				</div>
 				<button
-					disabled={!$extensionAvailable}
+					disabled={!isExtensionAvailable}
 					type="button"
-					class={["button button-alert mb-0.5 self-end", `${!$extensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(
+					class={["button button-alert mb-0.5 self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(
 						" "
 					)}
 					on:click={() => onFetch($formStore.isbn, formStore)}
