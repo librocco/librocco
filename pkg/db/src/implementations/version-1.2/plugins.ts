@@ -33,8 +33,7 @@ class Plugins implements PluginsInterface {
 // #region fallbacks
 const bookFetcherFallback = {
 	fetchBookData: async () => [],
-	checkAvailability: async () => {},
-	AvailabilitySubject: new BehaviorSubject(false)
+	isAvailableStream: new BehaviorSubject(false)
 };
 // #endregion fallbacks
 

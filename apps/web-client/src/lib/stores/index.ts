@@ -10,6 +10,5 @@ export const remoteDbStore = createRemoteDbStore();
  * (in browser environment) as the db won't be available before that
  */
 export const createExtensionAvailabilityStore = (db: DatabaseInterface) => {
-	db?.plugin("book-fetcher").AvailabilitySubject.subscribe((isAvailable) => console.log({ isAvailable }));
-	return readableFromStream({}, db?.plugin("book-fetcher").AvailabilitySubject, false);
+	return readableFromStream({}, db?.plugin("book-fetcher").isAvailableStream, false);
 };
