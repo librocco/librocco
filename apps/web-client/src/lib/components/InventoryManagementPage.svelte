@@ -7,7 +7,7 @@
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 
-	import { Page } from "$lib/components";
+	import { ExtensionAvailabilityToast, Page } from "$lib/components";
 
 	import { getDB } from "$lib/db";
 
@@ -81,5 +81,9 @@
 
 			<slot />
 		</div>
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
