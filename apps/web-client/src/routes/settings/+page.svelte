@@ -3,7 +3,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { Page, RemoteDbData, ProgressBar } from "$lib/components";
+	import { Page, RemoteDbData, ProgressBar, ExtensionAvailabilityToast } from "$lib/components";
 	import { RemoteDbForm, type RemoteDbFormOptions } from "$lib/forms";
 
 	import { remoteDbStore } from "$lib/stores";
@@ -71,5 +71,9 @@
 				</div>
 			</div>
 		</div>
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>

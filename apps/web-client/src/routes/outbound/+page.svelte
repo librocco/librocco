@@ -12,7 +12,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { Page, PlaceholderBox, Dialog } from "$lib/components";
+	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -151,6 +151,10 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 

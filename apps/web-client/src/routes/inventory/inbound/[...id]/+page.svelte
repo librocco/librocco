@@ -22,7 +22,8 @@
 		createBreadcrumbs,
 		TextEditable,
 		Dialog,
-		InboundTable
+		InboundTable,
+		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
@@ -394,6 +395,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 

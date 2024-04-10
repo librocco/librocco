@@ -9,7 +9,7 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { StockTable } from "$lib/components";
+	import { ExtensionAvailabilityToast, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
@@ -144,6 +144,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 

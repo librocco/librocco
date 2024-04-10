@@ -10,7 +10,7 @@
 
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable } from "$lib/components";
+	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, ExtensionAvailabilityToast } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
@@ -170,6 +170,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 
