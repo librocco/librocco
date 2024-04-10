@@ -11,7 +11,6 @@
 
 	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
 	import { remoteDbStore } from "$lib/stores";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { LayoutData } from "./$types";
 
