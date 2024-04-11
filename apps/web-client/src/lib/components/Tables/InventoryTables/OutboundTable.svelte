@@ -16,7 +16,6 @@
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import type { OutboundTableData } from "../types";
 
 	export let table: ReturnType<typeof createTable<OutboundTableData>>;
 	export let warehouseList: Iterable<[string, NavEntry]>;
