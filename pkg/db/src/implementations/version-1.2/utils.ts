@@ -55,10 +55,11 @@ export const addWarehouseData = (entries: Iterable<VolumeStock>, warehouses: War
 };
 
 /**
- * Takes in a list of VolumeStockClient entries and a list of existing warehouses and adds an `availableWarehouses` field to each entry (omitting the default warehouse).
+ * Takes in a list of VolumeStockClient entries and a list of existing warehouses and a stockMap and adds an `availableWarehouses` field to each entry (omitting the default warehouse).
  *
  * @param entries
  * @param warehouses
+ * @param stock
  * @returns
  */
 export const addAvailableWarehouses = (

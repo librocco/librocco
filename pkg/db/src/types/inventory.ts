@@ -55,6 +55,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
 	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
@@ -73,6 +74,8 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
 	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
+	/** Updates the `defaultWarehouse` of the note. */
+	setDefaultWarehouse: (ctx: debug.DebugCtx, warehouseId: string) => Promise<NoteInterface<A>>;
 	/**
 	 * Marks the note as a 'reconciliationNote' - an inbound note used to reconcile the state
 	 * in case an outbound note contains some out-of-stock books (but they exist in physical state).

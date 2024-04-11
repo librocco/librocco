@@ -1,7 +1,7 @@
 <script lang="ts">
+	import { map } from "rxjs";
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
-	import { map } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
@@ -62,15 +62,13 @@
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
-	// We display loading state before navigation (in case of creating new note/warehouse)
-	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
-
 	$: note = data.note;
 
 	$: noteStores = createNoteStores(note);
 
 	$: displayName = noteStores.displayName;
+	$: defaultWarehouse = noteStores.defaultWarehouse;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
@@ -291,6 +289,18 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
+				<div class="flex flex-col">
+					<select
+						id="defaultWarehouse"
+						name="defaultWarehouse"
+						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
+						bind:value={$defaultWarehouse}
+					>
+						{#each $warehouseList as warehouse}
+							<option value={warehouse[0]}>{warehouse[1].displayName}</option>
+						{/each}
+					</select>
+				</div>
 				<button
 					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
