@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, PowerCircle, Power } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -40,6 +40,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { scanAutofocus } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -78,13 +79,15 @@
 		}
 	}
 
-	const handleCommitSelf = async () => {
+	const handleCommitSelf = async (closeDialog: () => void) => {
 		await note.commit({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
 
-	const handleDeleteSelf = async () => {
+	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
+		closeDialog();
 		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
@@ -200,6 +203,13 @@
 				}
 			}}
 		/>
+		<button
+			data-testid={testId("scan-autofocus-toggle")}
+			data-is-on={$scanAutofocus}
+			on:click={scanAutofocus.toggle}
+			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
+			><Power size={18} />Scan</button
+		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -441,14 +451,7 @@
 			</div>
 		{:else}
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog
-					{dialog}
-					{type}
-					onConfirm={async (closeDialog) => {
-						await onConfirm();
-						closeDialog();
-					}}
-				>
+				<Dialog {dialog} {type} {onConfirm}>
 					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 				</Dialog>
