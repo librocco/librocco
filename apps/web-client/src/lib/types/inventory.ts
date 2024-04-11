@@ -38,6 +38,7 @@ export interface WarehouseStore {
 export interface NoteStore {
 	[noteId: string]: {
 		displayName?: string;
+		defaultWarehouseId?: string;
 		entries: VolumeQuantity[];
 		updatedAt: string;
 		state: NoteState;
