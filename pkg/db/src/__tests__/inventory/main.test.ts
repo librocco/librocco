@@ -688,6 +688,82 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			])
 		);
 	});
+	test("outboundNoteDefaultWarehouse", async () => {
+		// Create two warehouses to work with
+		await db
+			.warehouse("wh-1")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 1"));
+		await db
+			.warehouse("wh-2")
+			.create()
+			.then((w) => w.setName({}, "Warehouse 2"));
+
+		// Create an outbound note
+		const note = await db.warehouse().note().create();
+		await note.setDefaultWarehouse({}, "v1/wh-2");
+
+		let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+		note
+			.stream()
+			.entries({})
+			.subscribe(({ rows }) => (entries = rows.map(volumeStockClientToVolumeStockClientOld)));
+
+		// No transactions are added
+		await waitFor(() => expect(entries).toEqual([]));
+
+		// Add a tranasction
+		await note.addVolumes({ isbn: "1234567890", quantity: 1 });
+
+		// Should display the transaction with the default warehouse as warehouseId
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: "v1/wh-2",
+					warehouseName: "Warehouse 2",
+					availableWarehouses: [],
+					warehouseDiscount: 0
+				}
+			])
+		);
+
+		await note.setDefaultWarehouse({}, "v1/wh-1");
+
+		await note.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567770", quantity: 1 });
+
+		// Should display the second transaction with the default warehouse as warehouseId
+		// and the first interaction should keep its default warehouseId
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{
+					isbn: "1234567770",
+					quantity: 1,
+					warehouseId: "v1/wh-1",
+					warehouseName: "Warehouse 1",
+					availableWarehouses: [],
+					warehouseDiscount: 0
+				},
+				{
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: "v1/wh-1",
+					warehouseName: "Warehouse 1",
+					availableWarehouses: [],
+					warehouseDiscount: 0
+				},
+				{
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: "v1/wh-2",
+					warehouseName: "Warehouse 2",
+					availableWarehouses: [],
+					warehouseDiscount: 0
+				}
+			])
+		);
+	});
 
 	test("streamWarehouseStock", async () => {
 		const warehouse1 = await db.warehouse("warehouse-1").create();

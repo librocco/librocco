@@ -21,6 +21,7 @@ import { DocType } from "@/enums";
 /** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
 	entries: VolumeStock[];
+	defaultWarehouseId?: string;
 };
 
 /** Note data (extended with additional fields) for internal implementation usage. */

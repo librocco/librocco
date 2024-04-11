@@ -46,6 +46,7 @@ class Note implements NoteInterface {
 	reconciliationNote?: boolean;
 
 	entries: VolumeStock[] = [];
+	defaultWarehouseId?: string | undefined;
 	committed = false;
 	displayName = "";
 	updatedAt: string | null = null;
@@ -134,6 +135,7 @@ class Note implements NoteInterface {
 		this.updateField("noteType", data.noteType);
 		this.updateField("committed", data.committed);
 		this.updateField("entries", data.entries);
+		this.updateField("defaultWarehouseId", data.defaultWarehouseId);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 		this.updateField("reconciliationNote", data.reconciliationNote);
@@ -248,6 +250,22 @@ class Note implements NoteInterface {
 	}
 
 	/**
+	 * Update default warehouse.
+	 */
+	setDefaultWarehouse(ctx: debug.DebugCtx, warehouseId: string): Promise<NoteInterface> {
+		const currentDefaultWarehouseId = this.defaultWarehouseId;
+		debug.log(ctx, "note:set_default_warehouse")({ warehouseId, currentDefaultWarehouseId });
+
+		if (warehouseId === currentDefaultWarehouseId || !warehouseId || this.noteType !== "outbound") {
+			debug.log(ctx, "note:set_defaultwarehouse:noop")({ warehouseId, currentDefaultWarehouseId });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_defaultwarehouse:updating")({ warehouseId });
+		return this.update(ctx, { defaultWarehouseId: warehouseId });
+	}
+	
+	/**
 	 * Mark the note as reconciliation note (see types for more info)
 	 */
 	setReconciliationNote(ctx: debug.DebugCtx, value: boolean) {
@@ -264,7 +282,12 @@ class Note implements NoteInterface {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
 				if (!update.isbn) throw new EmptyTransactionError();
-				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
+
+				const warehouseId = update.warehouseId
+					? versionId(update.warehouseId)
+					: this.noteType === "inbound"
+					? this.#w._id
+					: this.defaultWarehouseId || "";
 
 				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
 
@@ -481,6 +504,12 @@ class Note implements NoteInterface {
 					tap(debug.log(ctx, "note_streams: display_name: res"))
 				),
 
+			defaultWarehouseId: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: input")),
+					map(({ defaultWarehouseId }) => defaultWarehouseId || ""),
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: res"))
+				),
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
@@ -502,7 +531,11 @@ class Note implements NoteInterface {
 					this.#db.stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
+					map(
+						combineTransactionsWarehouses({
+							includeAvailableWarehouses: this.noteType === "outbound"
+						})
+					),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				);
 			},
