@@ -1,16 +1,22 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { NoteState, debug, VolumeStock } from "@librocco/shared";
+import { NoteState, debug, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient } from "@/types";
+import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient, OutOfStockTransaction } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
 import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
-import { EmptyNoteError, OutOfStockError, TransactionWarehouseMismatchError, EmptyTransactionError } from "@/errors";
+import {
+	EmptyNoteError,
+	OutOfStockError,
+	TransactionWarehouseMismatchError,
+	EmptyTransactionError,
+	NoWarehouseSelectedError
+} from "@/errors";
 import { addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
@@ -37,8 +43,10 @@ class Note implements NoteInterface {
 	_deleted?: boolean;
 
 	noteType: NoteType;
+	reconciliationNote?: boolean;
 
 	entries: VolumeStock[] = [];
+	defaultWarehouseId?: string | undefined;
 	committed = false;
 	displayName = "";
 	updatedAt: string | null = null;
@@ -127,8 +135,10 @@ class Note implements NoteInterface {
 		this.updateField("noteType", data.noteType);
 		this.updateField("committed", data.committed);
 		this.updateField("entries", data.entries);
+		this.updateField("defaultWarehouseId", data.defaultWarehouseId);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
+		this.updateField("reconciliationNote", data.reconciliationNote);
 
 		this.#exists = true;
 
@@ -240,6 +250,30 @@ class Note implements NoteInterface {
 	}
 
 	/**
+	 * Update default warehouse.
+	 */
+	setDefaultWarehouse(ctx: debug.DebugCtx, warehouseId: string): Promise<NoteInterface> {
+		const currentDefaultWarehouseId = this.defaultWarehouseId;
+		debug.log(ctx, "note:set_default_warehouse")({ warehouseId, currentDefaultWarehouseId });
+
+		if (warehouseId === currentDefaultWarehouseId || !warehouseId || this.noteType !== "outbound") {
+			debug.log(ctx, "note:set_defaultwarehouse:noop")({ warehouseId, currentDefaultWarehouseId });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_defaultwarehouse:updating")({ warehouseId });
+		return this.update(ctx, { defaultWarehouseId: warehouseId });
+	}
+	
+	/**
+	 * Mark the note as reconciliation note (see types for more info)
+	 */
+	setReconciliationNote(ctx: debug.DebugCtx, value: boolean) {
+		debug.log(ctx, "note:set_reconciliation_note")({ value });
+		return this.update(ctx, { reconciliationNote: value });
+	}
+
+	/**
 	 * Add volumes accepts an object or multiple objects of VolumeStock updates (isbn, quantity, warehouseId?) for
 	 * book quantities. If a volume with a given isbn is found, the quantity is aggregated, otherwise a new
 	 * entry is pushed to the list of entries.
@@ -248,7 +282,12 @@ class Note implements NoteInterface {
 		return runAfterCondition(async () => {
 			params.forEach((update) => {
 				if (!update.isbn) throw new EmptyTransactionError();
-				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
+
+				const warehouseId = update.warehouseId
+					? versionId(update.warehouseId)
+					: this.noteType === "inbound"
+					? this.#w._id
+					: this.defaultWarehouseId || "";
 
 				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
 
@@ -321,6 +360,40 @@ class Note implements NoteInterface {
 	}
 
 	/**
+	 * Checks that all transactions in an inbound note are assigned to the parent warehouse.
+	 * @returns a list of all invlid transactions in that regard.
+	 */
+	private getInvalidInboundTransactions(): VolumeStock[] {
+		// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
+		return this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+	}
+
+	/**
+	 * Checks that all transactions have a warehouse assigned to them.
+	 * @returns a list of all invalid transactions in that regard.
+	 */
+	private getNoWarehouseTransactions(): VolumeStock[] {
+		return this.entries.filter(({ warehouseId }) => !warehouseId);
+	}
+
+	private async getOutOfStockTransactions(): Promise<OutOfStockTransaction[]> {
+		const stock = await this.#db.getStock();
+		const warehouseMap = await firstValueFrom(this.#db.stream().warehouseMap({}));
+		return (
+			this.entries
+				.map(({ isbn, quantity, warehouseId }) => ({
+					isbn,
+					quantity,
+					warehouseId,
+					available: stock.isbn(isbn).get([isbn, warehouseId])?.quantity || 0,
+					warehouseName: warehouseMap.get(warehouseId)?.displayName || "unkonwn"
+				}))
+				// Filter out transactions that are valid
+				.filter(({ quantity, available }) => quantity > available)
+		);
+	}
+
+	/**
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
@@ -336,33 +409,75 @@ class Note implements NoteInterface {
 		// Check transactions before committing
 		switch (this.noteType) {
 			case "inbound": {
-				// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
-				const invalidTransactions = this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+				// Check that all transactions are assigned to the parent warehouse
+				const invalidTransactions = this.getInvalidInboundTransactions();
 				if (invalidTransactions.length) {
 					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
 				}
 				break;
 			}
 			case "outbound": {
-				const stock = await this.#db.getStock();
-
-				const invalidTransactions = this.entries
-					.map(({ isbn, quantity, warehouseId }) => ({
-						isbn,
-						quantity,
-						warehouseId,
-						available: stock.isbn(isbn).get([isbn, warehouseId])?.quantity || 0
-					}))
-					// Filter out transactions that are valid
-					.filter(({ quantity, available }) => quantity > available);
-
+				// Check for transactions without a warehouse assigned - outbound note can't be committed in this state
+				const invalidTransactions = this.getNoWarehouseTransactions();
 				if (invalidTransactions.length) {
-					throw new OutOfStockError(invalidTransactions);
+					throw new NoWarehouseSelectedError(invalidTransactions);
+				}
+
+				// Check for out-of-stock transactions - outbound note can't be committed in this state, but the state can be reconciled
+				const outOfStockTransactions = await this.getOutOfStockTransactions();
+				if (outOfStockTransactions.length) {
+					throw new OutOfStockError(outOfStockTransactions);
 				}
 			}
 		}
 
 		return this.update(ctx, { committed: true });
+	}
+
+	reconcile(ctx: debug.DebugCtx): Promise<NoteInterface> {
+		return runAfterCondition(async () => {
+			// Only outbound note can be reconciled
+			const inbound = this.noteType === "inbound";
+			// Committed notes don't need reconciliation
+			const committed = this.committed;
+			if (inbound || committed) {
+				debug.log(ctx, "note:reconcile:noop")({ noteType: this.noteType, committed });
+				return this;
+			}
+
+			const stock = await this.#db.getStock();
+
+			const toUpdate = wrapIter(this.entries)
+				// Filter out rows with no 'warehouseId' assigned - those aren't ready
+				// for reconciliation and should be handled somewhere else
+				.filter(({ warehouseId }) => Boolean(warehouseId))
+				// Check the difference in quantity available and quantity demanded
+				.map(({ isbn, warehouseId, quantity }) => ({ warehouseId, isbn, diff: stock.getQuantity([isbn, warehouseId]) - quantity }))
+				// Filter out rows that don't need to be reconciled - they are fully in stock for desired warehouse/quantity
+				.filter(({ diff }) => diff < 0)
+				// Prepare the rows for reconciliation notes - make the quantity positive
+				.map(({ diff, ...txn }) => ({ ...txn, quantity: -diff }))
+				// Group remaining rows by warehouse
+				.reduce((acc, txn) => {
+					const whId = txn.warehouseId;
+					const existing = acc.get(whId) || [];
+					return acc.set(whId, [...existing, txn]);
+				}, new Map<string, VolumeStock[]>());
+
+			// Create a reconciliation note for each warehouse
+			const updates = wrapIter(toUpdate).map(([whId, transactions]) =>
+				this.#db
+					.warehouse(whId)
+					.note()
+					.create()
+					.then((n) => n.setReconciliationNote(ctx, true))
+					.then((n) => n.addVolumes(...transactions))
+					.then((n) => n.commit(ctx))
+			);
+			await Promise.all(updates);
+
+			return this;
+		}, this.#initialized);
 	}
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
@@ -389,6 +504,12 @@ class Note implements NoteInterface {
 					tap(debug.log(ctx, "note_streams: display_name: res"))
 				),
 
+			defaultWarehouseId: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: input")),
+					map(({ defaultWarehouseId }) => defaultWarehouseId || ""),
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: res"))
+				),
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
@@ -410,7 +531,11 @@ class Note implements NoteInterface {
 					this.#db.stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
+					map(
+						combineTransactionsWarehouses({
+							includeAvailableWarehouses: this.noteType === "outbound"
+						})
+					),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				);
 			},

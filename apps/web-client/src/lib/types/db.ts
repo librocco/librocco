@@ -23,6 +23,7 @@ export interface Stores {
 export interface NoteStream {
 	state: Observable<NoteState | undefined>;
 	displayName: Observable<string | undefined>;
+	defaultWarehouseId: Observable<string | undefined>;
 	updatedAt: Observable<Date | undefined>;
 	entries: Observable<VolumeQuantity[]>;
 }

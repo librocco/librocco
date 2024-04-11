@@ -6,6 +6,7 @@ import type { debug } from "@librocco/shared";
 import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
 
 import { createDisplayNameStore } from "./display_name";
+import { createDefaultWarehouseStore } from "./default_warehouse";
 import { createDisplayStateStore, createInternalStateStore } from "./note_state";
 import { createDisplayEntriesStore } from "./table_content";
 
@@ -15,6 +16,7 @@ import { createWarehouseDiscountStore } from "./warehouse_discount";
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
+	defaultWarehouse: Writable<string | undefined>;
 	state: Writable<NoteAppState>;
 	updatedAt: Readable<Date | null>;
 	entries: Readable<DisplayRow[]>;
@@ -42,6 +44,9 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?._id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, note, undefined);
 
+	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSEE::${note?._id}]`, debug: false };
+	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, undefined);
+
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
@@ -53,7 +58,8 @@ export const createNoteStores: CreateNoteStores = (note) => {
 		updatedAt,
 		entries,
 		currentPage,
-		paginationData
+		paginationData,
+		defaultWarehouse
 	};
 };
 
