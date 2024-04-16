@@ -420,6 +420,9 @@ importers:
       '@librocco/db':
         specifier: workspace:*
         version: link:../../pkg/db
+      '@librocco/shared':
+        specifier: workspace:*
+        version: link:../../pkg/shared
       '@testing-library/dom':
         specifier: ~8.20.0
         version: 8.20.1

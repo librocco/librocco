@@ -1697,7 +1697,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		//
 		// Here we're also testing that the api won't explode if no plugin is registered.
 		const res1 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res1).toEqual([]);
+		// The plugin should return the same number of results (and in the same order as the isbns requested)
+		// fallback should, then, return a list of undefineds with the same langth as the number of requested isbns
+		expect(res1).toEqual([undefined, undefined]);
 
 		// Registering a plugin implementation should return that implementation for all subsequent calls
 		const impl1 = {
