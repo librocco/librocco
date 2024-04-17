@@ -26,6 +26,7 @@
 	"devDependencies": {
 		"@librocco/db": "workspace:*",
 		"@librocco/shared": "workspace:*",
+		"@types/chrome": "^0.0.241",
 		"@types/node": "16",
 		"@types/testing-library__jest-dom": "~5.14.5",
 		"@typescript-eslint/eslint-plugin": "~5.27.0",

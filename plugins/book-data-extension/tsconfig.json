@@ -3,7 +3,7 @@
 	"compilerOptions": {
 		"rootDir": "src",
 		"baseUrl": ".",
-		"types": ["node"],
+		"types": ["node", "chrome"],
 		"lib": ["ESNext", "DOM"],
 		"esModuleInterop": true
 	},

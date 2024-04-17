@@ -1,14 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
+import { Result } from "../types";
+
 import { addEventListener, removeEventListener } from "./window-helpers";
 
 type MessageData<T = {}> = { message: string } & T;
-
-type EmptyResult = { ok: boolean };
-/**
- * Yes, this is inspired by Rust's 'Result' enum - easier to write a generic function (e.g. 'listenWithTimeout') with
- * a consistent (generic) return type.
- */
-type Result<T> = T extends null ? EmptyResult : { ok: true; data: T } | { ok: false };
 
 /**
  * A helper function used to create the response listener - listening to a message from the extension. The timeout
@@ -36,7 +31,7 @@ export function listenWithTimeout<T, R>(..._params: any[]): Promise<Result<R>> |
 				if (cb) {
 					return resolve({ ok: true, data: cb(event.data) } as Result<R>);
 				}
-				return resolve({ ok: true } as EmptyResult);
+				return resolve({ ok: true });
 			}
 		};
 		addEventListener("message", handler);
