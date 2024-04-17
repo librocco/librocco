@@ -6,19 +6,21 @@ const config = {
 		lib: {
 			entry: {
 				"plugin/index": path.join(__dirname, "src", "plugin", "index.ts"),
-				"extension/index": path.join(__dirname, "src", "extension", "index.ts")
+				"extension/index": path.join(__dirname, "src", "extension", "index.ts"),
+				"extension/background": path.join(__dirname, "src", "extension", "background.ts")
 			}
 		},
 		rollupOptions: {
 			external: ["@librocco/db"],
 			input: {
 				"plugin/index": path.join(__dirname, "src", "plugin", "index.ts"),
-				"extension/index": path.join(__dirname, "src", "extension", "index.ts")
+				"extension/index": path.join(__dirname, "src", "extension", "index.ts"),
+				"extension/background": path.join(__dirname, "src", "extension", "background.ts")
 			},
 			output: [
 				{
 					dir: "dist",
-					entryFileNames: "[name].js",
+					entryFileNames: "[name].cjs",
 					format: "cjs",
 					sourcemap: true
 				},
