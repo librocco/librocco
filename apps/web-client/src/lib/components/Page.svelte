@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { BookCopy, Library, PackageMinus, Search, Settings, AlignLeft as Menu, ArrowLeftToLine, QrCode } from "lucide-svelte";
+	import { BookCopy, Library, PackageMinus, Search, Settings, AlignLeft as Menu, ArrowLeftToLine, QrCode, Book } from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
 
@@ -46,6 +46,12 @@
 			href: appPath("settings"),
 			icon: Settings,
 			linkto: "settings"
+		},
+		{
+			label: "Entries",
+			href: appPath("entries"),
+			icon: Book,
+			linkto: "entries"
 		}
 	];
 

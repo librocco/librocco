@@ -77,6 +77,9 @@ importers:
       '@histoire/plugin-svelte':
         specifier: ~0.17.0
         version: 0.17.8(histoire@0.17.8)(svelte@4.2.9)(vite@5.0.10)
+      '@internationalized/date':
+        specifier: ~3.5.2
+        version: 3.5.2
       '@librocco/book-data-extension':
         specifier: workspace:*
         version: link:../../plugins/book-data-extension
@@ -2351,8 +2354,8 @@ packages:
   /@humanwhocodes/object-schema@1.2.1:
     resolution: {integrity: sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==}
 
-  /@internationalized/date@3.5.1:
-    resolution: {integrity: sha512-LUQIfwU9e+Fmutc/DpRTGXSdgYZLBegi4wygCWDSVmUdLTaMHsQyASDiJtREwanwKuQLq0hY76fCJ9J/9I2xOQ==}
+  /@internationalized/date@3.5.2:
+    resolution: {integrity: sha512-vo1yOMUt2hzp63IutEaTUxROdvQg1qlMRsbCvbay2AK2Gai7wIgCyK5weEX3nHkiLgo4qCXHijFNC/ILhlRpOQ==}
     dependencies:
       '@swc/helpers': 0.5.3
     dev: true
@@ -2680,7 +2683,7 @@ packages:
     dependencies:
       '@floating-ui/core': 1.5.2
       '@floating-ui/dom': 1.5.3
-      '@internationalized/date': 3.5.1
+      '@internationalized/date': 3.5.2
       dequal: 2.0.3
       focus-trap: 7.5.4
       nanoid: 4.0.2

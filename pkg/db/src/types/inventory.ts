@@ -6,7 +6,7 @@ import { NoteState, VolumeStock, debug } from "@librocco/shared";
 
 import type { PrintJobStatus } from "@/enums";
 
-import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
+import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial, SearchIndex } from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -45,6 +45,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		committed: boolean;
 		displayName: string;
 		updatedAt: string | null;
+		committedAt: string | null;
 		reconciliationNote?: boolean;
 	} & A
 >;
@@ -249,7 +250,6 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
 export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
-	allEntriesList: (ctx: debug.DebugCtx) => Observable<Map<string, VolumeStock>>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 }
 
@@ -294,6 +294,10 @@ export type InventoryDatabaseInterface<
 	 */
 	stream: () => DbStream;
 	receipts: () => RecepitsInterface;
+	/**
+	 * Get search index for full-text search
+	 */
+	streamSearchIndex: () => Observable<SearchIndex>;
 }>;
 
 export interface NewDatabase {

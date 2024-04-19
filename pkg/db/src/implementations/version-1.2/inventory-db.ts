@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap, concat, from } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, StockMap, VolumeStock } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared";
 
 import {
 	BooksInterface,
@@ -16,7 +16,9 @@ import {
 	PluginInterfaceLookup,
 	LibroccoPlugin,
 	RecepitsInterface,
-	WarehouseDataMap
+	WarehouseDataMap,
+	SearchIndex,
+	NoteType
 } from "@/types";
 import {
 	InventoryDatabaseInterface,
@@ -25,8 +27,7 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface,
-	allNotesListRow
+	ViewInterface
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -40,8 +41,9 @@ import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 import { newReceiptsInterface } from "./receipts";
 
-import { scanDesignDocuments } from "@/utils/pouchdb";
+import { newChangesStream, scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
+import { Search } from "js-search";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -51,9 +53,9 @@ class Database implements InventoryDatabaseInterface {
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
 	#inNoteListStream: Observable<InNoteMap>;
-	#allEntriesListStream: Observable<Map<string, VolumeStock>>;
 
 	#stockStream: Observable<StockMap>;
+	#searchIndexStream?: Observable<SearchIndex>;
 
 	#plugins: PluginsInterface;
 
@@ -70,7 +72,7 @@ class Database implements InventoryDatabaseInterface {
 			.pipe(
 				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
 				map(({ rows }) => wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "" }] as const)),
-				// Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
+				// Combine the stream with stock map stream to g(rows).et the 'totalBooks' for each warehouse
 				switchMap((warehouses) =>
 					this.#stockStream.pipe(
 						map((s) => mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: s.warehouse(id).size }] as const))
@@ -94,25 +96,6 @@ class Database implements InventoryDatabaseInterface {
 						)
 				),
 				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
-			);
-
-		const allEntriesListCache = new BehaviorSubject<Map<string, VolumeStock>>(new Map());
-		this.#allEntriesListStream = this.view<allNotesListRow>("v1_list/allNotes")
-			.stream({})
-			.pipe(
-				tap(({ rows }) => console.log({ rows })),
-				map(
-					({ rows }) =>
-						new Map(
-							wrapIter(rows)
-								.filter(({ value: { committed } }) => Boolean(committed))
-								.flatMap(({ key, value: { entries, noteType } }) =>
-									wrapIter(entries).map((entry) => [`${key}-${entry.isbn}-${noteType}`, entry])
-								)
-						)
-				),
-				tap((entryMap) => console.log(entryMap.keys())),
-				share({ connector: () => allEntriesListCache, resetOnRefCountZero: false })
 			);
 
 		const inNoteListCache = new BehaviorSubject<InNoteMap>(new Map());
@@ -141,6 +124,30 @@ class Database implements InventoryDatabaseInterface {
 		return this;
 	}
 
+	private streamChanges() {
+		return newChangesStream<unknown[]>(
+			{},
+			this._pouch.changes({ since: "now", live: true, filter: (doc) => doc._id.startsWith(versionId("")) })
+		);
+	}
+
+	/**
+	 * Creates a search index stream, assigns it to this.#searchIndexStream and multicasts it.
+	 * Returns the created stream.
+	 */
+	private createSearchIndexStream() {
+		const searchStreamCache = new ReplaySubject<SearchIndex>();
+
+		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
+			tap((searchIndexStream) => console.log({ searchIndexStream })),
+			switchMap(() => from(this.getStockDocs())),
+			map(createSearchIndex),
+			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
+			// Reset the stream when there are no more subscribers (for the same reasons as above)
+			share({ connector: () => searchStreamCache, resetOnRefCountZero: true })
+		));
+	}
+
 	// #region setup
 	replicate(): Replicator {
 		return newDbReplicator(this);
@@ -152,6 +159,13 @@ class Database implements InventoryDatabaseInterface {
 
 	getStock(): Promise<StockMap> {
 		return newStock(this).query();
+	}
+	getStockDocs(): Promise<{ noteType: NoteType; committedAt: string | null; isbn: string; quantity: number; warehouseId: string }[]> {
+		return newStock(this).getAll();
+	}
+
+	streamSearchIndex() {
+		return this.#searchIndexStream ?? this.createSearchIndexStream();
 	}
 
 	async buildIndices() {
@@ -255,7 +269,6 @@ class Database implements InventoryDatabaseInterface {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			allEntriesList: (ctx: debug.DebugCtx) => this.#allEntriesListStream.pipe(tap(debug.log(ctx, "db:all_entries_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
 		};
 	}
@@ -313,4 +326,18 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 		return this;
 	}
 }
+
+const createSearchIndex = (
+	stock: { noteType: NoteType; committedAt: string | null; isbn: string; quantity: number; warehouseId: string }[]
+) => {
+	const index = new Search("isbn");
+
+	index.addIndex("isbn");
+	index.addIndex("committedAt");
+
+	index.addDocuments(stock);
+
+	return index;
+};
+
 // #endregion helpers
