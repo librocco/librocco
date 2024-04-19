@@ -120,24 +120,6 @@ export const listDeisgnDocument: DesignDocument = {
 				});
 			}.toString()
 		},
-		allNotes: {
-			map: function (doc: NoteData) {
-				const note = doc as NoteData;
-				if (note.docType !== "note") {
-					return;
-				}
-
-				emit(doc._id, {
-					type: doc.docType,
-					noteType: doc.noteType,
-					displayName: doc.displayName,
-					committed: note.committed,
-					updatedAt: note.updatedAt,
-					totalBooks: note.entries.length,
-					entries: note.entries
-				});
-			}.toString()
-		},
 		publishers: {
 			// Since we're only interested in 'publisher' property on book documents
 			// we can treat all docs as book documents and only emit if the property exists
