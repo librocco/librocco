@@ -65,15 +65,16 @@ export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, s
 	};
 };
 
-const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
+export const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
 	wrapIter(stock)
 		.zip(bookData)
 		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
-const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient>) => (o: Observable<Iterable<BookEntry | undefined>>) =>
-	o.pipe(
-		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
-		map(mergeBookData(stock)),
-		tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
-	);
+export const mapMergeBookData =
+	(ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient>) => (o: Observable<Iterable<BookEntry | undefined>>) =>
+		o.pipe(
+			tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
+			map(mergeBookData(stock)),
+			tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
+		);

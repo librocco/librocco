@@ -8,7 +8,8 @@ const PATHS = {
 	inventory: `${basepath}/inventory/`,
 	inbound: `${basepath}/inventory/inbound/`,
 	outbound: `${basepath}/outbound/`,
-	settings: `${basepath}/settings/`
+	settings: `${basepath}/settings/`,
+	entries: `${basepath}/entries/`
 };
 
 /**

@@ -13,7 +13,8 @@ export const links = [
 		label: "Outbound",
 		href: `${base}/inventory/outbound/`
 	},
-	{ label: "Settings", href: `${base}/settings/` }
+	{ label: "Settings", href: `${base}/settings/` },
+	{ label: "Entries", href: `${base}/entries/` }
 ];
 
 export const publisherList = ["TCK Publishing", "Reed Elsevier", "Penguin Random House", "Harper Collins", "Bloomsbury"];
