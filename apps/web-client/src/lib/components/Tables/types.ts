@@ -1,3 +1,6 @@
+import type { VolumeStockClient } from "@librocco/db";
+import type { VolumeStockKind } from "@librocco/shared";
+
 /**
  * TODO: Temmp interface to be replaced with DB Customer/Supplier Order interface
  */
@@ -29,10 +32,6 @@ export type BookCoreRowData = {
 	year?: string;
 };
 
-// TODO: Align with DB types =>
-// VolumeStockClient has warehouseName as a string, but it should expect an array where
-// a volume in an Out Note can potentially come out of multiple warehouses
-export type OutboundTableData = InventoryTableData & {
-	/** @TODO this is a NavMap ... move shared types to 'shared' package */
-	availableWarehouses?: Map<string, { displayName: string; quantity: number }>;
-};
+export type OutboundTableData<K extends VolumeStockKind = VolumeStockKind> = K extends "book"
+	? InventoryTableData & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
+	: VolumeStockClient<K>;

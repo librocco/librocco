@@ -13,7 +13,7 @@ import { newNote } from "./note";
 import { newStock } from "./stock";
 
 import { versionId } from "./utils";
-import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks } from "@/utils/misc";
+import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
 
@@ -243,7 +243,9 @@ class Warehouse implements WarehouseInterface {
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
-		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+		const entries = wrapIter(queryRes.rows())
+			.filter(isBookRow)
+			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
 		return addWarehouseData(entries, warehouses);
 	}
 
