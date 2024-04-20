@@ -1,11 +1,35 @@
 import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from "rxjs";
 
-import type { VolumeStock } from "@librocco/shared";
+import type { VolumeStock, VolumeStockKind } from "@librocco/shared";
 
-import { VersionedString, VersionString } from "../types";
+import { VersionedString, VersionString, VolumeStockClient } from "../types";
 
-export const sortBooks = ({ isbn: i1, warehouseId: w1 }: VolumeStock, { isbn: i2, warehouseId: w2 }: VolumeStock) =>
-	i1 < i2 ? -1 : i1 > i2 ? 1 : w1 < w2 ? -1 : 1;
+const compareCustomItems = (a: VolumeStock, b: VolumeStock) =>
+	!(isCustomItemRow(a) && isCustomItemRow(b))
+		? // This comparison is applicable only if both items are custom items,
+		  // If not, the comparison is inconclusive
+		  0
+		: a.id < b.id
+		? -1
+		: a.id > b.id
+		? 1
+		: 0;
+
+const compareBookRows = (a: VolumeStock, b: VolumeStock) =>
+	!(isBookRow(a) && isBookRow(b))
+		? // This comparison is applicable only if both items are book items,
+		  // If not, the comparison is inconclusive
+		  0
+		: a.isbn < b.isbn
+		? -1
+		: a.isbn > b.isbn
+		? 1
+		: a.warehouseId < b.warehouseId || a.warehouseId === ""
+		? -1
+		: 1;
+
+export const sortBooks = (a: VolumeStock, b: VolumeStock) =>
+	compareCustomItems(a, b) || compareBookRows(a, b) || (isCustomItemRow(a) ? 1 : -1);
 
 /** Replaces JS friendly version name ('version_1_1') with a human friendly version name ('version 1.1') */
 export const processVersionName = (s: string): string => s.replace("_", " ").replace("_", ".");
@@ -108,3 +132,21 @@ export const isVersioned = (id: string, versionString: VersionString): id is Ver
 
 /** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
 export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
+
+type VolumeStockRes<T extends VolumeStock | VolumeStockClient, K extends VolumeStockKind> = T extends VolumeStockClient
+	? VolumeStockClient<K>
+	: VolumeStock<K>;
+
+/** Checks if item is custom item row */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+export function isCustomItemRow<VS extends VolumeStock | VolumeStockClient>(item: VS): item is VolumeStockRes<VS, "custom"> {
+	return item.__kind === "custom";
+}
+
+/** Checks if item is book row */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-expect-error
+export function isBookRow<VS extends VolumeStock | VolumeStockClient>(item: VS): item is VolumeStockRes<VS, "book"> {
+	return item.__kind !== "custom";
+}

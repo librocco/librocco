@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import type { NavEntry } from "@librocco/db";
+	import { type NavEntry, isBookRow } from "@librocco/db";
 
 	import type { OutboundTableData } from "../types";
 
@@ -12,10 +12,12 @@
 	import BookHeadCell from "./BookHeadCell.svelte";
 	import BookPriceCell from "./BookPriceCell.svelte";
 	import BookQuantityFormCell from "./BookQuantityFormCell.svelte";
+	import CustomItemHeadCell from "./CustomItemHeadCell.svelte";
 
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
+	import { ConciergeBell } from "lucide-svelte";
 
 	export let table: ReturnType<typeof createTable<OutboundTableData>>;
 	export let warehouseList: Iterable<[string, NavEntry]>;
@@ -51,46 +53,90 @@
 	</thead>
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
-			{@const { warehouseId, availableWarehouses } = row}
-			{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
-			<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
-			{@const requiresAction = !warehouseId && availableWarehouses?.size > 1}
-			<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
-			{@const outOfStock = quantityInWarehouse < quantity}
-			<!-- Require action takes precedence over out of stock -->
-			<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }}>
-				<th scope="row" data-property="book" class="table-cell-max">
-					<BookHeadCell data={{ isbn, title, authors, year }} />
-				</th>
+			{#if isBookRow(row)}
+				{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
+				{@const { warehouseId, warehouseName, availableWarehouses } = row}
+				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
+				<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
+				{@const requiresAction = !warehouseId && availableWarehouses?.size > 1}
+				<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
+				{@const outOfStock = quantityInWarehouse < quantity}
+				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
+				{@const coreRowData = {
+					rowIx,
+					isbn,
+					authors,
+					quantity,
+					price,
+					year,
+					title,
+					publisher,
+					warehouseDiscount,
+					warehouseId,
+					warehouseName,
+					availableWarehouses
+				}}
+				<!-- Require action takes precedence over out of stock -->
+				<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }} /><tr
+					class={outOfStock ? "out-of-stock" : ""}
+					use:table.tableRow={{ position: rowIx }}
+				>
+					<th scope="row" data-property="book" class="table-cell-max">
+						<BookHeadCell data={{ isbn, title, authors, year }} />
+					</th>
 
-				<td data-property="title" class="show-col-lg table-cell-max">
-					{title}
-				</td>
-				<td data-property="authors" class="show-col-lg table-cell-max">
-					{authors}
-				</td>
-				<td data-property="price" class="table-cell-fit">
-					<BookPriceCell data={{ price, warehouseDiscount }} />
-				</td>
-				<td data-property="quantity" class="table-cell-fit">
-					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />
-				</td>
-				<td data-property="publisher" class="show-col-md table-cell-max">
-					{publisher}
-				</td>
-				<td data-property="year" class="show-col-lg table-cell-fit">
-					{year}
-				</td>
-				<td data-property="warehouseName" class="table-cell-max">
-					<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
-				</td>
-				{#if $$slots["row-actions"]}
-					<td class="table-cell-fit">
-						<slot name="row-actions" {row} {rowIx} />
+					<td data-property="title" class="show-col-lg table-cell-max">
+						{title}
 					</td>
-				{/if}
-			</tr>
+					<td data-property="authors" class="show-col-lg table-cell-max">
+						{authors}
+					</td>
+					<td data-property="price" class="table-cell-fit">
+						<BookPriceCell data={{ price, warehouseDiscount }} />
+					</td>
+					<td data-property="quantity" class="table-cell-fit">
+						<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} />
+					</td>
+					<td data-property="publisher" class="show-col-md table-cell-max">
+						{publisher}
+					</td>
+					<td data-property="year" class="show-col-lg table-cell-fit">
+						{year}
+					</td>
+					<td data-property="warehouseName" class="table-cell-max">
+						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, coreRowData)} data={row} {rowIx} />
+					</td>
+					{#if $$slots["row-actions"]}
+						<td class="table-cell-fit">
+							<slot name="row-actions" {row} {rowIx} />
+						</td>
+					{/if}
+				</tr>
+			{:else}
+				{@const { rowIx, title, price } = row}
+				<tr use:table.tableRow={{ position: rowIx }}>
+					<th scope="row" data-property="custom-item" class="table-cell-max">
+						<CustomItemHeadCell data={{ title, price }} />
+					</th>
+
+					<td data-property="title" class="show-col-lg table-cell-max">
+						{title}
+					</td>
+					<td />
+					<td data-property="price" class="table-cell-fit">
+						<BookPriceCell data={{ price }} />
+					</td>
+					<td />
+					<td />
+					<td />
+					<td />
+					{#if $$slots["row-actions"]}
+						<td class="table-cell-fit">
+							<slot name="row-actions" {row} {rowIx} />
+						</td>
+					{/if}
+				</tr>
+			{/if}
 		{/each}
 	</tbody>
 </table>
