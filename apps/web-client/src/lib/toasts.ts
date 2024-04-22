@@ -1,7 +1,5 @@
 import { createToaster, ToastType, type ToastData } from "$lib/components";
 
-import type { ReplicationState } from "./stores/replication";
-
 export const defaultToaster = createToaster<ToastData>();
 
 export const toastSuccess = (message) =>
@@ -48,24 +46,3 @@ export const warehouseToastMessages = (warehouseName) => ({
 	warehouseDeleted: `${warehouseName} deleted`,
 	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`
 });
-
-// Aliging with BadgeColor enum here as it this color+message combo is used in the RemoteDb Description List
-export const replicationStatusMessages = {
-	INIT: { state: "success", message: "Connecting to remote database" },
-	"ACTIVE:REPLICATING": { state: "success", message: "Syncing with database" },
-	"ACTIVE:INDEXING": { state: "success", message: "Building indices" },
-	COMPLETED: { state: "success", message: "Sync complete" },
-	PAUSED: { state: "warning", message: "Sync paused. Status unknown" },
-	"PAUSED:IDLE": { state: "success", message: "Sync is up-to-date. Waiting for changes..." },
-	"FAILED:CANCEL": { state: "error", message: "Sync cancelled. Connection closed" },
-	"FAILED:ERROR": { state: "error", message: "Sync error. Connection closed" },
-	"PAUSED:ERROR": { state: "error", message: "Sync error. Retrying..." }
-} as const;
-
-export const toastReplicationStatus = (status: ReplicationState) => {
-	const { state, message } = replicationStatusMessages[status];
-
-	const toastFn = state === "success" ? toastSuccess : state === "error" ? toastError : toastWarning;
-
-	return toastFn(message);
-};
