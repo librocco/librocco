@@ -1,4 +1,4 @@
-import { BehaviorSubject, Observable, concat, firstValueFrom, from, share } from "rxjs";
+import { BehaviorSubject, Observable, concat, from, share } from "rxjs";
 
 import { BookFetcherPlugin, BookEntry } from "@librocco/db";
 
