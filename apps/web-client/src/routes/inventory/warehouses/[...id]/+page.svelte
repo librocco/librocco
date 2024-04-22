@@ -10,8 +10,9 @@
 
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable } from "$lib/components";
+	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, ExtensionAvailabilityToast } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { goto } from "$app/navigation";
 
@@ -19,7 +20,7 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
+	import { noteToastMessages, toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 
@@ -91,6 +92,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	// #region infinite-scroll
@@ -168,6 +171,10 @@
 			</div>
 		{/if}
 	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
+	</svelte:fragment>
 </Page>
 
 <div use:melt={$portalled}>
@@ -205,14 +212,19 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
+
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>
