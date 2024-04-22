@@ -7,7 +7,7 @@ import { LOCAL_STORAGE_COUCH_CONFIG } from "$lib/constants";
  * - db setup on client side only
  * - persisted remote config / connection
  */
-export const createRemoteDbStore = () => {
+export const createSettingsStore = () => {
 	const persistedRemoteConfigStore = persisted(LOCAL_STORAGE_COUCH_CONFIG, null);
 
 	return {
