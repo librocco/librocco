@@ -9,6 +9,7 @@ import { DEV_COUCH_URL, IS_E2E } from "$lib/constants";
 import { remoteDbStore } from "$lib/stores";
 
 import type { LayoutLoad } from "./$types";
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -26,6 +27,9 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// We should init the db first. If there is an existing remote config, the replicator we create next will need it
 		const db = await createDB();
+
+		// Register plugin(s)
+		db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
 
 		const remoteDbPersistedConfig = get(remoteDbStore.persisted);
 		const hasActiveHandler = get(remoteDbStore.replicator.hasActiveHandler);

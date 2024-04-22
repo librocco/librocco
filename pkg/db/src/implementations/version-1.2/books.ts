@@ -34,7 +34,9 @@ class Books implements BooksInterface {
 			.then((books) => books.filter((book): book is BookEntry => Boolean(book)));
 	}
 
-	async upsert(docsToUpsert: BookEntry[]): Promise<void> {
+	async upsert(_docs: (BookEntry | undefined)[]): Promise<void> {
+		// Filter out (possibly) undefined inputs
+		const docsToUpsert = _docs.filter((d): d is BookEntry => Boolean(d));
 		if (!docsToUpsert.length) return;
 
 		// Get revs for all updates
