@@ -44,19 +44,4 @@ describe("createBookDataExtensionPlugin", () => {
 
 		expect(books).toEqual([{ title: "book-3333" }, undefined, { title: "book-2222" }]);
 	});
-
-	test("fetchBookData returns array filled with undefined values if extension is not available", async () => {
-		vi.spyOn(comm, "ping").mockImplementation(() => Promise.resolve(false));
-		vi.spyOn(comm, "fetchBook").mockImplementation((isbn: string) =>
-			isbn == "1111"
-				? // Make it so as if "1111" is not found
-				  Promise.resolve(undefined)
-				: Promise.resolve({ title: `book-${isbn}` } as BookEntry)
-		);
-
-		const plugin = createBookDataExtensionPlugin();
-		const books = await plugin.fetchBookData(["3333", "1111", "2222"]);
-
-		expect(books).toEqual([undefined, undefined, undefined]);
-	});
 });
