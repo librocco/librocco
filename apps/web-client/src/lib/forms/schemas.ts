@@ -31,7 +31,6 @@ export const bookSchema = z.object({
 export type SettingsData = SuperValidated<typeof settingsSchema>["data"];
 export const settingsSchema = z.object({
 	couchUrl: z.string(),
-	receiptPrinterUrl: z.string(),
 	labelPrinterUrl: z.string(),
 
 });
