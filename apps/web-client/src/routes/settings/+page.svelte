@@ -7,20 +7,11 @@
 	import { RemoteDbForm, type RemoteDbFormOptions } from "$lib/forms";
 
 	import { remoteDbStore } from "$lib/stores";
-	import { replicationStatusMessages } from "$lib/toasts";
 
 	import { appPath } from "$lib/paths";
 	import { remoteDbSchema } from "$lib/forms";
-	import type { ReplicationConfig } from "$lib/stores/replication";
 
-	$: ({ replicator } = remoteDbStore);
-	$: ({ status, config, progress, hasActiveHandler } = replicator);
-
-	const onUpdated: RemoteDbFormOptions["onUpdated"] = ({ form }) => {
-		const data = form?.data as ReplicationConfig;
-
-		return remoteDbStore.createHandler(data);
-	};
+	const onUpdated: RemoteDbFormOptions["onUpdated"] = ({ form }) => {};
 </script>
 
 <Page view="settings" loaded={true}>
@@ -41,33 +32,19 @@
 					<p class="mt-1 text-sm leading-6 text-gray-600">Manage a connection to a remote database</p>
 				</div>
 				<div class="w-full basis-2/3">
-					{#if $hasActiveHandler}
-						<RemoteDbData config={$config} status={replicationStatusMessages[$status.state]} onEdit={() => remoteDbStore.destroyHandler()}>
-							<div slot="info" class="flex flex-col gap-y-2 pt-2">
-								{#if $status.state === "ACTIVE:REPLICATING"}
-									<ProgressBar value={$progress.progress !== -1 ? $progress.progress : undefined} />
-									<p class="text-xs font-medium uppercase leading-4 text-gray-500">
-										{$progress.docsWritten}{$progress.docsPending ? ` / ${$progress.docsWritten + $progress.docsPending}` : ""} Documents synced
-									</p>
-								{:else if $status.state === "ACTIVE:INDEXING"}
-									<ProgressBar />
-								{:else}
-									<p class="text-xs font-medium uppercase leading-4 text-gray-500">{$status.info}</p>
-								{/if}
-							</div>
-						</RemoteDbData>
-					{:else}
-						<RemoteDbForm
-							data={$config}
-							options={{
-								SPA: true,
-								dataType: "json",
-								validators: remoteDbSchema,
-								validationMethod: "submit-only",
-								onUpdated
-							}}
-						/>
-					{/if}
+					<!-- <RemoteDbData config={$config} status={replicationStatusMessages[$status.state]} onEdit={() => remoteDbStore.destroyHandler()}>
+							
+						</RemoteDbData> -->
+					<RemoteDbForm
+						data={{}}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: remoteDbSchema,
+							validationMethod: "submit-only",
+							onUpdated
+						}}
+					/>
 				</div>
 			</div>
 		</div>
