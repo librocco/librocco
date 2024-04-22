@@ -9,13 +9,14 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { StockTable } from "$lib/components";
+	import { ExtensionAvailabilityToast, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
+	import { toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -85,6 +86,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	const {
@@ -142,6 +145,10 @@
 			</div>
 		{/if}
 	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
+	</svelte:fragment>
 </Page>
 
 <div use:melt={$portalled}>
@@ -179,14 +186,19 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
+
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

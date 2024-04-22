@@ -27,12 +27,14 @@
 		Dialog,
 		OutboundTable,
 		TextEditable,
-		type WarehouseChangeDetail
+		type WarehouseChangeDetail,
+		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { toastSuccess, noteToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 	import { scanAutofocus } from "$lib/stores/app";
@@ -221,6 +223,8 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
@@ -469,6 +473,10 @@
 			</div>
 		{/if}
 	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
+	</svelte:fragment>
 </Page>
 
 <div use:melt={$portalled}>
@@ -557,14 +565,19 @@
 							}}
 							onCancel={() => open.set(false)}
 							onFetch={async (isbn, form) => {
-								const result = await bookDataPlugin.fetchBookData(isbn);
+								const result = await bookDataPlugin.fetchBookData([isbn]);
 
-								if (result) {
-									const [bookData] = result;
-									form.update((data) => ({ ...data, ...bookData }));
+								const [bookData] = result;
+								if (!bookData) {
+									toastError(bookFetchingMessages.bookNotFound);
+									return;
 								}
+
+								toastSuccess(bookFetchingMessages.bookFound);
+								form.update((data) => ({ ...data, ...bookData }));
 								// TODO: handle loading and errors
 							}}
+							isExtensionAvailable={$bookDataExtensionAvailable}
 						/>
 					</div>
 				</div>

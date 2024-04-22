@@ -13,6 +13,7 @@ const config =
 		  })
 		: defineConfig({
 				build: {
+					sourcemap: true,
 					lib: {
 						name: "@librocco/shared",
 						entry: path.join(__dirname, "src", "index.ts"),
