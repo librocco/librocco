@@ -4,12 +4,12 @@
 	import { goto } from "$app/navigation";
 
 	import { Page } from "$lib/components";
-	import { SettingsForm, type SettingsFormOptions } from "$lib/forms";
+	import { SettingsForm } from "$lib/forms";
 
 	import { appPath } from "$lib/paths";
 	import { settingsSchema } from "$lib/forms";
+	import {settingsStore} from "$lib/stores"
 
-	const onUpdated: SettingsFormOptions["onUpdated"] = ({ form }) => {};
 </script>
 
 <Page view="settings" loaded={true}>
@@ -32,13 +32,15 @@
 				<div class="w-full basis-2/3">
 
 					<SettingsForm
-						data={{}}
+						data={$settingsStore}
 						options={{
 							SPA: true,
 							dataType: "json",
 							validators: settingsSchema,
 							validationMethod: "submit-only",
-							onUpdated
+							onUpdated: ({form}) => {
+								if(form.valid)
+								{settingsStore.set(form.data)}}
 						}}
 					/>
 				</div>

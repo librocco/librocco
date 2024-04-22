@@ -14,12 +14,17 @@ let db: InventoryDatabaseInterface | undefined = undefined;
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = async (): Promise<InventoryDatabaseInterface> => {
+export const createDB = async (url?: string): Promise<InventoryDatabaseInterface> => {
 	if (db) {
 		return db;
 	}
 
-	const pouch = new pouchdb(LOCAL_POUCH_DB_NAME);
+	/**
+	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
+	 * There will be no local persistence.
+	 */
+	const connectionUrl = url ? url : LOCAL_POUCH_DB_NAME
+	const pouch = new pouchdb(connectionUrl);
 	db = newInventoryDatabaseInterface(pouch);
 	await db.init();
 
