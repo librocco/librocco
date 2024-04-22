@@ -36,30 +36,17 @@
 					id="url"
 					name="couchUrl"
 					label="Remote CouchDB URL"
-					required={true}
-					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
 					bind:value={$formStore.couchUrl}
 				>
 					<p slot="helpText">URL format: <span class="italic">https://user:password@host:post/db_name</span></p>
 				</Input>
 			</div>
-			<div class="basis-full">
-				<Input
-					id="url"
-					name="receiptPrinterUrl"
-					label="Receipt Printer URL"
-					required={true}
-					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
-					bind:value={$formStore.receiptPrinterUrl}
-				>
-				</Input>
-			</div>
+
 			<div class="basis-full">
 				<Input
 					id="url"
 					name="labelPrinterUrl"
 					label="Label Printer URL"
-					required={true}
 					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
 					bind:value={$formStore.labelPrinterUrl}
 				>
