@@ -1,3 +1,3 @@
-import { createRemoteDbStore } from "./settings";
+import { createSettingsStore } from "./settings";
 
-export const remoteDbStore = createRemoteDbStore();
+export const SettingsStore = createSettingsStore();

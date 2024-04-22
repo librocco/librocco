@@ -1,12 +1,9 @@
 import { redirect } from "@sveltejs/kit";
-import { get } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
 import { createDB } from "$lib/db";
-import { DEV_COUCH_URL, IS_E2E } from "$lib/constants";
-import { remoteDbStore } from "$lib/stores";
 
 import type { LayoutLoad } from "./$types";
 
