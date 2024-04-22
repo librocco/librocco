@@ -121,6 +121,20 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		expect(err).toBeDefined();
 	});
 
+	test("db streams", async () => {
+		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
+		db.stream()
+			.labelPrinterUrl({})
+			.subscribe((lpu) => (labelPrinterUrl = lpu));
+
+		// Initial value should be an empty string
+		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
+
+		// Set label printer url (url is not validated)
+		db.setLabelPrinterUrl("test-url");
+		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
+	});
+
 	test("warehouseDiscount", async () => {
 		const wh1 = await db.warehouse("wh1").create();
 
@@ -435,7 +449,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		const note = await db.warehouse("test-warehouse").note().create();
 
 		// Subscribe to note streams
-		const { displayName: displayNameStream, state: stateStream, updatedAt: updatedAtStream } = note.stream();
+		const {
+			displayName: displayNameStream,
+			state: stateStream,
+			updatedAt: updatedAtStream,
+			autoPrintLabels: autoPrintLabelsStream
+		} = note.stream();
 
 		let displayName: PossiblyEmpty<string> = EMPTY;
 		// Note: entries holds only the 10 entries displayed per page
@@ -450,12 +469,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		};
 		let state: PossiblyEmpty<NoteState> = EMPTY;
 		let updatedAt: PossiblyEmpty<Date | null> = EMPTY;
+		let autoPrintLabels: PossiblyEmpty<boolean> = EMPTY;
 
 		displayNameStream({}).subscribe((dn) => (displayName = dn));
 		stateStream({}).subscribe((s) => (state = s));
 		updatedAtStream({}).subscribe((ua) => {
 			updatedAt = ua;
 		});
+		autoPrintLabelsStream({}).subscribe((apl) => (autoPrintLabels = apl));
 
 		// Streams used to test pagination
 		const currentPage = new BehaviorSubject(0);
@@ -477,6 +498,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(displayName).toEqual("test");
 		});
+
+		// Check updating of autoPrintLabels
+		//
+		// Initial value should be false
+		await waitFor(() => expect(autoPrintLabels).toEqual(false));
+
+		await note.setAutoPrintLabels({}, true);
+		await waitFor(() => expect(autoPrintLabels).toEqual(true));
+
+		await note.setAutoPrintLabels({}, false); // Reset
+		await waitFor(() => expect(autoPrintLabels).toEqual(false));
 
 		// Check for entries stream
 		expect(entries.rows).toEqual([]);
