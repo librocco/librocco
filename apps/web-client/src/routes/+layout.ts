@@ -27,23 +27,6 @@ export const load: LayoutLoad = async ({ url }) => {
 		// We should init the db first. If there is an existing remote config, the replicator we create next will need it
 		const db = await createDB();
 
-		const remoteDbPersistedConfig = get(remoteDbStore.persisted);
-		const hasActiveHandler = get(remoteDbStore.replicator.hasActiveHandler);
-
-		if (!hasActiveHandler) {
-			// This should only run in dev to connect us to our couch test container
-			// and only run once, so that we can test updates via settings page
-			if (process.env.NODE_ENV === "development" && !remoteDbPersistedConfig && !IS_E2E) {
-				remoteDbStore.createHandler({ url: DEV_COUCH_URL, direction: "sync", live: true, retry: true });
-			}
-
-			// If there is a persisted remote config, we should create the handler here so that the settings page loads
-			// showing the data, otherwise there will be a flash of form controls
-			if (remoteDbPersistedConfig) {
-				remoteDbStore.createHandler(remoteDbPersistedConfig);
-			}
-		}
-
 		return {
 			db
 		};

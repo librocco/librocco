@@ -8,19 +8,9 @@
 
 	import { IS_E2E } from "$lib/constants";
 
-	import { defaultToaster, toastReplicationStatus } from "$lib/toasts";
-	import { remoteDbStore } from "$lib/stores";
+	import { defaultToaster } from "$lib/toasts";
 
 	import type { LayoutData } from "./$types";
-
-	// We toast here because we want replication state to be communicated wherever we are in the app
-	$: ({ replicator } = remoteDbStore);
-	$: ({ status } = replicator);
-	$: {
-		if ($status) {
-			toastReplicationStatus($status.state);
-		}
-	}
 
 	export let data: LayoutData;
 
