@@ -1,8 +1,8 @@
 {
-  "name": {
-    "message": "Librocco extension"
-  },
-  "description": {
-    "message": "Finds book meta data from different sources"
-  }
+	"name": {
+		"message": "Librocco extension"
+	},
+	"description": {
+		"message": "Finds book meta data from different sources"
+	}
 }
