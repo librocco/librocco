@@ -25,7 +25,7 @@ const handlePing = (senderResponse: (res?: any) => void) => {
 
 // #region helpers
 const urls: Record<string, string> = {
-	annasArchive: `https://annas-archive.org/isbn/`
+	annasArchive: `https://annas-archive.org/isbndb/`
 };
 
 function fetchUrl(isbn: string, senderResponse: (response?: any) => void) {
