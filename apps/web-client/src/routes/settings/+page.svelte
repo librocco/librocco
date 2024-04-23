@@ -43,6 +43,8 @@
 							onUpdated: ({ form }) => {
 								if (form.valid) {
 									settingsStore.set(form.data);
+									// Force reload the layout. A simple "invalidation" will not suffice as the existing DB reference will still exist
+									window.location.reload();
 								}
 							}
 						}}
