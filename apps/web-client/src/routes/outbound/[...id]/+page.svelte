@@ -451,6 +451,18 @@
 										<FileEdit />
 									</span>
 								</button>
+
+								<button
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("print-book-label")}
+									on:click={() => db.printer().label().print(row)}
+								>
+									<span class="sr-only">Print book label {rowIx}</span>
+									<span class="aria-hidden">
+										<Printer />
+									</span>
+								</button>
+
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
