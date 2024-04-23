@@ -66,6 +66,7 @@
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
+	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	$: toasts = noteToastMessages(note?.displayName);
 
@@ -182,6 +183,7 @@
 
 	// #region temp
 	const handlePrint = () => {};
+	const toggleAutoPrintLabels = () => note.setAutoPrintLabels({}, !$autoPrintLabels);
 
 	// #endregion temp
 
@@ -289,6 +291,16 @@
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={toggleAutoPrintLabels}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+							? '!bg-green-400'
+							: ''}"
+					>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Auto print book labels</span>
 					</div>
 					<div
 						{...item}
