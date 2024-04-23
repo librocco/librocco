@@ -31,7 +31,8 @@
 					id="url" 
 					name="couchUrl" 
 					label="Remote CouchDB URL" 
-					helpText="https://user:password@host:post/db_name" 
+					helpText="Couch DB Url's should be formatted https://user:password@host:post/db_name. 
+						When no url is provided, the app will use local browser storage to persist data." 
 					bind:value={$formStore.couchUrl} 
 				/>
 			</div>
