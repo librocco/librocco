@@ -1,8 +1,14 @@
 # @libroco/web-client
 
-This is our main app, using modules from `db` and `ui` packages, putting them together and creating a user facing dashboard, used to manipluate and view the book store inventory.
+This is our main app, using modules from `db`, `js-search` and `shared` packages (with `book-data-extension` plugin), putting them together and creating a user facing dashboard, used to manipluate and view the book store inventory.
 
 ## TOC
+
+1. [Structure](#1-structure):
+   - [1.1. Inventory](#11-inventory):
+     - [1.1.1. Views](#111-views)
+     - [1.1.2. Data flows](#112-data-flows)
+2. [Development](#2-development)
 
 ## 1. Structure
 
@@ -10,7 +16,7 @@ This app is bootstrapped using `svelte-kit` (`svelte` being our UI framework of 
 
 We're using svelte kit adapter `static`: at build time, only the core html skeleton is prerendered, while the functionality is initialised only when the app is opened in the browser.
 
-We're using PouchDB (on top of browser's IndexedDB), as a local db instance and replicating to the remote db. For this to be initialised, we need to be in the browser, hence our SSR logic described above.
+We're using PouchDB (on top of browser's IndexedDB), as a local db instance and replicating to the remote db. For this to be initialised, we need to be in the browser, hence our prerendering logic described above.
 
 **Loading the app:**
 
@@ -31,26 +37,48 @@ The main (and currently the only) top level view is the inventory. It is the mai
 
 #### 1.1.1. Views
 
-The loading logic for all inventory views happens in `/inventory/+layout.ts` and is specific to a particular view (read from rest of the path):
-
 - `/stock`:
 
   - **default view**
-  - the load function instantiates the specific warehouse (read from route) and passes the warehouse interface down to the page component
-  - the view is used to inspect the current stock in a particular warehouse
-  - if warehouse not provided, or doesn't exist, defaults to: `/invntory/stock/0-all` (the default warehouse)
+  - this is the view of the entire stock with full text search functionality
+  - due to the number of entries in stock, nothing is rendered until some (search) filter is applied
+  - with some search filer string, the results are shown
+  - when there's too many results to show, the dynamic loading is performed using the intersection observer
 
-- `/inbound`:
+- `/inventory`:
 
-  - the load function runs `db.findNote`, returning the note and its parent warehouse, passing them both down to the page component (as note interface and warehouse interface respectively)
-  - used to inspect, create, delete, update, commit the note (and its transactions)
-  - if note not found redirects back to the root of the view: `/inventory/inbound`
+  - the inventory view shows warehouses and notes (as a way to organise inventory)
+  - it features two sub-views:
+    - warehouses
+    - inbound
 
-- `outbound`:
+- `/inventory/warehouses`:
 
-  - the load function runs `db.findNote`, passing only the note down to the page component (as all outbond notes belong to the default warehouse)
-  - used to inspect, create, delete, update, commit the note (and its transactions)
-  - if note not found redirects back to the root of the view: `/inventory/outbound`
+  - displays a list of warehouses (and quick edit operations: warehouse name, discount)
+
+- `/inventory/warehouses/[...warehouseId]`:
+
+  - inspect stock for a particular warehouse
+
+- `/inventory/inbound`:
+
+  - displays a list of inbound notes
+
+- `/inventory/inbound/[...noteId]`:
+
+  - inspect / edit note (stock, meta data, etc.)
+
+- `/outbound`:
+
+  - displays a list of inbound notes
+
+- `/outbound/[...noteId]`:
+
+  - inspect / edit note (stock, meta data, etc.)
+
+- `/settings`
+
+  - edit settings (currently only the sync options)
 
 #### 1.1.2. Data flows
 
@@ -283,3 +311,7 @@ rushx start
 ```
 
 _Note: CouchDB instance is populated with test data, which will get replicated to the browser when the app starts. This data is being reset each time we stop the container (`docker compose down`), whereas the data inside the browser is persisted. If you wish to reset the changes made to the dev db, you can do so by clearing the IndexedDB (found in 'application' section of dev tools) and restarting the container (`docker compose down && docker compose up -d`)_
+
+## 3. Plugins
+
+The plugins interface in WIP. For not we only feature the book data extension plugin: [see more](../../plugins/book-data-extension/README.md)
