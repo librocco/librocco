@@ -7,7 +7,7 @@
 
 <script lang="ts">
 	import type { SuperValidated, ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync } from "sveltekit-superforms/client";
+	import { superForm } from "sveltekit-superforms/client";
 
 	import { Input } from "$lib/components";
 
@@ -25,9 +25,13 @@
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div class="basis-full">
-				<Input id="url" name="couchUrl" label="Remote CouchDB URL" bind:value={$formStore.couchUrl}>
-					<p slot="helpText">URL format: <span class="italic">https://user:password@host:post/db_name</span></p>
-				</Input>
+				<Input 
+					id="url" 
+					name="couchUrl" 
+					label="Remote CouchDB URL" 
+					helpText="https://user:password@host:post/db_name" 
+					bind:value={$formStore.couchUrl} 
+				/>
 			</div>
 
 			<div class="basis-full">
