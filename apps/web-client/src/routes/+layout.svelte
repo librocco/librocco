@@ -5,13 +5,14 @@
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
-	import { Toast } from "$lib/components";
+	import type { LayoutData } from "./$types";
 
 	import { IS_E2E } from "$lib/constants";
 
-	import { defaultToaster } from "$lib/toasts";
+	import { Toast } from "$lib/components";
 
-	import type { LayoutData } from "./$types";
+	import { defaultToaster } from "$lib/toasts";
+	import { settingsStore } from "$lib/stores";
 
 	export let data: LayoutData;
 
@@ -25,6 +26,8 @@
 	let showNotifications = !IS_E2E;
 
 	let availabilitySubscription: Subscription;
+
+	$: db?.setLabelPrinterUrl($settingsStore.labelPrinterUrl);
 
 	onMount(async () => {
 		// Register the db to the window object.

@@ -22,6 +22,7 @@ import { DocType } from "@/enums";
 export type AdditionalData = {
 	entries: VolumeStock[];
 	defaultWarehouseId?: string;
+	autoPrintLabels?: boolean;
 };
 
 /** Note data (extended with additional fields) for internal implementation usage. */
