@@ -178,7 +178,12 @@
 							</button>
 
 							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
-								<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
+								<button
+									use:melt={$trigger}
+									data-testid={testId("edit-row")}
+									on:m-click={() => (bookFormData = row)}
+									class="rounded p-3 text-gray-500 hover:text-gray-900"
+								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
 										<FileEdit />
