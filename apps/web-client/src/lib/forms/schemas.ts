@@ -28,12 +28,10 @@ export const bookSchema = z.object({
 	outOfPrint: z.boolean().optional()
 });
 
-export type RemoteDbData = SuperValidated<typeof remoteDbSchema>["data"];
-export const remoteDbSchema = z.object({
-	url: z.string(),
-	direction: z.enum(["to", "from", "sync"]).default("sync"),
-	live: z.boolean().default(true),
-	retry: z.boolean().default(true)
+export type SettingsData = SuperValidated<typeof settingsSchema>["data"];
+export const settingsSchema = z.object({
+	couchUrl: z.string(),
+	labelPrinterUrl: z.string()
 });
 
 export type ScannerData = SuperValidated<typeof scannerSchema>["data"];
