@@ -24,7 +24,6 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
-		
 		try {
 			const remoteUrl = get(settingsStore).couchUrl;
 			// We should init the db first. If there is an existing remote config, the replicator we create next will need it
