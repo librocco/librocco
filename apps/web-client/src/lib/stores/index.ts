@@ -3,8 +3,7 @@ import { settingsSchema } from "$lib/forms";
 import { readableFromStream } from "$lib/utils/streams";
 import type { DatabaseInterface } from "@librocco/db";
 import { superValidateSync } from "sveltekit-superforms/client";
-import { persisted } from "svelte-local-storage-store"
-
+import { persisted } from "svelte-local-storage-store";
 
 /**
  * Creates a store from the availability stream of the book data extension plugin.
@@ -12,7 +11,7 @@ import { persisted } from "svelte-local-storage-store"
  * (in browser environment) as the db won't be available before that
  */
 export const createExtensionAvailabilityStore = (db: DatabaseInterface) => {
-    return readableFromStream({}, db?.plugin("book-fetcher").isAvailableStream, false);
+	return readableFromStream({}, db?.plugin("book-fetcher").isAvailableStream, false);
 };
 
 const { data: defaultSettings } = superValidateSync(settingsSchema);
