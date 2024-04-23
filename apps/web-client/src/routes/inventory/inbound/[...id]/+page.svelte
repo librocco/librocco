@@ -3,7 +3,7 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, PowerCircle, Power } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -66,6 +66,7 @@
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
+	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	$: toasts = noteToastMessages(note?.displayName);
 
@@ -182,6 +183,7 @@
 
 	// #region temp
 	const handlePrint = () => {};
+	const toggleAutoPrintLabels = () => note.setAutoPrintLabels({}, !$autoPrintLabels);
 
 	// #endregion temp
 
@@ -293,6 +295,16 @@
 					<div
 						{...item}
 						use:item.action
+						on:m-click={toggleAutoPrintLabels}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+							? '!bg-green-400'
+							: ''}"
+					>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Auto print book labels</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
 						use:melt={$dialogTrigger}
 						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
 						on:m-click={() => {
@@ -382,6 +394,18 @@
 										<FileEdit />
 									</span>
 								</button>
+
+								<button
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("print-book-label")}
+									on:click={() => db.printer().label().print(row)}
+								>
+									<span class="sr-only">Print book label {rowIx}</span>
+									<span class="aria-hidden">
+										<Printer />
+									</span>
+								</button>
+
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
