@@ -6,7 +6,14 @@ import { NoteState, VolumeStock, debug } from "@librocco/shared";
 
 import type { PrintJobStatus } from "@/enums";
 
-import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
+import type {
+	DatabaseInterface as BaseDatabaseInterface,
+	BookEntry,
+	BooksInterface,
+	CouchDocument,
+	DatabaseInterface,
+	PickPartial
+} from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -56,6 +63,7 @@ export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
+	autoPrintLabels(ctx: debug.DebugCtx): Observable<boolean>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
 	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
@@ -117,6 +125,9 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	getEntries: EntriesQuery;
 	printReceipt(): Promise<string>;
 	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+
+	// Print book labels on scan
+	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface<A>>;
 }
 
 /**
@@ -211,6 +222,9 @@ export interface PrintJob extends CouchDocument<ReceiptData> {
 	error?: string;
 }
 
+export interface PrinterInterface {
+	label(): { print(book: BookEntry): Promise<Response> };
+}
 export interface RecepitsInterface {
 	print(note: NoteData): Promise<string>;
 }
@@ -253,6 +267,8 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
+
+	labelPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
 }
 
 /**
@@ -296,6 +312,8 @@ export type InventoryDatabaseInterface<
 	 */
 	stream: () => DbStream;
 	receipts: () => RecepitsInterface;
+	printer(): PrinterInterface;
+	setLabelPrinterUrl(url: string): DatabaseInterface;
 }>;
 
 export interface NewDatabase {

@@ -41,9 +41,12 @@ import { newReceiptsInterface } from "./receipts";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
+import { newPrinter } from "./printer";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
+
+	labelPrinterUrl = new BehaviorSubject("");
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
@@ -168,6 +171,11 @@ class Database implements InventoryDatabaseInterface {
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
+
+	setLabelPrinterUrl(url: string) {
+		this.labelPrinterUrl.next(url);
+		return this;
+	}
 	// #endregion setup
 
 	// #region instances
@@ -191,6 +199,10 @@ class Database implements InventoryDatabaseInterface {
 	receipts(): RecepitsInterface {
 		// TODO: We should add additional method to connect the printer
 		return newReceiptsInterface(this, "printer-1");
+	}
+
+	printer() {
+		return newPrinter(this, { labelPrinterUrl: this.labelPrinterUrl.value });
 	}
 	// #endregion instances
 
@@ -233,7 +245,9 @@ class Database implements InventoryDatabaseInterface {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
+
+			labelPrinterUrl: () => this.labelPrinterUrl
 		};
 	}
 }
