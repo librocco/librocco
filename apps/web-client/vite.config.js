@@ -82,6 +82,7 @@ const config = {
 		}
 	},
 	build: {
+		sourcemap: true,
 		rollupOptions: {
 			// This is the node modules polyfill (namely 'events') for PouchDB purposes, in production
 			plugins: [

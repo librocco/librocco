@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { ChevronLeft } from "lucide-svelte";
 
-	import { Page } from "$lib/components";
+	import { ExtensionAvailabilityToast, Page } from "$lib/components";
 
 	import { createDB, destroyDB } from "$lib/db";
 
@@ -42,5 +42,9 @@
 				>
 			</div>
 		</section>
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>

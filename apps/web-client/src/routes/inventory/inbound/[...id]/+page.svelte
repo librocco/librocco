@@ -8,10 +8,9 @@
 	import { goto } from "$app/navigation";
 
 	import { NoteState, testId } from "@librocco/shared";
-
 	import type { BookEntry } from "@librocco/db";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
+	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
 
 	import {
@@ -23,14 +22,16 @@
 		createBreadcrumbs,
 		TextEditable,
 		Dialog,
-		InboundTable
+		InboundTable,
+		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
+	import { toastSuccess, noteToastMessages, bookFetchingMessages, toastError } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -113,6 +114,14 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
+
+		const book = await bookDataPlugin.fetchBookData([isbn]);
+		if (!book.length) {
+			toastError(bookFetchingMessages.bookNotFound);
+		} else if (book.length) {
+			await db.books().upsert(book);
+			toastSuccess(bookFetchingMessages.bookFound);
+		}
 		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
@@ -163,6 +172,7 @@
 		}
 	};
 
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: breadcrumbs =
@@ -394,6 +404,10 @@
 			</div>
 		{/if}
 	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
+	</svelte:fragment>
 </Page>
 
 <div use:melt={$portalled}>
@@ -438,14 +452,19 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								toastError(bookFetchingMessages.bookNotFound);
+								return;
 							}
+
+							toastSuccess(bookFetchingMessages.bookFound);
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

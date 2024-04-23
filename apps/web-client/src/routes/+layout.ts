@@ -8,6 +8,7 @@ import { createDB } from "$lib/db";
 import type { LayoutLoad } from "./$types";
 import { get } from "svelte/store";
 import { settingsStore } from "$lib/stores";
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -23,10 +24,12 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
+		
 		try {
 			const remoteUrl = get(settingsStore).couchUrl;
 			// We should init the db first. If there is an existing remote config, the replicator we create next will need it
 			const db = await createDB(remoteUrl);
+			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
 
 			return {
 				db
