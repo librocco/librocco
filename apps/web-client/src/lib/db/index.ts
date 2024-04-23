@@ -23,7 +23,8 @@ export const createDB = async (url?: string): Promise<InventoryDatabaseInterface
 	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
 	 * There will be no local persistence.
 	 */
-	const connectionUrl = url ? url : LOCAL_POUCH_DB_NAME
+	const connectionUrl = url ? url : LOCAL_POUCH_DB_NAME;
+
 	const pouch = new pouchdb(connectionUrl);
 	db = newInventoryDatabaseInterface(pouch);
 	await db.init();
