@@ -8,17 +8,19 @@
 <script lang="ts">
 	import type { SuperValidated, ZodValidation } from "sveltekit-superforms";
 	import { superForm } from "sveltekit-superforms/client";
+	import compare from "just-compare";
 
 	import { Input } from "$lib/components";
-
-	import { settingsSchema, type SettingsData } from "$lib/forms/schemas";
+	import { settingsSchema } from "$lib/forms/schemas";
 
 	export let form: SuperValidated<typeof settingsSchema>;
 	export let options: SettingsFormOptions;
 
 	const _form = superForm(form, options);
 
-	const { form: formStore, enhance } = _form;
+	const { form: formStore, enhance, tainted } = _form;
+
+	$: hasChanges = $tainted && !compare($formStore, form.data);
 </script>
 
 <form class="flex h-auto flex-col gap-y-6" use:enhance method="POST" aria-label="Edit remote database connection config">
@@ -46,6 +48,6 @@
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
-		<button type="submit" class="button button-green">Save and Reload</button>
+		<button type="submit" class="button button-green" disabled={!hasChanges}>Save and Reload</button>
 	</div>
 </form>
