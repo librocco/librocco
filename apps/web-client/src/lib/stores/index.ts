@@ -1,8 +1,9 @@
-import { createRemoteDbStore } from "./settings";
+import { LOCAL_STORAGE_SETTINGS } from "$lib/constants";
+import { settingsSchema } from "$lib/forms";
 import { readableFromStream } from "$lib/utils/streams";
 import type { DatabaseInterface } from "@librocco/db";
-
-export const remoteDbStore = createRemoteDbStore();
+import { superValidateSync } from "sveltekit-superforms/client";
+import { persisted } from "svelte-local-storage-store";
 
 /**
  * Creates a store from the availability stream of the book data extension plugin.
@@ -12,3 +13,6 @@ export const remoteDbStore = createRemoteDbStore();
 export const createExtensionAvailabilityStore = (db: DatabaseInterface) => {
 	return readableFromStream({}, db?.plugin("book-fetcher").isAvailableStream, false);
 };
+
+const { data: defaultSettings } = superValidateSync(settingsSchema);
+export const settingsStore = persisted(LOCAL_STORAGE_SETTINGS, defaultSettings);

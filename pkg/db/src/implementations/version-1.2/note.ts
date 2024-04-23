@@ -264,7 +264,7 @@ class Note implements NoteInterface {
 		debug.log(ctx, "note:set_defaultwarehouse:updating")({ warehouseId });
 		return this.update(ctx, { defaultWarehouseId: warehouseId });
 	}
-	
+
 	/**
 	 * Mark the note as reconciliation note (see types for more info)
 	 */
