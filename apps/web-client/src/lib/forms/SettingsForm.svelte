@@ -7,11 +7,11 @@
 
 <script lang="ts">
 	import type { SuperValidated, ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync } from "sveltekit-superforms/client";
+	import { superForm } from "sveltekit-superforms/client";
 
 	import { Input } from "$lib/components";
 
-	import { settingsSchema, type SettingsData } from "$lib/forms/schemas";
+	import { settingsSchema } from "$lib/forms/schemas";
 
 	export let form: SuperValidated<typeof settingsSchema>;
 	export let options: SettingsFormOptions;
@@ -31,13 +31,7 @@
 			</div>
 
 			<div class="basis-full">
-				<Input
-					id="url"
-					name="labelPrinterUrl"
-					label="Label Printer URL"
-					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
-					bind:value={$formStore.labelPrinterUrl}
-				/>
+				<Input id="url" name="labelPrinterUrl" label="Label Printer URL" bind:value={$formStore.labelPrinterUrl} />
 			</div>
 		</div>
 	</div>
