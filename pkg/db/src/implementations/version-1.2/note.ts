@@ -44,9 +44,10 @@ class Note implements NoteInterface {
 
 	noteType: NoteType;
 	reconciliationNote?: boolean;
+	defaultWarehouseId?: string | undefined;
+	autoPrintLabels?: boolean | undefined; // Print book labels on scan
 
 	entries: VolumeStock[] = [];
-	defaultWarehouseId?: string | undefined;
 	committed = false;
 	displayName = "";
 	updatedAt: string | null = null;
@@ -139,6 +140,7 @@ class Note implements NoteInterface {
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 		this.updateField("reconciliationNote", data.reconciliationNote);
+		this.updateField("autoPrintLabels", data.autoPrintLabels);
 
 		this.#exists = true;
 
@@ -265,6 +267,11 @@ class Note implements NoteInterface {
 		return this.update(ctx, { defaultWarehouseId: warehouseId });
 	}
 
+	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface> {
+		debug.log(ctx, "set_auto_print_labels:updating")({ value });
+		return this.update(ctx, { autoPrintLabels: value });
+	}
+
 	/**
 	 * Mark the note as reconciliation note (see types for more info)
 	 */
@@ -280,7 +287,8 @@ class Note implements NoteInterface {
 	 */
 	addVolumes(...params: Parameters<NoteInterface["addVolumes"]>): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
-			params.forEach((update) => {
+			// TODO: remove async from '.forEach'
+			params.forEach(async (update) => {
 				if (!update.isbn) throw new EmptyTransactionError();
 
 				const warehouseId = update.warehouseId
@@ -301,6 +309,12 @@ class Note implements NoteInterface {
 					warehouseId,
 					quantity: this.entries[matchIndex].quantity + update.quantity
 				};
+
+				// Print the label for the book
+				if (this.autoPrintLabels) {
+					const [bookData] = await this.#db.books().get([update.isbn]);
+					this.#db.printer().label().print(bookData!);
+				}
 			});
 
 			return this.update({}, this);
@@ -510,6 +524,9 @@ class Note implements NoteInterface {
 					map(({ defaultWarehouseId }) => defaultWarehouseId || ""),
 					tap(debug.log(ctx, "note_streams: defaultWarehouseId: res"))
 				),
+
+			autoPrintLabels: () => this.#stream.pipe(map(({ autoPrintLabels }) => Boolean(autoPrintLabels))),
+
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
