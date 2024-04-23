@@ -21,7 +21,6 @@
 	},
 	"dependencies": {
 		"@librocco/db": "workspace:*",
-		"librocco-extension": "git+https://github.com/librocco/bookdata-extension.git",
 		"lucide-svelte": "^0.315.0",
 		"pouchdb": "~8.0.1",
 		"rxjs": "~7.8.0",
