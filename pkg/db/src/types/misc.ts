@@ -46,6 +46,15 @@ export type SearchIndex = Search;
 // #endregion misc
 
 // #region books
+//  'isbn': '9788808451880',
+//  'title': 'Matematica.azzurro con TUTOR 5',
+//  'price': '30.7',
+//  'year': '2021'}
+//  'author': '', // ------------ 'authors'
+//  'publisher': 'Zanichelli',
+//  'edited_by': '', // ------------ 'editedBy'
+//  'out_of_print': 'false', // ------------ 'outOfPrint'
+
 export interface BookEntry {
 	isbn: string;
 	title: string;

@@ -38,13 +38,7 @@
 			</div>
 
 			<div class="basis-full">
-				<Input
-					id="url"
-					name="labelPrinterUrl"
-					label="Label Printer URL"
-					pattern="^(https?://)(.+):(.+)@(.+):(.+)$"
-					bind:value={$formStore.labelPrinterUrl}
-				/>
+				<Input id="url" name="labelPrinterUrl" label="Label Printer URL" bind:value={$formStore.labelPrinterUrl} />
 			</div>
 		</div>
 	</div>

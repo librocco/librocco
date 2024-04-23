@@ -29,6 +29,7 @@ export type TestId =
 	| "popover-control"
 	| "popover-container"
 	| "edit-row"
+	| "print-book-label"
 	| "delete-row"
 	| "book-form"
 	| "scan-autofocus-toggle";
