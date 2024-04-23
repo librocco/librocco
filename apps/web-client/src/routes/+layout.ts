@@ -34,7 +34,11 @@ export const load: LayoutLoad = async ({ url }) => {
 				db
 			};
 		} catch (err) {
+			console.log("ERROR", err)
 			//TODO: load modal showing error and two options, go to Settings page to edit the couchUrl or retry the load function
+			return {
+
+			}
 		}
 	}
 
