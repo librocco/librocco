@@ -1,8 +1,9 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
-	import { Subscription } from "rxjs";
+
 	import { onMount } from "svelte";
+	import { Subscription } from "rxjs";
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import type { LayoutData } from "./$types";
@@ -69,7 +70,6 @@
 
 <slot />
 
-<!--Toasts container-->
 {#if showNotifications}
 	<div class="fixed bottom-12 right-4 z-[100] md:top-20 md:bottom-auto">
 		<div class="flex flex-col gap-y-6">
