@@ -3,8 +3,8 @@
 
 	import { goto } from "$app/navigation";
 
-	import { Page } from "$lib/components";
 	import { SettingsForm } from "$lib/forms";
+	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
 	import { settingsSchema } from "$lib/forms";
@@ -50,5 +50,9 @@
 				</div>
 			</div>
 		</div>
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>

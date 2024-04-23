@@ -1,4 +1,5 @@
 import { LibroccoPlugin, PluginInterfaceLookup } from "@/types";
+import { BehaviorSubject } from "rxjs";
 
 export interface PluginsInterface {
 	get<T extends keyof PluginInterfaceLookup>(pluginName: T): LibroccoPlugin<PluginInterfaceLookup[T]>;
@@ -31,7 +32,9 @@ class Plugins implements PluginsInterface {
 
 // #region fallbacks
 const bookFetcherFallback = {
-	fetchBookData: async () => []
+	// The 'fetchBookData' is expected to return the same number of results as the number of isbns requested
+	fetchBookData: async (isbns: string[]) => Array(isbns.length).fill(undefined),
+	isAvailableStream: new BehaviorSubject(false)
 };
 // #endregion fallbacks
 
