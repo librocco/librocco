@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import { Subscription } from "rxjs";
 	import { onMount } from "svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
@@ -22,6 +23,8 @@
 	// TODO: Maybe move the toasts somewhere else on the screen as they're obscuring
 	// the dashboard for tests as well as for the user clicking through.
 	let showNotifications = !IS_E2E;
+
+	let availabilitySubscription: Subscription;
 
 	onMount(async () => {
 		// Register the db to the window object.
@@ -49,6 +52,10 @@
 			});
 		}
 	});
+
+	export function onDestroy() {
+		availabilitySubscription && availabilitySubscription.unsubscribe();
+	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
 </script>

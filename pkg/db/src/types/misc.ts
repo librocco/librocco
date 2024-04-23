@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Search } from "js-search";
-
-import type { DocType } from "@/enums";
+import { Observable } from "rxjs";
 
 import { debug } from "@librocco/shared";
-import { Observable } from "rxjs";
+
+import type { DocType } from "@/enums";
 
 // #region utils
 /**
@@ -159,7 +159,8 @@ export type LibroccoPlugin<T extends {}> = {
 } & T;
 
 export interface BookFetcherPlugin {
-	fetchBookData(isbns: string[]): Promise<BookEntry[]>;
+	fetchBookData(isbns: string[]): Promise<(BookEntry | undefined)[]>;
+	isAvailableStream: Observable<boolean>;
 }
 
 export interface PluginInterfaceLookup {

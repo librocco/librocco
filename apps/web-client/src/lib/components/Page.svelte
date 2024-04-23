@@ -149,8 +149,14 @@
 		<!-- Heading section end -->
 
 		<!-- Main section -->
-		<main class="relative h-full w-full overflow-y-auto border-t bg-white">
-			<slot name="main" />
+		<main class="relative flex h-full w-full flex-col justify-between overflow-hidden border-t bg-white">
+			<div class="relative h-full w-full overflow-y-auto">
+				<slot name="main" />
+			</div>
+
+			<div class="flex h-8 items-center justify-end border-t bg-gray-100 px-4">
+				<slot name="footer" />
+			</div>
 		</main>
 		<!-- Main section end -->
 	</div>

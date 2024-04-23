@@ -1773,11 +1773,15 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		//
 		// Here we're also testing that the api won't explode if no plugin is registered.
 		const res1 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res1).toEqual([]);
+		// The plugin should return the same number of results (and in the same order as the isbns requested)
+		// fallback should, then, return a list of undefineds with the same langth as the number of requested isbns
+		expect(res1).toEqual([undefined, undefined]);
 
 		// Registering a plugin implementation should return that implementation for all subsequent calls
 		const impl1 = {
-			fetchBookData: async (isbns: string[]) => isbns as any // In practice this should be a BookEntry array
+			fetchBookData: async (isbns: string[]) => isbns as any, // In practice this should be a BookEntry array
+			isAvailableStream: new BehaviorSubject(false),
+			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
@@ -1788,7 +1792,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		// Registering a different implementation should return that implementation for all subsequent calls
 		const impl2 = {
-			fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 }))
+			fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 })),
+			isAvailableStream: new BehaviorSubject(false),
+			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);

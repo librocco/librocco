@@ -1,0 +1,23 @@
+{
+	"manifest_version": 3,
+	"name": "Librocco book data extension",
+	"version": "1.0",
+	"description": "Finds book meta data from different sources",
+	"homepage_url": "https://test.libroc.co/",
+	"host_permissions": ["https://*/*/"],
+	"default_locale": "en",
+	"content_scripts": [
+		{
+			"matches": ["*://test.libroc.co/*", "*://localhost/*"],
+			"js": ["./dist/extension/index.es.js"],
+			"type": "module"
+		}
+	],
+	"background": {
+		"service_worker": "./dist/extension/background.es.js",
+		"type": "module"
+	},
+	"content_security_policy": {
+		"extension_pages": "script-src 'self'; object-src 'self'"
+	}
+}
