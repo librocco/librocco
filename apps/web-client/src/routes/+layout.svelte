@@ -1,17 +1,22 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
-	import { Subscription } from "rxjs";
+
 	import { onMount } from "svelte";
+	import { Subscription } from "rxjs";
+	import { createDialog, melt } from "@melt-ui/svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
-	import { Toast } from "$lib/components";
+	import { Toast, Dialog } from "$lib/components";
 
 	import { IS_E2E } from "$lib/constants";
 
 	import { defaultToaster } from "$lib/toasts";
 
 	import type { LayoutData } from "./$types";
+	import { settingsStore } from "$lib/stores";
+	import { goto } from "$app/navigation";
+	import { base } from "$app/paths";
 
 	export let data: LayoutData;
 
@@ -58,13 +63,40 @@
 	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
+
+	const dialog = createDialog({
+		forceVisible: true
+	});
+
+	const {
+		elements: { overlay, portalled },
+	} = dialog;
 </script>
 
 <svelte:head>
 	{@html webManifest}
 </svelte:head>
 
-<slot />
+{#if db}
+	<slot />
+{:else}
+	<div use:melt={$portalled}>
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-gray-900" />
+			<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+				<Dialog {dialog} type="delete" onConfirm={() => {}}>
+					{console.log($settingsStore)}
+					<svelte:fragment slot="title">No database found at {$settingsStore.couchUrl}</svelte:fragment>
+					<svelte:fragment slot="description">You can either retry the connection or check the provided url</svelte:fragment>
+					<button slot="secondary-button" class="button button-sm button-alert" on:click={() => goto(`${base}/settings/`)}>
+						Go to settings
+					</button>
+					<button slot="confirm-button" class="button button-sm button-green">
+						Retry
+					</button>
+				</Dialog>
+			</div>
+	</div>
+{/if}
 
 <!--Toasts container-->
 {#if showNotifications}
