@@ -28,7 +28,14 @@ const urls: Record<string, string> = {
 	annasArchive: `https://annas-archive.org/isbndb/`
 };
 
+const cache: { [key: string]: string } = {};
+
 function fetchUrl(isbn: string, senderResponse: (response?: any) => void) {
+	// If the `isbn` is already in the cache, return it
+	if (cache[isbn]) {
+		senderResponse(cache[isbn]);
+		return;
+	}
 	try {
 		const source = "annasArchive";
 		const url = `${urls[source]}${isbn}`;
@@ -41,9 +48,11 @@ function fetchUrl(isbn: string, senderResponse: (response?: any) => void) {
 					// the html gets messed up in the sending process
 					chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 						const activeTab = tabs[0];
+						const result = JSON.stringify(res);
+						cache[isbn] = result;
 						if (activeTab.id) {
 							// to content script
-							chrome.tabs.sendMessage(activeTab.id, JSON.stringify(res));
+							chrome.tabs.sendMessage(activeTab.id, result);
 						}
 					});
 					senderResponse(`message sent back from ${url}`);
