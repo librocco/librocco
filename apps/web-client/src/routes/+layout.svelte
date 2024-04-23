@@ -4,7 +4,6 @@
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
-	import { createDialog, melt } from "@melt-ui/svelte";
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import { Toast, Dialog } from "$lib/components";
@@ -14,9 +13,6 @@
 	import { defaultToaster } from "$lib/toasts";
 
 	import type { LayoutData } from "./$types";
-	import { settingsStore } from "$lib/stores";
-	import { goto } from "$app/navigation";
-	import { base } from "$app/paths";
 
 	export let data: LayoutData;
 
@@ -63,42 +59,14 @@
 	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
-
-	const dialog = createDialog({
-		forceVisible: true
-	});
-
-	const {
-		elements: { overlay, portalled },
-	} = dialog;
 </script>
 
 <svelte:head>
 	{@html webManifest}
 </svelte:head>
 
-{#if db}
-	<slot />
-{:else}
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-gray-900" />
-			<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={() => {}}>
-					{console.log($settingsStore)}
-					<svelte:fragment slot="title">No database found at {$settingsStore.couchUrl}</svelte:fragment>
-					<svelte:fragment slot="description">You can either retry the connection or check the provided url</svelte:fragment>
-					<button slot="secondary-button" class="button button-sm button-alert" on:click={() => goto(`${base}/settings/`)}>
-						Go to settings
-					</button>
-					<button slot="confirm-button" class="button button-sm button-green">
-						Retry
-					</button>
-				</Dialog>
-			</div>
-	</div>
-{/if}
+<slot />
 
-<!--Toasts container-->
 {#if showNotifications}
 	<div class="fixed bottom-12 right-4 z-[100] md:top-20 md:bottom-auto">
 		<div class="flex flex-col gap-y-6">
