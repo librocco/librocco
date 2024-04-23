@@ -46,3 +46,8 @@ export const warehouseToastMessages = (warehouseName) => ({
 	warehouseDeleted: `${warehouseName} deleted`,
 	bookDataUpdated: (isbn: string) => `Updated book data for '${isbn}'`
 });
+
+export const bookFetchingMessages = {
+	bookFound: "Book data found",
+	bookNotFound: "Book data could not be found"
+};
