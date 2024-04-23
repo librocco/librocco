@@ -8,8 +8,11 @@
 
 	import { appPath } from "$lib/paths";
 	import { settingsSchema } from "$lib/forms";
-	import {settingsStore} from "$lib/stores"
+	import { settingsStore } from "$lib/stores";
 
+	import type { PageData } from "./$types";
+
+	export let data: PageData;
 </script>
 
 <Page view="settings" loaded={true}>
@@ -30,17 +33,18 @@
 					<p class="mt-1 text-sm leading-6 text-gray-600">Manage connections to services and devices</p>
 				</div>
 				<div class="w-full basis-2/3">
-
 					<SettingsForm
-						data={$settingsStore}
+						form={data.form}
 						options={{
 							SPA: true,
 							dataType: "json",
 							validators: settingsSchema,
 							validationMethod: "submit-only",
-							onUpdated: ({form}) => {
-								if(form.valid)
-								{settingsStore.set(form.data)}}
+							onUpdated: ({ form }) => {
+								if (form.valid) {
+									settingsStore.set(form.data);
+								}
+							}
 						}}
 					/>
 				</div>
