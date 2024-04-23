@@ -46,9 +46,6 @@ importers:
       '@librocco/db':
         specifier: workspace:*
         version: link:../../pkg/db
-      librocco-extension:
-        specifier: git+https://github.com/librocco/bookdata-extension.git
-        version: github.com/librocco/bookdata-extension/06fc4051d63af89306d5830f78da2149e67ffec9
       lucide-svelte:
         specifier: ^0.315.0
         version: 0.315.0(svelte@4.2.9)
@@ -11123,9 +11120,3 @@ packages:
   /zod@3.22.4:
     resolution: {integrity: sha512-iC+8Io04lddc+mVqQ9AZ7OQ2MrUKGN+oIQyq1vemgt46jwCwLfhq7/pwnBnNXXXZb8VTVLKwp9EDkx+ryxIWmg==}
     dev: true
-
-  github.com/librocco/bookdata-extension/06fc4051d63af89306d5830f78da2149e67ffec9:
-    resolution: {tarball: https://codeload.github.com/librocco/bookdata-extension/tar.gz/06fc4051d63af89306d5830f78da2149e67ffec9}
-    name: librocco-extension
-    version: 1.0.0
-    dev: false
