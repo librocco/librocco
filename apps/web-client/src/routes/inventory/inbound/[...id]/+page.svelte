@@ -110,8 +110,7 @@
 		await note.addVolumes({ isbn, quantity: 1 });
 
 		const book = await bookDataPlugin.fetchBookData([isbn]);
-		if (!book.length) {
-		} else if (book.length) {
+		if (book.length) {
 			await db.books().upsert(book);
 		}
 	};
