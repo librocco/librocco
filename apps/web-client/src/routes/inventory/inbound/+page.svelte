@@ -99,24 +99,24 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", noteId)}
 
-					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
-						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
-							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+					<a {href} class="group entity-list-row">
+						<div class="flex flex-col gap-y-2">
+							<p class="entity-list-text-lg text-gray-900 group-hover:underline group-focus:underline">{displayName}</p>
 
-							<div class="flex items-center">
-								<Library class="mr-1 text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+							<div class="flex flex-col items-start gap-y-2">
+								<div class="flex gap-x-0.5">
+									<Library class="mr-1 text-gray-700" size={24} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								</div>
+								{#if note.updatedAt}
+									<span class="badge badge-md badge-green">
+										Last updated: {updatedAt}
+									</span>
+								{/if}
 							</div>
 						</div>
 
-						{#if note.updatedAt}
-							<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
-								<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
-							</div>
-						{/if}
-
-						<div class="entity-list-actions col-span-2 row-span-2 xs:col-span-6">
-							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+						<div class="entity-list-actions">
 							<button
 								use:melt={$trigger}
 								class="button button-white"
@@ -134,7 +134,7 @@
 								</span>
 							</button>
 						</div>
-					</li>
+					</a>
 				{/each}
 				<!-- End entity list -->
 			{/if}
