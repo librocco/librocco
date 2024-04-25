@@ -12,8 +12,6 @@ export * from "./Breadcrumbs";
 export * from "./Dialogs";
 export * from "./FormControls";
 export * from "./Tables";
-export * from "./Toast";
-export * from "./Toasts";
 export * from "./ProgressBar";
 export * from "./TextEditable";
 export * from "./WarehouseSelect";

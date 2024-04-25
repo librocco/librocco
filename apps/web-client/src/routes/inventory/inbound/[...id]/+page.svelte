@@ -29,7 +29,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, noteToastMessages, bookFetchingMessages, toastError } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
@@ -68,29 +67,23 @@
 	$: entries = noteStores.entries;
 	$: autoPrintLabels = noteStores.autoPrintLabels;
 
-	$: toasts = noteToastMessages(note?.displayName);
-
 	// #region note-actions
 	//
 	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(appPath("inbound"));
-			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
-			toastSuccess(message);
 		}
 	}
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		await note.commit({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
 
@@ -118,12 +111,9 @@
 
 		const book = await bookDataPlugin.fetchBookData([isbn]);
 		if (!book.length) {
-			toastError(bookFetchingMessages.bookNotFound);
 		} else if (book.length) {
 			await db.books().upsert(book);
-			toastSuccess(bookFetchingMessages.bookFound);
 		}
-		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
@@ -138,12 +128,10 @@
 		}
 
 		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
-		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: string) => {
 		await note.removeTransactions({ isbn, warehouseId });
-		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
@@ -165,7 +153,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -480,11 +467,9 @@
 
 							const [bookData] = result;
 							if (!bookData) {
-								toastError(bookFetchingMessages.bookNotFound);
 								return;
 							}
 
-							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}

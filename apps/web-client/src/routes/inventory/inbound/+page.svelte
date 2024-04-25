@@ -13,7 +13,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -54,7 +53,6 @@
 		}
 		await result.note.delete({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 
 	const dialog = createDialog({ forceVisible: true });

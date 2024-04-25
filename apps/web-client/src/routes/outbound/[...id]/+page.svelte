@@ -32,7 +32,6 @@
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
-	import { toastSuccess, noteToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
@@ -75,18 +74,12 @@
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
 
-	$: toasts = noteToastMessages(note?.displayName);
-
 	// #region note-actions
 	//
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(appPath("outbound"));
-
-			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
-
-			toastSuccess(message);
 		}
 	}
 
@@ -110,7 +103,6 @@
 		try {
 			await note.commit({});
 			closeDialog();
-			toastSuccess(noteToastMessages("Note").outNoteCommited);
 		} catch (err) {
 			if (err instanceof NoWarehouseSelectedError) {
 				return openNoWarehouseSelectedDialog(err.invalidTransactions);
@@ -126,12 +118,10 @@
 		await note.reconcile({});
 		await note.commit({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").outNoteCommited);
 	};
 
 	const handleDeleteSelf = async () => {
 		await note.delete({});
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
 
@@ -156,7 +146,6 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
-		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
 	const updateRowWarehouse = async (
@@ -174,7 +163,6 @@
 
 		// TODO: error handling
 		await note.updateTransaction(transaction, { ...transaction, warehouseId: nextWarehouseId });
-		toastSuccess(toasts.warehouseUpdated(isbn));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
@@ -189,12 +177,10 @@
 		}
 
 		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
-		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: string) => {
 		await note.removeTransactions({ isbn, warehouseId });
-		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
@@ -216,7 +202,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -581,11 +566,9 @@
 
 								const [bookData] = result;
 								if (!bookData) {
-									toastError(bookFetchingMessages.bookNotFound);
 									return;
 								}
 
-								toastSuccess(bookFetchingMessages.bookFound);
 								form.update((data) => ({ ...data, ...bookData }));
 								// TODO: handle loading and errors
 							}}
