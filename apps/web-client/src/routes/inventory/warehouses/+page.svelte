@@ -16,7 +16,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, warehouseToastMessages, toastError, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { readableFromStream } from "$lib/utils/streams";
@@ -48,7 +47,6 @@
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
 		open.set(false);
-		toastSuccess(warehouseToastMessages(warehouseName).warehouseDeleted);
 	};
 
 	/**
@@ -57,7 +55,6 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
 		await goto(appPath("warehouses", warehouse._id));
 	};
 
@@ -67,7 +64,6 @@
 	 */
 	const handleCreateNote = (warehouseId: string) => async () => {
 		const note = await db?.warehouse(warehouseId).note().create();
-		toastSuccess(noteToastMessages("Note").inNoteCreated);
 		await goto(appPath("inbound", note._id));
 	};
 
@@ -237,15 +233,10 @@
 								const { id, name, discount } = form?.data;
 								const warehouseInterface = db.warehouse(id);
 
-								try {
-									await warehouseInterface.setName({}, name);
-									await warehouseInterface.setDiscount({}, discount);
+								await warehouseInterface.setName({}, name);
+								await warehouseInterface.setDiscount({}, discount);
 
-									open.set(false);
-									toastSuccess(warehouseToastMessages(name).warehouseUpdated);
-								} catch (err) {
-									toastError(`Error: ${err.message}`);
-								}
+								open.set(false);
 							}
 						}}
 						onCancel={() => open.set(false)}
