@@ -106,9 +106,9 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<a {href} class="group entity-list-row">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
-							<p class="entity-list-text-lg text-gray-900 group-hover:underline group-focus:underline">{displayName}</p>
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
@@ -202,7 +202,7 @@
 								</div>
 							</DropdownWrapper>
 						</div>
-					</a>
+					</div>
 				{/each}
 				<!-- End entity list -->
 			{/if}
