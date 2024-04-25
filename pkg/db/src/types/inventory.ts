@@ -123,10 +123,19 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * An imperative query (single response) of note's transactions (as opposed to the entries stream - an observable stream).
 	 */
 	getEntries: EntriesQuery;
-	printReceipt(): Promise<string>;
+	/**
+	 * Creates a receipt object (of ReceiptData type) for printing. Doesn't do the actual printing.
+	 */
+	intoReceipt(): Promise<ReceiptData>;
+	/**
+	 * For outbound notes: this function reconciles the missing stock (in the outbound note) by creating new inbound note(s), in the
+	 * background, and committing those before committing the outbound note so that the resulting for each entry will at least be 0 (no negative quantities).
+	 */
 	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
 
-	// Print book labels on scan
+	/**
+	 * Enable printing of labels on each scan.
+	 */
 	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface<A>>;
 }
 
@@ -226,10 +235,6 @@ export interface PrinterInterface {
 	label(): { print(book: BookEntry): Promise<Response> };
 	receipt(): { print(items: ReceiptItem[]): Promise<Response> };
 }
-
-export interface RecepitsInterface {
-	print(note: NoteData): Promise<string>;
-}
 // #endregion receipts
 
 // #region db
@@ -314,7 +319,6 @@ export type InventoryDatabaseInterface<
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
 	stream: () => DbStream;
-	receipts: () => RecepitsInterface;
 	printer(): PrinterInterface;
 	setLabelPrinterUrl(url: string): DatabaseInterface;
 	setReceiptPrinterUrl(url: string): DatabaseInterface;
