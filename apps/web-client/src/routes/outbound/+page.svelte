@@ -109,9 +109,9 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", noteId)}
 
-						<a {href} class="group entity-list-row">
+						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
-								<p class="entity-list-text-lg text-gray-900 group-hover:underline group-focus:underline">{displayName}</p>
+								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 								<div class="flex flex-col items-start gap-y-2">
 									<div class="flex gap-x-0.5">
@@ -127,6 +127,8 @@
 							</div>
 
 							<div class="entity-list-actions">
+								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+
 								<button
 									use:melt={$trigger}
 									class="button button-white"
@@ -144,7 +146,7 @@
 									</span>
 								</button>
 							</div>
-						</a>
+						</div>
 					{/each}
 					<!-- End entity list -->
 				{/if}
