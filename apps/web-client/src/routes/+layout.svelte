@@ -29,6 +29,7 @@
 	let availabilitySubscription: Subscription;
 
 	$: db?.setLabelPrinterUrl($settingsStore.labelPrinterUrl);
+	$: db?.setReceiptPrinterUrl($settingsStore.receiptPrinterUrl);
 
 	onMount(async () => {
 		// Register the db to the window object.

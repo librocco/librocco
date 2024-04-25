@@ -123,16 +123,25 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 	test("db streams", async () => {
 		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
+		let receiptPrinterUrl: PossiblyEmpty<string> = EMPTY;
 		db.stream()
 			.labelPrinterUrl({})
 			.subscribe((lpu) => (labelPrinterUrl = lpu));
+		db.stream()
+			.receiptPrinterUrl({})
+			.subscribe((rpu) => (receiptPrinterUrl = rpu));
 
 		// Initial value should be an empty string
 		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
+		await waitFor(() => expect(receiptPrinterUrl).toEqual(""));
 
 		// Set label printer url (url is not validated)
 		db.setLabelPrinterUrl("test-url");
 		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
+
+		// Set receipt printer url (url is not validated)
+		db.setReceiptPrinterUrl("test-url-receipts");
+		await waitFor(() => expect(receiptPrinterUrl).toEqual("test-url-receipts"));
 	});
 
 	test("warehouseDiscount", async () => {
@@ -1881,15 +1890,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			docType: DocType.PrintJob,
 			printer_id: "printer-1",
 			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price })),
-			// Prices series: 2, 4, ..., (n * 2) | n = 20
-			// S(n) = 2 + 4 + ... + (n * 2) | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (2 + 40) / 2 = 420
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 840
-			total: 840,
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 })),
 			timestamp: expect.any(Number)
 		});
 
@@ -1910,15 +1911,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			docType: DocType.PrintJob,
 			printer_id: "printer-1",
 			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 420
-			total: 420,
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
 			timestamp: expect.any(Number)
 		});
 
@@ -1941,19 +1934,10 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			status: "PENDING",
 			items: [
 				// wh-1 transactions - with discount applied
-				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
 				// additional two transactions (wh-2) - no discount applied
-				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price }))
+				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 }))
 			],
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = 2 * ( S(n) + transaction-0-without-discount + transaction-1-without-discount )
-			// Sum = 2 * ( S(n) + 2 + 4 ) = 432
-			total: 432,
 			timestamp: expect.any(Number)
 		});
 	});

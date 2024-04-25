@@ -40,6 +40,10 @@
 			<div class="basis-full">
 				<Input id="url" name="labelPrinterUrl" label="Label Printer URL" bind:value={$formStore.labelPrinterUrl} />
 			</div>
+
+			<div class="basis-full">
+				<Input id="url" name="receiptPrinterUrl" label="Receipt Printer URL" bind:value={$formStore.receiptPrinterUrl} />
+			</div>
 		</div>
 	</div>
 	<div class="flex justify-end gap-x-2 px-4 py-6">
