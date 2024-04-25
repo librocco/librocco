@@ -47,6 +47,7 @@ class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
 
 	labelPrinterUrl = new BehaviorSubject("");
+	receiptPrinterUrl = new BehaviorSubject("");
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
@@ -176,6 +177,10 @@ class Database implements InventoryDatabaseInterface {
 		this.labelPrinterUrl.next(url);
 		return this;
 	}
+	setReceiptPrinterUrl(url: string) {
+		this.receiptPrinterUrl.next(url);
+		return this;
+	}
 	// #endregion setup
 
 	// #region instances
@@ -202,7 +207,7 @@ class Database implements InventoryDatabaseInterface {
 	}
 
 	printer() {
-		return newPrinter(this, { labelPrinterUrl: this.labelPrinterUrl.value });
+		return newPrinter(this, { labelPrinterUrl: this.labelPrinterUrl.value, receiptPrinterUrl: this.receiptPrinterUrl.value });
 	}
 	// #endregion instances
 
@@ -247,7 +252,8 @@ class Database implements InventoryDatabaseInterface {
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
 
-			labelPrinterUrl: () => this.labelPrinterUrl
+			labelPrinterUrl: () => this.labelPrinterUrl,
+			receiptPrinterUrl: () => this.receiptPrinterUrl
 		};
 	}
 }

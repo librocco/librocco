@@ -230,7 +230,11 @@
 	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
 
 	// #region temp
-	const handlePrint = () => {};
+	const handlePrint = async () => {
+		db.printer()
+			.receipt()
+			.print($entries.map(({ isbn, price, quantity, warehouseDiscount: discount, title }) => ({ isbn, title, price, quantity, discount })));
+	};
 	// #endregion temp
 
 	const dialog = createDialog({

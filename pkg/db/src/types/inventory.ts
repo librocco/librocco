@@ -207,11 +207,11 @@ export interface ReceiptItem {
 	title: string;
 	quantity: number;
 	price: number;
+	discount: number;
 }
 
 export interface ReceiptData {
 	items: ReceiptItem[];
-	total: number;
 	timestamp: number;
 }
 
@@ -224,7 +224,9 @@ export interface PrintJob extends CouchDocument<ReceiptData> {
 
 export interface PrinterInterface {
 	label(): { print(book: BookEntry): Promise<Response> };
+	receipt(): { print(items: ReceiptItem[]): Promise<Response> };
 }
+
 export interface RecepitsInterface {
 	print(note: NoteData): Promise<string>;
 }
@@ -269,6 +271,7 @@ export interface DbStream {
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 
 	labelPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
+	receiptPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
 }
 
 /**
@@ -314,6 +317,7 @@ export type InventoryDatabaseInterface<
 	receipts: () => RecepitsInterface;
 	printer(): PrinterInterface;
 	setLabelPrinterUrl(url: string): DatabaseInterface;
+	setReceiptPrinterUrl(url: string): DatabaseInterface;
 }>;
 
 export interface NewDatabase {

@@ -44,19 +44,10 @@ class Receipts implements RecepitsInterface {
 			.map(({ warehouseId, ...entry }) => ({ ...entry, discount: warehouseMap.get(warehouseId)?.discountPercentage ?? 0 }))
 			// Zip with book data res - we can safely do this as the length and ordering of isbns and book data is the same (with undefined for missing books)
 			.zip(books)
-			.map(([{ isbn, quantity, discount }, { title, price } = { title: "", price: 0 }]) => ({
-				isbn,
-				title,
-				quantity,
-				price: (price * (100 - discount)) / 100
-			}))
+			.map(([stock, { title, price } = { title: "", price: 0 }]) => ({ ...stock, title, price }))
 			.array();
 
-		// In order to produce a correct total (two decimal places), we're doing the arithmetic over interegs and converting the result
-		// back to a float with two decimal places. This is to avoid floating point errors.
-		const total = items.reduce((acc, { quantity, price }) => acc + quantity * Math.floor(price * 100), 0) / 100;
-
-		const printJob = this.constructPrintJob({ items, total, timestamp });
+		const printJob = this.constructPrintJob({ items, timestamp });
 
 		await this.#db._pouch.put(printJob);
 
