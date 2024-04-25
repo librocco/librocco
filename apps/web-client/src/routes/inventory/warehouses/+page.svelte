@@ -106,11 +106,11 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<li class="entity-list-row flex items-center justify-between">
-						<div class="max-w-1/2 w-full">
-							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+					<a {href} class="group entity-list-row">
+						<div class="flex flex-col gap-y-2 self-start">
+							<p class="entity-list-text-lg text-gray-900 group-hover:underline group-focus:underline">{displayName}</p>
 
-							<div class="flex flex-wrap gap-y-2">
+							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
 									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
@@ -128,8 +128,9 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button
-							>
+							<button on:click={handleCreateNote(warehouseId)} class="button button-green">
+								<span class="button-text"> New note </span>
+							</button>
 
 							<DropdownWrapper let:separator let:item>
 								<div
@@ -201,7 +202,7 @@
 								</div>
 							</DropdownWrapper>
 						</div>
-					</li>
+					</a>
 				{/each}
 				<!-- End entity list -->
 			{/if}

@@ -287,7 +287,7 @@
 
 				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
