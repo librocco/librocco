@@ -16,7 +16,6 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
@@ -39,8 +38,6 @@
 
 	$: search = stores.search;
 	$: entries = stores.entries;
-
-	$: toasts = warehouseToastMessages("All");
 
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
@@ -80,7 +77,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -226,11 +222,9 @@
 
 							const [bookData] = result;
 							if (!bookData) {
-								toastError(bookFetchingMessages.bookNotFound);
 								return;
 							}
 
-							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}

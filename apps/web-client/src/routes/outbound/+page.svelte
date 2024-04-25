@@ -14,7 +14,6 @@
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -42,7 +41,6 @@
 		const { note } = await db?.findNote(noteId);
 		await note?.delete({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 
 	/**
@@ -51,7 +49,6 @@
 	 */
 	const handleCreateNote = async () => {
 		const note = await db.warehouse().note().create();
-		toastSuccess(noteToastMessages("Note").outNoteCreated);
 		await goto(appPath("outbound", note._id));
 	};
 

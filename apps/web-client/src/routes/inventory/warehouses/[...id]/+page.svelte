@@ -28,8 +28,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess, warehouseToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
-
 	import { createWarehouseStores } from "$lib/stores/proto";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
@@ -60,8 +58,6 @@
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 
-	$: toasts = warehouseToastMessages(warehouse?.displayName);
-
 	// #region warehouse-actions
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
@@ -71,7 +67,6 @@
 		loading = true;
 		const note = await warehouse.note().create();
 		await goto(appPath("inbound", note._id));
-		toastSuccess(noteToastMessages("Note").inNoteCreated);
 	};
 	// #endregion warehouse-actions
 
@@ -93,7 +88,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -257,11 +251,9 @@
 
 							const [bookData] = result;
 							if (!bookData) {
-								toastError(bookFetchingMessages.bookNotFound);
 								return;
 							}
 
-							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}

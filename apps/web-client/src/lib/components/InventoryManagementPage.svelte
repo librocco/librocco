@@ -11,8 +11,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
-
 	import { appPath } from "$lib/paths";
 
 	const tabs = [
@@ -41,7 +39,6 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
 		await goto(appPath("warehouses", warehouse._id));
 	};
 </script>
