@@ -13,7 +13,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
@@ -50,7 +50,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
@@ -80,7 +80,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
@@ -110,7 +110,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
