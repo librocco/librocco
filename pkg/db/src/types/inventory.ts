@@ -298,6 +298,11 @@ export type InventoryDatabaseInterface<
 	 * Get search index for full-text search
 	 */
 	streamSearchIndex: () => Observable<SearchIndex>;
+
+	/**
+	 * returns warehouse data map
+	 */
+	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 }>;
 
 export interface NewDatabase {

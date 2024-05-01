@@ -139,7 +139,6 @@ class Database implements InventoryDatabaseInterface {
 		const searchStreamCache = new ReplaySubject<SearchIndex>();
 
 		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
-			tap((searchIndexStream) => console.log({ searchIndexStream })),
 			switchMap(() => from(this.getStockDocs())),
 			map(createSearchIndex),
 			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
