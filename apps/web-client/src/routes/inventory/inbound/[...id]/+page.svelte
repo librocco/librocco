@@ -30,7 +30,7 @@
 	import { getDB } from "$lib/db";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -40,6 +40,8 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { autoPrintLabels } from "$lib/stores/app";
+	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	export let data: PageData;
 
@@ -64,7 +66,6 @@
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
-	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	// #region note-actions
 	//
@@ -168,18 +169,20 @@
 	};
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+
+	// #region printing
+	$: handlePrintReceipt = async () => {
+		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+	};
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
+	};
 	// #endregion book-form
 
 	$: breadcrumbs =
 		note?._id && warehouse?._id
 			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
 			: [];
-
-	// #region temp
-	const handlePrint = () => {};
-	const toggleAutoPrintLabels = () => note.setAutoPrintLabels({}, !$autoPrintLabels);
-
-	// #endregion temp
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -206,6 +209,17 @@
 				onUpdated: async ({ form }) => {
 					const { isbn } = form?.data;
 					await handleAddTransaction(isbn);
+
+					if ($autoPrintLabels) {
+						try {
+							db.books()
+								.get([isbn])
+								.then(([b]) => handlePrintLabel(b)());
+							// Success
+						} catch (err) {
+							// Show error
+						}
+					}
 				}
 			}}
 		/>
@@ -274,7 +288,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={handlePrint}
+						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
@@ -282,7 +296,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={toggleAutoPrintLabels}
+						on:m-click={autoPrintLabels.toggle}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
 							? '!bg-green-400'
 							: ''}"
@@ -387,7 +401,7 @@
 									<button
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("print-book-label")}
-										on:click={() => db.printer().label().print(row)}
+										on:click={handlePrintLabel(row)}
 									>
 										<span class="sr-only">Print book label {rowIx}</span>
 										<span class="aria-hidden">
