@@ -2435,41 +2435,22 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			]
 		});
 
-		// Add custom items - they should also be taken into account when calculating the total (with each custom item having quantity 1)
+		// Add custom items - they should also end up in the receipt (each with quantity 1 and discount 0)
 		note.addVolumes({ __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
 
-		// Print the receipt
-		printJobId = await note.printReceipt();
-		printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
+		// The print job should have been added to the print queue with discounted prices
+		receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
 			items: [
 				// wh-1 transactions - with discount applied
-				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
 				// additional two transactions (wh-2) - no discount applied
-				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price })),
-				// custom items come last
-				{ title: "Item 1", price: 20, quantity: 1 },
-				{ title: "Item 2", price: 35, quantity: 1 }
-			],
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = 2 * ( S(n) + transaction-0-without-discount + transaction-1-without-discount )
-			// Sum = 2 * ( S(n) + 2 + 4 ) = 432
-			//
-			// Price for custom items (each item has, and can only have, quantity = 1): i1*1 + i2*1 = 20 + 35 = 55
-			//
-			// Total = Sum + <custom_items> = 432 + 55 = 487
-			total: 487,
-			timestamp: expect.any(Number)
+				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 })),
+				// custom items
+				{ __kind: "custom", id: expect.any(String), title: "Item 1", price: 20, quantity: 1, discount: 0 },
+				{ __kind: "custom", id: expect.any(String), title: "Item 2", price: 35, quantity: 1, discount: 0 }
+			]
 		});
 	});
 
