@@ -77,8 +77,9 @@
 					availableWarehouses
 				}}
 				<!-- Require action takes precedence over out of stock -->
-				<tr class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""} use:table.tableRow={{ position: rowIx }} /><tr
-					class={outOfStock ? "out-of-stock" : ""}
+				<tr
+					class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""}
+					use:table.tableRow={{ position: rowIx }}
 					use:table.tableRow={{ position: rowIx }}
 				>
 					<th scope="row" data-property="book" class="table-cell-max">
