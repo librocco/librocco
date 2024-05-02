@@ -20,7 +20,6 @@ interface NoteDisplayStores {
 	state: Writable<NoteAppState>;
 	updatedAt: Readable<Date | null>;
 	entries: Readable<DisplayRow[]>;
-	autoPrintLabels: Readable<boolean>;
 }
 interface CreateNoteStores {
 	(note?: NoteInterface): NoteDisplayStores;
@@ -49,15 +48,12 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?._id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
 
-	const autoPrintLabels = readableFromStream({}, note?.stream().autoPrintLabels({}), false);
-
 	return {
 		displayName,
 		state,
 		updatedAt,
 		entries,
-		defaultWarehouse,
-		autoPrintLabels
+		defaultWarehouse
 	};
 };
 
