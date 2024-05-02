@@ -5,8 +5,6 @@ import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
-import { DocType } from "@/enums";
-
 import { BookEntry, InNoteMap, NavMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
 
 import * as implementations from "@/implementations/inventory";
@@ -123,16 +121,25 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 	test("db streams", async () => {
 		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
+		let receiptPrinterUrl: PossiblyEmpty<string> = EMPTY;
 		db.stream()
 			.labelPrinterUrl({})
 			.subscribe((lpu) => (labelPrinterUrl = lpu));
+		db.stream()
+			.receiptPrinterUrl({})
+			.subscribe((rpu) => (receiptPrinterUrl = rpu));
 
 		// Initial value should be an empty string
 		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
+		await waitFor(() => expect(receiptPrinterUrl).toEqual(""));
 
 		// Set label printer url (url is not validated)
 		db.setLabelPrinterUrl("test-url");
 		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
+
+		// Set receipt printer url (url is not validated)
+		db.setReceiptPrinterUrl("test-url-receipts");
+		await waitFor(() => expect(receiptPrinterUrl).toEqual("test-url-receipts"));
 	});
 
 	test("warehouseDiscount", async () => {
@@ -1842,11 +1849,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		]);
 	});
 
-	test("receiptPrinter", async () => {
+	test("receipt generation", async () => {
 		// We're creating a bunch of transactions to test the receipt
 		// taking into account entries which would be omitted in the UI by pagination.
-		//
-		// Additionally, we're later using this (predictable prices) to test applied discount.
 		const transactions = Array(20)
 			.fill(null)
 			.map((_, i) => ({
@@ -1869,28 +1874,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			db.books().upsert(transactions.map(({ isbn, title, price }) => ({ isbn, title, price })))
 		]);
 
-		// Print the note
-		let printJobId = await note.printReceipt();
-		expect(printJobId).toMatch(/print_queue\/printer-1\/[0-9a-z]+$/);
+		// Get the receipt items from the note
 
 		// The print job should have been added to the print queue
-		let printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price })),
-			// Prices series: 2, 4, ..., (n * 2) | n = 20
-			// S(n) = 2 + 4 + ... + (n * 2) | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (2 + 40) / 2 = 420
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 840
-			total: 840,
-			timestamp: expect.any(Number)
+		let receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 }))
 		});
 
 		// Add a discount to wh-1
@@ -1900,26 +1890,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			.then((wh) => wh.setDiscount({}, 50));
 
 		// Print the note again
-		printJobId = await note.printReceipt();
+		receipt = await note.intoReceipt();
 
 		// The print job should have been added to the print queue with discounted prices
-		printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 420
-			total: 420,
-			timestamp: expect.any(Number)
+
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 }))
 		});
 
 		// Add transactions belonging to different warehouse (no discount should be applied to those)
@@ -1928,33 +1905,16 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// they belong to wh-2, no discount will be applied
 		await note.addVolumes(...transactions.slice(0, 2).map((txn) => ({ ...txn, warehouseId: "wh-2" })));
 
-		// Print the note again
-		printJobId = await note.printReceipt();
-
 		// The print job should have been added to the print queue with discounted prices
-		printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
+		receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
 			items: [
 				// wh-1 transactions - with discount applied
-				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
 				// additional two transactions (wh-2) - no discount applied
-				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price }))
-			],
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = 2 * ( S(n) + transaction-0-without-discount + transaction-1-without-discount )
-			// Sum = 2 * ( S(n) + 2 + 4 ) = 432
-			total: 432,
-			timestamp: expect.any(Number)
+				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 }))
+			]
 		});
 	});
 

@@ -4,7 +4,15 @@ import { NoteState, debug, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient, OutOfStockTransaction } from "@/types";
+import {
+	NoteType,
+	VersionedString,
+	PickPartial,
+	EntriesStreamResult,
+	VolumeStockClient,
+	OutOfStockTransaction,
+	ReceiptData
+} from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
@@ -500,8 +508,21 @@ class Note implements NoteInterface {
 		return addWarehouseData(entries, warehouses);
 	}
 
-	printReceipt(): Promise<string> {
-		return this.#db.receipts().print(this);
+	async intoReceipt(): Promise<ReceiptData> {
+		const timestamp = Number(new Date());
+		const entries = await this.getEntries().then((e) => [...e]);
+		const bookData = await this.#db.books().get(entries.map(({ isbn }) => isbn));
+		const items = wrapIter(entries)
+			.zip(bookData)
+			.map(([{ isbn, quantity, warehouseDiscount: discount }, { title = "", price = 0 } = {}]) => ({
+				isbn,
+				title,
+				quantity,
+				price,
+				discount
+			}))
+			.array();
+		return { timestamp, items };
 	}
 
 	/**
