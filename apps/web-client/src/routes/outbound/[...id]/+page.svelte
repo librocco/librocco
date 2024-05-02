@@ -302,7 +302,7 @@
 	const handlePrint = async () => {
 		db.printer()
 			.receipt()
-			.print($entries.map(({ isbn, price, quantity, warehouseDiscount: discount, title }) => ({ isbn, title, price, quantity, discount })));
+			.print(await note?.intoReceipt().then(({ items }) => items));
 	};
 	// #endregion temp
 
