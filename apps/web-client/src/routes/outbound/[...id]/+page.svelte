@@ -41,7 +41,7 @@
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -50,9 +50,11 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { appPath } from "$lib/paths";
 	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
+	import { printBookLabel, printReceipt } from "$lib/printer";
+
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -294,10 +296,11 @@
 	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
 
 	// #region temp
-	const handlePrint = async () => {
-		db.printer()
-			.receipt()
-			.print(await note?.intoReceipt().then(({ items }) => items));
+	$: handlePrintReceipt = async () => {
+		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+	};
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 	// #endregion temp
 
@@ -409,7 +412,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={handlePrint}
+						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
@@ -503,7 +506,7 @@
 										<button
 											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 											data-testid={testId("print-book-label")}
-											on:click={() => db.printer().label().print(row)}
+											on:click={handlePrintLabel(row)}
 										>
 											<span class="sr-only">Print book label {rowIx}</span>
 											<span class="aria-hidden">
