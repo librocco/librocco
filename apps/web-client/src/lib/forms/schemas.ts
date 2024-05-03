@@ -35,6 +35,13 @@ export const settingsSchema = z.object({
 	receiptPrinterUrl: z.string()
 });
 
+export type CustomItemFormData = SuperValidated<typeof customItemSchema>["data"];
+export const customItemSchema = z.object({
+	id: z.string(),
+	title: z.string(),
+	price: z.number()
+});
+
 export type ScannerData = SuperValidated<typeof scannerSchema>["data"];
 export const scannerSchema = z.object({
 	isbn: z.string()

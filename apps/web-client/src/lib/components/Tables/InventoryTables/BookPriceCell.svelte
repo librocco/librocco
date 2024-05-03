@@ -1,7 +1,9 @@
 <script lang="ts">
+	import type { PickPartial } from "@librocco/db";
+
 	import type { InventoryTableData } from "../types";
 
-	export let data: Pick<InventoryTableData, "price" | "warehouseDiscount">;
+	export let data: PickPartial<Pick<InventoryTableData, "price" | "warehouseDiscount">, "warehouseDiscount">;
 
 	$: ({ price, warehouseDiscount } = data);
 </script>
