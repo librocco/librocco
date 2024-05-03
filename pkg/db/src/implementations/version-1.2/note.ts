@@ -606,9 +606,11 @@ class Note implements NoteInterface {
 			autoPrintLabels: () => this.#stream.pipe(map(({ autoPrintLabels }) => Boolean(autoPrintLabels))),
 
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
-			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
+			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 0): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
-				const endIx = startIx + itemsPerPage;
+				// If items per page is not provided (or is 0), we're returning all results and falling back
+				// to 'undefined' => slice will return all results if 2nd argument is undefined.
+				const endIx = !itemsPerPage ? undefined : startIx + itemsPerPage;
 
 				return combineLatest([
 					this.#stream.pipe(
