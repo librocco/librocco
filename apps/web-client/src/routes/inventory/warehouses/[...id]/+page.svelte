@@ -146,61 +146,64 @@
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<tr slot="row" let:row let:rowIx>
-						<StockBookRow {row} {rowIx}>
-							<div slot="row-actions">
-								<PopoverWrapper
-									options={{
-										forceVisible: true,
-										positioning: {
-											placement: "left"
-										}
-									}}
-									let:trigger
-								>
-									<button
-										data-testid={testId("popover-control")}
-										{...trigger}
-										use:trigger.action
-										class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<StockTable {table}>
+						<tr slot="row" let:row let:rowIx>
+							<StockBookRow {row} {rowIx}>
+								<div slot="row-actions">
+									<PopoverWrapper
+										options={{
+											forceVisible: true,
+											positioning: {
+												placement: "left"
+											}
+										}}
+										let:trigger
 									>
-										<span class="sr-only">Edit row {rowIx}</span>
-										<span class="aria-hidden">
-											<MoreVertical />
-										</span>
-									</button>
-
-									<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 										<button
-											use:melt={$trigger}
-											data-testid={testId("edit-row")}
-											on:m-click={() => (bookFormData = row)}
-											class="rounded p-3 text-gray-500 hover:text-gray-900"
+											data-testid={testId("popover-control")}
+											{...trigger}
+											use:trigger.action
+											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 										>
 											<span class="sr-only">Edit row {rowIx}</span>
 											<span class="aria-hidden">
-												<FileEdit />
+												<MoreVertical />
 											</span>
 										</button>
 
-										<button
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-											data-testid={testId("print-book-label")}
-											on:click={() => db.printer().label().print(row)}
-										>
-											<span class="sr-only">Print book label {rowIx}</span>
-											<span class="aria-hidden">
-												<Printer />
-											</span>
-										</button>
-									</div>
-								</PopoverWrapper>
-							</div>
-						</StockBookRow>
-					</tr>
-				</StockTable>
+										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+											<button
+												use:melt={$trigger}
+												data-testid={testId("edit-row")}
+												on:m-click={() => (bookFormData = row)}
+												class="rounded p-3 text-gray-500 hover:text-gray-900"
+											>
+												<span class="sr-only">Edit row {rowIx}</span>
+												<span class="aria-hidden">
+													<FileEdit />
+												</span>
+											</button>
+
+											<button
+												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+												data-testid={testId("print-book-label")}
+												on:click={() => db.printer().label().print(row)}
+											>
+												<span class="sr-only">Print book label {rowIx}</span>
+												<span class="aria-hidden">
+													<Printer />
+												</span>
+											</button>
+										</div>
+									</PopoverWrapper>
+								</div>
+							</StockBookRow>
+						</tr>
+					</StockTable>
+				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
