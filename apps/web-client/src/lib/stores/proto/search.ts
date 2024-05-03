@@ -1,7 +1,7 @@
 import { writable, type Readable, type Writable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest } from "rxjs";
 
-import { debug, wrapIter } from "@librocco/shared";
+import { debug, wrapIter, type VolumeStockKind } from "@librocco/shared";
 import type {
 	BookEntry,
 	InventoryDatabaseInterface,
@@ -16,18 +16,18 @@ import type { DisplayRow } from "$lib/types/inventory";
 
 import { observableFromStore, readableFromStream } from "$lib/utils/streams";
 
-interface CreateDisplayEntriesStore {
+interface CreateDisplayEntriesStore<K extends VolumeStockKind = VolumeStockKind> {
 	(
 		ctx: debug.DebugCtx,
 		db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
 		searchIndex?: SearchIndex
 	): {
-		entries: Readable<DisplayRow[]>;
+		entries: Readable<DisplayRow<K>[]>;
 		search: Writable<string>;
 	};
 }
 
-export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, searchIndex) => {
+export const createFilteredEntriesStore: CreateDisplayEntriesStore<"book"> = (ctx, db, searchIndex) => {
 	const searchStore = writable("");
 
 	const searchResStream = observableFromStore(searchStore).pipe(
@@ -39,9 +39,9 @@ export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, s
 		tap(debug.log(ctx, "display_entries_store:search:search_result"))
 	);
 	// We're searching all of the entries -> default pseudo warehouse
-	const entriesStream = db?.warehouse().stream().entries(ctx) || new Observable<EntriesStreamResult>();
+	const entriesStream = db?.warehouse().stream().entries(ctx) || new Observable<EntriesStreamResult<"book">>();
 
-	const shareSubject = new ReplaySubject<DisplayRow[]>(1);
+	const shareSubject = new ReplaySubject<DisplayRow<"book">[]>(1);
 	const tableData = combineLatest([searchResStream, entriesStream]).pipe(
 		map(([matchedIsbns, { rows }]) => rows.filter(({ isbn }) => matchedIsbns.has(isbn))),
 		switchMap((r) => {

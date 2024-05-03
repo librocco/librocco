@@ -64,7 +64,8 @@ export const createNoteStores: CreateNoteStores = (note) => {
 interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
 	warehouseDiscount: Writable<number>;
-	entries: Readable<DisplayRow[]>;
+	// Warehouse stock will display only book items (no custom items)
+	entries: Readable<DisplayRow<"book">[]>;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -82,7 +83,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entries = createDisplayEntriesStore(ctx, getDB(), warehouse);
+	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse);
 
 	return {
 		displayName,
