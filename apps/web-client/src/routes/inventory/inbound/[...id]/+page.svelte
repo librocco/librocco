@@ -10,7 +10,6 @@
 	import { NoteState, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
-	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
 	import type { DisplayRow } from "$lib/types/inventory";
 
@@ -110,9 +109,18 @@
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
 
-		const book = await bookDataPlugin.fetchBookData([isbn]);
-		if (book.length) {
-			await db.books().upsert(book);
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const [localBookData] = await db.books().get([isbn]);
+		if (localBookData) {
+			return;
+		}
+
+		// If book data retrieved from 3rd party source - store it for future use
+		const [thirdPartyBookData] = await db.plugin("book-fetcher").fetchBookData([isbn]);
+		if (thirdPartyBookData) {
+			await db.books().upsert([thirdPartyBookData]);
 		}
 	};
 
@@ -463,7 +471,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData([isbn]);
+							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
 
 							const [bookData] = result;
 							if (!bookData) {
