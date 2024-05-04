@@ -7,7 +7,6 @@
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
@@ -218,7 +217,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData([isbn]);
+							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
 
 							const [bookData] = result;
 							if (!bookData) {

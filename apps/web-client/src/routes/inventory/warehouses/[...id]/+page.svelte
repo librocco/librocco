@@ -8,8 +8,6 @@
 	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
-	import { bookDataPlugin } from "$lib/db/plugins";
-
 	import {
 		Page,
 		PlaceholderBox,
@@ -247,7 +245,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData([isbn]);
+							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
 
 							const [bookData] = result;
 							if (!bookData) {
