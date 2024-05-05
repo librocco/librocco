@@ -101,4 +101,7 @@ const flush = (target: HTMLInputElement | undefined, value: string) => {
 	if (!target) return;
 	// Append the buffer value to the target
 	target.value += value;
+	// Dispatch an empty event to trigger the 'input' event on target element with its current value
+	// TODO: This behaves a bit awkwardly if we want to replace a selected part of text
+	target.dispatchEvent(new KeyboardEvent("input"));
 };
