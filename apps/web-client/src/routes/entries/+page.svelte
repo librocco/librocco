@@ -4,35 +4,21 @@
 
 	import { melt, createDatePicker } from "@melt-ui/svelte";
 	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { map, tap, combineLatest, Observable, ReplaySubject, switchMap, share, scan, filter, from, reduce } from "rxjs";
+	import { map, tap, combineLatest, Observable, switchMap } from "rxjs";
 	import { now, getLocalTimeZone } from "@internationalized/date";
 
-	import { entityListView, testId, debug, wrapIter } from "@librocco/shared";
-	import type {
-		BookEntry,
-		EntriesStreamResult,
-		InventoryDatabaseInterface,
-		NavMap,
-		NoteInterface,
-		NoteType,
-		SearchIndex,
-		VolumeStockClient,
-		WarehouseDataMap,
-		WarehouseInterface
-	} from "@librocco/db";
+	import { entityListView, testId, debug, wrapIter, type VolumeStock } from "@librocco/shared";
+	import type { BookEntry, InventoryDatabaseInterface, NoteType } from "@librocco/db";
 
 	import { goto } from "$app/navigation";
 
+	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { observableFromStore, readableFromStream } from "$lib/utils/streams";
-	import { appPath } from "$lib/paths";
-	import type { DisplayRow } from "$lib/types/inventory";
-	import { mapMergeBookData } from "$lib/stores/proto/search";
-	import { string } from "zod";
 
 	const {
-		elements: { calendar, cell, content, field, grid, heading, label, nextButton, prevButton, segment, trigger, hiddenInput },
+		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
 		states: { months, headingValue, weekdays, segmentContents, value, open },
 		helpers: { isDateDisabled, isDateUnavailable }
 		// create a ZonedDateTime object with the current date and time
@@ -45,139 +31,153 @@
 	});
 
 	const db = getDB();
+	const committedNotesListCtx = { name: "[COMMITTED_NOTES_LIST]", debug: false };
+	let committedNotesListStream = new Observable<
+		Map<
+			string,
+			(VolumeStock & {
+				noteType: "inbound" | "outbound";
+			} & {
+				committedAt: string;
+			})[]
+		>
+	>();
+
+	db?.stream()
+		.committedNotesList(committedNotesListCtx)
+		.pipe((v) => (committedNotesListStream = v));
+
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 
-	let index: SearchIndex | undefined;
-	db?.streamSearchIndex().subscribe((ix) => (index = ix));
 	const warehouseListStream = db?.stream().warehouseMap(warehouseListCtx);
 
 	interface Result {
-				bookList: (DisplayRow & { committedAt: string; noteType: NoteType })[];
-				stats: {
-					totalInboundBookCount: number;
-					totalInboundCoverPrice: number;
-					totalOutboundBookCount: number;
-					totalOutboundCoverPrice: number;
-					totalOutboundDiscountedPrice: number;
-					totalInboundDiscountedPrice: number;
-				};
-			}
+		bookList: (VolumeStock & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
+		stats: {
+			totalInboundBookCount: number;
+			totalInboundCoverPrice: number;
+			totalOutboundBookCount: number;
+			totalOutboundCoverPrice: number;
+			totalOutboundDiscountedPrice: number;
+			totalInboundDiscountedPrice: number;
+		};
+	}
 	interface CreateDisplayEntriesStore {
-		(ctx: debug.DebugCtx, db: InventoryDatabaseInterface, searchIndex?: SearchIndex): {
+		(
+			ctx: debug.DebugCtx,
+			db: InventoryDatabaseInterface,
+			committedNotesListStream: Observable<
+				Map<
+					string,
+					(VolumeStock & {
+						noteType: "inbound" | "outbound";
+					} & {
+						committedAt: string;
+					})[]
+				>
+			>
+		): {
 			result: Readable<Result>;
 		};
 	}
 
 	export const mapMergeBookWarehouseData =
-		/** @TODO stock type
-		 */
+		(ctx: debug.DebugCtx, entries: Iterable<any>) =>
+		(books: Observable<Iterable<BookEntry | undefined>>): Observable<Result> =>
+			combineLatest([books, warehouseListStream]).pipe(
+				tap(([books, wh]) => console.log(ctx, "display_entries_store:table_data:retrieved_books", { books })),
+				map(([booksData, warehouseData]) => {
+					const books = wrapIter(entries)
+						.zip(booksData)
 
+						.map(([s, b = {} as BookEntry]) => {
+							const warehouse = warehouseData.size ? warehouseData.get(s.warehouseId) : { displayName: "", discountPercentage: 0 };
+							return {
+								...s,
+								...b,
+								discountPercentage: warehouse.discountPercentage || 0,
+								warehouseName: warehouse.displayName
+							};
+						})
+						.array();
 
-			(ctx: debug.DebugCtx, entries: Iterable<any>) =>
-			(
-				books: Observable<Iterable<BookEntry | undefined>>
-			): Observable<Result> =>
-				combineLatest([books, warehouseListStream]).pipe(
-					tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
-					map(([booksData, warehouseData]) => {
-						const books = wrapIter(entries)
-							.zip(booksData)
-							//  Map<string, NavEntry<Pick<WarehouseData<{}>, "displayName" | "discountPercentage">>>
-							// .zip(warehouseData)
-							.map(([s, b = {} as BookEntry]) => {
-								return {
-									...s,
-									...b,
-									...warehouseData.get(s.warehouseId)
-								};
-							})
-							.array();
+					return {
+						bookList: books,
 
-						return {
-							bookList: books,
-
-							stats: books.reduce(
-								(acc, { quantity, noteType, discountPercentage, price }) => {
-									if (noteType === "inbound") {
-										return {
-											...acc,
-											totalInboundBookCount: (acc.totalInboundBookCount += quantity),
-											totalInboundCoverPrice: (acc.totalInboundCoverPrice += quantity * price),
-											totalInboundDiscountedPrice: (acc.totalInboundDiscountedPrice +=
-												quantity * price - quantity * price * (discountPercentage / 100))
-										};
-									}
-
+						stats: books.reduce(
+							(acc, { quantity, noteType, discountPercentage, price = 0 }) => {
+								if (noteType === "inbound") {
 									return {
 										...acc,
-										totalOutboundBookCount: (acc.totalOutboundBookCount += quantity),
-										totalOutboundCoverPrice: (acc.totalOutboundCoverPrice += quantity * price),
-
-										totalOutboundDiscountedPrice: (acc.totalOutboundDiscountedPrice +=
-											quantity * price - quantity * price * (discountPercentage / 100))
+										totalInboundBookCount: (acc.totalInboundBookCount += quantity),
+										totalInboundCoverPrice: (acc.totalInboundCoverPrice += quantity * price),
+										totalInboundDiscountedPrice: (acc.totalInboundDiscountedPrice +=
+											quantity * ((price * (100 - discountPercentage)) / 100))
 									};
-								},
-
-								{
-									totalInboundBookCount: 0,
-									totalInboundCoverPrice: 0,
-									totalOutboundBookCount: 0,
-									totalOutboundCoverPrice: 0,
-									totalOutboundDiscountedPrice: 0,
-									totalInboundDiscountedPrice: 0
 								}
-							)
-						};
-					}),
 
-					tap((bookWithAllDetails) => console.log(ctx, "display_entries_store:table_data:merged_books", { bookWithAllDetails }))
-				);
+								return {
+									...acc,
+									totalOutboundBookCount: (acc.totalOutboundBookCount += quantity),
+									totalOutboundCoverPrice: (acc.totalOutboundCoverPrice += quantity * price),
+									totalOutboundDiscountedPrice: (acc.totalOutboundDiscountedPrice +=
+										quantity * ((price * (100 - discountPercentage)) / 100))
+								};
+							},
 
-	export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, searchIndex) => {
-
-		const searchResStream = observableFromStore(value).pipe(
-			tap(debug.log(ctx, "display_entries_store:search:search_result")),
-			tap((value) => console.log("should be warehousemap and date", value)),
-
-			switchMap((date) => {
-				const set =
-					// If the search index is not available, or the search store is empty, return an empty set (all results will be filtered out)
-					searchIndex && date.toString().length ? searchIndex.search(date.toString().slice(0, 10)) : [];
-
-				const noteEntries = wrapIter(set).array();
-
-				const result =
-					db
-						?.books()
-						.stream(
-							ctx,
-							noteEntries.map((match) => match.isbn)
+							{
+								totalInboundBookCount: 0,
+								totalInboundCoverPrice: 0,
+								totalOutboundBookCount: 0,
+								totalOutboundCoverPrice: 0,
+								totalOutboundDiscountedPrice: 0,
+								totalInboundDiscountedPrice: 0
+							}
 						)
-						.pipe((bookEntryObs) => mapMergeBookWarehouseData(ctx, noteEntries)(bookEntryObs)) || new Observable();
+					};
+				}),
 
-				return result;
+				tap((bookWithAllDetails) => console.log(ctx, "display_entries_store:table_data:merged_books", { bookWithAllDetails }))
+			);
+
+	export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, committedNotesListStream) => {
+		const searchResStream = combineLatest([committedNotesListStream, observableFromStore(value)]).pipe(
+			switchMap(([notes, date]) => {
+				console.log("committedNotesStore", { notes });
+				console.log("date ", date.toString());
+				const entries = notes.get(date.toString().slice(0, 10)) || [];
+
+				const isbns = entries.map((match) => match.isbn);
+				console.log(entries.map((match) => match.isbn));
+				console.log({ db });
+
+				return db
+					?.books()
+					.stream(ctx, isbns)
+					.pipe(
+						tap((books) => console.log(books)),
+						(bookObs) => mapMergeBookWarehouseData(ctx, entries)(bookObs)
+					);
 			})
 		);
-
 		return {
-			result: readableFromStream(ctx, searchResStream, {} as Result )
+			result: readableFromStream(ctx, searchResStream, {} as Result)
 		};
 	};
 
-	$: stores = createFilteredEntriesStore({}, db, index);
+	$: stores = createFilteredEntriesStore({}, db, committedNotesListStream);
 	$: allEntriesList = stores.result;
 </script>
 
 <Page view="entries" loaded={true}>
-	<!-- <svelte:fragment slot="topbar" let:iconProps let:inputProps>
+	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment> -->
+	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Entries</h1>
-			<!-- <div>{$totalBooks}</div> -->
 
 			<section class="flex w-full flex-col items-center gap-3">
 				<div>
@@ -261,24 +261,24 @@
 				<!-- Start entity list -->
 				<div class="flex flex-row text-sm">
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Book Count: {Math.floor($allEntriesList.stats.totalInboundBookCount)}
+						Inbound Book Count: {$allEntriesList.stats.totalInboundBookCount}
 					</div>
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Cover Price: {Math.floor($allEntriesList.stats.totalInboundCoverPrice)}
+						Inbound Cover Price: {$allEntriesList.stats.totalInboundCoverPrice.toFixed(2)}
 					</div>
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Discounted Price : {$allEntriesList.stats.totalInboundDiscountedPrice}
+						Inbound Discounted Price : {$allEntriesList.stats.totalInboundDiscountedPrice.toFixed(2)}
 					</div>
 				</div>
 				<div class="flex flex-row text-sm">
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Book Count: {Math.floor($allEntriesList.stats.totalOutboundBookCount)}
+						Outbound Book Count: {$allEntriesList.stats.totalOutboundBookCount}
 					</div>
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Cover Price: {Math.floor($allEntriesList.stats.totalOutboundCoverPrice)}
+						Outbound Cover Price: {$allEntriesList.stats.totalOutboundCoverPrice.toFixed(2)}
 					</div>
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Discounted Price : {Math.floor($allEntriesList.stats.totalOutboundDiscountedPrice)}
+						Outbound Discounted Price : {$allEntriesList.stats.totalOutboundDiscountedPrice.toFixed(2)}
 					</div>
 				</div>
 				<!-- <div>{ $allEntriesList.stats}</div>
@@ -289,7 +289,6 @@
 					{@const warehouseName = entry.warehouseName}
 					{@const committedAt = entry.committedAt}
 					{@const noteType = entry.noteType}
-					<!-- {@const noteType = entry.noteType} -->
 
 					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
 						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
@@ -300,7 +299,6 @@
 								<span class="entity-list-text-sm text-gray-500">{quantity} books -</span>
 								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span>
 							</div>
-							<!-- <span class="entity-list-text-sm text-gray-500"> {noteType}</span> -->
 						</div>
 
 						{#if committedAt}
