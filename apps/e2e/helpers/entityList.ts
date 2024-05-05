@@ -15,7 +15,7 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 	async function assertElement(element: null, nth: number): Promise<void>;
 	async function assertElement(element: EntityListMatcher, nth?: number): Promise<void>;
 	async function assertElement(element: EntityListMatcher | null, nth?: number): Promise<void> {
-		let locator = container.locator("li");
+		let locator = container.locator(".entity-list-row");
 		// If nth provided, we're explicitly checking for the nth element, otherwise, we're checking that the element exists
 		locator = nth !== undefined ? locator.nth(nth) : locator;
 
@@ -47,7 +47,7 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 
 function getEntityListItem(parent: DashboardNode, nth: number): EntityListItem {
 	const dashboard = parent.dashboard;
-	const container = parent.locator("li").nth(nth);
+	const container = parent.locator(".entity-list-row").nth(nth);
 
 	const edit = () => container.getByText("Edit").click();
 	const _delete = () => container.locator('button[aria-label*="Delete note"]').click();

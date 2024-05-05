@@ -106,7 +106,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", noteId)}
 
-						<div class="group entity-list-row">
+						<div class="entity-list-row group">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -117,7 +117,7 @@
 									</div>
 									{#if note.updatedAt}
 										<span class="badge badge-md badge-green">
-											Updated: {updatedAt}
+											Last updated: {updatedAt}
 										</span>
 									{/if}
 								</div>
