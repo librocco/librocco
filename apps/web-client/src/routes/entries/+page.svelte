@@ -30,12 +30,14 @@
 		preventDeselect: true
 	});
 
+	type VolumeStockBook = VolumeStock<"book">;
+
 	const db = getDB();
 	const committedNotesListCtx = { name: "[COMMITTED_NOTES_LIST]", debug: false };
 	let committedNotesListStream = new Observable<
 		Map<
 			string,
-			(VolumeStock & {
+			(VolumeStockBook & {
 				noteType: "inbound" | "outbound";
 			} & {
 				committedAt: string;
@@ -52,7 +54,7 @@
 	const warehouseListStream = db?.stream().warehouseMap(warehouseListCtx);
 
 	interface Result {
-		bookList: (VolumeStock & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
+		bookList: (VolumeStockBook & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
 		stats: {
 			totalInboundBookCount: number;
 			totalInboundCoverPrice: number;
@@ -69,7 +71,7 @@
 			committedNotesListStream: Observable<
 				Map<
 					string,
-					(VolumeStock & {
+					(VolumeStockBook & {
 						noteType: "inbound" | "outbound";
 					} & {
 						committedAt: string;
@@ -143,8 +145,6 @@
 	export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, committedNotesListStream) => {
 		const searchResStream = combineLatest([committedNotesListStream, observableFromStore(value)]).pipe(
 			switchMap(([notes, date]) => {
-				console.log("committedNotesStore", { notes });
-				console.log("date ", date.toString());
 				const entries = notes.get(date.toString().slice(0, 10)) || [];
 
 				const isbns = entries.map((match) => match.isbn);
