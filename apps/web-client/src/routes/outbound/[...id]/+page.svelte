@@ -9,6 +9,7 @@
 	import { goto } from "$app/navigation";
 
 	import { NoteState, filter, testId, type VolumeStock } from "@librocco/shared";
+
 	import {
 		OutOfStockError,
 		type BookEntry,
@@ -18,10 +19,10 @@
 		NoWarehouseSelectedError,
 		isBookRow
 	} from "@librocco/db";
+	import { bookDataPlugin } from "$lib/db/plugins";
 
 	import type { PageData } from "./$types";
 
-	import { bookDataPlugin } from "$lib/db/plugins";
 	import { getDB } from "$lib/db";
 
 	import {
@@ -38,10 +39,8 @@
 		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
-
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
-	import { toastSuccess, noteToastMessages, toastError, bookFetchingMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
@@ -85,18 +84,12 @@
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries;
 
-	$: toasts = noteToastMessages(note?.displayName);
-
 	// #region note-actions
 	//
 	// When the note is committed or deleted, automatically redirect to 'outbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(appPath("outbound"));
-
-			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
-
-			toastSuccess(message);
 		}
 	}
 
@@ -120,7 +113,6 @@
 		try {
 			await note.commit({});
 			closeDialog();
-			toastSuccess(noteToastMessages("Note").outNoteCommited);
 		} catch (err) {
 			if (err instanceof NoWarehouseSelectedError) {
 				return openNoWarehouseSelectedDialog(err.invalidTransactions);
@@ -136,12 +128,10 @@
 		await note.reconcile({});
 		await note.commit({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").outNoteCommited);
 	};
 
 	const handleDeleteSelf = async () => {
 		await note.delete({});
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
 
@@ -160,7 +150,6 @@
 			// TEMP: remove this when the db is updated
 			.map((entry) => ({ __kind: "book", ...entry }))
 	});
-	$: console.log($entries);
 
 	const table = createTable(tableOptions);
 
@@ -172,7 +161,6 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
-		toastSuccess(toasts.volumeAdded(isbn));
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData) => {
@@ -188,7 +176,6 @@
 
 		// TODO: error handling
 		await note.updateTransaction({}, transaction, { ...transaction, warehouseId: nextWarehouseId });
-		toastSuccess(toasts.warehouseUpdated(isbn));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
@@ -203,7 +190,6 @@
 		}
 
 		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
-		toastSuccess(toasts.volumeUpdated(isbn));
 	};
 
 	const handleAddCustomItem = () => note.addVolumes({ __kind: "custom", title: "Custom item", price: 10 });
@@ -212,7 +198,6 @@
 		const row = $table.rows[rowIx];
 		const match = isCustomItemRow(row) ? row.id : row;
 		await note.removeTransactions(match);
-		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
@@ -262,7 +247,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -287,11 +271,10 @@
 		try {
 			await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
 
-			toastSuccess(toasts.bookDataUpdated(data.id));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
-			// toastError(`Error: ${err.message}`);
+			console.error(err);
 		}
 	};
 	// #endregion book-form
@@ -360,7 +343,7 @@
 
 				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -641,11 +624,9 @@
 
 							const [bookData] = result;
 							if (!bookData) {
-								toastError(bookFetchingMessages.bookNotFound);
 								return;
 							}
 
-							toastSuccess(bookFetchingMessages.bookFound);
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}

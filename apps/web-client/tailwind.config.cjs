@@ -51,19 +51,19 @@ const plugins = [
 
 			// Lists
 			".entity-list-container": {
-				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto px-3 xs:px-6": {}
+				"@apply h-full w-full select-none divide-y divide-gray-300 overflow-y-auto": {}
 			},
 			".entity-list-row": {
-				"@apply py-4 px-3 xs:px-6": {}
+				"@apply py-4 px-3 xs:px-6 flex items-center justify-between": {}
 			},
 			".entity-list-text-lg": {
-				"@apply mb-1 text-base font-semibold leading-6": {}
+				"@apply text-base font-semibold leading-6": {}
 			},
-			".entity-list-text-sm": {
-				"@apply text-sm font-normal leading-5": {}
+			".entity-list-text-md": {
+				"@apply text-md font-normal leading-5": {}
 			},
 			".entity-list-actions": {
-				"@apply flex w-full flex-col items-end justify-end gap-3": {},
+				"@apply flex flex-col items-end justify-end gap-3": {},
 				["@screen xs"]: {
 					"@apply flex-row items-center": {}
 				}

@@ -13,7 +13,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -54,7 +53,6 @@
 		}
 		await result.note.delete({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 
 	const dialog = createDialog({ forceVisible: true });
@@ -99,23 +97,24 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", noteId)}
 
-					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
-						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
-							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+					<div class="group entity-list-row">
+						<div class="flex flex-col gap-y-2">
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex items-center">
-								<Library class="mr-1 text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+							<div class="flex flex-col items-start gap-y-2">
+								<div class="flex gap-x-0.5">
+									<Library class="mr-1 text-gray-700" size={24} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								</div>
+								{#if note.updatedAt}
+									<span class="badge badge-md badge-green">
+										Last updated: {updatedAt}
+									</span>
+								{/if}
 							</div>
 						</div>
 
-						{#if note.updatedAt}
-							<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
-								<span class="badge badge-sm badge-green">Last updated: {updatedAt}</span>
-							</div>
-						{/if}
-
-						<div class="entity-list-actions col-span-2 row-span-2 xs:col-span-6">
+						<div class="entity-list-actions">
 							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
 							<button
 								use:melt={$trigger}
@@ -134,7 +133,7 @@
 								</span>
 							</button>
 						</div>
-					</li>
+					</div>
 				{/each}
 				<!-- End entity list -->
 			{/if}
