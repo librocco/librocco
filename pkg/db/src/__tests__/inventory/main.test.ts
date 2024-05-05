@@ -5,8 +5,6 @@ import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
-import { DocType } from "@/enums";
-
 import { BookEntry, InNoteMap, NavMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
 
 import * as implementations from "@/implementations/inventory";
@@ -123,16 +121,25 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 	test("db streams", async () => {
 		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
+		let receiptPrinterUrl: PossiblyEmpty<string> = EMPTY;
 		db.stream()
 			.labelPrinterUrl({})
 			.subscribe((lpu) => (labelPrinterUrl = lpu));
+		db.stream()
+			.receiptPrinterUrl({})
+			.subscribe((rpu) => (receiptPrinterUrl = rpu));
 
 		// Initial value should be an empty string
 		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
+		await waitFor(() => expect(receiptPrinterUrl).toEqual(""));
 
 		// Set label printer url (url is not validated)
 		db.setLabelPrinterUrl("test-url");
 		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
+
+		// Set receipt printer url (url is not validated)
+		db.setReceiptPrinterUrl("test-url-receipts");
+		await waitFor(() => expect(receiptPrinterUrl).toEqual("test-url-receipts"));
 	});
 
 	test("warehouseDiscount", async () => {
@@ -179,8 +186,15 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
 		const entries = await note.getEntries({});
 		expect([...entries]).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 },
-			{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
+			{
+				__kind: "book",
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("wh1"),
+				warehouseName: "Warehouse 1",
+				warehouseDiscount: 10
+			},
+			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
 		]);
 
 		// Check for warehouse
@@ -190,19 +204,33 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note.commit({});
 		wh1Entries = await wh1.getEntries({});
 		expect([...wh1Entries]).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 },
-			{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
+			{
+				__kind: "book",
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("wh1"),
+				warehouseName: "Warehouse 1",
+				warehouseDiscount: 10
+			},
+			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
 		]);
 
 		// Should work all the same for the default warehouse
 		const defaultWhEntries = await defaultWh.getEntries({});
 		expect([...defaultWhEntries]).toEqual([
-			{ isbn: "0123456789", quantity: 2, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 },
-			{ isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
+			{
+				__kind: "book",
+				isbn: "0123456789",
+				quantity: 2,
+				warehouseId: versionId("wh1"),
+				warehouseName: "Warehouse 1",
+				warehouseDiscount: 10
+			},
+			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: versionId("wh1"), warehouseName: "Warehouse 1", warehouseDiscount: 10 }
 		]);
 	});
 
-	test("noteTransactionOperations", async () => {
+	test("note.addVolumes", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -235,6 +263,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId(wh1._id),
@@ -243,6 +272,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 3,
 					warehouseId: "",
@@ -251,6 +281,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 4,
 					warehouseId: versionId(wh1._id),
@@ -271,6 +302,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 5,
 					warehouseId: versionId(wh1._id),
@@ -279,6 +311,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 10,
 					warehouseId: "",
@@ -287,6 +320,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 4,
 					warehouseId: versionId(wh1._id),
@@ -297,12 +331,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			]);
 		});
 
-		// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
-		await note.updateTransaction({ isbn: "11111111", warehouseId: wh1._id }, { isbn: "11111111", quantity: 8, warehouseId: wh1._id });
-
+		// Adding a custom item should assign a random id to the item
+		await note.addVolumes({ __kind: "custom", title: "Custom Item", price: 10 });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 5,
 					warehouseId: versionId(wh1._id),
@@ -311,6 +345,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 10,
 					warehouseId: "",
@@ -319,21 +354,29 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
-					quantity: 8,
+					quantity: 4,
 					warehouseId: versionId(wh1._id),
 					warehouseName: "Warehouse 1",
 					availableWarehouses,
 					warehouseDiscount: 0
-				}
+				},
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item", price: 10 }
 			]);
 		});
 
-		// Update transaction should be able to update warehouseId for a transaction
-		await note.updateTransaction({ isbn: "11111111" }, { isbn: "11111111", quantity: 10, warehouseId: "wh3" });
+		// Adding another custom item should assign a different random id
+		//
+		// Get the id of the first custom item
+		const customItemId = await note
+			.getEntries({})
+			.then((entries) => [...entries].find((e): e is VolumeStockClient<"custom"> => e.__kind === "custom")!.id);
+		await note.addVolumes({ __kind: "custom", title: "Custom Item 2", price: 20 });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 5,
 					warehouseId: versionId(wh1._id),
@@ -342,6 +385,155 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 4,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				// Custom items should be sorted in order of addition (timestamped)
+				{ id: customItemId, __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 2", price: 20 }
+			]);
+		});
+		const newCustomItemId = await note
+			.getEntries({})
+			.then(
+				(entries) =>
+					[...entries].filter((e): e is VolumeStockClient<"custom"> => e.__kind === "custom").find((e) => e.title === "Custom Item 2")!.id
+			);
+		expect(newCustomItemId).not.toEqual(customItemId);
+	});
+
+	test("note.updateTransaction", async () => {
+		// Set up two warehouses (with display names) and an outbound note
+		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
+		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
+
+		// There are no books in stock so 'availableWarehouses' will always be empty
+		const availableWarehouses: NavListEntry[] = [];
+
+		// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
+		const note = await db.warehouse().note().create();
+
+		// Subscribe to entries to receive updates
+		let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
+		note
+			.stream()
+			.entries({})
+			.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
+
+		// Setup is the same as the result of previous test (tests were broken down due to log run times and growing number of assertions)
+		await note.addVolumes(
+			{ __kind: "book", isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id) },
+			{ __kind: "book", isbn: "11111111", quantity: 10, warehouseId: "" },
+			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: versionId(wh1._id) },
+			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 },
+			{ __kind: "custom", id: "custom-item-2", title: "Custom Item 2", price: 20 }
+		);
+
+		// Initial stream should be empty
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 4,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 }
+			]);
+		});
+
+		// Update transaction should overwrite the existing transaction (and not confuse it with the same isbn, but different warehouse)
+		await note.updateTransaction(
+			{},
+			{ __kind: "book", isbn: "11111111", warehouseId: wh1._id },
+			{ __kind: "book", isbn: "11111111", quantity: 8, warehouseId: wh1._id }
+		);
+
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 8,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 }
+			]);
+		});
+
+		// Update transaction should be able to update warehouseId for a transaction
+		await note.updateTransaction({}, { isbn: "11111111" }, { isbn: "11111111", quantity: 10, warehouseId: "wh3" });
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 8,
 					warehouseId: versionId(wh1._id),
@@ -350,24 +542,29 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 10,
 					warehouseId: versionId("wh3"),
 					warehouseName: "not-found",
 					availableWarehouses,
 					warehouseDiscount: 0
-				}
+				},
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 }
 			]);
 		});
 
 		// Updating two transaction with the same isbn to the same warehouse should merge the two (aggregate the quantity)
 		await note.updateTransaction(
+			{},
 			{ isbn: "11111111", warehouseId: versionId("wh3") },
 			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh1._id) }
 		);
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 5,
 					warehouseId: versionId(wh1._id),
@@ -376,54 +573,175 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 18,
 					warehouseId: versionId(wh1._id),
 					warehouseName: "Warehouse 1",
 					availableWarehouses,
 					warehouseDiscount: 0
-				}
+				},
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 }
 			]);
 		});
 
 		// Updating transaction with not-matched 'matchTxn' should be a noop
 		await note.updateTransaction(
+			{},
 			{ isbn: "11111111", warehouseId: versionId("wh3") },
 			{ isbn: "11111111", quantity: 10, warehouseId: versionId(wh1._id) }
 		);
-		const entriesSnapshot = await note
-			.getEntries({})
-			.then((entries) => [...entries].map((e) => volumeStockClientToVolumeStockClientOld({ ...e, availableWarehouses: new Map() })));
-		expect([...entriesSnapshot]).toEqual([
-			{
-				isbn: "0123456789",
-				quantity: 5,
-				warehouseId: versionId(wh1._id),
-				warehouseName: "Warehouse 1",
-				availableWarehouses,
-				warehouseDiscount: 0
-			},
-			{
-				isbn: "11111111",
-				quantity: 18,
-				warehouseId: versionId(wh1._id),
-				warehouseName: "Warehouse 1",
-				availableWarehouses,
-				warehouseDiscount: 0
-			}
-		]);
+		await waitFor(() =>
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 18,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 }
+			])
+		);
+
+		// Updating of custom items should be possible using the custom item id
+		await note.updateTransaction({}, "custom-item-1", { __kind: "custom", title: "Custom Item", price: 15 });
+		await note.updateTransaction({}, "custom-item-2", { __kind: "custom", title: "Updated 2nd item", price: 25 });
+
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 18,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-1",
+					title: "Custom Item",
+					price: 15
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-2",
+					title: "Updated 2nd item",
+					price: 25
+				}
+			]);
+		});
+	});
+
+	test("note.removeTransaction", async () => {
+		// Set up two warehouses (with display names) and an outbound note
+		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
+		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
+
+		// There are no books in stock so 'availableWarehouses' will always be empty
+		const availableWarehouses: NavListEntry[] = [];
+
+		// We're testing against an outbound note as it lets us test against more robust functionality (different warehouses and such)
+		const note = await db.warehouse().note().create();
+
+		// Subscribe to entries to receive updates
+		let entries: PossiblyEmpty<VolumeStockClientOld[]> = EMPTY;
+		note
+			.stream()
+			.entries({})
+			.subscribe(({ rows }) => (entries = rows.map((row) => volumeStockClientToVolumeStockClientOld(row))));
+
+		// Setup is the same as the result of previous test (tests were broken down due to log run times and growing number of assertions)
+		await note.addVolumes(
+			{ __kind: "book", isbn: "0123456789", quantity: 5, warehouseId: versionId(wh1._id) },
+			{ __kind: "book", isbn: "11111111", quantity: 18, warehouseId: versionId(wh1._id) },
+			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 15 },
+			{ __kind: "custom", id: "custom-item-2", title: "Updated 2nd item", price: 25 }
+		);
+
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 18,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-1",
+					title: "Custom Item",
+					price: 15
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-2",
+					title: "Updated 2nd item",
+					price: 25
+				}
+			]);
+		});
 
 		// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
 		await note.removeTransactions({ isbn: "0123456789", warehouseId: wh1._id }, { isbn: "11111111", warehouseId: "wh3" });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 18,
 					warehouseId: versionId(wh1._id),
 					warehouseName: "Warehouse 1",
 					availableWarehouses,
 					warehouseDiscount: 0
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-1",
+					title: "Custom Item",
+					price: 15
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-2",
+					title: "Updated 2nd item",
+					price: 25
 				}
 			]);
 		});
@@ -433,12 +751,47 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "11111111",
 					quantity: 18,
 					warehouseId: versionId(wh1._id),
 					warehouseName: "Warehouse 1",
 					availableWarehouses,
 					warehouseDiscount: 0
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-1",
+					title: "Custom Item",
+					price: 15
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-2",
+					title: "Updated 2nd item",
+					price: 25
+				}
+			]);
+		});
+
+		// Should be able to remove custom items using their id
+		await note.removeTransactions("custom-item-2");
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 18,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "custom",
+					id: "custom-item-1",
+					title: "Custom Item",
+					price: 15
 				}
 			]);
 		});
@@ -516,6 +869,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(entries.rows).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("test-warehouse"),
@@ -534,9 +888,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note.addVolumes(...fiftyEntries.slice(0, 20));
 		await waitFor(() => {
 			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(0, 10)
-					.map((e) => ({ ...e, warehouseId: versionId("test-warehouse"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+				fiftyEntries.slice(0, 10).map((e) => ({
+					...e,
+					__kind: "book",
+					warehouseId: versionId("test-warehouse"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}))
 			);
 			expect(entries.total).toEqual(20);
 			expect(entries.totalPages).toEqual(2);
@@ -545,9 +903,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		paginate(1);
 		await waitFor(() => {
 			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(10, 20)
-					.map((e) => ({ ...e, warehouseId: versionId("test-warehouse"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+				fiftyEntries.slice(10, 20).map((e) => ({
+					...e,
+					__kind: "book",
+					warehouseId: versionId("test-warehouse"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}))
 			);
 			expect(entries.total).toEqual(20);
 			expect(entries.totalPages).toEqual(2);
@@ -555,13 +917,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// Updating a particular transaction (if belonging to the current page) should be streamed to the client.
 		const matchTxn = fiftyEntries[10];
 		const updateTxn = { ...matchTxn, quantity: 100, warehouseId: versionId("test-warehouse") };
-		await note.updateTransaction(matchTxn, updateTxn);
+		await note.updateTransaction({}, matchTxn, updateTxn);
 		await waitFor(() =>
 			expect(entries.rows).toEqual([
-				{ ...updateTxn, warehouseName: "New Warehouse", warehouseDiscount: 0 },
-				...fiftyEntries
-					.slice(11, 20)
-					.map((e) => ({ ...e, warehouseId: versionId("test-warehouse"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 0 },
+				...fiftyEntries.slice(11, 20).map((e) => ({
+					...e,
+					__kind: "book",
+					warehouseId: versionId("test-warehouse"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}))
 			])
 		);
 
@@ -569,10 +935,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await db.warehouse("test-warehouse").setDiscount({}, 10);
 		await waitFor(() =>
 			expect(entries.rows).toEqual([
-				{ ...updateTxn, warehouseName: "New Warehouse", warehouseDiscount: 10 },
-				...fiftyEntries
-					.slice(11, 20)
-					.map((e) => ({ ...e, warehouseId: versionId("test-warehouse"), warehouseName: "New Warehouse", warehouseDiscount: 10 }))
+				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 10 },
+				...fiftyEntries.slice(11, 20).map((e) => ({
+					...e,
+					__kind: "book",
+					warehouseId: versionId("test-warehouse"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 10
+				}))
 			])
 		);
 
@@ -623,7 +993,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// Create an outbound note
 		const note = await db.warehouse().note().create();
 
-		let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+		let entries: PossiblyEmpty<(VolumeStock<"custom"> | VolumeStockClientOld)[]> = EMPTY;
 		note
 			.stream()
 			.entries({})
@@ -638,7 +1008,15 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// Should display the transaction, but no 'availableWarehouses'
 		await waitFor(() =>
 			expect(entries).toEqual([
-				{ isbn: "1234567890", quantity: 1, warehouseId: "", warehouseName: "not-found", availableWarehouses: [], warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "1234567890",
+					quantity: 1,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses: [],
+					warehouseDiscount: 0
+				}
 			])
 		);
 
@@ -653,6 +1031,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "",
@@ -674,6 +1053,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "",
@@ -699,6 +1079,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "1111111111",
 					quantity: 1,
 					warehouseId: "",
@@ -707,6 +1088,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "",
@@ -720,6 +1102,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			])
 		);
 	});
+
 	test("outboundNoteDefaultWarehouse", async () => {
 		// Create two warehouses to work with
 		await db
@@ -735,7 +1118,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		const note = await db.warehouse().note().create();
 		await note.setDefaultWarehouse({}, "v1/wh-2");
 
-		let entries: PossiblyEmpty<VolumeStock[]> = EMPTY;
+		let entries: PossiblyEmpty<(VolumeStock<"custom"> | VolumeStockClientOld)[]> = EMPTY;
 		note
 			.stream()
 			.entries({})
@@ -751,6 +1134,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "v1/wh-2",
@@ -763,13 +1147,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		await note.setDefaultWarehouse({}, "v1/wh-1");
 
-		await note.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567770", quantity: 1 });
+		await note.addVolumes({ __kind: "book", isbn: "1234567890", quantity: 1 }, { __kind: "book", isbn: "1234567770", quantity: 1 });
 
 		// Should display the second transaction with the default warehouse as warehouseId
 		// and the first interaction should keep its default warehouseId
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
+					__kind: "book",
 					isbn: "1234567770",
 					quantity: 1,
 					warehouseId: "v1/wh-1",
@@ -778,6 +1163,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "v1/wh-1",
@@ -786,6 +1172,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					warehouseDiscount: 0
 				},
 				{
+					__kind: "book",
 					isbn: "1234567890",
 					quantity: 1,
 					warehouseId: "v1/wh-2",
@@ -834,10 +1221,24 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 3,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
-				{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 3,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}
 			]);
 			expect(warehouse2Stock).toEqual([]);
 		});
@@ -849,11 +1250,26 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 3,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
-				{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 },
 				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 3,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 3,
 					warehouseId: versionId("warehouse-2"),
@@ -863,6 +1279,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			]);
 			expect(warehouse2Stock).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 3,
 					warehouseId: versionId("warehouse-2"),
@@ -877,7 +1294,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note3.addVolumes({ isbn: "0123456789", quantity: 3 });
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 3, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 3,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}
 			]);
 			// If the assertion for warehouse-1 (in this case) passes, the other two streams are implicitly not affected
 			// (according to the previous two assertions)
@@ -893,11 +1317,26 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note4.commit({});
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "New Warehouse", warehouseDiscount: 0 },
 				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
@@ -907,6 +1346,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			]);
 			expect(warehouse2Stock).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
@@ -920,11 +1360,26 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await warehouse1.setName({}, "Warehouse 1");
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 0 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 0
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 0 },
 				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
@@ -938,11 +1393,26 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await warehouse1.setDiscount({}, 20);
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 20 }
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 20
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
-				{ isbn: "0123456789", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 20 },
 				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 20
+				},
+				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
@@ -960,6 +1430,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(warehouse1Stock).toEqual([]);
 			expect(defaultWarehouseStock).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
@@ -981,17 +1452,54 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note6.commit({});
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
-				{ isbn: "11111111", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 20 }
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 20
+				}
 			]);
 			expect(defaultWarehouseStock).toEqual([
 				{
+					__kind: "book",
 					isbn: "0123456789",
 					quantity: 2,
 					warehouseId: versionId("warehouse-2"),
 					warehouseName: "New Warehouse (2)",
 					warehouseDiscount: 0
 				},
-				{ isbn: "11111111", quantity: 1, warehouseId: versionId("warehouse-1"), warehouseName: "Warehouse 1", warehouseDiscount: 20 }
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 1,
+					warehouseId: versionId("warehouse-1"),
+					warehouseName: "Warehouse 1",
+					warehouseDiscount: 20
+				}
+			]);
+		});
+
+		// Custom items should not affect the stock
+		const note7 = defaultWarehouse.note();
+		await note7.addVolumes(
+			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 },
+			// Removing one book from stock, the regular way, to assert that the update did happen (and custom item just wasn't taken into account)
+			{ isbn: "11111111", quantity: 1, warehouseId: "warehouse-1" }
+		);
+		await note7.commit({});
+		await waitFor(() => {
+			expect(warehouse1Stock).toEqual([]);
+			expect(defaultWarehouseStock).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 2,
+					warehouseId: versionId("warehouse-2"),
+					warehouseName: "New Warehouse (2)",
+					warehouseDiscount: 0
+				}
 			]);
 		});
 	});
@@ -1031,7 +1539,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(entries.rows).toEqual(
 				fiftyEntries
 					.slice(0, 10)
-					.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
 			);
 			expect(entries.total).toEqual(20);
 			expect(entries.totalPages).toEqual(2);
@@ -1043,7 +1551,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(entries.rows).toEqual(
 				fiftyEntries
 					.slice(10, 20)
-					.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
 			);
 			expect(entries.total).toEqual(20);
 			expect(entries.totalPages).toEqual(2);
@@ -1059,7 +1567,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(entries.rows).toEqual(
 				fiftyEntries
 					.slice(10, 20)
-					.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
 			);
 			expect(entries.total).toEqual(28);
 			expect(entries.totalPages).toEqual(3);
@@ -1077,7 +1585,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(entries.rows).toEqual(
 				fiftyEntries
 					.slice(19, 28)
-					.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
 			);
 			expect(entries.total).toEqual(19);
 			expect(entries.totalPages).toEqual(2);
@@ -1092,7 +1600,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			fiftyEntries
 				.slice(0, 10)
 				.concat(fiftyEntries.slice(19, 28))
-				.map((v) => ({ ...v, warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
+				.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
 		);
 		// Should still stream predictable pagination stats
 		expect(allEntries.total).toEqual(19);
@@ -1595,7 +2103,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		const note1 = await warehouse1.note().create();
 		await note1.addVolumes(
 			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
-			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" }
+			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" },
+			// Adding custom item as noise - shouldn't affect these checks
+			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }
 		);
 
 		await expect(note1.commit({})).rejects.toThrow(
@@ -1606,7 +2116,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		// Fix the invalid transactions and commit the note
 		await note1
-			.updateTransaction({ isbn: "22222222", warehouseId: "warehouse-2" }, { isbn: "22222222", warehouseId: "warehouse-1", quantity: 2 })
+			.updateTransaction(
+				{},
+				{ isbn: "22222222", warehouseId: "warehouse-2" },
+				{ isbn: "22222222", warehouseId: "warehouse-1", quantity: 2 }
+			)
 			.then((n) => n.commit({}));
 
 		await waitFor(() => note1.get().then((n) => expect(n!.committed).toEqual(true)));
@@ -1651,7 +2165,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await expect(note.commit({})).rejects.toThrow(new NoWarehouseSelectedError([{ isbn: "22222222", quantity: 2, warehouseId: "" }]));
 
 		// Fix warehouse selection
-		await note.updateTransaction({ isbn: "22222222" }, { isbn: "22222222", quantity: 2, warehouseId: "warehouse-1" });
+		await note.updateTransaction({}, { isbn: "22222222" }, { isbn: "22222222", quantity: 2, warehouseId: "warehouse-1" });
 		// Current note transactions:
 		// - "11111111": 2 (warehouse-1) - valid
 		// - "22222222": 2 (warehouse-1) - invlid - no "22222222" in warehouse-1 stock
@@ -1670,6 +2184,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// Fix the note - remove excess quantity/transactions
 		await note.removeTransactions({ isbn: "22222222", warehouseId: "warehouse-1" }, { isbn: "11111111", warehouseId: "warehouse-2" });
 		await note.updateTransaction(
+			{},
 			{ isbn: "22222222", warehouseId: "warehouse-2" },
 			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" }
 		);
@@ -1679,6 +2194,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		await note.commit({});
 		await waitFor(() => note.get().then((n) => expect(n!.committed).toEqual(true)));
+
+		// Committing a note with custom item only should be allowed
+		await db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.addVolumes({ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }))
+			.then((n) => n.commit({}));
 	});
 
 	test("reconcile outbound notes", async () => {
@@ -1729,7 +2252,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			// Not-fully-in-stock - reconciliation should add 2, resulting in 0 after the note is committed
 			{ isbn: "11111111", quantity: 3, warehouseId: "warehouse-2" },
 			// Not-in-stock - reconciliation should add 1, resulting in 0 after the note is committed
-			{ isbn: "22222222", quantity: 1, warehouseId: "warehouse-3" }
+			{ isbn: "22222222", quantity: 1, warehouseId: "warehouse-3" },
+			// Adding custom item as noise - shouldn't affect these checks
+			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }
 		);
 
 		// We can't commit the note yet
@@ -1842,11 +2367,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		]);
 	});
 
-	test("receiptPrinter", async () => {
+	test("receipt generation", async () => {
 		// We're creating a bunch of transactions to test the receipt
 		// taking into account entries which would be omitted in the UI by pagination.
-		//
-		// Additionally, we're later using this (predictable prices) to test applied discount.
 		const transactions = Array(20)
 			.fill(null)
 			.map((_, i) => ({
@@ -1869,28 +2392,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			db.books().upsert(transactions.map(({ isbn, title, price }) => ({ isbn, title, price })))
 		]);
 
-		// Print the note
-		let printJobId = await note.printReceipt();
-		expect(printJobId).toMatch(/print_queue\/printer-1\/[0-9a-z]+$/);
+		// Get the receipt items from the note
 
 		// The print job should have been added to the print queue
-		let printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price })),
-			// Prices series: 2, 4, ..., (n * 2) | n = 20
-			// S(n) = 2 + 4 + ... + (n * 2) | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (2 + 40) / 2 = 420
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 840
-			total: 840,
-			timestamp: expect.any(Number)
+		let receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 }))
 		});
 
 		// Add a discount to wh-1
@@ -1900,26 +2408,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			.then((wh) => wh.setDiscount({}, 50));
 
 		// Print the note again
-		printJobId = await note.printReceipt();
+		receipt = await note.intoReceipt();
 
 		// The print job should have been added to the print queue with discounted prices
-		printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
-			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = S(n) * 2 = 420
-			total: 420,
-			timestamp: expect.any(Number)
+
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
+			items: transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 }))
 		});
 
 		// Add transactions belonging to different warehouse (no discount should be applied to those)
@@ -1928,33 +2423,34 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// they belong to wh-2, no discount will be applied
 		await note.addVolumes(...transactions.slice(0, 2).map((txn) => ({ ...txn, warehouseId: "wh-2" })));
 
-		// Print the note again
-		printJobId = await note.printReceipt();
-
 		// The print job should have been added to the print queue with discounted prices
-		printJob = await db._pouch.get(printJobId);
-		expect(printJob).toEqual({
-			_id: printJobId,
-			_rev: expect.any(String),
-			docType: DocType.PrintJob,
-			printer_id: "printer-1",
-			status: "PENDING",
+		receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
 			items: [
 				// wh-1 transactions - with discount applied
-				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price: price / 2 })),
+				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
 				// additional two transactions (wh-2) - no discount applied
-				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price }))
-			],
-			// Prices series: 1, 2, ..., n | n = 20
-			// S(n) = 1 + 2 + ... + n | n = 20
-			// S(n) = n * (a1 + an) / 2
-			// S(n) = 20 * (1 + 20) / 2 = 210
-			//
-			// Quantities: 2 (for each entry)
-			// Sum = 2 * ( S(n) + transaction-0-without-discount + transaction-1-without-discount )
-			// Sum = 2 * ( S(n) + 2 + 4 ) = 432
-			total: 432,
-			timestamp: expect.any(Number)
+				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 }))
+			]
+		});
+
+		// Add custom items - they should also end up in the receipt (each with quantity 1 and discount 0)
+		note.addVolumes({ __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
+
+		// The print job should have been added to the print queue with discounted prices
+		receipt = await note.intoReceipt();
+		expect(receipt).toEqual({
+			timestamp: expect.any(Number),
+			items: [
+				// wh-1 transactions - with discount applied
+				...transactions.map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 50 })),
+				// additional two transactions (wh-2) - no discount applied
+				...transactions.slice(0, 2).map(({ isbn, title, quantity, price }) => ({ isbn, title, quantity, price, discount: 0 })),
+				// custom items
+				{ __kind: "custom", id: expect.any(String), title: "Item 1", price: 20, quantity: 1, discount: 0 },
+				{ __kind: "custom", id: expect.any(String), title: "Item 2", price: 35, quantity: 1, discount: 0 }
+			]
 		});
 	});
 
@@ -2023,8 +2519,14 @@ const navMapToNavList = (navMap: NavMap): NavListEntry[] => [...navMap].map(([id
 const inNoteMapToInNoteList = (inNoteMap: InNoteMap): InNoteList =>
 	[...inNoteMap].map(([id, { displayName, notes }]) => ({ id, displayName, notes: navMapToNavList(notes) }));
 
-const volumeStockClientToVolumeStockClientOld = ({ availableWarehouses, ...vsc }: VolumeStockClient): VolumeStockClientOld => ({
-	...vsc,
-	...(availableWarehouses ? { availableWarehouses: navMapToNavList(availableWarehouses) } : {})
-});
+const volumeStockClientToVolumeStockClientOld = (entry: VolumeStockClient): VolumeStock<"custom"> | VolumeStockClientOld => {
+	if (entry.__kind === "custom") {
+		return entry;
+	}
+	const { availableWarehouses, ...vsc } = entry;
+	return {
+		...vsc,
+		...(availableWarehouses ? { availableWarehouses: navMapToNavList(availableWarehouses) } : {})
+	};
+};
 // #endregion

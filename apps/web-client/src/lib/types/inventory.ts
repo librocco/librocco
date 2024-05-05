@@ -1,5 +1,5 @@
 import type { VolumeStockClient, BookEntry } from "@librocco/db";
-import type { NoteState, NoteTempState } from "@librocco/shared";
+import type { NoteState, NoteTempState, VolumeStockKind } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
 
@@ -23,7 +23,9 @@ export interface BookStore {
 }
 
 /** The properties of a book + quantity row shown in the note/warehouse table. */
-export type DisplayRow = VolumeStockClient & BookEntry;
+export type DisplayRow<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
+	? VolumeStockClient<"custom">
+	: VolumeStockClient<K> & BookEntry;
 
 /** A structure of the warehouse store: `readable<WarehouseStore>()`. */
 export interface WarehouseStore {
