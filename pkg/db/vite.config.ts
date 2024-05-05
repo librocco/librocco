@@ -11,6 +11,7 @@ export default defineConfig({
 		}
 	},
 	build: {
+		sourcemap: true,
 		lib: {
 			name: "@librocco/db",
 			entry: path.join(__dirname, "src", "index.ts"),

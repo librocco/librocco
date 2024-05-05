@@ -10,12 +10,12 @@ export type NoteType = "inbound" | "outbound";
 export interface RawNote {
 	id: string;
 	type: NoteType;
-	books: VolumeStock[];
+	books: VolumeStock<"book">[];
 }
 
 export interface RawSnap {
 	id: string;
-	books: VolumeStock[];
+	books: VolumeStock<"book">[];
 }
 
 export interface TestNotesAndWarehouses {
@@ -38,7 +38,7 @@ const getSnaps = async () => {
 	return unwrapDocs(res).filter((n) => n !== undefined) as RawSnap[];
 };
 
-const mapWarehouses = (books: VolumeStock[]): RawSnap[] => {
+const mapWarehouses = (books: VolumeStock<"book">[]): RawSnap[] => {
 	const warehousesObject = books.reduce((acc, b) => {
 		const { warehouseId } = b;
 		const warehouse = acc[warehouseId] || ({ id: warehouseId, books: [] } as RawSnap);

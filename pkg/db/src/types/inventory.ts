@@ -2,31 +2,41 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockInput, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
 import type { PrintJobStatus } from "@/enums";
 
-import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial, SearchIndex } from "./misc";
+import type {
+	DatabaseInterface as BaseDatabaseInterface,
+	BookEntry,
+	BooksInterface,
+	CouchDocument,
+	DatabaseInterface,
+	PickPartial,
+	SearchIndex
+} from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
 // #region misc
 /** An extended version of `VolumeStock`, for client usage (should contain warehouse name as ids are quite ugly to display) */
-export interface VolumeStockClient extends VolumeStock {
-	warehouseDiscount: number;
-	warehouseName: string;
-	availableWarehouses?: NavMap<{ quantity: number }>;
-}
+export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
+	? VolumeStock<"custom">
+	: VolumeStock<K> & {
+			warehouseDiscount: number;
+			warehouseName: string;
+			availableWarehouses?: NavMap<{ quantity: number }>;
+	  };
 
-export interface EntriesStreamResult {
-	rows: VolumeStockClient[];
+export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
+	rows: VolumeStockClient<K>[];
 	total: number;
 	totalPages: number;
 }
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
 
-export interface OutOfStockTransaction extends VolumeStock {
+export interface OutOfStockTransaction extends VolumeStock<"book"> {
 	warehouseName: string;
 	available: number;
 }
@@ -56,9 +66,15 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
+	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
+	autoPrintLabels(ctx: debug.DebugCtx): Observable<boolean>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
 	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
 }
+
+export type UpdateTransactionParams<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
+	? [id: string, update: PickPartial<VolumeStock<"custom">, "id">]
+	: [match: PickPartial<Omit<VolumeStock<"book">, "quantity">, "warehouseId">, update: VolumeStock<"book">];
 
 /**
  * A standardized interface (interface of methods) for a note.
@@ -66,14 +82,16 @@ export interface NoteStream {
  */
 export interface NoteProto<A extends Record<string, any> = {}> {
 	// CRUD
-	create: () => Promise<NoteInterface<A>>;
-	get: () => Promise<NoteInterface<A> | undefined>;
+	create(): Promise<NoteInterface<A>>;
+	get(): Promise<NoteInterface<A> | undefined>;
 	// NOTE: update is private
-	delete: (ctx: debug.DebugCtx) => Promise<void>;
+	delete(ctx: debug.DebugCtx): Promise<void>;
 
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
-	setName: (ctx: debug.DebugCtx, name: string) => Promise<NoteInterface<A>>;
+	setName(ctx: debug.DebugCtx, name: string): Promise<NoteInterface<A>>;
+	/** Updates the `defaultWarehouse` of the note. */
+	setDefaultWarehouse(ctx: debug.DebugCtx, warehouseId: string): Promise<NoteInterface<A>>;
 	/**
 	 * Marks the note as a 'reconciliationNote' - an inbound note used to reconcile the state
 	 * in case an outbound note contains some out-of-stock books (but they exist in physical state).
@@ -83,24 +101,29 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
-	addVolumes: (...params: PickPartial<VolumeStock, "warehouseId">[]) => Promise<NoteInterface<A>>;
+	addVolumes(
+		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
+	): Promise<NoteInterface<A>>;
 	/**
 	 * Explicitly update an existing transaction row.
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
-	updateTransaction: (match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock) => Promise<NoteInterface<A>>;
+	updateTransaction(ctx: debug.DebugCtx, ...params: UpdateTransactionParams<"book">): Promise<NoteInterface<A>>;
+	updateTransaction(ctx: debug.DebugCtx, ...params: UpdateTransactionParams<"custom">): Promise<NoteInterface<A>>;
 	/**
 	 * Remove "row" from note transactions .
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
-	removeTransactions: (...transactions: Omit<VolumeStock, "quantity">[]) => Promise<NoteInterface<A>>;
+	removeTransactions(
+		...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>
+	): Promise<NoteInterface<A>>;
 	/**
 	 * Commit the note, no updates to the note (except updates to `displayName`) can be performed after this.
 	 * @param ctx debug context
 	 * @param options object
 	 * @param options.force force commit, even if the note is empty (this should be used only in tests)
 	 */
-	commit: (ctx: debug.DebugCtx, options?: { force: true }) => Promise<NoteInterface<A>>;
+	commit(ctx: debug.DebugCtx, options?: { force: true }): Promise<NoteInterface<A>>;
 	/**
 	 * Stream returns an object containing observable streams for the note:
 	 * - `state` - streams the note's `state`
@@ -108,13 +131,25 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * - `updatedAt` - streams the note's `updatedAt`
 	 * - `entries` - streams the note's `entries` (volume transactions)
 	 */
-	stream: () => NoteStream;
+	stream(): NoteStream;
 	/**
 	 * An imperative query (single response) of note's transactions (as opposed to the entries stream - an observable stream).
 	 */
 	getEntries: EntriesQuery;
-	printReceipt(): Promise<string>;
+	/**
+	 * Creates a receipt object (of ReceiptData type) for printing. Doesn't do the actual printing.
+	 */
+	intoReceipt(): Promise<ReceiptData>;
+	/**
+	 * For outbound notes: this function reconciles the missing stock (in the outbound note) by creating new inbound note(s), in the
+	 * background, and committing those before committing the outbound note so that the resulting for each entry will at least be 0 (no negative quantities).
+	 */
 	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+
+	/**
+	 * Enable printing of labels on each scan.
+	 */
+	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface<A>>;
 }
 
 /**
@@ -143,7 +178,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	discount: (ctx: debug.DebugCtx) => Observable<number>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
+	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult<"book">>;
 }
 
 /**
@@ -190,15 +225,16 @@ export type WarehouseInterface<N extends NoteInterface = NoteInterface, A extend
 
 // #region receipts
 export interface ReceiptItem {
-	isbn: string;
+	// Custom items have no isbn
+	isbn?: string;
 	title: string;
 	quantity: number;
 	price: number;
+	discount: number;
 }
 
 export interface ReceiptData {
 	items: ReceiptItem[];
-	total: number;
 	timestamp: number;
 }
 
@@ -209,8 +245,9 @@ export interface PrintJob extends CouchDocument<ReceiptData> {
 	error?: string;
 }
 
-export interface RecepitsInterface {
-	print(note: NoteData): Promise<string>;
+export interface PrinterInterface {
+	label(): { print(book: BookEntry): Promise<Response> };
+	receipt(): { print(items: ReceiptItem[]): Promise<Response> };
 }
 // #endregion receipts
 
@@ -252,6 +289,8 @@ export interface DbStream {
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
 	committedNotesList: (ctx: debug.DebugCtx) => Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
+	labelPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
+	receiptPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
 }
 
 /**
@@ -304,6 +343,9 @@ export type InventoryDatabaseInterface<
 	 * returns warehouse data map
 	 */
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
+	printer(): PrinterInterface;
+	setLabelPrinterUrl(url: string): DatabaseInterface;
+	setReceiptPrinterUrl(url: string): DatabaseInterface;
 }>;
 
 export interface NewDatabase {

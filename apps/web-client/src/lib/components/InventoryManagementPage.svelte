@@ -7,11 +7,9 @@
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 
-	import { Page } from "$lib/components";
+	import { ExtensionAvailabilityToast, Page } from "$lib/components";
 
 	import { getDB } from "$lib/db";
-
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { appPath } from "$lib/paths";
 
@@ -41,7 +39,6 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
 		await goto(appPath("warehouses", warehouse._id));
 	};
 </script>
@@ -81,5 +78,9 @@
 
 			<slot />
 		</div>
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>

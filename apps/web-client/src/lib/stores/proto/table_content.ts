@@ -1,7 +1,7 @@
 import type { Readable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap } from "rxjs";
 
-import { debug, wrapIter } from "@librocco/shared";
+import { debug, wrapIter, type VolumeStockKind } from "@librocco/shared";
 import type {
 	BookEntry,
 	InventoryDatabaseInterface,
@@ -15,14 +15,6 @@ import type { DisplayRow } from "$lib/types/inventory";
 
 import { readableFromStream } from "$lib/utils/streams";
 
-interface CreateDisplayEntriesStore {
-	(
-		ctx: debug.DebugCtx,
-		db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
-		entity: NoteInterface | WarehouseInterface | undefined
-	): Readable<DisplayRow[]>;
-}
-
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
  * @param ctx debug context
@@ -31,23 +23,27 @@ interface CreateDisplayEntriesStore {
  * @param currentPageStore a store containing the current page index
  * @returns
  */
-export const createDisplayEntriesStore: CreateDisplayEntriesStore = (ctx, db, entity) => {
-	const shareSubject = new ReplaySubject<DisplayRow[]>(1);
+export const createDisplayEntriesStore = <K extends VolumeStockKind = VolumeStockKind>(
+	ctx: debug.DebugCtx,
+	db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
+	entity: NoteInterface | WarehouseInterface | undefined
+): Readable<DisplayRow<K>[]> => {
+	const shareSubject = new ReplaySubject<DisplayRow<K>[]>(1);
 
-	const entriesStream = entity?.stream().entries(ctx) || new Observable<EntriesStreamResult>();
+	const entriesStream = (entity?.stream().entries(ctx) || new Observable()) as Observable<EntriesStreamResult<K>>;
 	const tableData = entriesStream.pipe(
 		map(({ rows }) => rows),
 		// Process the data received from the paginated stream, "ziping" the data with the book data
 		// and returning pagination data.
 		switchMap((r) => {
 			// Map rows to just isbns
-			const isbns = r.map((entry) => entry.isbn);
+			const isbns = r.map((entry) => (entry.__kind === "custom" ? undefined : entry.isbn));
 
 			debug.log(ctx, "display_entries_store:table_data:retrieving_books")({ isbns });
 
 			// Return array of merged values of books and volume stock client
 			const rows = db.books().stream(ctx, isbns).pipe(mapMergeBookData(ctx, r));
-			return rows;
+			return rows as Observable<DisplayRow<K>[]>;
 		}),
 		// Multicast the stream (for both the table and pagination stores)
 		share({ connector: () => shareSubject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })

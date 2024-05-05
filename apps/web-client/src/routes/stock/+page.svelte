@@ -4,22 +4,23 @@
 	import { fade, fly } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
+	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { StockTable } from "$lib/components";
+	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { toastSuccess, warehouseToastMessages } from "$lib/toasts";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { getDB } from "$lib/db";
+	import { testId } from "@librocco/shared";
 
 	const db = getDB();
 
@@ -37,8 +38,6 @@
 
 	$: search = stores.search;
 	$: entries = stores.entries;
-
-	$: toasts = warehouseToastMessages("All");
 
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
@@ -78,13 +77,14 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	const {
@@ -126,12 +126,47 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
-						<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
-							<span class="sr-only">Edit row {rowIx}</span>
-							<span class="aria-hidden">
-								<FileEdit />
-							</span>
-						</button>
+						<PopoverWrapper
+							options={{
+								forceVisible: true,
+								positioning: {
+									placement: "left"
+								}
+							}}
+							let:trigger
+						>
+							<button
+								data-testid={testId("popover-control")}
+								{...trigger}
+								use:trigger.action
+								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+							>
+								<span class="sr-only">Edit row {rowIx}</span>
+								<span class="aria-hidden">
+									<MoreVertical />
+								</span>
+							</button>
+
+							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+								<button use:melt={$trigger} on:m-click={() => (bookFormData = row)} class="rounded p-3 text-gray-500 hover:text-gray-900">
+									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="aria-hidden">
+										<FileEdit />
+									</span>
+								</button>
+
+								<button
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("print-book-label")}
+									on:click={() => db.printer().label().print(row)}
+								>
+									<span class="sr-only">Print book label {rowIx}</span>
+									<span class="aria-hidden">
+										<Printer />
+									</span>
+								</button>
+							</div>
+						</PopoverWrapper>
 					</div>
 				</StockTable>
 
@@ -141,6 +176,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 
@@ -179,14 +218,17 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								return;
 							}
+
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

@@ -6,6 +6,7 @@ import { InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { newChangesStream } from "@/utils/pouchdb";
 import { versionId } from "./utils";
+import { isBookRow } from "@/utils/misc";
 
 export interface StockInterface {
 	changes: () => PouchDB.Core.Changes<any>;
@@ -55,7 +56,12 @@ class Stock implements StockInterface {
 			.map(({ doc }) => doc as Doc)
 			.filter((doc): doc is NoteData => doc?.docType === "note")
 			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
-			.flatMap(({ entries, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, noteType })));
+			.flatMap(({ entries, noteType }) =>
+				wrapIter(entries)
+					// We're not passing custom item entries to stock (as it shouldn't affect the final state)
+					.filter(isBookRow)
+					.map((entry) => ({ ...entry, noteType }))
+			);
 
 		return StockMap.fromDbRows(mapGenerator);
 	}

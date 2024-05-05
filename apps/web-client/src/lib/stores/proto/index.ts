@@ -6,6 +6,7 @@ import type { debug } from "@librocco/shared";
 import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
 
 import { createDisplayNameStore } from "$lib/stores/inventory/display_name";
+import { createDefaultWarehouseStore } from "$lib/stores/inventory/default_warehouse";
 import { createDisplayStateStore, createInternalStateStore } from "$lib/stores/inventory/note_state";
 import { createDisplayEntriesStore } from "./table_content";
 
@@ -15,9 +16,11 @@ import { createWarehouseDiscountStore } from "$lib/stores/inventory/warehouse_di
 
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
+	defaultWarehouse: Writable<string | undefined>;
 	state: Writable<NoteAppState>;
 	updatedAt: Readable<Date | null>;
 	entries: Readable<DisplayRow[]>;
+	autoPrintLabels: Readable<boolean>;
 }
 interface CreateNoteStores {
 	(note?: NoteInterface): NoteDisplayStores;
@@ -43,18 +46,26 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
 	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note);
 
+	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?._id}]`, debug: false };
+	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
+
+	const autoPrintLabels = readableFromStream({}, note?.stream().autoPrintLabels({}), false);
+
 	return {
 		displayName,
 		state,
 		updatedAt,
-		entries
+		entries,
+		defaultWarehouse,
+		autoPrintLabels
 	};
 };
 
 interface WarehouseDisplayStores {
 	displayName: Writable<string | undefined>;
 	warehouseDiscount: Writable<number>;
-	entries: Readable<DisplayRow[]>;
+	// Warehouse stock will display only book items (no custom items)
+	entries: Readable<DisplayRow<"book">[]>;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -72,7 +83,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entries = createDisplayEntriesStore(ctx, getDB(), warehouse);
+	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse);
 
 	return {
 		displayName,

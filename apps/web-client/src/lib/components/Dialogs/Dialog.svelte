@@ -33,9 +33,11 @@
 
 	<div class="border-t-1 flex gap-x-4 self-end">
 		<div>
-			<button class="button button-white" use:melt={$close} type="button">
-				<span class="button-text"> Cancel </span>
-			</button>
+			<slot name="secondary-button">
+				<button class="button button-white" use:melt={$close} type="button">
+					<span class="button-text"> Cancel </span>
+				</button>
+			</slot>
 		</div>
 		<div>
 			<slot name="confirm-button">

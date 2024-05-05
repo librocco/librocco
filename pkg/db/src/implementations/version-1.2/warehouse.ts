@@ -4,8 +4,8 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData } from "./types";
+import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
+import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -13,7 +13,7 @@ import { newNote } from "./note";
 import { newStock } from "./stock";
 
 import { versionId } from "./utils";
-import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks } from "@/utils/misc";
+import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow, isCustomItemRow } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
 
@@ -198,7 +198,35 @@ class Warehouse implements WarehouseInterface {
 			if (!this.#exists) {
 				return;
 			}
-			await this.#db._pouch.put({ ...this, _deleted: true } as Required<WarehouseInterface>);
+
+			const docs = await this.#db._pouch
+				.allDocs({
+					startkey: versionId(""),
+					endkey: versionId("").replace(/\/$/, "0"), // e.g. 'v10' (comes after 'v1/' -- this doesn't work for versions above 10, but we'll get to that if needed)
+					include_docs: true
+				})
+				.then(({ rows }) => rows.filter(({ doc }) => !!doc).map(({ doc }) => doc as NoteData | WarehouseData))
+				.catch((e) => (console.error(e), []));
+
+			const docsToDelete = docs.flatMap((doc): CouchDocument[] => {
+				// warehouse and inbound notes
+				if (doc._id.startsWith(this._id)) {
+					return [{ ...doc, _deleted: true }];
+				}
+
+				// outbound notes
+				if (
+					"noteType" in doc &&
+					doc?.noteType === "outbound" &&
+					doc?.entries.filter(isBookRow).some((entry) => entry.warehouseId === this._id)
+				) {
+					return [{ ...doc, entries: doc.entries.filter((entry) => isCustomItemRow(entry) || entry.warehouseId !== this._id) }];
+				}
+
+				// no need for update
+				return [];
+			});
+			await this.#db._pouch.bulkDocs(docsToDelete);
 		}, this.#initialized);
 	}
 
@@ -243,7 +271,9 @@ class Warehouse implements WarehouseInterface {
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
-		const entries = wrapIter(queryRes.rows()).filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+		const entries = wrapIter(queryRes.rows())
+			.filter(isBookRow)
+			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
 		return addWarehouseData(entries, warehouses);
 	}
 

@@ -16,7 +16,6 @@
 
 	import { getDB } from "$lib/db";
 
-	import { noteToastMessages, warehouseToastMessages, toastError, toastSuccess } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { readableFromStream } from "$lib/utils/streams";
@@ -48,7 +47,6 @@
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
 		await db?.warehouse(warehouseId).delete();
 		open.set(false);
-		toastSuccess(warehouseToastMessages(warehouseName).warehouseDeleted);
 	};
 
 	/**
@@ -57,7 +55,6 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		toastSuccess(warehouseToastMessages("Warehouse").warehouseCreated);
 		await goto(appPath("warehouses", warehouse._id));
 	};
 
@@ -67,7 +64,6 @@
 	 */
 	const handleCreateNote = (warehouseId: string) => async () => {
 		const note = await db?.warehouse(warehouseId).note().create();
-		toastSuccess(noteToastMessages("Note").inNoteCreated);
 		await goto(appPath("inbound", note._id));
 	};
 
@@ -106,11 +102,11 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<li class="entity-list-row flex items-center justify-between">
-						<div class="max-w-1/2 w-full">
-							<p class="entity-list-text-lg text-gray-900">{displayName}</p>
+					<div class="group entity-list-row">
+						<div class="flex flex-col gap-y-2 self-start">
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex flex-wrap gap-y-2">
+							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
 									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
@@ -128,8 +124,9 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateNote(warehouseId)} class="button button-green"><span class="button-text">New note</span></button
-							>
+							<button on:click={handleCreateNote(warehouseId)} class="button button-green">
+								<span class="button-text"> New note </span>
+							</button>
 
 							<DropdownWrapper let:separator let:item>
 								<div
@@ -201,7 +198,7 @@
 								</div>
 							</DropdownWrapper>
 						</div>
-					</li>
+					</div>
 				{/each}
 				<!-- End entity list -->
 			{/if}
@@ -236,15 +233,10 @@
 								const { id, name, discount } = form?.data;
 								const warehouseInterface = db.warehouse(id);
 
-								try {
-									await warehouseInterface.setName({}, name);
-									await warehouseInterface.setDiscount({}, discount);
+								await warehouseInterface.setName({}, name);
+								await warehouseInterface.setDiscount({}, discount);
 
-									open.set(false);
-									toastSuccess(warehouseToastMessages(name).warehouseUpdated);
-								} catch (err) {
-									toastError(`Error: ${err.message}`);
-								}
+								open.set(false);
 							}
 						}}
 						onCancel={() => open.set(false)}

@@ -13,7 +13,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
@@ -50,7 +50,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"
@@ -71,6 +71,36 @@ jobs:
       run: rush build
     - name: Run tests
       run: cd apps/web-client && rushx test:ci
+  book-data-extension-test:
+    name: Book data extension Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - uses: actions/checkout@v3
+    - uses: actions/setup-node@v3
+      with:
+        node-version: "20"
+    - name: Cache node modules
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run tests
+      run: cd plugins/book-data-extension && rushx test:ci
   db-test:
     name: DB Tests
     runs-on: ubuntu-latest
@@ -80,7 +110,7 @@ jobs:
       contents: read
       checks: write
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: actions/setup-node@v3
       with:
         node-version: "20"

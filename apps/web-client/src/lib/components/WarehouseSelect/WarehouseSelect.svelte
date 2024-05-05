@@ -10,7 +10,7 @@
 	import type { WarehouseChangeDetail } from "./types";
 	import type { OutboundTableData } from "$lib/components/Tables/types";
 
-	export let data: OutboundTableData;
+	export let data: OutboundTableData<"book">;
 	export let rowIx: number;
 	export let warehouseList: Iterable<[string, NavEntry]> = new Map<string, { displayName: string }>();
 

@@ -51,8 +51,12 @@ export const newNote =
 				const note = $contentStore[noteId];
 				return note ? note.entries : [];
 			});
+			const defaultWarehouseId = derivedObservable(contentStore, ($contentStore) => {
+				const note = $contentStore[noteId];
+				return note ? note.defaultWarehouseId : "";
+			});
 
-			return { state, displayName, updatedAt, entries };
+			return { state, displayName, updatedAt, entries, defaultWarehouseId };
 		};
 
 		return { commit, delete: deleteNote, setName, stream };

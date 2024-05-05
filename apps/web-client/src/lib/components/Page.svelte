@@ -11,7 +11,6 @@
 	import { TooltipWrapper } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
-	// import { noteToastMessages, toastSuccess } from "$lib/toasts";
 	import { getDB } from "$lib/db";
 
 	interface Link {
@@ -71,11 +70,6 @@
 	 */
 	const handleCreateNote = async () => {
 		const note = await getDB()?.warehouse().note().create();
-		// TODO: Check this: this causes problems, stating that toastSuccess is not a function.
-		// For now we can live without the notification here as we'll be redirected to the note page,
-		// but it would be nice to fix.
-		//
-		// toastSuccess(noteToastMessages("Note").outNoteCreated);
 		await goto(appPath("outbound", note._id));
 	};
 </script>
@@ -137,7 +131,7 @@
 			<!-- SM size menu icon end -->
 
 			<!-- Top bar input -->
-			<div class="flex h-full w-full items-center px-4 focus-within:ring-2 focus-within:ring-inset">
+			<div class="relative flex h-full w-full items-center px-4 focus-within:ring-2 focus-within:ring-inset">
 				<slot
 					name="topbar"
 					iconProps={{ class: "text-gray-400", size: 24 }}
@@ -155,8 +149,14 @@
 		<!-- Heading section end -->
 
 		<!-- Main section -->
-		<main class="relative h-full w-full overflow-y-auto border-t bg-white">
-			<slot name="main" />
+		<main class="relative flex h-full w-full flex-col justify-between overflow-hidden border-t bg-white">
+			<div class="relative h-full w-full overflow-y-auto">
+				<slot name="main" />
+			</div>
+
+			<div class="flex h-8 items-center justify-end border-t bg-gray-100 px-4">
+				<slot name="footer" />
+			</div>
 		</main>
 		<!-- Main section end -->
 	</div>
