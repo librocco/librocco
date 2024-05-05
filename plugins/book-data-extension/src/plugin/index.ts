@@ -1,29 +1,35 @@
+import { BehaviorSubject, Observable, concat, from, share } from "rxjs";
+
 import { BookFetcherPlugin, BookEntry } from "@librocco/db";
-import { postMessage } from "./window-helpers";
-import { listenForBook, listenForExtension } from "./listeners";
+
+import { continuousListener } from "./listeners";
+import { fetchBook, ping } from "./comm";
 
 export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
-	const fetchBookData = async (isbns: string[]): Promise<BookEntry[]> => {
-		// Check if the extension is registered if not resolve to []
-		postMessage(`BOOK_FETCHER:PING`);
+	// Continuous availability stream
+	const isAvailableStream = createAvailabilityStream();
 
-		const extensionAvailable = await listenForExtension(`BOOK_FETCHER:PONG`, 500);
-
-		if (!extensionAvailable) return [];
-
-		const unfilteredBookData = await Promise.all(isbns.map((isbn) => fetchBook(isbn)));
-
-		return unfilteredBookData.filter(
-			(bookData): bookData is BookEntry => bookData !== undefined && bookData.isbn !== "" && bookData.title !== ""
-		);
+	const fetchBookData = async (isbns: string[]): Promise<(BookEntry | undefined)[]> => {
+		return Promise.all(isbns.map((isbn) => fetchBook(isbn)));
 	};
 
-	const fetchBook = (isbn: string) => {
-		// Post message to the extension
-		postMessage(`BOOK_FETCHER:REQ:${isbn}`);
+	return { fetchBookData, isAvailableStream };
+};
 
-		return listenForBook(`BOOK_FETCHER:RES:${isbn}`, 4000);
-	};
-
-	return { fetchBookData };
+const createAvailabilityStream = () => {
+	// Message received when the extension is registered
+	const message = "BOOK_FETCHER:ACTIVE";
+	const shareSuject = new BehaviorSubject(false);
+	// A new observable is created, listening to register events from the extension
+	// The 'continuousListener' registers a listener to the event and returns the cleanup function (removing the listener) the same value is passed
+	// to the observable initialisation, propagating the cleanup behaviour to when the observable goes out of scope (get's garbage collected, to be more precise)
+	const listener = new Observable<boolean>((observer) =>
+		continuousListener(message, ({ isAvailable }: { isAvailable: boolean }) => {
+			observer.next(isAvailable);
+		})
+	);
+	// The first value is the imperative check, with the listener continuing the stream
+	return concat(from(ping()), listener).pipe(
+		share({ connector: () => shareSuject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })
+	);
 };

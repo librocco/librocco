@@ -51,28 +51,6 @@ const sequenceNamingDesignDocument: DesignDocument = {
 	}
 };
 
-const stockDesignDocument: DesignDocument = {
-	_id: "_design/v1_stock",
-	views: {
-		by_isbn: {
-			map: function (doc: WarehouseData | NoteData) {
-				const { entries, committed } = doc as NoteData;
-
-				// Account for book transactions only if the note is committed
-				if (doc.docType === "note" && entries && committed) {
-					entries.forEach((entry) => {
-						// Check if we should be incrementing or decrementing the overall quantity
-						const delta = (doc as NoteData).noteType === "inbound" ? entry.quantity : -entry.quantity;
-
-						emit([entry.isbn, entry.warehouseId], delta);
-					});
-				}
-			}.toString(),
-			reduce: "_sum"
-		}
-	}
-};
-
 export const listDeisgnDocument: DesignDocument = {
 	_id: "_design/v1_list",
 	views: {
@@ -159,5 +137,5 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export const inventory = [stockDesignDocument, listDeisgnDocument, sequenceNamingDesignDocument];
+export const inventory = [listDeisgnDocument, sequenceNamingDesignDocument];
 export const orders = [listDeisgnDocument, sequenceNamingDesignDocument];

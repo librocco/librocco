@@ -1,18 +1,18 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
 	import { NoteState, testId } from "@librocco/shared";
-
 	import type { BookEntry } from "@librocco/db";
-	import { bookDataPlugin } from "$lib/db/plugins";
 
+	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
+	import type { DisplayRow } from "$lib/types/inventory";
 
 	import {
 		Breadcrumbs,
@@ -23,14 +23,15 @@
 		createBreadcrumbs,
 		TextEditable,
 		Dialog,
-		InboundTable
+		InboundTable,
+		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
 
-	import { toastSuccess, noteToastMessages } from "$lib/toasts";
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -40,6 +41,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { scanAutofocus } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -63,9 +65,8 @@
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
-
-	$: toasts = noteToastMessages(note?.displayName);
+	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
+	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	// #region note-actions
 	//
@@ -73,21 +74,17 @@
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
 			goto(appPath("inbound"));
-			const message = $state === NoteState.Committed ? toasts.outNoteCommited : toasts.noteDeleted;
-			toastSuccess(message);
 		}
 	}
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		await note.commit({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").inNoteCommited);
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
 		closeDialog();
-		toastSuccess(noteToastMessages("Note").noteDeleted);
 	};
 	// #region note-actions
 
@@ -112,7 +109,11 @@
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
-		toastSuccess(toasts.volumeAdded(isbn));
+
+		const book = await bookDataPlugin.fetchBookData([isbn]);
+		if (book.length) {
+			await db.books().upsert(book);
+		}
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
@@ -126,13 +127,11 @@
 			return;
 		}
 
-		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
-		toastSuccess(toasts.volumeUpdated(isbn));
+		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: string) => {
 		await note.removeTransactions({ isbn, warehouseId });
-		toastSuccess(toasts.volumeRemoved(1));
 	};
 	// #region transaction-actions
 
@@ -154,7 +153,6 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -162,6 +160,7 @@
 		}
 	};
 
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: breadcrumbs =
@@ -171,6 +170,7 @@
 
 	// #region temp
 	const handlePrint = () => {};
+	const toggleAutoPrintLabels = () => note.setAutoPrintLabels({}, !$autoPrintLabels);
 
 	// #endregion temp
 
@@ -202,6 +202,13 @@
 				}
 			}}
 		/>
+		<button
+			data-testid={testId("scan-autofocus-toggle")}
+			data-is-on={$scanAutofocus}
+			on:click={scanAutofocus.toggle}
+			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
+			><Power size={18} />Scan</button
+		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -218,7 +225,7 @@
 
 				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-sm badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -271,6 +278,16 @@
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={toggleAutoPrintLabels}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+							? '!bg-green-400'
+							: ''}"
+					>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Auto print book labels</span>
 					</div>
 					<div
 						{...item}
@@ -364,6 +381,18 @@
 										<FileEdit />
 									</span>
 								</button>
+
+								<button
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("print-book-label")}
+									on:click={() => db.printer().label().print(row)}
+								>
+									<span class="sr-only">Print book label {rowIx}</span>
+									<span class="aria-hidden">
+										<Printer />
+									</span>
+								</button>
+
 								<button
 									on:click={() => deleteRow(row.isbn, row.warehouseId)}
 									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
@@ -385,6 +414,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 
@@ -430,14 +463,17 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								return;
 							}
+
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>
