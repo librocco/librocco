@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
@@ -12,6 +12,7 @@
 
 	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
+	import type { DisplayRow } from "$lib/types/inventory";
 
 	import {
 		Breadcrumbs,
@@ -64,7 +65,7 @@
 	$: displayName = noteStores.displayName;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
+	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
 	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	// #region note-actions
@@ -126,7 +127,7 @@
 			return;
 		}
 
-		await note.updateTransaction(transaction, { quantity: nextQty, ...transaction });
+		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: string) => {

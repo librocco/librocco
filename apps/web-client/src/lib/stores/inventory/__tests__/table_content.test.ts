@@ -17,7 +17,7 @@ describe("tableContentStore", () => {
 
 		// Both db and entity are undefined (this will happen at build time, as db is instantiated only in browser)
 		let tableData = createDisplayEntriesStore({}, undefined, undefined, readable(0));
-		tableData.entries.subscribe((de) => (displayEntries = de));
+		tableData.entries.subscribe((de) => (displayEntries = de as VolumeQuantity[]));
 		expect(displayEntries).toEqual([]);
 
 		// Reset the 'displayEntries'
@@ -26,7 +26,7 @@ describe("tableContentStore", () => {
 		// Should also work if db is defined but entity is undefined (this might happen if the entity id is not specified)
 		const db = await newTestDB();
 		tableData = createDisplayEntriesStore({}, db, undefined, readable(0));
-		tableData.entries.subscribe((de) => (displayEntries = de));
+		tableData.entries.subscribe((de) => (displayEntries = de as VolumeQuantity[]));
 		expect(displayEntries).toEqual([]);
 
 		// Same check for pagination
@@ -84,7 +84,15 @@ describe("tableContentStore", () => {
 		// Should receive the initial state (only book1 transaction in the note)
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
+				{
+					...book1,
+					__kind: "book",
+					quantity: 12,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			])
 		);
 
@@ -92,11 +100,35 @@ describe("tableContentStore", () => {
 		await note.addVolumes({ isbn: book2.isbn, quantity: 10, warehouseId: "jazz" }, { isbn: book3.isbn, quantity: 5, warehouseId: "jazz" });
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
 				// Book data for book2 is already available in the db
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
 				// Book data for book3 is not available in the db - only the transaction data is shown
-				{ isbn: book3.isbn, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					isbn: book3.isbn,
+					quantity: 5,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			]);
 		});
 
@@ -104,10 +136,34 @@ describe("tableContentStore", () => {
 		await db.books().upsert([book3]);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
 				// Full book3 data should be displayed
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					...book3,
+					quantity: 5,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			]);
 		});
 
@@ -117,15 +173,33 @@ describe("tableContentStore", () => {
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
 				{
+					__kind: "book",
 					...book1,
 					title: "The Age of Wonder (updated)",
 					quantity: 12,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
-					availableWarehouses: new Map()
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
 				},
-				{ ...book2, quantity: 10, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() },
-				{ ...book3, quantity: 5, warehouseId: `v1/jazz`, warehouseName: "not-found", availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					...book3,
+					quantity: 5,
+					warehouseId: `v1/jazz`,
+					warehouseName: "not-found",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			]);
 		});
 	});
@@ -175,8 +249,24 @@ describe("tableContentStore", () => {
 		// Displays the state (including prices) as is
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
-				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", availableWarehouses: new Map() },
-				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/wh-1`,
+					warehouseName: "Warehouse 1",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/wh-2`,
+					warehouseName: "Warehouse 2",
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			])
 		);
 
@@ -185,9 +275,27 @@ describe("tableContentStore", () => {
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
 				// The price of book1 should be discounted (as wh-1 has a discount of 10%)
-				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", price: 54, availableWarehouses: new Map() },
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/wh-1`,
+					warehouseName: "Warehouse 1",
+					price: 54,
+					availableWarehouses: new Map(),
+					warehouseDiscount: 10
+				},
 				// Warehouse 2 doesn't have a discount applied to it
-				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", price: 12, availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/wh-2`,
+					warehouseName: "Warehouse 2",
+					price: 12,
+					availableWarehouses: new Map(),
+					warehouseDiscount: 0
+				}
 			])
 		);
 
@@ -196,9 +304,27 @@ describe("tableContentStore", () => {
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
 				// Applied discount: 10%
-				{ ...book1, quantity: 12, warehouseId: `v1/wh-1`, warehouseName: "Warehouse 1", price: 54, availableWarehouses: new Map() },
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/wh-1`,
+					warehouseName: "Warehouse 1",
+					price: 54,
+					availableWarehouses: new Map(),
+					warehouseDiscount: 10
+				},
 				// Applied discount: 20%
-				{ ...book2, quantity: 10, warehouseId: `v1/wh-2`, warehouseName: "Warehouse 2", price: 9.6, availableWarehouses: new Map() }
+				{
+					__kind: "book",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/wh-2`,
+					warehouseName: "Warehouse 2",
+					price: 9.6,
+					availableWarehouses: new Map(),
+					warehouseDiscount: 20
+				}
 			])
 		);
 	});

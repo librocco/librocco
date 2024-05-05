@@ -2,13 +2,14 @@ import { derived, get, readable, type Readable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest, of } from "rxjs";
 
 import { debug, wrapIter } from "@librocco/shared";
-import type {
-	BookEntry,
-	InventoryDatabaseInterface,
-	EntriesStreamResult,
-	NoteInterface,
-	VolumeStockClient,
-	WarehouseInterface
+import {
+	type BookEntry,
+	type InventoryDatabaseInterface,
+	type EntriesStreamResult,
+	type NoteInterface,
+	type VolumeStockClient,
+	type WarehouseInterface,
+	isCustomItemRow
 } from "@librocco/db";
 
 import type { PaginationData, DisplayRow } from "$lib/types/inventory";
@@ -41,7 +42,7 @@ type Config = {
 	itemsPerPage: number;
 };
 
-type Foo = Config & EntriesStreamResult;
+type SearchSetup = Config & EntriesStreamResult<"book">;
 
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
@@ -88,20 +89,13 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (
 			)
 			.pipe(
 				switchMap(({ rows: r, ...rest }) => {
-					// Map rows to just isbns
-					const isbns = r.map((entry) => entry.isbn);
+					// We're returning undefined in lieu of isbn for custom item rows (this safe as undefined isbns will have undefined book data)
+					const isbns = r.map((entry) => (isCustomItemRow(entry) ? undefined : entry.isbn));
 
 					debug.log(ctx, "display_entries_store:table_data:retrieving_books")({ isbns });
 
 					// Return array of merged values of books and volume stock client
-					const rows = db
-						.books()
-						.stream(ctx, isbns)
-						.pipe(
-							mapMergeBookData(ctx, r),
-							// eslint-disable-next-line @typescript-eslint/no-unused-vars
-							map((rows) => rows.map(({ warehouseDiscount, ...rest }) => rest))
-						);
+					const rows = db.books().stream(ctx, isbns).pipe(mapMergeBookData(ctx, r));
 
 					const pagination = of(rest).pipe(
 						map(({ total: totalItems, totalPages: numPages }): PaginationData => {
@@ -135,7 +129,7 @@ const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterabl
 		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
-const applyDiscount = <T extends Pick<VolumeStockClient, "warehouseDiscount"> & Pick<BookEntry, "price">>({
+const applyDiscount = <T extends Pick<VolumeStockClient<"book">, "warehouseDiscount"> & Pick<BookEntry, "price">>({
 	price,
 	warehouseDiscount,
 	...rest
@@ -146,11 +140,11 @@ const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient
 		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
 		map(mergeBookData(stock)),
 		tap(debug.log(ctx, "display_entries_store:table_data:merged_books")),
-		map((transactions) => transactions.map(applyDiscount)),
+		map((transactions) => transactions.map((txn) => (isCustomItemRow(txn) ? txn : applyDiscount(txn)))),
 		tap(debug.log(ctx, "display_entries_store:table_data:after_applied_discount"))
 	);
 
-const paginate = ({ rows, currentPage: cp, itemsPerPage, searchFilter }: Foo): Foo => {
+const paginate = ({ rows, currentPage: cp, itemsPerPage, searchFilter }: SearchSetup): SearchSetup => {
 	let currentPage = cp;
 	let startIx = currentPage * itemsPerPage;
 	let endIx = startIx + itemsPerPage;
@@ -167,7 +161,7 @@ const paginate = ({ rows, currentPage: cp, itemsPerPage, searchFilter }: Foo): F
 	return { rows: rows.slice(startIx, endIx), currentPage, itemsPerPage, total, totalPages, searchFilter };
 };
 
-const search = (o: Observable<Foo>): Observable<Foo> =>
+const search = (o: Observable<SearchSetup>): Observable<SearchSetup> =>
 	o.pipe(
 		switchMap(({ searchFilter: { searchString, isbns } }) =>
 			searchString

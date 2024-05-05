@@ -34,7 +34,7 @@ export function createTable<T = object>(options: Options<T>) {
 	// const _data = writable(setRowKeys(rows));
 	const data = derived(optionsStore, ($options) => {
 		const { data = [] } = $options;
-		return data.map((row) => ({ ...row, key: uuidv4() })).map((row, ix) => ({ ...row, rowIx: ix }));
+		return data.map((row, ix) => ({ ...row, key: uuidv4(), rowIx: ix }));
 	});
 
 	/**
