@@ -2,7 +2,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockInput, debug } from "@librocco/shared";
 
 import type { PrintJobStatus } from "@/enums";
 
@@ -251,6 +251,7 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
+	committedNotesList: (ctx: debug.DebugCtx) => Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
 }
 
 /**
