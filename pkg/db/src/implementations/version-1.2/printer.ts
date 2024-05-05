@@ -1,7 +1,8 @@
-import { BookEntry, DatabaseInterface, PrinterInterface } from "@/types";
+import { BookEntry, DatabaseInterface, PrinterInterface, ReceiptData, ReceiptItem } from "@/types";
 
 type PrinterConfig = {
 	labelPrinterUrl: string;
+	receiptPrinterUrl: string;
 };
 
 class Printer implements PrinterInterface {
@@ -17,20 +18,34 @@ class Printer implements PrinterInterface {
 	label() {
 		return newLabelPrinter(this);
 	}
+
+	receipt() {
+		return newReceiptPrinter(this);
+	}
 }
 
 // #region label-printer
 const newLabelPrinter = (printer: Printer) => {
 	const print = (bookData: BookEntry) => {
-		const baseUrl = printer.config.labelPrinterUrl;
-		return printBookLabel(bookData!, baseUrl);
+		const url = printer.config.labelPrinterUrl;
+		return postPrint(bookData!, url);
 	};
 
 	return { print };
 };
 
-const printBookLabel = (book: BookEntry, url: string) => {
-	const body = JSON.stringify(Object.fromEntries(Object.entries(book).map(([k, v]) => [camelToSnake(k), v])));
+const newReceiptPrinter = (printer: Printer) => {
+	const print = (items: ReceiptItem[]) => {
+		const timestamp = Date.now();
+		const url = printer.config.receiptPrinterUrl; // TODO
+		return postPrint({ items, timestamp }, url);
+	};
+
+	return { print };
+};
+
+const postPrint = (data: BookEntry | ReceiptData, url: string) => {
+	const body = JSON.stringify(Object.fromEntries(Object.entries(data).map(([k, v]) => [camelToSnake(k), v])));
 	const request = new Request(url, { method: "POST", body });
 	return fetch(request);
 };

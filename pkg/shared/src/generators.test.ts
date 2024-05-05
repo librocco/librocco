@@ -1,6 +1,6 @@
 import { describe, test, expect } from "vitest";
 
-import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, reduce, slice, wrapIter, zip } from "./generators";
+import { EmptyIterableError, filter, flatMap, iterableFromGenerator, map, partition, reduce, slice, wrapIter, zip } from "./generators";
 
 describe("iterableFromGenerator", () => {
 	test("should allow for multiple iterations over the same generator", () => {
@@ -37,6 +37,13 @@ describe("Smoke test of transformers", () => {
 		const iterable = [1, 2, 3, 4, 5, 6];
 		const filtered = filter(iterable, (value) => value % 2 === 0);
 		expect([...filtered]).toEqual([2, 4, 6]);
+	});
+
+	test("partition", () => {
+		const iterable = [1, 2, 3, 4, 5, 6];
+		const [even, odd] = partition(iterable, (value) => value % 2 === 0);
+		expect([...even]).toEqual([2, 4, 6]);
+		expect([...odd]).toEqual([1, 3, 5]);
 	});
 
 	test("reduce without seed", () => {
@@ -134,5 +141,16 @@ describe("Composition with 'wrapIter'", () => {
 			["4", "four", 4],
 			["6", "six", 6]
 		]);
+
+		const [par1, par2] = result
+			// Two "partitions" (transformable iterables):
+			// - Iterable { ["2", "two", 2], ["6", "six", 6] }
+			// - Iterable { ["4", "four", 4] }
+			.partition(([, , x]) => x % 4 != 0);
+		expect([...par1]).toEqual([
+			["2", "two", 2],
+			["6", "six", 6]
+		]);
+		expect([...par2]).toEqual([["4", "four", 4]]);
 	});
 });
