@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap, concat, from } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, type StockMap, VolumeStockInput } from "@librocco/shared";
 
 import {
 	BooksInterface,
@@ -27,7 +27,9 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface
+	ViewInterface,
+	committedNotesListRow,
+	NoteData
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -52,6 +54,7 @@ class Database implements InventoryDatabaseInterface {
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
+	#committedNotesListStream: Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
 	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<StockMap>;
@@ -106,6 +109,26 @@ class Database implements InventoryDatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
+		const committedNotesListCache = new BehaviorSubject<Map<string, (VolumeStockInput & { committedAt: string })[]>>(new Map());
+		this.#committedNotesListStream = this.view<committedNotesListRow>("v1_list/committed")
+			.stream({})
+			.pipe(
+				map(({ rows }) =>
+					wrapIter(rows)
+						.map(({ value }) => value as NoteData)
+
+						.flatMap(({ entries, committedAt, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, committedAt, noteType })))
+						.reduce((acc, curr) => {
+							const key = curr.committedAt?.slice(0, 10);
+							const existingArr = acc.get(key) || [];
+							acc.set(key, [...existingArr, curr]);
+
+							return acc;
+						}, new Map())
+				),
+				share({ connector: () => committedNotesListCache, resetOnRefCountZero: false })
+			);
+
 		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
@@ -118,6 +141,7 @@ class Database implements InventoryDatabaseInterface {
 
 		// Initialise the streams
 		firstValueFrom(this.#warehouseMapStream);
+		firstValueFrom(this.#committedNotesListStream);
 		firstValueFrom(this.#inNoteListStream);
 		firstValueFrom(this.#outNoteListStream);
 
@@ -141,6 +165,7 @@ class Database implements InventoryDatabaseInterface {
 		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
 			switchMap(() => from(this.getStockDocs())),
 			map(createSearchIndex),
+			tap((allDocs) => console.log({ allDocs })),
 			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
 			// Reset the stream when there are no more subscribers (for the same reasons as above)
 			share({ connector: () => searchStreamCache, resetOnRefCountZero: true })
@@ -268,7 +293,8 @@ class Database implements InventoryDatabaseInterface {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
+			committedNotesList: (ctx: debug.DebugCtx) => this.#committedNotesListStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
 		};
 	}
 }
