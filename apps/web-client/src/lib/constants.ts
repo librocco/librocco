@@ -9,7 +9,7 @@ import {
 
 export const DEV_COUCH_URL = `http://${PUBLIC_COUCHDB_USER}:${PUBLIC_COUCHDB_PASSWORD}@${PUBLIC_COUCHDB_HOST}:${PUBLIC_COUCHDB_PORT}/${PUBLIC_DB_NAME}`;
 
-export const LOCAL_STORAGE_COUCH_CONFIG = "librocco:couchdb-config";
+export const LOCAL_STORAGE_SETTINGS = "librocco:settings";
 
 export const LOCAL_POUCH_DB_NAME = "librocco-client";
 

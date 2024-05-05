@@ -4,21 +4,29 @@
 	"main": "./dist/plugin/index.js",
 	"exports": {
 		".": {
-			"import": "./dist/plugin/index.es.js",
-			"require": "./dist/plugin/index.js",
-			"default": "./dist/plugin/index.es.js"
+			"import": {
+				"default": "./dist/plugin/index.es.js",
+				"types": "./dist/plugin/index.d.ts"
+			},
+			"require": {
+				"default": "./dist/plugin/index.js",
+				"types": "./dist/plugin/index.d.ts"
+			}
 		}
 	},
 	"scripts": {
-		"build": "vite build",
+		"build": "vite build && tsc --project tsconfig.build.json",
 		"typecheck": "tsc --noEmit",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"test": "vitest",
+		"test:ci": "vitest",
 		"format": "prettier --write --plugin-search-dir=. ."
 	},
 	"devDependencies": {
 		"@librocco/db": "workspace:*",
+		"@librocco/shared": "workspace:*",
+		"@types/chrome": "^0.0.241",
 		"@types/node": "16",
 		"@types/testing-library__jest-dom": "~5.14.5",
 		"@typescript-eslint/eslint-plugin": "~5.27.0",
@@ -26,6 +34,7 @@
 		"eslint": "~8.16.0",
 		"eslint-config-prettier": "^8.3.0",
 		"prettier": "~2.7.1",
+		"rxjs": "^7.8.1",
 		"tslib": "^2.3.1",
 		"typescript": "^4.8.4",
 		"vite": "~4.0.0",

@@ -21,12 +21,12 @@
 	},
 	"dependencies": {
 		"@librocco/db": "workspace:*",
-		"librocco-extension": "git+https://github.com/librocco/bookdata-extension.git",
 		"lucide-svelte": "^0.315.0",
 		"pouchdb": "~8.0.1",
 		"rxjs": "~7.8.0",
 		"svelte-local-storage-store": "~0.6.4",
-		"uuid": "~9.0.0"
+		"uuid": "~9.0.0",
+		"just-compare": "~2.3.0"
 	},
 	"devDependencies": {
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",

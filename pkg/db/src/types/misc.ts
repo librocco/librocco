@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Search } from "js-search";
-
-import type { DocType } from "@/enums";
+import { Observable } from "rxjs";
 
 import { debug } from "@librocco/shared";
-import { Observable } from "rxjs";
+
+import type { DocType } from "@/enums";
 
 // #region utils
 /**
@@ -46,6 +46,15 @@ export type SearchIndex = Search;
 // #endregion misc
 
 // #region books
+//  'isbn': '9788808451880',
+//  'title': 'Matematica.azzurro con TUTOR 5',
+//  'price': '30.7',
+//  'year': '2021'}
+//  'author': '', // ------------ 'authors'
+//  'publisher': 'Zanichelli',
+//  'edited_by': '', // ------------ 'editedBy'
+//  'out_of_print': 'false', // ------------ 'outOfPrint'
+
 export interface BookEntry {
 	isbn: string;
 	title: string;
@@ -159,7 +168,8 @@ export type LibroccoPlugin<T extends {}> = {
 } & T;
 
 export interface BookFetcherPlugin {
-	fetchBookData(isbns: string[]): Promise<BookEntry[]>;
+	fetchBookData(isbns: string[]): Promise<(BookEntry | undefined)[]>;
+	isAvailableStream: Observable<boolean>;
 }
 
 export interface PluginInterfaceLookup {

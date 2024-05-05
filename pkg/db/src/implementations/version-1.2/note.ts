@@ -4,11 +4,20 @@ import { NoteState, debug, VolumeStock, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { NoteType, VersionedString, PickPartial, EntriesStreamResult, VolumeStockClient, OutOfStockTransaction } from "@/types";
+import {
+	NoteType,
+	VersionedString,
+	PickPartial,
+	EntriesStreamResult,
+	VolumeStockClient,
+	OutOfStockTransaction,
+	ReceiptData,
+	UpdateTransactionParams
+} from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
-import { isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
+import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import {
 	EmptyNoteError,
@@ -44,6 +53,8 @@ class Note implements NoteInterface {
 
 	noteType: NoteType;
 	reconciliationNote?: boolean;
+	defaultWarehouseId?: string | undefined;
+	autoPrintLabels?: boolean | undefined; // Print book labels on scan
 
 	entries: VolumeStock[] = [];
 	committed = false;
@@ -135,10 +146,12 @@ class Note implements NoteInterface {
 		this.updateField("noteType", data.noteType);
 		this.updateField("committed", data.committed);
 		this.updateField("entries", data.entries);
+		this.updateField("defaultWarehouseId", data.defaultWarehouseId);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
 		this.updateField("committedAt", data.committedAt);
 		this.updateField("reconciliationNote", data.reconciliationNote);
+		this.updateField("autoPrintLabels", data.autoPrintLabels);
 
 		this.#exists = true;
 
@@ -250,6 +263,27 @@ class Note implements NoteInterface {
 	}
 
 	/**
+	 * Update default warehouse.
+	 */
+	setDefaultWarehouse(ctx: debug.DebugCtx, warehouseId: string): Promise<NoteInterface> {
+		const currentDefaultWarehouseId = this.defaultWarehouseId;
+		debug.log(ctx, "note:set_default_warehouse")({ warehouseId, currentDefaultWarehouseId });
+
+		if (warehouseId === currentDefaultWarehouseId || !warehouseId || this.noteType !== "outbound") {
+			debug.log(ctx, "note:set_defaultwarehouse:noop")({ warehouseId, currentDefaultWarehouseId });
+			return Promise.resolve(this);
+		}
+
+		debug.log(ctx, "note:set_defaultwarehouse:updating")({ warehouseId });
+		return this.update(ctx, { defaultWarehouseId: warehouseId });
+	}
+
+	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface> {
+		debug.log(ctx, "set_auto_print_labels:updating")({ value });
+		return this.update(ctx, { autoPrintLabels: value });
+	}
+
+	/**
 	 * Mark the note as reconciliation note (see types for more info)
 	 */
 	setReconciliationNote(ctx: debug.DebugCtx, value: boolean) {
@@ -262,13 +296,30 @@ class Note implements NoteInterface {
 	 * book quantities. If a volume with a given isbn is found, the quantity is aggregated, otherwise a new
 	 * entry is pushed to the list of entries.
 	 */
-	addVolumes(...params: Parameters<NoteInterface["addVolumes"]>): Promise<NoteInterface> {
+	addVolumes(
+		...params: Array<Omit<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
+	): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
-			params.forEach((update) => {
-				if (!update.isbn) throw new EmptyTransactionError();
-				const warehouseId = update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
+			// TODO: remove async from '.forEach'
+			params.forEach(async (update) => {
+				// Custom items are merely added, not aggregated
+				if (update.__kind === "custom") {
+					const id = uniqueTimestamp();
+					this.entries.push({ id, ...update });
+					return;
+				}
 
-				const matchIndex = this.entries.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
+				if (!update.isbn) throw new EmptyTransactionError();
+
+				const warehouseId = update.warehouseId
+					? versionId(update.warehouseId)
+					: this.noteType === "inbound"
+					? this.#w._id
+					: this.defaultWarehouseId || "";
+
+				const matchIndex = this.entries
+					.filter(isBookRow)
+					.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
 
 				if (matchIndex === -1) {
 					this.entries.push({ isbn: update.isbn, warehouseId, quantity: update.quantity });
@@ -278,15 +329,44 @@ class Note implements NoteInterface {
 				this.entries[matchIndex] = {
 					isbn: update.isbn,
 					warehouseId,
-					quantity: this.entries[matchIndex].quantity + update.quantity
+					quantity: (this.entries[matchIndex] as VolumeStock<"book">).quantity + update.quantity
 				};
+
+				// Print the label for the book
+				if (this.autoPrintLabels) {
+					const [bookData] = await this.#db.books().get([update.isbn]);
+					this.#db.printer().label().print(bookData!);
+				}
 			});
 
 			return this.update({}, this);
 		}, this.#initialized);
 	}
 
-	updateTransaction(match: PickPartial<Omit<VolumeStock, "quantity">, "warehouseId">, update: VolumeStock): Promise<NoteInterface> {
+	updateTransaction(ctx: debug.DebugCtx, ...params: UpdateTransactionParams): Promise<NoteInterface> {
+		debug.log(ctx, "update_transaction:params")({ params });
+		// Update custom item
+		if (typeof params[0] === "string") {
+			debug.log(ctx, "update_transaction:custom_item:updating")({});
+
+			const [id, update] = params as UpdateTransactionParams<"custom">;
+			const ix = this.entries.findIndex((e) => isCustomItemRow(e) && e.id === id);
+
+			if (ix === -1) {
+				debug.log(ctx, "update_transaction:custom_item:no_item_found")({});
+				return this.update(ctx, {}); // Noop update
+			}
+
+			debug.log(ctx, "update_transaction:custom_item:found_item")({ ix, item: this.entries[ix] });
+			this.entries[ix] = { ...(this.entries[ix] as VolumeStock<"custom">), ...update };
+			return this.update(ctx, { entries: this.entries.sort(sortBooks) });
+		}
+
+		// Update book transaction row
+		debug.log(ctx, "update_transaction:book_row:updating")({});
+
+		const [match, update] = params as UpdateTransactionParams<"book">;
+
 		const matchTr = {
 			...match,
 			warehouseId: match.warehouseId ? versionId(match.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
@@ -298,61 +378,79 @@ class Note implements NoteInterface {
 			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
 		};
 
+		debug.log(ctx, "update_transaction:book_row:data")({ matchTr, updateTr });
+
 		// Remove the matched transaction from the list of entries (this is the transaction we're updating to a new one)
-		const entries = this.entries.filter((e) => !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
+		const entries = this.entries.filter((e) => isCustomItemRow(e) || !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
 
 		// If both existing entries and entries without the match transaction are the same:
 		// the match transaction wasn't found, exit early
 		if (entries.length === this.entries.length) {
-			return this.update({}, {}); // Noop update
+			debug.log(ctx, "update_transaction:book_row:no_item_found")({});
+			return this.update(ctx, {}); // Noop update
 		}
 
 		// Check if there already is a transaction with the same 'isbn' and 'warehouseId' as the updated transaction.
 		// If so, we're merging the two, if not we're simply adding a new transaction to the list.
-		const existingTxnIx = entries.findIndex((e) => e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
+		const existingTxnIx = entries.findIndex((e) => isBookRow(e) && e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
 
 		if (existingTxnIx == -1) {
+			debug.log(ctx, "update_transaction:book_row:unique_txn")({});
 			entries.push(updateTr);
 		} else {
-			entries[existingTxnIx] = {
-				...entries[existingTxnIx],
-				quantity: entries[existingTxnIx].quantity + updateTr.quantity
-			};
+			const old = entries[existingTxnIx];
+			const aggregated = {
+				...old,
+				quantity: (entries[existingTxnIx] as VolumeStock<"book">).quantity + updateTr.quantity
+			} as VolumeStock<"book">;
+			debug.log(ctx, "update_transaction:book_row:txn_exists:aggregating")({ old, aggregated });
+
+			entries[existingTxnIx] = aggregated;
 		}
 
 		// Post an update, the local entries will be updated by the update function.
-		return this.update({}, { entries: entries.sort(sortBooks) });
+		return this.update(ctx, { entries: entries.sort(sortBooks) });
 	}
 
-	removeTransactions(...transactions: Omit<VolumeStock, "quantity">[]): Promise<NoteInterface> {
-		const removeTransaction = (transaction: Omit<VolumeStock, "quantity">) => {
-			// If this is an inbound note, we infer the warehouse id from the note itself.
-			// If this is an outbound note, we read the transaction's warehouse id, or falling back to an empty string (warhehouse not assigned).
-			const wh = transaction.warehouseId ? versionId(transaction.warehouseId) : this.noteType === "inbound" ? this.#w._id : "";
+	removeTransactions(...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>): Promise<NoteInterface> {
+		const [_customItems, _books] = wrapIter(transactions).partition((e): e is string => typeof e === "string");
+		const [customItemRows, bookRows] = wrapIter(this.entries).partition(isCustomItemRow);
 
-			this.entries = this.entries.filter(({ isbn, warehouseId }) => isbn !== transaction.isbn || warehouseId !== wh);
-		};
+		// If this is an inbound note, we infer the warehouse id from the note itself.
+		// If this is an outbound note, we read the transaction's warehouse id, or falling back to an empty string (warhehouse not assigned).
+		const noteWarehouse = this.noteType === "inbound" ? this.#w._id : "";
+		const booksToRemove = wrapIter(_books)
+			.map((e) => ({
+				isbn: e.isbn,
+				warehouseId: e.warehouseId ? versionId(e.warehouseId) : noteWarehouse
+			}))
+			.array();
 
-		transactions.forEach(removeTransaction);
+		const customItemsToRemove = wrapIter(_customItems).array();
 
-		return this.update({}, this);
+		const filteredBookRows = bookRows.filter((e) => !booksToRemove.some((b) => b.isbn === e.isbn && b.warehouseId === e.warehouseId));
+		const filteredCustomItemRows = customItemRows.filter((e) => !customItemsToRemove.includes(e.id));
+
+		const entries = [...filteredBookRows, ...filteredCustomItemRows];
+
+		return this.update({}, { entries });
 	}
 
 	/**
 	 * Checks that all transactions in an inbound note are assigned to the parent warehouse.
 	 * @returns a list of all invlid transactions in that regard.
 	 */
-	private getInvalidInboundTransactions(): VolumeStock[] {
+	private getInvalidInboundTransactions(): VolumeStock<"book">[] {
 		// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
-		return this.entries.filter(({ warehouseId }) => warehouseId !== this.#w._id);
+		return this.entries.filter(isBookRow).filter(({ warehouseId }) => warehouseId !== this.#w._id);
 	}
 
 	/**
 	 * Checks that all transactions have a warehouse assigned to them.
 	 * @returns a list of all invalid transactions in that regard.
 	 */
-	private getNoWarehouseTransactions(): VolumeStock[] {
-		return this.entries.filter(({ warehouseId }) => !warehouseId);
+	private getNoWarehouseTransactions(): VolumeStock<"book">[] {
+		return this.entries.filter(isBookRow).filter(({ warehouseId }) => !warehouseId);
 	}
 
 	private async getOutOfStockTransactions(): Promise<OutOfStockTransaction[]> {
@@ -360,6 +458,7 @@ class Note implements NoteInterface {
 		const warehouseMap = await firstValueFrom(this.#db.stream().warehouseMap({}));
 		return (
 			this.entries
+				.filter(isBookRow)
 				.map(({ isbn, quantity, warehouseId }) => ({
 					isbn,
 					quantity,
@@ -428,6 +527,8 @@ class Note implements NoteInterface {
 			const stock = await this.#db.getStock();
 
 			const toUpdate = wrapIter(this.entries)
+				// Custom items are irrelevant for this action
+				.filter(isBookRow)
 				// Filter out rows with no 'warehouseId' assigned - those aren't ready
 				// for reconciliation and should be handled somewhere else
 				.filter(({ warehouseId }) => Boolean(warehouseId))
@@ -466,8 +567,22 @@ class Note implements NoteInterface {
 		return addWarehouseData(entries, warehouses);
 	}
 
-	printReceipt(): Promise<string> {
-		return this.#db.receipts().print(this);
+	async intoReceipt(): Promise<ReceiptData> {
+		const timestamp = Number(new Date());
+		const entries = await this.getEntries().then((e) => [...e]);
+		const [bookEntries, customItemEntries] = wrapIter(entries).partition(isBookRow);
+		const bookData = await this.#db.books().get(bookEntries.array().map(({ isbn }) => isbn));
+		const bookEntriesFull = wrapIter(bookEntries)
+			.zip(bookData)
+			.map(([{ isbn, quantity, warehouseDiscount: discount }, { title = "", price = 0 } = {}]) => ({
+				isbn,
+				title,
+				quantity,
+				price,
+				discount
+			}));
+		const items = [...bookEntriesFull, ...customItemEntries.map((e) => ({ ...e, quantity: 1, discount: 0 }))];
+		return { timestamp, items };
 	}
 
 	/**
@@ -484,6 +599,15 @@ class Note implements NoteInterface {
 					tap(debug.log(ctx, "note_streams: display_name: res"))
 				),
 
+			defaultWarehouseId: (ctx: debug.DebugCtx) =>
+				this.#stream.pipe(
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: input")),
+					map(({ defaultWarehouseId }) => defaultWarehouseId || ""),
+					tap(debug.log(ctx, "note_streams: defaultWarehouseId: res"))
+				),
+
+			autoPrintLabels: () => this.#stream.pipe(map(({ autoPrintLabels }) => Boolean(autoPrintLabels))),
+
 			// Combine latest is like an rxjs equivalent of svelte derived stores with multiple sources.
 			entries: (ctx: debug.DebugCtx, page = 0, itemsPerPage = 10): Observable<EntriesStreamResult> => {
 				const startIx = page * itemsPerPage;
@@ -494,7 +618,7 @@ class Note implements NoteInterface {
 						map(
 							({ entries = [] }): TableData => ({
 								rows: entries
-									.map((e) => ({ ...e, warehouseName: "" }))
+									.map((e) => (isCustomItemRow(e) ? e : { ...e, warehouseName: "" }))
 									.sort(sortBooks)
 									.slice(startIx, endIx),
 								stats: { total: entries.length, totalPages: Math.ceil(entries.length / itemsPerPage) }
@@ -505,7 +629,11 @@ class Note implements NoteInterface {
 					this.#db.stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
-					map(combineTransactionsWarehouses({ includeAvailableWarehouses: this.noteType === "outbound" })),
+					map(
+						combineTransactionsWarehouses({
+							includeAvailableWarehouses: this.noteType === "outbound"
+						})
+					),
 					tap(debug.log(ctx, "note:entries:stream:output"))
 				);
 			},

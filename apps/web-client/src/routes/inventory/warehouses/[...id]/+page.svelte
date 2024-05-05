@@ -3,23 +3,30 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Search, FileEdit, X, Loader2 as Loader } from "lucide-svelte";
+	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { Page, PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable } from "$lib/components";
+	import {
+		Page,
+		PlaceholderBox,
+		Breadcrumbs,
+		createBreadcrumbs,
+		StockTable,
+		ExtensionAvailabilityToast,
+		PopoverWrapper
+	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { goto } from "$app/navigation";
 
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
-
-	import { noteToastMessages, toastSuccess, warehouseToastMessages } from "$lib/toasts";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 
@@ -51,8 +58,6 @@
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
 
-	$: toasts = warehouseToastMessages(warehouse?.displayName);
-
 	// #region warehouse-actions
 	/**
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
@@ -62,7 +67,6 @@
 		loading = true;
 		const note = await warehouse.note().create();
 		await goto(appPath("inbound", note._id));
-		toastSuccess(noteToastMessages("Note").inNoteCreated);
 	};
 	// #endregion warehouse-actions
 
@@ -84,13 +88,14 @@
 		try {
 			await db.books().upsert([data]);
 
-			toastSuccess(toasts.bookDataUpdated(data.isbn));
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
 	};
+
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	// #region infinite-scroll
@@ -145,19 +150,52 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<div slot="row-actions" let:row let:rowIx>
-						<button
-							data-testid={testId("edit-row")}
-							use:melt={$trigger}
-							on:m-click={() => {
-								bookFormData = row;
+						<PopoverWrapper
+							options={{
+								forceVisible: true,
+								positioning: {
+									placement: "left"
+								}
 							}}
-							class="rounded p-3 text-gray-500 hover:text-gray-900"
+							let:trigger
 						>
-							<span class="sr-only">Edit row {rowIx}</span>
-							<span class="aria-hidden">
-								<FileEdit />
-							</span>
-						</button>
+							<button
+								data-testid={testId("popover-control")}
+								{...trigger}
+								use:trigger.action
+								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+							>
+								<span class="sr-only">Edit row {rowIx}</span>
+								<span class="aria-hidden">
+									<MoreVertical />
+								</span>
+							</button>
+
+							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+								<button
+									use:melt={$trigger}
+									data-testid={testId("edit-row")}
+									on:m-click={() => (bookFormData = row)}
+									class="rounded p-3 text-gray-500 hover:text-gray-900"
+								>
+									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="aria-hidden">
+										<FileEdit />
+									</span>
+								</button>
+
+								<button
+									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+									data-testid={testId("print-book-label")}
+									on:click={() => db.printer().label().print(row)}
+								>
+									<span class="sr-only">Print book label {rowIx}</span>
+									<span class="aria-hidden">
+										<Printer />
+									</span>
+								</button>
+							</div>
+						</PopoverWrapper>
 					</div>
 				</StockTable>
 
@@ -167,6 +205,10 @@
 				{/if}
 			</div>
 		{/if}
+	</svelte:fragment>
+
+	<svelte:fragment slot="footer">
+		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
 
@@ -205,14 +247,17 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData(isbn);
+							const result = await bookDataPlugin.fetchBookData([isbn]);
 
-							if (result) {
-								const [bookData] = result;
-								form.update((data) => ({ ...data, ...bookData }));
+							const [bookData] = result;
+							if (!bookData) {
+								return;
 							}
+
+							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

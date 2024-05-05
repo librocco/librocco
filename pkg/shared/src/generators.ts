@@ -30,6 +30,15 @@ export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolea
 	});
 }
 
+export function partition<T, S extends T>(
+	iterable: Iterable<T>,
+	predicate: (value: T) => value is S
+): [ReusableGenerator<S>, ReusableGenerator<Exclude<T, S>>];
+export function partition<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): [ReusableGenerator<T>, ReusableGenerator<T>];
+export function partition<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): [ReusableGenerator<T>, ReusableGenerator<T>] {
+	return [filter(iterable, predicate), filter(iterable, (value) => !predicate(value))] as const;
+}
+
 export function slice<T>(iterable: Iterable<T>, start: number, end: number): ReusableGenerator<T> {
 	return iterableFromGenerator(function* () {
 		const iterator = iterable[Symbol.iterator]();
@@ -127,6 +136,8 @@ interface TransformableIterable<T> extends Iterable<T> {
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
 	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
+	partition<S extends T>(predicate: (value: T) => value is S): [TransformableIterable<S>, TransformableIterable<Exclude<T, S>>];
+	partition(predicate: (value: T) => boolean): [TransformableIterable<T>, TransformableIterable<T>];
 	slice(start: number, end: number): TransformableIterable<T>;
 	zip<A extends readonly Iterable<unknown>[]>(
 		...iterables: A
@@ -163,6 +174,10 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 	const m = <R>(mapper: (value: T) => R) => wrapIter(map(iterable, mapper));
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
 	const f = (predicate: (value: T) => boolean) => wrapIter(filter(iterable, predicate));
+	const p = <S extends T>(predicate: (value: T) => value is S) => {
+		const [a, b] = partition(iterable, predicate);
+		return [wrapIter(a), wrapIter(b)] as [TransformableIterable<S>, TransformableIterable<Exclude<T, S>>];
+	};
 	const s = (start: number, end: number) => wrapIter(slice(iterable, start, end));
 	const z = <A extends readonly Iterable<unknown>[]>(...iterables: A) => wrapIter(zip(iterable, ...iterables));
 
@@ -173,6 +188,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		map: m,
 		flatMap: fm,
 		filter: f,
+		partition: p,
 		slice: s,
 		reduce: r,
 		zip: z,

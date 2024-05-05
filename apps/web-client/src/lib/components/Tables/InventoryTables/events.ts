@@ -1,6 +1,6 @@
 import type { EventDispatcher } from "svelte";
 
-import type { InventoryTableData, OutboundTableData } from "../types";
+import type { InventoryTableData } from "../types";
 
 import type { WarehouseChangeDetail } from "$lib/components";
 
@@ -13,7 +13,7 @@ export const createInboundTableEvents = (dispatch: EventDispatcher<InboundTableE
 export const createOutboundTableEvents = (dispatch: EventDispatcher<OutboundTableEvents>) => {
 	return {
 		editQuantity: createEditQuantityEvent(dispatch),
-		editWarehouse: (event: CustomEvent<WarehouseChangeDetail>, row: OutboundTableData) => {
+		editWarehouse: (event: CustomEvent<WarehouseChangeDetail>, row: InventoryTableData) => {
 			dispatch("edit-row-warehouse", { event, row });
 		}
 	};
@@ -33,6 +33,6 @@ type EditQuantityEvent = {
 type EditWarehouseEvent = {
 	"edit-row-warehouse": {
 		event: CustomEvent<WarehouseChangeDetail>;
-		row: OutboundTableData;
+		row: InventoryTableData;
 	};
 };
