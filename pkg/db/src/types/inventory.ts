@@ -2,7 +2,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockInput, VolumeStockKind, debug } from "@librocco/shared";
 
 import type { PrintJobStatus } from "@/enums";
 
@@ -12,8 +12,7 @@ import type {
 	BooksInterface,
 	CouchDocument,
 	DatabaseInterface,
-	PickPartial,
-	SearchIndex
+	PickPartial
 } from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -333,12 +332,6 @@ export type InventoryDatabaseInterface<
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
 	stream: () => DbStream;
-	receipts: () => RecepitsInterface;
-	/**
-	 * Get search index for full-text search
-	 */
-	streamSearchIndex: () => Observable<SearchIndex>;
-
 	/**
 	 * returns warehouse data map
 	 */
