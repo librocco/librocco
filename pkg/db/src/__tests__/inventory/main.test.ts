@@ -1875,8 +1875,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		let committedNotes: Map<string, VolumeStock[]> = new Map();
 
-		const date = new Date()
-		const slicedDate = date.toISOString().slice(0, 10)
+		const date = new Date();
+		const slicedDate = date.toISOString().slice(0, 10);
 
 		const warehouse1 = db.warehouse("warehouse-1");
 		const warehouse2 = db.warehouse("warehouse-2");
@@ -1888,19 +1888,48 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note1.commit({});
 		await note2.commit({});
 
-		const inboundNotesArray = [{ isbn: "11111111", quantity: 2, warehouseId: warehouse1._id, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound" }, { isbn: "22222222", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse1._id }
-			, { isbn: "11111111", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse2._id }
-			, { isbn: "22222222", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse2._id }]
-		let map = new Map()
+		const inboundNotesArray = [
+			{
+				isbn: "11111111",
+				quantity: 2,
+				warehouseId: warehouse1._id,
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				noteType: "inbound"
+			},
+			{
+				isbn: "22222222",
+				quantity: 2,
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				noteType: "inbound",
+				warehouseId: warehouse1._id
+			},
+			{
+				isbn: "11111111",
+				quantity: 2,
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				noteType: "inbound",
+				warehouseId: warehouse2._id
+			},
+			{
+				isbn: "22222222",
+				quantity: 2,
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				noteType: "inbound",
+				warehouseId: warehouse2._id
+			}
+		];
+		const map = new Map();
 		map.set(slicedDate, inboundNotesArray);
 
-		ael$.subscribe((ael) => committedNotes = ael);
+		ael$.subscribe((ael) => (committedNotes = ael));
 
 		await waitFor(() => {
-			expect(committedNotes).toEqual(map)
+			expect(committedNotes).toEqual(map);
 		});
-
-
 
 		// add some outbound notes
 		const note3 = await db.warehouse().note().create();
@@ -1910,17 +1939,30 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		);
 		note3.commit({});
 
-		const outboundNotesArray = [{ isbn: "11111111", quantity: 1, noteType: "outbound", committedAt: slicedDate, updatedAt: expect.any(String), warehouseId: warehouse1._id }, { isbn: "22222222", quantity: 1, noteType: "outbound", committedAt: slicedDate, updatedAt: expect.any(String), warehouseId: warehouse2._id }]
+		const outboundNotesArray = [
+			{
+				isbn: "11111111",
+				quantity: 1,
+				noteType: "outbound",
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				warehouseId: warehouse1._id
+			},
+			{
+				isbn: "22222222",
+				quantity: 1,
+				noteType: "outbound",
+				committedAt: slicedDate,
+				updatedAt: expect.any(String),
+				warehouseId: warehouse2._id
+			}
+		];
 
-		map.set(slicedDate, [...outboundNotesArray, ...inboundNotesArray])
+		map.set(slicedDate, [...outboundNotesArray, ...inboundNotesArray]);
 
 		await waitFor(() => {
-			expect(committedNotes).toEqual(map)
-
+			expect(committedNotes).toEqual(map);
 		});
-
-
-
 	});
 
 	test("sequenceWarehouseDesignDocument", async () => {
