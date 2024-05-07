@@ -9,7 +9,7 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { bookDataPlugin } from "$lib/db/plugins";
 
-	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, BookRow, TooltipWrapper } from "$lib/components";
+	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
@@ -139,7 +139,7 @@
 							let:trigger={tooltipTrigger}
 						>
 							<tr {...tooltipTrigger} use:tooltipTrigger.action use:table.tableRow={{ position: rowIx }}>
-								<BookRow {row} {rowIx}>
+								<StockBookRow {row} {rowIx}>
 									<div slot="row-actions">
 										<PopoverWrapper
 											options={{
@@ -187,7 +187,7 @@
 											</div>
 										</PopoverWrapper>
 									</div>
-								</BookRow>
+								</StockBookRow>
 							</tr>
 
 							<p slot="tooltip-content" class="px-4 py-1 text-white">{row.warehouseName}</p>

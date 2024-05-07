@@ -4,7 +4,7 @@
 	import { HeadCol } from "../Cells";
 
 	import type { InventoryTableData } from "../types";
-	import BookRow from "./BookRow.svelte";
+	import StockBookRow from "./StockBookRow.svelte";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 
@@ -41,7 +41,7 @@
 
 			<slot name="row" row={rowData} {rowIx}>
 				<tr use:table.tableRow={{ position: rowIx }}>
-					<BookRow row={rowData} {rowIx} />
+					<StockBookRow row={rowData} {rowIx} />
 				</tr>
 			</slot>
 		{/each}
