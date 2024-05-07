@@ -1870,60 +1870,58 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note - Updated" }]);
 		});
 	});
-	// test.skip("allEntriesStream", async () => {
-	// 	const ael$ = db.stream().allEntriesList({});
-	// 	// let allEntriesList: [string, VolumeStock][] = [];
+	test("committedNotesListStream", async () => {
+		const ael$ = db.stream().committedNotesList({});
 
-	// 	let allEntriesList: PossiblyEmpty<Map<string, VolumeStock[]>> = EMPTY;
+		let committedNotes: Map<string, VolumeStock[]> = new Map();
 
-	// 	const warehouse1 = db.warehouse("warehouse-1");
-	// 	const warehouse2 = db.warehouse("warehouse-2");
+		const date = new Date()
+		const slicedDate = date.toISOString().slice(0, 10)
 
-	// 	const note1 = await warehouse1.note().create();
-	// 	const note2 = await warehouse2.note().create();
-	// 	await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
-	// 	await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
-	// 	await note1.commit({});
-	// 	await note2.commit({});
+		const warehouse1 = db.warehouse("warehouse-1");
+		const warehouse2 = db.warehouse("warehouse-2");
 
-	// 	let map = new Map()
-	// 	map.set(`${note1._id}-11111111-inbound`, { isbn: "11111111", quantity: 2, warehouseId: warehouse1._id });
-	// 	map.set(`${note1._id}-22222222-inbound`, { isbn: "22222222", quantity: 2, warehouseId: warehouse1._id });
-	// 	map.set(`${note2._id}-11111111-inbound`, { isbn: "11111111", quantity: 2, warehouseId: warehouse2._id });
-	// 	map.set(`${note2._id}-22222222-inbound`, { isbn: "22222222", quantity: 2, warehouseId: warehouse2._id });
+		const note1 = await warehouse1.note().create();
+		const note2 = await warehouse2.note().create();
+		await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await note1.commit({});
+		await note2.commit({});
 
-	// 	// Subscribe after the initial update to test the initial state being streamed
-	// 	// ael$.subscribe((m) => m.forEach((n) => console.log({ n })));
+		const inboundNotesArray = [{ isbn: "11111111", quantity: 2, warehouseId: warehouse1._id, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound" }, { isbn: "22222222", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse1._id }
+			, { isbn: "11111111", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse2._id }
+			, { isbn: "22222222", quantity: 2, committedAt: slicedDate, updatedAt: expect.any(String), noteType: "inbound", warehouseId: warehouse2._id }]
+		let map = new Map()
+		map.set(slicedDate, inboundNotesArray);
 
-	// 	ael$.subscribe((ael) => ael.forEach((aa) => console.log({ aa })));
+		ael$.subscribe((ael) => committedNotes = ael);
 
-	// 	// await waitFor(() => {
-	// 	// 	allEntriesList.forEach(([key, entry], i) => {
-	// 	// 		expect(entry).toEqual(expect.objectContaining(map.get(key)));
-	// 	// 	})
-	// 	// });
+		await waitFor(() => {
+			expect(committedNotes).toEqual(map)
+		});
 
-	// 	console.log({ allEntriesList })
 
-	// 	// add some outbound notes
-	// 	const note3 = await db.warehouse().note().create();
-	// 	await note3.addVolumes(
-	// 		{ isbn: "11111111", quantity: 1, warehouseId: warehouse1._id },
-	// 		{ isbn: "22222222", quantity: 1, warehouseId: warehouse2._id }
-	// 	);
-	// 	note3.commit({});
 
-	// 	map.set(`${note3._id}-11111111-outbound`, { isbn: "11111111", quantity: 1, warehouseId: warehouse1._id })
-	// 	map.set(`${note3._id}-22222222-outbound`, { isbn: "22222222", quantity: 1, warehouseId: warehouse2._id });
+		// add some outbound notes
+		const note3 = await db.warehouse().note().create();
+		await note3.addVolumes(
+			{ isbn: "11111111", quantity: 1, warehouseId: warehouse1._id },
+			{ isbn: "22222222", quantity: 1, warehouseId: warehouse2._id }
+		);
+		note3.commit({});
 
-	// 	// ael$.forEach((s) => console.log({ s }))
-	// 	// await waitFor(() => {
-	// 	// 	allEntriesList.forEach(([key, entry], i) => {
-	// 	// 		expect(entry).toEqual(expect.objectContaining(map.get(key)));
-	// 	// 	})
-	// 	// });
+		const outboundNotesArray = [{ isbn: "11111111", quantity: 1, noteType: "outbound", committedAt: slicedDate, updatedAt: expect.any(String), warehouseId: warehouse1._id }, { isbn: "22222222", quantity: 1, noteType: "outbound", committedAt: slicedDate, updatedAt: expect.any(String), warehouseId: warehouse2._id }]
 
-	// });
+		map.set(slicedDate, [...outboundNotesArray, ...inboundNotesArray])
+
+		await waitFor(() => {
+			expect(committedNotes).toEqual(map)
+
+		});
+
+
+
+	});
 
 	test("sequenceWarehouseDesignDocument", async () => {
 		const wh1 = await db.warehouse("0").create(); // New Warehouse
