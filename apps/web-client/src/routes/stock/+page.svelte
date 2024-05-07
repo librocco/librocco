@@ -140,7 +140,7 @@
 						>
 							<tr {...tooltipTrigger} use:tooltipTrigger.action use:table.tableRow={{ position: rowIx }}>
 								<BookRow {row} {rowIx}>
-									<div slot="row-actions" let:row let:rowIx>
+									<div slot="row-actions">
 										<PopoverWrapper
 											options={{
 												forceVisible: true,
