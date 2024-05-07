@@ -101,14 +101,7 @@ export const listDeisgnDocument: DesignDocument = {
 		committed: {
 			map: function (doc: NoteData) {
 				const note = doc as NoteData;
-				if (
-					note.docType !== "note" ||
-					!note.committed ||
-					!note.entries.length ||
-					note.committedAt === "" ||
-					note.committedAt === undefined ||
-					!note.committedAt
-				) {
+				if (note.docType !== "note" || !note.committed || !note.entries.length || !note.updatedAt) {
 					return;
 				}
 
