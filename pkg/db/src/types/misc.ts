@@ -168,7 +168,7 @@ export type LibroccoPlugin<T extends {}> = {
 } & T;
 
 export interface BookFetcherPlugin {
-	fetchBookData(isbns: string[]): Promise<(BookEntry | undefined)[]>;
+	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
 	isAvailableStream: Observable<boolean>;
 }
 
