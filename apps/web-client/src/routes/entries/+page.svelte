@@ -4,7 +4,7 @@
 
 	import { melt, createDatePicker } from "@melt-ui/svelte";
 	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { map, tap, combineLatest, Observable, switchMap } from "rxjs";
+	import { map, combineLatest, Observable, switchMap } from "rxjs";
 	import { now, getLocalTimeZone } from "@internationalized/date";
 
 	import { entityListView, testId, debug, wrapIter, type VolumeStock } from "@librocco/shared";
@@ -87,7 +87,6 @@
 		(ctx: debug.DebugCtx, entries: Iterable<any>) =>
 		(books: Observable<Iterable<BookEntry | undefined>>): Observable<Result> =>
 			combineLatest([books, warehouseListStream]).pipe(
-				tap(([books, wh]) => console.log(ctx, "display_entries_store:table_data:retrieved_books", { books })),
 				map(([booksData, warehouseData]) => {
 					const books = wrapIter(entries)
 						.zip(booksData)
@@ -137,9 +136,7 @@
 							}
 						)
 					};
-				}),
-
-				tap((bookWithAllDetails) => console.log(ctx, "display_entries_store:table_data:merged_books", { bookWithAllDetails }))
+				})
 			);
 
 	export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, committedNotesListStream) => {
@@ -148,16 +145,11 @@
 				const entries = notes.get(date.toString().slice(0, 10)) || [];
 
 				const isbns = entries.map((match) => match.isbn);
-				console.log(entries.map((match) => match.isbn));
-				console.log({ db });
 
 				return db
 					?.books()
 					.stream(ctx, isbns)
-					.pipe(
-						tap((books) => console.log(books)),
-						(bookObs) => mapMergeBookWarehouseData(ctx, entries)(bookObs)
-					);
+					.pipe((bookObs) => mapMergeBookWarehouseData(ctx, entries)(bookObs));
 			})
 		);
 		return {
