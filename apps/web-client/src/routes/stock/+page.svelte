@@ -134,7 +134,8 @@
 								openDelay: 0,
 								closeDelay: 0,
 								closeOnPointerDown: true,
-								forceVisible: true
+								forceVisible: true,
+								disableHoverableContent: true
 							}}
 							let:trigger={tooltipTrigger}
 						>
