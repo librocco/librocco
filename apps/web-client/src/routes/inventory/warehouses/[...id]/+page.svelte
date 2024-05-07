@@ -18,7 +18,7 @@
 		StockTable,
 		ExtensionAvailabilityToast,
 		PopoverWrapper,
-		BookRow
+		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
@@ -151,7 +151,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
 				<StockTable {table}>
 					<tr slot="row" let:row let:rowIx>
-						<BookRow {row} {rowIx}>
+						<StockBookRow {row} {rowIx}>
 							<div slot="row-actions">
 								<PopoverWrapper
 									options={{
@@ -200,7 +200,7 @@
 									</div>
 								</PopoverWrapper>
 							</div>
-						</BookRow>
+						</StockBookRow>
 					</tr>
 				</StockTable>
 
