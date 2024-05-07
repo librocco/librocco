@@ -15,7 +15,6 @@ import {
 	NavMap,
 	PluginInterfaceLookup,
 	LibroccoPlugin,
-	SearchIndex,
 	WarehouseDataMap
 } from "@/types";
 import {
@@ -58,7 +57,6 @@ class Database implements InventoryDatabaseInterface {
 	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<StockMap>;
-	#searchIndexStream?: Observable<SearchIndex>;
 
 	#plugins: PluginsInterface;
 
@@ -117,9 +115,11 @@ class Database implements InventoryDatabaseInterface {
 					wrapIter(rows)
 						.map(({ value }) => value as NoteData)
 
-						.flatMap(({ entries, committedAt, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, committedAt, noteType })))
+						.flatMap(({ entries, committedAt, updatedAt, noteType }) =>
+							wrapIter(entries).map((entry) => ({ ...entry, committedAt, updatedAt, noteType }))
+						)
 						.reduce((acc, curr) => {
-							const key = curr.committedAt?.slice(0, 10);
+							const key = curr.committedAt ? curr.committedAt.slice(0, 10) : curr.updatedAt?.slice(0, 10);
 							const existingArr = acc.get(key) || [];
 							acc.set(key, [...existingArr, curr]);
 
