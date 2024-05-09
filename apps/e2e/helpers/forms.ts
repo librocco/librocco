@@ -31,6 +31,18 @@ function constructForm<F extends keyof BookFormValues>(
 			await container.waitFor({ state: "detached" });
 		};
 
+		const cancel = async (kind: "click" | "keyboard" = "keyboard") => {
+			if (kind === "keyboard") {
+				await container.press("Escape");
+			} else {
+				// Note: This might cause conflicts if there ever are multiple instances of "Save" text within the form.
+				// That's unlikely to be the case and it will be caught by tests (immediately), but for now it's the only convenient
+				// way to handle this as selector 'button[name="Save"]' doesn't yield the element.
+				await container.getByText("Cancel").click();
+			}
+			await container.waitFor({ state: "detached" });
+		};
+
 		const fillData = async (entries: Partial<{ [K in F]: BookFormValues[K] }>) => {
 			for (const [name, value] of Object.entries(entries)) {
 				// Skip isbn field as it's not editable
@@ -39,7 +51,7 @@ function constructForm<F extends keyof BookFormValues>(
 			}
 		};
 
-		return Object.assign(container, { dashboard, field, submit, fillData, fetchData: () => fetchData(container) });
+		return Object.assign(container, { dashboard, field, submit, cancel, fillData, fetchData: () => fetchData(container) });
 	};
 }
 

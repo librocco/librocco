@@ -174,6 +174,7 @@ export type FormInterface<F extends keyof BookFormValues> = {
 	fillData(entries: Partial<{ [K in F]: BookFormValues[K] }>): Promise<void>;
 	fetchData(): Promise<void>;
 	submit(kind?: "keyboard" | "click"): Promise<void>;
+	cancel(kind?: "keyboard" | "click"): Promise<void>;
 };
 
 export type BookFormInterface = FormInterface<keyof BookFormValues>;

@@ -205,8 +205,6 @@
 		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
 
-	const handleAddCustomItem = () => note.addVolumes({ __kind: "custom", title: "Custom item", price: 10 });
-
 	const deleteRow = async (rowIx: number) => {
 		const row = $table.rows[rowIx];
 		const match = isCustomItemRow(row) ? row.id : row;
@@ -235,11 +233,13 @@
 			type: "edit-row"
 		};
 	};
-	const openCustomItemForm = (row: OutboundTableData & { key: string; rowIx: number }) => {
+
+	// Row can be undefined - create mode
+	const openCustomItemForm = (row?: OutboundTableData) => {
 		customItemFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
-			title: dialogTitle.editCustomItem(),
+			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
 			description: "",
 			type: "custom-item-form"
 		};
@@ -282,7 +282,14 @@
 		const data = form?.data as VolumeStock<"custom">;
 
 		try {
-			await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+			// Check if create or update and dispatch appropriate action
+			//
+			// Presence of id indicates the existing custom item (update action)
+			if (data.id) {
+				await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+			} else {
+				await note.addVolumes({ __kind: "custom", ...data });
+			}
 
 			bookFormData = null;
 			open.set(false);
@@ -375,7 +382,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -410,7 +417,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -418,7 +425,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrint}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -426,7 +433,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -534,7 +541,12 @@
 				</OutboundTable>
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
-					<button on:click={handleAddCustomItem} class="button button-green">Custom item</button>
+					<button
+						use:melt={$dialogTrigger}
+						on:m-click={() => openCustomItemForm()}
+						on:m-keydown={() => openCustomItemForm()}
+						class="button button-green">Custom item</button
+					>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
