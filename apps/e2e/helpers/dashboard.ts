@@ -9,7 +9,7 @@ import { getContent } from "./content";
 import { getDialog } from "./dialog";
 
 import { idSelector, loadedSelector, selector, viewSelector } from "./utils";
-import { getBookForm } from "./bookForm";
+import { getBookForm, getCustomItemForm } from "./forms";
 
 export function getDashboard(_page: Page): DashboardInterface {
 	const page = () => _page;
@@ -38,6 +38,7 @@ export function getDashboard(_page: Page): DashboardInterface {
 	const dialog = () => getDialog(node);
 
 	const bookForm = () => getBookForm(node);
+	const customItemForm = () => getCustomItemForm(node);
 
-	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog, bookForm });
+	return Object.assign(container, { dashboard, page, nav, navigate, view, content, dialog, bookForm, customItemForm });
 }

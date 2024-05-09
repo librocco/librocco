@@ -32,6 +32,7 @@ export type TestId =
 	| "print-book-label"
 	| "delete-row"
 	| "book-form"
+	| "custom-item-form"
 	| "scan-autofocus-toggle";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
