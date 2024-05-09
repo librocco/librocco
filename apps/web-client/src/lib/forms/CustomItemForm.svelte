@@ -29,6 +29,8 @@
 	const { form: formStore, constraints, enhance } = form;
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
+
+	console.log("custom item form open");
 </script>
 
 <form
