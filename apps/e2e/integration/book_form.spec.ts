@@ -42,7 +42,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	await content.table("warehouse").row(0).edit();
 
 	const bookForm = dashboard.bookForm();
-	await bookForm.fillBookData(book1);
+	await bookForm.fillData(book1);
 	await bookForm.submit("click");
 
 	// The row should have been updated
@@ -80,7 +80,7 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 	await content.table("inbound-note").row(0).edit();
 
 	const bookForm = dashboard.bookForm();
-	await bookForm.fillBookData(book1);
+	await bookForm.fillData(book1);
 	await bookForm.submit("click");
 
 	// The row should have been updated
@@ -117,7 +117,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await content.table("outbound-note").row(0).edit();
 
 	const bookForm = dashboard.bookForm();
-	await bookForm.fillBookData(book1);
+	await bookForm.fillData(book1);
 	await bookForm.submit("click");
 
 	// The row should have been updated
@@ -154,7 +154,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	await content.table("outbound-note").row(0).edit();
 
 	const bookForm = dashboard.bookForm();
-	await bookForm.fillBookData(book1);
+	await bookForm.fillData(book1);
 	await bookForm.submit("keyboard");
 
 	// The row should have been updated
