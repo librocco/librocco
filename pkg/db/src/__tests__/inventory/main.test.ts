@@ -119,29 +119,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		expect(err).toBeDefined();
 	});
 
-	test("db streams", async () => {
-		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
-		let receiptPrinterUrl: PossiblyEmpty<string> = EMPTY;
-		db.stream()
-			.labelPrinterUrl({})
-			.subscribe((lpu) => (labelPrinterUrl = lpu));
-		db.stream()
-			.receiptPrinterUrl({})
-			.subscribe((rpu) => (receiptPrinterUrl = rpu));
-
-		// Initial value should be an empty string
-		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
-		await waitFor(() => expect(receiptPrinterUrl).toEqual(""));
-
-		// Set label printer url (url is not validated)
-		db.setLabelPrinterUrl("test-url");
-		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
-
-		// Set receipt printer url (url is not validated)
-		db.setReceiptPrinterUrl("test-url-receipts");
-		await waitFor(() => expect(receiptPrinterUrl).toEqual("test-url-receipts"));
-	});
-
 	test("warehouseDiscount", async () => {
 		const wh1 = await db.warehouse("wh1").create();
 
@@ -802,12 +779,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		const note = await db.warehouse("test-warehouse").note().create();
 
 		// Subscribe to note streams
-		const {
-			displayName: displayNameStream,
-			state: stateStream,
-			updatedAt: updatedAtStream,
-			autoPrintLabels: autoPrintLabelsStream
-		} = note.stream();
+		const { displayName: displayNameStream, state: stateStream, updatedAt: updatedAtStream } = note.stream();
 
 		let displayName: PossiblyEmpty<string> = EMPTY;
 		// Note: entries holds only the 10 entries displayed per page
@@ -820,14 +792,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		};
 		let state: PossiblyEmpty<NoteState> = EMPTY;
 		let updatedAt: PossiblyEmpty<Date | null> = EMPTY;
-		let autoPrintLabels: PossiblyEmpty<boolean> = EMPTY;
 
 		displayNameStream({}).subscribe((dn) => (displayName = dn));
 		stateStream({}).subscribe((s) => (state = s));
 		updatedAtStream({}).subscribe((ua) => {
 			updatedAt = ua;
 		});
-		autoPrintLabelsStream({}).subscribe((apl) => (autoPrintLabels = apl));
 		note
 			.stream()
 			.entries({})
@@ -846,17 +816,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(displayName).toEqual("test");
 		});
-
-		// Check updating of autoPrintLabels
-		//
-		// Initial value should be false
-		await waitFor(() => expect(autoPrintLabels).toEqual(false));
-
-		await note.setAutoPrintLabels({}, true);
-		await waitFor(() => expect(autoPrintLabels).toEqual(true));
-
-		await note.setAutoPrintLabels({}, false); // Reset
-		await waitFor(() => expect(autoPrintLabels).toEqual(false));
 
 		// Check for entries stream
 		expect(entries.rows).toEqual([]);
@@ -883,15 +842,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await note.addVolumes(...fiftyEntries.slice(0, 20));
 		await waitFor(() => {
 			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(0, 20)
-					.map((e) => ({
-						__kind: "book",
-						...e,
-						warehouseId: versionId("test-warehouse"),
-						warehouseName: "New Warehouse",
-						warehouseDiscount: 0
-					}))
+				fiftyEntries.slice(0, 20).map((e) => ({
+					__kind: "book",
+					...e,
+					warehouseId: versionId("test-warehouse"),
+					warehouseName: "New Warehouse",
+					warehouseDiscount: 0
+				}))
 			);
 			expect(entries.total).toEqual(20);
 		});
