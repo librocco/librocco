@@ -76,6 +76,7 @@ function getEntriesRow(parent: DashboardNode, view: TableView, index: number): E
 
 		// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
 		const rowFieldsLookup = {
+			stock: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
 			warehouse: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
 			"inbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
 			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName"]
