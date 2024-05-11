@@ -26,6 +26,7 @@ export type TestId =
 	| "dropdown-control"
 	| "dropdown-menu"
 	| "scan-input"
+	| "search-input"
 	| "popover-control"
 	| "popover-container"
 	| "edit-row"
