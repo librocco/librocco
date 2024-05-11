@@ -19,7 +19,7 @@
 		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { goto } from "$app/navigation";
 
@@ -34,6 +34,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { printBookLabel } from "$lib/printer";
 
 	export let data: PageData;
 
@@ -123,6 +124,12 @@
 	} = createDialog({
 		forceVisible: true
 	});
+
+	// #region printing
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
+	};
+	// #endregion printing
 </script>
 
 <Page view="warehouse" loaded={!loading}>
@@ -190,7 +197,7 @@
 											<button
 												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 												data-testid={testId("print-book-label")}
-												on:click={() => db.printer().label().print(row)}
+												on:click={handlePrintLabel(row)}
 											>
 												<span class="sr-only">Print book label {rowIx}</span>
 												<span class="aria-hidden">
