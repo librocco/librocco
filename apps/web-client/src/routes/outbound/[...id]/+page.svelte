@@ -44,7 +44,6 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
-	import { scanAutofocus } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -333,13 +332,6 @@
 				}
 			}}
 		/>
-		<button
-			data-testid="scan-autofocus-toggle"
-			data-is-on={$scanAutofocus}
-			on:click={(e) => (scanAutofocus.toggle(), e.currentTarget.blur())}
-			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
-			><Power size={18} />Scan</button
-		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">

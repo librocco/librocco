@@ -40,7 +40,6 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
-	import { scanAutofocus } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -210,13 +209,6 @@
 				}
 			}}
 		/>
-		<button
-			data-testid={testId("scan-autofocus-toggle")}
-			data-is-on={$scanAutofocus}
-			on:click={scanAutofocus.toggle}
-			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
-			><Power size={18} />Scan</button
-		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">

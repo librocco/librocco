@@ -149,8 +149,6 @@ export interface StatePickerInterface extends Locator {
 
 export type ScanFieldInterface = DashboardNode<{
 	add(isbn: string): Promise<void>;
-	toggleOn(): Promise<void>;
-	toggleOff(): Promise<void>;
 }>;
 
 export interface WarehouseDiscountInterface extends Locator {
