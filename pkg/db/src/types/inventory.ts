@@ -30,7 +30,6 @@ export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K e
 export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
 	rows: VolumeStockClient<K>[];
 	total: number;
-	totalPages: number;
 }
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
@@ -67,7 +66,7 @@ export interface NoteStream {
 	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
 	autoPrintLabels(ctx: debug.DebugCtx): Observable<boolean>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
+	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult>;
 }
 
 export type UpdateTransactionParams<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
@@ -176,7 +175,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	discount: (ctx: debug.DebugCtx) => Observable<number>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult<"book">>;
+	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult<"book">>;
 }
 
 /**

@@ -97,7 +97,7 @@
 <Page view="stock" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
+		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -122,78 +122,81 @@
 				</PlaceholderBox>
 			{/await}
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<svelte:fragment slot="row" let:row let:rowIx>
-						<TooltipWrapper
-							options={{
-								positioning: {
-									placement: "top-start"
-								},
-								openDelay: 0,
-								closeDelay: 0,
-								closeOnPointerDown: true,
-								forceVisible: true,
-								disableHoverableContent: true
-							}}
-							let:trigger={tooltipTrigger}
-						>
-							<tr {...tooltipTrigger} use:tooltipTrigger.action use:table.tableRow={{ position: rowIx }}>
-								<StockBookRow {row} {rowIx}>
-									<div slot="row-actions">
-										<PopoverWrapper
-											options={{
-												forceVisible: true,
-												positioning: {
-													placement: "left"
-												}
-											}}
-											let:trigger
-										>
-											<button
-												data-testid={testId("popover-control")}
-												{...trigger}
-												use:trigger.action
-												class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<StockTable {table}>
+						<svelte:fragment slot="row" let:row let:rowIx>
+							<TooltipWrapper
+								options={{
+									positioning: {
+										placement: "top-start"
+									},
+									openDelay: 0,
+									closeDelay: 0,
+									closeOnPointerDown: true,
+									forceVisible: true,
+									disableHoverableContent: true
+								}}
+								let:trigger={tooltipTrigger}
+							>
+								<tr {...tooltipTrigger} use:tooltipTrigger.action use:table.tableRow={{ position: rowIx }}>
+									<StockBookRow {row} {rowIx}>
+										<div slot="row-actions">
+											<PopoverWrapper
+												options={{
+													forceVisible: true,
+													positioning: {
+														placement: "left"
+													}
+												}}
+												let:trigger
 											>
-												<span class="sr-only">Edit row {rowIx}</span>
-												<span class="aria-hidden">
-													<MoreVertical />
-												</span>
-											</button>
-
-											<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 												<button
-													use:melt={$trigger}
-													on:m-click={() => (bookFormData = row)}
-													class="rounded p-3 text-gray-500 hover:text-gray-900"
+													data-testid={testId("popover-control")}
+													{...trigger}
+													use:trigger.action
+													class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 												>
 													<span class="sr-only">Edit row {rowIx}</span>
 													<span class="aria-hidden">
-														<FileEdit />
+														<MoreVertical />
 													</span>
 												</button>
 
-												<button
-													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-													data-testid={testId("print-book-label")}
-													on:click={() => db.printer().label().print(row)}
-												>
-													<span class="sr-only">Print book label {rowIx}</span>
-													<span class="aria-hidden">
-														<Printer />
-													</span>
-												</button>
-											</div>
-										</PopoverWrapper>
-									</div>
-								</StockBookRow>
-							</tr>
+												<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+													<button
+														use:melt={$trigger}
+														on:m-click={() => (bookFormData = row)}
+														class="rounded p-3 text-gray-500 hover:text-gray-900"
+													>
+														<span class="sr-only">Edit row {rowIx}</span>
+														<span class="aria-hidden">
+															<FileEdit />
+														</span>
+													</button>
 
-							<p slot="tooltip-content" class="px-4 py-1 text-white">{row.warehouseName}</p>
-						</TooltipWrapper>
-					</svelte:fragment>
-				</StockTable>
+													<button
+														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+														data-testid={testId("print-book-label")}
+														on:click={() => db.printer().label().print(row)}
+													>
+														<span class="sr-only">Print book label {rowIx}</span>
+														<span class="aria-hidden">
+															<Printer />
+														</span>
+													</button>
+												</div>
+											</PopoverWrapper>
+										</div>
+									</StockBookRow>
+								</tr>
+
+								<p slot="tooltip-content" class="px-4 py-1 text-white">{row.warehouseName}</p>
+							</TooltipWrapper>
+						</svelte:fragment>
+					</StockTable>
+				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
