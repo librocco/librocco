@@ -7,19 +7,20 @@
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
+	import { testId } from "@librocco/shared";
+
+	import { getDB } from "$lib/db";
+	import { printBookLabel } from "$lib/printer";
 
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
-
-	import { getDB } from "$lib/db";
-	import { testId } from "@librocco/shared";
 
 	const db = getDB();
 
@@ -85,6 +86,10 @@
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
+
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
+	};
 
 	const {
 		elements: { trigger, overlay, content, title, description, close, portalled },
@@ -179,7 +184,7 @@
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														data-testid={testId("print-book-label")}
-														on:click={() => db.printer().label().print(row)}
+														on:click={handlePrintLabel(row)}
 													>
 														<span class="sr-only">Print book label {rowIx}</span>
 														<span class="aria-hidden">
