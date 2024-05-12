@@ -161,7 +161,7 @@
 	$: allEntriesList = stores.result;
 </script>
 
-<Page view="entries" loaded={true}>
+<Page view="history" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
