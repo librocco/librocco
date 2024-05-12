@@ -41,13 +41,9 @@ import { newPluginsInterface, PluginsInterface } from "./plugins";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
-import { newPrinter } from "./printer";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
-
-	labelPrinterUrl = new BehaviorSubject("");
-	receiptPrinterUrl = new BehaviorSubject("");
 
 	// The nav list streams are open when the db is instantiated and kept alive throughout the
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
@@ -196,15 +192,6 @@ class Database implements InventoryDatabaseInterface {
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
-
-	setLabelPrinterUrl(url: string) {
-		this.labelPrinterUrl.next(url);
-		return this;
-	}
-	setReceiptPrinterUrl(url: string) {
-		this.receiptPrinterUrl.next(url);
-		return this;
-	}
 	// #endregion setup
 
 	// #region instances
@@ -223,10 +210,6 @@ class Database implements InventoryDatabaseInterface {
 
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
 		return this.#plugins.get(type);
-	}
-
-	printer() {
-		return newPrinter(this, { labelPrinterUrl: this.labelPrinterUrl.value, receiptPrinterUrl: this.receiptPrinterUrl.value });
 	}
 	// #endregion instances
 
@@ -271,10 +254,7 @@ class Database implements InventoryDatabaseInterface {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
-			committedNotesList: (ctx: debug.DebugCtx) =>
-				this.#committedNotesListStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream"))),
-			labelPrinterUrl: () => this.labelPrinterUrl,
-			receiptPrinterUrl: () => this.receiptPrinterUrl
+			committedNotesList: (ctx: debug.DebugCtx) => this.#committedNotesListStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
 		};
 	}
 }

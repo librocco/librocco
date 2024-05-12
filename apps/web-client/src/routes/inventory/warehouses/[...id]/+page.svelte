@@ -8,8 +8,6 @@
 	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
-	import { bookDataPlugin } from "$lib/db/plugins";
-
 	import {
 		Page,
 		PlaceholderBox,
@@ -17,10 +15,11 @@
 		createBreadcrumbs,
 		StockTable,
 		ExtensionAvailabilityToast,
-		PopoverWrapper
+		PopoverWrapper,
+		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { goto } from "$app/navigation";
 
@@ -35,6 +34,7 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
+	import { printBookLabel } from "$lib/printer";
 
 	export let data: PageData;
 
@@ -124,6 +124,12 @@
 	} = createDialog({
 		forceVisible: true
 	});
+
+	// #region printing
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
+	};
+	// #endregion printing
 </script>
 
 <Page view="warehouse" loaded={!loading}>
@@ -147,57 +153,64 @@
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
-				<StockTable {table}>
-					<div slot="row-actions" let:row let:rowIx>
-						<PopoverWrapper
-							options={{
-								forceVisible: true,
-								positioning: {
-									placement: "left"
-								}
-							}}
-							let:trigger
-						>
-							<button
-								data-testid={testId("popover-control")}
-								{...trigger}
-								use:trigger.action
-								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-							>
-								<span class="sr-only">Edit row {rowIx}</span>
-								<span class="aria-hidden">
-									<MoreVertical />
-								</span>
-							</button>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<StockTable {table}>
+						<tr slot="row" let:row let:rowIx>
+							<StockBookRow {row} {rowIx}>
+								<div slot="row-actions">
+									<PopoverWrapper
+										options={{
+											forceVisible: true,
+											positioning: {
+												placement: "left"
+											}
+										}}
+										let:trigger
+									>
+										<button
+											data-testid={testId("popover-control")}
+											{...trigger}
+											use:trigger.action
+											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+										>
+											<span class="sr-only">Edit row {rowIx}</span>
+											<span class="aria-hidden">
+												<MoreVertical />
+											</span>
+										</button>
 
-							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
-								<button
-									use:melt={$trigger}
-									data-testid={testId("edit-row")}
-									on:m-click={() => (bookFormData = row)}
-									class="rounded p-3 text-gray-500 hover:text-gray-900"
-								>
-									<span class="sr-only">Edit row {rowIx}</span>
-									<span class="aria-hidden">
-										<FileEdit />
-									</span>
-								</button>
+										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+											<button
+												use:melt={$trigger}
+												data-testid={testId("edit-row")}
+												on:m-click={() => (bookFormData = row)}
+												class="rounded p-3 text-gray-500 hover:text-gray-900"
+											>
+												<span class="sr-only">Edit row {rowIx}</span>
+												<span class="aria-hidden">
+													<FileEdit />
+												</span>
+											</button>
 
-								<button
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("print-book-label")}
-									on:click={() => db.printer().label().print(row)}
-								>
-									<span class="sr-only">Print book label {rowIx}</span>
-									<span class="aria-hidden">
-										<Printer />
-									</span>
-								</button>
-							</div>
-						</PopoverWrapper>
-					</div>
-				</StockTable>
+											<button
+												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+												data-testid={testId("print-book-label")}
+												on:click={handlePrintLabel(row)}
+											>
+												<span class="sr-only">Print book label {rowIx}</span>
+												<span class="aria-hidden">
+													<Printer />
+												</span>
+											</button>
+										</div>
+									</PopoverWrapper>
+								</div>
+							</StockBookRow>
+						</tr>
+					</StockTable>
+				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -247,7 +260,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData([isbn]);
+							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
 
 							const [bookData] = result;
 							if (!bookData) {

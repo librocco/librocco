@@ -4,7 +4,7 @@ import { readable } from "svelte/store";
 import { testUtils } from "@librocco/shared";
 
 import type { VolumeQuantity } from "$lib/types/db";
-import type { PaginationData, DisplayRow } from "$lib/types/inventory";
+import type { DisplayRow } from "$lib/types/inventory";
 
 import { createDisplayEntriesStore } from "../table_content";
 import { newTestDB } from "$lib/__testUtils__/db";
@@ -28,16 +28,6 @@ describe("tableContentStore", () => {
 		tableData = createDisplayEntriesStore({}, db, undefined, readable(0));
 		tableData.entries.subscribe((de) => (displayEntries = de as VolumeQuantity[]));
 		expect(displayEntries).toEqual([]);
-
-		// Same check for pagination
-		let paginationData: PaginationData | undefined;
-		tableData.paginationData.subscribe((pd) => (paginationData = pd));
-		expect(paginationData).toEqual({
-			numPages: 0,
-			firstItem: 0,
-			lastItem: 0,
-			totalItems: 0
-		} as PaginationData);
 	});
 
 	test("should stream book data with the entires (matching their isbn)", async () => {

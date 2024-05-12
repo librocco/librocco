@@ -10,7 +10,6 @@
 	import { NoteState, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
-	import { bookDataPlugin } from "$lib/db/plugins";
 	import type { PageData } from "./$types";
 	import type { DisplayRow } from "$lib/types/inventory";
 
@@ -31,7 +30,7 @@
 	import { getDB } from "$lib/db";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -41,7 +40,8 @@
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
-	import { scanAutofocus } from "$lib/stores/app";
+	import { autoPrintLabels } from "$lib/stores/app";
+	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	export let data: PageData;
 
@@ -66,7 +66,6 @@
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
 	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
-	$: autoPrintLabels = noteStores.autoPrintLabels;
 
 	// #region note-actions
 	//
@@ -110,9 +109,18 @@
 	const handleAddTransaction = async (isbn: string) => {
 		await note.addVolumes({ isbn, quantity: 1 });
 
-		const book = await bookDataPlugin.fetchBookData([isbn]);
-		if (book.length) {
-			await db.books().upsert(book);
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const [localBookData] = await db.books().get([isbn]);
+		if (localBookData) {
+			return;
+		}
+
+		// If book data retrieved from 3rd party source - store it for future use
+		const [thirdPartyBookData] = await db.plugin("book-fetcher").fetchBookData([isbn]);
+		if (thirdPartyBookData) {
+			await db.books().upsert([thirdPartyBookData]);
 		}
 	};
 
@@ -161,18 +169,20 @@
 	};
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+
+	// #region printing
+	$: handlePrintReceipt = async () => {
+		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+	};
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
+	};
 	// #endregion book-form
 
 	$: breadcrumbs =
 		note?._id && warehouse?._id
 			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
 			: [];
-
-	// #region temp
-	const handlePrint = () => {};
-	const toggleAutoPrintLabels = () => note.setAutoPrintLabels({}, !$autoPrintLabels);
-
-	// #endregion temp
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -199,16 +209,20 @@
 				onUpdated: async ({ form }) => {
 					const { isbn } = form?.data;
 					await handleAddTransaction(isbn);
+
+					if ($autoPrintLabels) {
+						try {
+							db.books()
+								.get([isbn])
+								.then(([b]) => handlePrintLabel(b)());
+							// Success
+						} catch (err) {
+							// Show error
+						}
+					}
 				}
 			}}
 		/>
-		<button
-			data-testid={testId("scan-autofocus-toggle")}
-			data-is-on={$scanAutofocus}
-			on:click={scanAutofocus.toggle}
-			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
-			><Power size={18} />Scan</button
-		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -274,7 +288,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={handlePrint}
+						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
@@ -282,7 +296,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={toggleAutoPrintLabels}
+						on:m-click={autoPrintLabels.toggle}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
 							? '!bg-green-400'
 							: ''}"
@@ -328,85 +342,88 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
-				<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
-					<div slot="row-actions" let:row let:rowIx>
-						<PopoverWrapper
-							options={{
-								forceVisible: true,
-								positioning: {
-									placement: "left"
-								}
-							}}
-							let:trigger
-						>
-							<button
-								data-testid={testId("popover-control")}
-								{...trigger}
-								use:trigger.action
-								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
+						<div slot="row-actions" let:row let:rowIx>
+							<PopoverWrapper
+								options={{
+									forceVisible: true,
+									positioning: {
+										placement: "left"
+									}
+								}}
+								let:trigger
 							>
-								<span class="sr-only">Edit row {rowIx}</span>
-								<span class="aria-hidden">
-									<MoreVertical />
-								</span>
-							</button>
-
-							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 								<button
-									use:melt={$dialogTrigger}
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("edit-row")}
-									on:m-click={() => {
-										bookFormData = row;
-										dialogContent = {
-											onConfirm: () => {},
-											title: dialogTitle.editBook(),
-											description: dialogDescription.editBook(),
-											type: "edit-row"
-										};
-									}}
-									on:m-keydown={() => {
-										bookFormData = row;
-										dialogContent = {
-											onConfirm: () => {},
-											title: dialogTitle.editBook(),
-											description: dialogDescription.editBook(),
-											type: "edit-row"
-										};
-									}}
+									data-testid={testId("popover-control")}
+									{...trigger}
+									use:trigger.action
+									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
-										<FileEdit />
+										<MoreVertical />
 									</span>
 								</button>
 
-								<button
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("print-book-label")}
-									on:click={() => db.printer().label().print(row)}
-								>
-									<span class="sr-only">Print book label {rowIx}</span>
-									<span class="aria-hidden">
-										<Printer />
-									</span>
-								</button>
+								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+									<button
+										use:melt={$dialogTrigger}
+										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										data-testid={testId("edit-row")}
+										on:m-click={() => {
+											bookFormData = row;
+											dialogContent = {
+												onConfirm: () => {},
+												title: dialogTitle.editBook(),
+												description: dialogDescription.editBook(),
+												type: "edit-row"
+											};
+										}}
+										on:m-keydown={() => {
+											bookFormData = row;
+											dialogContent = {
+												onConfirm: () => {},
+												title: dialogTitle.editBook(),
+												description: dialogDescription.editBook(),
+												type: "edit-row"
+											};
+										}}
+									>
+										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="aria-hidden">
+											<FileEdit />
+										</span>
+									</button>
 
-								<button
-									on:click={() => deleteRow(row.isbn, row.warehouseId)}
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("delete-row")}
-								>
-									<span class="sr-only">Delete row {rowIx}</span>
-									<span class="aria-hidden">
-										<Trash2 />
-									</span>
-								</button>
-							</div>
-						</PopoverWrapper>
-					</div>
-				</InboundTable>
+									<button
+										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										data-testid={testId("print-book-label")}
+										on:click={handlePrintLabel(row)}
+									>
+										<span class="sr-only">Print book label {rowIx}</span>
+										<span class="aria-hidden">
+											<Printer />
+										</span>
+									</button>
+
+									<button
+										on:click={() => deleteRow(row.isbn, row.warehouseId)}
+										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										data-testid={testId("delete-row")}
+									>
+										<span class="sr-only">Delete row {rowIx}</span>
+										<span class="aria-hidden">
+											<Trash2 />
+										</span>
+									</button>
+								</div>
+							</PopoverWrapper>
+						</div>
+					</InboundTable>
+				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $entries?.length > maxResults}
@@ -463,7 +480,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await bookDataPlugin.fetchBookData([isbn]);
+							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
 
 							const [bookData] = result;
 							if (!bookData) {
