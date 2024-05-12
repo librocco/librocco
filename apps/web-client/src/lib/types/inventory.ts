@@ -2,6 +2,11 @@ import type { VolumeStockClient, BookEntry } from "@librocco/db";
 import type { NoteState, NoteTempState, VolumeStockKind } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
+import type { NoteType, InventoryDatabaseInterface } from "@librocco/db";
+import type { Observable } from "rxjs";
+import type { Readable } from "svelte/motion";
+import type { VolumeStock, debug } from "@librocco/shared";
+import type { WarehouseDataMap } from "@librocco/db";
 
 /**
  * An interface for a full book entry, used to type the entries in books store and
@@ -60,4 +65,39 @@ export interface PaginationData {
 	firstItem: number;
 	lastItem: number;
 	totalItems: number;
+}
+
+type VolumeStockBook = VolumeStock<"book">;
+
+export interface Result {
+	bookList: (VolumeStockBook & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
+	stats: {
+		totalInboundBookCount: number;
+		totalInboundCoverPrice: number;
+		totalOutboundBookCount: number;
+		totalOutboundCoverPrice: number;
+		totalOutboundDiscountedPrice: number;
+		totalInboundDiscountedPrice: number;
+	};
+}
+
+export interface CreateDisplayEntriesStore {
+	(
+		ctx: debug.DebugCtx,
+		db: InventoryDatabaseInterface,
+		committedNotesListStream: Observable<
+			Map<
+				string,
+				(VolumeStockBook & {
+					noteType: "inbound" | "outbound";
+				} & {
+					committedAt: string;
+				})[]
+			>
+		>,
+		warehouseListStream: Observable<WarehouseDataMap>,
+		dateValue: Readable<any>
+	): {
+		result: Readable<Result>;
+	};
 }
