@@ -25,7 +25,7 @@ import {
 	InNoteListRow,
 	WarehouseData,
 	ViewInterface,
-	committedNotesListRow,
+	CommittedNotesListRow,
 	NoteData
 } from "./types";
 
@@ -39,7 +39,7 @@ import { newView } from "./view";
 import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 
-import { newChangesStream, scanDesignDocuments } from "@/utils/pouchdb";
+import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
 import { newPrinter } from "./printer";
 
@@ -73,7 +73,7 @@ class Database implements InventoryDatabaseInterface {
 			.pipe(
 				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
 				map(({ rows }) => wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "" }] as const)),
-				// Combine the stream with stock map stream to g(rows).et the 'totalBooks' for each warehouse
+				// Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
 				switchMap((warehouses) =>
 					this.#stockStream.pipe(
 						map((s) => mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: s.warehouse(id).size }] as const))
@@ -108,7 +108,7 @@ class Database implements InventoryDatabaseInterface {
 			);
 
 		const committedNotesListCache = new BehaviorSubject<Map<string, (VolumeStockInput & { committedAt: string })[]>>(new Map());
-		this.#committedNotesListStream = this.view<committedNotesListRow>("v1_list/committed")
+		this.#committedNotesListStream = this.view<CommittedNotesListRow>("v1_list/committed")
 			.stream({})
 			.pipe(
 				map(({ rows }) =>
@@ -146,13 +146,6 @@ class Database implements InventoryDatabaseInterface {
 		firstValueFrom(this.#outNoteListStream);
 
 		return this;
-	}
-
-	private streamChanges() {
-		return newChangesStream<unknown[]>(
-			{},
-			this._pouch.changes({ since: "now", live: true, filter: (doc) => doc._id.startsWith(versionId("")) })
-		);
 	}
 
 	// #region setup
