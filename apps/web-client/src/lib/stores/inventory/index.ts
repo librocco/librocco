@@ -3,7 +3,7 @@ import { writable, type Readable, type Writable, derived } from "svelte/store";
 import type { NoteInterface, WarehouseInterface, SearchIndex } from "@librocco/db";
 import type { debug } from "@librocco/shared";
 
-import type { DisplayRow, NoteAppState, PaginationData } from "$lib/types/inventory";
+import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
 
 import { createDisplayNameStore } from "./display_name";
 import { createDefaultWarehouseStore } from "./default_warehouse";
@@ -21,7 +21,6 @@ interface NoteDisplayStores {
 	updatedAt: Readable<Date | null>;
 	entries: Readable<DisplayRow[]>;
 	currentPage: Writable<number>;
-	paginationData: Readable<PaginationData>;
 }
 interface CreateNoteStores {
 	(note?: NoteInterface): NoteDisplayStores;
@@ -50,7 +49,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const { entries, paginationData } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
+	const { entries } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
 
 	return {
 		displayName,
@@ -58,7 +57,6 @@ export const createNoteStores: CreateNoteStores = (note) => {
 		updatedAt,
 		entries,
 		currentPage,
-		paginationData,
 		defaultWarehouse
 	};
 };
@@ -68,7 +66,6 @@ interface WarehouseDisplayStores {
 	warehouseDiscount: Writable<number>;
 	entries: Readable<DisplayRow[]>;
 	currentPageStore: Writable<number>;
-	paginationData: Readable<PaginationData>;
 	searchStore: Writable<string>;
 }
 interface CreateWarehouseStores {
@@ -100,14 +97,13 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const { entries, paginationData } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPageStore, controlledSearchStore);
+	const { entries } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPageStore, controlledSearchStore);
 
 	return {
 		displayName,
 		warehouseDiscount,
 		entries,
 		currentPageStore,
-		searchStore,
-		paginationData
+		searchStore
 	};
 };

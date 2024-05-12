@@ -56,17 +56,6 @@ export interface NoteStore {
 /** A union type for note states used in the client app */
 export type NoteAppState = NoteState | NoteTempState | undefined;
 
-/**
- * A structure of the store streaming pagination date for the purpose of displaying pagination element as well as some
- * state on currently shown entries, total entries, etc.
- */
-export interface PaginationData {
-	numPages: number;
-	firstItem: number;
-	lastItem: number;
-	totalItems: number;
-}
-
 type VolumeStockBook = VolumeStock<"book">;
 
 export interface Result {
@@ -81,7 +70,7 @@ export interface Result {
 	};
 }
 
-export interface CreateDisplayEntriesStore {
+export interface CreateHistoryStore {
 	(
 		ctx: debug.DebugCtx,
 		db: InventoryDatabaseInterface,
