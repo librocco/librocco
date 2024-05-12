@@ -47,10 +47,10 @@
 			linkto: "settings"
 		},
 		{
-			label: "Entries",
-			href: appPath("entries"),
+			label: "History",
+			href: appPath("history"),
 			icon: Book,
-			linkto: "entries"
+			linkto: "history"
 		}
 	];
 
