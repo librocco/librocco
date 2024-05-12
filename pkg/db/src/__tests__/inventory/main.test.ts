@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { beforeEach, describe, expect, test } from "vitest";
-import { BehaviorSubject, firstValueFrom, switchMap } from "rxjs";
+import { BehaviorSubject } from "rxjs";
 import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
@@ -117,29 +117,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			err = e;
 		}
 		expect(err).toBeDefined();
-	});
-
-	test("db streams", async () => {
-		let labelPrinterUrl: PossiblyEmpty<string> = EMPTY;
-		let receiptPrinterUrl: PossiblyEmpty<string> = EMPTY;
-		db.stream()
-			.labelPrinterUrl({})
-			.subscribe((lpu) => (labelPrinterUrl = lpu));
-		db.stream()
-			.receiptPrinterUrl({})
-			.subscribe((rpu) => (receiptPrinterUrl = rpu));
-
-		// Initial value should be an empty string
-		await waitFor(() => expect(labelPrinterUrl).toEqual(""));
-		await waitFor(() => expect(receiptPrinterUrl).toEqual(""));
-
-		// Set label printer url (url is not validated)
-		db.setLabelPrinterUrl("test-url");
-		await waitFor(() => expect(labelPrinterUrl).toEqual("test-url"));
-
-		// Set receipt printer url (url is not validated)
-		db.setReceiptPrinterUrl("test-url-receipts");
-		await waitFor(() => expect(receiptPrinterUrl).toEqual("test-url-receipts"));
 	});
 
 	test("warehouseDiscount", async () => {
@@ -802,41 +779,29 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		const note = await db.warehouse("test-warehouse").note().create();
 
 		// Subscribe to note streams
-		const {
-			displayName: displayNameStream,
-			state: stateStream,
-			updatedAt: updatedAtStream,
-			autoPrintLabels: autoPrintLabelsStream
-		} = note.stream();
+		const { displayName: displayNameStream, state: stateStream, updatedAt: updatedAtStream } = note.stream();
 
 		let displayName: PossiblyEmpty<string> = EMPTY;
 		// Note: entries holds only the 10 entries displayed per page
 		let entries: {
 			rows: PossiblyEmpty<VolumeStockClient[]>;
 			total: PossiblyEmpty<number>;
-			totalPages: PossiblyEmpty<number>;
 		} = {
 			rows: EMPTY,
-			total: EMPTY,
-			totalPages: EMPTY
+			total: EMPTY
 		};
 		let state: PossiblyEmpty<NoteState> = EMPTY;
 		let updatedAt: PossiblyEmpty<Date | null> = EMPTY;
-		let autoPrintLabels: PossiblyEmpty<boolean> = EMPTY;
 
 		displayNameStream({}).subscribe((dn) => (displayName = dn));
 		stateStream({}).subscribe((s) => (state = s));
 		updatedAtStream({}).subscribe((ua) => {
 			updatedAt = ua;
 		});
-		autoPrintLabelsStream({}).subscribe((apl) => (autoPrintLabels = apl));
-
-		// Streams used to test pagination
-		const currentPage = new BehaviorSubject(0);
-		const paginate = (page: number) => currentPage.next(page);
-		const entriesWithPagination = currentPage.pipe(switchMap((page) => note.stream().entries({}, page)));
-
-		entriesWithPagination.subscribe((e) => (entries = e));
+		note
+			.stream()
+			.entries({})
+			.subscribe((e) => (entries = e));
 
 		// Check that the stream gets initialised with the current values
 		await waitFor(() => {
@@ -851,17 +816,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await waitFor(() => {
 			expect(displayName).toEqual("test");
 		});
-
-		// Check updating of autoPrintLabels
-		//
-		// Initial value should be false
-		await waitFor(() => expect(autoPrintLabels).toEqual(false));
-
-		await note.setAutoPrintLabels({}, true);
-		await waitFor(() => expect(autoPrintLabels).toEqual(true));
-
-		await note.setAutoPrintLabels({}, false); // Reset
-		await waitFor(() => expect(autoPrintLabels).toEqual(false));
 
 		// Check for entries stream
 		expect(entries.rows).toEqual([]);
@@ -879,55 +833,40 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			]);
 		});
 
-		// Check for entries pagination
+		// Entries stream
 		//
 		// Reset the entries
 		await note.removeTransactions({ isbn: "0123456789", warehouseId: "test-warehouse" });
 		await waitFor(() => expect(entries.rows).toEqual([]));
-		// Add 20 entries and check pagination results
+		// Add 20 entries and check the results
 		await note.addVolumes(...fiftyEntries.slice(0, 20));
 		await waitFor(() => {
 			expect(entries.rows).toEqual(
-				fiftyEntries.slice(0, 10).map((e) => ({
-					...e,
+				fiftyEntries.slice(0, 20).map((e) => ({
 					__kind: "book",
+					...e,
 					warehouseId: versionId("test-warehouse"),
 					warehouseName: "New Warehouse",
 					warehouseDiscount: 0
 				}))
 			);
 			expect(entries.total).toEqual(20);
-			expect(entries.totalPages).toEqual(2);
 		});
-		// Paginate to the next page
-		paginate(1);
-		await waitFor(() => {
-			expect(entries.rows).toEqual(
-				fiftyEntries.slice(10, 20).map((e) => ({
-					...e,
-					__kind: "book",
-					warehouseId: versionId("test-warehouse"),
-					warehouseName: "New Warehouse",
-					warehouseDiscount: 0
-				}))
-			);
-			expect(entries.total).toEqual(20);
-			expect(entries.totalPages).toEqual(2);
-		});
+
 		// Updating a particular transaction (if belonging to the current page) should be streamed to the client.
-		const matchTxn = fiftyEntries[10];
+		const matchTxn = fiftyEntries[19];
 		const updateTxn = { ...matchTxn, quantity: 100, warehouseId: versionId("test-warehouse") };
 		await note.updateTransaction({}, matchTxn, updateTxn);
 		await waitFor(() =>
 			expect(entries.rows).toEqual([
-				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 0 },
-				...fiftyEntries.slice(11, 20).map((e) => ({
+				...fiftyEntries.slice(0, 19).map((e) => ({
 					...e,
 					__kind: "book",
 					warehouseId: versionId("test-warehouse"),
 					warehouseName: "New Warehouse",
 					warehouseDiscount: 0
-				}))
+				})),
+				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 0 }
 			])
 		);
 
@@ -935,14 +874,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		await db.warehouse("test-warehouse").setDiscount({}, 10);
 		await waitFor(() =>
 			expect(entries.rows).toEqual([
-				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 10 },
-				...fiftyEntries.slice(11, 20).map((e) => ({
+				...fiftyEntries.slice(0, 19).map((e) => ({
 					...e,
 					__kind: "book",
 					warehouseId: versionId("test-warehouse"),
 					warehouseName: "New Warehouse",
 					warehouseDiscount: 10
-				}))
+				})),
+				{ ...updateTxn, __kind: "book", warehouseName: "New Warehouse", warehouseDiscount: 10 }
 			])
 		);
 
@@ -1502,109 +1441,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				}
 			]);
 		});
-	});
-
-	test("warehousePaginationStream", async () => {
-		const warehouse = await db.warehouse("wh1").create();
-
-		// Subscribe to paginated warehouse stream
-		let entries: {
-			rows: PossiblyEmpty<VolumeStockClient[]>;
-			total: PossiblyEmpty<number>;
-			totalPages: PossiblyEmpty<number>;
-		} = {
-			rows: EMPTY,
-			total: EMPTY,
-			totalPages: EMPTY
-		};
-
-		// Streams used to test pagination
-		const currentPage = new BehaviorSubject(0);
-		const paginate = (page: number) => currentPage.next(page);
-		const entriesWithPagination = currentPage.pipe(switchMap((page) => warehouse.stream().entries({}, page, 10)));
-		entriesWithPagination.subscribe((e) => (entries = e));
-
-		await waitFor(() => {
-			expect(entries.rows).toEqual([]);
-			expect(entries.total).toEqual(0);
-			expect(entries.totalPages).toEqual(0);
-		});
-
-		// Add some volumes to the warehouse
-		await warehouse
-			.note()
-			.addVolumes(...fiftyEntries.slice(0, 20))
-			.then((n) => n.commit({}));
-		await waitFor(() => {
-			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(0, 10)
-					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
-			);
-			expect(entries.total).toEqual(20);
-			expect(entries.totalPages).toEqual(2);
-		});
-
-		// Paginate to the second page
-		paginate(1);
-		await waitFor(() => {
-			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(10, 20)
-					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
-			);
-			expect(entries.total).toEqual(20);
-			expect(entries.totalPages).toEqual(2);
-		});
-
-		// Add additional volumes
-		await warehouse
-			.note()
-			.addVolumes(...fiftyEntries.slice(20, 28))
-			.then((n) => n.commit({}));
-		await waitFor(() => {
-			// We're still on the second page, only the total number of items/pages should have changed
-			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(10, 20)
-					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
-			);
-			expect(entries.total).toEqual(28);
-			expect(entries.totalPages).toEqual(3);
-		});
-
-		// Removing items from the current page should update the stream,
-		// still showing 10 items, filling the gap with items from the next page.
-		await db
-			.warehouse()
-			.note()
-			// Adding some of the transactions to an outbound note (same quantity) should simply remove said books from stock
-			.addVolumes(...fiftyEntries.slice(10, 19).map((v) => ({ ...v, warehouseId: "wh1" })))
-			.then((n) => n.commit({}));
-		await waitFor(() => {
-			expect(entries.rows).toEqual(
-				fiftyEntries
-					.slice(19, 28)
-					.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
-			);
-			expect(entries.total).toEqual(19);
-			expect(entries.totalPages).toEqual(2);
-		});
-
-		// If no itemsPerPage provided, should stream all items
-		const allEntries = await firstValueFrom(warehouse.stream().entries({}));
-		// There currently are 19 entries in the warehouse => 28 added - 19 removed
-		expect(allEntries.rows.length).toEqual(19);
-		expect(allEntries.rows).toEqual(
-			// We've removed entries 10-18, in the previous step
-			fiftyEntries
-				.slice(0, 10)
-				.concat(fiftyEntries.slice(19, 28))
-				.map((v) => ({ ...v, __kind: "book", warehouseId: versionId("wh1"), warehouseName: "New Warehouse", warehouseDiscount: 0 }))
-		);
-		// Should still stream predictable pagination stats
-		expect(allEntries.total).toEqual(19);
-		expect(allEntries.totalPages).toEqual(1);
 	});
 
 	test("warehouseDataMapStream", async () => {

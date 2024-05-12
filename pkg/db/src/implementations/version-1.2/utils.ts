@@ -11,11 +11,7 @@ export const versionId = createVersioningFunction("v1");
 export type TableData = {
 	/** Rows to display for a page */
 	rows: Iterable<VolumeStock>;
-	/** Stats used for pagination */
-	stats: {
-		total: number;
-		totalPages: number;
-	};
+	total: number;
 };
 
 type Params = [TableData, WarehouseDataMap, ...any[]];
@@ -27,12 +23,12 @@ export function combineTransactionsWarehouses(opts: {
 export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }): (params: Params) => EntriesStreamResult;
 export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }) {
 	return opts?.includeAvailableWarehouses
-		? ([{ rows, stats }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
-				...stats,
+		? ([{ rows, total }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
+				total,
 				rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
 		  })
-		: ([{ rows, stats }, warehouses]: Params): EntriesStreamResult => ({
-				...stats,
+		: ([{ rows, total }, warehouses]: Params): EntriesStreamResult => ({
+				total,
 				rows: [...addWarehouseData(rows, warehouses)]
 		  });
 }
