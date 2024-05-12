@@ -50,7 +50,7 @@ export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> 
 // View response types
 export type WarehouseListRow = MapReduceRow<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>;
 export type OutNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean }>>;
-export type committedNotesListRow = MapReduceRow<
+export type CommittedNotesListRow = MapReduceRow<
 	string,
 	{ entries: VolumeStock[]; committed?: boolean; noteType: NoteType; committedAt: string }
 >;

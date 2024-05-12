@@ -146,7 +146,6 @@ const createSearchIndex = (books: BookEntry[]) => {
 	index.addIndex("authors");
 	index.addIndex("publisher");
 	index.addIndex("editedBy");
-	index.addIndex("committedAt");
 
 	index.addDocuments(books);
 

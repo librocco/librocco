@@ -1,21 +1,19 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import { type Readable } from "svelte/store";
 
 	import { melt, createDatePicker } from "@melt-ui/svelte";
 	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { map, combineLatest, Observable, switchMap } from "rxjs";
+	import { Observable } from "rxjs";
 	import { now, getLocalTimeZone } from "@internationalized/date";
 
-	import { entityListView, testId, debug, wrapIter, type VolumeStock } from "@librocco/shared";
-	import type { BookEntry, InventoryDatabaseInterface, NoteType } from "@librocco/db";
+	import { entityListView, testId, type VolumeStock } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
 	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { observableFromStore, readableFromStream } from "$lib/utils/streams";
+	import { createHistoryStore } from "$lib/stores/inventory/history_entries";
 
 	const {
 		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
@@ -30,14 +28,12 @@
 		preventDeselect: true
 	});
 
-	type VolumeStockBook = VolumeStock<"book">;
-
 	const db = getDB();
 	const committedNotesListCtx = { name: "[COMMITTED_NOTES_LIST]", debug: false };
 	let committedNotesListStream = new Observable<
 		Map<
 			string,
-			(VolumeStockBook & {
+			(VolumeStock<"book"> & {
 				noteType: "inbound" | "outbound";
 			} & {
 				committedAt: string;
@@ -53,115 +49,11 @@
 
 	const warehouseListStream = db?.stream().warehouseMap(warehouseListCtx);
 
-	interface Result {
-		bookList: (VolumeStockBook & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
-		stats: {
-			totalInboundBookCount: number;
-			totalInboundCoverPrice: number;
-			totalOutboundBookCount: number;
-			totalOutboundCoverPrice: number;
-			totalOutboundDiscountedPrice: number;
-			totalInboundDiscountedPrice: number;
-		};
-	}
-	interface CreateDisplayEntriesStore {
-		(
-			ctx: debug.DebugCtx,
-			db: InventoryDatabaseInterface,
-			committedNotesListStream: Observable<
-				Map<
-					string,
-					(VolumeStockBook & {
-						noteType: "inbound" | "outbound";
-					} & {
-						committedAt: string;
-					})[]
-				>
-			>
-		): {
-			result: Readable<Result>;
-		};
-	}
-
-	export const mapMergeBookWarehouseData =
-		(ctx: debug.DebugCtx, entries: Iterable<any>) =>
-		(books: Observable<Iterable<BookEntry | undefined>>): Observable<Result> =>
-			combineLatest([books, warehouseListStream]).pipe(
-				map(([booksData, warehouseData]) => {
-					const books = wrapIter(entries)
-						.zip(booksData)
-
-						.map(([s, b = {} as BookEntry]) => {
-							const warehouse = warehouseData.size ? warehouseData.get(s.warehouseId) : { displayName: "", discountPercentage: 0 };
-							return {
-								...s,
-								...b,
-								discountPercentage: warehouse.discountPercentage || 0,
-								warehouseName: warehouse.displayName
-							};
-						})
-						.array();
-
-					return {
-						bookList: books,
-
-						stats: books.reduce(
-							(acc, { quantity, noteType, discountPercentage, price = 0 }) => {
-								if (noteType === "inbound") {
-									return {
-										...acc,
-										totalInboundBookCount: (acc.totalInboundBookCount += quantity),
-										totalInboundCoverPrice: (acc.totalInboundCoverPrice += quantity * price),
-										totalInboundDiscountedPrice: (acc.totalInboundDiscountedPrice +=
-											quantity * ((price * (100 - discountPercentage)) / 100))
-									};
-								}
-
-								return {
-									...acc,
-									totalOutboundBookCount: (acc.totalOutboundBookCount += quantity),
-									totalOutboundCoverPrice: (acc.totalOutboundCoverPrice += quantity * price),
-									totalOutboundDiscountedPrice: (acc.totalOutboundDiscountedPrice +=
-										quantity * ((price * (100 - discountPercentage)) / 100))
-								};
-							},
-
-							{
-								totalInboundBookCount: 0,
-								totalInboundCoverPrice: 0,
-								totalOutboundBookCount: 0,
-								totalOutboundCoverPrice: 0,
-								totalOutboundDiscountedPrice: 0,
-								totalInboundDiscountedPrice: 0
-							}
-						)
-					};
-				})
-			);
-
-	export const createFilteredEntriesStore: CreateDisplayEntriesStore = (ctx, db, committedNotesListStream) => {
-		const searchResStream = combineLatest([committedNotesListStream, observableFromStore(value)]).pipe(
-			switchMap(([notes, date]) => {
-				const entries = notes.get(date.toString().slice(0, 10)) || [];
-
-				const isbns = entries.map((match) => match.isbn);
-
-				return db
-					?.books()
-					.stream(ctx, isbns)
-					.pipe((bookObs) => mapMergeBookWarehouseData(ctx, entries)(bookObs));
-			})
-		);
-		return {
-			result: readableFromStream(ctx, searchResStream, {} as Result)
-		};
-	};
-
-	$: stores = createFilteredEntriesStore({}, db, committedNotesListStream);
+	$: stores = createHistoryStore({}, db, committedNotesListStream, warehouseListStream, value);
 	$: allEntriesList = stores.result;
 </script>
 
-<Page view="entries" loaded={true}>
+<Page view="history" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
@@ -169,7 +61,7 @@
 
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">Entries</h1>
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
 
 			<section class="flex w-full flex-col items-center gap-3">
 				<div>
@@ -273,8 +165,7 @@
 						Outbound Discounted Price : {$allEntriesList.stats.totalOutboundDiscountedPrice.toFixed(2)}
 					</div>
 				</div>
-				<!-- <div>{ $allEntriesList.stats}</div>
-				<div>{ $allEntriesList.stats}</div> -->
+
 				{#each $allEntriesList.bookList as entry}
 					{@const title = entry.title}
 					{@const quantity = entry.quantity}
