@@ -8,16 +8,11 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { settingsStore } from "$lib/stores";
-
 	export let data: LayoutData;
 
 	const { db } = data;
 
 	let availabilitySubscription: Subscription;
-
-	$: db?.setLabelPrinterUrl($settingsStore.labelPrinterUrl);
-	$: db?.setReceiptPrinterUrl($settingsStore.receiptPrinterUrl);
 
 	onMount(async () => {
 		// Register the db to the window object.

@@ -1,5 +1,7 @@
-import { writable } from "svelte/store";
+import { persisted } from "svelte-local-storage-store";
 
-const inner = writable(true);
-const toggle = () => inner.update((v) => !v);
-export const scanAutofocus = Object.assign(inner, { toggle });
+import { LOCAL_STORAGE_APP_SETTINGS } from "$lib/constants";
+
+const autoPrintLabelsInner = persisted(LOCAL_STORAGE_APP_SETTINGS, false);
+const toggleAutoprintLabels = () => autoPrintLabelsInner.update((v) => !v);
+export const autoPrintLabels = Object.assign(autoPrintLabelsInner, { toggle: toggleAutoprintLabels });
