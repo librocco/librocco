@@ -22,90 +22,27 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.content().header().title().assert("New Note");
 });
 
-test('should route "keyboard" input with freqency of scan input to the scan input element even if scan element is not focused (by default)', async ({
-	page
-}) => {
-	await page.keyboard.type("1234567890");
-	await page.keyboard.press("Enter");
-
-	// The input should have been submitted and a new transaction added
-	await getDashboard(page)
-		.content()
-		.table("outbound-note")
-		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
-});
-
-test("should update scan input autofocus behaviour with respect to the state in store (toggle on 'scan' button click)", async ({
+test("should allow for continous scanning by auto focusing the scan field after the previous scanning operation is submitted", async ({
 	page
 }) => {
 	const dashboard = getDashboard(page);
+	const content = dashboard.content();
 
-	// Turn the scan autofocus off
-	await dashboard.content().scanField().toggleOff();
+	// The scan field needs to be focused before we can scan
+	await content.scanField().focus();
 
-	// Attempt scan
-	await page.keyboard.type("1234567890");
-	await page.keyboard.press("Enter");
-
-	// Nothing should have happened
-	await getDashboard(page).content().table("outbound-note").assertRows([]);
-
-	// Turn the scan autofocus back on and scan again
-	await dashboard.content().scanField().toggleOn();
 	await page.keyboard.type("1234567890");
 	await page.keyboard.press("Enter");
 
 	// The input should have been submitted and a new transaction added
-	await getDashboard(page)
-		.content()
-		.table("outbound-note")
-		.assertRows([{ isbn: "1234567890", quantity: 1 }]);
-});
+	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
-test('should route "keyboard" input with freqency of scan input to the scan input element even if another input element is focused', async ({
-	page
-}) => {
-	const content = getDashboard(page).content();
-
-	// Add one transaction (we'll need a quantity field)
-	await content.scanField().add("1234567890");
-
-	// Edit the quantity of the first transaction
-	await content.table("outbound-note").row(0).getByRole("spinbutton").click();
-
-	// Typing with scanning frequency should route the input to the scan element
+	// Add next book
 	await page.keyboard.type("1234567891");
 	await page.keyboard.press("Enter");
 
-	// The input should have been submitted and a new transaction added
-	await getDashboard(page)
-		.content()
-		.table("outbound-note")
-		.assertRows([
-			{ isbn: "1234567890", quantity: 1 },
-			{ isbn: "1234567891", quantity: 1 }
-		]);
-});
-
-test('should not route "keyboard" input with freqency of human input to the scan input element (unless scan input field is focused)', async ({
-	page
-}) => {
-	const content = getDashboard(page).content();
-
-	// Add one transaction (we'll need a quantity field)
-	await content.scanField().add("1234567890");
-
-	// Edit the quantity of the first transaction
-	await content.table("outbound-note").row(0).getByRole("spinbutton").click();
-
-	// Typing with frequency of human input should not route the input to the scan element
-	// (instead quantity should be updated)
-	await page.keyboard.type("44", { delay: 100 });
-	await page.keyboard.press("Enter");
-
-	// The input should have been submitted and a new transaction added
-	await getDashboard(page)
-		.content()
-		.table("outbound-note")
-		.assertRows([{ isbn: "1234567890", quantity: 144 }]);
+	await content.table("outbound-note").assertRows([
+		{ isbn: "1234567890", quantity: 1 },
+		{ isbn: "1234567891", quantity: 1 }
+	]);
 });
