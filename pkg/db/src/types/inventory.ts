@@ -2,7 +2,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockInput, VolumeStockKind, debug } from "@librocco/shared";
 
 import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
 
@@ -44,6 +44,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		committed: boolean;
 		displayName: string;
 		updatedAt: string | null;
+		committedAt: string | null;
 		reconciliationNote?: boolean;
 	} & A
 >;
@@ -258,6 +259,7 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
+	committedNotesList: (ctx: debug.DebugCtx) => Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
 }
 
 /**
@@ -300,6 +302,10 @@ export type InventoryDatabaseInterface<
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
 	stream: () => DbStream;
+	/**
+	 * returns warehouse data map
+	 */
+	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 }>;
 
 export interface NewDatabase {

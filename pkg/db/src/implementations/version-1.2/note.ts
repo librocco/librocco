@@ -59,6 +59,7 @@ class Note implements NoteInterface {
 	committed = false;
 	displayName = "";
 	updatedAt: string | null = null;
+	committedAt: string | null = null;
 
 	constructor(warehouse: WarehouseInterface, db: InventoryDatabaseInterface, id?: string) {
 		this.#w = warehouse;
@@ -147,6 +148,7 @@ class Note implements NoteInterface {
 		this.updateField("defaultWarehouseId", data.defaultWarehouseId);
 		this.updateField("displayName", data.displayName);
 		this.updateField("updatedAt", data.updatedAt);
+		this.updateField("committedAt", data.committedAt);
 		this.updateField("reconciliationNote", data.reconciliationNote);
 
 		this.#exists = true;
@@ -493,8 +495,9 @@ class Note implements NoteInterface {
 				}
 			}
 		}
+		const committedAt = new Date().toISOString().slice(0, 10);
 
-		return this.update(ctx, { committed: true });
+		return this.update(ctx, { committed: true, committedAt });
 	}
 
 	reconcile(ctx: debug.DebugCtx): Promise<NoteInterface> {
