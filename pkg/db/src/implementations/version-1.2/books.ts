@@ -34,7 +34,7 @@ class Books implements BooksInterface {
 			.then((books) => books.filter((book): book is BookEntry => Boolean(book)));
 	}
 
-	async upsert(_docs: (BookEntry | undefined)[]): Promise<void> {
+	async upsert(_docs: (Partial<BookEntry> | undefined)[]): Promise<void> {
 		// Filter out (possibly) undefined inputs
 		const docsToUpsert = _docs.filter((d): d is BookEntry => Boolean(d));
 		if (!docsToUpsert.length) return;
@@ -50,7 +50,7 @@ class Books implements BooksInterface {
 		const updates = wrapIter(docsToUpsert)
 			.map((doc) => ({ _id: `books/${doc.isbn}`, ...doc }))
 			.zip(docs)
-			.map(([update, { _rev } = { _rev: "" }]) => (_rev ? { ...update, _rev } : update));
+			.map(([update, existing = { _rev: "" }]) => ({ ...existing, ...update }));
 
 		await this.#db._pouch.bulkDocs([...updates]);
 	}

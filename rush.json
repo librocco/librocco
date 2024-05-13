@@ -405,6 +405,10 @@
 		{
 			"packageName": "@librocco/book-data-extension",
 			"projectFolder": "plugins/book-data-extension"
+		},
+		{
+			"packageName": "@librocco/google-books-api-plugin",
+			"projectFolder": "plugins/google-books-api"
 		}
 	]
 }

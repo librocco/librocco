@@ -82,7 +82,7 @@ export interface BooksInterface {
 	 * Upsert accepts an array of book data and upserts them into the db. If a book data already exists, it will be
 	 * updated, otherwise it will be created.
 	 */
-	upsert: (bookEntries: BookEntry[]) => Promise<void>;
+	upsert: (bookEntries: Partial<BookEntry>[]) => Promise<void>;
 	/**
 	 * Stream accepts an array of isbns and streams a same length array of book data or `undefined`.
 	 *
@@ -168,7 +168,7 @@ export type LibroccoPlugin<T extends {}> = {
 } & T;
 
 export interface BookFetcherPlugin {
-	fetchBookData(isbns: string[]): Promise<(BookEntry | undefined)[]>;
+	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
 	isAvailableStream: Observable<boolean>;
 }
 
