@@ -41,19 +41,20 @@
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
-	import { scanAutofocus } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
 
-	import { appPath } from "$lib/paths";
 	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
+	import { printBookLabel, printReceipt } from "$lib/printer";
+
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -295,10 +296,11 @@
 	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
 
 	// #region temp
-	const handlePrint = async () => {
-		db.printer()
-			.receipt()
-			.print(await note?.intoReceipt().then(({ items }) => items));
+	$: handlePrintReceipt = async () => {
+		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+	};
+	$: handlePrintLabel = (book: BookEntry) => async () => {
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 	// #endregion temp
 
@@ -333,13 +335,6 @@
 				}
 			}}
 		/>
-		<button
-			data-testid="scan-autofocus-toggle"
-			data-is-on={$scanAutofocus}
-			on:click={(e) => (scanAutofocus.toggle(), e.currentTarget.blur())}
-			class="button {$scanAutofocus ? 'button-green' : 'button-white'} absolute right-4 top-1/2 -translate-y-1/2"
-			><Power size={18} />Scan</button
-		>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -417,7 +412,7 @@
 					<div
 						{...item}
 						use:item.action
-						on:m-click={handlePrint}
+						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
@@ -461,77 +456,80 @@
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="overflow-y-auto" style="scrollbar-width: thin">
-				<OutboundTable
-					{table}
-					warehouseList={$warehouseList}
-					on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-					on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
-				>
-					<div slot="row-actions" let:row let:rowIx>
-						<PopoverWrapper
-							options={{
-								forceVisible: true,
-								positioning: {
-									placement: "left"
-								}
-							}}
-							let:trigger
-						>
-							<button
-								data-testid={testId("popover-control")}
-								{...trigger}
-								use:trigger.action
-								class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<OutboundTable
+						{table}
+						warehouseList={$warehouseList}
+						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
+						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
+					>
+						<div slot="row-actions" let:row let:rowIx>
+							<PopoverWrapper
+								options={{
+									forceVisible: true,
+									positioning: {
+										placement: "left"
+									}
+								}}
+								let:trigger
 							>
-								<span class="sr-only">Edit row {rowIx}</span>
-								<span class="aria-hidden">
-									<MoreVertical />
-								</span>
-							</button>
-
-							<!-- svelte-ignore a11y-no-static-element-interactions -->
-							<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 								<button
-									use:melt={$dialogTrigger}
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("edit-row")}
-									on:m-click={handleOpenFormPopover(row)}
-									on:m-keydown={handleOpenFormPopover(row)}
+									data-testid={testId("popover-control")}
+									{...trigger}
+									use:trigger.action
+									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
-										<FileEdit />
+										<MoreVertical />
 									</span>
 								</button>
 
-								{#if isBookRow(row)}
+								<!-- svelte-ignore a11y-no-static-element-interactions -->
+								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 									<button
+										use:melt={$dialogTrigger}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-										data-testid={testId("print-book-label")}
-										on:click={() => db.printer().label().print(row)}
+										data-testid={testId("edit-row")}
+										on:m-click={handleOpenFormPopover(row)}
+										on:m-keydown={handleOpenFormPopover(row)}
 									>
-										<span class="sr-only">Print book label {rowIx}</span>
+										<span class="sr-only">Edit row {rowIx}</span>
 										<span class="aria-hidden">
-											<Printer />
+											<FileEdit />
 										</span>
 									</button>
-								{/if}
 
-								<button
-									on:click={() => deleteRow(rowIx)}
-									class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-									data-testid={testId("delete-row")}
-								>
-									<span class="sr-only">Delete row {rowIx}</span>
-									<span class="aria-hidden">
-										<Trash2 />
-									</span>
-								</button>
-							</div>
-						</PopoverWrapper>
-					</div>
-				</OutboundTable>
+									{#if isBookRow(row)}
+										<button
+											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											data-testid={testId("print-book-label")}
+											on:click={handlePrintLabel(row)}
+										>
+											<span class="sr-only">Print book label {rowIx}</span>
+											<span class="aria-hidden">
+												<Printer />
+											</span>
+										</button>
+									{/if}
+
+									<button
+										on:click={() => deleteRow(rowIx)}
+										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										data-testid={testId("delete-row")}
+									>
+										<span class="sr-only">Delete row {rowIx}</span>
+										<span class="aria-hidden">
+											<Trash2 />
+										</span>
+									</button>
+								</div>
+							</PopoverWrapper>
+						</div>
+					</OutboundTable>
+				</div>
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
 					<button on:click={handleAddCustomItem} class="button button-green">Custom item</button>

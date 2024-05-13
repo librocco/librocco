@@ -14,7 +14,8 @@ import {
 	CouchDocument,
 	MapReduceRes,
 	WarehouseDataMap,
-	NavEntry
+	NavEntry,
+	NoteType
 } from "@/types";
 import { DocType } from "@/enums";
 
@@ -22,7 +23,6 @@ import { DocType } from "@/enums";
 export type AdditionalData = {
 	entries: VolumeStock[];
 	defaultWarehouseId?: string;
-	autoPrintLabels?: boolean;
 };
 
 /** Note data (extended with additional fields) for internal implementation usage. */
@@ -49,6 +49,10 @@ export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> 
 // View response types
 export type WarehouseListRow = MapReduceRow<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>;
 export type OutNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean }>>;
+export type CommittedNotesListRow = MapReduceRow<
+	string,
+	{ entries: VolumeStock[]; committed?: boolean; noteType: NoteType; committedAt: string }
+>;
 export type InNoteListRow = MapReduceRow<string, NavEntry<{ committed?: boolean; type: DocType }>>;
 export type PublishersListRow = MapReduceRow<string, number>;
 

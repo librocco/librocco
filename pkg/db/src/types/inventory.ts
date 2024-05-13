@@ -2,18 +2,9 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockInput, VolumeStockKind, debug } from "@librocco/shared";
 
-import type { PrintJobStatus } from "@/enums";
-
-import type {
-	DatabaseInterface as BaseDatabaseInterface,
-	BookEntry,
-	BooksInterface,
-	CouchDocument,
-	DatabaseInterface,
-	PickPartial
-} from "./misc";
+import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -30,7 +21,6 @@ export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K e
 export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
 	rows: VolumeStockClient<K>[];
 	total: number;
-	totalPages: number;
 }
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
@@ -54,6 +44,7 @@ export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
 		committed: boolean;
 		displayName: string;
 		updatedAt: string | null;
+		committedAt: string | null;
 		reconciliationNote?: boolean;
 	} & A
 >;
@@ -65,9 +56,8 @@ export interface NoteStream {
 	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
-	autoPrintLabels(ctx: debug.DebugCtx): Observable<boolean>;
 	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult>;
+	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult>;
 }
 
 export type UpdateTransactionParams<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
@@ -143,11 +133,6 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * background, and committing those before committing the outbound note so that the resulting for each entry will at least be 0 (no negative quantities).
 	 */
 	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
-
-	/**
-	 * Enable printing of labels on each scan.
-	 */
-	setAutoPrintLabels(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface<A>>;
 }
 
 /**
@@ -176,7 +161,7 @@ export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
 export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	discount: (ctx: debug.DebugCtx) => Observable<number>;
-	entries: (ctx: debug.DebugCtx, page?: number, itemsPerPage?: number) => Observable<EntriesStreamResult<"book">>;
+	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult<"book">>;
 }
 
 /**
@@ -235,18 +220,6 @@ export interface ReceiptData {
 	items: ReceiptItem[];
 	timestamp: number;
 }
-
-export interface PrintJob extends CouchDocument<ReceiptData> {
-	printer_id: string;
-	// TODO: Update the states when developing the functionality further
-	status: PrintJobStatus;
-	error?: string;
-}
-
-export interface PrinterInterface {
-	label(): { print(book: BookEntry): Promise<Response> };
-	receipt(): { print(items: ReceiptItem[]): Promise<Response> };
-}
 // #endregion receipts
 
 // #region db
@@ -286,9 +259,7 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
-
-	labelPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
-	receiptPrinterUrl: (ctx: debug.DebugCtx) => Observable<string>;
+	committedNotesList: (ctx: debug.DebugCtx) => Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
 }
 
 /**
@@ -331,9 +302,10 @@ export type InventoryDatabaseInterface<
 	 * - `inNoteList` - a stream of in note list entries (for navigation)
 	 */
 	stream: () => DbStream;
-	printer(): PrinterInterface;
-	setLabelPrinterUrl(url: string): DatabaseInterface;
-	setReceiptPrinterUrl(url: string): DatabaseInterface;
+	/**
+	 * returns warehouse data map
+	 */
+	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 }>;
 
 export interface NewDatabase {
