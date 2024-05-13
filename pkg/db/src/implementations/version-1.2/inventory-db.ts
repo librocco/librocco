@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, StockMap } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, type StockMap, VolumeStockInput } from "@librocco/shared";
 
 import {
 	BooksInterface,
@@ -24,7 +24,9 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface
+	ViewInterface,
+	CommittedNotesListRow,
+	NoteData
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -47,6 +49,7 @@ class Database implements InventoryDatabaseInterface {
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
+	#committedNotesListStream: Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
 	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<StockMap>;
@@ -100,6 +103,28 @@ class Database implements InventoryDatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
+		const committedNotesListCache = new BehaviorSubject<Map<string, (VolumeStockInput & { committedAt: string })[]>>(new Map());
+		this.#committedNotesListStream = this.view<CommittedNotesListRow>("v1_list/committed")
+			.stream({})
+			.pipe(
+				map(({ rows }) =>
+					wrapIter(rows)
+						.map(({ value }) => value as NoteData)
+
+						.flatMap(({ entries, committedAt, updatedAt, noteType }) =>
+							wrapIter(entries).map((entry) => ({ ...entry, committedAt, updatedAt, noteType }))
+						)
+						.reduce((acc, curr) => {
+							const key = curr.committedAt ? curr.committedAt.slice(0, 10) : curr.updatedAt?.slice(0, 10);
+							const existingArr = acc.get(key) || [];
+							acc.set(key, [...existingArr, curr]);
+
+							return acc;
+						}, new Map())
+				),
+				share({ connector: () => committedNotesListCache, resetOnRefCountZero: false })
+			);
+
 		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
@@ -112,6 +137,7 @@ class Database implements InventoryDatabaseInterface {
 
 		// Initialise the streams
 		firstValueFrom(this.#warehouseMapStream);
+		firstValueFrom(this.#committedNotesListStream);
 		firstValueFrom(this.#inNoteListStream);
 		firstValueFrom(this.#outNoteListStream);
 
@@ -220,13 +246,15 @@ class Database implements InventoryDatabaseInterface {
 					)
 			);
 	}
+
 	// #endregion queries
 
 	stream(): DbStream {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
+			committedNotesList: (ctx: debug.DebugCtx) => this.#committedNotesListStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
 		};
 	}
 }
@@ -283,4 +311,5 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 		return this;
 	}
 }
+
 // #endregion helpers

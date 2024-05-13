@@ -65,6 +65,16 @@ class Stock implements StockInterface {
 
 		return StockMap.fromDbRows(mapGenerator);
 	}
+	async getAll() {
+		const queryRes = await this.#db._pouch.allDocs({ ...this.options, include_docs: true });
+
+		return wrapIter(queryRes.rows)
+			.map(({ doc }) => doc as Doc)
+			.filter((doc): doc is NoteData => doc?.docType === "note")
+			.filter(({ committed, entries }) => Boolean(committed && entries?.length))
+			.flatMap(({ entries, committedAt, noteType }) => wrapIter(entries).map((entry) => ({ ...entry, committedAt, noteType })))
+			.array();
+	}
 
 	stream(ctx: debug.DebugCtx) {
 		const trigger = concat(from(Promise.resolve()), this.changesStream(ctx));
