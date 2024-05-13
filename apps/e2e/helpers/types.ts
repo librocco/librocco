@@ -121,6 +121,7 @@ export type ContentInterface = DashboardNode<{
 	entityList(view: EntityListView): EntityListInterface;
 	navigate(to: Subset<EntityListView, "warehouse-list" | "inbound-list">): Promise<void>;
 	scanField(): ScanFieldInterface;
+	searchField(): Locator;
 	table(view: TableView): EntriesTableInterface;
 }>;
 
@@ -148,8 +149,6 @@ export interface StatePickerInterface extends Locator {
 
 export type ScanFieldInterface = DashboardNode<{
 	add(isbn: string): Promise<void>;
-	toggleOn(): Promise<void>;
-	toggleOff(): Promise<void>;
 }>;
 
 export interface WarehouseDiscountInterface extends Locator {
@@ -181,7 +180,7 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 // #endregion book form
 
 // #region inventory table
-export type TableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse">;
+export type TableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse" | "stock">;
 
 export interface AssertRowFieldsOpts {
 	strict?: boolean;
