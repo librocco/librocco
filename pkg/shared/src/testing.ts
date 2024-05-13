@@ -10,6 +10,7 @@ export type WebClientView =
 	| "outbound-note"
 	| "warehouse"
 	| "settings"
+	| "history"
 	| "debug";
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list";
