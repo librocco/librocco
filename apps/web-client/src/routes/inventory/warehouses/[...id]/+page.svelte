@@ -35,7 +35,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { printBookLabel } from "$lib/printer";
-
+	import { download, generateCsv, mkConfig } from "export-to-csv";
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -57,6 +57,18 @@
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
+
+	// #region csv
+	$: handleExportCsv = async () => {
+		const csvConfig = mkConfig({ useKeysAsHeaders: true });
+
+		await warehouse.getCsvEntries({}).then((res) => {
+			const gen = generateCsv(csvConfig)([...res]);
+			download(csvConfig)(gen);
+		});
+	};
+
+	// #endregion csv
 
 	// #region warehouse-actions
 	/**
@@ -140,7 +152,13 @@
 
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+		<div class="flex justify-between">
+			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+			<button class=" text-white items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]" on:click={handleExportCsv}>
+				<span class="aria-hidden"> Export to CSV </span>
+			</button>
+		</div>
+			
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">

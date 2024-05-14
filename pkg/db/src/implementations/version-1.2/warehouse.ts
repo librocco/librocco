@@ -1,10 +1,10 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug, StockMap, wrapIter } from "@librocco/shared";
+import { debug, StockMap, wrapIter, type VolumeStock } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
+import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient, VolumeStockCsv } from "@/types";
 import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -12,7 +12,7 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { newNote } from "./note";
 import { newStock } from "./stock";
 
-import { versionId } from "./utils";
+import { addWarehouseName, versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow, isCustomItemRow } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
@@ -275,6 +275,14 @@ class Warehouse implements WarehouseInterface {
 			.filter(isBookRow)
 			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
 		return addWarehouseData(entries, warehouses);
+	}
+
+	async getCsvEntries(): Promise<Iterable<VolumeStockCsv>> {
+		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
+		const entries = wrapIter(queryRes.rows())
+			.filter(isBookRow)
+			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+		return addWarehouseName(entries, warehouses);
 	}
 
 	/**
