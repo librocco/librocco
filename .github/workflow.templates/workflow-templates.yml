@@ -13,7 +13,7 @@ jobs:
     name: Check Github Actions templates
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Run script to generate Github Actions
         run: ./.github/build-workflows.sh
       - name: Check if there are any changes
