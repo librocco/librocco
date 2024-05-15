@@ -1,10 +1,10 @@
 import { BehaviorSubject, combineLatest, firstValueFrom, map, Observable, ReplaySubject, share, Subject, tap } from "rxjs";
 
-import { debug, StockMap, wrapIter, type VolumeStock } from "@librocco/shared";
+import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient, VolumeStockCsv } from "@/types";
+import { CouchDocument, EntriesStreamCsvResult, EntriesStreamResult, VersionedString, VolumeStockClient, VolumeStockCsv } from "@/types";
 import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -320,6 +320,25 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
+				);
+			},
+			entriesCsv: (ctx: debug.DebugCtx): Observable<EntriesStreamCsvResult> => {
+				const tableData = this.#stock.pipe(
+					map(
+						(stock): TableData => ({
+							rows: [...stock.rows()].sort(sortBooks),
+							total: stock.size
+						})
+					)
+				);
+
+				return combineLatest([tableData, this.#db.stream().warehouseMap(ctx)]).pipe(
+					tap(debug.log(ctx, "warehouse_entries_csv:stream:input")),
+					map(([{ rows, total }, warehouses]) => ({
+						total,
+						rows: [...addWarehouseName(rows, warehouses)]
+					})),
+					tap(debug.log(ctx, "warehouse_entries_csv:stream:output"))
 				);
 			}
 		};

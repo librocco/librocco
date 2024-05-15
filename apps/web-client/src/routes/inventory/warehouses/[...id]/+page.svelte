@@ -57,15 +57,27 @@
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
+	$: csvEntries = warehouesStores.csvEntries;
 
 	// #region csv
-	$: handleExportCsv = async () => {
+	type CsvEntries = {
+		warehouseDiscount: number;
+		warehouseName: string;
+		isbn: string;
+		title: string;
+		price: number;
+		year?: string;
+		authors?: string;
+		publisher?: string;
+		editedBy?: string;
+		outOfPrint?: boolean;
+	};
+
+	const handleExportCsv = () => {
 		const csvConfig = mkConfig({ useKeysAsHeaders: true });
 
-		await warehouse.getCsvEntries({}).then((res) => {
-			const gen = generateCsv(csvConfig)([...res]);
-			download(csvConfig)(gen);
-		});
+		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
+		download(csvConfig)(gen);
 	};
 
 	// #endregion csv
@@ -154,11 +166,12 @@
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex justify-between">
 			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
-			<button class=" text-white items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]" on:click={handleExportCsv}>
-				<span class="aria-hidden"> Export to CSV </span>
-			</button>
+			{#if $csvEntries.length}
+				<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
+					<span class="aria-hidden"> Export to CSV </span>
+				</button>
+			{/if}
 		</div>
-			
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
