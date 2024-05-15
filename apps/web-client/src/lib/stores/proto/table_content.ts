@@ -95,14 +95,7 @@ export const createCsvEntriesStore = <K extends "book">(
 const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
 	wrapIter(stock)
 		.zip(bookData)
-		.map(([s, b = {} as BookEntry]) => ({
-			...s,
-			...b,
-			year: b.year ?? "",
-			publisher: b.publisher ?? "",
-			editedBy: b.editedBy ?? "",
-			authors: b.authors ?? ""
-		}))
+		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
 const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient>) => (o: Observable<Iterable<BookEntry | undefined>>) =>
