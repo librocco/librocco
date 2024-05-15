@@ -35,6 +35,7 @@
 		"@histoire/controls": "~0.17.0",
 		"@histoire/plugin-svelte": "~0.17.0",
 		"@librocco/book-data-extension": "workspace:*",
+		"@librocco/google-books-api-plugin": "workspace:*",
 		"@librocco/shared": "workspace:*",
 		"@melt-ui/pp": "~0.1.4",
 		"@melt-ui/svelte": "~0.65.1",
