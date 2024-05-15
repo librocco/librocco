@@ -21,12 +21,16 @@ export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K e
 export type VolumeStockCsv<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
 	? Omit<VolumeStock<"custom">, "__kind">
 	: Omit<VolumeStock<K>, "warehouseId" | "__kind"> & {
-		warehouseDiscount: number;
-		warehouseName: string;
-	};
+			warehouseDiscount: number;
+			warehouseName: string;
+	  };
 
 export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
 	rows: VolumeStockClient<K>[];
+	total: number;
+}
+export interface EntriesStreamCsvResult<K extends VolumeStockKind = VolumeStockKind> {
+	rows: VolumeStockCsv<K>[];
 	total: number;
 }
 
@@ -170,6 +174,7 @@ export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	discount: (ctx: debug.DebugCtx) => Observable<number>;
 	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult<"book">>;
+	entriesCsv: (ctx: debug.DebugCtx) => Observable<EntriesStreamCsvResult<"book">>;
 }
 
 /**

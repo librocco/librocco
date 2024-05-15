@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "svelte/store";
 
-import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { BookEntry, NoteInterface, WarehouseInterface } from "@librocco/db";
 import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
@@ -8,7 +8,7 @@ import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
 import { createDisplayNameStore } from "$lib/stores/inventory/display_name";
 import { createDefaultWarehouseStore } from "$lib/stores/inventory/default_warehouse";
 import { createDisplayStateStore, createInternalStateStore } from "$lib/stores/inventory/note_state";
-import { createDisplayEntriesStore } from "./table_content";
+import { createCsvEntriesStore, createDisplayEntriesStore } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
@@ -62,6 +62,12 @@ interface WarehouseDisplayStores {
 	warehouseDiscount: Writable<number>;
 	// Warehouse stock will display only book items (no custom items)
 	entries: Readable<DisplayRow<"book">[]>;
+	csvEntries: Readable<
+		({
+			warehouseDiscount: number;
+			warehouseName: string;
+		} & BookEntry)[]
+	>;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -80,10 +86,12 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
 	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse);
+	const csvEntries = createCsvEntriesStore<"book">(ctx, getDB(), warehouse);
 
 	return {
 		displayName,
 		warehouseDiscount,
-		entries
+		entries,
+		csvEntries
 	};
 };
