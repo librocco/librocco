@@ -66,16 +66,14 @@ export const addWarehouseData = (entries: Iterable<VolumeStock>, warehouses: War
  */
 export const addWarehouseName = (entries: Iterable<VolumeStock>, warehouses: WarehouseDataMap): Iterable<VolumeStockCsv> => {
 	return map(entries, (e) => {
-		// Custom items don't require additional processing
 		if (e.__kind === "custom") {
-			const { __kind, ...rest } = e
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const { __kind, ...rest } = e;
 			return rest;
 		}
 
-		// const {...e,} = e
-
-		// Add additional data to book rows
-		const { __kind, warehouseId, ...rest } = e
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const { __kind, warehouseId, ...rest } = e;
 		return {
 			...rest,
 			warehouseName: warehouses.get(e.warehouseId)?.displayName || "not-found",
