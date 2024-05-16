@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
 
-import { debug, wrapIter, map as mapIter, type StockMap, VolumeStockInput } from "@librocco/shared";
+import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared";
 
 import {
 	BooksInterface,
@@ -15,7 +15,8 @@ import {
 	NavMap,
 	PluginInterfaceLookup,
 	LibroccoPlugin,
-	WarehouseDataMap
+	WarehouseDataMap,
+	PastTransactionsMap
 } from "@/types";
 import {
 	InventoryDatabaseInterface,
@@ -25,7 +26,6 @@ import {
 	InNoteListRow,
 	WarehouseData,
 	ViewInterface,
-	CommittedNotesListRow,
 	NoteData
 } from "./types";
 
@@ -38,6 +38,7 @@ import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
 import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
+import { PastTransactions } from "./past-transactions";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
@@ -49,7 +50,7 @@ class Database implements InventoryDatabaseInterface {
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
-	#committedNotesListStream: Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
+	#pastTransactionsStream: Observable<PastTransactionsMap>;
 	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<StockMap>;
@@ -103,25 +104,16 @@ class Database implements InventoryDatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
-		const committedNotesListCache = new BehaviorSubject<Map<string, (VolumeStockInput & { committedAt: string })[]>>(new Map());
-		this.#committedNotesListStream = this.view<CommittedNotesListRow>("v1_list/committed")
-			.stream({})
+		const committedNotesListCache = new BehaviorSubject<PastTransactionsMap>(new Map());
+		this.#pastTransactionsStream = this.view<MapReduceRow<string>, NoteData>("v1_list/committed")
+			.stream({}, { include_docs: true })
 			.pipe(
-				map(({ rows }) =>
-					wrapIter(rows)
-						.map(({ value }) => value as NoteData)
-
-						.flatMap(({ entries, committedAt, updatedAt, noteType }) =>
-							wrapIter(entries).map((entry) => ({ ...entry, committedAt, updatedAt, noteType }))
-						)
-						.reduce((acc, curr) => {
-							const key = curr.committedAt ? curr.committedAt.slice(0, 10) : curr.updatedAt?.slice(0, 10);
-							const existingArr = acc.get(key) || [];
-							acc.set(key, [...existingArr, curr]);
-
-							return acc;
-						}, new Map())
-				),
+				map(({ rows }) => {
+					const notes = wrapIter(rows)
+						.map(({ doc }) => doc)
+						.filter((doc): doc is NoteData => Boolean(doc));
+					return PastTransactions.fromNotes(notes).by("date");
+				}),
 				share({ connector: () => committedNotesListCache, resetOnRefCountZero: false })
 			);
 
@@ -137,7 +129,7 @@ class Database implements InventoryDatabaseInterface {
 
 		// Initialise the streams
 		firstValueFrom(this.#warehouseMapStream);
-		firstValueFrom(this.#committedNotesListStream);
+		firstValueFrom(this.#pastTransactionsStream);
 		firstValueFrom(this.#inNoteListStream);
 		firstValueFrom(this.#outNoteListStream);
 
@@ -254,7 +246,7 @@ class Database implements InventoryDatabaseInterface {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
 			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
-			committedNotesList: (ctx: debug.DebugCtx) => this.#committedNotesListStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
+			pastTransactions: (ctx: debug.DebugCtx) => this.#pastTransactionsStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
 		};
 	}
 }

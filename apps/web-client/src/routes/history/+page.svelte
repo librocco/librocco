@@ -13,7 +13,7 @@
 	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
 	import { Page, PlaceholderBox } from "$lib/components";
-	import { createHistoryStore } from "$lib/stores/inventory/history_entries";
+	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
 
 	const {
 		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
@@ -29,28 +29,9 @@
 	});
 
 	const db = getDB();
-	const committedNotesListCtx = { name: "[COMMITTED_NOTES_LIST]", debug: false };
-	let committedNotesListStream = new Observable<
-		Map<
-			string,
-			(VolumeStock<"book"> & {
-				noteType: "inbound" | "outbound";
-			} & {
-				committedAt: string;
-			})[]
-		>
-	>();
 
-	db?.stream()
-		.committedNotesList(committedNotesListCtx)
-		.pipe((v) => (committedNotesListStream = v));
-
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-
-	const warehouseListStream = db?.stream().warehouseMap(warehouseListCtx);
-
-	$: stores = createHistoryStore({}, db, committedNotesListStream, warehouseListStream, value);
-	$: allEntriesList = stores.result;
+	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: true };
+	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, value);
 </script>
 
 <Page view="history" loaded={true}>
@@ -137,7 +118,7 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-			{#if !$allEntriesList || !$allEntriesList.bookList || !$allEntriesList.bookList.length}
+			{#if !$dailySummary?.bookList?.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
 				<!-- End entity list placeholder -->
@@ -145,28 +126,28 @@
 				<!-- Start entity list -->
 				<div class="flex flex-row text-sm">
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Book Count: {$allEntriesList.stats.totalInboundBookCount}
+						Inbound Book Count: {$dailySummary.stats.totalInboundBookCount}
 					</div>
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Cover Price: {$allEntriesList.stats.totalInboundCoverPrice.toFixed(2)}
+						Inbound Cover Price: {$dailySummary.stats.totalInboundCoverPrice.toFixed(2)}
 					</div>
 					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Discounted Price : {$allEntriesList.stats.totalInboundDiscountedPrice.toFixed(2)}
+						Inbound Discounted Price : {$dailySummary.stats.totalInboundDiscountedPrice.toFixed(2)}
 					</div>
 				</div>
 				<div class="flex flex-row text-sm">
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Book Count: {$allEntriesList.stats.totalOutboundBookCount}
+						Outbound Book Count: {$dailySummary.stats.totalOutboundBookCount}
 					</div>
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Cover Price: {$allEntriesList.stats.totalOutboundCoverPrice.toFixed(2)}
+						Outbound Cover Price: {$dailySummary.stats.totalOutboundCoverPrice.toFixed(2)}
 					</div>
 					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Discounted Price : {$allEntriesList.stats.totalOutboundDiscountedPrice.toFixed(2)}
+						Outbound Discounted Price : {$dailySummary.stats.totalOutboundDiscountedPrice.toFixed(2)}
 					</div>
 				</div>
 
-				{#each $allEntriesList.bookList as entry}
+				{#each $dailySummary.bookList as entry}
 					{@const title = entry.title}
 					{@const quantity = entry.quantity}
 					{@const warehouseName = entry.warehouseName}
