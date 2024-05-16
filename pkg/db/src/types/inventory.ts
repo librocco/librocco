@@ -2,7 +2,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockInput, VolumeStockKind, debug } from "@librocco/shared";
+import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
 import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
 
@@ -222,6 +222,16 @@ export interface ReceiptData {
 }
 // #endregion receipts
 
+// #region history
+export type PastTransaction = VolumeStock<"book"> & {
+	date: string;
+	noteId: string;
+	noteType: NoteType;
+};
+
+export type PastTransactionsMap = Map<string, Iterable<PastTransaction>>;
+// #endregion history
+
 // #region db
 export type NavEntry<A = {}> = {
 	displayName: string;
@@ -259,7 +269,9 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
-	committedNotesList: (ctx: debug.DebugCtx) => Observable<Map<string, (VolumeStockInput & { committedAt: string })[]>>;
+
+	// TEMP: move this to a separate interface, dealing with history
+	pastTransactions: (ctx: debug.DebugCtx) => Observable<PastTransactionsMap>;
 }
 
 /**

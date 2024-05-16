@@ -1,12 +1,7 @@
-import type { VolumeStockClient, BookEntry } from "@librocco/db";
-import type { NoteState, NoteTempState, VolumeStockKind } from "@librocco/shared";
+import type { VolumeStockClient, BookEntry, NoteType } from "@librocco/db";
+import type { NoteState, NoteTempState, VolumeStockKind, VolumeStock } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
-import type { NoteType, InventoryDatabaseInterface } from "@librocco/db";
-import type { Observable } from "rxjs";
-import type { Readable } from "svelte/motion";
-import type { VolumeStock, debug } from "@librocco/shared";
-import type { WarehouseDataMap } from "@librocco/db";
 
 /**
  * An interface for a full book entry, used to type the entries in books store and
@@ -53,13 +48,9 @@ export interface NoteStore {
 	};
 }
 
-/** A union type for note states used in the client app */
-export type NoteAppState = NoteState | NoteTempState | undefined;
-
-type VolumeStockBook = VolumeStock<"book">;
-
-export interface Result {
-	bookList: (VolumeStockBook & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
+/** A structure of the daily summary store (for daily summary part of the history section) */
+export interface DailySummaryStore {
+	bookList: (VolumeStock<"book"> & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
 	stats: {
 		totalInboundBookCount: number;
 		totalInboundCoverPrice: number;
@@ -70,23 +61,5 @@ export interface Result {
 	};
 }
 
-export interface CreateHistoryStore {
-	(
-		ctx: debug.DebugCtx,
-		db: InventoryDatabaseInterface,
-		committedNotesListStream: Observable<
-			Map<
-				string,
-				(VolumeStockBook & {
-					noteType: "inbound" | "outbound";
-				} & {
-					committedAt: string;
-				})[]
-			>
-		>,
-		warehouseListStream: Observable<WarehouseDataMap>,
-		dateValue: Readable<any>
-	): {
-		result: Readable<Result>;
-	};
-}
+/** A union type for note states used in the client app */
+export type NoteAppState = NoteState | NoteTempState | undefined;
