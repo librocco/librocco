@@ -1709,9 +1709,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 	test("past transactions stream", async () => {
 		let pastTransactions: PossiblyEmpty<PastTransactionsMap> = EMPTY;
-		db.stream()
-			.pastTransactions({})
-			.subscribe(($pt) => (pastTransactions = $pt));
+		db.history()
+			.stream({})
+			.subscribe(($pt) => (pastTransactions = $pt.by("date")));
 
 		// Initial stream should be an empty map
 		await waitFor(() => expect(pastTransactions).toEqual(new Map()));

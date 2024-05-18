@@ -1,4 +1,4 @@
-import { switchMap, combineLatest } from "rxjs";
+import { switchMap, combineLatest, map } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 import type { DateValue } from "@internationalized/date";
 
@@ -18,7 +18,10 @@ export const createDailySummaryStore: CreateHistoryStore = (ctx, db, dateValue) 
 		return readable({} as DailySummaryStore);
 	}
 
-	const pastTransactionsStream = db.stream().pastTransactions(ctx);
+	const pastTransactionsStream = db
+		.history()
+		.stream(ctx)
+		.pipe(map((pt) => pt.by("date")));
 	const warehouseMapStream = db.stream().warehouseMap(ctx);
 
 	const dailySummary = combineLatest([pastTransactionsStream, observableFromStore(dateValue)]).pipe(
