@@ -16,7 +16,7 @@ import {
 	PluginInterfaceLookup,
 	LibroccoPlugin,
 	WarehouseDataMap,
-	PastTransactionsMap
+	HistoryInterface
 } from "@/types";
 import {
 	InventoryDatabaseInterface,
@@ -25,8 +25,7 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface,
-	NoteData
+	ViewInterface
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -38,7 +37,7 @@ import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
 import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
-import { PastTransactions } from "./past-transactions";
+import { newHistoryProvider } from "./history";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
@@ -50,7 +49,6 @@ class Database implements InventoryDatabaseInterface {
 	// lifetime of the instance to avoid wait times when the user navigates to the corresponding pages.
 	#warehouseMapStream: Observable<WarehouseDataMap>;
 	#outNoteListStream: Observable<NavMap>;
-	#pastTransactionsStream: Observable<PastTransactionsMap>;
 	#inNoteListStream: Observable<InNoteMap>;
 
 	#stockStream: Observable<StockMap>;
@@ -58,6 +56,7 @@ class Database implements InventoryDatabaseInterface {
 	#plugins: PluginsInterface;
 
 	#booksInterface?: BooksInterface;
+	#history?: HistoryInterface;
 
 	constructor(db: PouchDB.Database) {
 		this._pouch = db;
@@ -104,19 +103,6 @@ class Database implements InventoryDatabaseInterface {
 				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
 			);
 
-		const committedNotesListCache = new BehaviorSubject<PastTransactionsMap>(new Map());
-		this.#pastTransactionsStream = this.view<MapReduceRow<string>, NoteData>("v1_list/committed")
-			.stream({}, { include_docs: true })
-			.pipe(
-				map(({ rows }) => {
-					const notes = wrapIter(rows)
-						.map(({ doc }) => doc)
-						.filter((doc): doc is NoteData => Boolean(doc));
-					return PastTransactions.fromNotes(notes).by("date");
-				}),
-				share({ connector: () => committedNotesListCache, resetOnRefCountZero: false })
-			);
-
 		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
@@ -129,7 +115,6 @@ class Database implements InventoryDatabaseInterface {
 
 		// Initialise the streams
 		firstValueFrom(this.#warehouseMapStream);
-		firstValueFrom(this.#pastTransactionsStream);
 		firstValueFrom(this.#inNoteListStream);
 		firstValueFrom(this.#outNoteListStream);
 
@@ -200,9 +185,20 @@ class Database implements InventoryDatabaseInterface {
 		return newWarehouse(this, id);
 	}
 
+	history(): HistoryInterface {
+		// The history provider is not instantiated automatically (as it's quite resource intensive),
+		// but rather instantiated in a lazy manner when the history() method is called. We do, however,
+		// cache history once it has been instantiated to avoid multiple instantiations.
+		if (!this.#history) {
+			this.#history = newHistoryProvider(this);
+		}
+		return this.#history;
+	}
+
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
 		return this.#plugins.get(type);
 	}
+
 	// #endregion instances
 
 	// #region queries
@@ -245,8 +241,7 @@ class Database implements InventoryDatabaseInterface {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
-			pastTransactions: (ctx: debug.DebugCtx) => this.#pastTransactionsStream.pipe(tap(debug.log(ctx, "db:committed_note_list:stream")))
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
 		};
 	}
 }
