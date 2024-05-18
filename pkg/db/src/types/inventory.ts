@@ -227,9 +227,18 @@ export type PastTransaction = VolumeStock<"book"> & {
 	date: string;
 	noteId: string;
 	noteType: NoteType;
+	noteDisplayName: string;
 };
 
 export type PastTransactionsMap = Map<string, Iterable<PastTransaction>>;
+
+export interface PastTransactionsInterface {
+	by(property: keyof PastTransaction): PastTransactionsMap;
+}
+
+export interface HistoryInterface {
+	stream(ctx: debug.DebugCtx): Observable<PastTransactionsInterface>;
+}
 // #endregion history
 
 // #region db
@@ -269,9 +278,6 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
-
-	// TEMP: move this to a separate interface, dealing with history
-	pastTransactions: (ctx: debug.DebugCtx) => Observable<PastTransactionsMap>;
 }
 
 /**
@@ -318,6 +324,11 @@ export type InventoryDatabaseInterface<
 	 * returns warehouse data map
 	 */
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
+	/**
+	 * Returns a history interface for the db, handling queries/streams with regard
+	 * to past transactions, notes, etc.
+	 */
+	history(): HistoryInterface;
 }>;
 
 export interface NewDatabase {
