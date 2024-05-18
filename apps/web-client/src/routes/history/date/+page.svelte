@@ -3,10 +3,9 @@
 
 	import { melt, createDatePicker } from "@melt-ui/svelte";
 	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { Observable } from "rxjs";
 	import { now, getLocalTimeZone } from "@internationalized/date";
 
-	import { entityListView, testId, type VolumeStock } from "@librocco/shared";
+	import { entityListView, testId } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
@@ -151,8 +150,10 @@
 					{@const title = entry.title}
 					{@const quantity = entry.quantity}
 					{@const warehouseName = entry.warehouseName}
-					{@const committedAt = entry.committedAt}
+					{@const committedAt = entry.date}
 					{@const noteType = entry.noteType}
+					{@const noteName = entry.noteDisplayName}
+					{@const noteId = entry.noteId}
 
 					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
 						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
@@ -160,8 +161,10 @@
 
 							<div class="flex items-center">
 								<Library class="mr-1 text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{quantity} books -</span>
-								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span>
+								<span class="entity-list-text-sm text-gray-500">{quantity} books - </span>
+								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span> (<a href="{appPath('history')}notes/{noteId}"
+									><span>{noteName}</span></a
+								>)
 							</div>
 						</div>
 
