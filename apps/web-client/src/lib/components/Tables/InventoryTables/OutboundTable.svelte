@@ -3,7 +3,7 @@
 
 	import { type NavEntry, isBookRow } from "@librocco/db";
 
-	import type { OutboundTableData } from "../types";
+	import type { InventoryTableData } from "../types";
 
 	import type { createTable } from "$lib/actions";
 
@@ -17,9 +17,8 @@
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import { ConciergeBell } from "lucide-svelte";
 
-	export let table: ReturnType<typeof createTable<OutboundTableData>>;
+	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 	export let warehouseList: Iterable<[string, NavEntry]>;
 
 	const { table: tableAction } = table;
