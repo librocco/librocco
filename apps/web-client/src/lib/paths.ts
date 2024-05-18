@@ -9,7 +9,7 @@ const PATHS = {
 	inbound: `${basepath}/inventory/inbound/`,
 	outbound: `${basepath}/outbound/`,
 	settings: `${basepath}/settings/`,
-	history: `${basepath}/history/date/` // TODO: this should be the root history view (handling redirects/tab selection on its own)
+	history: `${basepath}/history/`
 };
 
 /**

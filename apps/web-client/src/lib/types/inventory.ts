@@ -1,5 +1,5 @@
-import type { VolumeStockClient, BookEntry, NoteType } from "@librocco/db";
-import type { NoteState, NoteTempState, VolumeStockKind, VolumeStock } from "@librocco/shared";
+import type { VolumeStockClient, BookEntry, PastTransaction } from "@librocco/db";
+import type { NoteState, NoteTempState, VolumeStockKind } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
 
@@ -50,7 +50,7 @@ export interface NoteStore {
 
 /** A structure of the daily summary store (for daily summary part of the history section) */
 export interface DailySummaryStore {
-	bookList: (VolumeStock<"book"> & BookEntry & { warehouseName: string; committedAt: string; noteType: NoteType })[];
+	bookList: (PastTransaction & BookEntry & { warehouseName })[];
 	stats: {
 		totalInboundBookCount: number;
 		totalInboundCoverPrice: number;
