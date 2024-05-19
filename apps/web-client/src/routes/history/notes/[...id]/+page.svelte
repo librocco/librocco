@@ -5,16 +5,7 @@
 
 	import type { PageData } from "./$types";
 
-	import {
-		Breadcrumbs,
-		Page,
-		PlaceholderBox,
-		createBreadcrumbs,
-		TextEditable,
-		ExtensionAvailabilityToast,
-		StockTable,
-		StockBookRow
-	} from "$lib/components";
+	import { Page, PlaceholderBox, ExtensionAvailabilityToast, StockTable, StockBookRow } from "$lib/components";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	import { createNoteStores } from "$lib/stores/proto";
@@ -59,8 +50,6 @@
 		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
 	});
 	// #endregion table
-
-	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
 </script>
 
 <Page view="outbound-note" loaded={!loading}>
@@ -70,21 +59,17 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
-				<TextEditable
-					name="title"
-					textEl="h1"
-					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="Note"
-					disabled
-					bind:value={$displayName}
-				/>
+				<div class="relative block w-full p-2 ">
+					<div class="flex flex-row items-center gap-x-2 text-gray-400">
+						<h1 class="text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+					</div>
+				</div>
 
 				<div class="w-fit">
 					{#if $updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString($updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
