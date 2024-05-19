@@ -1735,7 +1735,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				warehouseId: warehouse1._id,
 				date: slicedDate,
 				noteType: "inbound",
-				noteId: note1._id
+				noteId: note1._id,
+				noteDisplayName: note1.displayName
 			},
 			{
 				isbn: "22222222",
@@ -1743,7 +1744,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				date: slicedDate,
 				noteType: "inbound",
 				warehouseId: warehouse1._id,
-				noteId: note1._id
+				noteId: note1._id,
+				noteDisplayName: note1.displayName
 			},
 			{
 				isbn: "11111111",
@@ -1751,7 +1753,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				date: slicedDate,
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
-				noteId: note2._id
+				noteId: note2._id,
+				noteDisplayName: note2.displayName
 			},
 			{
 				isbn: "22222222",
@@ -1759,7 +1762,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				date: slicedDate,
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
-				noteId: note2._id
+				noteId: note2._id,
+				noteDisplayName: note2.displayName
 			}
 		];
 
@@ -1782,7 +1786,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				noteType: "outbound",
 				date: slicedDate,
 				warehouseId: warehouse1._id,
-				noteId: note3._id
+				noteId: note3._id,
+				noteDisplayName: note3.displayName
 			},
 			{
 				isbn: "22222222",
@@ -1790,7 +1795,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				noteType: "outbound",
 				date: slicedDate,
 				warehouseId: warehouse2._id,
-				noteId: note3._id
+				noteId: note3._id,
+				noteDisplayName: note3.displayName
 			},
 			...transactions
 		];
