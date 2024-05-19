@@ -35,7 +35,7 @@
 		{authors}
 	</td>
 	<td data-property="price" class="">
-		<BookPriceCell data={{ price, warehouseDiscount }} />
+		<BookPriceCell data={row} />
 	</td>
 	<td data-property="quantity" class="">
 		<span class="badge badge-md badge-gray">
@@ -71,7 +71,7 @@
 	</td>
 	<td />
 	<td data-property="price" class="table-cell-fit">
-		<BookPriceCell data={{ price }} />
+		<BookPriceCell data={row} />
 	</td>
 	<td />
 	<td />

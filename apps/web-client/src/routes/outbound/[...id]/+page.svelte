@@ -37,7 +37,7 @@
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -144,7 +144,7 @@
 	// #endregion infinite-scroll
 
 	// #region table
-	const tableOptions = writable<{ data: OutboundTableData[] }>({
+	const tableOptions = writable<{ data: InventoryTableData[] }>({
 		data: $entries
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
@@ -154,7 +154,7 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: ($entries as OutboundTableData[])?.slice(0, maxResults)
+		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
 	});
 	// #endregion table
 
@@ -177,7 +177,7 @@
 		}
 	};
 
-	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData) => {
+	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 		const { warehouseId: nextWarehouseId } = e.detail;
 		// Number form control validation means this string->number conversion should yield a valid result
@@ -192,7 +192,7 @@
 		await note.updateTransaction({}, transaction, { ...transaction, warehouseId: nextWarehouseId });
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -224,10 +224,10 @@
 	 * - book form
 	 * - custom item form
 	 */
-	const handleOpenFormPopover = (row: OutboundTableData & { key: string; rowIx: number }) => () =>
+	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () =>
 		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
 
-	const openBookForm = (row: OutboundTableData & { key: string; rowIx: number }) => {
+	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
 		bookFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
@@ -236,7 +236,7 @@
 			type: "edit-row"
 		};
 	};
-	const openCustomItemForm = (row: OutboundTableData & { key: string; rowIx: number }) => {
+	const openCustomItemForm = (row: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
 		customItemFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
