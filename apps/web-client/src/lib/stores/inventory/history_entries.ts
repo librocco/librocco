@@ -1,19 +1,19 @@
-import { switchMap, combineLatest, map } from "rxjs";
+import { switchMap, combineLatest, map, tap } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 import type { DateValue } from "@internationalized/date";
 
-import type { debug } from "@librocco/shared";
-import type { InventoryDatabaseInterface } from "@librocco/db";
+import { debug, wrapIter } from "@librocco/shared";
+import type { BookEntry, InventoryDatabaseInterface } from "@librocco/db";
 
-import type { DailySummaryStore } from "$lib/types/inventory";
+import type { BookHistoryStores, DailySummaryStore } from "$lib/types/inventory";
 import { observableFromStore, readableFromStream } from "$lib/utils/streams";
 import { mapMergeBookWarehouseData } from "$lib/utils/misc";
 
-export interface CreateHistoryStore {
+interface CreateDailySummaryStore {
 	(ctx: debug.DebugCtx, db: InventoryDatabaseInterface | undefined, dateValue: Readable<DateValue>): Readable<DailySummaryStore>;
 }
 
-export const createDailySummaryStore: CreateHistoryStore = (ctx, db, dateValue) => {
+export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, dateValue) => {
 	if (!db) {
 		return readable({} as DailySummaryStore);
 	}
@@ -35,4 +35,39 @@ export const createDailySummaryStore: CreateHistoryStore = (ctx, db, dateValue) 
 	);
 
 	return readableFromStream(ctx, dailySummary, {} as DailySummaryStore);
+};
+
+export interface createBookHistoryStores {
+	(ctx: debug.DebugCtx, db?: InventoryDatabaseInterface, isbn?: string): BookHistoryStores;
+}
+
+export const createBookHistoryStores: createBookHistoryStores = (ctx, db, isbn = "") => {
+	if (!db) {
+		return {
+			bookData: readable({} as BookEntry),
+			transactions: readable([])
+		};
+	}
+
+	const history = db.history().stream(ctx);
+	const warehouseMapStream = db.stream().warehouseMap(ctx);
+
+	const bookDataStream = db
+		.books()
+		.stream(ctx, [isbn])
+		.pipe(map(([data]) => data || ({} as BookEntry)));
+	const bookData = readableFromStream(ctx, bookDataStream, {} as BookEntry);
+
+	const transactionsStream = combineLatest([history, warehouseMapStream]).pipe(
+		// Get transactions for current isbn
+		map(([history, warehouseMap]) => [history.by("isbn").get(isbn) || [], warehouseMap] as const),
+		map(([transactions, warehouseMap]) =>
+			wrapIter(transactions).map((txn) => ({ ...txn, warehouseName: warehouseMap.get(txn.warehouseId)?.displayName || "" }))
+		),
+		tap(debug.log(ctx, `transactions_for_isbn:${isbn}`)),
+		map((pt) => pt.array())
+	);
+	const transactions = readableFromStream(ctx, transactionsStream, []);
+
+	return { bookData, transactions };
 };
