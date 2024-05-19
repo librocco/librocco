@@ -92,7 +92,7 @@
 						{authors}
 					</td>
 					<td data-property="price" class="table-cell-fit">
-						<BookPriceCell data={{ price, warehouseDiscount }} />
+						<BookPriceCell data={row} />
 					</td>
 					<td data-property="quantity" class="table-cell-fit">
 						<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} />
@@ -124,7 +124,7 @@
 					</td>
 					<td />
 					<td data-property="price" class="table-cell-fit">
-						<BookPriceCell data={{ price }} />
+						<BookPriceCell data={row} />
 					</td>
 					<td />
 					<td />
