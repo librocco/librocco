@@ -74,7 +74,7 @@
 	};
 
 	const handleExportCsv = () => {
-		const csvConfig = mkConfig({ useKeysAsHeaders: true });
+		const csvConfig = mkConfig({ useKeysAsHeaders: true, filename: `${$displayName.replace(" ", "-")}-${Date.now()}` });
 
 		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
 		download(csvConfig)(gen);

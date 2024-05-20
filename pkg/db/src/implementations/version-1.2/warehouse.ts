@@ -4,7 +4,7 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { CouchDocument, EntriesStreamCsvResult, EntriesStreamResult, VersionedString, VolumeStockClient, VolumeStockCsv } from "@/types";
+import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
 import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -12,7 +12,7 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { newNote } from "./note";
 import { newStock } from "./stock";
 
-import { addWarehouseName, versionId } from "./utils";
+import { versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow, isCustomItemRow } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
@@ -277,14 +277,6 @@ class Warehouse implements WarehouseInterface {
 		return addWarehouseData(entries, warehouses);
 	}
 
-	async getCsvEntries(): Promise<Iterable<VolumeStockCsv>> {
-		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
-		const entries = wrapIter(queryRes.rows())
-			.filter(isBookRow)
-			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
-		return addWarehouseName(entries, warehouses);
-	}
-
 	/**
 	 * Creates streams for the warehouse data. The streams are hot in a way that they will
 	 * emit the value from external source (i.e. db), but cold in a way that the db subscription is
@@ -320,25 +312,6 @@ class Warehouse implements WarehouseInterface {
 					tap(debug.log(ctx, "warehouse_entries:stream:input")),
 					map(combineTransactionsWarehouses({ includeAvailableWarehouses: false })),
 					tap(debug.log(ctx, "warehouse_entries:stream:output"))
-				);
-			},
-			entriesCsv: (ctx: debug.DebugCtx): Observable<EntriesStreamCsvResult> => {
-				const tableData = this.#stock.pipe(
-					map(
-						(stock): TableData => ({
-							rows: [...stock.rows()].sort(sortBooks),
-							total: stock.size
-						})
-					)
-				);
-
-				return combineLatest([tableData, this.#db.stream().warehouseMap(ctx)]).pipe(
-					tap(debug.log(ctx, "warehouse_entries_csv:stream:input")),
-					map(([{ rows, total }, warehouses]) => ({
-						total,
-						rows: [...addWarehouseName(rows, warehouses)]
-					})),
-					tap(debug.log(ctx, "warehouse_entries_csv:stream:output"))
 				);
 			}
 		};
