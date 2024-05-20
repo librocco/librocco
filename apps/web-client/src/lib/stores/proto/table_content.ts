@@ -84,7 +84,7 @@ const mergeBookDataCsv = (stock: Iterable<VolumeStockClient>) => (bookData: Iter
 			publisher: b.publisher ?? "",
 			editedBy: b.editedBy ?? "",
 			authors: b.authors ?? "",
-			discountedPrice: (b.price * (100 - rest.warehouseDiscount || 0)) / 100
+			discountedPrice: ((b.price * (100 - rest.warehouseDiscount || 0)) / 100).toFixed(2)
 		}))
 		.array();
 
