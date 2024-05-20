@@ -36,6 +36,7 @@
 	import { appPath } from "$lib/paths";
 	import { printBookLabel } from "$lib/printer";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -60,21 +61,23 @@
 	$: csvEntries = warehouesStores.csvEntries;
 
 	// #region csv
-	type CsvEntries = {
-		warehouseDiscount: number;
-		warehouseName: string;
-		isbn: string;
-		title: string;
-		price: number;
-		year?: string;
-		authors?: string;
-		publisher?: string;
-		editedBy?: string;
-		outOfPrint?: boolean;
-	};
-
+	type CsvEntries = Omit<InventoryTableData, "warehouseId">;
 	const handleExportCsv = () => {
-		const csvConfig = mkConfig({ useKeysAsHeaders: true, filename: `${$displayName.replace(" ", "-")}-${Date.now()}` });
+		const csvConfig = mkConfig({
+			columnHeaders: [
+				{ displayLabel: "Quantity", key: "quantity" },
+				{ displayLabel: "ISBN", key: "isbn" },
+				{ displayLabel: "Title", key: "title" },
+				{ displayLabel: "Publisher", key: "publisher" },
+				{ displayLabel: "Authors", key: "authors" },
+				{ displayLabel: "Year", key: "year" },
+				{ displayLabel: "Price", key: "price" },
+				{ displayLabel: "Category", key: "category" },
+				{ displayLabel: "Edited by", key: "edited_by" },
+				{ displayLabel: "Out of print", key: "out_of_print" }
+			],
+			filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
+		});
 
 		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
 		download(csvConfig)(gen);
