@@ -2,7 +2,7 @@ import { map, StockMap } from "@librocco/shared";
 
 import { VolumeStock } from "@librocco/shared";
 
-import { EntriesStreamResult, NavMap, VolumeStockClient, VolumeStockCsv, WarehouseDataMap } from "@/types";
+import { EntriesStreamResult, NavMap, VolumeStockClient, WarehouseDataMap } from "@/types";
 
 import { createVersioningFunction } from "@/utils/misc";
 
@@ -24,13 +24,13 @@ export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouse
 export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouses: boolean }) {
 	return opts?.includeAvailableWarehouses
 		? ([{ rows, total }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
-			total,
-			rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
-		})
+				total,
+				rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
+		  })
 		: ([{ rows, total }, warehouses]: Params): EntriesStreamResult => ({
-			total,
-			rows: [...addWarehouseData(rows, warehouses)]
-		});
+				total,
+				rows: [...addWarehouseData(rows, warehouses)]
+		  });
 }
 
 /**
@@ -51,31 +51,6 @@ export const addWarehouseData = (entries: Iterable<VolumeStock>, warehouses: War
 		return {
 			...e,
 			__kind: "book",
-			warehouseName: warehouses.get(e.warehouseId)?.displayName || "not-found",
-			warehouseDiscount: warehouses.get(e.warehouseId)?.discountPercentage || 0
-		};
-	});
-};
-
-/**
- * Takes in a list of VolumeStock entries and a list of existing warehouses and adds a `warehouseName`.
- *
- * @param entries
- * @param warehouses
- * @returns
- */
-export const addWarehouseName = (entries: Iterable<VolumeStock>, warehouses: WarehouseDataMap): Iterable<VolumeStockCsv> => {
-	return map(entries, (e) => {
-		if (e.__kind === "custom") {
-			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			const { __kind, ...rest } = e;
-			return rest;
-		}
-
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const { __kind, warehouseId, ...rest } = e;
-		return {
-			...rest,
 			warehouseName: warehouses.get(e.warehouseId)?.displayName || "not-found",
 			warehouseDiscount: warehouses.get(e.warehouseId)?.discountPercentage || 0
 		};

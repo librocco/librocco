@@ -17,25 +17,13 @@ export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K e
 			warehouseName: string;
 			availableWarehouses?: NavMap<{ quantity: number }>;
 	  };
-/** An extended version of `VolumeStock`, for csv usage, no available warehouses */
-export type VolumeStockCsv<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
-	? Omit<VolumeStock<"custom">, "__kind">
-	: Omit<VolumeStock<K>, "warehouseId" | "__kind"> & {
-			warehouseDiscount: number;
-			warehouseName: string;
-	  };
 
 export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
 	rows: VolumeStockClient<K>[];
 	total: number;
 }
-export interface EntriesStreamCsvResult<K extends VolumeStockKind = VolumeStockKind> {
-	rows: VolumeStockCsv<K>[];
-	total: number;
-}
 
 export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
-export type EntriesCsvQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockCsv>>;
 
 export interface OutOfStockTransaction extends VolumeStock<"book"> {
 	warehouseName: string;
@@ -174,7 +162,6 @@ export interface WarehouseStream {
 	displayName: (ctx: debug.DebugCtx) => Observable<string>;
 	discount: (ctx: debug.DebugCtx) => Observable<number>;
 	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult<"book">>;
-	entriesCsv: (ctx: debug.DebugCtx) => Observable<EntriesStreamCsvResult<"book">>;
 }
 
 /**
@@ -208,10 +195,6 @@ export interface WarehouseProto<N extends NoteInterface = NoteInterface, A exten
 	 * An imperative query (single response) of warehouse stock (as opposed to the entries stream - an observable stream).
 	 */
 	getEntries: EntriesQuery;
-	/**
-	 * An imperative query of warehouse stock without additional warehouse data.
-	 */
-	getCsvEntries: EntriesCsvQuery;
 }
 
 /**
