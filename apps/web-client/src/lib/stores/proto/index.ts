@@ -65,6 +65,7 @@ interface WarehouseDisplayStores {
 		({
 			warehouseDiscount: number;
 			warehouseName: string;
+			quantity: number;
 		} & BookEntry)[]
 	>;
 }
