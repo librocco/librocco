@@ -90,3 +90,5 @@ export interface CreateHistoryStore {
 		result: Readable<Result>;
 	};
 }
+
+export type DisplayStoreKind = "entries" | "csv";

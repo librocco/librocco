@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "svelte/store";
 
-import type { BookEntry, NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { NoteInterface, WarehouseInterface } from "@librocco/db";
 import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
@@ -61,13 +61,7 @@ interface WarehouseDisplayStores {
 	warehouseDiscount: Writable<number>;
 	// Warehouse stock will display only book items (no custom items)
 	entries: Readable<DisplayRow<"book">[]>;
-	csvEntries: Readable<
-		({
-			warehouseDiscount: number;
-			warehouseName: string;
-			quantity: number;
-		} & BookEntry)[]
-	>;
+	csvEntries: Readable<Omit<DisplayRow<"book">, "warehouseId">[]>;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -86,7 +80,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
 	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookData);
-	const csvEntries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookDataCsv);
+	const csvEntries = createDisplayEntriesStore<"book", "csv">(ctx, getDB(), warehouse, mapMergeBookDataCsv);
 
 	return {
 		displayName,
