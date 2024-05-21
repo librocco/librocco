@@ -40,6 +40,7 @@
 			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
 			<th scope="col" class="show-col-xl"> Edited By </th>
 			<th scope="col" class="show-col-xl table-cell-fit"> O.P </th>
+			<th scope="col" class="show-col-xl table-cell-fit"> Category </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
@@ -57,6 +58,7 @@
 				title = "N/A",
 				publisher = "",
 				editedBy = "",
+				category = "",
 				outOfPrint = false,
 				warehouseDiscount
 			} = row}
@@ -88,6 +90,9 @@
 				</td>
 				<td data-property="outOfPrint" class="show-col-xl table-cell-fit">
 					<BookOutPrintCell {rowIx} {outOfPrint} />
+				</td>
+				<td data-property="category" class="show-col-xl table-cell-max">
+					{category}
 				</td>
 				{#if $$slots["row-actions"]}
 					<td class="table-cell-fit">

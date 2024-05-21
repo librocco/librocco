@@ -46,6 +46,7 @@
 			<th scope="col" class="show-col-md"> Publisher </th>
 			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
 			<th scope="col">Warehouse </th>
+			<th scope="col" class="show-col-md"> Category </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
@@ -54,7 +55,18 @@
 	<tbody>
 		{#each rows as row (row.key)}
 			{#if isBookRow(row)}
-				{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
+				{@const {
+					rowIx,
+					isbn,
+					authors = "N/A",
+					quantity,
+					price,
+					year = "N/A",
+					title = "N/A",
+					publisher = "",
+					warehouseDiscount,
+					category = ""
+				} = row}
 				{@const { warehouseId, warehouseName, availableWarehouses } = row}
 				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
 				<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
@@ -74,7 +86,8 @@
 					warehouseDiscount,
 					warehouseId,
 					warehouseName,
-					availableWarehouses
+					availableWarehouses,
+					category
 				}}
 				<!-- Require action takes precedence over out of stock -->
 				<tr
@@ -106,6 +119,9 @@
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
 						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, coreRowData)} data={row} {rowIx} />
+					</td>
+					<td data-property="category" class="show-col-md table-cell-max">
+						{category}
 					</td>
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
