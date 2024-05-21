@@ -54,6 +54,7 @@ export type SearchIndex = Search;
 //  'publisher': 'Zanichelli',
 //  'edited_by': '', // ------------ 'editedBy'
 //  'out_of_print': 'false', // ------------ 'outOfPrint'
+//  'category': '500', 'basement'
 
 export interface BookEntry {
 	isbn: string;
@@ -64,6 +65,7 @@ export interface BookEntry {
 	publisher?: string;
 	editedBy?: string;
 	outOfPrint?: boolean;
+	category?: string;
 }
 
 /**

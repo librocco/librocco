@@ -30,6 +30,7 @@
 			<th scope="col" class="show-col-lg"> Year </th>
 			<th scope="col" class="show-col-xl "> Edited By </th>
 			<th scope="col" class="show-col-xl"> O.P </th>
+			<th scope="col" class="show-col-xl"> Category </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}

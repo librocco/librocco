@@ -18,6 +18,7 @@ export type InventoryTableData = BookCoreRowData & {
 	year?: string;
 	editedBy?: string;
 	outOfPrint?: boolean;
+	category?: string;
 };
 
 export type BookCoreRowData = {

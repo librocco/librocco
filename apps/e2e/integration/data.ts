@@ -6,5 +6,6 @@ export const book1 = {
 	authors: "Author and Sons",
 	publisher: "Reed Elsevier",
 	editedBy: "Sons",
-	outOfPrint: true
+	outOfPrint: true,
+	category: ""
 };

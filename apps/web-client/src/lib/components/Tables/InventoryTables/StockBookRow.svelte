@@ -18,7 +18,8 @@
 		publisher = "",
 		editedBy = "",
 		outOfPrint = false,
-		warehouseDiscount
+		warehouseDiscount,
+		category = ""
 	} = row;
 </script>
 
@@ -51,6 +52,9 @@
 </td>
 <td data-property="outOfPrint" class="show-col-xl">
 	<BookOutPrintCell {rowIx} {outOfPrint} />
+</td>
+<td data-property="category" class="show-col-xl table-cell-max">
+	{category}
 </td>
 {#if $$slots["row-actions"]}
 	<td class="table-cell-fit">
