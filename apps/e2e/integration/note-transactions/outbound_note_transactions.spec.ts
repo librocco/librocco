@@ -384,6 +384,87 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
 });
 
+test("should add custom items on 'Custom Item' button click and filling out the form", async ({ page }) => {
+	// Setup: add one non-custom transaction
+	const db = await getDbHandle(page);
+	await db.evaluateHandle((db) => db.warehouse().note("note-1").addVolumes({ isbn: "11111111", quantity: 1 }));
+
+	const content = getDashboard(page).content();
+
+	// Add a custom item using custom item button
+	await content.getByRole("button", { name: "Custom Item" }).click();
+	// The custom item form appears automatically, when adding a new custom item
+	const form = getDashboard(page).customItemForm();
+	await form.fillData({ title: "Item 1", price: 5 });
+	await form.submit();
+
+	// A new custom item should appear under book transactions
+	await content.table("outbound-note").assertRows([
+		{ isbn: "11111111", quantity: 1 },
+		{ title: "Item 1", price: 5 }
+	]);
+
+	// Custom items always appear under book rows
+	await content.scanField().add("22222222"); // Add new book item
+	await content.getByRole("button", { name: "Custom Item" }).click(); // Add new custom item
+	await form.fillData({ title: "Item 2", price: 20 });
+	await form.submit();
+
+	await content.table("outbound-note").assertRows([
+		{ isbn: "11111111", quantity: 1 },
+		{ isbn: "22222222", quantity: 1 },
+		// Custom items are not aggregated (each has a unique internal id)
+		{ title: "Item 1", price: 5 },
+		{ title: "Item 2", price: 20 }
+	]);
+
+	// Opening up a form and and cancelling shouldn't add anything
+	await content.getByRole("button", { name: "Custom item" }).click();
+	await form.cancel();
+
+	await content.table("outbound-note").assertRows([
+		{ isbn: "11111111", quantity: 1 },
+		{ isbn: "22222222", quantity: 1 },
+		// Custom items are not aggregated (each has a unique internal id)
+		{ title: "Item 1", price: 5 },
+		{ title: "Item 2", price: 20 }
+	]);
+});
+
+test("should allow for editing of custom items using the custom item form", async ({ page }) => {
+	// Setup: add two custom items and two book rows (as noise)
+	const db = await getDbHandle(page);
+	await db.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note("note-1")
+			.addVolumes(
+				{ isbn: "11111111", quantity: 1 },
+				{ isbn: "22222222", quantity: 1 },
+				{ __kind: "custom", id: "custom-item-1", title: "Custom item 1", price: 10 },
+				{ __kind: "custom", id: "custom-item-2", title: "Custom item 2", price: 10 }
+			)
+	);
+
+	const content = getDashboard(page).content();
+
+	// Edit custom items using custom item form
+	await content.table("outbound-note").row(2).edit();
+	await getDashboard(page).customItemForm().fillData({ title: "Custom item 1 - updated" });
+	await getDashboard(page).customItemForm().submit();
+
+	await content.table("outbound-note").row(3).edit();
+	await getDashboard(page).customItemForm().fillData({ title: "Custom item 2 - updated", price: 12 });
+	await getDashboard(page).customItemForm().submit();
+
+	await content.table("outbound-note").assertRows([
+		{ isbn: "11111111", quantity: 1 },
+		{ isbn: "22222222", quantity: 1 },
+		{ title: "Custom item 1 - updated", price: 10 },
+		{ title: "Custom item 2 - updated", price: 12 }
+	]);
+});
+
 test("should check validity of the transactions and commit the note on 'commit' button click", async ({ page }) => {
 	// Setup - add some stock
 	const db = await getDbHandle(page);

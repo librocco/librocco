@@ -206,8 +206,6 @@
 		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
 
-	const handleAddCustomItem = () => note.addVolumes({ __kind: "custom", title: "Custom item", price: 10 });
-
 	const deleteRow = async (rowIx: number) => {
 		const row = $table.rows[rowIx];
 		const match = isCustomItemRow(row) ? row.id : row;
@@ -240,7 +238,7 @@
 		customItemFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
-			title: dialogTitle.editCustomItem(),
+			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
 			description: "",
 			type: "custom-item-form"
 		};
@@ -283,7 +281,14 @@
 		const data = form?.data as VolumeStock<"custom">;
 
 		try {
-			await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+			// Check if create or update and dispatch appropriate action
+			//
+			// Presence of id indicates the existing custom item (update action)
+			if (data.id) {
+				await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+			} else {
+				await note.addVolumes({ __kind: "custom", ...data });
+			}
 
 			bookFormData = null;
 			open.set(false);
@@ -532,7 +537,12 @@
 				</div>
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
-					<button on:click={handleAddCustomItem} class="button button-green">Custom item</button>
+					<button
+						use:melt={$dialogTrigger}
+						on:m-click={() => openCustomItemForm()}
+						on:m-keydown={() => openCustomItemForm()}
+						class="button button-green">Custom item</button
+					>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->

@@ -55,6 +55,7 @@ export interface DashboardInterface extends Locator {
 	content(): ContentInterface;
 	dialog(): DialogInterface;
 	bookForm(): BookFormInterface;
+	customItemForm(): CustomItemFormInterface;
 }
 
 export interface NavInterface extends Locator {
@@ -167,12 +168,16 @@ export interface BookFormValues {
 	outOfPrint: boolean;
 }
 
-export type BookFormInterface = DashboardNode<{
-	field<N extends keyof BookFormValues>(name: N): BookFormFieldInterface<BookFormValues[N]>;
-	fillBookData(entries: Partial<BookFormValues>): Promise<void>;
-	fillExistingData(): Promise<void>;
+export type FormInterface<F extends keyof BookFormValues> = {
+	field<N extends F>(name: N): BookFormFieldInterface<BookFormValues[N]>;
+	fillData(entries: Partial<{ [K in F]: BookFormValues[K] }>): Promise<void>;
+	fetchData(): Promise<void>;
 	submit(kind?: "keyboard" | "click"): Promise<void>;
-}>;
+	cancel(kind?: "keyboard" | "click"): Promise<void>;
+};
+
+export type BookFormInterface = FormInterface<keyof BookFormValues>;
+export type CustomItemFormInterface = FormInterface<"title" | "price">;
 
 export interface BookFormFieldInterface<T extends string | number | boolean> extends Locator {
 	set: (value: T) => Promise<void>;

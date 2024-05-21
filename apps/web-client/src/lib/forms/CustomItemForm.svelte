@@ -29,6 +29,8 @@
 	const { form: formStore, constraints, enhance } = form;
 
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
+
+	console.log("custom item form open");
 </script>
 
 <form
@@ -36,7 +38,7 @@
 	aria-label="Edit book details"
 	use:enhance
 	method="POST"
-	id={testId("book-form")}
+	id={testId("custom-item-form")}
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">

@@ -18,6 +18,7 @@ export const dialogTitle = {
 
 	// BookForm
 	editBook: () => "Edit book details",
+	createCustomItem: () => "Create custom item",
 	editCustomItem: () => "Edit custom item",
 
 	// WarehouseForm

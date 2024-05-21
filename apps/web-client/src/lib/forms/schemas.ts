@@ -37,7 +37,7 @@ export const settingsSchema = z.object({
 
 export type CustomItemFormData = SuperValidated<typeof customItemSchema>["data"];
 export const customItemSchema = z.object({
-	id: z.string(),
+	id: z.string().optional(),
 	title: z.string(),
 	price: z.number()
 });
