@@ -43,6 +43,7 @@ export interface DisplayRow {
 	publisher?: string;
 	editedBy?: string;
 	outOfPrint?: boolean;
+	category?: string;
 	warehouseName: string;
 }
 
@@ -165,6 +166,7 @@ export interface BookFormValues {
 	publisher: string;
 	editedBy: string;
 	outOfPrint: boolean;
+	category: string;
 }
 
 export type BookFormInterface = DashboardNode<{
@@ -218,6 +220,7 @@ export interface TransactionFieldInterfaceLookup {
 	warehouseName: WarehouseNameTransactionField;
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
+	category: Asserter<string>;
 }
 export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName" | "price">;
 // #endregion inventory table

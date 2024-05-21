@@ -175,6 +175,9 @@
 			<div id="editedBy-field-container" class="basis-full">
 				<Input bind:value={$formStore.editedBy} name="editedBy" label="Edited by" placeholder="" {...$constraints.editedBy} />
 			</div>
+			<div id="category-field-container" class="basis-full">
+				<Input bind:value={$formStore.category} name="category" label="Category" placeholder="" {...$constraints.category} />
+			</div>
 			<div id="outOfPrint-field-container" class="basis-full">
 				<Checkbox
 					bind:checked={$formStore.outOfPrint}

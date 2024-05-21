@@ -11,6 +11,7 @@ export const rows: InventoryTableData[] = [
 		year: "2017",
 		editedBy: "",
 		outOfPrint: false,
+		category: "",
 		warehouseId: "wh1",
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 20
@@ -25,6 +26,7 @@ export const rows: InventoryTableData[] = [
 		year: "2017",
 		editedBy: "",
 		outOfPrint: false,
+		category: "",
 		warehouseId: "wh1",
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 10
@@ -40,6 +42,7 @@ export const rows: InventoryTableData[] = [
 		year: "2017",
 		editedBy: "Renato Sironi, Francesca Desiderio, Evelina Poggi, Allesandro Lucchese",
 		outOfPrint: false,
+		category: "",
 		warehouseId: "wh1",
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 0
