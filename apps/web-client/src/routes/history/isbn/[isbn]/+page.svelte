@@ -1,16 +1,20 @@
 <script lang="ts">
 	import { Search, Library, ArrowLeft, ArrowRight } from "lucide-svelte";
+	import { createDropdownMenu } from "@melt-ui/svelte";
 
 	import { page } from "$app/stores";
 
+	import type { BookEntry, SearchIndex } from "@librocco/db";
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$app/navigation";
-
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
+
 	import { Page, PlaceholderBox } from "$lib/components";
+	import { getDB } from "$lib/db";
+
 	import { createBookHistoryStores } from "$lib/stores/inventory/history_entries";
+	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	const db = getDB();
@@ -22,12 +26,56 @@
 
 	$: bookData = stores.bookData;
 	$: transactions = stores.transactions;
+
+	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
+		[authors, year, publisher].filter(Boolean).join(", ");
+
+	// #region search
+
+	// Create a search index for books in the db. Each time the books change, we recreate the index.
+	// This is more/less inexpensive (around 2sec), considering it runs in the background.
+	let index: SearchIndex | undefined;
+	db?.books()
+		.streamSearchIndex()
+		.subscribe((ix) => (index = ix));
+
+	$: searchStores = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
+
+	$: search = searchStores.search;
+	$: entries = searchStores.entries;
+
+	let searchContainer: HTMLElement | null = null;
+
+	const {
+		states: { open }
+	} = createDropdownMenu({});
+
+	const searchDropdown = (node?: HTMLElement, searchContainer?: HTMLElement) => {
+		if (!node || !searchContainer) return;
+
+		const { bottom, left, width } = searchContainer.getBoundingClientRect();
+		const style = `position: fixed; top: ${bottom + 32}px; left: ${left}px; width: ${width}px; bottom: 32px; overflow-hidden`;
+		node.setAttribute("style", style);
+
+		return {
+			destroy() {}
+		};
+	};
+	// #endregion search
 </script>
 
 <Page view="history" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
+		<input
+			bind:this={searchContainer}
+			on:focus={() => ($open = true)}
+			on:blur={() => ($open = false)}
+			on:click={() => ($open = true)}
+			bind:value={$search}
+			placeholder="Search"
+			{...inputProps}
+		/>
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -96,9 +144,28 @@
 				<!-- End entity list -->
 			{/if}
 		</div>
+
 		<!-- End entity list contaier -->
 	</svelte:fragment>
 </Page>
+
+{#if $open && $entries?.length}
+	<div use:searchDropdown={searchContainer}>
+		<ul class="max-h-[100%] w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
+			{#each $entries as entry}
+				{@const { isbn, title, authors, year, publisher } = entry}
+
+				<li class="w-full">
+					<a href="{appPath('history')}isbn/{isbn}" class="block w-full px-4 py-3">
+						<p class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+						<p class="text-xl font-medium">{title}</p>
+						<p>{createMetaString({ authors, year, publisher })}</p>
+					</a>
+				</li>
+			{/each}
+		</ul>
+	</div>
+{/if}
 
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {
