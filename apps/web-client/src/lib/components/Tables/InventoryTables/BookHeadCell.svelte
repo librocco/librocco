@@ -2,7 +2,7 @@
 	import BodyMultiRow from "../Cells/BodyMultiRow.svelte";
 	import type { InventoryTableData } from "../types";
 
-	export let data: Pick<InventoryTableData, "isbn" | "title" | "authors" | "year">;
+	export let data: Pick<InventoryTableData<"book">, "isbn" | "title" | "authors" | "year">;
 
 	$: ({ isbn, title, authors, year } = data);
 </script>
