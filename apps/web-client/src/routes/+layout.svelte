@@ -19,7 +19,9 @@
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// This is not a security concern as the db is in the user's browser anyhow.
 		if (db) {
+			window["db_ready"] = true;
 			window["_db"] = db;
+			window.dispatchEvent(new Event("db_ready"));
 		}
 
 		if (pwaInfo) {
