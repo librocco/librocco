@@ -1,7 +1,9 @@
-import type { Result } from "$lib/types/inventory";
+import { Observable, combineLatest, map } from "rxjs";
+
 import type { BookEntry, WarehouseDataMap } from "@librocco/db";
 import { wrapIter, debug } from "@librocco/shared";
-import { Observable, combineLatest, map } from "rxjs";
+
+import type { DailySummaryStore } from "$lib/types/inventory";
 
 /**
  * A util used to compare two paths. It trims the paths and removes the leading and trailing slashes
@@ -19,7 +21,7 @@ export const comparePaths = (...paths: [string, string]) => {
 
 export const mapMergeBookWarehouseData =
 	(ctx: debug.DebugCtx, entries: Iterable<any>, warehouseListStream: Observable<WarehouseDataMap>) =>
-	(books: Observable<Iterable<BookEntry | undefined>>): Observable<Result> =>
+	(books: Observable<Iterable<BookEntry | undefined>>): Observable<DailySummaryStore> =>
 		combineLatest([books, warehouseListStream]).pipe(
 			map(([booksData, warehouseData]) => {
 				const books = wrapIter(entries)
