@@ -35,7 +35,8 @@
 
 	import { appPath } from "$lib/paths";
 	import { printBookLabel } from "$lib/printer";
-
+	import { download, generateCsv, mkConfig } from "export-to-csv";
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -57,6 +58,32 @@
 
 	$: displayName = warehouesStores.displayName;
 	$: entries = warehouesStores.entries;
+	$: csvEntries = warehouesStores.csvEntries;
+
+	// #region csv
+	type CsvEntries = Omit<InventoryTableData, "warehouseId">;
+	const handleExportCsv = () => {
+		const csvConfig = mkConfig({
+			columnHeaders: [
+				{ displayLabel: "Quantity", key: "quantity" },
+				{ displayLabel: "ISBN", key: "isbn" },
+				{ displayLabel: "Title", key: "title" },
+				{ displayLabel: "Publisher", key: "publisher" },
+				{ displayLabel: "Authors", key: "authors" },
+				{ displayLabel: "Year", key: "year" },
+				{ displayLabel: "Price", key: "price" },
+				{ displayLabel: "Category", key: "category" },
+				{ displayLabel: "Edited by", key: "edited_by" },
+				{ displayLabel: "Out of print", key: "out_of_print" }
+			],
+			filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
+		});
+
+		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
+		download(csvConfig)(gen);
+	};
+
+	// #endregion csv
 
 	// #region warehouse-actions
 	/**
@@ -140,7 +167,14 @@
 
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+		<div class="flex justify-between">
+			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+			{#if $csvEntries.length}
+				<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
+					<span class="aria-hidden"> Export to CSV </span>
+				</button>
+			{/if}
+		</div>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">

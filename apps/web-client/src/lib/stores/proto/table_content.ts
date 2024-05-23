@@ -15,6 +15,11 @@ import type { DisplayRow } from "$lib/types/inventory";
 
 import { readableFromStream } from "$lib/utils/streams";
 
+type mapMergeBookDataFunction = (
+	ctx: debug.DebugCtx,
+	stock: Iterable<VolumeStockClient>
+) => (o: Observable<Iterable<BookEntry | undefined>>) => Observable<unknown>;
+
 /**
  * Creates a store that streams the entries to be displayed in the table, with respect to the content in the db and the current page (set by pagination element).
  * @param ctx debug context
@@ -26,7 +31,8 @@ import { readableFromStream } from "$lib/utils/streams";
 export const createDisplayEntriesStore = <K extends VolumeStockKind = VolumeStockKind>(
 	ctx: debug.DebugCtx,
 	db: InventoryDatabaseInterface<WarehouseInterface<NoteInterface<object>, object>, NoteInterface<object>>,
-	entity: NoteInterface | WarehouseInterface | undefined
+	entity: NoteInterface | WarehouseInterface | undefined,
+	mapFunction: mapMergeBookDataFunction
 ): Readable<DisplayRow<K>[]> => {
 	const shareSubject = new ReplaySubject<DisplayRow<K>[]>(1);
 
@@ -42,7 +48,7 @@ export const createDisplayEntriesStore = <K extends VolumeStockKind = VolumeStoc
 			debug.log(ctx, "display_entries_store:table_data:retrieving_books")({ isbns });
 
 			// Return array of merged values of books and volume stock client
-			const rows = db.books().stream(ctx, isbns).pipe(mapMergeBookData(ctx, r));
+			const rows = db.books().stream(ctx, isbns).pipe(mapFunction(ctx, r));
 			return rows as Observable<DisplayRow<K>[]>;
 		}),
 		// Multicast the stream (for both the table and pagination stores)
@@ -52,15 +58,39 @@ export const createDisplayEntriesStore = <K extends VolumeStockKind = VolumeStoc
 	return readableFromStream(ctx, tableData, []);
 };
 
+// create two curried functions one with csv and one with entries mapping function
+// when csv mappig is called
+
 const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
 	wrapIter(stock)
 		.zip(bookData)
 		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
-const mapMergeBookData = (ctx: debug.DebugCtx, stock: Iterable<VolumeStockClient>) => (o: Observable<Iterable<BookEntry | undefined>>) =>
+export const mapMergeBookData: mapMergeBookDataFunction = (ctx, stock) => (o) =>
 	o.pipe(
 		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
 		map(mergeBookData(stock)),
+		tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
+	);
+const mergeBookDataCsv = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
+	wrapIter(stock as Iterable<VolumeStockClient<"book">>)
+		.zip(bookData)
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		.map(([{ __kind, warehouseId, ...rest }, b = {} as BookEntry]) => ({
+			...rest,
+			...b,
+			year: b.year ?? "",
+			publisher: b.publisher ?? "",
+			editedBy: b.editedBy ?? "",
+			authors: b.authors ?? "",
+			discountedPrice: ((b.price * (100 - rest.warehouseDiscount || 0)) / 100).toFixed(2)
+		}))
+		.array();
+
+export const mapMergeBookDataCsv: mapMergeBookDataFunction = (ctx, stock) => (o) =>
+	o.pipe(
+		tap(debug.log(ctx, "display_entries_store:table_data:retrieved_books")),
+		map(mergeBookDataCsv(stock)),
 		tap(debug.log(ctx, "display_entries_store:table_data:merged_books"))
 	);
