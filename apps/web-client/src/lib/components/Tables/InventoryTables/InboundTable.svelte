@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
+	import type { VolumeStock } from "@librocco/shared";
+
 	import type { createTable } from "$lib/actions";
 
 	import { HeadCol } from "../Cells";
@@ -13,7 +15,8 @@
 	import { createInboundTableEvents, type InboundTableEvents } from "./events";
 	import type { InventoryTableData } from "../types";
 
-	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	// The inbound table accepts only book variant rows
+	export let table: ReturnType<typeof createTable<Extract<InventoryTableData, VolumeStock<"book">>>>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -74,7 +77,7 @@
 					{authors}
 				</td>
 				<td data-property="price" class="table-cell-fit">
-					<BookPriceCell data={{ price, warehouseDiscount }} />
+					<BookPriceCell data={row} />
 				</td>
 				<td data-property="quantity" class="table-cell-fit">
 					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />

@@ -18,6 +18,19 @@ export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Itera
 	});
 }
 
+export function _groupIntoMap<T, K, V>(iterable: Iterable<T>, selector: (entry: T) => [K, V]): Map<K, Iterable<V>> {
+	const map = new Map<K, V[]>();
+	const add = (key: K, value: V) => map.get(key)?.push(value) || map.set(key, [value]);
+	for (const entry of iterable) {
+		add(...selector(entry));
+	}
+	return map;
+}
+
+export function _group<T, K, V>(iterable: Iterable<T>, selector: (entry: T) => [K, V]): Iterable<[K, Iterable<V>]> {
+	return wrapIter([..._groupIntoMap(iterable, selector)]);
+}
+
 export function filter<T, S extends T>(iterable: Iterable<T>, predicate: (value: T) => value is S): ReusableGenerator<S>;
 export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T>;
 export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T> {
@@ -134,6 +147,8 @@ export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGen
 interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
+	_group<K, V>(selector: (entry: T) => [K, V]): Iterable<[K, Iterable<V>]>;
+	_groupIntoMap<K, V>(selector: (entry: T) => [K, V]): Map<K, Iterable<V>>;
 	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
 	partition<S extends T>(predicate: (value: T) => value is S): [TransformableIterable<S>, TransformableIterable<Exclude<T, S>>];
@@ -173,6 +188,8 @@ interface TransformableIterable<T> extends Iterable<T> {
 export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => {
 	const m = <R>(mapper: (value: T) => R) => wrapIter(map(iterable, mapper));
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
+	const _g = <K, V>(selector: (entry: T) => [K, V]) => wrapIter(_group(iterable, selector));
+	const _gim = <K, V>(selector: (entry: T) => [K, V]) => _groupIntoMap(iterable, selector);
 	const f = (predicate: (value: T) => boolean) => wrapIter(filter(iterable, predicate));
 	const p = <S extends T>(predicate: (value: T) => value is S) => {
 		const [a, b] = partition(iterable, predicate);
@@ -187,6 +204,8 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		[Symbol.iterator]: iterable[Symbol.iterator],
 		map: m,
 		flatMap: fm,
+		_group: _g,
+		_groupIntoMap: _gim,
 		filter: f,
 		partition: p,
 		slice: s,
