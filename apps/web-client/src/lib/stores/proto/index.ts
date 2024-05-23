@@ -1,6 +1,6 @@
 import type { Readable, Writable } from "svelte/store";
 
-import type { NoteInterface, WarehouseInterface } from "@librocco/db";
+import type { BookEntry, NoteInterface, WarehouseInterface } from "@librocco/db";
 import type { debug } from "@librocco/shared";
 
 import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
@@ -8,12 +8,11 @@ import type { DisplayRow, NoteAppState } from "$lib/types/inventory";
 import { createDisplayNameStore } from "$lib/stores/inventory/display_name";
 import { createDefaultWarehouseStore } from "$lib/stores/inventory/default_warehouse";
 import { createDisplayStateStore, createInternalStateStore } from "$lib/stores/inventory/note_state";
-import { createDisplayEntriesStore } from "./table_content";
+import { createDisplayEntriesStore, mapMergeBookData, mapMergeBookDataCsv } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
 import { getDB } from "$lib/db";
 import { createWarehouseDiscountStore } from "$lib/stores/inventory/warehouse_discount";
-
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
 	defaultWarehouse: Writable<string | undefined>;
@@ -43,7 +42,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note);
+	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note, mapMergeBookData);
 
 	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?._id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
@@ -62,6 +61,13 @@ interface WarehouseDisplayStores {
 	warehouseDiscount: Writable<number>;
 	// Warehouse stock will display only book items (no custom items)
 	entries: Readable<DisplayRow<"book">[]>;
+	csvEntries: Readable<
+		({
+			warehouseDiscount: number;
+			warehouseName: string;
+			quantity: number;
+		} & BookEntry)[]
+	>;
 }
 interface CreateWarehouseStores {
 	(ctx: debug.DebugCtx, warehouse?: WarehouseInterface): WarehouseDisplayStores;
@@ -79,11 +85,13 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse);
+	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookData);
+	const csvEntries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookDataCsv);
 
 	return {
 		displayName,
 		warehouseDiscount,
-		entries
+		entries,
+		csvEntries
 	};
 };

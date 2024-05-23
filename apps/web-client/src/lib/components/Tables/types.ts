@@ -13,13 +13,15 @@ export interface OrderData {
 	actionLink: string;
 }
 
-export type InventoryTableData = BookCoreRowData & {
-	publisher?: string;
-	year?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
+export type InventoryTableData<K extends VolumeStockKind = VolumeStockKind> = K extends "book"
+	? BookCoreRowData & {
+			publisher?: string;
+			year?: string;
+			editedBy?: string;
+			outOfPrint?: boolean;
+			category?: string;
+	  } & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
+	: VolumeStockClient<K>;
 
 export type BookCoreRowData = {
 	isbn: string;
@@ -32,7 +34,3 @@ export type BookCoreRowData = {
 	authors?: string;
 	year?: string;
 };
-
-export type OutboundTableData<K extends VolumeStockKind = VolumeStockKind> = K extends "book"
-	? InventoryTableData & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
-	: VolumeStockClient<K>;
