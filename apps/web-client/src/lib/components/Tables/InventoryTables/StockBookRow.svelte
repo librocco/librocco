@@ -50,11 +50,11 @@
 	<td data-property="editedBy" class="show-col-xl table-cell-max">
 		{editedBy}
 	</td>
-	<td data-property="category" class="show-col-xl table-cell-max">
-		{category}
-	</td>
 	<td data-property="outOfPrint" class="show-col-xl">
 		<BookOutPrintCell {rowIx} {outOfPrint} />
+	</td>
+	<td data-property="category" class="show-col-xl table-cell-max">
+		{category}
 	</td>
 
 	{#if $$slots["row-actions"]}
