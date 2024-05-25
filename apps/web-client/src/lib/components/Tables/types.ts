@@ -19,6 +19,7 @@ export type InventoryTableData<K extends VolumeStockKind = VolumeStockKind> = K 
 			year?: string;
 			editedBy?: string;
 			outOfPrint?: boolean;
+			category?: string;
 	  } & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
 	: VolumeStockClient<K>;
 

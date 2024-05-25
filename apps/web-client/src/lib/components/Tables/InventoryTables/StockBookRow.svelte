@@ -16,13 +16,12 @@
 	{@const isbn = row.isbn}
 	{@const authors = row.authors || "N/A"}
 	{@const quantity = row.quantity}
-	{@const price = row.price}
 	{@const year = row.year || "N/A"}
 	{@const title = row.title || "N/A"}
 	{@const publisher = row.publisher || ""}
 	{@const editedBy = row.editedBy || ""}
+	{@const category = row.category || ""}
 	{@const outOfPrint = row.outOfPrint || false}
-	{@const warehouseDiscount = row.warehouseDiscount}
 
 	<th scope="row" class="table-cell-max">
 		<BookHeadCell data={{ isbn, title, authors, year }} />
@@ -53,6 +52,9 @@
 	</td>
 	<td data-property="outOfPrint" class="show-col-xl">
 		<BookOutPrintCell {rowIx} {outOfPrint} />
+	</td>
+	<td data-property="category" class="show-col-xl table-cell-max">
+		{category}
 	</td>
 
 	{#if $$slots["row-actions"]}

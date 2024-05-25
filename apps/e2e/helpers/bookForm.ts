@@ -51,6 +51,7 @@ const bookFieldContstructors: BookFieldContstructors = {
 	// We might want to expand on this in the future.
 	publisher: getStringField("publisher"),
 	editedBy: getStringField("editedBy"),
+	category: getStringField("category"),
 	outOfPrint: getOutOfPrintField
 };
 
