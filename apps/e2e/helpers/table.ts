@@ -55,7 +55,8 @@ const defaultValues: Omit<TransactionRowValues, "price"> & { price: string | num
 	publisher: "",
 	editedBy: "",
 	warehouseName: "not-found",
-	outOfPrint: false
+	outOfPrint: false,
+	category: ""
 };
 
 function getEntriesRow(parent: DashboardNode, view: TableView, index: number): EntriesRowInterface {
@@ -76,10 +77,10 @@ function getEntriesRow(parent: DashboardNode, view: TableView, index: number): E
 
 		// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
 		const rowFieldsLookup = {
-			stock: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
-			warehouse: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
-			"inbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint"],
-			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName"]
+			stock: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
+			warehouse: ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
+			"inbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "publisher", "editedBy", "outOfPrint", "category"],
+			"outbound-note": ["isbn", "title", "authors", "quantity", "price", "year", "warehouseName", "category"]
 		};
 
 		await Promise.all(
@@ -239,6 +240,7 @@ const fieldConstructorLookup: {
 	outOfPrint: outOfPrintFieldConstructor,
 	warehouseName: warehouseNameFieldConstructor,
 	editedBy: stringFieldConstructor("editedBy"),
+	category: stringFieldConstructor("category"),
 	year: stringFieldConstructor("year")
 };
 // #endregion row_fields

@@ -25,7 +25,8 @@ export const bookSchema = z.object({
 	authors: z.string().optional(),
 	publisher: z.string().optional(),
 	editedBy: z.string().optional(),
-	outOfPrint: z.boolean().optional()
+	outOfPrint: z.boolean().optional(),
+	category: z.string().optional()
 });
 
 export type SettingsData = SuperValidated<typeof settingsSchema>["data"];
