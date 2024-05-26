@@ -285,7 +285,7 @@
 			//
 			// Presence of id indicates the existing custom item (update action)
 			if (data.id) {
-				await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+				await note.updateTransaction({ name: "UPDATE_TXN", debug: false }, data.id, data);
 			} else {
 				await note.addVolumes({ __kind: "custom", ...data });
 			}
