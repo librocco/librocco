@@ -391,6 +391,45 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					[...entries].filter((e): e is VolumeStockClient<"custom"> => e.__kind === "custom").find((e) => e.title === "Custom Item 2")!.id
 			);
 		expect(newCustomItemId).not.toEqual(customItemId);
+
+		// Regression: should overwrite the id (always generate a new id) on add volumes - the custom item form assigns 'undefined' to id - this caused a regression
+		// we're testing for here
+		await note.addVolumes({ __kind: "custom", id: undefined, title: "Custom Item 3", price: 20 });
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 4,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				// Custom items should be sorted in order of addition (timestamped)
+				{ id: customItemId, __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 2", price: 20 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 3", price: 20 }
+			]);
+		});
 	});
 
 	test("note.updateTransaction", async () => {
