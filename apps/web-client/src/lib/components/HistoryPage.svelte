@@ -17,12 +17,12 @@
 			href: appPath("history/date", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
 			linkto: historyView("history/date")
 		},
-		// 		{
-		// 			icon: Book,
-		// 			label: "By ISBN",
-		// 			href: appPath("history/isbn"),
-		// 			linkto: historyView("history/isbn")
-		// 		},
+		{
+			icon: Book,
+			label: "By ISBN",
+			href: appPath("history/isbn"),
+			linkto: historyView("history/isbn")
+		}
 		// 		{
 		// 			icon: Book,
 		// 			label: "Notes by date",
