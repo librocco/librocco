@@ -1,7 +1,4 @@
-import { appPath } from "$lib/paths";
-import { redirect } from "@sveltejs/kit";
-
+// Here to keep TypeScript happy, redirects are handled in the layout file
 export const load = () => {
-	// There should always be a data in state
-	throw redirect(307, appPath("history/notes", new Date().toISOString().slice(0, 10)));
+	return {};
 };
