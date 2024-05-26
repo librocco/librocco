@@ -18,6 +18,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
 
@@ -27,8 +28,7 @@
 	const outNoteListStream = db
 		?.stream()
 		.outNoteList(outNoteListCtx)
-		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...m]));
+		.pipe(map((m) => [...m].sort(([, a], [, b]) => compareNotes(a, b))));
 	const outNoteList = readableFromStream(outNoteListCtx, outNoteListStream, []);
 
 	let initialized = false;
