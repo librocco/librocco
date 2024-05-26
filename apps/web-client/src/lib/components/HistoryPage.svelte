@@ -22,13 +22,13 @@
 			label: "By ISBN",
 			href: appPath("history/isbn"),
 			linkto: historyView("history/isbn")
+		},
+		{
+			icon: Book,
+			label: "Notes by date",
+			href: appPath("history/notes", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
+			linkto: historyView("history/notes")
 		}
-		// 		{
-		// 			icon: Book,
-		// 			label: "Notes by date",
-		// 			href: appPath("history/notes", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
-		// 			linkto: historyView("history/notes")
-		// 		}
 	];
 
 	export let view: HistoryView;
