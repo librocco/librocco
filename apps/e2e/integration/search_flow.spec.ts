@@ -50,6 +50,11 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	// Start search (no entries will be shown before)
 	await dashboard.content().searchField().type("000"); // Should match all ISBNS from the data set
 
+	// We're not making any assertions before scrolling the 20th row into view, triggering loading of the next contingent,
+	// to avoid flakiness, as this will sometimes load automatically and sometimes not
+	await table.row(19).waitFor();
+	await table.row(19).scrollIntoViewIfNeeded();
+
 	// We're saving on assertions and asserting only at breakpoints (every 40 rows)
 	await table.row(39).assertFields(entries[39]);
 	await table.row(40).waitFor({ state: "detached" }); // 41st row (index 40) isn't loaded yet
