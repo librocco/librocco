@@ -1,46 +1,63 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-
 	import { melt, createDatePicker } from "@melt-ui/svelte";
-	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { now, getLocalTimeZone } from "@internationalized/date";
+	import { Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
+	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 
 	import { entityListView, testId } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
+
+	import type { PageData } from "./$types";
+
+	import { HistoryPage, PlaceholderBox } from "$lib/components";
+
+	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
+
+	import { getDB } from "$lib/db";
 
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
-	import { Page, PlaceholderBox } from "$lib/components";
-	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
+
+	export let data: PageData;
+
+	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
+		if (!a || !b) return false;
+		return a.toString().slice(0, 10) === b.toString().slice(0, 10);
+	};
 
 	const {
 		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
-		states: { months, headingValue, weekdays, segmentContents, value, open },
+		states: { months, headingValue, weekdays, segmentContents, open },
 		helpers: { isDateDisabled, isDateUnavailable }
 		// create a ZonedDateTime object with the current date and time
 	} = createDatePicker({
-		defaultValue: now(getLocalTimeZone()),
+		// 'date' param should always be defined as the route doesn't render without the date param
+		defaultValue: data.dateValue,
 		isDateDisabled: (date) => {
 			return date > now(getLocalTimeZone());
+		},
+		onValueChange: ({ next }) => {
+			// Redirect only in browser, if data value is different then the one in route param
+			if (browser && !isEqualDateValue(data.dateValue, next)) {
+				// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
+				// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
+				goto(appPath("history/date", next.toString().slice(0, 10)), { replaceState: true });
+			}
+			return next;
 		},
 		preventDeselect: true
 	});
 
 	const db = getDB();
 
-	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: true };
-	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, value);
+	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
+	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, data.date);
 </script>
 
-<Page view="history" loaded={true}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
+<HistoryPage view="history/date">
 	<svelte:fragment slot="heading">
-		<div class="flex w-full items-center justify-between">
+		<div class="flex w-full justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
 
 			<section class="flex w-full flex-col items-center gap-3">
@@ -162,7 +179,7 @@
 							<div class="flex items-center">
 								<Library class="mr-1 text-gray-700" size={20} />
 								<span class="entity-list-text-sm text-gray-500">{quantity} books - </span>
-								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span> (<a href="{appPath('history')}notes/{noteId}"
+								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span> (<a href={appPath("history/notes", noteId)}
 									><span>{noteName}</span></a
 								>)
 							</div>
@@ -180,7 +197,7 @@
 		</ul>
 		<!-- End entity list contaier -->
 	</svelte:fragment>
-</Page>
+</HistoryPage>
 
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {

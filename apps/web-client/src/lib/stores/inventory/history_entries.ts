@@ -1,20 +1,19 @@
 import { switchMap, combineLatest, map, tap } from "rxjs";
 import { readable, type Readable } from "svelte/store";
-import type { DateValue } from "@internationalized/date";
 
 import { debug, wrapIter } from "@librocco/shared";
 import type { BookEntry, InventoryDatabaseInterface } from "@librocco/db";
 
 import type { BookHistoryStores, DailySummaryStore } from "$lib/types/inventory";
-import { observableFromStore, readableFromStream } from "$lib/utils/streams";
+import { readableFromStream } from "$lib/utils/streams";
 import { mapMergeBookWarehouseData } from "$lib/utils/misc";
 
 interface CreateDailySummaryStore {
-	(ctx: debug.DebugCtx, db: InventoryDatabaseInterface | undefined, dateValue: Readable<DateValue>): Readable<DailySummaryStore>;
+	(ctx: debug.DebugCtx, db: InventoryDatabaseInterface | undefined, date?: string): Readable<DailySummaryStore>;
 }
 
-export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, dateValue) => {
-	if (!db) {
+export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, date) => {
+	if (!db || !date) {
 		return readable({} as DailySummaryStore);
 	}
 
@@ -24,10 +23,9 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, dateVa
 		.pipe(map((pt) => pt.by("date")));
 	const warehouseMapStream = db.stream().warehouseMap(ctx);
 
-	const dailySummary = combineLatest([pastTransactionsStream, observableFromStore(dateValue)]).pipe(
-		switchMap(([txnMap, date]) => {
-			const entries = [...(txnMap.get(date.toString().slice(0, 10)) || [])];
-
+	const dailySummary = pastTransactionsStream.pipe(
+		switchMap((txnMap) => {
+			const entries = [...(txnMap.get(date) || [])];
 			const isbns = entries.map(({ isbn }) => isbn);
 
 			return db.books().stream(ctx, isbns).pipe(mapMergeBookWarehouseData(ctx, entries, warehouseMapStream));
@@ -37,11 +35,11 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, dateVa
 	return readableFromStream(ctx, dailySummary, {} as DailySummaryStore);
 };
 
-export interface createBookHistoryStores {
+export interface CreateBookHistoryStores {
 	(ctx: debug.DebugCtx, db?: InventoryDatabaseInterface, isbn?: string): BookHistoryStores;
 }
 
-export const createBookHistoryStores: createBookHistoryStores = (ctx, db, isbn = "") => {
+export const createBookHistoryStores: CreateBookHistoryStores = (ctx, db, isbn = "") => {
 	if (!db) {
 		return {
 			bookData: readable({} as BookEntry),
