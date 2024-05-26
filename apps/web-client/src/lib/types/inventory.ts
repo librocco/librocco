@@ -67,5 +67,16 @@ export interface BookHistoryStores {
 	bookData: Readable<BookEntry>;
 }
 
+export interface PastNoteEntry {
+	id: string;
+	warehouseName: string;
+	displayName: string;
+	date: string;
+	books: number;
+	noteType: "inbound" | "outbound";
+	totalCoverPrice: number;
+	totalDiscountedPrice: number;
+}
+
 /** A union type for note states used in the client app */
 export type NoteAppState = NoteState | NoteTempState | undefined;
