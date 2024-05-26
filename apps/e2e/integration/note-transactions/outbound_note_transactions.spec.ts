@@ -384,7 +384,7 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
 });
 
-test("should add custom items on 'Custom Item' button click and filling out the form", async ({ page }) => {
+test("should add custom item on 'Custom Item' button click after filling out the form", async ({ page }) => {
 	// Setup: add one non-custom transaction
 	const db = await getDbHandle(page);
 	await db.evaluateHandle((db) => db.warehouse().note("note-1").addVolumes({ isbn: "11111111", quantity: 1 }));
