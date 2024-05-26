@@ -9,7 +9,9 @@ const PATHS = {
 	inbound: `${basepath}/inventory/inbound/`,
 	outbound: `${basepath}/outbound/`,
 	settings: `${basepath}/settings/`,
-	history: `${basepath}/history/`
+	"history/date": `${basepath}/history/date/`,
+	"history/isbn": `${basepath}/history/isbn/`,
+	"history/notes": `${basepath}/history/notes/`
 };
 
 /**
