@@ -1,10 +1,10 @@
 import { switchMap, combineLatest, map, tap } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 
-import { debug, wrapIter } from "@librocco/shared";
+import { debug, wrapIter, zip, reduce } from "@librocco/shared";
 import type { BookEntry, InventoryDatabaseInterface } from "@librocco/db";
 
-import type { BookHistoryStores, DailySummaryStore } from "$lib/types/inventory";
+import type { BookHistoryStores, DailySummaryStore, PastNoteEntry } from "$lib/types/inventory";
 import { readableFromStream } from "$lib/utils/streams";
 import { mapMergeBookWarehouseData } from "$lib/utils/misc";
 
@@ -68,4 +68,62 @@ export const createBookHistoryStores: CreateBookHistoryStores = (ctx, db, isbn =
 	const transactions = readableFromStream(ctx, transactionsStream, []);
 
 	return { bookData, transactions };
+};
+
+export interface CreatePastNotesStores {
+	(ctx: debug.DebugCtx, db?: InventoryDatabaseInterface, isbn?: string): Readable<PastNoteEntry[]>;
+}
+
+export const createPastNotesStore: CreatePastNotesStores = (ctx, db, date: string) => {
+	if (!db) {
+		return readable([] as any[]);
+	}
+
+	const history = db.history().stream(ctx);
+	const warehouseMapStream = db.stream().warehouseMap(ctx);
+
+	const transactions = history.pipe(
+		map((pt) => pt.by("date").get(date) || []),
+		switchMap((txns) => {
+			const isbns = [...txns].map(({ isbn }) => isbn);
+			return db
+				.books()
+				.stream(ctx, isbns)
+				.pipe(map((data) => zip(data, txns)));
+		}),
+		map((data) => wrapIter(data).map(([book, txn]) => ({ ...book, ...txn })))
+	);
+
+	const notesStream = combineLatest([transactions, warehouseMapStream]).pipe(
+		map(([txns, warehouseMap]) =>
+			wrapIter(txns)
+				.map((txn) => ({
+					...txn,
+					discount: warehouseMap.get(txn.warehouseId)?.discountPercentage || 0,
+					warehouseName: warehouseMap.get(txn.warehouseId)?.displayName || txn.warehouseId
+				}))
+				._group((txn) => [txn.noteId, txn])
+				.map(([, txns]) => txns)
+				.map((txns) =>
+					reduce(
+						txns,
+						(acc, txn) => {
+							const id = txn.noteId;
+							const date = txn.date;
+							const displayName = txn.noteDisplayName;
+							const noteType = txn.noteType;
+							const warehouseName = noteType === "outbound" ? "Outbound" : txn.warehouseName;
+							const books = acc.books + txn.quantity;
+							const totalCoverPrice = acc.totalCoverPrice + txn.price * txn.quantity;
+							const totalDiscountedPrice = acc.totalDiscountedPrice + Math.floor(txn.price * txn.quantity * (100 - txn.discount)) / 100;
+							return { id, date, displayName, noteType, warehouseName, books, totalCoverPrice, totalDiscountedPrice };
+						},
+						{ books: 0, totalCoverPrice: 0, totalDiscountedPrice: 0 } as PastNoteEntry
+					)
+				)
+				.array()
+		)
+	);
+
+	return readableFromStream(ctx, notesStream, []);
 };
