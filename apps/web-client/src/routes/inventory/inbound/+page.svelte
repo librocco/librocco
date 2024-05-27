@@ -17,6 +17,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
 
@@ -35,6 +36,7 @@
 					.filter(([warehouseId]) => !warehouseId.includes("0-all"))
 					.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
 					.array()
+					.sort(([, [, a]], [, [, b]]) => compareNotes(a, b))
 			)
 		)!;
 	const inNoteList = readableFromStream(inNoteListCtx, inNoteListStream, []);
