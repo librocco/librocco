@@ -244,7 +244,7 @@ export interface HistoryInterface {
 // #region db
 export type NavEntry<A = {}> = {
 	displayName: string;
-	updatedAt?: Date;
+	updatedAt?: string;
 	totalBooks?: number;
 } & A;
 
