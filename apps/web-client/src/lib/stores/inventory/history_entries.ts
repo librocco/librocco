@@ -114,8 +114,9 @@ export const createPastNotesStore: CreatePastNotesStores = (ctx, db, date: strin
 							const noteType = txn.noteType;
 							const warehouseName = noteType === "outbound" ? "Outbound" : txn.warehouseName;
 							const books = acc.books + txn.quantity;
-							const totalCoverPrice = acc.totalCoverPrice + txn.price * txn.quantity;
-							const totalDiscountedPrice = acc.totalDiscountedPrice + Math.floor(txn.price * txn.quantity * (100 - txn.discount)) / 100;
+							const totalCoverPrice = acc.totalCoverPrice + (txn.price || 0) * txn.quantity;
+							const totalDiscountedPrice =
+								acc.totalDiscountedPrice + Math.floor((txn.price || 0) * txn.quantity * (100 - txn.discount)) / 100;
 							return { id, date, displayName, noteType, warehouseName, books, totalCoverPrice, totalDiscountedPrice };
 						},
 						{ books: 0, totalCoverPrice: 0, totalDiscountedPrice: 0 } as PastNoteEntry
