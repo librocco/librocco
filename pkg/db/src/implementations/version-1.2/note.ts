@@ -497,7 +497,7 @@ class Note implements NoteInterface {
 				}
 			}
 		}
-		const committedAt = new Date().toISOString().slice(0, 10);
+		const committedAt = new Date().toISOString();
 
 		return this.update(ctx, { committed: true, committedAt });
 	}
