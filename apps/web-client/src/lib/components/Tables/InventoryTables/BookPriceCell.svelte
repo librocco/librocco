@@ -5,8 +5,9 @@
 	export let data: InventoryTableData;
 </script>
 
-{#if isBookRow(data) && data.warehouseDiscount}
+{#if isBookRow(data) && data.price && data.warehouseDiscount}
 	<!-- Discounted price is shown only for book rows with discount other than 0 -->
+	<!-- We're rendering this branch only if both the price and discount are defined - no price is handled in the other branch -->
 	{@const { price, warehouseDiscount } = data}
 	<div class="flex flex-col items-start gap-0.5">
 		<span class="sr-only">Discounted price:</span>
