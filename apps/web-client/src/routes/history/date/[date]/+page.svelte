@@ -18,6 +18,7 @@
 	import { getDB } from "$lib/db";
 
 	import { appPath } from "$lib/paths";
+	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	export let data: PageData;
 
@@ -187,7 +188,9 @@
 
 						{#if committedAt}
 							<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
-								<span class={`badge badge-sm ${noteType === "inbound" ? "badge-green" : "badge-red"}`}>Comitted At: {committedAt}</span>
+								<span class={`badge badge-sm ${noteType === "inbound" ? "badge-green" : "badge-red"}`}
+									>Comitted At: {generateUpdatedAtString(committedAt, "time-only")}</span
+								>
 							</div>
 						{/if}
 					</li>
