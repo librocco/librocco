@@ -161,7 +161,7 @@
 								</p>
 
 								<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-									Committed: {note.date}
+									Committed: {generateUpdatedAtString(note.date, "time-only")}
 								</span>
 							</div>
 						</div>
