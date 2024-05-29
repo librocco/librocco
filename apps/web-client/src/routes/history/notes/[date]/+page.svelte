@@ -2,45 +2,61 @@
 	import { fade } from "svelte/transition";
 
 	import { melt, createDatePicker } from "@melt-ui/svelte";
-	import { Search, Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { now, getLocalTimeZone } from "@internationalized/date";
+	import { Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
+	import { now, getLocalTimeZone, fromDate, type DateValue } from "@internationalized/date";
 
 	import { entityListView, testId } from "@librocco/shared";
 
 	import { goto } from "$app/navigation";
 
+	import type { PageData } from "./$types";
+
 	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
-	import { Page, PlaceholderBox } from "$lib/components";
-	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
+	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { createPastNotesStore } from "$lib/stores/inventory/history_entries";
+	import { browser } from "$app/environment";
+	import { generateUpdatedAtString } from "$lib/utils/time";
+
+	export let data: PageData;
+
+	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
+		if (!a || !b) return false;
+		return a.toString().slice(0, 10) === b.toString().slice(0, 10);
+	};
 
 	const {
 		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
-		states: { months, headingValue, weekdays, segmentContents, value, open },
+		states: { months, headingValue, weekdays, segmentContents, open, value },
 		helpers: { isDateDisabled, isDateUnavailable }
 		// create a ZonedDateTime object with the current date and time
 	} = createDatePicker({
-		defaultValue: now(getLocalTimeZone()),
+		// 'date' param should always be defined as the route doesn't render without the date param
+		defaultValue: data.dateValue,
 		isDateDisabled: (date) => {
 			return date > now(getLocalTimeZone());
+		},
+		onValueChange: ({ next }) => {
+			// Redirect only in browser, if data value is different then the one in route param
+			if (browser && !isEqualDateValue(data.dateValue, next)) {
+				// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
+				// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
+				goto(appPath("history/notes", next.toString().slice(0, 10)), { replaceState: true });
+			}
+			return next;
 		},
 		preventDeselect: true
 	});
 
 	const db = getDB();
 
-	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: true };
-	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, value);
+	const pastNotesCtx = { name: "[NOTES_BY_DAY]", debug: false };
+	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
 </script>
 
-<Page view="history" loaded={true}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
+<HistoryPage view="history/date">
 	<svelte:fragment slot="heading">
-		<div class="flex w-full items-center justify-between">
+		<div class="flex w-full justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
 
 			<section class="flex w-full flex-col items-center gap-3">
@@ -116,71 +132,47 @@
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-			{#if !$dailySummary?.bookList?.length}
+		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
+			{#if !$notes.length}
 				<!-- Start entity list placeholder -->
-				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
+				<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" class="center-absolute" />
 				<!-- End entity list placeholder -->
 			{:else}
 				<!-- Start entity list -->
-				<div class="flex flex-row text-sm">
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Book Count: {$dailySummary.stats.totalInboundBookCount}
-					</div>
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Cover Price: {$dailySummary.stats.totalInboundCoverPrice.toFixed(2)}
-					</div>
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Discounted Price : {$dailySummary.stats.totalInboundDiscountedPrice.toFixed(2)}
-					</div>
-				</div>
-				<div class="flex flex-row text-sm">
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Book Count: {$dailySummary.stats.totalOutboundBookCount}
-					</div>
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Cover Price: {$dailySummary.stats.totalOutboundCoverPrice.toFixed(2)}
-					</div>
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Discounted Price : {$dailySummary.stats.totalOutboundDiscountedPrice.toFixed(2)}
-					</div>
-				</div>
+				{#each $notes as note}
+					{@const displayName = `${note.warehouseName} / ${note.displayName}`}
+					{@const totalBooks = note.books}
+					{@const href = appPath("history/notes", note.id)}
 
-				{#each $dailySummary.bookList as entry}
-					{@const title = entry.title}
-					{@const quantity = entry.quantity}
-					{@const warehouseName = entry.warehouseName}
-					{@const committedAt = entry.date}
-					{@const noteType = entry.noteType}
-					{@const noteName = entry.noteDisplayName}
-					{@const noteId = entry.noteId}
+					<div class="group entity-list-row">
+						<div class="flex flex-col gap-y-2">
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-					<li class="entity-list-row grid grid-flow-col grid-cols-12 items-center">
-						<div class="max-w-1/2 col-span-10 row-span-1 w-full xs:col-span-6 lg:row-span-2">
-							<p class="entity-list-text-lg text-gray-900">{title}</p>
+							<div class="flex flex-col items-start gap-y-2">
+								<div class="flex gap-x-0.5">
+									<Library class="mr-1 text-gray-700" size={24} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								</div>
 
-							<div class="flex items-center">
-								<Library class="mr-1 text-gray-700" size={20} />
-								<span class="entity-list-text-sm text-gray-500">{quantity} books - </span>
-								<span class="entity-list-text-sm text-gray-500"> {warehouseName}</span> (<a href="{appPath('history')}notes/{noteId}"
-									><span>{noteName}</span></a
-								>)
+								<p class="text-gray-500">Total cover price: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span></p>
+
+								<p class="text-gray-500">
+									Total discounted price: <span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
+								</p>
+
+								<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
+									Committed: {note.date}
+								</span>
 							</div>
 						</div>
-
-						{#if committedAt}
-							<div class="col-span-10 row-span-1 xs:col-span-6 lg:col-span-3 lg:row-span-2">
-								<span class={`badge badge-sm ${noteType === "inbound" ? "badge-green" : "badge-red"}`}>Comitted At: {committedAt}</span>
-							</div>
-						{/if}
-					</li>
+					</div>
 				{/each}
 				<!-- End entity list -->
 			{/if}
 		</ul>
 		<!-- End entity list contaier -->
 	</svelte:fragment>
-</Page>
+</HistoryPage>
 
 <style lang="postcss">
 	[data-melt-calendar-prevbutton][data-disabled] {

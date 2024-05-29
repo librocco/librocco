@@ -2,6 +2,7 @@ import type { VolumeStockClient, BookEntry, PastTransaction } from "@librocco/db
 import type { NoteState, NoteTempState, VolumeStockKind } from "@librocco/shared";
 
 import type { VolumeQuantity } from "./db";
+import type { Readable } from "svelte/store";
 
 /**
  * An interface for a full book entry, used to type the entries in books store and
@@ -59,6 +60,22 @@ export interface DailySummaryStore {
 		totalOutboundDiscountedPrice: number;
 		totalInboundDiscountedPrice: number;
 	};
+}
+
+export interface BookHistoryStores {
+	transactions: Readable<(PastTransaction & { warehouseName: string })[]>;
+	bookData: Readable<BookEntry>;
+}
+
+export interface PastNoteEntry {
+	id: string;
+	warehouseName: string;
+	displayName: string;
+	date: string;
+	books: number;
+	noteType: "inbound" | "outbound";
+	totalCoverPrice: number;
+	totalDiscountedPrice: number;
 }
 
 /** A union type for note states used in the client app */
