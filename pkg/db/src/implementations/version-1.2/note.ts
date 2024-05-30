@@ -607,7 +607,7 @@ class Note implements NoteInterface {
 						)
 					),
 					this.#db.stream().warehouseMap(ctx),
-					this.#db.stock()
+					this.#db.stream().stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
 					map(

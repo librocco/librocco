@@ -33,7 +33,6 @@ export type WarehouseData = WD;
 export type WarehouseInterface = WI<NoteInterface>;
 export type InventoryDatabaseInterface = IDI<WarehouseInterface, NoteInterface> & {
 	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string): ViewInterface<R, M>;
-	stock: () => Observable<StockMap>;
 	getStock: () => Promise<StockMap>;
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
 };

@@ -126,10 +126,6 @@ class Database implements InventoryDatabaseInterface {
 		return newDbReplicator(this);
 	}
 
-	stock(): Observable<StockMap> {
-		return this.#stockStream;
-	}
-
 	getStock(): Promise<StockMap> {
 		return newStock(this).query();
 	}
@@ -241,7 +237,9 @@ class Database implements InventoryDatabaseInterface {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx) => this.#warehouseMapStream.pipe(tap(debug.log(ctx, "db:warehouse_list:stream"))),
 			outNoteList: (ctx: debug.DebugCtx) => this.#outNoteListStream.pipe(tap(debug.log(ctx, "db:out_note_list:stream"))),
-			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream")))
+			inNoteList: (ctx: debug.DebugCtx) => this.#inNoteListStream.pipe(tap(debug.log(ctx, "db:in_note_list:stream"))),
+
+			stock: () => this.#stockStream
 		};
 	}
 }
