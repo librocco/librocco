@@ -43,7 +43,8 @@ export const createBookHistoryStores: CreateBookHistoryStores = (ctx, db, isbn =
 	if (!db) {
 		return {
 			bookData: readable({} as BookEntry),
-			transactions: readable([])
+			transactions: readable([]),
+			stock: readable([])
 		};
 	}
 
@@ -67,7 +68,28 @@ export const createBookHistoryStores: CreateBookHistoryStores = (ctx, db, isbn =
 	);
 	const transactions = readableFromStream(ctx, transactionsStream, []);
 
-	return { bookData, transactions };
+	const stockStream = db
+		?.stream()
+		.stock()
+		.pipe(
+			map((s) => [...s.isbn(isbn)]),
+			map((s) => s.filter(([, { quantity }]) => Boolean(quantity))),
+			map((s) => s.map(([[, warehouseId], { quantity }]) => ({ warehouseId, quantity })))
+		);
+
+	const combinedStockStream = combineLatest([warehouseMapStream, stockStream]).pipe(
+		map(([w, s]) =>
+			s.map(({ warehouseId, quantity }) => ({
+				warehouseId,
+				quantity,
+				warehouseName: w.get(warehouseId)?.displayName || warehouseId.split("/").pop()
+			}))
+		)
+	);
+
+	const stock = readableFromStream({}, combinedStockStream, []);
+
+	return { bookData, transactions, stock };
 };
 
 export interface CreatePastNotesStores {
