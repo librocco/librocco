@@ -22,7 +22,7 @@
 
 	$: isbn = $page.params.isbn;
 
-	const dailySummaryCtx = { name: "[BOOK_HISTORY]", debug: true };
+	const dailySummaryCtx = { name: "[BOOK_HISTORY]", debug: false };
 	$: stores = createBookHistoryStores(dailySummaryCtx, db, isbn);
 
 	$: bookData = stores.bookData;
@@ -45,7 +45,7 @@
 	$: entries = bookSearch.entries;
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
-	const { input, dropdown, value, open } = createSearchDropdown();
+	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
 	// #endregion search
 </script>
@@ -53,7 +53,9 @@
 <HistoryPage view="history/isbn">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input use:input placeholder="Search" {...inputProps} />
+		{#key isbn}
+			<input autofocus use:input placeholder="Search" {...inputProps} />
+		{/key}
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
