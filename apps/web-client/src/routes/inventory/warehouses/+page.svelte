@@ -25,6 +25,7 @@
 	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
 	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
+	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	const db = getDB();
 
@@ -39,7 +40,6 @@
 	let initialized = false;
 	onMount(() => {
 		firstValueFrom(warehouseListStream).then((wls) => {
-			console.log("warehouseListStream", wls);
 			initialized = true;
 		});
 	});
@@ -102,14 +102,19 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
-								<div class="flex w-32 items-center gap-x-1">
-									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								<div class="entity-list-text-sm flex w-32 items-end items-center gap-x-1 text-gray-500">
+									<Library class="text-gray-700" size={18} />
+									{#if totalBooks === -1}
+										<PlaceholderDots />
+									{:else}
+										<span class="">{totalBooks}</span>
+									{/if}
+									books
 								</div>
 
 								{#if warehouseDiscount}
@@ -151,7 +156,7 @@
 											type: "edit"
 										};
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Edit class="text-gray-400" size={20} />
 									<span class="text-gray-700">Edit</span>
@@ -163,7 +168,7 @@
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Table2 class="text-gray-400" size={20} />
 									<span class="text-gray-700">View Stock</span>
@@ -191,7 +196,7 @@
 											type: "delete"
 										};
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+									class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Trash2 class="text-white" size={20} />
 									<span class="text-white">Delete</span>

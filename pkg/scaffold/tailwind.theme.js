@@ -37,6 +37,20 @@ module.exports = {
 			3.25: rem(13),
 			4.25: rem(17),
 			6.25: rem(25)
+		},
+		keyframes: {
+			loading: {
+				"0%": {
+					opacity: 0.2
+				},
+				"20%": {
+					opacity: 1,
+					transform: "translateX(1px)"
+				},
+				"100%": {
+					opacity: 0.2
+				}
+			}
 		}
 	}
 };
