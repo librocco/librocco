@@ -144,25 +144,29 @@
 					{@const totalBooks = note.books}
 					{@const href = appPath("history/notes", note.id)}
 
-					<div class="entity-list-row group">
-						<div class="flex flex-col gap-y-2">
-							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+					<div class="group entity-list-row">
+						<div class="block w-full">
+							<a {href} class="entity-list-text-lg mb-2 block text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex flex-col items-start gap-y-2">
-								<div class="flex gap-x-0.5">
+							<div class="grid w-full grid-cols-4 items-start gap-2 lg:grid-cols-8">
+								<div class="order-1 col-span-2 flex gap-x-0.5 lg:col-span-1">
 									<Library class="mr-1 text-gray-700" size={24} />
 									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
 								</div>
 
-								<p class="text-gray-500">Total cover price: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span></p>
-
-								<p class="text-gray-500">
-									Total discounted price: <span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
+								<p class="order-2 col-span-2 text-gray-500 lg:order-3">
+									Total cover price: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
 
-								<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-									Committed: {generateUpdatedAtString(note.date, "time-only")}
-								</span>
+								<p class="order-3 col-span-2 lg:order-2">
+									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
+										Committed: {generateUpdatedAtString(note.date, "time-only")}
+									</span>
+								</p>
+
+								<p class="order-4 col-span-2 text-gray-500">
+									Total discounted price: <span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
+								</p>
 							</div>
 						</div>
 					</div>
