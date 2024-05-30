@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
+import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap, startWith, mergeMap, of } from "rxjs";
 
 import { debug, wrapIter, map as mapIter, type StockMap, VolumeStockInput } from "@librocco/shared";
 
@@ -63,21 +63,31 @@ class Database implements InventoryDatabaseInterface {
 
 		this.#plugins = newPluginsInterface();
 
-		const warehouseMapCache = new BehaviorSubject<WarehouseDataMap>(new Map());
 		this.#warehouseMapStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
 				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
-				map(({ rows }) => wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "" }] as const)),
-				// Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
+				map(({ rows }) =>
+					wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "", totalBooks: -1 }] as const)
+				), // Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
 				switchMap((warehouses) =>
 					this.#stockStream.pipe(
-						map((s) => mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: s.warehouse(id).size }] as const))
+						// Emit the initial warehouses without totalBooks
+						startWith(warehouses),
+						// Merge the warehouses with updated totalBooks information
+						mergeMap((s) =>
+							s === warehouses
+								? of(warehouses)
+								: of(mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: (s as StockMap).warehouse(id).size }] as const))
+						),
+						// Multi-cast the potentially long-running mergeMap to prevent redundant execution fo each subscriber
+						share()
 					)
 				),
 				// Convert the iterable into a map of required type
 				map((iter) => new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(iter)),
-				share({ connector: () => warehouseMapCache, resetOnRefCountZero: false })
+				// Multi-cast the stream as a Subject (BehaviourSubject without an initial value)
+				share()
 			);
 
 		const outNoteListCache = new BehaviorSubject<NavMap>(new Map());
