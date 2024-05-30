@@ -290,15 +290,17 @@ class Note implements NoteInterface {
 	 * entry is pushed to the list of entries.
 	 */
 	addVolumes(
-		...params: Array<Omit<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
+		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
 			// TODO: remove async from '.forEach'
 			params.forEach(async (update) => {
 				// Custom items are merely added, not aggregated
 				if (update.__kind === "custom") {
-					const id = uniqueTimestamp();
-					this.entries.push({ id, ...update });
+					// Generate a random id only if not provided.
+					// This will be the case most of the time, but for testing, it's sometimes convenient to be able to explicitly specify the id.
+					const id = update.id || uniqueTimestamp();
+					this.entries.push({ ...update, id });
 					return;
 				}
 

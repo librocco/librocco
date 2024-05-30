@@ -39,7 +39,8 @@ export type TestId =
 	| "edit-row"
 	| "print-book-label"
 	| "delete-row"
-	| "book-form";
+	| "book-form"
+	| "custom-item-form";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
