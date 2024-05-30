@@ -1,9 +1,15 @@
-import { browser } from "$app/environment";
 import { get, writable, type Writable } from "svelte/store";
+
+import { browser } from "$app/environment";
 
 const click = (cb: () => void) => (node: HTMLElement) => {
 	node.addEventListener("click", cb);
 	return () => node.removeEventListener("click", cb);
+};
+
+const keydown = (cb: (e: KeyboardEvent) => void) => (node: HTMLElement) => {
+	node.addEventListener("keydown", cb);
+	return () => node.removeEventListener("keydown", cb);
 };
 
 const input = (cb: (e: InputEvent) => void) => (node: HTMLInputElement) => {
@@ -48,13 +54,17 @@ const destroyListeners = <E extends HTMLElement>(node: E | undefined, ...listene
 		)
 });
 
-export const createSearchDropdown = () => {
+export const createSearchDropdown = ({
+	onConfirmSelection = () => Promise.resolve()
+}: { onConfirmSelection?: (value: string) => Promise<void> } = {}) => {
 	const _search = writable<HTMLInputElement>();
 	const _dropdown = writable<HTMLElement>();
 
 	const value = writable<string>("");
 
 	const open = writable(false);
+
+	const reset = () => (open.set(false), value.set(""));
 
 	const closeOnOutsideClick = (e: Event) => {
 		if ([_search, _dropdown].map(get).some((el) => el?.contains(e.target as Node))) return;
@@ -75,7 +85,8 @@ export const createSearchDropdown = () => {
 			node,
 			register(_search), // Register the input element
 			click(() => open.set(true)), // Open the dropdown on input element click
-			input((e) => (open.set(true), value.set((e.target as any).value))) //
+			input((e) => (open.set(true), value.set((e.target as any).value))),
+			keydown((e) => e.key === "Enter" && (onConfirmSelection(get(value)), reset()))
 		);
 	};
 
