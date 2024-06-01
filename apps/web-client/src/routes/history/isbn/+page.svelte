@@ -10,9 +10,10 @@
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
 	import { getDB } from "$lib/db";
 
-	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createSearchStore } from "$lib/stores/proto/search";
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
 
 	const db = getDB();
 
@@ -27,10 +28,11 @@
 	db?.books()
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
+	$: if (browser) window["_search_index"] = index;
 
-	$: bookSearch = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
-	$: search = bookSearch.search;
-	$: entries = bookSearch.entries;
+	$: bookSearch = createSearchStore({ name: "[SEARCH]", debug: false }, index);
+	$: search = bookSearch.searchStore;
+	$: entries = bookSearch.searchResStore;
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
