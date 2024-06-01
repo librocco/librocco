@@ -275,6 +275,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		// Adding volumes to the note should also create (empty: isbn-only) book data entries for added volumes
 		bookData = await db.books().get(["0123456789", "11111111"]);
+
 		await waitFor(() => expect(bookData).toEqual([{ isbn: "0123456789" }, { isbn: "11111111" }]));
 
 		// Adding volumes to the same ISBN/warheouseId pair should simply aggregate the quantities
