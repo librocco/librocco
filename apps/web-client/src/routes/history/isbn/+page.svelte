@@ -76,7 +76,7 @@
 			{#each $entries as { isbn, title, authors, year, publisher }}
 				<li on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))} class="w-full cursor-pointer px-4 py-3">
 					<p class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-					<p class="text-xl font-medium">{title}</p>
+					<p class="text-xl font-medium">{title || "Unknown Title"}</p>
 					<p>{createMetaString({ authors, year, publisher })}</p>
 				</li>
 			{/each}
