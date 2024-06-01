@@ -293,8 +293,7 @@ class Note implements NoteInterface {
 		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
-			// TODO: remove async from '.forEach'
-			params.forEach(async (update) => {
+			params.map((update) => {
 				// Custom items are merely added, not aggregated
 				if (update.__kind === "custom") {
 					// Generate a random id only if not provided.
@@ -327,6 +326,17 @@ class Note implements NoteInterface {
 					quantity: (this.entries[matchIndex] as VolumeStock<"book">).quantity + update.quantity
 				};
 			});
+
+			// Create book data entries for added books (if they don't exist)
+			const isbns = (params as VolumeStock[]).filter(isBookRow).map(({ isbn }) => isbn);
+			const results = await this.#db.books().get(isbns);
+			const bookDataToCreate = wrapIter(isbns)
+				.zip(results)
+				.filter(([, r]) => !r)
+				.map(([isbn]) => ({ isbn }))
+				.array();
+
+			this.#db.books().upsert(bookDataToCreate); // We're not awaiting this as it's not that relevant immediately
 
 			return this.update({}, this);
 		}, this.#initialized);
