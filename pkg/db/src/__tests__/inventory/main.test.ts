@@ -1772,7 +1772,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "11111111",
 				quantity: 2,
 				warehouseId: warehouse1._id,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				noteId: note1._id,
 				noteDisplayName: note1.displayName
@@ -1780,7 +1780,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "22222222",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse1._id,
 				noteId: note1._id,
@@ -1789,7 +1789,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "11111111",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
 				noteId: note2._id,
@@ -1798,7 +1798,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "22222222",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
 				noteId: note2._id,
@@ -1823,7 +1823,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "11111111",
 				quantity: 1,
 				noteType: "outbound",
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				warehouseId: warehouse1._id,
 				noteId: note3._id,
 				noteDisplayName: note3.displayName
@@ -1832,7 +1832,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "22222222",
 				quantity: 1,
 				noteType: "outbound",
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				warehouseId: warehouse2._id,
 				noteId: note3._id,
 				noteDisplayName: note3.displayName

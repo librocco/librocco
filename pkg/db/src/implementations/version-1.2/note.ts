@@ -497,7 +497,7 @@ class Note implements NoteInterface {
 				}
 			}
 		}
-		const committedAt = new Date().toISOString().slice(0, 10);
+		const committedAt = new Date().toISOString();
 
 		return this.update(ctx, { committed: true, committedAt });
 	}
@@ -607,7 +607,7 @@ class Note implements NoteInterface {
 						)
 					),
 					this.#db.stream().warehouseMap(ctx),
-					this.#db.stock()
+					this.#db.stream().stock()
 				]).pipe(
 					tap(debug.log(ctx, "note:entries:stream:input")),
 					map(

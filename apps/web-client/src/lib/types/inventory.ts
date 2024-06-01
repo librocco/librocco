@@ -65,6 +65,7 @@ export interface DailySummaryStore {
 export interface BookHistoryStores {
 	transactions: Readable<(PastTransaction & { warehouseName: string })[]>;
 	bookData: Readable<BookEntry>;
+	stock: Readable<{ warehouseId: string; quantity: number; warehouseName: string }[]>;
 }
 
 export interface PastNoteEntry {

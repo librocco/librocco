@@ -33,16 +33,15 @@
 	$: entries = bookSearch.entries;
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
-	const { input, dropdown, value, open } = createSearchDropdown();
+	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
-	// #endregion search
 	// #endregion search
 </script>
 
 <HistoryPage view="history/isbn">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input use:input placeholder="Search" {...inputProps} />
+		<input autofocus use:input placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">

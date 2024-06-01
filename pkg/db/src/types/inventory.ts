@@ -2,7 +2,7 @@
 import type { Observable } from "rxjs";
 import PouchDB from "pouchdb";
 
-import { NoteState, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
+import { NoteState, StockMap, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
 import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
 
@@ -278,6 +278,8 @@ export interface DbStream {
 	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
 	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
 	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
+
+	stock: () => Observable<StockMap>;
 }
 
 /**
