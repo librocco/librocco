@@ -12,6 +12,8 @@
 	import { getDB } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
 
+	import { goto } from "$app/navigation";
+
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 
@@ -21,8 +23,10 @@
 	import { Page, PlaceholderBox } from "$lib/components";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { appPath } from "$lib/paths";
 
-	const db = getDB();
+	const { db, status } = getDB();
+	if (!status) goto(appPath("settings"));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
