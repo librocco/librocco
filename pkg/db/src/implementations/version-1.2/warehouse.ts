@@ -70,10 +70,13 @@ class Warehouse implements WarehouseInterface {
 		);
 
 		const stockCache = new ReplaySubject<StockMap>(1);
-		this.#stock = this.#db.stock().pipe(
-			map((stock) => stock.warehouse(this._id)),
-			share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
-		);
+		this.#stock = this.#db
+			.stream()
+			.stock()
+			.pipe(
+				map((stock) => stock.warehouse(this._id)),
+				share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
+			);
 
 		// The first value from the stream will be either warehouse data, or an empty object (if the warehouse doesn't exist in the db).
 		// This is enough to signal that the warehouse intsance is initialised.
