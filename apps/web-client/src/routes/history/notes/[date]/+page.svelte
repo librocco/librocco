@@ -48,7 +48,7 @@
 		preventDeselect: true
 	});
 
-	const db = getDB();
+	const { db } = getDB();
 
 	const pastNotesCtx = { name: "[NOTES_BY_DAY]", debug: false };
 	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
