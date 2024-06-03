@@ -31,7 +31,8 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB();
+	const { db, status } = getDB();
+	if (!status) goto(appPath("settings"));
 
 	/**
 	 * Handle create warehouse is an `on:click` handler used to create a new warehouse

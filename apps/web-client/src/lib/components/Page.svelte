@@ -68,7 +68,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
-		const note = await getDB()?.warehouse().note().create();
+		const note = await getDB().db?.warehouse().note().create();
 		await goto(appPath("outbound", note._id));
 	};
 </script>

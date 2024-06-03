@@ -12,6 +12,7 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
+	import { goto } from "$app/navigation";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
@@ -24,7 +25,7 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB();
+	const { db, status } = getDB();
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
 	const inNoteListStream = db
@@ -43,7 +44,10 @@
 
 	let initialized = false;
 	onMount(() => {
-		firstValueFrom(inNoteListStream).then(() => (initialized = true));
+		if (status) firstValueFrom(inNoteListStream).then(() => (initialized = true));
+		else {
+			goto(appPath("settings"));
+		}
 	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
