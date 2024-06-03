@@ -26,7 +26,7 @@
 	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 
-	const db = getDB();
+	const { db, status } = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseListStream = db
@@ -38,10 +38,14 @@
 
 	let initialized = false;
 	onMount(() => {
-		firstValueFrom(warehouseListStream).then((wls) => {
-			console.log("warehouseListStream", wls);
-			initialized = true;
-		});
+		if (status)
+			firstValueFrom(warehouseListStream).then((wls) => {
+				console.log("warehouseListStream", wls);
+				initialized = true;
+			});
+		else {
+			goto(appPath("settings"));
+		}
 	});
 
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {

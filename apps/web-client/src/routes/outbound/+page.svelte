@@ -22,7 +22,7 @@
 
 	import { appPath } from "$lib/paths";
 
-	const db = getDB();
+	const { db, status } = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
 	const outNoteListStream = db
@@ -33,7 +33,10 @@
 
 	let initialized = false;
 	onMount(() => {
-		firstValueFrom(outNoteListStream).then(() => (initialized = true));
+		if (status) firstValueFrom(outNoteListStream).then(() => (initialized = true));
+		else {
+			goto(appPath("settings"));
+		}
 	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach

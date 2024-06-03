@@ -50,7 +50,8 @@
 		preventDeselect: true
 	});
 
-	const db = getDB();
+	const { db, status } = getDB();
+	if (!status) goto(appPath("settings"));
 
 	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
 	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, data.date);
