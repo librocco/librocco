@@ -28,7 +28,9 @@ export function _groupIntoMap<T, K, V>(iterable: Iterable<T>, selector: (entry: 
 }
 
 export function _group<T, K, V>(iterable: Iterable<T>, selector: (entry: T) => [K, V]): Iterable<[K, Iterable<V>]> {
-	return wrapIter([..._groupIntoMap(iterable, selector)]);
+	return iterableFromGenerator(function* () {
+		yield* _groupIntoMap(iterable, selector);
+	});
 }
 
 export function filter<T, S extends T>(iterable: Iterable<T>, predicate: (value: T) => value is S): ReusableGenerator<S>;
@@ -147,7 +149,7 @@ export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGen
 interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
-	_group<K, V>(selector: (entry: T) => [K, V]): Iterable<[K, Iterable<V>]>;
+	_group<K, V>(selector: (entry: T) => [K, V]): TransformableIterable<[K, Iterable<V>]>;
 	_groupIntoMap<K, V>(selector: (entry: T) => [K, V]): Map<K, Iterable<V>>;
 	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
 	filter(predicate: (value: T) => boolean): TransformableIterable<T>;
