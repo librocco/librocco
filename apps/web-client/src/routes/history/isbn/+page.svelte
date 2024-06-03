@@ -14,7 +14,7 @@
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$app/navigation";
 
-	const db = getDB();
+	const { db } = getDB();
 
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
