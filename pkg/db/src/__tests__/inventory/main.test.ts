@@ -391,6 +391,45 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					[...entries].filter((e): e is VolumeStockClient<"custom"> => e.__kind === "custom").find((e) => e.title === "Custom Item 2")!.id
 			);
 		expect(newCustomItemId).not.toEqual(customItemId);
+
+		// Regression: should overwrite the id (always generate a new id) on add volumes - the custom item form assigns 'undefined' to id - this caused a regression
+		// we're testing for here
+		await note.addVolumes({ __kind: "custom", id: undefined, title: "Custom Item 3", price: 20 });
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 4,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				// Custom items should be sorted in order of addition (timestamped)
+				{ id: customItemId, __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 2", price: 20 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 3", price: 20 }
+			]);
+		});
 	});
 
 	test("note.updateTransaction", async () => {
@@ -1733,7 +1772,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "11111111",
 				quantity: 2,
 				warehouseId: warehouse1._id,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				noteId: note1._id,
 				noteDisplayName: note1.displayName
@@ -1741,7 +1780,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "22222222",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse1._id,
 				noteId: note1._id,
@@ -1750,7 +1789,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "11111111",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
 				noteId: note2._id,
@@ -1759,7 +1798,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			{
 				isbn: "22222222",
 				quantity: 2,
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
 				warehouseId: warehouse2._id,
 				noteId: note2._id,
@@ -1784,7 +1823,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "11111111",
 				quantity: 1,
 				noteType: "outbound",
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				warehouseId: warehouse1._id,
 				noteId: note3._id,
 				noteDisplayName: note3.displayName
@@ -1793,7 +1832,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				isbn: "22222222",
 				quantity: 1,
 				noteType: "outbound",
-				date: slicedDate,
+				date: expect.stringContaining(slicedDate),
 				warehouseId: warehouse2._id,
 				noteId: note3._id,
 				noteDisplayName: note3.displayName

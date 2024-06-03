@@ -48,9 +48,8 @@
 		},
 		{
 			label: "History",
-			href: `${appPath("history")}date/`,
-			icon: Book,
-			linkto: "history"
+			href: appPath("history/date"),
+			icon: Book
 		}
 	];
 

@@ -12,19 +12,26 @@ export class PastTransactions implements PastTransactionsInterface {
 	}
 
 	public static fromNotes(
-		notes: Iterable<Pick<NoteData, "_id" | "committed" | "noteType" | "updatedAt" | "displayName"> & { entries: VolumeStock[] }>
+		notes: Iterable<
+			Pick<NoteData, "_id" | "committed" | "noteType" | "updatedAt" | "committedAt" | "displayName"> & { entries: VolumeStock[] }
+		>
 	) {
 		const entries = wrapIter(notes)
 			.filter(({ committed }) => committed)
-			.flatMap(({ _id, entries, updatedAt, noteType, displayName: noteDisplayName }) =>
+			.flatMap(({ _id, entries, committedAt, updatedAt, noteType, displayName: noteDisplayName }) =>
 				wrapIter(entries)
 					.filter(isBookRow)
-					.map((e) => ({ ...e, noteId: _id, date: updatedAt!.slice(0, 10), noteType, noteDisplayName }))
+					.map((e) => ({ ...e, noteId: _id, date: committedAt || updatedAt!, noteType, noteDisplayName }))
 			);
 		return new PastTransactions(entries);
 	}
 
 	public by(property: keyof PastTransaction): PastTransactionsMap {
+		// The date will, in most cases, include the time of day.
+		// When grouping by date, we're interested only in the date part
+		if (property === "date") {
+			return wrapIter(this._internal)._groupIntoMap((e) => [e["date"].slice(0, 10), e]);
+		}
 		return wrapIter(this._internal)._groupIntoMap((e) => [e[property] as string, e]);
 	}
 }
