@@ -50,7 +50,7 @@ class Books implements BooksInterface {
 		const updates = wrapIter(docsToUpsert)
 			.map((doc) => ({ _id: `books/${doc.isbn}`, ...doc }))
 			.zip(docs)
-			.map(([update, existing = { _rev: "" }]) => ({ ...existing, ...update }));
+			.map(([update, existing = {}]) => ({ ...existing, ...update }));
 
 		await this.#db._pouch.bulkDocs([...updates]);
 	}
