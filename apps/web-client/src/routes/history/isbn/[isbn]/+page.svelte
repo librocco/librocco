@@ -3,7 +3,7 @@
 
 	import { page } from "$app/stores";
 
-	import type { BookEntry, SearchIndex, VolumeStockClient } from "@librocco/db";
+	import type { BookEntry, SearchIndex } from "@librocco/db";
 	import { entityListView, testId } from "@librocco/shared";
 
 	import { appPath } from "$lib/paths";
@@ -18,7 +18,7 @@
 	import { goto } from "$app/navigation";
 	import { createSearchDropdown } from "./actions";
 
-	const db = getDB();
+	const { db } = getDB();
 
 	$: isbn = $page.params.isbn;
 
