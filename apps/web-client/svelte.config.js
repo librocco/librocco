@@ -15,7 +15,7 @@ const config = {
 		serviceWorker: {
 			register: false
 		},
-		adapter: adapter(),
+		adapter: adapter({ fallback: "index.html" }),
 		prerender: {
 			entries: [
 				"/",
@@ -28,8 +28,6 @@ const config = {
 				"/stock/",
 				"/outbound/",
 				"/outbound/1/",
-				"/history/date/",
-				"/history/notes/1/",
 				"/settings/",
 				"/debug"
 			]
