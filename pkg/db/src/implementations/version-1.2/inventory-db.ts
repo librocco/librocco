@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap, startWith, mergeMap, of } from "rxjs";
+import { map, Observable, ReplaySubject, share, switchMap, tap, startWith, mergeMap, of } from "rxjs";
 
 import { debug, wrapIter, map as mapIter, type StockMap, VolumeStockInput } from "@librocco/shared";
 
@@ -87,10 +87,9 @@ class Database implements InventoryDatabaseInterface {
 				// Convert the iterable into a map of required type
 				map((iter) => new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(iter)),
 				// Multi-cast the stream as a Subject (BehaviourSubject without an initial value)
-				share()
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
-		const outNoteListCache = new BehaviorSubject<NavMap>(new Map());
 		this.#outNoteListStream = this.view<OutNoteListRow>("v1_list/outbound")
 			.stream({})
 			.pipe(
@@ -102,18 +101,16 @@ class Database implements InventoryDatabaseInterface {
 								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id, { displayName, ...rest }])
 						)
 				),
-				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }),
 			);
 
-		const inNoteListCache = new BehaviorSubject<InNoteMap>(new Map());
 		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
 			.stream({})
 			.pipe(
 				map(({ rows }) => wrapIter(rows).reduce((acc, row) => acc.aggregate(row), new InNoteAggregator())),
-				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }),
 			);
 
-		const committedNotesListCache = new BehaviorSubject<Map<string, (VolumeStockInput & { committedAt: string })[]>>(new Map());
 		this.#committedNotesListStream = this.view<CommittedNotesListRow>("v1_list/committed")
 			.stream({})
 			.pipe(
@@ -132,24 +129,17 @@ class Database implements InventoryDatabaseInterface {
 							return acc;
 						}, new Map())
 				),
-				share({ connector: () => committedNotesListCache, resetOnRefCountZero: false })
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
-		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
-			.pipe(share({ connector: () => stockCache, resetOnRefCountZero: false }));
+			.pipe(share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }));
 
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
 		// but will still show a warning if that number gets unexpectedly high (memory leak).
 		this._pouch.setMaxListeners(30);
-
-		// Initialise the streams
-		firstValueFrom(this.#warehouseMapStream);
-		firstValueFrom(this.#committedNotesListStream);
-		firstValueFrom(this.#inNoteListStream);
-		firstValueFrom(this.#outNoteListStream);
 
 		return this;
 	}
