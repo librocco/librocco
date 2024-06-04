@@ -13,7 +13,8 @@ export type WebClientView =
 	| "history/date"
 	| "history/isbn"
 	| "history/notes"
-	| "debug";
+	| "debug"
+	| "error";
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list";
 /** Union of names for all views regarding history (summaries, past notes/transactions) */
