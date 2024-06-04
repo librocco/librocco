@@ -26,16 +26,19 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		const remoteUrl = get(settingsStore).couchUrl;
 
-		const db = await createDB(remoteUrl);
+		const { db, status } = await createDB(remoteUrl);
 
-		db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		if (status) {
+			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		}
 
 		return {
-			db
+			db,
+			status
 		};
 	}
 
-	return {};
+	return { status: false };
 };
 export const prerender = true;
 export const trailingSlash = "always";

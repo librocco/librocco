@@ -1,6 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
+	import type { VolumeStock } from "@librocco/shared";
+
 	import type { createTable } from "$lib/actions";
 
 	import { HeadCol } from "../Cells";
@@ -13,7 +15,8 @@
 	import { createInboundTableEvents, type InboundTableEvents } from "./events";
 	import type { InventoryTableData } from "../types";
 
-	export let table: ReturnType<typeof createTable<InventoryTableData>>;
+	// The inbound table accepts only book variant rows
+	export let table: ReturnType<typeof createTable<Extract<InventoryTableData, VolumeStock<"book">>>>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -40,6 +43,7 @@
 			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
 			<th scope="col" class="show-col-xl"> Edited By </th>
 			<th scope="col" class="show-col-xl table-cell-fit"> O.P </th>
+			<th scope="col" class="show-col-xl table-cell-fit"> Category </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
@@ -57,6 +61,7 @@
 				title = "N/A",
 				publisher = "",
 				editedBy = "",
+				category = "",
 				outOfPrint = false,
 				warehouseDiscount
 			} = row}
@@ -72,7 +77,7 @@
 					{authors}
 				</td>
 				<td data-property="price" class="table-cell-fit">
-					<BookPriceCell data={{ price, warehouseDiscount }} />
+					<BookPriceCell data={row} />
 				</td>
 				<td data-property="quantity" class="table-cell-fit">
 					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />
@@ -88,6 +93,9 @@
 				</td>
 				<td data-property="outOfPrint" class="show-col-xl table-cell-fit">
 					<BookOutPrintCell {rowIx} {outOfPrint} />
+				</td>
+				<td data-property="category" class="show-col-xl table-cell-max">
+					{category}
 				</td>
 				{#if $$slots["row-actions"]}
 					<td class="table-cell-fit">

@@ -13,13 +13,13 @@ export const createInboundTableEvents = (dispatch: EventDispatcher<InboundTableE
 export const createOutboundTableEvents = (dispatch: EventDispatcher<OutboundTableEvents>) => {
 	return {
 		editQuantity: createEditQuantityEvent(dispatch),
-		editWarehouse: (event: CustomEvent<WarehouseChangeDetail>, row: InventoryTableData) => {
+		editWarehouse: (event: CustomEvent<WarehouseChangeDetail>, row: InventoryTableData<"book">) => {
 			dispatch("edit-row-warehouse", { event, row });
 		}
 	};
 };
 
-const createEditQuantityEvent = (dispatch: EventDispatcher<EditQuantityEvent>) => (event: SubmitEvent, row: InventoryTableData) => {
+const createEditQuantityEvent = (dispatch: EventDispatcher<EditQuantityEvent>) => (event: SubmitEvent, row: InventoryTableData<"book">) => {
 	dispatch("edit-row-quantity", { event, row });
 };
 
@@ -27,12 +27,12 @@ export type InboundTableEvents = EditQuantityEvent;
 export type OutboundTableEvents = EditQuantityEvent & EditWarehouseEvent;
 
 type EditQuantityEvent = {
-	"edit-row-quantity": { event: SubmitEvent; row: InventoryTableData };
+	"edit-row-quantity": { event: SubmitEvent; row: InventoryTableData<"book"> };
 };
 
 type EditWarehouseEvent = {
 	"edit-row-warehouse": {
 		event: CustomEvent<WarehouseChangeDetail>;
-		row: InventoryTableData;
+		row: InventoryTableData<"book">;
 	};
 };

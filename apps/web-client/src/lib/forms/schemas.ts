@@ -25,7 +25,8 @@ export const bookSchema = z.object({
 	authors: z.string().optional(),
 	publisher: z.string().optional(),
 	editedBy: z.string().optional(),
-	outOfPrint: z.boolean().optional()
+	outOfPrint: z.boolean().optional(),
+	category: z.string().optional()
 });
 
 export type SettingsData = SuperValidated<typeof settingsSchema>["data"];
@@ -37,7 +38,7 @@ export const settingsSchema = z.object({
 
 export type CustomItemFormData = SuperValidated<typeof customItemSchema>["data"];
 export const customItemSchema = z.object({
-	id: z.string(),
+	id: z.string().optional(),
 	title: z.string(),
 	price: z.number()
 });

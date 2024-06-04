@@ -105,16 +105,7 @@ export const listDeisgnDocument: DesignDocument = {
 					return;
 				}
 
-				emit(doc._id, {
-					type: doc.docType,
-					noteType: doc.noteType,
-					displayName: doc.displayName,
-					committed: doc.committed,
-					committedAt: doc.committedAt,
-					updatedAt: doc.updatedAt,
-					totalBooks: doc.entries.length,
-					entries: doc.entries
-				});
+				emit(doc._id);
 			}.toString()
 		},
 		publishers: {

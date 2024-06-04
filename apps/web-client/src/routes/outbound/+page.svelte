@@ -18,22 +18,26 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
 
-	const db = getDB();
+	const { db, status } = getDB();
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
 	const outNoteListStream = db
 		?.stream()
 		.outNoteList(outNoteListCtx)
-		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...m]));
+		.pipe(map((m) => [...m].sort(([, a], [, b]) => compareNotes(a, b))));
 	const outNoteList = readableFromStream(outNoteListCtx, outNoteListStream, []);
 
 	let initialized = false;
 	onMount(() => {
-		firstValueFrom(outNoteListStream).then(() => (initialized = true));
+		if (status) {
+			firstValueFrom(outNoteListStream).then(() => (initialized = true));
+		} else {
+			goto(appPath("settings"));
+		}
 	});
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
@@ -106,7 +110,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", noteId)}
 
-						<div class="group entity-list-row">
+						<div class="entity-list-row group">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
