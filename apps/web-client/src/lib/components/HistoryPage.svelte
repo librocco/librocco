@@ -28,13 +28,20 @@
 			label: "Notes by date",
 			href: appPath("history/notes", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
 			linkto: historyView("history/notes")
+		},
+		{
+			icon: Book,
+			label: "by Warehouse",
+			href: appPath("history/warehouse"), // Keep the date when switching from one dated tab to another
+			linkto: historyView("history/warehouse")
 		}
 	];
 
 	export let view: HistoryView;
+	export let loaded = true;
 </script>
 
-<Page {view} loaded={true}>
+<Page {view} {loaded}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		{#if $$slots.topbar}
 			<slot name="topbar" {iconProps} {inputProps} />
