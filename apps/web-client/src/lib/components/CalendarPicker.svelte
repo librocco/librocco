@@ -33,7 +33,7 @@
 
 <div>
 	<div
-		class="mt-1.5 flex w-full min-w-[200px] items-center gap-x-1 rounded-lg border border-gray-400 bg-gray-50 p-1.5 px-4 text-gray-600"
+		class="mt-1.5 flex min-w-[200px] items-center gap-x-1 rounded-lg border border-gray-400 bg-gray-50 p-1.5 px-4 text-gray-600"
 		use:melt={$field}
 	>
 		<p class="flex items-center gap-x-0.5">
