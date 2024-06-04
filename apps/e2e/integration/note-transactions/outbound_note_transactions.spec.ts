@@ -199,13 +199,14 @@ test("should delete the transaction from the note when when selected for deletio
 test("transaction should default to the only warehouse the given book is available in if there is only one", async ({ page }) => {
 	// Setup: Add the book to the warehouse (through an inbound note)
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		db.warehouse("wh-1")
+	await dbHandle.evaluate((db) =>
+		db
+			.warehouse("wh-1")
 			.setName({}, "Warehouse 1")
 			.then((wh) => wh.note().create())
 			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
-			.then((n) => n.commit({}));
-	});
+			.then((n) => n.commit({}))
+	);
 
 	const content = getDashboard(page).content();
 

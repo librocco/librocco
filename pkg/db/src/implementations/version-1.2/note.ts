@@ -292,7 +292,7 @@ class Note implements NoteInterface {
 	addVolumes(
 		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface> {
-		return runAfterCondition(async () => {
+		return runAfterCondition(() => {
 			params.map((update) => {
 				// Custom items are merely added, not aggregated
 				if (update.__kind === "custom") {
@@ -328,15 +328,19 @@ class Note implements NoteInterface {
 			});
 
 			// Create book data entries for added books (if they don't exist)
+			// We're not awaiting this as it's not that relevant immediately
 			const isbns = (params as VolumeStock[]).filter(isBookRow).map(({ isbn }) => isbn);
-			const results = await this.#db.books().get(isbns);
-			const bookDataToCreate = wrapIter(isbns)
-				.zip(results)
-				.filter(([, r]) => !r)
-				.map(([isbn]) => ({ isbn }))
-				.array();
-
-			this.#db.books().upsert(bookDataToCreate); // We're not awaiting this as it's not that relevant immediately
+			this.#db
+				.books()
+				.get(isbns)
+				.then((results) => {
+					const bookDataToCreate = wrapIter(isbns)
+						.zip(results)
+						.filter(([, r]) => !r)
+						.map(([isbn]) => ({ isbn }))
+						.array();
+					return this.#db.books().upsert(bookDataToCreate);
+				});
 
 			return this.update({}, this);
 		}, this.#initialized);
