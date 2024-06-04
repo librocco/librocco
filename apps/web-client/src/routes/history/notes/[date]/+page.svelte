@@ -1,9 +1,6 @@
 <script lang="ts">
-	import { fade } from "svelte/transition";
-
-	import { melt, createDatePicker } from "@melt-ui/svelte";
-	import { Library, Calendar, ChevronRight, ChevronLeft } from "lucide-svelte";
-	import { now, getLocalTimeZone, fromDate, type DateValue } from "@internationalized/date";
+	import { Library } from "lucide-svelte";
+	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 
 	import { entityListView, testId } from "@librocco/shared";
 
@@ -17,6 +14,7 @@
 	import { createPastNotesStore } from "$lib/stores/inventory/history_entries";
 	import { browser } from "$app/environment";
 	import { generateUpdatedAtString } from "$lib/utils/time";
+	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 
 	export let data: PageData;
 
@@ -25,28 +23,21 @@
 		return a.toString().slice(0, 10) === b.toString().slice(0, 10);
 	};
 
-	const {
-		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
-		states: { months, headingValue, weekdays, segmentContents, open, value },
-		helpers: { isDateDisabled, isDateUnavailable }
-		// create a ZonedDateTime object with the current date and time
-	} = createDatePicker({
-		// 'date' param should always be defined as the route doesn't render without the date param
-		defaultValue: data.dateValue,
-		isDateDisabled: (date) => {
-			return date > now(getLocalTimeZone());
-		},
-		onValueChange: ({ next }) => {
-			// Redirect only in browser, if data value is different then the one in route param
-			if (browser && !isEqualDateValue(data.dateValue, next)) {
-				// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
-				// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
-				goto(appPath("history/notes", next.toString().slice(0, 10)), { replaceState: true });
-			}
-			return next;
-		},
-		preventDeselect: true
-	});
+	// #region date picker
+	const defaultDateValue = data.dateValue;
+	const onDateValueChange = ({ next }) => {
+		// Redirect only in browser, if data value is different then the one in route param
+		if (browser && !isEqualDateValue(data.dateValue, next)) {
+			// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
+			// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
+			goto(appPath("history/notes", next.toString().slice(0, 10)), { replaceState: true });
+		}
+		return next;
+	};
+	const isDateDisabled = (date: DateValue) => {
+		return date > now(getLocalTimeZone());
+	};
+	// #endregion date picker
 
 	const db = getDB();
 
@@ -59,72 +50,9 @@
 		<div class="flex w-full justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
 
-			<section class="flex w-full flex-col items-center gap-3">
-				<div>
-					<div
-						class="mt-1.5 flex w-full min-w-[200px] items-center rounded-lg border border-gray-400 bg-gray-50 p-1.5 text-gray-600"
-						use:melt={$field}
-					>
-						{#each $segmentContents as seg}
-							<div class="px-0.5" use:melt={$segment(seg.part)}>
-								{seg.value}
-							</div>
-						{/each}
-						<div class="ml-4 flex w-full items-center justify-end">
-							<button class="rounded-md p-1 text-gray-600 transition-all" use:melt={$trigger}>
-								<Calendar size={20} />
-							</button>
-						</div>
-					</div>
-				</div>
-				{#if $open}
-					<div class="z-10 min-w-[320px] rounded-lg bg-white shadow-sm" transition:fade={{ duration: 100 }} use:melt={$content}>
-						<div class="w-full rounded-lg bg-white p-3 text-gray-600 shadow-sm" use:melt={$calendar}>
-							<header class="flex items-center justify-between pb-2">
-								<button class="rounded-lg p-1 transition-all" use:melt={$prevButton}>
-									<ChevronLeft size={24} />
-								</button>
-								<div class="flex items-center gap-6" use:melt={$heading}>
-									{$headingValue}
-								</div>
-								<button class="rounded-lg p-1 transition-all" use:melt={$nextButton}>
-									<ChevronRight size={24} />
-								</button>
-							</header>
-							<div>
-								{#each $months as month}
-									<table class="w-full" use:melt={$grid}>
-										<thead aria-hidden="true">
-											<tr>
-												{#each $weekdays as day}
-													<th class="text-sm font-semibold">
-														<div class="flex h-6 w-6 items-center justify-center p-4">
-															{day}
-														</div>
-													</th>
-												{/each}
-											</tr>
-										</thead>
-										<tbody>
-											{#each month.weeks as weekDates}
-												<tr>
-													{#each weekDates as date}
-														<td role="gridcell" aria-disabled={$isDateDisabled(date) || $isDateUnavailable(date)}>
-															<div use:melt={$cell(date, month.value)}>
-																{date.day}
-															</div>
-														</td>
-													{/each}
-												</tr>
-											{/each}
-										</tbody>
-									</table>
-								{/each}
-							</div>
-						</div>
-					</div>
-				{/if}
-			</section>
+			<div class="flex w-full flex-col items-center gap-3">
+				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
+			</div>
 		</div>
 	</svelte:fragment>
 
