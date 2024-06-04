@@ -37,7 +37,7 @@
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import type { InventoryTableData, OutboundTableData } from "$lib/components/Tables/types";
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -61,7 +61,8 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB();
+	const { db, status } = getDB();
+	// if(!status) goto(appPath("settings"))
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseListStream = db
@@ -144,7 +145,7 @@
 	// #endregion infinite-scroll
 
 	// #region table
-	const tableOptions = writable<{ data: OutboundTableData[] }>({
+	const tableOptions = writable<{ data: InventoryTableData[] }>({
 		data: $entries
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
@@ -154,7 +155,7 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: ($entries as OutboundTableData[])?.slice(0, maxResults)
+		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
 	});
 	// #endregion table
 
@@ -177,7 +178,7 @@
 		}
 	};
 
-	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData) => {
+	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
 		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
 		const { warehouseId: nextWarehouseId } = e.detail;
 		// Number form control validation means this string->number conversion should yield a valid result
@@ -192,7 +193,7 @@
 		await note.updateTransaction({}, transaction, { ...transaction, warehouseId: nextWarehouseId });
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -205,8 +206,6 @@
 
 		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
-
-	const handleAddCustomItem = () => note.addVolumes({ __kind: "custom", title: "Custom item", price: 10 });
 
 	const deleteRow = async (rowIx: number) => {
 		const row = $table.rows[rowIx];
@@ -224,10 +223,10 @@
 	 * - book form
 	 * - custom item form
 	 */
-	const handleOpenFormPopover = (row: OutboundTableData & { key: string; rowIx: number }) => () =>
+	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () =>
 		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
 
-	const openBookForm = (row: OutboundTableData & { key: string; rowIx: number }) => {
+	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
 		bookFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
@@ -236,11 +235,11 @@
 			type: "edit-row"
 		};
 	};
-	const openCustomItemForm = (row: OutboundTableData & { key: string; rowIx: number }) => {
+	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
 		customItemFormData = row;
 		dialogContent = {
 			onConfirm: () => {},
-			title: dialogTitle.editCustomItem(),
+			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
 			description: "",
 			type: "custom-item-form"
 		};
@@ -283,7 +282,14 @@
 		const data = form?.data as VolumeStock<"custom">;
 
 		try {
-			await note.updateTransaction({ name: "UPDATE_TXN", debug: true }, data.id, data);
+			// Check if create or update and dispatch appropriate action
+			//
+			// Presence of id indicates the existing custom item (update action)
+			if (data.id) {
+				await note.updateTransaction({ name: "UPDATE_TXN", debug: false }, data.id, data);
+			} else {
+				await note.addVolumes({ __kind: "custom", ...data });
+			}
 
 			bookFormData = null;
 			open.set(false);
@@ -532,7 +538,12 @@
 				</div>
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
-					<button on:click={handleAddCustomItem} class="button button-green">Custom item</button>
+					<button
+						use:melt={$dialogTrigger}
+						on:m-click={() => openCustomItemForm()}
+						on:m-keydown={() => openCustomItemForm()}
+						class="button button-green">Custom item</button
+					>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->

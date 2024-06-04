@@ -27,7 +27,7 @@
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
-	const db = getDB();
+	const { db, status } = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseListStream = db
@@ -39,9 +39,11 @@
 
 	let initialized = false;
 	onMount(() => {
-		firstValueFrom(warehouseListStream).then((wls) => {
-			initialized = true;
-		});
+		if (status) {
+			firstValueFrom(warehouseListStream).then((wls) => (initialized = true));
+		} else {
+			goto(appPath("settings"));
+		}
 	});
 
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {

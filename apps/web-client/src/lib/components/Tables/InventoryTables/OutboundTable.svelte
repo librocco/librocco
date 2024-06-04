@@ -3,7 +3,7 @@
 
 	import { type NavEntry, isBookRow } from "@librocco/db";
 
-	import type { OutboundTableData } from "../types";
+	import type { InventoryTableData } from "../types";
 
 	import type { createTable } from "$lib/actions";
 
@@ -17,9 +17,8 @@
 	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
-	import { ConciergeBell } from "lucide-svelte";
 
-	export let table: ReturnType<typeof createTable<OutboundTableData>>;
+	export let table: ReturnType<typeof createTable<InventoryTableData>>;
 	export let warehouseList: Iterable<[string, NavEntry]>;
 
 	const { table: tableAction } = table;
@@ -46,6 +45,7 @@
 			<th scope="col" class="show-col-md"> Publisher </th>
 			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
 			<th scope="col">Warehouse </th>
+			<th scope="col" class="show-col-md"> Category </th>
 			{#if $$slots["row-actions"]}
 				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
 			{/if}
@@ -54,7 +54,18 @@
 	<tbody>
 		{#each rows as row (row.key)}
 			{#if isBookRow(row)}
-				{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "", warehouseDiscount } = row}
+				{@const {
+					rowIx,
+					isbn,
+					authors = "N/A",
+					quantity,
+					price,
+					year = "N/A",
+					title = "N/A",
+					publisher = "",
+					warehouseDiscount,
+					category = ""
+				} = row}
 				{@const { warehouseId, warehouseName, availableWarehouses } = row}
 				{@const quantityInWarehouse = availableWarehouses?.get(warehouseId)?.quantity || 0}
 				<!-- If a book is available in multiple warehouses (and no warehouse selected), we require action - bg is yellow -->
@@ -74,7 +85,8 @@
 					warehouseDiscount,
 					warehouseId,
 					warehouseName,
-					availableWarehouses
+					availableWarehouses,
+					category
 				}}
 				<!-- Require action takes precedence over out of stock -->
 				<tr
@@ -93,7 +105,7 @@
 						{authors}
 					</td>
 					<td data-property="price" class="table-cell-fit">
-						<BookPriceCell data={{ price, warehouseDiscount }} />
+						<BookPriceCell data={row} />
 					</td>
 					<td data-property="quantity" class="table-cell-fit">
 						<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} />
@@ -106,6 +118,9 @@
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
 						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, coreRowData)} data={row} {rowIx} />
+					</td>
+					<td data-property="category" class="show-col-md table-cell-max">
+						{category}
 					</td>
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
@@ -123,14 +138,15 @@
 					<td data-property="title" class="show-col-lg table-cell-max">
 						{title}
 					</td>
-					<td />
+					<td class="show-col-lg" />
 					<td data-property="price" class="table-cell-fit">
-						<BookPriceCell data={{ price }} />
+						<BookPriceCell data={row} />
 					</td>
+					<td class="table-cell-fit" />
+					<td class="show-col-md" />
+					<td class="show-col-lg table-cell-fit" />
 					<td />
-					<td />
-					<td />
-					<td />
+					<td class="show-col-md" />
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
 							<slot name="row-actions" {row} {rowIx} />

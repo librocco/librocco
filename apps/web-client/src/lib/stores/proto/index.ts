@@ -42,7 +42,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const entries = createDisplayEntriesStore(entriesCtx, getDB(), note, mapMergeBookData);
+	const entries = createDisplayEntriesStore(entriesCtx, getDB().db, note, mapMergeBookData);
 
 	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?._id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
@@ -85,8 +85,8 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookData);
-	const csvEntries = createDisplayEntriesStore<"book">(ctx, getDB(), warehouse, mapMergeBookDataCsv);
+	const entries = createDisplayEntriesStore<"book">(ctx, getDB().db, warehouse, mapMergeBookData);
+	const csvEntries = createDisplayEntriesStore<"book">(ctx, getDB().db, warehouse, mapMergeBookDataCsv);
 
 	return {
 		displayName,

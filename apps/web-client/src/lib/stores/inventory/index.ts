@@ -49,7 +49,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
-	const { entries } = createDisplayEntriesStore(entriesCtx, getDB(), note, currentPage);
+	const { entries } = createDisplayEntriesStore(entriesCtx, getDB().db, note, currentPage);
 
 	return {
 		displayName,
@@ -97,7 +97,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const { entries } = createDisplayEntriesStore(ctx, getDB(), warehouse, currentPageStore, controlledSearchStore);
+	const { entries } = createDisplayEntriesStore(ctx, getDB().db, warehouse, currentPageStore, controlledSearchStore);
 
 	return {
 		displayName,

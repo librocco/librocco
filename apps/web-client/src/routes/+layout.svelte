@@ -7,10 +7,12 @@
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import type { LayoutData } from "./$types";
+	import { goto } from "$app/navigation";
+	import { appPath } from "$lib/paths";
 
-	export let data: LayoutData;
+	export let data: LayoutData & { status: boolean };
 
-	const { db } = data;
+	const { db, status } = data;
 
 	let availabilitySubscription: Subscription;
 
@@ -18,8 +20,13 @@
 		// Register the db to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// This is not a security concern as the db is in the user's browser anyhow.
+		if (!status) {
+			await goto(appPath("settings"));
+		}
 		if (db) {
+			window["db_ready"] = true;
 			window["_db"] = db;
+			window.dispatchEvent(new Event("db_ready"));
 		}
 
 		if (pwaInfo) {

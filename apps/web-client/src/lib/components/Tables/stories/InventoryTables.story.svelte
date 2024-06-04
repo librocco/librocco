@@ -14,9 +14,16 @@
 
 	export let Hst: Hst;
 
-	const stockAndInboundTable = createTable(
+	const inboundTable = createTable(
 		writable({
 			data: rows
+		})
+	);
+
+	const stockTable = createTable(
+		writable({
+			// Stock table needs to support custom items as well, as we're using it to display (already) committed notes (both inbound and outbound)
+			data: [...rows, { __kind: "custom" as const, id: "custom-1", title: "Custom Item 1", price: 10 }]
 		})
 	);
 
@@ -25,7 +32,7 @@
 
 <Hst.Story title="Tables / Inventory Tables">
 	<Hst.Variant title="Stock">
-		<StockTable table={stockAndInboundTable}>
+		<StockTable table={stockTable}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
@@ -37,7 +44,7 @@
 		</StockTable>
 	</Hst.Variant>
 	<Hst.Variant title="Inbound">
-		<InboundTable table={stockAndInboundTable} on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}>
+		<InboundTable table={inboundTable} on:edit-row-quantity={({ detail }) => logEvent("Edit Quantity", detail)}>
 			<div slot="row-actions" let:row let:rowIx>
 				<button on:click={() => console.log(row)} class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900">
 					<span class="sr-only">Edit row {rowIx}</span>
