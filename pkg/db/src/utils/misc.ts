@@ -1,8 +1,8 @@
 import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription } from "rxjs";
 
-import type { VolumeStock, VolumeStockKind } from "@librocco/shared";
+import type { VolumeStock } from "@librocco/shared";
 
-import { VersionedString, VersionString, VolumeStockClient } from "../types";
+import { VersionedString, VersionString } from "../types";
 
 const compareCustomItems = (a: VolumeStock, b: VolumeStock) =>
 	!(isCustomItemRow(a) && isCustomItemRow(b))
@@ -133,20 +133,12 @@ export const isVersioned = (id: string, versionString: VersionString): id is Ver
 /** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
 export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;
 
-type VolumeStockRes<T extends VolumeStock | VolumeStockClient, K extends VolumeStockKind> = T extends VolumeStockClient
-	? VolumeStockClient<K>
-	: VolumeStock<K>;
-
 /** Checks if item is custom item row */
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-export function isCustomItemRow<VS extends VolumeStock | VolumeStockClient>(item: VS): item is VolumeStockRes<VS, "custom"> {
+export function isCustomItemRow<T extends VolumeStock>(item: T): item is Extract<T, VolumeStock<"custom">> {
 	return item.__kind === "custom";
 }
 
 /** Checks if item is book row */
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-expect-error
-export function isBookRow<VS extends VolumeStock | VolumeStockClient>(item: VS): item is VolumeStockRes<VS, "book"> {
+export function isBookRow<T extends VolumeStock>(item: T): item is Extract<T, VolumeStock<"book">> {
 	return item.__kind !== "custom";
 }

@@ -5,7 +5,7 @@ import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
-import { BookEntry, InNoteMap, NavMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
+import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
 
 import * as implementations from "@/implementations/inventory";
 
@@ -391,6 +391,45 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 					[...entries].filter((e): e is VolumeStockClient<"custom"> => e.__kind === "custom").find((e) => e.title === "Custom Item 2")!.id
 			);
 		expect(newCustomItemId).not.toEqual(customItemId);
+
+		// Regression: should overwrite the id (always generate a new id) on add volumes - the custom item form assigns 'undefined' to id - this caused a regression
+		// we're testing for here
+		await note.addVolumes({ __kind: "custom", id: undefined, title: "Custom Item 3", price: 20 });
+		await waitFor(() => {
+			expect(entries).toEqual([
+				{
+					__kind: "book",
+					isbn: "0123456789",
+					quantity: 5,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 10,
+					warehouseId: "",
+					warehouseName: "not-found",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				{
+					__kind: "book",
+					isbn: "11111111",
+					quantity: 4,
+					warehouseId: versionId(wh1._id),
+					warehouseName: "Warehouse 1",
+					availableWarehouses,
+					warehouseDiscount: 0
+				},
+				// Custom items should be sorted in order of addition (timestamped)
+				{ id: customItemId, __kind: "custom", title: "Custom Item", price: 10 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 2", price: 20 },
+				{ id: expect.any(String), __kind: "custom", title: "Custom Item 3", price: 20 }
+			]);
+		});
 	});
 
 	test("note.updateTransaction", async () => {
@@ -1706,10 +1745,15 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(outNoteList).toEqual([{ id: note1._id, displayName: "New Note - Updated" }]);
 		});
 	});
-	test("committedNotesListStream", async () => {
-		const ael$ = db.stream().committedNotesList({});
 
-		let committedNotes: Map<string, VolumeStock[]> = new Map();
+	test("past transactions stream", async () => {
+		let pastTransactions: PossiblyEmpty<PastTransactionsMap> = EMPTY;
+		db.history()
+			.stream({})
+			.subscribe(($pt) => (pastTransactions = $pt.by("date")));
+
+		// Initial stream should be an empty map
+		await waitFor(() => expect(pastTransactions).toEqual(new Map()));
 
 		const date = new Date();
 		const slicedDate = date.toISOString().slice(0, 10);
@@ -1719,52 +1763,51 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		const note1 = await warehouse1.note().create();
 		const note2 = await warehouse2.note().create();
-		await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
-		await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
-		await note1.commit({});
-		await note2.commit({});
 
-		const inboundNotesArray = [
+		await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit({}));
+		await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit({}));
+
+		let transactions = [
 			{
 				isbn: "11111111",
 				quantity: 2,
 				warehouseId: warehouse1._id,
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
-				noteType: "inbound"
+				date: expect.stringContaining(slicedDate),
+				noteType: "inbound",
+				noteId: note1._id,
+				noteDisplayName: note1.displayName
 			},
 			{
 				isbn: "22222222",
 				quantity: 2,
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
-				warehouseId: warehouse1._id
+				warehouseId: warehouse1._id,
+				noteId: note1._id,
+				noteDisplayName: note1.displayName
 			},
 			{
 				isbn: "11111111",
 				quantity: 2,
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
-				warehouseId: warehouse2._id
+				warehouseId: warehouse2._id,
+				noteId: note2._id,
+				noteDisplayName: note2.displayName
 			},
 			{
 				isbn: "22222222",
 				quantity: 2,
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
+				date: expect.stringContaining(slicedDate),
 				noteType: "inbound",
-				warehouseId: warehouse2._id
+				warehouseId: warehouse2._id,
+				noteId: note2._id,
+				noteDisplayName: note2.displayName
 			}
 		];
-		const map = new Map();
-		map.set(slicedDate, inboundNotesArray);
-
-		ael$.subscribe((ael) => (committedNotes = ael));
 
 		await waitFor(() => {
-			expect(committedNotes).toEqual(map);
+			expect(pastTransactions).toEqual(new Map([[slicedDate, transactions]]));
 		});
 
 		// add some outbound notes
@@ -1775,29 +1818,30 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		);
 		note3.commit({});
 
-		const outboundNotesArray = [
+		transactions = [
 			{
 				isbn: "11111111",
 				quantity: 1,
 				noteType: "outbound",
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
-				warehouseId: warehouse1._id
+				date: expect.stringContaining(slicedDate),
+				warehouseId: warehouse1._id,
+				noteId: note3._id,
+				noteDisplayName: note3.displayName
 			},
 			{
 				isbn: "22222222",
 				quantity: 1,
 				noteType: "outbound",
-				committedAt: slicedDate,
-				updatedAt: expect.any(String),
-				warehouseId: warehouse2._id
-			}
+				date: expect.stringContaining(slicedDate),
+				warehouseId: warehouse2._id,
+				noteId: note3._id,
+				noteDisplayName: note3.displayName
+			},
+			...transactions
 		];
 
-		map.set(slicedDate, [...outboundNotesArray, ...inboundNotesArray]);
-
 		await waitFor(() => {
-			expect(committedNotes).toEqual(map);
+			expect(pastTransactions).toEqual(new Map([[slicedDate, transactions]]));
 		});
 	});
 

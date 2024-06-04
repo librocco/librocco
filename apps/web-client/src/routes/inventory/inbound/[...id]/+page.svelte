@@ -48,7 +48,7 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const db = getDB()!;
+	const { db, status } = getDB()!;
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
@@ -468,6 +468,7 @@
 					</button>
 				</div>
 				<div class="px-6">
+					<!-- {$connectivity} -->
 					<BookForm
 						data={bookFormData}
 						publisherList={$publisherList}
