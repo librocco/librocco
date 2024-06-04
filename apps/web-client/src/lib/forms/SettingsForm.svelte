@@ -17,12 +17,11 @@
 	export let form: SuperValidated<typeof settingsSchema>;
 	export let options: SettingsFormOptions;
 
-
 	const _form = superForm(form, options);
 
 	const { form: formStore, enhance, tainted } = _form;
 
-	const {reason} = getDB()
+	const { reason } = getDB();
 
 	$: hasChanges = $tainted && !compare($formStore, form.data);
 </script>
