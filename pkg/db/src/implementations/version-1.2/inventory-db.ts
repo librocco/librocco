@@ -78,7 +78,12 @@ class Database implements InventoryDatabaseInterface {
 						mergeMap((s) =>
 							s === warehouses
 								? of(warehouses)
-								: of(mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: (s as StockMap).warehouse(id).size }] as const))
+								: of(
+										mapIter(
+											warehouses,
+											([id, warehouse]) => [id, { ...warehouse, totalBooks: (s as StockMap).warehouse(id).size }] as const
+										)
+								  )
 						),
 						// Multi-cast the potentially long-running mergeMap to prevent redundant execution fo each subscriber
 						share()
@@ -86,7 +91,8 @@ class Database implements InventoryDatabaseInterface {
 				),
 				// Convert the iterable into a map of required type
 				map((iter) => new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(iter)),
-				// Multi-cast the stream as a Subject (BehaviourSubject without an initial value)
+				// Multi-cast the stream as a ReplaySubject which replays the last emitted value
+				// in order to make view switching snappier after initial first load
 				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
@@ -101,14 +107,14 @@ class Database implements InventoryDatabaseInterface {
 								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id, { displayName, ...rest }])
 						)
 				),
-				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }),
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
 		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
 			.stream({})
 			.pipe(
 				map(({ rows }) => wrapIter(rows).reduce((acc, row) => acc.aggregate(row), new InNoteAggregator())),
-				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }),
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
 		this.#stockStream = newStock(this)

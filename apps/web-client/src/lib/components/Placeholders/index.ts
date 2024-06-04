@@ -1,4 +1,4 @@
-import PlaceholderDots from "./PlaceholderDots.svelte"
-import PlaceholderBox from "./PlaceholderBox.svelte"
+import PlaceholderDots from "./PlaceholderDots.svelte";
+import PlaceholderBox from "./PlaceholderBox.svelte";
 
-export { PlaceholderDots, PlaceholderBox }
+export { PlaceholderDots, PlaceholderBox };
