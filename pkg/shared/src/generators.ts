@@ -33,6 +33,24 @@ export function _group<T, K, V>(iterable: Iterable<T>, selector: (entry: T) => [
 	});
 }
 
+export function _unique<T extends Record<string, any>>(iterable: Iterable<T>, key: keyof T): Set<T>;
+export function _unique<T>(iterable: Iterable<T>, selector: (x: T) => any): Set<T>;
+export function _unique<T>(iterable: Iterable<T>): Set<T>;
+export function _unique<T>(...params: any[]): Set<T> {
+	if (params.length == 1) {
+		const [iter] = params as [Iterable<T>];
+		return new Set(iter);
+	}
+
+	if (typeof params[1] === "string") {
+		const [iter, selector] = params as [Iterable<Record<string, any>>, string];
+		return _unique(iter, (x) => x[selector]) as Set<T>;
+	}
+
+	const [iter, selector] = params as [Iterable<T>, (x: T) => any];
+	return _unique(iter, selector);
+}
+
 export function filter<T, S extends T>(iterable: Iterable<T>, predicate: (value: T) => value is S): ReusableGenerator<S>;
 export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T>;
 export function filter<T>(iterable: Iterable<T>, predicate: (value: T) => boolean): ReusableGenerator<T> {
