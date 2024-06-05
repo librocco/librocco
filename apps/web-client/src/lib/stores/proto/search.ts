@@ -1,7 +1,7 @@
 import { writable, type Readable, type Writable } from "svelte/store";
 import { map, Observable, share, ReplaySubject, switchMap, tap, combineLatest } from "rxjs";
 
-import { debug, wrapIter, type VolumeStockKind } from "@librocco/shared";
+import { map as mapIter, debug, wrapIter, type VolumeStockKind } from "@librocco/shared";
 import type {
 	BookEntry,
 	InventoryDatabaseInterface,
@@ -27,22 +27,29 @@ interface CreateDisplayEntriesStore<K extends VolumeStockKind = VolumeStockKind>
 	};
 }
 
-export const createFilteredEntriesStore: CreateDisplayEntriesStore<"book"> = (ctx, db, searchIndex) => {
+export const createSearchStore = (ctx: debug.DebugCtx, searchIndex?: SearchIndex) => {
 	const searchStore = writable("");
 
 	const searchResStream = observableFromStore(searchStore).pipe(
 		tap(debug.log(ctx, "display_entries_store:search:input")),
-		map((searchString) =>
-			// If the search index is not available, or the search store is empty, return an empty set (all results will be filtered out)
-			searchIndex && searchString.length ? new Set(searchIndex.search(searchString).map(({ isbn }) => isbn)) : new Set()
-		),
+		// If the search index is not available, or the search store is empty, return an empty set (all results will be filtered out)
+		map((searchString) => (searchIndex && searchString.length ? searchIndex.search(searchString) : []) as BookEntry[]),
 		tap(debug.log(ctx, "display_entries_store:search:search_result"))
 	);
+	const searchResStore = readableFromStream(ctx, searchResStream, []);
+
+	return { searchResStream, searchStore, searchResStore };
+};
+
+export const createFilteredEntriesStore: CreateDisplayEntriesStore<"book"> = (ctx, db, searchIndex) => {
+	const { searchStore, searchResStream } = createSearchStore(ctx, searchIndex);
+	const filteredIsbnsStream = searchResStream.pipe(map((res) => new Set(mapIter(res, ({ isbn }) => isbn))));
+
 	// We're searching all of the entries -> default pseudo warehouse
 	const entriesStream = db?.warehouse().stream().entries(ctx) || new Observable<EntriesStreamResult<"book">>();
 
 	const shareSubject = new ReplaySubject<DisplayRow<"book">[]>(1);
-	const tableData = combineLatest([searchResStream, entriesStream]).pipe(
+	const tableData = combineLatest([filteredIsbnsStream, entriesStream]).pipe(
 		map(([matchedIsbns, { rows }]) => rows.filter(({ isbn }) => matchedIsbns.has(isbn))),
 		switchMap((r) => {
 			// Map rows to just isbns
