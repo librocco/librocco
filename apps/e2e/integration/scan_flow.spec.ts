@@ -42,7 +42,7 @@ test("should allow for continous scanning by auto focusing the scan field after 
 	await page.keyboard.press("Enter");
 
 	await content.table("outbound-note").assertRows([
-		{ isbn: "1234567890", quantity: 1 },
-		{ isbn: "1234567891", quantity: 1 }
+		{ isbn: "1234567891", quantity: 1 },
+		{ isbn: "1234567890", quantity: 1 }
 	]);
 });
