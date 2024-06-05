@@ -1,0 +1,11 @@
+{
+	"extends": "../../pkg/scaffold/tsconfig.json",
+	"compilerOptions": {
+		"rootDir": "src",
+		"baseUrl": ".",
+		"lib": ["ESNext", "DOM"],
+		"esModuleInterop": true
+	},
+	"exclude": ["node_modules"],
+	"include": ["src"]
+}
