@@ -107,8 +107,8 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1 },
-		{ isbn: "1234567891", quantity: 1 }
+		{ isbn: "1234567891", quantity: 1 },
+		{ isbn: "1234567890", quantity: 1 }
 	]);
 
 	// Add another transaction for "1234567890"
@@ -156,12 +156,12 @@ test("should allow for changing of transaction quantity using the quantity field
 	await scanField.add("1234567891");
 
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 3 },
-		{ isbn: "1234567891", quantity: 1 }
+		{ isbn: "1234567891", quantity: 1 },
+		{ isbn: "1234567890", quantity: 3 }
 	]);
 });
 
-test("should sort transactions by isbn", async ({ page }) => {
+test("should sort in reverse order to being added/aggregated", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -173,7 +173,11 @@ test("should sort transactions by isbn", async ({ page }) => {
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }]);
 
 	await scanField.add("1234567892");
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }, { isbn: "1234567891" }]);
+
+	// Aggregating should push the aggregated txn up
+	await scanField.add("1234567891");
+	await entries.assertRows([{ isbn: "1234567891" }, { isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
 test("should delete the transaction from the note on delete button click", async ({ page }) => {
@@ -189,13 +193,13 @@ test("should delete the transaction from the note on delete button click", async
 	const entries = getDashboard(page).content().table("inbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
 	// Delete the second transaction
 	await entries.row(1).delete();
 
 	// Check that the second transaction was deleted
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
 // TODO: Should not allow committing of an empty note ??

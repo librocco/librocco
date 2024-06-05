@@ -95,7 +95,7 @@
 	};
 	// #endregion csv
 
-	const db = getDB();
+	const { db } = getDB();
 
 	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
 	$: historyStores = createWarehouseHistoryStores(dailySummaryCtx, db, data.warehouseId, data.from.dateValue, data.to.dateValue, filter);
