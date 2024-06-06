@@ -92,8 +92,8 @@ describe("tableContentStore", () => {
 			expect(displayEntries).toEqual([
 				{
 					__kind: "book",
-					...book1,
-					quantity: 12,
+					isbn: book3.isbn,
+					quantity: 5,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -112,8 +112,8 @@ describe("tableContentStore", () => {
 				// Book data for book3 is not available in the db - only the transaction data is shown
 				{
 					__kind: "book",
-					isbn: book3.isbn,
-					quantity: 5,
+					...book1,
+					quantity: 12,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -128,8 +128,8 @@ describe("tableContentStore", () => {
 			expect(displayEntries).toEqual([
 				{
 					__kind: "book",
-					...book1,
-					quantity: 12,
+					...book3,
+					quantity: 5,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -147,8 +147,8 @@ describe("tableContentStore", () => {
 				// Full book3 data should be displayed
 				{
 					__kind: "book",
-					...book3,
-					quantity: 5,
+					...book1,
+					quantity: 12,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -164,9 +164,8 @@ describe("tableContentStore", () => {
 			expect(displayEntries).toEqual([
 				{
 					__kind: "book",
-					...book1,
-					title: "The Age of Wonder (updated)",
-					quantity: 12,
+					...book3,
+					quantity: 5,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -183,8 +182,9 @@ describe("tableContentStore", () => {
 				},
 				{
 					__kind: "book",
-					...book3,
-					quantity: 5,
+					...book1,
+					title: "The Age of Wonder (updated)",
+					quantity: 12,
 					warehouseId: `v1/jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
@@ -241,19 +241,19 @@ describe("tableContentStore", () => {
 			expect(displayEntries).toEqual([
 				{
 					__kind: "book",
-					...book1,
-					quantity: 12,
-					warehouseId: `v1/wh-1`,
-					warehouseName: "Warehouse 1",
+					...book2,
+					quantity: 10,
+					warehouseId: `v1/wh-2`,
+					warehouseName: "Warehouse 2",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
 				},
 				{
 					__kind: "book",
-					...book2,
-					quantity: 10,
-					warehouseId: `v1/wh-2`,
-					warehouseName: "Warehouse 2",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/wh-1`,
+					warehouseName: "Warehouse 1",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
 				}
@@ -264,17 +264,6 @@ describe("tableContentStore", () => {
 		await wh1.setDiscount({}, 10);
 		await waitFor(() =>
 			expect(displayEntries).toEqual([
-				// The price of book1 should be discounted (as wh-1 has a discount of 10%)
-				{
-					__kind: "book",
-					...book1,
-					quantity: 12,
-					warehouseId: `v1/wh-1`,
-					warehouseName: "Warehouse 1",
-					price: 54,
-					availableWarehouses: new Map(),
-					warehouseDiscount: 10
-				},
 				// Warehouse 2 doesn't have a discount applied to it
 				{
 					__kind: "book",
@@ -285,15 +274,8 @@ describe("tableContentStore", () => {
 					price: 12,
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
-				}
-			])
-		);
-
-		// Set the warehouse discount for the second warehouse
-		await wh2.setDiscount({}, 20);
-		await waitFor(() =>
-			expect(displayEntries).toEqual([
-				// Applied discount: 10%
+				},
+				// The price of book1 should be discounted (as wh-1 has a discount of 10%)
 				{
 					__kind: "book",
 					...book1,
@@ -303,7 +285,14 @@ describe("tableContentStore", () => {
 					price: 54,
 					availableWarehouses: new Map(),
 					warehouseDiscount: 10
-				},
+				}
+			])
+		);
+
+		// Set the warehouse discount for the second warehouse
+		await wh2.setDiscount({}, 20);
+		await waitFor(() =>
+			expect(displayEntries).toEqual([
 				// Applied discount: 20%
 				{
 					__kind: "book",
@@ -314,6 +303,17 @@ describe("tableContentStore", () => {
 					price: 9.6,
 					availableWarehouses: new Map(),
 					warehouseDiscount: 20
+				},
+				// Applied discount: 10%
+				{
+					__kind: "book",
+					...book1,
+					quantity: 12,
+					warehouseId: `v1/wh-1`,
+					warehouseName: "Warehouse 1",
+					price: 54,
+					availableWarehouses: new Map(),
+					warehouseDiscount: 10
 				}
 			])
 		);
