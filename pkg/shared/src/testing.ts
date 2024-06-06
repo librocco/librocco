@@ -15,10 +15,12 @@ export type WebClientView =
 	| "history/notes"
 	| "debug"
 	| "error";
+	| "history/warehouse"
+	| "debug";
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list";
 /** Union of names for all views regarding history (summaries, past notes/transactions) */
-export type HistoryView = "history/date" | "history/isbn" | "history/notes";
+export type HistoryView = "history/date" | "history/isbn" | "history/notes" | "history/warehouse";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-view] property to the page container element */
 export const view = (name: WebClientView) => name;
