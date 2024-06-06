@@ -104,8 +104,8 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 1 },
-		{ isbn: "1234567891", quantity: 1 }
+		{ isbn: "1234567891", quantity: 1 },
+		{ isbn: "1234567890", quantity: 1 }
 	]);
 
 	// Add another transaction for "1234567890"
@@ -153,14 +153,14 @@ test("should allow for changing of transaction quantity using the quantity field
 	await scanField.add("1234567891");
 
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 3 },
-		{ isbn: "1234567891", quantity: 1 }
+		{ isbn: "1234567891", quantity: 1 },
+		{ isbn: "1234567890", quantity: 3 }
 	]);
 });
 
-test("should sort transactions by isbn", async ({ page }) => {
+test("should sort in reverse order to being added/aggregated", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
-	const entries = getDashboard(page).content().table("outbound-note");
+	const entries = getDashboard(page).content().table("inbound-note");
 
 	// We're adding books in non-alphabetical order to check if they're sorted correctly
 	await scanField.add("1234567891");
@@ -170,7 +170,11 @@ test("should sort transactions by isbn", async ({ page }) => {
 	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }]);
 
 	await scanField.add("1234567892");
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }, { isbn: "1234567891" }]);
+
+	// Aggregating should push the aggregated txn up
+	await scanField.add("1234567891");
+	await entries.assertRows([{ isbn: "1234567891" }, { isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
 test("should delete the transaction from the note when when selected for deletion and deletion confirmed", async ({ page }) => {
@@ -186,13 +190,13 @@ test("should delete the transaction from the note when when selected for deletio
 	const entries = getDashboard(page).content().table("outbound-note");
 
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567891" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
 	// Delete the second transaction
 	await entries.row(1).delete();
 
 	// Check that the second transaction was deleted
-	await entries.assertRows([{ isbn: "1234567890" }, { isbn: "1234567892" }]);
+	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
 // TODO: This test is failing as the functionality is not working, we should fix this
@@ -375,12 +379,12 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 
 	// Wait for the transactions to be displayed before continuing with assertions
 	await entries.assertRows([
-		{ isbn: "1234567890", quantity: 3, warehouseName: "Warehouse 1" },
-		{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 2" }
+		{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 2" },
+		{ isbn: "1234567890", quantity: 3, warehouseName: "Warehouse 1" }
 	]);
 
 	// Change the warehouse of the first transaction to the same as the second transaction
-	await entries.row(0).field("warehouseName").set("Warehouse 2");
+	await entries.row(1).field("warehouseName").set("Warehouse 2");
 
 	await entries.assertRows([{ isbn: "1234567890", quantity: 5, warehouseName: "Warehouse 2" }]);
 });
@@ -401,22 +405,21 @@ test("should add custom item on 'Custom Item' button click after filling out the
 
 	// A new custom item should appear under book transactions
 	await content.table("outbound-note").assertRows([
-		{ isbn: "11111111", quantity: 1 },
-		{ title: "Item 1", price: 5 }
+		{ title: "Item 1", price: 5 },
+		{ isbn: "11111111", quantity: 1 }
 	]);
 
-	// Custom items always appear under book rows
 	await content.scanField().add("22222222"); // Add new book item
 	await content.getByRole("button", { name: "Custom Item" }).click(); // Add new custom item
 	await form.fillData({ title: "Item 2", price: 20 });
 	await form.submit();
 
 	await content.table("outbound-note").assertRows([
-		{ isbn: "11111111", quantity: 1 },
+		{ title: "Item 2", price: 20 },
 		{ isbn: "22222222", quantity: 1 },
 		// Custom items are not aggregated (each has a unique internal id)
 		{ title: "Item 1", price: 5 },
-		{ title: "Item 2", price: 20 }
+		{ isbn: "11111111", quantity: 1 }
 	]);
 
 	// Opening up a form and and cancelling shouldn't add anything
@@ -424,11 +427,10 @@ test("should add custom item on 'Custom Item' button click after filling out the
 	await form.cancel();
 
 	await content.table("outbound-note").assertRows([
-		{ isbn: "11111111", quantity: 1 },
+		{ title: "Item 2", price: 20 },
 		{ isbn: "22222222", quantity: 1 },
-		// Custom items are not aggregated (each has a unique internal id)
 		{ title: "Item 1", price: 5 },
-		{ title: "Item 2", price: 20 }
+		{ isbn: "11111111", quantity: 1 }
 	]);
 });
 
@@ -450,19 +452,19 @@ test("should allow for editing of custom items using the custom item form", asyn
 	const content = getDashboard(page).content();
 
 	// Edit custom items using custom item form
-	await content.table("outbound-note").row(2).edit();
+	await content.table("outbound-note").row(1).edit();
 	await getDashboard(page).customItemForm().fillData({ title: "Custom item 1 - updated" });
 	await getDashboard(page).customItemForm().submit();
 
-	await content.table("outbound-note").row(3).edit();
+	await content.table("outbound-note").row(0).edit();
 	await getDashboard(page).customItemForm().fillData({ title: "Custom item 2 - updated", price: 12 });
 	await getDashboard(page).customItemForm().submit();
 
 	await content.table("outbound-note").assertRows([
-		{ isbn: "11111111", quantity: 1 },
-		{ isbn: "22222222", quantity: 1 },
+		{ title: "Custom item 2 - updated", price: 12 },
 		{ title: "Custom item 1 - updated", price: 10 },
-		{ title: "Custom item 2 - updated", price: 12 }
+		{ isbn: "22222222", quantity: 1 },
+		{ isbn: "11111111", quantity: 1 }
 	]);
 });
 
@@ -532,22 +534,22 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	// Close the dialog and fix the invalid transactions
 	await dialog.cancel();
-	// "22222222"
+	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
 	// "44444444"
-	await entries.row(4).field("warehouseName").set("Warehouse 2");
+	await entries.row(0).field("warehouseName").set("Warehouse 2");
 
 	await entries.assertRows([
-		// All fine, enough books in stock (required 3, 4 available in the warehouse)
-		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" },
-		// Invalid - out of stock (required 3, only 2 available in the warehouse)
-		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 2" },
-		// All fine, enough books in stock (required 5, 5 available in the warehouse)
-		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
+		// Out of stock - the book doesn't exist in warehouse
+		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" },
 		// Out of stock - the book doesn't exist in warehouse
 		{ isbn: "33333333", quantity: 2, warehouseName: "Warehouse 1" },
-		// Out of stock - the book doesn't exist in warehouse
-		{ isbn: "44444444", quantity: 1, warehouseName: "Warehouse 2" }
+		// All fine, enough books in stock (required 5, 5 available in the warehouse)
+		{ isbn: "22222222", quantity: 5, warehouseName: "Warehouse 1" },
+		// Invalid - out of stock (required 3, only 2 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 2" },
+		// All fine, enough books in stock (required 3, 4 available in the warehouse)
+		{ isbn: "11111111", quantity: 3, warehouseName: "Warehouse 1" }
 	]);
 
 	// Try to commit the note
