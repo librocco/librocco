@@ -17,6 +17,3 @@ export const load: LayoutLoad = ({ route }) => {
 			return;
 	}
 };
-
-export const prerender = false;
-export const ssr = false;
