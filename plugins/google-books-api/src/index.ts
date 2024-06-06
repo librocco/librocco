@@ -3,7 +3,13 @@ import { BehaviorSubject } from "rxjs";
 import { type BookFetcherPlugin, type BookEntry } from "@librocco/db";
 
 const baseurl = "https://www.googleapis.com/books/v1/volumes";
-const reqFields = ["volumeInfo/title", "volumeInfo/authors", "volumeInfo/publisher", "volumeInfo/publishedDate"].join(",");
+const reqFields = [
+	"volumeInfo/title",
+	"volumeInfo/authors",
+	"volumeInfo/publisher",
+	"volumeInfo/publishedDate",
+	"volumeInfo/categories"
+].join(",");
 
 export function createGoogleBooksApiPlugin(): BookFetcherPlugin {
 	// The plugin is always available (as long as there's internet connection)
@@ -23,6 +29,7 @@ type GBookEntry = {
 		authors?: string[];
 		publisher?: string;
 		publishedDate?: string;
+		categories?: string[];
 	};
 };
 
@@ -51,7 +58,8 @@ function processResponse(gBook: GBookEntry | undefined): Partial<BookEntry> | un
 
 	const res: Partial<BookEntry> = {};
 
-	const { title, authors: _authors, publisher, publishedDate, isbn } = gBook.volumeInfo;
+	// TODO: We're picking the first category, whereas google books can return multiple categories, find a way to handle this
+	const { title, authors: _authors, publisher, publishedDate, categories: [category] = [], isbn } = gBook.volumeInfo;
 	const authors = _authors?.join(", ");
 	const year = publishedDate?.slice(0, 4);
 
@@ -59,6 +67,7 @@ function processResponse(gBook: GBookEntry | undefined): Partial<BookEntry> | un
 	if (authors) res.authors = authors;
 	if (publisher) res.publisher = publisher;
 	if (year) res.year = year;
+	if (category) res.category = category;
 	res.isbn = isbn;
 
 	return res;
