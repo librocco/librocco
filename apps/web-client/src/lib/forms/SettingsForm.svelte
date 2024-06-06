@@ -12,6 +12,7 @@
 
 	import { Input } from "$lib/components";
 	import { settingsSchema } from "$lib/forms/schemas";
+	import { getDB } from "$lib/db";
 
 	export let form: SuperValidated<typeof settingsSchema>;
 	export let options: SettingsFormOptions;
@@ -19,6 +20,8 @@
 	const _form = superForm(form, options);
 
 	const { form: formStore, enhance, tainted } = _form;
+
+	const { reason } = getDB();
 
 	$: hasChanges = $tainted && !compare($formStore, form.data);
 </script>
@@ -33,6 +36,7 @@
 					label="Remote CouchDB URL"
 					helpText="Couch DB Url's should be formatted https://user:password@host:post/db_name. 
 						When no url is provided, the app will use local browser storage to persist data."
+					errorText={reason}
 					bind:value={$formStore.couchUrl}
 				/>
 			</div>

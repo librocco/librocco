@@ -6,6 +6,7 @@
 		name: string;
 		label?: string;
 		helpText?: string;
+		errorText?: string;
 		inputRef?: HTMLInputElement | null;
 		inputAction?: Action<HTMLElement, any> | (() => void);
 	}
@@ -20,6 +21,7 @@
 	export let type = "text";
 	export let label = "";
 	export let helpText = "";
+	export let errorText = "";
 	export let required = false;
 	export let inputRef = null;
 	export let inputAction: Action<HTMLElement, any> = () => {};
@@ -52,13 +54,18 @@
 	];
 
 	const helpTextColour = "text-oyster-500 font-regular";
+	const errorTextColour = "text-red-500 font-regular";
 	const containerBorderWidth = "outline-1";
 	const containerBorderColour = "outline-oyster-300";
+	const errorBorderColour = "outline-red-500";
 
 	const labelClasses = labelBaseClasses.join(" ");
 	const inputClasses = inputBaseClasses.join(" ");
 	const helpTextClasses = helpTextBaseClasses.concat(helpTextColour).join(" ");
-	const containerClasses = containerBaseClasses.concat(containerBorderColour, containerBorderWidth).join(" ");
+	const errorTextClasses = helpTextBaseClasses.concat(errorTextColour).join(" ");
+	const containerClasses = containerBaseClasses
+		.concat(`${errorText ? errorBorderColour : containerBorderColour}`, containerBorderWidth)
+		.join(" ");
 
 	// Props passed to the built in input element or (optional) input slot
 	$: inputProps = {
@@ -100,7 +107,9 @@
 			</div>
 		{/if}
 	</div>
-	{#if helpText}
+	{#if errorText}
+		<p class={errorTextClasses}>{errorText}</p>
+	{:else if helpText}
 		<p class={helpTextClasses}>{helpText}</p>
 	{/if}
 </div>
