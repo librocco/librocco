@@ -18,15 +18,3 @@ export type VolumeStock<K extends VolumeStockKind = VolumeStockKind> = K extends
 			title: string;
 			price: number;
 	  };
-
-/**
- * Input for VolumeStockMap, used to aggregate the transactions and calculate stock.
- *
- * _note: only valid inputs are book-related rows as custom rows are not used in stock calculations (used only as rows in particular notes)._
- */
-export type VolumeStockInput = VolumeStock<"book"> & { noteType: "inbound" | "outbound" };
-
-export type StockKey = [isbn: string, warehouseId: string];
-export type StockElement = { quantity: number };
-export type StockEntry = [StockKey, StockElement];
-export type VolumeStockMap = Map<StockKey, StockElement>;
