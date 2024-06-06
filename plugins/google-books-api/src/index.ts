@@ -18,6 +18,7 @@ export function createGoogleBooksApiPlugin(): BookFetcherPlugin {
 
 type GBookEntry = {
 	volumeInfo: {
+		isbn: string;
 		title?: string;
 		authors?: string[];
 		publisher?: string;
@@ -38,6 +39,7 @@ async function fetchBook(isbn: string): Promise<GBookEntry | undefined> {
 
 	const { items = [] } = await fetch(url).then((r) => r.json() as GBooksRes);
 	const [gBookData] = items;
+	gBookData.volumeInfo = { ...gBookData.volumeInfo, isbn };
 
 	return gBookData;
 }
@@ -49,7 +51,7 @@ function processResponse(gBook: GBookEntry | undefined): Partial<BookEntry> | un
 
 	const res: Partial<BookEntry> = {};
 
-	const { title, authors: _authors, publisher, publishedDate } = gBook.volumeInfo;
+	const { title, authors: _authors, publisher, publishedDate, isbn } = gBook.volumeInfo;
 	const authors = _authors?.join(", ");
 	const year = publishedDate?.slice(0, 4);
 
@@ -57,6 +59,7 @@ function processResponse(gBook: GBookEntry | undefined): Partial<BookEntry> | un
 	if (authors) res.authors = authors;
 	if (publisher) res.publisher = publisher;
 	if (year) res.year = year;
+	res.isbn = isbn;
 
 	return res;
 }

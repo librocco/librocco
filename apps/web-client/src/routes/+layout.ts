@@ -30,8 +30,8 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { db, status } = await createDB(remoteUrl);
 
 		if (status) {
-			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
 			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
+			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
 
 		return {
