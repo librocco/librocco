@@ -10,9 +10,10 @@
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
 	import { getDB } from "$lib/db";
 
-	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createSearchStore } from "$lib/stores/proto/search";
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$app/navigation";
+	import { browser } from "$app/environment";
 
 	const { db } = getDB();
 
@@ -27,10 +28,11 @@
 	db?.books()
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
+	$: if (browser) window["_search_index"] = index;
 
-	$: bookSearch = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
-	$: search = bookSearch.search;
-	$: entries = bookSearch.entries;
+	$: bookSearch = createSearchStore({ name: "[SEARCH]", debug: false }, index);
+	$: search = bookSearch.searchStore;
+	$: entries = bookSearch.searchResStore;
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
@@ -74,7 +76,7 @@
 			{#each $entries as { isbn, title, authors, year, publisher }}
 				<li on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))} class="w-full cursor-pointer px-4 py-3">
 					<p class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-					<p class="text-xl font-medium">{title}</p>
+					<p class="text-xl font-medium">{title || "Unknown Title"}</p>
 					<p>{createMetaString({ authors, year, publisher })}</p>
 				</li>
 			{/each}
