@@ -20,46 +20,42 @@ export function createOpenLibraryApiPlugin(): BookFetcherPlugin {
 }
 
 type OLBookEntry = {
-	docs: {
-		title?: string;
-		author_name?: string[];
-		publisher?: string[];
-		publish_date?: string[];
-	}[];
+	isbn: string;
+	title?: string;
+	author_name?: string[];
+	publisher?: string[];
+	publish_date?: string[];
 };
 
 type OLBooksRes = {
-	items?: OLBookEntry[];
+	docs?: OLBookEntry[];
 };
 
-
 async function fetchBook(isbn: string): Promise<OLBookEntry> {
-
 	const url = new URL(baseurl);
-	console.log({ url })
+	console.log({ url });
 
 	url.searchParams.append("q", isbn);
 	url.searchParams.append("limit", "1");
 	url.searchParams.append("fields", reqFields);
 
-	const { items = [] } = await fetch(url).then((r) => r.json() as OLBooksRes);
-	const [olBookData] = items;
+	const { docs = [] } = await fetch(url).then((r) => r.json() as OLBooksRes);
+	const [olBookData] = docs;
 
-	return olBookData;
+	return { ...olBookData, isbn };
 }
-
 
 function processResponse(olBook: OLBookEntry | undefined): Partial<BookEntry> | undefined {
 	if (!olBook) {
 		return undefined;
 	}
 
-	const res: Partial<BookEntry> = {};
+	const res: Partial<BookEntry> = { isbn: olBook.isbn };
 
-	const { title, author_name: _authors, publisher, publish_date } = olBook.docs[0];
+	const { title, author_name: _authors, publisher, publish_date } = olBook;
 	const authors = _authors?.join(", ");
 	const publishers = publisher?.join(", "); // join or first element?
-	const year = publish_date?.[0] || ""; // 
+	const year = publish_date?.[0] || "";
 
 	if (title) res.title = title;
 	if (authors) res.authors = authors;
