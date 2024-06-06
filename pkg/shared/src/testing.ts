@@ -14,7 +14,7 @@ export type WebClientView =
 	| "history/isbn"
 	| "history/notes"
 	| "debug"
-	| "error";
+	| "error"
 	| "history/warehouse"
 	| "debug";
 /** Union of names for all views containing entity lists (warehouses / notes) */
