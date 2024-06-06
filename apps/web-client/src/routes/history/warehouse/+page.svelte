@@ -14,7 +14,7 @@
 
 	import { appPath } from "$lib/paths";
 
-	const db = getDB();
+	const { db } = getDB();
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseListStream = db
