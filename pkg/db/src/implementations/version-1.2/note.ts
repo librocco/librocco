@@ -17,7 +17,7 @@ import {
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
-import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, sortBooks, uniqueTimestamp } from "@/utils/misc";
+import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
 import { newDocumentStream } from "@/utils/pouchdb";
 import {
 	EmptyNoteError,
@@ -292,9 +292,8 @@ class Note implements NoteInterface {
 	addVolumes(
 		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface> {
-		return runAfterCondition(async () => {
-			// TODO: remove async from '.forEach'
-			params.forEach(async (update) => {
+		return runAfterCondition(() => {
+			params.map((update) => {
 				// Custom items are merely added, not aggregated
 				if (update.__kind === "custom") {
 					// Generate a random id only if not provided.
@@ -306,7 +305,7 @@ class Note implements NoteInterface {
 
 				if (!update.isbn) throw new EmptyTransactionError();
 
-				const warehouseId = update.warehouseId
+				update.warehouseId = update.warehouseId
 					? versionId(update.warehouseId)
 					: this.noteType === "inbound"
 					? this.#w._id
@@ -314,19 +313,33 @@ class Note implements NoteInterface {
 
 				const matchIndex = this.entries
 					.filter(isBookRow)
-					.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === warehouseId);
+					.findIndex((entry) => entry.isbn === update.isbn && entry.warehouseId === update.warehouseId);
 
+				// If transaction doesn't already exist, create a new one
 				if (matchIndex === -1) {
-					this.entries.push({ isbn: update.isbn, warehouseId, quantity: update.quantity });
+					this.entries.push(update as VolumeStock<"book">);
 					return;
 				}
 
-				this.entries[matchIndex] = {
-					isbn: update.isbn,
-					warehouseId,
-					quantity: (this.entries[matchIndex] as VolumeStock<"book">).quantity + update.quantity
-				};
+				// If transaction already exists, aggregate the quantity, but push it to the top of the list (we're displaying the list in reverse)
+				const [existing] = this.entries.splice(matchIndex, 1) as VolumeStock<"book">[];
+				this.entries.push({ ...existing, quantity: existing.quantity + update.quantity } as VolumeStock<"book">);
 			});
+
+			// Create book data entries for added books (if they don't exist)
+			// We're not awaiting this as it's not that relevant immediately
+			const isbns = (params as VolumeStock[]).filter(isBookRow).map(({ isbn }) => isbn);
+			this.#db
+				.books()
+				.get(isbns)
+				.then((results) => {
+					const bookDataToCreate = wrapIter(isbns)
+						.zip(results)
+						.filter(([, r]) => !r)
+						.map(([isbn]) => ({ isbn }))
+						.array();
+					return this.#db.books().upsert(bookDataToCreate);
+				});
 
 			return this.update({}, this);
 		}, this.#initialized);
@@ -343,12 +356,12 @@ class Note implements NoteInterface {
 
 			if (ix === -1) {
 				debug.log(ctx, "update_transaction:custom_item:no_item_found")({});
-				return this.update(ctx, {}); // Noop update
+				return Promise.resolve(this);
 			}
 
 			debug.log(ctx, "update_transaction:custom_item:found_item")({ ix, item: this.entries[ix] });
 			this.entries[ix] = { ...(this.entries[ix] as VolumeStock<"custom">), ...update };
-			return this.update(ctx, { entries: this.entries.sort(sortBooks) });
+			return this.update(ctx, this);
 		}
 
 		// Update book transaction row
@@ -369,36 +382,37 @@ class Note implements NoteInterface {
 
 		debug.log(ctx, "update_transaction:book_row:data")({ matchTr, updateTr });
 
-		// Remove the matched transaction from the list of entries (this is the transaction we're updating to a new one)
-		const entries = this.entries.filter((e) => isCustomItemRow(e) || !(e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId));
+		// Find the transaction we're updating
+		const matchIx = this.entries.findIndex((e) => isBookRow(e) && e.isbn === matchTr.isbn && e.warehouseId === matchTr.warehouseId);
 
-		// If both existing entries and entries without the match transaction are the same:
-		// the match transaction wasn't found, exit early
-		if (entries.length === this.entries.length) {
+		if (matchIx === -1) {
+			// No transaction to update: exit early
 			debug.log(ctx, "update_transaction:book_row:no_item_found")({});
 			return this.update(ctx, {}); // Noop update
 		}
 
-		// Check if there already is a transaction with the same 'isbn' and 'warehouseId' as the updated transaction.
-		// If so, we're merging the two, if not we're simply adding a new transaction to the list.
-		const existingTxnIx = entries.findIndex((e) => isBookRow(e) && e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
+		// Check if there already exists a transation with same isbn/warehouse as the one we're updating to (in which case we're merely aggregating)
+		//
+		// Start by excluding the transaction from entries - this prevents faulty behaviour when only updating quantity
+		const otherEntries = [...this.entries];
+		otherEntries.splice(matchIx, 1);
 
-		if (existingTxnIx == -1) {
-			debug.log(ctx, "update_transaction:book_row:unique_txn")({});
-			entries.push(updateTr);
-		} else {
-			const old = entries[existingTxnIx];
-			const aggregated = {
-				...old,
-				quantity: (entries[existingTxnIx] as VolumeStock<"book">).quantity + updateTr.quantity
-			} as VolumeStock<"book">;
-			debug.log(ctx, "update_transaction:book_row:txn_exists:aggregating")({ old, aggregated });
+		const updateMatchIx = otherEntries.findIndex((e) => isBookRow(e) && e.isbn === updateTr.isbn && e.warehouseId === updateTr.warehouseId);
 
-			entries[existingTxnIx] = aggregated;
+		// There already exists a transaction with same isbn/warehouse id - aggregate the quantity
+		//
+		// Use the 'otherEntries' as the old transaction no longer exists as such - it's getting merged with another txn
+		if (updateMatchIx !== -1) {
+			(otherEntries[updateMatchIx] as VolumeStock<"book">).quantity += updateTr.quantity;
+			return this.update(ctx, { entries: otherEntries });
 		}
 
-		// Post an update, the local entries will be updated by the update function.
-		return this.update(ctx, { entries: entries.sort(sortBooks) });
+		// There's no transaction with same isbn/warehouse id - merely update the existing txn
+		//
+		// Notice we're using the existing entries - this preserves the order
+		this.entries[matchIx] = updateTr;
+
+		return this.update(ctx, this);
 	}
 
 	removeTransactions(...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>): Promise<NoteInterface> {
@@ -601,7 +615,7 @@ class Note implements NoteInterface {
 					this.#stream.pipe(
 						map(
 							({ entries = [] }): TableData => ({
-								rows: entries.map((e) => (isCustomItemRow(e) ? e : { ...e, warehouseName: "" })).sort(sortBooks),
+								rows: entries.map((e) => (isCustomItemRow(e) ? e : { ...e, warehouseName: "" })).reverse(),
 								total: entries.length
 							})
 						)
