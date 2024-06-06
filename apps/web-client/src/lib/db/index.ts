@@ -51,7 +51,7 @@ export const createDB = async (url?: string): Promise<{ db: InventoryDatabaseInt
 
 			if (!response.ok) {
 				status = false;
-				reason = `Failed to connect to provided URL: ${response.status} ${response.statusText}`;
+				reason = `Failed to connect using provided username and password.`;
 			} else {
 				status = true;
 				connectionUrl = url;
