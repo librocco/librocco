@@ -27,13 +27,13 @@ interface CreateDisplayEntriesStore<K extends VolumeStockKind = VolumeStockKind>
 	};
 }
 
-export const createSearchStore = (ctx: debug.DebugCtx, searchIndex?: SearchIndex) => {
+export const createSearchStore = (ctx: debug.DebugCtx, searchIndex?: SearchIndex, minCharCount = 3) => {
 	const searchStore = writable("");
 
 	const searchResStream = observableFromStore(searchStore).pipe(
 		tap(debug.log(ctx, "display_entries_store:search:input")),
 		// If the search index is not available, or the search store is empty, return an empty set (all results will be filtered out)
-		map((searchString) => (searchIndex && searchString.length ? searchIndex.search(searchString) : []) as BookEntry[]),
+		map((searchString) => (searchIndex && searchString.length >= minCharCount ? searchIndex.search(searchString) : []) as BookEntry[]),
 		tap(debug.log(ctx, "display_entries_store:search:search_result"))
 	);
 	const searchResStore = readableFromStream(ctx, searchResStream, []);
