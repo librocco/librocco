@@ -12,7 +12,7 @@
 	import { getDB } from "$lib/db";
 
 	import { createBookHistoryStores } from "$lib/stores/inventory/history_entries";
-	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
+	import { createSearchStore } from "$lib/stores/proto/search";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { goto } from "$app/navigation";
@@ -41,9 +41,9 @@
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
 
-	$: bookSearch = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
-	$: search = bookSearch.search;
-	$: entries = bookSearch.entries;
+	$: bookSearch = createSearchStore({ name: "[SEARCH]", debug: false }, index);
+	$: search = bookSearch.searchStore;
+	$: entries = bookSearch.searchResStore;
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });

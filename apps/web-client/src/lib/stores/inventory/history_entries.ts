@@ -1,12 +1,13 @@
-import { switchMap, combineLatest, map, tap } from "rxjs";
+import { switchMap, combineLatest, map, tap, from } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 
 import { debug, wrapIter, zip, reduce } from "@librocco/shared";
-import type { BookEntry, InventoryDatabaseInterface } from "@librocco/db";
+import type { BookEntry, InventoryDatabaseInterface, PastTransaction } from "@librocco/db";
 
-import type { BookHistoryStores, DailySummaryStore, PastNoteEntry } from "$lib/types/inventory";
+import type { BookHistoryStores, DailySummaryStore, DisplayRow, PastNoteEntry } from "$lib/types/inventory";
 import { readableFromStream } from "$lib/utils/streams";
 import { mapMergeBookWarehouseData } from "$lib/utils/misc";
+import { getLocalTimeZone, type DateValue } from "@internationalized/date";
 
 interface CreateDailySummaryStore {
 	(ctx: debug.DebugCtx, db: InventoryDatabaseInterface | undefined, date?: string): Readable<DailySummaryStore>;
@@ -149,4 +150,66 @@ export const createPastNotesStore: CreatePastNotesStores = (ctx, db, date: strin
 	);
 
 	return readableFromStream(ctx, notesStream, []);
+};
+
+interface WarehouseHistoryStores {
+	displayName: Readable<string>;
+	transactions: Readable<(PastTransaction & DisplayRow<"book">)[]>;
+}
+
+export interface CreateWarehouseHistoryStore {
+	(
+		ctx: debug.DebugCtx,
+		db: InventoryDatabaseInterface | undefined,
+		warehouseId: string,
+		from: DateValue,
+		to: DateValue,
+		filter: string
+	): WarehouseHistoryStores;
+}
+
+export const createWarehouseHistoryStores: CreateWarehouseHistoryStore = (ctx, db, warehouseId, _from, _to, filter) => {
+	const displayName = readableFromStream(ctx, db?.warehouse(warehouseId).stream().displayName(ctx), "");
+
+	if (!db) {
+		return { displayName, transactions: readable([]) };
+	}
+
+	// Create range of days we're querying for
+	const _fromMillis = Number(_from.toDate(getLocalTimeZone()));
+	const _toMillis = Number(_to.toDate(getLocalTimeZone()));
+	const dayDiff = Math.ceil((_toMillis - _fromMillis) / (1000 * 60 * 60 * 24));
+	if (dayDiff < 0) {
+		return { displayName, transactions: readable([]) };
+	}
+
+	const dateRange = Array(dayDiff + 1)
+		.fill(null)
+		.map((_, i) => _from.add({ days: i }).toString().slice(0, 10));
+
+	const history = db.history().stream(ctx);
+	const warehouseDataStream = from(db.warehouse(warehouseId).get());
+
+	const transactionsStream = combineLatest([history, warehouseDataStream]).pipe(
+		// Get transactions for current isbn
+		map(([history, wh]) => [history.by("date"), wh] as const),
+		map(([history, wh]) =>
+			wrapIter(dateRange)
+				.flatMap((date) => history.get(date) || [])
+				// We're checking against warehouse document's id as that provides us with the full doc path
+				.filter((txn) => txn.warehouseId === wh._id)
+				.filter((txn) => txn.noteType.includes(filter))
+		),
+		switchMap((txns) => {
+			const isbns = txns.map(({ isbn }) => isbn).array();
+			return db
+				.books()
+				.stream(ctx, isbns)
+				.pipe(map((data) => txns.zip(data).map(([txn, book]) => ({ ...txn, ...book }))));
+		}),
+		map((pt) => pt.array())
+	);
+	const transactions = readableFromStream(ctx, transactionsStream, []);
+
+	return { displayName, transactions };
 };
