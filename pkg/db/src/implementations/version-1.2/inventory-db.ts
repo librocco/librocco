@@ -191,7 +191,11 @@ class Database implements InventoryDatabaseInterface {
 		return this.#history;
 	}
 
+	// should be merged eventually
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
+		return this.#plugins.get(type);
+	}
+	pluginController<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
 		return this.#plugins.get(type);
 	}
 

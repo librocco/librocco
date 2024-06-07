@@ -173,8 +173,24 @@ export interface BookFetcherPlugin {
 	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
 	isAvailableStream: Observable<boolean>;
 }
+export interface BookFetcherPluginController {
+	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
+	isAvailableStream: Observable<boolean>;
+}
+
+export interface PluginControllerInterfaceLookup {
+	[key: string]: () => BookFetcherPluginController;
+}
+export interface BookFetcherLookup {
+	"google-books": BookFetcherPlugin;
+	"open-library": BookFetcherPlugin;
+}
+export interface PluginInterfaceNestedLookup {
+	"book-fetcher": BookFetcherLookup;
+}
 
 export interface PluginInterfaceLookup {
 	"book-fetcher": BookFetcherPlugin;
 }
+
 // #endregion plugins
