@@ -9,12 +9,15 @@
 	import Page from "$lib/components/Page.svelte";
 
 	import { appPath } from "$lib/paths";
+	import { browser } from "$app/environment";
 
 	$: tabs = [
 		{
 			icon: Calendar,
 			label: "By Date",
-			href: appPath("history/date", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
+			// Keep the date when switching from one dated tab to another.
+			// We're doing this in browser only so as to not produce errors during static build.
+			href: appPath("history/date", (browser && $page.params?.date) || ""),
 			linkto: historyView("history/date")
 		},
 		{
@@ -26,7 +29,9 @@
 		{
 			icon: Book,
 			label: "Notes by date",
-			href: appPath("history/notes", $page.params?.date || ""), // Keep the date when switching from one dated tab to another
+			// Keep the date when switching from one dated tab to another
+			// We're doing this in browser only so as to not produce errors during static build.
+			href: appPath("history/notes", (browser && $page.params?.date) || ""),
 			linkto: historyView("history/notes")
 		},
 		{
