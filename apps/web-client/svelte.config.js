@@ -15,8 +15,10 @@ const config = {
 		serviceWorker: {
 			register: false
 		},
-		adapter: adapter({ fallback: "index.html" }),
+		adapter: adapter(),
 		prerender: {
+			// Note: the '...path/1/' is a workaround for prebuilding the skeleton for all
+			// pages that will, in the browser have a param (in place of the 1), used to render dynamic data.
 			entries: [
 				"/",
 				"/inventory",
@@ -27,6 +29,14 @@ const config = {
 				"/inventory/warehouses/1/",
 				"/stock/",
 				"/outbound/",
+				"/outbound/1/",
+				"/history/date/1/",
+				"/history/isbn/",
+				"/history/isbn/1/",
+				"/history/notes/1/",
+				"/history/notes/1/1/",
+				"/history/warehouse/",
+				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
 				"/settings/",
 				"/debug"
