@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, firstValueFrom, map, Observable, ReplaySubject, share, switchMap, tap } from "rxjs";
+import { map, Observable, ReplaySubject, share, switchMap, tap, startWith, mergeMap, of } from "rxjs";
 
 import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared";
 
@@ -63,24 +63,39 @@ class Database implements InventoryDatabaseInterface {
 
 		this.#plugins = newPluginsInterface();
 
-		const warehouseMapCache = new BehaviorSubject<WarehouseDataMap>(new Map());
 		this.#warehouseMapStream = this.view<WarehouseListRow>("v1_list/warehouses")
 			.stream({})
 			.pipe(
 				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
-				map(({ rows }) => wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "" }] as const)),
-				// Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
+				map(({ rows }) =>
+					wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "", totalBooks: -1 }] as const)
+				), // Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
 				switchMap((warehouses) =>
 					this.#stockStream.pipe(
-						map((s) => mapIter(warehouses, ([id, warehouse]) => [id, { ...warehouse, totalBooks: s.warehouse(id).size }] as const))
+						// Emit the initial warehouses without totalBooks
+						startWith(warehouses),
+						// Merge the warehouses with updated totalBooks information
+						mergeMap((s) =>
+							s === warehouses
+								? of(warehouses)
+								: of(
+										mapIter(
+											warehouses,
+											([id, warehouse]) => [id, { ...warehouse, totalBooks: (s as StockMap).warehouse(id).size }] as const
+										)
+								  )
+						),
+						// Multi-cast the potentially long-running mergeMap to prevent redundant execution fo each subscriber
+						share()
 					)
 				),
 				// Convert the iterable into a map of required type
 				map((iter) => new Map<string, NavEntry<Pick<WarehouseData, "discountPercentage">>>(iter)),
-				share({ connector: () => warehouseMapCache, resetOnRefCountZero: false })
+				// Multi-cast the stream as a ReplaySubject which replays the last emitted value
+				// in order to make view switching snappier after initial first load
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
-		const outNoteListCache = new BehaviorSubject<NavMap>(new Map());
 		this.#outNoteListStream = this.view<OutNoteListRow>("v1_list/outbound")
 			.stream({})
 			.pipe(
@@ -92,31 +107,24 @@ class Database implements InventoryDatabaseInterface {
 								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id, { displayName, ...rest }])
 						)
 				),
-				share({ connector: () => outNoteListCache, resetOnRefCountZero: false })
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
-		const inNoteListCache = new BehaviorSubject<InNoteMap>(new Map());
 		this.#inNoteListStream = this.view<InNoteListRow>("v1_list/inbound")
 			.stream({})
 			.pipe(
 				map(({ rows }) => wrapIter(rows).reduce((acc, row) => acc.aggregate(row), new InNoteAggregator())),
-				share({ connector: () => inNoteListCache, resetOnRefCountZero: false })
+				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
 			);
 
-		const stockCache = new ReplaySubject<StockMap>(1);
 		this.#stockStream = newStock(this)
 			.stream({})
-			.pipe(share({ connector: () => stockCache, resetOnRefCountZero: false }));
+			.pipe(share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false }));
 
 		// Currently we're using up to 14 listeners (21 when replication is enabled).
 		// This increases the limit to a reasonable threshold, leaving some room for slower performance,
 		// but will still show a warning if that number gets unexpectedly high (memory leak).
 		this._pouch.setMaxListeners(30);
-
-		// Initialise the streams
-		firstValueFrom(this.#warehouseMapStream);
-		firstValueFrom(this.#inNoteListStream);
-		firstValueFrom(this.#outNoteListStream);
 
 		return this;
 	}

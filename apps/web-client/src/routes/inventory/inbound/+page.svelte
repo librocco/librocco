@@ -44,8 +44,9 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status) firstValueFrom(inNoteListStream).then(() => (initialized = true));
-		else {
+		if (status) {
+			firstValueFrom(inNoteListStream).then(() => (initialized = true));
+		} else {
 			goto(appPath("settings"));
 		}
 	});

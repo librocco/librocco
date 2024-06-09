@@ -25,6 +25,7 @@
 	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
 	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
+	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	const { db, status } = getDB();
 
@@ -38,12 +39,9 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status)
-			firstValueFrom(warehouseListStream).then((wls) => {
-				console.log("warehouseListStream", wls);
-				initialized = true;
-			});
-		else {
+		if (status) {
+			firstValueFrom(warehouseListStream).then((wls) => (initialized = true));
+		} else {
 			goto(appPath("settings"));
 		}
 	});
@@ -111,9 +109,14 @@
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
-								<div class="flex w-32 items-center gap-x-1">
-									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								<div class="entity-list-text-sm flex w-32 items-end items-center gap-x-1 text-gray-500">
+									<Library class="text-gray-700" size={18} />
+									{#if totalBooks === -1}
+										<PlaceholderDots />
+									{:else}
+										<span class="">{totalBooks}</span>
+									{/if}
+									books
 								</div>
 
 								{#if warehouseDiscount}

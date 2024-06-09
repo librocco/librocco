@@ -33,8 +33,9 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status) firstValueFrom(outNoteListStream).then(() => (initialized = true));
-		else {
+		if (status) {
+			firstValueFrom(outNoteListStream).then(() => (initialized = true));
+		} else {
 			goto(appPath("settings"));
 		}
 	});
