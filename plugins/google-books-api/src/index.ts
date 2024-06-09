@@ -16,7 +16,7 @@ export function createGoogleBooksApiPlugin(): BookFetcherPlugin {
 	const isAvailableStream = new BehaviorSubject(true);
 
 	const fetchBookData = async (isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]> => {
-		return Promise.all(isbns.map((isbn) => fetchBook(isbn).then(processResponse)));
+		return Promise.all(isbns.map((isbn) => fetchBook(isbn).then(processResponse(isbn))));
 	};
 
 	return { fetchBookData, isAvailableStream };
@@ -49,23 +49,25 @@ async function fetchBook(isbn: string): Promise<GBookEntry | undefined> {
 	return gBookData;
 }
 
-function processResponse(gBook: GBookEntry | undefined): Partial<BookEntry> | undefined {
-	if (!gBook) {
-		return undefined;
-	}
+function processResponse(isbn: string) {
+	return (gBook: GBookEntry | undefined): Partial<BookEntry> | undefined => {
+		if (!gBook) {
+			return undefined;
+		}
 
-	const res: Partial<BookEntry> = {};
+		const res: Partial<BookEntry> = {};
 
-	// TODO: We're picking the first category, whereas google books can return multiple categories, find a way to handle this
-	const { title, authors: _authors, publisher, publishedDate, categories: [category] = [] } = gBook.volumeInfo;
-	const authors = _authors?.join(", ");
-	const year = publishedDate?.slice(0, 4);
+		// TODO: We're picking the first category, whereas google books can return multiple categories, find a way to handle this
+		const { title, authors: _authors, publisher, publishedDate, categories: [category] = [] } = gBook.volumeInfo;
+		const authors = _authors?.join(", ");
+		const year = publishedDate?.slice(0, 4);
 
-	if (title) res.title = title;
-	if (authors) res.authors = authors;
-	if (publisher) res.publisher = publisher;
-	if (year) res.year = year;
-	if (category) res.category = category;
+		if (title) res.title = title;
+		if (authors) res.authors = authors;
+		if (publisher) res.publisher = publisher;
+		if (year) res.year = year;
+		if (category) res.category = category;
 
-	return res;
+		return { ...res, isbn };
+	};
 }
