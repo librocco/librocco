@@ -76,7 +76,7 @@ describe("StockMap '.aggregage' method", () => {
 	test("should aggregate the quantity by [isbn, warehouse] of entries passed as argument", () => {
 		const m = new StockMap();
 
-		m.aggragate([
+		m.aggregate([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 5, noteType: "inbound" }
@@ -91,7 +91,7 @@ describe("StockMap '.aggregage' method", () => {
 	test("quantity from 'outbound' entries should be subtracted", () => {
 		const m = new StockMap();
 
-		m.aggragate([
+		m.aggregate([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 5, noteType: "outbound" }
@@ -106,7 +106,7 @@ describe("StockMap '.aggregage' method", () => {
 	test("should remove the entry if the quantity is 0", () => {
 		const m = new StockMap();
 
-		m.aggragate([
+		m.aggregate([
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "outbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }
@@ -118,7 +118,7 @@ describe("StockMap '.aggregage' method", () => {
 	test("should disregard entries with 0 quantity", () => {
 		const m = new StockMap();
 
-		m.aggragate([
+		m.aggregate([
 			{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" },
 			{ isbn: "12345678", warehouseId: "wh2", quantity: 0, noteType: "inbound" }
 		]);
@@ -129,8 +129,8 @@ describe("StockMap '.aggregage' method", () => {
 	test("should account for additional aggregation calls", () => {
 		const m = new StockMap();
 
-		m.aggragate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
-		m.aggragate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
+		m.aggregate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
+		m.aggregate([{ isbn: "12345678", warehouseId: "wh1", quantity: 10, noteType: "inbound" }]);
 
 		expect([...m]).toEqual([[["12345678", "wh1"], { quantity: 20 }]]);
 	});
