@@ -1,5 +1,6 @@
 import { describe, test, expect, beforeEach, beforeAll } from "vitest";
-import { firstValueFrom } from "rxjs";
+
+import { VolumeStock, testUtils } from "@librocco/shared";
 
 import { __withDocker__ } from "@/__tests__/constants";
 
@@ -51,15 +52,21 @@ describe
 				.then((n) => n.commit({}));
 		}
 
-		const { rows } = await firstValueFrom(db.warehouse().stream().entries({}));
+		let rows = [] as VolumeStock[];
+		db.warehouse()
+			.stream()
+			.entries({})
+			.subscribe(($r) => (rows = $r.rows));
 
-		expect(rows).toEqual(
-			fullStock.books.map(({ warehouseId, ...volumeStock }) =>
-				expect.objectContaining({
-					...volumeStock,
-					// We're versioning the warehouseId at assertions, rather than at data generation
-					warehouseId: `${version}/${warehouseId}`
-				})
+		await testUtils.waitFor(() =>
+			expect(rows).toEqual(
+				fullStock.books.map(({ warehouseId, ...volumeStock }) =>
+					expect.objectContaining({
+						...volumeStock,
+						// We're versioning the warehouseId at assertions, rather than at data generation
+						warehouseId: `${version}/${warehouseId}`
+					})
+				)
 			)
 		);
 	});
