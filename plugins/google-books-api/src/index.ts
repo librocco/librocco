@@ -19,7 +19,7 @@ export function createGoogleBooksApiPlugin(): BookFetcherPlugin {
 		return Promise.all(isbns.map((isbn) => fetchBook(isbn).then(processResponse(isbn))));
 	};
 
-	return { fetchBookData, isAvailableStream };
+	return { __name: "google-books-api", fetchBookData, isAvailableStream };
 }
 
 type GBookEntry = {

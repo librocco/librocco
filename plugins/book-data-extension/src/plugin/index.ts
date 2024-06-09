@@ -13,7 +13,7 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 		return Promise.all(isbns.map((isbn) => fetchBook(isbn)));
 	};
 
-	return { fetchBookData, isAvailableStream };
+	return { __name: "chrome-extension", fetchBookData, isAvailableStream };
 };
 
 const createAvailabilityStream = () => {

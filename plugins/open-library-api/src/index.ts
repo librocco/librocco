@@ -16,7 +16,7 @@ export function createOpenLibraryApiPlugin(): BookFetcherPlugin {
 		return Promise.all(isbns.map((isbn) => fetchBook(isbn).then(processResponse)));
 	};
 
-	return { fetchBookData, isAvailableStream };
+	return { __name: "open-library-api", fetchBookData, isAvailableStream };
 }
 
 type OLBookEntry = {
