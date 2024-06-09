@@ -52,7 +52,7 @@ export class StockMap implements Map<StockKey, StockElement> {
 	 */
 	static fromDbRows(rows: Iterable<VolumeStockInput>) {
 		const map = new StockMap();
-		map.aggragate(rows);
+		map.aggregate(rows);
 		return map;
 	}
 
@@ -145,7 +145,7 @@ export class StockMap implements Map<StockKey, StockElement> {
 	 * @param entries
 	 * @returns
 	 */
-	aggragate(entries: Iterable<VolumeStockInput>) {
+	aggregate(entries: Iterable<VolumeStockInput>) {
 		for (const entry of entries) {
 			// Skip entries with 0 quantity
 			if (entry.quantity === 0) continue;
