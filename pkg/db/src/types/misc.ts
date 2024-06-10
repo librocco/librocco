@@ -169,10 +169,18 @@ export type LibroccoPlugin<T extends {}> = {
 	register: (instance: T) => LibroccoPlugin<T>;
 } & T;
 
+export type BookFetchResultEntry = Partial<BookEntry> | undefined;
+
+export interface BookFetchResult {
+	stream(): Observable<BookFetchResultEntry[]>;
+	promise(): Promise<BookFetchResultEntry[][]>;
+	onResult(cb: (r: BookFetchResultEntry[]) => void): void;
+}
+
 export interface BookFetcherPlugin {
 	// Name is used to differentiate between different implementations satisfying the same interface
 	__name: string;
-	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
+	fetchBookData(isbns: string[]): BookFetchResult;
 	isAvailableStream: Observable<boolean>;
 }
 

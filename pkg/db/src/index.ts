@@ -18,4 +18,6 @@ export * from "./enums";
 export * from "./types";
 export * from "./constants";
 export * from "./errors";
+
 export { isBookRow, isCustomItemRow } from "./utils/misc";
+export { fetchBookDataFromSingleSource } from "./utils/plugins";
