@@ -2317,35 +2317,47 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		expect(res1).toEqual([undefined, undefined]);
 
 		// Registering a plugin implementation should return that implementation for all subsequent calls
+		//
+		// The impl1 will return the 'isbn' and the 'title' (same as isbn)
 		const impl1 = {
-			fetchBookData: async (isbns: string[]) => isbns as any, // In practice this should be a BookEntry array
+			__name: "impl-1",
+			fetchBookData: async (isbns: string[]) => isbns.map((isbn) => ({ isbn, title: isbn })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
-		expect(res21).toEqual(["11111111", "22222222"]);
+		expect(res21).toEqual([
+			{ isbn: "11111111", title: "11111111" },
+			{ isbn: "22222222", title: "22222222" }
+		]);
 		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
 		const res22 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res22).toEqual(["11111111", "22222222"]);
+		expect(res22).toEqual([
+			{ isbn: "11111111", title: "11111111" },
+			{ isbn: "22222222", title: "22222222" }
+		]);
 
-		// Registering a different implementation should return that implementation for all subsequent calls
+		// Registering a different implementation should make the book fetching return merged results
+		//
+		// The impl2 will return only the price (static 20) - the results should be merged
 		const impl2 = {
-			fetchBookData: async (isbns: string[]) => isbns.map((isbn): BookEntry => ({ isbn, title: "Title", price: 0 })),
+			__name: "impl-2",
+			fetchBookData: async (isbns: string[]) => isbns.map(() => ({ price: 20 })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
 		const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);
 		expect(res31).toEqual([
-			{ isbn: "11111111", title: "Title", price: 0 },
-			{ isbn: "22222222", title: "Title", price: 0 }
+			{ isbn: "11111111", title: "11111111", price: 20 },
+			{ isbn: "22222222", title: "22222222", price: 20 }
 		]);
 		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
 		const res32 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
 		expect(res32).toEqual([
-			{ isbn: "11111111", title: "Title", price: 0 },
-			{ isbn: "22222222", title: "Title", price: 0 }
+			{ isbn: "11111111", title: "11111111", price: 20 },
+			{ isbn: "22222222", title: "22222222", price: 20 }
 		]);
 	});
 
