@@ -172,7 +172,7 @@
 		}
 
 		// If book data retrieved from 3rd party source - store it for future use
-		const [thirdPartyBookData] = await db.plugin("book-fetcher").fetchBookData([isbn]);
+		const [[thirdPartyBookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
 		if (thirdPartyBookData) {
 			await db.books().upsert([thirdPartyBookData]);
 		}
@@ -642,9 +642,8 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
+							const [[bookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
 
-							const [bookData] = result;
 							if (!bookData) {
 								return;
 							}

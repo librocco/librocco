@@ -255,9 +255,8 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
+							const [[bookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
 
-							const [bookData] = result;
 							if (!bookData) {
 								return;
 							}
