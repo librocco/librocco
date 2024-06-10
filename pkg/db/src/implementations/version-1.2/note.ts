@@ -12,7 +12,8 @@ import {
 	VolumeStockClient,
 	OutOfStockTransaction,
 	ReceiptData,
-	UpdateTransactionParams
+	UpdateTransactionParams,
+	BookEntry
 } from "@/types";
 import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
@@ -328,18 +329,23 @@ class Note implements NoteInterface {
 
 			// Create book data entries for added books (if they don't exist)
 			// We're not awaiting this as it's not that relevant immediately
+			//
+			// TODO: URGENT: This is a quick fix, should be rolled back and fixed in a more robust manner
 			const isbns = (params as VolumeStock[]).filter(isBookRow).map(({ isbn }) => isbn);
 			this.#db
 				.books()
 				.get(isbns)
-				.then((results) => {
-					const bookDataToCreate = wrapIter(isbns)
+				// Get isbns to fetch (ones that don't have associated book data entries)
+				.then((results) =>
+					wrapIter(isbns)
 						.zip(results)
 						.filter(([, r]) => !r)
-						.map(([isbn]) => ({ isbn }))
-						.array();
-					return this.#db.books().upsert(bookDataToCreate);
-				});
+						.map(([isbn]) => isbn)
+						.array()
+				)
+				.then((isbnsToFetch) => this.#db.plugin("book-fetcher").fetchBookData(isbnsToFetch))
+				.then((bookData) => bookData.filter((d): d is Partial<BookEntry> => !!d))
+				.then((bookData) => this.#db.books().upsert(bookData));
 
 			return this.update({}, this);
 		}, this.#initialized);
