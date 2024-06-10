@@ -13,6 +13,7 @@ import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatch
 
 import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
+import { fetchBookDataFromSingleSource } from "@/utils/plugins";
 
 import { fiftyEntries } from "./data";
 
@@ -2321,7 +2322,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// The impl1 will return the 'isbn' and the 'title' (same as isbn)
 		const impl1 = {
 			__name: "impl-1",
-			fetchBookData: async (isbns: string[]) => isbns.map((isbn) => ({ isbn, title: isbn })),
+			fetchBookData: fetchBookDataFromSingleSource(async (isbns) => isbns.map((isbn) => ({ isbn, title: isbn }))),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
@@ -2343,7 +2344,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// The impl2 will return only the price (static 20) - the results should be merged
 		const impl2 = {
 			__name: "impl-2",
-			fetchBookData: async (isbns: string[]) => isbns.map(() => ({ price: 20 })),
+			fetchBookData: fetchBookDataFromSingleSource(async (isbns) => isbns.map(() => ({ price: 20 }))),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
