@@ -2,7 +2,7 @@ import { BehaviorSubject, Observable, combineLatest, map, merge, mergeMap, switc
 
 import { wrapIter } from "@librocco/shared";
 
-import { BookFetchResult, BookFetchResultEntry, BookFetcherPlugin, LibroccoPlugin } from "@/types";
+import { BookFetchResult, BookFetcherPlugin, LibroccoPlugin } from "@/types";
 import { fetchBookDataFromSingleSource } from "@/utils/plugins";
 
 export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPlugin> {
@@ -46,15 +46,15 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 	fetchBookData(isbns: string[]): BookFetchResult {
 		const requests = wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbns));
 
+		// First resolves to whichever value is retrieved first
+		const first = () => Promise.any(requests.map((r) => r.first()));
 		// Stream combines all of the streams of all plugin instances (and flatmaps them)
 		const stream = () => merge(requests.map((r) => r.stream())).pipe(mergeMap((x) => x));
 		// Promise combines all of the promises from all plugin instances, flattens the results, guaranteeing the same order
 		// as the order of plugins in the lookup
-		const promise = () => Promise.all(requests.map((r) => r.promise())).then((results) => results.flatMap((r) => r));
-		// onResult is a convenience method to subscribe to the stream - this is the equivalent of passing 'onResult' to each plugin
-		const onResult = (cb: (r: BookFetchResultEntry[]) => void) => stream().subscribe(cb);
+		const all = () => Promise.all(requests.map((r) => r.all())).then((results) => results.flatMap((r) => r));
 
-		return { stream, promise, onResult };
+		return { first, stream, all };
 	}
 }
 
