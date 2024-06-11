@@ -28,6 +28,7 @@
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
+	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -38,10 +39,10 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
 	import { autoPrintLabels } from "$lib/stores/app";
-	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	export let data: PageData;
 
@@ -118,7 +119,13 @@
 		}
 
 		// If book data retrieved from 3rd party source - store it for future use
-		const [[thirdPartyBookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
+		const thirdPartyBookData = await db
+			.plugin("book-fetcher")
+			.fetchBookData([isbn])
+			.all()
+			.then((results) => results.map(([b]) => b))
+			.then((bookData) => mergeBookData(bookData));
+
 		if (thirdPartyBookData) {
 			await db.books().upsert([thirdPartyBookData]);
 		}
@@ -246,7 +253,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -281,7 +288,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -289,7 +296,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -297,7 +304,7 @@
 						{...item}
 						use:item.action
 						on:m-click={autoPrintLabels.toggle}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
 							? '!bg-green-400'
 							: ''}"
 					>
@@ -307,7 +314,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -481,8 +488,11 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const [[bookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
+							const results = await db.plugin("book-fetcher").fetchBookData([isbn]).all();
+							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							const bookData = mergeBookData(results.map(([b]) => b));
 
+							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
 								return;
 							}

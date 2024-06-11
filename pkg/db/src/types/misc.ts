@@ -172,9 +172,9 @@ export type LibroccoPlugin<T extends {}> = {
 export type BookFetchResultEntry = Partial<BookEntry> | undefined;
 
 export interface BookFetchResult {
+	first(): Promise<BookFetchResultEntry[]>;
 	stream(): Observable<BookFetchResultEntry[]>;
-	promise(): Promise<BookFetchResultEntry[][]>;
-	onResult(cb: (r: BookFetchResultEntry[]) => void): void;
+	all(): Promise<BookFetchResultEntry[][]>;
 }
 
 export interface BookFetcherPlugin {
