@@ -15,9 +15,8 @@ export function createGoogleBooksApiPlugin(): BookFetcherPlugin {
 	// The plugin is always available (as long as there's internet connection)
 	const isAvailableStream = new BehaviorSubject(true);
 
-	const fetchBookData = fetchBookDataFromSingleSource((isbns) =>
-		Promise.all(isbns.map((isbn) => fetchBook(isbn).then(processResponse(isbn))))
-	);
+	const fetchBookData = fetchBookDataFromSingleSource((isbn) => fetchBook(isbn).then(processResponse(isbn)));
+
 	return { __name: "google-books-api", fetchBookData, isAvailableStream };
 }
 
