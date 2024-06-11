@@ -30,7 +30,6 @@ type OLBooksRes = {
 
 async function fetchBook(isbn: string): Promise<OLBookEntry> {
 	const url = new URL(baseurl);
-	console.log({ url });
 
 	url.searchParams.append("q", isbn);
 	url.searchParams.append("limit", "1");
