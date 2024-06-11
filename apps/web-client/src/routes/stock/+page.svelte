@@ -21,8 +21,11 @@
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
+
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { mergeBookData } from "$lib/utils/misc";
+
 	import { appPath } from "$lib/paths";
 
 	const { db, status } = getDB();
@@ -255,8 +258,11 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const [[bookData]] = await db.plugin("book-fetcher").fetchBookData([isbn]).promise();
+							const results = await db.plugin("book-fetcher").fetchBookData([isbn]).all();
+							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							const bookData = mergeBookData(results.map(([b]) => b));
 
+							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
 								return;
 							}
