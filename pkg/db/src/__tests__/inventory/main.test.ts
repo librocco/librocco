@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { beforeEach, describe, expect, test } from "vitest";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, firstValueFrom, toArray } from "rxjs";
 import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
@@ -2312,54 +2312,50 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// with all of its methods being noop
 		//
 		// Here we're also testing that the api won't explode if no plugin is registered.
-		const res1 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
+		const res1 = await db.plugin("book-fetcher").fetchBookData("11111111").first();
 		// The plugin should return the same number of results (and in the same order as the isbns requested)
 		// fallback should, then, return a list of undefineds with the same langth as the number of requested isbns
-		expect(res1).toEqual([undefined, undefined]);
+		expect(res1).toEqual(undefined);
 
-		// Registering a plugin implementation should return that implementation for all subsequent calls
+		// Registering a plugin implementation should use that implementation for all subsequent calls to 'fetchBookData'
 		//
 		// The impl1 will return the 'isbn' and the 'title' (same as isbn)
 		const impl1 = {
 			__name: "impl-1",
-			fetchBookData: fetchBookDataFromSingleSource(async (isbns) => isbns.map((isbn) => ({ isbn, title: isbn }))),
+			fetchBookData: fetchBookDataFromSingleSource(async (isbn) => ({ isbn, title: isbn })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
-		const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
-		expect(res21).toEqual([
-			{ isbn: "11111111", title: "11111111" },
-			{ isbn: "22222222", title: "22222222" }
-		]);
-		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
-		const res22 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res22).toEqual([
-			{ isbn: "11111111", title: "11111111" },
-			{ isbn: "22222222", title: "22222222" }
-		]);
+		db.plugin("book-fetcher").register(impl1);
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").first()).toEqual({ isbn: "11111111", title: "11111111" });
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([{ isbn: "11111111", title: "11111111" }]);
 
-		// Registering a different implementation should make the book fetching return merged results
+		// Registering a different implementation should make the book fetching return results from all sources
 		//
 		// The impl2 will return only the price (static 20) - the results should be merged
 		const impl2 = {
 			__name: "impl-2",
-			fetchBookData: fetchBookDataFromSingleSource(async (isbns) => isbns.map(() => ({ price: 20 }))),
+			fetchBookData: fetchBookDataFromSingleSource(async () => ({ price: 20 })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
-		// Calling the implementation returned after registering the plugin
-		const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);
-		expect(res31).toEqual([
-			{ isbn: "11111111", title: "11111111", price: 20 },
-			{ isbn: "22222222", title: "22222222", price: 20 }
+
+		db.plugin("book-fetcher").register(impl2);
+		// We're not testing for '.first()' here as the order of the results (in case of '.first()') is not guaranteed
+		//
+		// The order of results for '.all()' should be the same as the order of plugins registration
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([
+			// Result from impl1
+			{ isbn: "11111111", title: "11111111" },
+			// Result from impl2
+			{ price: 20 }
 		]);
-		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
-		const res32 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res32).toEqual([
-			{ isbn: "11111111", title: "11111111", price: 20 },
-			{ isbn: "22222222", title: "22222222", price: 20 }
-		]);
+
+		// Stream should stream the results as they resolve (in an arbitraty order)
+		const streamRes = await firstValueFrom(db.plugin("book-fetcher").fetchBookData("11111111").stream().pipe(toArray()));
+		expect(streamRes.length).toEqual(2);
+		expect(streamRes).toEqual(expect.arrayContaining([{ isbn: "11111111", title: "11111111" }, { price: 20 }]));
 	});
 
 	test("receipt generation", async () => {

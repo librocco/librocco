@@ -27,6 +27,11 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 	}
 
 	register = (plugin: BookFetcherPlugin) => {
+		// The first time the actual plugin is registered, we're removing the fallback (as it's no longer necessary as a placeolder)
+		if (this.#lookup.has("fallback")) {
+			this.#lookup.delete("fallback");
+		}
+
 		// Add the plugin to the lookup
 		// If the plugin is a different instance of the same implementation, it won't be added
 		// (same implementation is registered only once)
@@ -43,8 +48,8 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 		return this;
 	};
 
-	fetchBookData(isbns: string[]): BookFetchResult {
-		const requests = wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbns));
+	fetchBookData(isbn: string): BookFetchResult {
+		const requests = wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbn));
 
 		// First resolves to whichever value is retrieved first
 		const first = () => Promise.any(requests.map((r) => r.first()));
@@ -58,16 +63,9 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 	}
 }
 
-// type FetchBookDataRes = Awaited<ReturnType<BookFetcherPlugin["fetchBookData"]>>;
-// const mergeResults = (prev: FetchBookDataRes, curr: FetchBookDataRes) =>
-// 	wrapIter(prev)
-// 		.zip(curr)
-// 		.map(([_acc, _curr]) => (!_curr ? _acc : { ..._acc, ..._curr }))
-// 		.array();
-
 const bookFetcherFallback: BookFetcherPlugin = {
 	__name: "fallback",
 	// The 'fetchBookData' is expected to return the same number of results as the number of isbns requested
-	fetchBookData: fetchBookDataFromSingleSource(async (isbns) => Array(isbns.length).fill(undefined)),
+	fetchBookData: fetchBookDataFromSingleSource(async () => undefined),
 	isAvailableStream: new BehaviorSubject(false)
 };
