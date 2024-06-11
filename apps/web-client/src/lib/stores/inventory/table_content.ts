@@ -109,7 +109,8 @@ export const createDisplayEntriesStore: CreateDisplayEntriesStore = (
 const mergeBookData = (stock: Iterable<VolumeStockClient>) => (bookData: Iterable<BookEntry | undefined>) =>
 	wrapIter(stock)
 		.zip(bookData)
-		.map(([s, b = {} as BookEntry]) => ({ ...s, ...b }))
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		.map(([s, { updatedAt, ...b } = {} as BookEntry]) => ({ ...s, ...b }))
 		.array();
 
 const applyDiscount = <T extends Pick<VolumeStockClient<"book">, "warehouseDiscount"> & Pick<BookEntry, "price">>({
