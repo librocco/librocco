@@ -68,6 +68,9 @@ export interface BookEntry {
 	editedBy?: string;
 	outOfPrint?: boolean;
 	category?: string;
+
+	/** Book data that has 'updatedAt' field set had already been filled with data */
+	updatedAt?: string;
 }
 
 /**

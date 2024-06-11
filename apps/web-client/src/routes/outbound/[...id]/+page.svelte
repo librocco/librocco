@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { map } from "rxjs";
+	import { filter, map, scan } from "rxjs";
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
 
@@ -8,7 +8,7 @@
 
 	import { goto } from "$app/navigation";
 
-	import { NoteState, filter, testId, type VolumeStock } from "@librocco/shared";
+	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
 
 	import {
 		OutOfStockError,
@@ -69,7 +69,7 @@
 	const warehouseListStream = db
 		?.stream()
 		.warehouseMap(warehouseListCtx)
-		.pipe(map((m) => new Map<string, NavEntry>(filter(m, ([warehouseId]) => !warehouseId.includes("0-all")))));
+		.pipe(map((m) => new Map<string, NavEntry>(wrapIter(m).filter(([warehouseId]) => !warehouseId.includes("0-all")))));
 	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
@@ -168,20 +168,28 @@
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
 		const [localBookData] = await db.books().get([isbn]);
-		if (localBookData) {
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
 			return;
 		}
 
-		// If book data retrieved from 3rd party source - store it for future use
-		const thirdPartyBookData = await db
-			.plugin("book-fetcher")
-			.fetchBookData(isbn)
-			.all()
-			.then((bookData) => mergeBookData(bookData));
-
-		if (thirdPartyBookData) {
-			await db.books().upsert([thirdPartyBookData]);
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await db.books().upsert([{ isbn }]);
 		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		db.plugin("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => db.books().upsert([b]));
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
@@ -382,7 +390,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -417,7 +425,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -425,7 +433,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -433,7 +441,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
