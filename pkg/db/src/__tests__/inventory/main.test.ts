@@ -2002,7 +2002,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
-		expect(booksFromDb).toEqual([book1, book2]);
+		// There's a full book data in each entry, the operation should assign 'updatedAt'
+		expect(booksFromDb).toEqual([book1, book2].map((b) => ({ ...b, updatedAt: expect.any(String) })));
+		const updatedAt = booksFromDb[0]!.updatedAt;
 
 		// Update test
 		await Promise.all([
@@ -2012,12 +2014,23 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			])
 		]);
 
-		const [updatedBooksFromDb] = await Promise.all([booksInterface.get([book1.isbn, book2.isbn])]);
+		const updatedBooksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
 		expect(updatedBooksFromDb).toEqual([
-			{ ...book1, title: "Updated Title" },
-			{ ...book2, title: "Updated Title 12" }
+			{ ...book1, title: "Updated Title", updatedAt: expect.any(String) },
+			{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) }
 		]);
+		// The 'updatedAt' should be updated
+		expect(updatedBooksFromDb[0]!.updatedAt).not.toEqual(updatedAt);
+
+		// ISBN-only entries should not get the 'updatedAt' assigned to them
+		await db.books().upsert([{ isbn: "1111111111" }]);
+		await db.books().upsert([{ isbn: "1111111111" }]); // One more (update) for good measure
+		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111" }]);
+
+		// Adding at least one additiona field should assign the 'updatedAt'
+		await db.books().upsert([{ isbn: "1111111111", title: "Title 1" }]); // One more (update) for good measure
+		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111", title: "Title 1", updatedAt: expect.any(String) }]);
 
 		// Stream test
 		let bookEntries: (BookEntry | undefined)[] = [];
@@ -2027,21 +2040,33 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		});
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Updated Title" }, { ...book2, title: "Updated Title 12" }, undefined]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Updated Title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				undefined
+			]);
 		});
 
 		// Stream should update when the book in the db is updated
 		await db.books().upsert([{ ...book1, title: "Stream updated title" }]);
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, undefined]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Stream updated title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				undefined
+			]);
 		});
 
 		// Stream should update if the book we're requesting (which didn't exist) is added
 		await db.books().upsert([book3]);
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, book3]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Stream updated title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				{ ...book3, updatedAt: expect.any(String) }
+			]);
 		});
 	});
 
@@ -2463,13 +2488,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			.subscribe((i) => (index = i));
 
 		// Search string: "oxford" - should match "Oxford University Press" (regardless of letter casing)
-		await waitFor(() => expect(index.search("oxford")).toEqual([pets, time]));
+		await waitFor(() => expect(index.search("oxford")).toEqual([pets, time].map((b) => ({ ...b, updatedAt: expect.any(String) }))));
 
 		// Search string: "stephen" - should match "Stephen King" (author) and "Stephen Hawking" (author)
 		// expect(index.search("stephen")).toEqual([pets, time]);
 
 		// Search string: "king" - should match both "(...) Return of The King" (title) and "Stephen King" (author)
-		await waitFor(() => expect(index.search("king")).toEqual([lotr, pets]));
+		await waitFor(() => expect(index.search("king")).toEqual([lotr, pets].map((b) => ({ ...b, updatedAt: expect.any(String) }))));
 
 		// Adding a book to the db should update the index
 		const werther = {
@@ -2480,7 +2505,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			price: 40
 		};
 		await db.books().upsert([werther]);
-		await waitFor(() => expect(index.search("Penguin Classics")).toEqual([lotr, werther]));
+		await waitFor(() =>
+			expect(index.search("Penguin Classics")).toEqual([lotr, werther].map((b) => ({ ...b, updatedAt: expect.any(String) })))
+		);
 	});
 });
 
