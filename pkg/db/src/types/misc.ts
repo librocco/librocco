@@ -170,6 +170,8 @@ export type LibroccoPlugin<T extends {}> = {
 } & T;
 
 export interface BookFetcherPlugin {
+	// Name is used to differentiate between different implementations satisfying the same interface
+	__name: string;
 	fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]>;
 	isAvailableStream: Observable<boolean>;
 }
