@@ -9,7 +9,7 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 	// Continuous availability stream
 	const isAvailableStream = createAvailabilityStream();
 
-	const fetchBookData = fetchBookDataFromSingleSource((isbns) => Promise.all(isbns.map((isbn) => fetchBook(isbn))));
+	const fetchBookData = fetchBookDataFromSingleSource((isbn) => fetchBook(isbn));
 
 	return { __name: "chrome-extension", fetchBookData, isAvailableStream };
 };
