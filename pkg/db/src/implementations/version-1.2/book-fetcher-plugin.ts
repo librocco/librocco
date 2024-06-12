@@ -2,12 +2,15 @@ import { BehaviorSubject, Observable, combineLatest, map, merge, mergeMap, switc
 
 import { wrapIter } from "@librocco/shared";
 
-import { BookFetchResult, BookFetcherPlugin, LibroccoPlugin } from "@/types";
-import { fetchBookDataFromSingleSource } from "@/utils/plugins";
+import { BookFetchOptions, BookFetchResult, BookFetcherPlugin, LibroccoPlugin } from "@/types";
+import { createSingleSourceBookFetcher } from "@/utils/plugins";
 
 export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPlugin> {
 	#lookup = new Map<string, BookFetcherPlugin>();
 	#availabilityStreams = new BehaviorSubject([] as Observable<boolean>[]);
+
+	#fetchedISBNS = new Map<string, BookFetchResult>();
+	#fetchingISBNS = new Map<string, BookFetchResult>();
 
 	__name = "root";
 
@@ -24,6 +27,8 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 		// This is necessary in order for the 'register' method to be preserved on the plugin and not overridden
 		// by the plugins interface's default method
 		this.register = this.register.bind(this);
+		// Same reasoning as above
+		this.reset = this.reset.bind(this);
 	}
 
 	register = (plugin: BookFetcherPlugin) => {
@@ -48,8 +53,17 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 		return this;
 	};
 
-	fetchBookData(isbn: string): BookFetchResult {
-		const requests = wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbn));
+	reset = () => {
+		this.#lookup.clear();
+		this.#fetchedISBNS.clear();
+		this.#fetchingISBNS.clear();
+		return this.register(bookFetcherFallback);
+	};
+
+	private _fetchBookData(isbn: string): BookFetchResult {
+		const requests = wrapIter(this.#lookup.entries())
+			.map(([, plugin]) => plugin.fetchBookData(isbn))
+			.array();
 
 		// First resolves to whichever value is retrieved first
 		const first = () => Promise.any(requests.map((r) => r.first()));
@@ -61,11 +75,31 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 
 		return { first, stream, all };
 	}
+
+	fetchBookData(isbn: string, { retryIfAlreadyAttempted = false }: BookFetchOptions = {}): BookFetchResult {
+		// Check for cached result (unless explicitly instructed to retry)
+		if (this.#fetchedISBNS.has(isbn) && !retryIfAlreadyAttempted) {
+			return this.#fetchedISBNS.get(isbn)!;
+		}
+
+		// Check for ongoing fetch for the same isbn
+		if (this.#fetchingISBNS.has(isbn)) {
+			return this.#fetchingISBNS.get(isbn)!;
+		}
+
+		const res = this._fetchBookData(isbn);
+
+		// Memoise the results
+		this.#fetchingISBNS.set(isbn, res);
+		this.#fetchedISBNS.set(isbn, res);
+
+		// Clear the memoized ongoing fetch once the fetch is complete
+		res.all().then(() => {
+			this.#fetchingISBNS.delete(isbn);
+		});
+
+		return res;
+	}
 }
 
-const bookFetcherFallback: BookFetcherPlugin = {
-	__name: "fallback",
-	// The 'fetchBookData' is expected to return the same number of results as the number of isbns requested
-	fetchBookData: fetchBookDataFromSingleSource(async () => undefined),
-	isAvailableStream: new BehaviorSubject(false)
-};
+const bookFetcherFallback = createSingleSourceBookFetcher("fallback", async () => undefined, false);
