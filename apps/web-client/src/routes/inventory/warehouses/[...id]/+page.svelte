@@ -298,7 +298,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn).all();
+							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 
