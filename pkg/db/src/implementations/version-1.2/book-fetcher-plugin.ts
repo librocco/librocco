@@ -1,8 +1,8 @@
-import { BehaviorSubject, Observable, combineLatest, map, merge, mergeMap, switchMap } from "rxjs";
+import { BehaviorSubject, Observable, Subject, combineLatest, map, merge, mergeMap, share, switchMap } from "rxjs";
 
 import { wrapIter } from "@librocco/shared";
 
-import { BookFetchOptions, BookFetchResult, BookFetcherPlugin, LibroccoPlugin } from "@/types";
+import { BookFetchOptions, BookFetchResult, BookFetchResultEntry, BookFetcherPlugin, LibroccoPlugin } from "@/types";
 import { createSingleSourceBookFetcher } from "@/utils/plugins";
 
 export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPlugin> {
@@ -67,8 +67,15 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 
 		// First resolves to whichever value is retrieved first
 		const first = () => Promise.any(requests.map((r) => r.first()));
-		// Stream combines all of the streams of all plugin instances (and flatmaps them)
-		const stream = () => merge(requests.map((r) => r.stream())).pipe(mergeMap((x) => x));
+		// Stream combines all of the streams of all plugin instances (and flatmaps them).
+		// The stream is cached so that if we return the cached value (for repeated request), the observable won't be
+		// restarted, which would produce an awkward behavior
+		const streamCache = new Subject<BookFetchResultEntry>();
+		const stream = () =>
+			merge(requests.map((r) => r.stream())).pipe(
+				mergeMap((x) => x),
+				share({ connector: () => streamCache })
+			);
 		// Promise combines all of the promises from all plugin instances, flattens the results, guaranteeing the same order
 		// as the order of plugins in the lookup
 		const all = () => Promise.all(requests.map((r) => r.all())).then((results) => results.flatMap((r) => r));
