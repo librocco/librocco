@@ -11,9 +11,10 @@ import { browser } from "$app/environment";
 
 const createDBConnectivityStream = () => {
 	const shareSuject = new BehaviorSubject(true);
+	const url = get(settingsStore).couchUrl;
 
-	return browser
-		? from(checkUrlConnection(get(settingsStore).couchUrl)).pipe(
+	return browser && url
+		? from(checkUrlConnection(url)).pipe(
 				map((response: Response) => response.ok),
 				catchError(() => of(false)),
 				share({ connector: () => shareSuject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })
