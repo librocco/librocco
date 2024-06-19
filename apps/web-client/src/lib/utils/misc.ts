@@ -1,6 +1,6 @@
 import { Observable, combineLatest, map } from "rxjs";
 
-import type { BookEntry, WarehouseDataMap } from "@librocco/db";
+import type { BookEntry, BookFetchResultEntry, WarehouseDataMap } from "@librocco/db";
 import { wrapIter, debug } from "@librocco/shared";
 
 import type { DailySummaryStore } from "$lib/types/inventory";
@@ -82,3 +82,19 @@ export const mapMergeBookWarehouseData =
 				};
 			})
 		);
+
+// #region book data fetching
+/**
+ * Merges book data for the same book retrieved from multiple sources
+ * @param sources
+ * @param kind "prefer_first" - values from the source that comes first in the array will be preferred and vice versa
+ * @returns
+ */
+export const mergeBookData = (sources: BookFetchResultEntry[], kind: "prefer_first" | "prefer_last" = "prefer_first") =>
+	!sources.some(Boolean)
+		? undefined
+		: kind === "prefer_first"
+		? sources.reduceRight((acc = {}, curr = {}) => ({ ...acc, ...curr }), {})
+		: sources.reduce((acc = {}, curr = {}) => ({ ...acc, ...curr }), {});
+
+// #endregion book data fetching

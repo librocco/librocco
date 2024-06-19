@@ -36,6 +36,7 @@ class Books implements BooksInterface {
 
 	async upsert(_docs: (Partial<BookEntry> | undefined)[]): Promise<void> {
 		// Filter out (possibly) undefined inputs
+
 		const docsToUpsert = _docs.filter((d): d is BookEntry => Boolean(d));
 		if (!docsToUpsert.length) return;
 
@@ -48,11 +49,15 @@ class Books implements BooksInterface {
 			.then(({ rows }) => rows.map(({ doc }) => doc as CouchDocument<BookEntry> | undefined));
 
 		const updates = wrapIter(docsToUpsert)
+			// If entry has any field other than "isbn", add/update the 'updatedAt' field.
+			// If entry is isbn-only - we don't have any book data - no 'updatedAt' is added as this signals that the book data should be fetched at some point.
+			.map((doc) => (Object.keys(doc).some((k) => k !== "isbn") ? { ...doc, updatedAt: new Date().toISOString() } : doc))
 			.map((doc) => ({ _id: `books/${doc.isbn}`, ...doc }))
 			.zip(docs)
-			.map(([update, existing = {}]) => ({ ...existing, ...update }));
+			.map(([update, existing = {}]) => ({ ...existing, ...update }))
+			.array();
 
-		await this.#db._pouch.bulkDocs([...updates]);
+		await this.#db._pouch.bulkDocs(updates);
 	}
 
 	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
