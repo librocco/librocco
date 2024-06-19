@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { beforeEach, describe, expect, test } from "vitest";
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, firstValueFrom, toArray } from "rxjs";
 import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
@@ -13,6 +13,7 @@ import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatch
 
 import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
+import { fetchBookDataFromSingleSource } from "@/utils/plugins";
 
 import { fiftyEntries } from "./data";
 
@@ -230,10 +231,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(entries).toEqual([]);
 		});
 
-		// There is no book data for isbns we're about to add
-		let bookData = await db.books().get(["0123456789", "11111111"]);
-		expect(bookData).toEqual([undefined, undefined]);
-
 		// Adding volumes should add transactions to the note
 		await note.addVolumes(
 			{ isbn: "0123456789", quantity: 2, warehouseId: wh1._id },
@@ -274,11 +271,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 				}
 			]);
 		});
-
-		// Adding volumes to the note should also create (empty: isbn-only) book data entries for added volumes
-		bookData = await db.books().get(["0123456789", "11111111"]);
-
-		await waitFor(() => expect(bookData).toEqual([{ isbn: "0123456789" }, { isbn: "11111111" }]));
 
 		// Adding volumes to the same ISBN/warheouseId pair should simply aggregate the quantities
 		await note.addVolumes(
@@ -2010,7 +2002,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 
 		const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
-		expect(booksFromDb).toEqual([book1, book2]);
+		// There's a full book data in each entry, the operation should assign 'updatedAt'
+		expect(booksFromDb).toEqual([book1, book2].map((b) => ({ ...b, updatedAt: expect.any(String) })));
+		const updatedAt = booksFromDb[0]!.updatedAt;
 
 		// Update test
 		await Promise.all([
@@ -2020,12 +2014,23 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			])
 		]);
 
-		const [updatedBooksFromDb] = await Promise.all([booksInterface.get([book1.isbn, book2.isbn])]);
+		const updatedBooksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
 
 		expect(updatedBooksFromDb).toEqual([
-			{ ...book1, title: "Updated Title" },
-			{ ...book2, title: "Updated Title 12" }
+			{ ...book1, title: "Updated Title", updatedAt: expect.any(String) },
+			{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) }
 		]);
+		// The 'updatedAt' should be updated
+		expect(updatedBooksFromDb[0]!.updatedAt).not.toEqual(updatedAt);
+
+		// ISBN-only entries should not get the 'updatedAt' assigned to them
+		await db.books().upsert([{ isbn: "1111111111" }]);
+		await db.books().upsert([{ isbn: "1111111111" }]); // One more (update) for good measure
+		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111" }]);
+
+		// Adding at least one additiona field should assign the 'updatedAt'
+		await db.books().upsert([{ isbn: "1111111111", title: "Title 1" }]); // One more (update) for good measure
+		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111", title: "Title 1", updatedAt: expect.any(String) }]);
 
 		// Stream test
 		let bookEntries: (BookEntry | undefined)[] = [];
@@ -2035,21 +2040,33 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		});
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Updated Title" }, { ...book2, title: "Updated Title 12" }, undefined]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Updated Title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				undefined
+			]);
 		});
 
 		// Stream should update when the book in the db is updated
 		await db.books().upsert([{ ...book1, title: "Stream updated title" }]);
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, undefined]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Stream updated title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				undefined
+			]);
 		});
 
 		// Stream should update if the book we're requesting (which didn't exist) is added
 		await db.books().upsert([book3]);
 
 		await waitFor(() => {
-			expect(bookEntries).toEqual([{ ...book1, title: "Stream updated title" }, { ...book2, title: "Updated Title 12" }, book3]);
+			expect(bookEntries).toEqual([
+				{ ...book1, title: "Stream updated title", updatedAt: expect.any(String) },
+				{ ...book2, title: "Updated Title 12", updatedAt: expect.any(String) },
+				{ ...book3, updatedAt: expect.any(String) }
+			]);
 		});
 	});
 
@@ -2311,54 +2328,50 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// with all of its methods being noop
 		//
 		// Here we're also testing that the api won't explode if no plugin is registered.
-		const res1 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
+		const res1 = await db.plugin("book-fetcher").fetchBookData("11111111").first();
 		// The plugin should return the same number of results (and in the same order as the isbns requested)
 		// fallback should, then, return a list of undefineds with the same langth as the number of requested isbns
-		expect(res1).toEqual([undefined, undefined]);
+		expect(res1).toEqual(undefined);
 
-		// Registering a plugin implementation should return that implementation for all subsequent calls
+		// Registering a plugin implementation should use that implementation for all subsequent calls to 'fetchBookData'
 		//
 		// The impl1 will return the 'isbn' and the 'title' (same as isbn)
 		const impl1 = {
 			__name: "impl-1",
-			fetchBookData: async (isbns: string[]) => isbns.map((isbn) => ({ isbn, title: isbn })),
+			fetchBookData: fetchBookDataFromSingleSource(async (isbn) => ({ isbn, title: isbn })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
 		// Calling the implementation returned after registering the plugin
-		const res21 = await db.plugin("book-fetcher").register(impl1).fetchBookData(["11111111", "22222222"]);
-		expect(res21).toEqual([
-			{ isbn: "11111111", title: "11111111" },
-			{ isbn: "22222222", title: "22222222" }
-		]);
-		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
-		const res22 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res22).toEqual([
-			{ isbn: "11111111", title: "11111111" },
-			{ isbn: "22222222", title: "22222222" }
-		]);
+		db.plugin("book-fetcher").register(impl1);
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").first()).toEqual({ isbn: "11111111", title: "11111111" });
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([{ isbn: "11111111", title: "11111111" }]);
 
-		// Registering a different implementation should make the book fetching return merged results
+		// Registering a different implementation should make the book fetching return results from all sources
 		//
 		// The impl2 will return only the price (static 20) - the results should be merged
 		const impl2 = {
 			__name: "impl-2",
-			fetchBookData: async (isbns: string[]) => isbns.map(() => ({ price: 20 })),
+			fetchBookData: fetchBookDataFromSingleSource(async () => ({ price: 20 })),
 			isAvailableStream: new BehaviorSubject(false),
 			checkAvailability: async () => {}
 		};
-		// Calling the implementation returned after registering the plugin
-		const res31 = await db.plugin("book-fetcher").register(impl2).fetchBookData(["11111111", "22222222"]);
-		expect(res31).toEqual([
-			{ isbn: "11111111", title: "11111111", price: 20 },
-			{ isbn: "22222222", title: "22222222", price: 20 }
+
+		db.plugin("book-fetcher").register(impl2);
+		// We're not testing for '.first()' here as the order of the results (in case of '.first()') is not guaranteed
+		//
+		// The order of results for '.all()' should be the same as the order of plugins registration
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([
+			// Result from impl1
+			{ isbn: "11111111", title: "11111111" },
+			// Result from impl2
+			{ price: 20 }
 		]);
-		// Calling the implementation from the next call to .plugin("book-fetcher") - should be the same implementation
-		const res32 = await db.plugin("book-fetcher").fetchBookData(["11111111", "22222222"]);
-		expect(res32).toEqual([
-			{ isbn: "11111111", title: "11111111", price: 20 },
-			{ isbn: "22222222", title: "22222222", price: 20 }
-		]);
+
+		// Stream should stream the results as they resolve (in an arbitraty order)
+		const streamRes = await firstValueFrom(db.plugin("book-fetcher").fetchBookData("11111111").stream().pipe(toArray()));
+		expect(streamRes.length).toEqual(2);
+		expect(streamRes).toEqual(expect.arrayContaining([{ isbn: "11111111", title: "11111111" }, { price: 20 }]));
 	});
 
 	test("receipt generation", async () => {
@@ -2475,13 +2488,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			.subscribe((i) => (index = i));
 
 		// Search string: "oxford" - should match "Oxford University Press" (regardless of letter casing)
-		await waitFor(() => expect(index.search("oxford")).toEqual([pets, time]));
+		await waitFor(() => expect(index.search("oxford")).toEqual([pets, time].map((b) => ({ ...b, updatedAt: expect.any(String) }))));
 
 		// Search string: "stephen" - should match "Stephen King" (author) and "Stephen Hawking" (author)
 		// expect(index.search("stephen")).toEqual([pets, time]);
 
 		// Search string: "king" - should match both "(...) Return of The King" (title) and "Stephen King" (author)
-		await waitFor(() => expect(index.search("king")).toEqual([lotr, pets]));
+		await waitFor(() => expect(index.search("king")).toEqual([lotr, pets].map((b) => ({ ...b, updatedAt: expect.any(String) }))));
 
 		// Adding a book to the db should update the index
 		const werther = {
@@ -2492,7 +2505,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			price: 40
 		};
 		await db.books().upsert([werther]);
-		await waitFor(() => expect(index.search("Penguin Classics")).toEqual([lotr, werther]));
+		await waitFor(() =>
+			expect(index.search("Penguin Classics")).toEqual([lotr, werther].map((b) => ({ ...b, updatedAt: expect.any(String) })))
+		);
 	});
 });
 
