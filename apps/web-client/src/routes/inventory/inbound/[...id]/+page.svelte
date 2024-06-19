@@ -3,7 +3,7 @@
 	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Power } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$app/navigation";
 
@@ -28,6 +28,7 @@
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
+	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -38,10 +39,11 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { readableFromStream } from "$lib/utils/streams";
+	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
 	import { autoPrintLabels } from "$lib/stores/app";
-	import { printBookLabel, printReceipt } from "$lib/printer";
+	import { filter, onErrorResumeNextWith, scan } from "rxjs";
 
 	export let data: PageData;
 
@@ -113,15 +115,28 @@
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
 		const [localBookData] = await db.books().get([isbn]);
-		if (localBookData) {
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
 			return;
 		}
 
-		// If book data retrieved from 3rd party source - store it for future use
-		const [thirdPartyBookData] = await db.plugin("book-fetcher").fetchBookData([isbn]);
-		if (thirdPartyBookData) {
-			await db.books().upsert([thirdPartyBookData]);
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await db.books().upsert([{ isbn }]);
 		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		db.plugin("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => db.books().upsert([b]));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
@@ -481,9 +496,11 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
+							const results = await db.plugin("book-fetcher").fetchBookData(isbn).all();
+							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							const bookData = mergeBookData(results);
 
-							const [bookData] = result;
+							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
 								return;
 							}

@@ -1,12 +1,15 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
 	import { writable } from "svelte/store";
+	import { download, generateCsv, mkConfig } from "export-to-csv";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { debug, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
+
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	import {
 		Page,
@@ -26,17 +29,17 @@
 	import type { PageData } from "./$types";
 
 	import { getDB } from "$lib/db";
+	import { printBookLabel } from "$lib/printer";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { readableFromStream } from "$lib/utils/streams";
+	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { printBookLabel } from "$lib/printer";
-	import { download, generateCsv, mkConfig } from "export-to-csv";
-	import type { InventoryTableData } from "$lib/components/Tables/types";
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -295,9 +298,11 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const result = await db.plugin("book-fetcher").fetchBookData([isbn]);
+							const results = await db.plugin("book-fetcher").fetchBookData(isbn).all();
+							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							const bookData = mergeBookData(results);
 
-							const [bookData] = result;
+							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
 								return;
 							}

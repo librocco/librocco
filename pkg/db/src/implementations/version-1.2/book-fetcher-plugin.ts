@@ -1,8 +1,9 @@
-import { BehaviorSubject, Observable, combineLatest, map, switchMap } from "rxjs";
+import { BehaviorSubject, Observable, combineLatest, map, merge, mergeMap, switchMap } from "rxjs";
 
 import { wrapIter } from "@librocco/shared";
 
-import { BookEntry, BookFetcherPlugin, LibroccoPlugin } from "@/types";
+import { BookFetchResult, BookFetcherPlugin, LibroccoPlugin } from "@/types";
+import { fetchBookDataFromSingleSource } from "@/utils/plugins";
 
 export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPlugin> {
 	#lookup = new Map<string, BookFetcherPlugin>();
@@ -26,6 +27,11 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 	}
 
 	register = (plugin: BookFetcherPlugin) => {
+		// The first time the actual plugin is registered, we're removing the fallback (as it's no longer necessary as a placeolder)
+		if (this.#lookup.has("fallback")) {
+			this.#lookup.delete("fallback");
+		}
+
 		// Add the plugin to the lookup
 		// If the plugin is a different instance of the same implementation, it won't be added
 		// (same implementation is registered only once)
@@ -42,24 +48,24 @@ export class BookFetcherPluginController implements LibroccoPlugin<BookFetcherPl
 		return this;
 	};
 
-	async fetchBookData(isbns: string[]): Promise<(Partial<BookEntry> | undefined)[]> {
-		const results = await Promise.all(wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbns)));
-		const init = Array<Partial<BookEntry> | undefined>(isbns.length).fill(undefined);
-		return results.reduce(mergeResults, init);
+	fetchBookData(isbn: string): BookFetchResult {
+		const requests = wrapIter(this.#lookup.entries()).map(([, plugin]) => plugin.fetchBookData(isbn));
+
+		// First resolves to whichever value is retrieved first
+		const first = () => Promise.any(requests.map((r) => r.first()));
+		// Stream combines all of the streams of all plugin instances (and flatmaps them)
+		const stream = () => merge(requests.map((r) => r.stream())).pipe(mergeMap((x) => x));
+		// Promise combines all of the promises from all plugin instances, flattens the results, guaranteeing the same order
+		// as the order of plugins in the lookup
+		const all = () => Promise.all(requests.map((r) => r.all())).then((results) => results.flatMap((r) => r));
+
+		return { first, stream, all };
 	}
 }
 
-type FetchBookDataRes = Awaited<ReturnType<BookFetcherPlugin["fetchBookData"]>>;
-
-const mergeResults = (prev: FetchBookDataRes, curr: FetchBookDataRes) =>
-	wrapIter(prev)
-		.zip(curr)
-		.map(([_acc, _curr]) => (!_curr ? _acc : { ..._acc, ..._curr }))
-		.array();
-
-const bookFetcherFallback = {
+const bookFetcherFallback: BookFetcherPlugin = {
 	__name: "fallback",
 	// The 'fetchBookData' is expected to return the same number of results as the number of isbns requested
-	fetchBookData: async (isbns: string[]) => Array(isbns.length).fill(undefined),
+	fetchBookData: fetchBookDataFromSingleSource(async () => undefined),
 	isAvailableStream: new BehaviorSubject(false)
 };

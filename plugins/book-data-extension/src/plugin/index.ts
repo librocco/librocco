@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, concat, from, share } from "rxjs";
 
-import { BookFetcherPlugin, BookEntry } from "@librocco/db";
+import { BookFetcherPlugin, fetchBookDataFromSingleSource } from "@librocco/db";
 
 import { continuousListener } from "./listeners";
 import { fetchBook, ping } from "./comm";
@@ -9,9 +9,7 @@ export const createBookDataExtensionPlugin = (): BookFetcherPlugin => {
 	// Continuous availability stream
 	const isAvailableStream = createAvailabilityStream();
 
-	const fetchBookData = async (isbns: string[]): Promise<(BookEntry | undefined)[]> => {
-		return Promise.all(isbns.map((isbn) => fetchBook(isbn)));
-	};
+	const fetchBookData = fetchBookDataFromSingleSource((isbn) => fetchBook(isbn));
 
 	return { __name: "chrome-extension", fetchBookData, isAvailableStream };
 };
