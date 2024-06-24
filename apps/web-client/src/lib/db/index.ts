@@ -14,6 +14,9 @@ let reason = "";
 
 export const checkUrlConnection = async (url: string) => {
 	const [credenialsAndUrl, urlEnd] = url.split("@");
+
+	url = urlEnd === undefined ? url : `https://${urlEnd}`;
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_, credentials] = credenialsAndUrl.split("//");
 
@@ -21,7 +24,7 @@ export const checkUrlConnection = async (url: string) => {
 	const encodedCredentials = btoa(credentials);
 	headers.append("Authorization", `Basic ${encodedCredentials}`);
 
-	return fetch(`https://${urlEnd}`, {
+	return fetch(url, {
 		method: "GET",
 		headers: headers,
 		credentials: "include"
