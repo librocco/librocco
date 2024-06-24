@@ -65,7 +65,13 @@ class Books implements BooksInterface {
 			.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 			// The rows are returned in the same order as the supplied keys array.
 			// The row for a nonexistent document will just contain an "error" property with the value "not_found".
-			.then((docs) => unwrapDocs(docs));
+			.then((docs) => unwrapDocs(docs))
+
+			.catch((err) => {
+				if ((err as any).status === (404 || 401)) return [];
+				// For all other errors, throw
+				throw err;
+			});
 
 		return books;
 	}
