@@ -1,4 +1,4 @@
-import { switchMap, combineLatest, map, tap, from } from "rxjs";
+import { switchMap, combineLatest, map, tap, from, Observable } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 
 import { debug, wrapIter, zip, reduce } from "@librocco/shared";
@@ -21,7 +21,8 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, date) 
 	const pastTransactionsStream = db
 		.history()
 		.stream(ctx)
-		.pipe(map((pt) => pt.by("date")));
+		.pipe(map((pt) => (pt ? pt.by("date") : {})));
+
 	const warehouseMapStream = db.stream().warehouseMap(ctx);
 
 	const dailySummary = pastTransactionsStream.pipe(
@@ -29,7 +30,7 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, date) 
 			const entries = [...(txnMap.get(date) || [])];
 			const isbns = entries.map(({ isbn }) => isbn);
 
-			return db.books().stream(ctx, isbns).pipe(mapMergeBookWarehouseData(ctx, entries, warehouseMapStream));
+			return (db.books().stream(ctx, isbns) || new Observable()).pipe(mapMergeBookWarehouseData(ctx, entries, warehouseMapStream));
 		})
 	);
 
