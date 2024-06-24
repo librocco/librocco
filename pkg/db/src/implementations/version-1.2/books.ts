@@ -68,7 +68,7 @@ class Books implements BooksInterface {
 			.then((docs) => unwrapDocs(docs))
 
 			.catch((err) => {
-				if ((err as any).status === (404 || 401)) return [];
+				if ((err as any).status === 404 || (err as any).status === 401) return [];
 				// For all other errors, throw
 				throw err;
 			});
@@ -105,7 +105,6 @@ class Books implements BooksInterface {
 			});
 
 			const initialState = from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:initial_state")));
-
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				tap(debug.log(ctx, "books:change")),
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
