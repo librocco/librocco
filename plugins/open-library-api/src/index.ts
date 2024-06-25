@@ -30,12 +30,21 @@ type OLBooksRes = {
 
 async function fetchBook(isbn: string): Promise<OLBookEntry> {
 	const url = new URL(baseurl);
+	const email = "info@libroc.co";  // TODO: let users set their email
+
+	const headers = new Headers({
+		"User-Agent": `Librocco/1.0 ${email}`
+	});
+	const options = {
+		method: "GET",
+		headers: headers
+	};
 
 	url.searchParams.append("q", isbn);
 	url.searchParams.append("limit", "1");
 	url.searchParams.append("fields", reqFields);
 
-	const { docs = [] } = await fetch(url).then((r) => r.json() as OLBooksRes);
+	const { docs = [] } = await fetch(url, options).then((r) => r.json() as OLBooksRes);
 	const [olBookData] = docs;
 
 	return olBookData;
