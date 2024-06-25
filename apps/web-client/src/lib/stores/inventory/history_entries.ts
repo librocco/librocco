@@ -8,6 +8,7 @@ import type { BookHistoryStores, DailySummaryStore, DisplayRow, PastNoteEntry } 
 import { readableFromStream } from "$lib/utils/streams";
 import { mapMergeBookWarehouseData } from "$lib/utils/misc";
 import { getLocalTimeZone, type DateValue } from "@internationalized/date";
+import type { PastTransactionsMap } from "@librocco/db";
 
 interface CreateDailySummaryStore {
 	(ctx: debug.DebugCtx, db: InventoryDatabaseInterface | undefined, date?: string): Readable<DailySummaryStore>;
@@ -26,7 +27,7 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, date) 
 	const warehouseMapStream = db.stream().warehouseMap(ctx);
 
 	const dailySummary = pastTransactionsStream.pipe(
-		switchMap((txnMap) => {
+		switchMap((txnMap: PastTransactionsMap) => {
 			const entries = [...(txnMap.get(date) || [])];
 			const isbns = entries.map(({ isbn }) => isbn);
 
