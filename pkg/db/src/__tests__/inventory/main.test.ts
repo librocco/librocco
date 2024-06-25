@@ -1,6 +1,6 @@
 /* eslint-disable no-case-declarations */
 import { beforeEach, describe, expect, test } from "vitest";
-import { BehaviorSubject, firstValueFrom, toArray } from "rxjs";
+import { firstValueFrom, toArray } from "rxjs";
 import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
@@ -13,7 +13,7 @@ import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatch
 
 import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
-import { fetchBookDataFromSingleSource } from "@/utils/plugins";
+import { createSingleSourceBookFetcher } from "@/utils/plugins";
 
 import { fiftyEntries } from "./data";
 
@@ -2328,50 +2328,83 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 		// with all of its methods being noop
 		//
 		// Here we're also testing that the api won't explode if no plugin is registered.
-		const res1 = await db.plugin("book-fetcher").fetchBookData("11111111").first();
-		// The plugin should return the same number of results (and in the same order as the isbns requested)
-		// fallback should, then, return a list of undefineds with the same langth as the number of requested isbns
-		expect(res1).toEqual(undefined);
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).all()).toEqual([undefined]);
 
 		// Registering a plugin implementation should use that implementation for all subsequent calls to 'fetchBookData'
 		//
 		// The impl1 will return the 'isbn' and the 'title' (same as isbn)
-		const impl1 = {
-			__name: "impl-1",
-			fetchBookData: fetchBookDataFromSingleSource(async (isbn) => ({ isbn, title: isbn })),
-			isAvailableStream: new BehaviorSubject(false),
-			checkAvailability: async () => {}
-		};
+		const impl1 = createSingleSourceBookFetcher("impl-1", async (isbn) => ({ isbn, title: isbn }), true);
+
 		// Calling the implementation returned after registering the plugin
 		db.plugin("book-fetcher").register(impl1);
-		expect(await db.plugin("book-fetcher").fetchBookData("11111111").first()).toEqual({ isbn: "11111111", title: "11111111" });
-		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([{ isbn: "11111111", title: "11111111" }]);
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).first()).toEqual({
+			isbn: "11111111",
+			title: "11111111"
+		});
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).all()).toEqual([
+			{ isbn: "11111111", title: "11111111" }
+		]);
 
 		// Registering a different implementation should make the book fetching return results from all sources
 		//
 		// The impl2 will return only the price (static 20) - the results should be merged
-		const impl2 = {
-			__name: "impl-2",
-			fetchBookData: fetchBookDataFromSingleSource(async () => ({ price: 20 })),
-			isAvailableStream: new BehaviorSubject(false),
-			checkAvailability: async () => {}
-		};
+		const impl2 = createSingleSourceBookFetcher("impl-2", async () => ({ price: 20 }), true);
 
 		db.plugin("book-fetcher").register(impl2);
 		// We're not testing for '.first()' here as the order of the results (in case of '.first()') is not guaranteed
 		//
 		// The order of results for '.all()' should be the same as the order of plugins registration
-		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).all()).toEqual([
 			// Result from impl1
 			{ isbn: "11111111", title: "11111111" },
 			// Result from impl2
 			{ price: 20 }
 		]);
 
-		// Stream should stream the results as they resolve (in an arbitraty order)
-		const streamRes = await firstValueFrom(db.plugin("book-fetcher").fetchBookData("11111111").stream().pipe(toArray()));
+		// Stream should stream the results as they resolve (in an arbitrary order)
+		const streamRes = await firstValueFrom(
+			db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).stream().pipe(toArray())
+		);
 		expect(streamRes.length).toEqual(2);
 		expect(streamRes).toEqual(expect.arrayContaining([{ isbn: "11111111", title: "11111111" }, { price: 20 }]));
+
+		// Reset the plugins to test the caching
+		db.plugin("book-fetcher").reset();
+		// Verify the reset was successful
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([undefined]);
+
+		// Attempting to fetch the same isbn that was already tried should return the cached result
+		//
+		// Set the new plugin implementation
+		const impl3 = createSingleSourceBookFetcher(
+			"impl-3",
+			(isbn) => new Promise((res) => setTimeout(() => res({ isbn, title: new Date().toISOString() }), 200)),
+			true
+		);
+		db.plugin("book-fetcher").register(impl3);
+
+		// Attempting to fetch witout the retry flag should return the cached result
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111").all()).toEqual([undefined]);
+
+		// Fetching with the retry flag gives the new result
+		expect(await db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true }).all()).toEqual([
+			{ isbn: "11111111", title: expect.any(String) }
+		]);
+
+		// If attempting to fetch two isbns at the same time, we should get the first result for all fetch operations
+		//
+		// Note: we're not awaiting the results before initialising the second fetch operation
+		const res1 = db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true });
+		// The timeout for the mock fetch operation is 200ms - we can wait for 100ms before initialising the second fetch and be cofident
+		// that the first won't resolve before the second fetch is initialised
+		await new Promise((res) => setTimeout(res, 100));
+		const res2 = db.plugin("book-fetcher").fetchBookData("11111111", { retryIfAlreadyAttempted: true });
+
+		const res1Val = await res1.first();
+		const res2Val = await res2.first();
+
+		// The timestamped titles shold be exqual
+		expect(res1Val!.title).toEqual(res2Val!.title);
 	});
 
 	test("receipt generation", async () => {
