@@ -4,6 +4,8 @@
 	import { Calendar, ChevronLeft, ChevronRight } from "lucide-svelte";
 	import { fade } from "svelte/transition";
 
+	import { testId } from "@librocco/shared";
+
 	export let defaultValue: DateValue = now(getLocalTimeZone());
 	export let onValueChange: (args: { curr: DateValue; next: DateValue }) => DateValue = ({ next }) => next;
 	let checkIsDateDisabled: (date: DateValue) => boolean = () => false;
@@ -11,7 +13,7 @@
 
 	const {
 		elements: { calendar, cell, content, field, grid, heading, nextButton, prevButton, segment, trigger },
-		states: { months, headingValue, weekdays, segmentContentsObj, open },
+		states: { months, headingValue: monthHeading, weekdays, segmentContentsObj, open },
 		helpers: { isDateDisabled, isDateUnavailable }
 		// create a ZonedDateTime object with the current date and time
 	} = createDatePicker({
@@ -51,25 +53,36 @@
 			<span class="ml-1 block" use:melt={$segment("dayPeriod")}>{dayPeriod}</span>
 		</p>
 
-		<button class="rounded-md p-1 text-gray-600 transition-all" use:melt={$trigger}>
+		<button
+			data-testid={testId("calendar-picker-control")}
+			data-open={$open}
+			class="rounded-md p-1 text-gray-600 transition-all"
+			use:melt={$trigger}
+		>
 			<Calendar size={20} />
 		</button>
 	</div>
 </div>
+
 {#if $open}
-	<div class="z-10 min-w-[320px] rounded-lg bg-white shadow-sm" transition:fade={{ duration: 100 }} use:melt={$content}>
+	<div
+		data-testid={testId("calendar-picker")}
+		class="z-10 min-w-[320px] rounded-lg bg-white shadow-sm"
+		transition:fade={{ duration: 100 }}
+		use:melt={$content}
+	>
 		<div class="w-full rounded-lg bg-white p-3 text-gray-600 shadow-sm" use:melt={$calendar}>
-			<header class="flex items-center justify-between pb-2">
+			<div data-testid={testId("calendar-picker-month-select")} class="flex items-center justify-between pb-2">
 				<button class="rounded-lg p-1 transition-all" use:melt={$prevButton}>
 					<ChevronLeft size={24} />
 				</button>
 				<div class="flex items-center gap-6" use:melt={$heading}>
-					{$headingValue}
+					{$monthHeading}
 				</div>
 				<button class="rounded-lg p-1 transition-all" use:melt={$nextButton}>
 					<ChevronRight size={24} />
 				</button>
-			</header>
+			</div>
 			<div>
 				{#each $months as month}
 					<table class="w-full" use:melt={$grid}>
@@ -89,7 +102,7 @@
 								<tr>
 									{#each weekDates as date}
 										<td role="gridcell" aria-disabled={$isDateDisabled(date) || $isDateUnavailable(date)}>
-											<div use:melt={$cell(date, month.value)}>
+											<div data-testid="" use:melt={$cell(date, month.value)}>
 												{date.day}
 											</div>
 										</td>
