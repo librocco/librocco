@@ -131,6 +131,7 @@ export type ContentInterface = DashboardNode<{
 	searchField(): Locator;
 	table<V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface;
 	calendar(): CalendarPicker;
+	historyStats(): HistoryStatsInterface;
 }>;
 
 export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
@@ -263,3 +264,29 @@ export interface CalendarPicker extends DashboardNode {
 	select(date: string): Promise<void>;
 }
 // #endregion calendar picker
+
+// #region history stats
+export interface StatsField {
+	assert(value: number): Promise<void>;
+}
+
+export interface HistoryStatsValues {
+	inboundCount: number;
+	inboundCoverPrice: number;
+	inboundDiscountedPrice: number;
+	outboundCount: number;
+	outboundCoverPrice: number;
+	outboundDiscountedPrice: number;
+}
+
+export interface HistoryStatsInterface extends DashboardNode {
+	inboundCount(): StatsField;
+	inboundCoverPrice(): StatsField;
+	inboundDiscountedPrice(): StatsField;
+	outboundCount(): StatsField;
+	outboundCoverPrice(): StatsField;
+	outboundDiscountedPrice(): StatsField;
+
+	assert(values: HistoryStatsValues): Promise<void>;
+}
+// #region history stats

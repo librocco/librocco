@@ -107,7 +107,6 @@
 				<div id="history-table" class="w-full">
 					<ul class="w-full divide-y divide-gray-300">
 						{#each $dailySummary.bookList as entry}
-							{@const _ = console.log(entry)}
 							{@const isbn = entry.isbn}
 							{@const title = entry.title}
 							{@const quantity = entry.quantity}
