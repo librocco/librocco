@@ -23,25 +23,37 @@ export async function compareEntries(container: Locator, labels: string[], selec
 // #region selectors
 type IdString = `#${string}`;
 type ClassString = `.${string}`;
-type TestIdString = `[data-testid="${string}"]`;
-type DataLoadedString = `[data-loaded="${boolean}"]`;
-type DataViewString = `[data-view="${string}"]`;
+type TestIdString = `[data-testid="${string}"]` | `[data-testid*="${string}"]`;
+type DataLoadedString = `[data-loaded="${boolean}"]` | `[data-loaded*="${boolean}"]`;
+type DataViewString = `[data-view="${string}"]` | `[data-view*="${string}"]`;
+type DataValueString = `[data-value="${string}"]` | `[data-value*="${string}"]`;
 
-type SelectorSegment = IdString | ClassString | TestIdString | DataLoadedString | DataViewString;
+type SelectorSegment = IdString | ClassString | TestIdString | DataLoadedString | DataViewString | DataValueString;
+
+type SelectorConstructor<I, T extends SelectorSegment> = (input: I, opts?: { strict: boolean }) => T;
 
 /** Creates a typo-safe selector string for the element id */
-export const idSelector = (_id: TestId): IdString => `#${_id}`;
+export const idSelector: SelectorConstructor<TestId, IdString> = (_id) => `#${_id}`;
 /** Creates a typo-safe selector string for the element class name */
-export const classSelector = (_id: TestId): ClassString => `.${_id}`;
+export const classSelector: SelectorConstructor<TestId, ClassString> = (_id) => `.${_id}`;
 /** Creates a typo-safe selector string for the element testid = [data-testid="..."] */
-export const testIdSelector = (_id: TestId): TestIdString => `[data-testid="${_id}"]`;
+export const testIdSelector: SelectorConstructor<TestId, TestIdString> = (_id, { strict } = { strict: true }) =>
+	strict ? `[data-testid="${_id}"]` : `[data-testid*="${_id}"]`;
 /** Creates a typo-safe selector string for the loaded element - [data-loaded="..."] */
-export const loadedSelector = (_loaded: boolean): DataLoadedString => `[data-loaded="${_loaded}"]`;
+export const loadedSelector: SelectorConstructor<boolean, DataLoadedString> = (_loaded, { strict } = { strict: true }) =>
+	strict ? `[data-loaded="${_loaded}"]` : `[data-loaded*="${_loaded}"]`;
 /** Creates a typo-safe selector string for the view element - [data-view="..."] */
-export const viewSelector = (_view: WebClientView): DataViewString => `[data-view="${_view}"]`;
+export const viewSelector: SelectorConstructor<WebClientView, DataViewString> = (_view, { strict } = { strict: true }) =>
+	strict ? `[data-view="${_view}"]` : `[data-view*="${_view}"]`;
 /** Creates a typo-safe selector string for the entity list view element - [data-view="..."] */
-export const entityListViewSelector = (_view: EntityListView): DataViewString => `[data-view="${_view}"]`;
+export const entityListViewSelector: SelectorConstructor<EntityListView, DataViewString> = (_view, { strict } = { strict: true }) =>
+	strict ? `[data-view="${_view}"]` : `[data-view*="${_view}"]`;
+/** Creates a typo-safe selector string for the data-value element */
+export const dataValueSelector: SelectorConstructor<string, DataValueString> = (_view, { strict } = { strict: true }) =>
+	strict ? `[data-value="${_view}"]` : `[data-value*="${_view}"]`;
 
+export const conditionalSelector = (segment?: SelectorSegment, condition = false): SelectorSegment =>
+	condition ? segment : ("" as SelectorSegment);
 /** Accepts typo-safe selector segments and joins them in to the selector string */
 export const selector = (...segments: SelectorSegment[]): string => segments.join("");
 // #endregion selectors
