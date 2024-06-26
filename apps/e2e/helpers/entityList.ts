@@ -4,7 +4,7 @@ import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, 
 
 import { assertionTimeout } from "@/constants";
 
-import { getUpdatedAt } from "./updatedAt";
+import { getDateString } from "./dateString";
 import { classSelector, entityListViewSelector, loadedSelector, selector } from "./utils";
 import { getDropdown } from "./dropdown";
 
@@ -26,7 +26,13 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 		const { name, updatedAt, numBooks, discount } = element;
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
-		if (updatedAt) await getUpdatedAt(Object.assign(locator, { dashboard })).assert(updatedAt);
+		if (updatedAt) {
+			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
+			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Last updated:", extractDateFromUpdatedAtString).assert(
+				updatedAt
+			);
+		}
+
 		if (numBooks) await locator.getByText(`${numBooks} books`).waitFor();
 		if (discount) await locator.getByText(`${discount}% discount`).waitFor();
 	}
