@@ -268,7 +268,8 @@ const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "war
 
 	const set = async (value: string) => {
 		await opened(() => dropdown.getByText(value).click())();
-		return dropdown.close();
+		// Close the dropdown if open (we're not doing this over the dropdown interface as the disappearing dropdown might cause flaky tests)
+		return container.page().keyboard.press("Escape");
 	};
 
 	const assert = (want: string, opts?: WaitForOpts) => expect(container).toContainText(want, { timeout: assertionTimeout, ...opts });
