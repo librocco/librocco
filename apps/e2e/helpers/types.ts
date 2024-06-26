@@ -125,6 +125,7 @@ export type ContentInterface = DashboardNode<{
 	scanField(): ScanFieldInterface;
 	searchField(): Locator;
 	table(view: TableView): EntriesTableInterface;
+	calendar(): CalendarPicker;
 }>;
 
 export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
@@ -228,3 +229,11 @@ export interface TransactionFieldInterfaceLookup {
 }
 export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName" | "price">;
 // #endregion inventory table
+
+// #region calendar picker
+export interface CalendarPicker extends DashboardNode {
+	open(): Promise<void>;
+	close(): Promise<void>;
+	select(date: string): Promise<void>;
+}
+// #endregion calendar picker
