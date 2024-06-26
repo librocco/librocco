@@ -48,7 +48,7 @@
 				{#each $warehouseList as [warehouseId, warehouse]}
 					{@const displayName = warehouse.displayName || warehouseId}
 					{@const totalBooks = warehouse.totalBooks}
-					{@const href = appPath("history/warehouse", warehouseId.split("/").pop())}
+					{@const href = appPath("history/warehouse", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
 					<div class="group entity-list-row">
