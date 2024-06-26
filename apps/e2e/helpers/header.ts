@@ -2,7 +2,7 @@ import { ContentHeaderInterface, DashboardNode, WaitForOpts } from "./types";
 
 import { assertionTimeout } from "../constants";
 
-import { getUpdatedAt } from "./updatedAt";
+import { getDateString } from "./dateString";
 import { getBreadcrumbs } from "./breadcrumbs";
 
 export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
@@ -18,7 +18,8 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 			titleElement.getByText(text, { exact: true }).waitFor({ timeout: assertionTimeout, ...opts })
 	});
 
-	const updatedAt = () => getUpdatedAt(getHeader(_parent));
+	const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
+	const updatedAt = () => getDateString(getHeader(_parent), "Last updated:", extractDateFromUpdatedAtString);
 
 	const createNote = async (opts: WaitForOpts = {}) => {
 		// Create a new note by clicking the button
