@@ -1,11 +1,19 @@
-import type { EntityListView } from "@librocco/shared";
+import type { EntityListView, WebClientView } from "@librocco/shared";
 
-import type { ContentInterface, DashboardNode, Subset, TableView } from "./types";
+import type {
+	ContentInterface,
+	DashboardNode,
+	HistoryTableInterface,
+	InventoryTableInterface,
+	InventoryTableView,
+	Subset,
+	TableView
+} from "./types";
 
 import { getHeader } from "./header";
 import { getEntityList } from "./entityList";
 import { getScanField } from "./scanField";
-import { getEntriesTable } from "./table";
+import { getHistoryTable, getInventoryTable } from "./table";
 import { selector, testIdSelector } from "./utils";
 import { getCalendar } from "./calendar";
 
@@ -21,13 +29,27 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 	const scanField = () => getScanField(container);
 	const searchField = () => container.locator(selector(testIdSelector("search-input")));
 
-	const table = (view: TableView) => getEntriesTable(container, view);
+	const table = <V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface => {
+		const isInventoryView = (view: TableView): view is InventoryTableView =>
+			["inbound-note", "outbound-note", "stock", "warehouse"].includes(view);
+		return isInventoryView(view) ? getInventoryTable(container, view) : (getHistoryTable(container, view) as any);
+	};
 
-	const navigate = (to: Subset<EntityListView, "warehouse-list" | "inbound-list">) =>
+	const navigate = (
+		to:
+			| Subset<EntityListView, "warehouse-list" | "inbound-list">
+			| Subset<WebClientView, "history/date" | "history/isbn" | "history/notes" | "history/warehouse">
+	) =>
 		container
 			.locator(`[data-linkto="${to}"]`)
 			.click()
-			.then(() => entityList(to).waitFor());
+			.then(() =>
+				["warehouse-list", "inbound-list"].includes(to)
+					? entityList(to as EntityListView).waitFor()
+					: dashboard()
+							.view(to as WebClientView)
+							.waitFor()
+			);
 
 	const calendar = () => getCalendar(container);
 

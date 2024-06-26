@@ -3,6 +3,7 @@ export { default as InventoryManagementPage } from "./InventoryManagementPage.sv
 export { default as HistoryPage } from "./HistoryPage.svelte";
 
 export { default as ExtensionAvailabilityToast } from "./ExtensionAvailabilityToast.svelte";
+export { default as CalendarPicker } from "./CalendarPicker.svelte";
 
 export { default as TooltipWrapper } from "./Melt/TooltipWrapper.svelte";
 export { default as DropdownWrapper } from "./Melt/DropdownWrapper.svelte";
