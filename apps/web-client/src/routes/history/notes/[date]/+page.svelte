@@ -45,7 +45,7 @@
 	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
 </script>
 
-<HistoryPage view="history/date">
+<HistoryPage view="history/notes">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
