@@ -8,8 +8,9 @@ export type Subset<T, S extends T> = S;
 
 export type WaitForOpts = Parameters<Locator["waitFor"]>[0];
 export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
-/** A type of display row property names, without 'warehouseId' as it's never displayed */
-export type TransactionRowField = keyof Omit<DisplayRow, "warehouseId">;
+
+export type InventoryRowField = keyof InventoryFieldLookup;
+export type HistoryRowField = keyof HistoryFieldLookup;
 
 export type DashboardNode<T = {}> = T &
 	Locator & {
@@ -121,10 +122,14 @@ export type EntityListInterface = DashboardNode<{
 export type ContentInterface = DashboardNode<{
 	header(): ContentHeaderInterface;
 	entityList(view: EntityListView): EntityListInterface;
-	navigate(to: Subset<EntityListView, "warehouse-list" | "inbound-list">): Promise<void>;
+	navigate(
+		to:
+			| Subset<EntityListView, "warehouse-list" | "inbound-list">
+			| Subset<WebClientView, "history/date" | "history/isbn" | "history/notes" | "history/warehouse">
+	): Promise<void>;
 	scanField(): ScanFieldInterface;
 	searchField(): Locator;
-	table(view: TableView): EntriesTableInterface;
+	table<V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface;
 	calendar(): CalendarPicker;
 }>;
 
@@ -187,34 +192,40 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 // #endregion book form
 
 // #region inventory table
-export type TableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse" | "stock">;
+export type InventoryTableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse" | "stock">;
+export type HistoryTableView = Subset<WebClientView, "history/date">;
+export type TableView = InventoryTableView | HistoryTableView;
 
 export interface AssertRowFieldsOpts {
 	strict?: boolean;
 	timeout?: number;
 }
 
-export type EntriesTableInterface = DashboardNode<{
-	row(index: number): EntriesRowInterface;
-	assertRows(rows: Partial<DisplayRow>[], opts?: AssertRowFieldsOpts): Promise<void>;
+export type InventoryTableInterface = DashboardNode<{
+	row(index: number): InventoryRowInterface;
+	assertRows(rows: Partial<InventoryRowValues>[], opts?: AssertRowFieldsOpts): Promise<void>;
+}>;
+export type HistoryTableInterface = DashboardNode<{
+	row(index: number): HistoryRowInterface;
+	assertRows(rows: Partial<HistoryRowValues>[], opts?: AssertRowFieldsOpts): Promise<void>;
 }>;
 
-export type EntriesRowInterface = DashboardNode<{
-	field<K extends keyof TransactionFieldInterfaceLookup>(name: K): TransactionFieldInterfaceLookup[K];
+export type InventoryRowInterface = DashboardNode<{
+	field<K extends InventoryRowField>(name: K): InventoryFieldLookup[K];
 	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
 	edit(): Promise<void>;
 	delete(): Promise<void>;
 }>;
+export type HistoryRowInterface = DashboardNode<{
+	field<K extends HistoryRowField>(name: K): HistoryFieldLookup[K];
+	assertFields(row: Partial<DisplayRow>, opts?: AssertRowFieldsOpts): Promise<void>;
+}>;
 
-export type TransactionRowValues = {
-	[K in keyof TransactionFieldInterfaceLookup]: DisplayRow[K];
-};
-
-export interface WarehouseNameTransactionField extends AsserterSetter<string>, Locator {
+export interface InventoryWarehouseNameField extends AsserterSetter<string>, Locator {
 	assertOptions(options: string[], opts?: WaitForOpts): Promise<void>;
 }
 
-export interface TransactionFieldInterfaceLookup {
+export interface InventoryFieldLookup {
 	isbn: Asserter<string>;
 	title: Asserter<string>;
 	authors: Asserter<string>;
@@ -222,12 +233,27 @@ export interface TransactionFieldInterfaceLookup {
 	year: Asserter<string>;
 	publisher: Asserter<string>;
 	price: Asserter<number | string | IBookPrice>;
-	warehouseName: WarehouseNameTransactionField;
+	warehouseName: InventoryWarehouseNameField;
 	editedBy: Asserter<string>;
 	outOfPrint: Asserter<boolean>;
 	category: Asserter<string>;
 }
-export type GenericTransactionField = keyof Omit<TransactionFieldInterfaceLookup, "quantity" | "warehouseName" | "price">;
+export interface HistoryFieldLookup {
+	isbn: Asserter<string>;
+	title: Asserter<string>;
+	quantity: AsserterSetter<number>;
+	warehouseName: Asserter<string>;
+	noteName: Locator & Asserter<string>;
+}
+
+export type InventoryRowValues = {
+	[K in keyof InventoryFieldLookup]: InventoryFieldLookup[K] extends Asserter<infer T> ? T : never;
+};
+export type HistoryRowValues = {
+	[K in keyof HistoryFieldLookup]: HistoryFieldLookup[K] extends Asserter<infer T> ? T : never;
+};
+
+export type GenericTransactionField = keyof Omit<InventoryFieldLookup, "quantity" | "warehouseName" | "price">;
 // #endregion inventory table
 
 // #region calendar picker
