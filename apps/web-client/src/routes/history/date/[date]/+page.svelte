@@ -1,7 +1,5 @@
 <script lang="ts">
-	import { fade } from "svelte/transition";
-	import { melt, createDatePicker } from "@melt-ui/svelte";
-	import { Library, Calendar, ChevronRight, ChevronLeft, ArrowLeft, ArrowRight } from "lucide-svelte";
+	import { Library, ArrowLeft, ArrowRight } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 
 	import { entityListView, testId } from "@librocco/shared";
@@ -11,7 +9,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { HistoryPage, PlaceholderBox, CalendarPicker } from "$lib/components";
 
 	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
 
@@ -19,7 +17,6 @@
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 
 	export let data: PageData;
 
@@ -73,86 +70,100 @@
 			{:else}
 				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">Stats</h2>
 
-				<div class="flex flex-row text-sm">
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Book Count: {$dailySummary.stats.totalInboundBookCount}
+				<div data-testid={testId("history-date-stats")}>
+					<div class="flex flex-row text-sm">
+						<div class="badge badge-green m-2 p-2 font-bold">
+							Inbound Book Count: <span data-property="inbound-count">{$dailySummary.stats.totalInboundBookCount}</span>
+						</div>
+						<div class="badge badge-green m-2 p-2 font-bold">
+							Inbound Cover Price: <span data-property="inbound-cover-price">{$dailySummary.stats.totalInboundCoverPrice.toFixed(2)}</span>
+						</div>
+						<div class="badge badge-green m-2 p-2 font-bold">
+							Inbound Discounted Price: <span data-property="inbound-discounted-price"
+								>{$dailySummary.stats.totalInboundDiscountedPrice.toFixed(2)}</span
+							>
+						</div>
 					</div>
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Cover Price: {$dailySummary.stats.totalInboundCoverPrice.toFixed(2)}
-					</div>
-					<div class="badge badge-green m-2 p-2 font-bold">
-						Inbound Discounted Price : {$dailySummary.stats.totalInboundDiscountedPrice.toFixed(2)}
-					</div>
-				</div>
 
-				<div class="flex flex-row text-sm">
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Book Count: {$dailySummary.stats.totalOutboundBookCount}
-					</div>
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Cover Price: {$dailySummary.stats.totalOutboundCoverPrice.toFixed(2)}
-					</div>
-					<div class="badge badge-red m-2 p-2 font-bold">
-						Outbound Discounted Price : {$dailySummary.stats.totalOutboundDiscountedPrice.toFixed(2)}
+					<div class="flex flex-row text-sm">
+						<div class="badge badge-red m-2 p-2 font-bold">
+							Outbound Book Count: <span data-property="outbound-count">{$dailySummary.stats.totalOutboundBookCount}</span>
+						</div>
+						<div class="badge badge-red m-2 p-2 font-bold">
+							Outbound Cover Price: <span data-property="outbound-cover-price"
+								>{$dailySummary.stats.totalOutboundCoverPrice.toFixed(2)}</span
+							>
+						</div>
+						<div class="badge badge-red m-2 p-2 font-bold">
+							Outbound Discounted Price: <span data-property="outbound-discounted-price"
+								>{$dailySummary.stats.totalOutboundDiscountedPrice.toFixed(2)}</span
+							>
+						</div>
 					</div>
 				</div>
 
 				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
 
-				<ul class="w-full divide-y divide-gray-300">
-					{#each $dailySummary.bookList as entry}
-						{@const isbn = entry.isbn}
-						{@const title = entry.title}
-						{@const quantity = entry.quantity}
-						{@const warehouseName = entry.warehouseName}
-						{@const committedAt = entry.date}
-						{@const noteType = entry.noteType}
-						{@const noteName = entry.noteDisplayName}
-						{@const noteId = entry.noteId}
+				<div id="history-table" class="w-full">
+					<ul class="w-full divide-y divide-gray-300">
+						{#each $dailySummary.bookList as entry}
+							{@const _ = console.log(entry)}
+							{@const isbn = entry.isbn}
+							{@const title = entry.title}
+							{@const quantity = entry.quantity}
+							{@const warehouseName = entry.warehouseName}
+							{@const committedAt = entry.date}
+							{@const noteType = entry.noteType}
+							{@const noteName = entry.noteDisplayName}
+							{@const noteId = entry.noteId}
 
-						<!--<div class="w-full text-gray-700">
+							<!--<div class="w-full text-gray-700">
 								<p class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
 								<p class="mb-1 text-2xl">{title}</p>
 							</div>-->
 
-						<li
-							class="entity-list-row grid w-full w-full grid-cols-2 items-center gap-y-3 gap-x-4 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
-						>
-							<p class="text-xl font-medium leading-none text-gray-900 lg:col-span-3 xl:col-span-2">{isbn}</p>
-							<p class="col-span-2 overflow-hidden whitespace-nowrap text-xl font-medium lg:col-span-5 xl:col-span-3">
-								{title || ""}
-							</p>
-							<p class="lg:order-4 xl:order-none xl:col-span-2">
-								<span class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-									Committed: {generateUpdatedAtString(committedAt, "time-only")}
-								</span>
-							</p>
-
-							<div class="col-span-2 flex items-center lg:col-span-4 lg:col-start-9 xl:col-span-4 xl:col-start-9">
-								<div class="flex items-center">
-									<Library class="mr-1" size={20} />
-									<p class="entity-list-text-sm">{warehouseName}</p>
-								</div>
-
-								<a
-									href={appPath("history/notes", noteId)}
-									class="{noteType === 'outbound'
-										? 'text-red-700'
-										: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 py-0.5 px-3 hover:font-semibold"
+							<li
+								class="entity-list-row grid w-full w-full grid-cols-2 items-center gap-y-3 gap-x-4 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
+							>
+								<p data-property="isbn" class="text-xl font-medium leading-none text-gray-900 lg:col-span-3 xl:col-span-2">{isbn}</p>
+								<p
+									data-property="title"
+									class="col-span-2 overflow-hidden whitespace-nowrap text-xl font-medium lg:col-span-5 xl:col-span-3"
 								>
-									{#if noteType === "inbound"}
-										<p><ArrowLeft size={16} /></p>
-										<p>{quantity}</p>
-									{:else}
-										<p>{quantity}</p>
-										<p><ArrowRight size={16} /></p>
-									{/if}
-									<p class="ml-2">{noteName}</p>
-								</a>
-							</div>
-						</li>
-					{/each}
-				</ul>
+									{title || "Unknown Title"}
+								</p>
+								<p class="lg:order-4 xl:order-none xl:col-span-2">
+									<span data-property="committedAt" class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
+										Committed: {generateUpdatedAtString(committedAt)}
+									</span>
+								</p>
+
+								<div class="col-span-2 flex items-center lg:col-span-4 lg:col-start-9 xl:col-span-4 xl:col-start-9">
+									<div class="flex items-center">
+										<Library class="mr-1" size={20} />
+										<p data-property="warehouseName" class="entity-list-text-sm">{warehouseName}</p>
+									</div>
+
+									<a
+										href={appPath("history/notes", noteId)}
+										class="{noteType === 'outbound'
+											? 'text-red-700'
+											: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 py-0.5 px-3 hover:font-semibold"
+									>
+										{#if noteType === "inbound"}
+											<p><ArrowLeft size={16} /></p>
+											<p data-property="quantity">{quantity}</p>
+										{:else}
+											<p data-property="quantity">{quantity}</p>
+											<p><ArrowRight size={16} /></p>
+										{/if}
+										<p data-property="noteName" class="ml-2">{noteName}</p>
+									</a>
+								</div>
+							</li>
+						{/each}
+					</ul>
+				</div>
 				<!-- End entity list -->
 			{/if}
 		</div>

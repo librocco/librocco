@@ -10,6 +10,7 @@ export type WebClientView =
 	| "outbound-note"
 	| "warehouse"
 	| "settings"
+	| "history"
 	| "history/date"
 	| "history/isbn"
 	| "history/notes"
@@ -43,7 +44,12 @@ export type TestId =
 	| "print-book-label"
 	| "delete-row"
 	| "book-form"
-	| "custom-item-form";
+	| "custom-item-form"
+	| "calendar-picker-control"
+	| "calendar-picker"
+	| "calendar-picker-day-select"
+	| "calendar-picker-month-select"
+	| "history-date-stats";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
