@@ -7,6 +7,7 @@ import { getEntityList } from "./entityList";
 import { getScanField } from "./scanField";
 import { getEntriesTable } from "./table";
 import { selector, testIdSelector } from "./utils";
+import { getCalendar } from "./calendar";
 
 export function getContent(_parent: DashboardNode): ContentInterface {
 	const dashboard = _parent.dashboard;
@@ -28,5 +29,7 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 			.click()
 			.then(() => entityList(to).waitFor());
 
-	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table });
+	const calendar = () => getCalendar(container);
+
+	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table, calendar });
 }
