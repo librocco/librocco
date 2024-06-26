@@ -231,7 +231,59 @@ test("history/date - display", async ({ page }) => {
 		]);
 });
 
-test("history/date - date navigation", async ({ page }) => {
+test("history/date - general navigation", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	await dashboard.navigate("history/date");
+	await dashboard.content().navigate("history/isbn"); // This is our "previous" view
+	await dashboard.content().navigate("history/date");
+
+	// Navigating between dates is shallow - going back should go to previous route altogether
+	const t_minus_1 = new Date(Date.now() - 1 * TIME_DAY).toISOString().slice(0, 10);
+	await dashboard.content().calendar().select(t_minus_1);
+	expect(page.url().includes(t_minus_1));
+	const t_minus_2 = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
+	await dashboard.content().calendar().select(t_minus_2);
+	expect(page.url().includes(t_minus_2));
+	const t_minus_3 = new Date(Date.now() - 3 * TIME_DAY).toISOString().slice(0, 10);
+	await dashboard.content().calendar().select(t_minus_3);
+	expect(page.url().includes(t_minus_3));
+
+	// Clicking (browser) back should navigate back to the previous view
+	await page.goBack();
+	await dashboard.view("history/isbn").waitFor();
+
+	// Clicking on txn's note name shold redirect to committed note page
+	//
+	// Navigate back to date view
+	await dashboard.content().navigate("history/date");
+
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.commit({}))
+	);
+
+	await dashboard.content().table("history/date").row(0).field("noteName").click();
+
+	// Should redirect to (committed) note page
+	await dashboard.content().header().title().assert("Note 1");
+
+	// Navigating to history/notes should preserve the selected date
+	//
+	// Go back to history/date
+	await dashboard.navigate("history/date");
+	await dashboard.content().calendar().select(t_minus_3);
+	await dashboard.content().navigate("history/notes");
+	expect(page.url().includes(`history/notes/${t_minus_3}`));
+});
+
+test("history/date - displaying of different date summaries", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	const dbHandle = await getDbHandle(page);
 
@@ -345,56 +397,4 @@ test("history/date - date navigation", async ({ page }) => {
 			{ isbn: "1111111111", quantity: 1, warehouseName: "Warehouse 1", noteName: "Note 2" },
 			{ isbn: "2222222222", quantity: 1, warehouseName: "Warehouse 1", noteName: "Note 2" }
 		]);
-});
-
-test("history/date - general navigation", async ({ page }) => {
-	const dashboard = getDashboard(page);
-
-	await dashboard.navigate("history/date");
-	await dashboard.content().navigate("history/isbn"); // This is our "previous" view
-	await dashboard.content().navigate("history/date");
-
-	// Navigating between dates is shallow - going back should go to previous route altogether
-	const t_minus_1 = new Date(Date.now() - 1 * TIME_DAY).toISOString().slice(0, 10);
-	await dashboard.content().calendar().select(t_minus_1);
-	expect(page.url().includes(t_minus_1));
-	const t_minus_2 = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
-	await dashboard.content().calendar().select(t_minus_2);
-	expect(page.url().includes(t_minus_2));
-	const t_minus_3 = new Date(Date.now() - 3 * TIME_DAY).toISOString().slice(0, 10);
-	await dashboard.content().calendar().select(t_minus_3);
-	expect(page.url().includes(t_minus_3));
-
-	// Clicking (browser) back should navigate back to the previous view
-	await page.goBack();
-	await dashboard.view("history/isbn").waitFor();
-
-	// Clicking on txn's note name shold redirect to committed note page
-	//
-	// Navigate back to date view
-	await dashboard.content().navigate("history/date");
-
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
-
-	await dashboard.content().table("history/date").row(0).field("noteName").click();
-
-	// Should redirect to (committed) note page
-	await dashboard.content().header().title().assert("Note 1");
-
-	// Navigating to history/notes should preserve the selected date
-	//
-	// Go back to history/date
-	await dashboard.navigate("history/date");
-	await dashboard.content().calendar().select(t_minus_3);
-	await dashboard.content().navigate("history/notes");
-	expect(page.url().includes(`history/notes/${t_minus_3}`));
 });
