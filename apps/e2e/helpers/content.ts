@@ -16,6 +16,7 @@ import { getScanField } from "./scanField";
 import { getHistoryTable, getInventoryTable } from "./table";
 import { selector, testIdSelector } from "./utils";
 import { getCalendar } from "./calendar";
+import { getHistoryStats } from "./historyStats";
 
 export function getContent(_parent: DashboardNode): ContentInterface {
 	const dashboard = _parent.dashboard;
@@ -53,5 +54,7 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 
 	const calendar = () => getCalendar(container);
 
-	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table, calendar });
+	const historyStats = () => getHistoryStats(container);
+
+	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table, calendar, historyStats });
 }
