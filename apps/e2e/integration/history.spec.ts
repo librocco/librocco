@@ -682,3 +682,514 @@ test("history/isbn - navigation", async ({ page }) => {
 	await dashboard.content().table("history/isbn").row(0).field("noteName").click();
 	await dashboard.content().header().title().assert("Note 1");
 });
+
+test("history/notes - base", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/notes' subview
+	await dashboard.content().navigate("history/notes");
+
+	// Should use today as default date
+	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
+	// Should display a message stating that no notes are available on today's date
+	await dashboard.content().getByText("No notes found").waitFor();
+	await dashboard.content().getByText("No notes seem to have been committed on that date").waitFor();
+});
+
+test("history/notes - date display", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dbHandle = await getDbHandle(page);
+	const dateStub = await getDateStub(page);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/notes' subview
+	await dashboard.content().navigate("history/notes");
+
+	// Add some notes to work with
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
+			.then((n) => n.commit({}))
+	);
+
+	// Should display the note (including price data)
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Note 1`,
+				totalCoverPrice: 40, // 2*10 + 1*20
+				totalDiscountedPrice: 40 // Same as cover price - no discount
+			}
+		]);
+
+	// Add an outbound note on the same day
+	// Stub the date to ensure ordering
+	await dateStub.mock(new Date(Date.now() + TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 2"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1, warehouseId: "wh1" }))
+			.then((n) => n.commit({}))
+	);
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Note 1`,
+				totalCoverPrice: 40, // 2*10 + 1*20
+				totalDiscountedPrice: 40 // Same as cover price - no discount
+			},
+			{
+				name: `Outbound / Note 2`,
+				totalCoverPrice: 10, // 1*10
+				totalDiscountedPrice: 10 // Same as cover price - no discount
+			}
+		]);
+
+	// Add a note to a different warehouse (on the same day)
+	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh2")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 3"))
+			.then((n) => n.addVolumes({ isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.commit({}))
+	);
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Note 1`,
+				totalCoverPrice: 40, // 2*10 + 1*20
+				totalDiscountedPrice: 40 // Same as cover price - no discount
+			},
+			{
+				name: `Outbound / Note 2`,
+				totalCoverPrice: 10, // 2*10 + 1*20
+				totalDiscountedPrice: 10 // Same as cover price - no discount
+			},
+			{
+				name: `Warehouse 2 / Note 3`,
+				totalCoverPrice: 60, // 3*20
+				totalDiscountedPrice: 54 // 60 * 0.9 (10% discount applied)
+			}
+		]);
+
+	// Add an outbound note, containing transactions from both warehouses (discount applied only to part of txns)
+	await dateStub.mock(new Date(Date.now() + 3 * TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 4"))
+			.then((n) =>
+				n.addVolumes({ isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh2" })
+			)
+			.then((n) => n.commit({}))
+	);
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Note 1`,
+				totalCoverPrice: 40, // 2*10 + 1*20
+				totalDiscountedPrice: 40 // Same as cover price - no discount
+			},
+			{
+				name: `Outbound / Note 2`,
+				totalCoverPrice: 10, // 2*10 + 1*20
+				totalDiscountedPrice: 10 // Same as cover price - no discount
+			},
+			{
+				name: `Warehouse 2 / Note 3`,
+				totalCoverPrice: 60, // 3*20
+				totalDiscountedPrice: 54 // 60 * 0.9 (10% discount applied)
+			},
+			{
+				name: `Outbound / Note 4`,
+				totalCoverPrice: 30, // 1*10 + 1*20
+				totalDiscountedPrice: 28 // 1*10 (no discount) + 1*20*0.9 (10% discount applied)
+			}
+		]);
+
+	// Add two notes on a different date
+	const twoDaysAgo = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
+	await dateStub.mock(twoDaysAgo);
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Past Note 1"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }))
+			.then((n) => n.commit({}))
+	);
+	await dateStub.mock(new Date(new Date(twoDaysAgo).getTime() + TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Past Note 2"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3, warehouseId: "wh1" }))
+			.then((n) => n.commit({}))
+	);
+
+	// The list hadn't changed (we're observing today)
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Note 1`,
+				totalCoverPrice: 40, // 2*10 + 1*20
+				totalDiscountedPrice: 40 // Same as cover price - no discount
+			},
+			{
+				name: `Outbound / Note 2`,
+				totalCoverPrice: 10, // 2*10 + 1*20
+				totalDiscountedPrice: 10 // Same as cover price - no discount
+			},
+			{
+				name: `Warehouse 2 / Note 3`,
+				totalCoverPrice: 60, // 3*20
+				totalDiscountedPrice: 54 // 60 * 0.9 (10% discount applied)
+			},
+			{
+				name: `Outbound / Note 4`,
+				totalCoverPrice: 30, // 1*10 + 1*20
+				totalDiscountedPrice: 28 // 1*10 (no discount) + 1*20*0.9 (10% discount applied)
+			}
+		]);
+
+	// Navigate to two days ago - should display "Past Note 1" and "Past Note 2"
+	await dashboard.content().calendar().select(twoDaysAgo);
+	await dashboard
+		.content()
+		.entityList("history/notes")
+		.assertElements([
+			{
+				name: `Warehouse 1 / Past Note 1`,
+				totalCoverPrice: 50, // 5*10
+				totalDiscountedPrice: 50 // Same as cover price - no discount
+			},
+			{
+				name: `Outbound / Past Note 2`,
+				totalCoverPrice: 30, // 3*10
+				totalDiscountedPrice: 30 // Same as cover price - no discount
+			}
+		]);
+});
+
+test("history/warehose - base", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/warehouse' subview
+	await dashboard.content().navigate("history/warehouse");
+
+	// The list should show two existing warehouses
+	await dashboard
+		.content()
+		.entityList("warehouse-list")
+		.assertElements([
+			{
+				name: "Warehouse 1",
+				discount: 0,
+				numBooks: 0
+			},
+			{
+				name: "Warehouse 2",
+				discount: 10,
+				numBooks: 0
+			}
+		]);
+
+	// Navigate to the page for Warehouse 1 - should default to toady - today range
+	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
+	await dashboard.content().getByText("No transactions found").waitFor();
+	await dashboard.content().getByText("There seem to be no transactions going in/out for the selected date range").waitFor();
+	const today = new Date().toISOString().slice(0, 10);
+	expect(page.url().includes(`${today}/${today}`)).toEqual(true);
+});
+
+test("history/warehouse - date ranges and filters", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dateStub = await getDateStub(page);
+	const dbHandle = await getDbHandle(page);
+
+	const from = dashboard.content().calendar("calendar-from");
+	const to = dashboard.content().calendar("calendar-to");
+
+	// Add some transactions to work with (spanning last three days)
+	//
+	// Two days ago
+	const t_minus_2 = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
+	await dateStub.mock(t_minus_2);
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
+			.then((n) => n.commit({}))
+	);
+	await dateStub.mock(new Date(new Date(t_minus_2).getTime() + TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 2"))
+			.then((n) =>
+				n.addVolumes({ isbn: "1111111111", quantity: 3, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 3, warehouseId: "wh1" })
+			)
+			.then((n) => n.commit({}))
+	);
+
+	// Yesterday
+	const t_minus_1 = new Date(Date.now() - TIME_DAY).toISOString().slice(0, 10);
+	await dateStub.mock(t_minus_1);
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 3"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }, { isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.commit({}))
+	);
+	await dateStub.mock(new Date(new Date(t_minus_1).getTime() + TIME_MIN));
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 4"))
+			.then((n) =>
+				n.addVolumes({ isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 2, warehouseId: "wh1" })
+			)
+			.then((n) => n.commit({}))
+	);
+
+	// Today
+	await dateStub.reset();
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 5"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }, { isbn: "2222222222", quantity: 1 }))
+			.then((n) => n.commit({}))
+	);
+	await dateStub.mock(new Date(Date.now() + TIME_MIN));
+	// Note: This is an intruder (Warehouse 2) - this should not be shown in Warehouse 1 view
+	//
+	// No transactions should be shown
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh2")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 6"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
+			.then((n) => n.commit({}))
+	);
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 7"))
+			.then((n) =>
+				n.addVolumes(
+					{ isbn: "1111111111", quantity: 1, warehouseId: "wh1" },
+					// Note: This transaction is an intruder (wh2) - it shouldn't be shown
+					{ isbn: "2222222222", quantity: 3, warehouseId: "wh2" }
+				)
+			)
+			.then((n) => n.commit({}))
+	);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/warehouse' subview
+	await dashboard.content().navigate("history/warehouse");
+	// Navigate to Warehouse 1
+	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
+	await dashboard.content().header().title().assert("Warehouse 1 history");
+
+	// The default (today) should show only today's transactions
+	const today = new Date().toISOString().slice(0, 10);
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 5" },
+			{ committedAt: today, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 1, noteName: "Note 5" },
+			// Note 6 doesn't belong to this warehouse
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 7" }
+			// Note 7 - txn 2 won't be shown - belongs to Warehouse 2
+		]);
+
+	// Check range yesterday - today
+	await from.select(t_minus_1);
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			// Yesterday
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 2, noteName: "Note 4" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 2, noteName: "Note 4" },
+
+			// Today
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 5" },
+			{ committedAt: today, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 1, noteName: "Note 5" },
+			// Note 6 doesn't belong to this warehouse
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 7" }
+			// Note 7 - txn 2 won't be shown - belongs to Warehouse 2
+		]);
+
+	// Check range two days ago - today
+	await from.select(t_minus_2);
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			// Two days ago
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 5, noteName: "Note 1" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 5, noteName: "Note 1" },
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 2" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 2" },
+
+			// Yesterday
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 2, noteName: "Note 4" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 2, noteName: "Note 4" },
+
+			// Today
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 5" },
+			{ committedAt: today, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 1, noteName: "Note 5" },
+			// Note 6 doesn't belong to this warehouse
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 7" }
+			// Note 7 - txn 2 won't be shown - belongs to Warehouse 2
+		]);
+
+	// Check range two days ago - yesterday
+	await to.select(t_minus_1);
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			// Two days ago
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 5, noteName: "Note 1" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 5, noteName: "Note 1" },
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 2" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 2" },
+
+			// Yesterday
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 2, noteName: "Note 4" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 2, noteName: "Note 4" }
+		]);
+
+	// Test inbound/outbound filters
+	//
+	// Reset to two days ago - today range
+	await to.select(today);
+
+	// The inbound/outbound filter is not implemented on helpers api as it's used only here
+	const filter = dashboard.content().header().locator("#inbound-outbound-filter");
+	await filter.waitFor();
+
+	// Test for only inbound
+	await filter.getByText("Inbound").click();
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			// Two days ago
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 5, noteName: "Note 1" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 5, noteName: "Note 1" },
+
+			// Yesterday
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 3" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 3" },
+
+			// Today
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 5" },
+			{ committedAt: today, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 1, noteName: "Note 5" }
+		]);
+
+	// Test for only outbound
+	await filter.getByText("Outbound").click();
+	await dashboard
+		.content()
+		.table("history/warehouse")
+		.assertRows([
+			// Two days ago
+			{ committedAt: t_minus_2, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 3, noteName: "Note 2" },
+			{ committedAt: t_minus_2, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 3, noteName: "Note 2" },
+
+			// Yesterday
+			{ committedAt: t_minus_1, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 2, noteName: "Note 4" },
+			{ committedAt: t_minus_1, isbn: "2222222222", title: "Book 2", authors: "Author 2", quantity: 2, noteName: "Note 4" },
+
+			// Today
+			{ committedAt: today, isbn: "1111111111", title: "Book 1", authors: "Author 1", quantity: 1, noteName: "Note 7" }
+			// Note 7 - txn 2 won't be shown - belongs to Warehouse 2
+		]);
+});
+
+test("history/warehose - navigation", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dbHandle = await getDbHandle(page);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/warehouse' subview
+	await dashboard.content().navigate("history/warehouse");
+	// Navigate to the page for Warehouse 1 - should default to toady - today range
+	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
+	await dashboard.content().header().title().assert("Warehouse 1 history");
+
+	// Add a transaction
+	await dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.setName({}, "Note 1"))
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.commit({}))
+	);
+
+	// Clicking on note name should navigate to note page
+	await dashboard.content().table("history/warehouse").row(0).field("noteName").click();
+	await dashboard.content().header().title().assert("Note 1");
+});
