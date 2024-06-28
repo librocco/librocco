@@ -4,13 +4,15 @@ import { TestId } from "@librocco/shared";
 
 import type { CalendarPicker, DashboardNode } from "./types";
 
-import { conditionalSelector, dataValueSelector, idSelector, selector, testIdSelector } from "./utils";
+import { conditionalSelector, dataValueSelector, selector, testIdSelector } from "./utils";
 
 export function getCalendar(parent: DashboardNode, id?: TestId): CalendarPicker {
 	const dashboard = parent.dashboard;
 
 	// Dropdown control button
-	const control = parent.locator(selector(conditionalSelector(idSelector(id), Boolean(id)), testIdSelector("calendar-picker-control")));
+	const control = parent.locator(
+		selector(conditionalSelector(`[data-calendarid=${id}]` as any, Boolean(id)), testIdSelector("calendar-picker-control"))
+	);
 
 	// Note: container will be present only if the calendar picker is open
 	//
