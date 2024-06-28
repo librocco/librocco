@@ -29,7 +29,7 @@ export const compareNotes = <N extends { updatedAt?: string | Date | null }>({ u
 	return _a < _b ? 1 : -1;
 };
 
-const compareTxns = composeCompare<PastTransaction & BookEntry>(
+const compareTxns = composeCompare<Pick<PastTransaction, "isbn" | "noteId" | "warehouseId" | "date">>(
 	asc(({ date }) => date),
 	asc(({ noteId }) => noteId.split("/").pop()),
 	asc(({ isbn }) => isbn),

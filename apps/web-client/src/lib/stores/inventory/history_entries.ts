@@ -1,7 +1,7 @@
 import { switchMap, combineLatest, map, tap, from } from "rxjs";
 import { readable, type Readable } from "svelte/store";
 
-import { debug, wrapIter, zip, reduce } from "@librocco/shared";
+import { debug, wrapIter, zip, reduce, composeCompare, asc } from "@librocco/shared";
 import type { BookEntry, InventoryDatabaseInterface, PastTransaction } from "@librocco/db";
 
 import type { BookHistoryStores, DailySummaryStore, DisplayRow, PastNoteEntry } from "$lib/types/inventory";
@@ -65,7 +65,8 @@ export const createBookHistoryStores: CreateBookHistoryStores = (ctx, db, isbn =
 			wrapIter(transactions).map((txn) => ({ ...txn, warehouseName: warehouseMap.get(txn.warehouseId)?.displayName || "" }))
 		),
 		tap(debug.log(ctx, `transactions_for_isbn:${isbn}`)),
-		map((pt) => pt.array())
+		map((pt) => pt.array()),
+		map((txns) => txns.sort(compareTxns))
 	);
 	const transactions = readableFromStream(ctx, transactionsStream, []);
 
@@ -146,6 +147,7 @@ export const createPastNotesStore: CreatePastNotesStores = (ctx, db, date: strin
 					)
 				)
 				.array()
+				.sort(composeCompare(asc(({ date }) => date)))
 		)
 	);
 
@@ -207,9 +209,16 @@ export const createWarehouseHistoryStores: CreateWarehouseHistoryStore = (ctx, d
 				.stream(ctx, isbns)
 				.pipe(map((data) => txns.zip(data).map(([txn, book]) => ({ ...txn, ...book }))));
 		}),
-		map((pt) => pt.array())
+		map((pt) => pt.array().sort(compareTxns))
 	);
 	const transactions = readableFromStream(ctx, transactionsStream, []);
 
 	return { displayName, transactions };
 };
+
+const compareTxns = composeCompare<Pick<PastTransaction, "isbn" | "noteId" | "warehouseId" | "date">>(
+	asc(({ date }) => date),
+	asc(({ noteId }) => noteId.split("/").pop()),
+	asc(({ isbn }) => isbn),
+	asc(({ warehouseId }) => warehouseId)
+);
