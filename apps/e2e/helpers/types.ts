@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Locator, Page } from "@playwright/test";
 
-import type { NoteState, NoteTempState, EntityListView, WebClientView } from "@librocco/shared";
+import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId } from "@librocco/shared";
+import { SearchFieldInterface } from "./searchField";
 
 /** A util type used to "pick" a subset of the given (union type) */
 export type Subset<T, S extends T> = S;
@@ -16,16 +17,6 @@ export type DashboardNode<T = {}> = T &
 	Locator & {
 		dashboard: () => DashboardInterface;
 	};
-
-export interface Asserter<T> {
-	assert(value: T, opts?: WaitForOpts): Promise<void>;
-}
-
-interface Setter<T> {
-	set: (value: T) => Promise<void>;
-}
-
-type AsserterSetter<T> = Asserter<T> & Setter<T>;
 
 export interface IBookPrice {
 	price: string;
@@ -96,6 +87,8 @@ export interface EntityListMatcher {
 	updatedAt?: Date;
 	numBooks?: number;
 	discount?: number;
+	totalCoverPrice?: number;
+	totalDiscountedPrice?: number;
 }
 
 export type WarehouseItemDropdown = DashboardNode<{
@@ -128,10 +121,11 @@ export type ContentInterface = DashboardNode<{
 			| Subset<WebClientView, "history/date" | "history/isbn" | "history/notes" | "history/warehouse">
 	): Promise<void>;
 	scanField(): ScanFieldInterface;
-	searchField(): Locator;
+	searchField(): SearchFieldInterface;
 	table<V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface;
-	calendar(): CalendarPicker;
+	calendar(id?: TestId): CalendarPicker;
 	historyStats(): HistoryStatsInterface;
+	stockReport(): StockReportInterface;
 }>;
 
 export type BreadcrumbsInterface = Asserter<string[]> & DashboardNode;
@@ -194,7 +188,7 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 
 // #region inventory table
 export type InventoryTableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse" | "stock">;
-export type HistoryTableView = Subset<WebClientView, "history/date">;
+export type HistoryTableView = Subset<WebClientView, "history/date" | "history/isbn" | "history/warehouse">;
 export type TableView = InventoryTableView | HistoryTableView;
 
 export interface AssertRowFieldsOpts {
@@ -242,9 +236,11 @@ export interface InventoryFieldLookup {
 export interface HistoryFieldLookup {
 	isbn: Asserter<string>;
 	title: Asserter<string>;
+	authors: Asserter<string>;
 	quantity: AsserterSetter<number>;
 	warehouseName: Asserter<string>;
 	noteName: Locator & Asserter<string>;
+	committedAt: Asserter<string | Date>;
 }
 
 export type InventoryRowValues = {
@@ -265,7 +261,7 @@ export interface CalendarPicker extends DashboardNode {
 }
 // #endregion calendar picker
 
-// #region history stats
+// #region history
 export interface StatsField {
 	assert(value: number): Promise<void>;
 }
@@ -289,4 +285,24 @@ export interface HistoryStatsInterface extends DashboardNode {
 
 	assert(values: HistoryStatsValues): Promise<void>;
 }
-// #region history stats
+
+export interface StockReportInterface extends DashboardNode {
+	assert(values: [warehouseId: string, quantity: number][]): Promise<void>;
+}
+// #region history
+
+// #region asserters
+export interface Asserter<T> {
+	assert(value: T, opts?: WaitForOpts): Promise<void>;
+}
+
+interface Setter<T> {
+	set: (value: T) => Promise<void>;
+}
+
+type AsserterSetter<T> = Asserter<T> & Setter<T>;
+
+export interface FieldConstructor<L extends Record<string, any>, K extends keyof L> {
+	(parent: DashboardNode, view: TableView): L[K];
+}
+// #endregion asserters

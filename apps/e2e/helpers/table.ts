@@ -9,7 +9,6 @@ import {
 	InventoryRowValues,
 	HistoryRowField,
 	InventoryTableView,
-	TableView,
 	WaitForOpts,
 	HistoryFieldLookup,
 	InventoryRowInterface,
@@ -18,14 +17,17 @@ import {
 	HistoryRowInterface,
 	HistoryTableInterface,
 	HistoryTableView,
-	Asserter
+	Asserter,
+	FieldConstructor,
+	TableView
 } from "./types";
 
 import { assertionTimeout } from "@/constants";
 
 import { getDropdown } from "./dropdown";
 
-import { selector, testIdSelector } from "./utils";
+import { selector, stringFieldConstructor, testIdSelector } from "./utils";
+import { getDateString } from "./dateString";
 
 // #region inventory table
 export function getInventoryTable(parent: DashboardNode, view: InventoryTableView): InventoryTableInterface {
@@ -173,6 +175,7 @@ function getHistoryRow(parent: DashboardNode, view: HistoryTableView, index: num
 	const dashboard = parent.dashboard;
 	const container = parent.locator("li").nth(index);
 
+	// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
 	const field = <K extends HistoryRowField>(name: K) => historyFieldConstructorLookup[name](getHistoryRow(parent, view, index), view);
 
 	const assertFields = async (row: Partial<HistoryRowValues>, opts: Pick<AssertRowFieldsOpts, "timeout">) => {
@@ -188,21 +191,6 @@ function getHistoryRow(parent: DashboardNode, view: HistoryTableView, index: num
 // #region history table
 
 // #region row_fields
-interface FieldConstructor<L extends Record<string, any>, K extends keyof L> {
-	(parent: DashboardNode, view: TableView): L[K];
-}
-
-const stringFieldConstructor =
-	<L extends Record<string, any>, K extends keyof L>(name: K, transformDisplay = (x: string) => x): FieldConstructor<L, K> =>
-	(row) =>
-		({
-			assert: (want: K, opts?: WaitForOpts) =>
-				expect(row.locator(`[data-property="${name as string}"]`)).toHaveText(transformDisplay(want.toString()), {
-					timeout: assertionTimeout,
-					...opts
-				})
-		} as L[K]);
-
 const priceFieldConstructor: FieldConstructor<InventoryFieldLookup, "price"> = (row) => ({
 	assert: (want: string | number | IBookPrice, opts) => {
 		switch (typeof want) {
@@ -294,6 +282,15 @@ const noteNameFieldConstructor = (row: DashboardNode): Locator & Asserter<string
 	});
 };
 
+const committedAtConstructor = (row: DashboardNode, view: TableView): Asserter<string | Date> => {
+	const container = Object.assign(row.locator('[data-property="committedAt"]'), { dashboard: row.dashboard });
+
+	const extractDate = (str: string) => (view === "history/isbn" ? new Date(str) : new Date(str));
+	const dateElement = getDateString(container, "", extractDate);
+
+	return { assert: (want: string, opts?: WaitForOpts) => dateElement.assert(want, opts) };
+};
+
 const inventoryFieldConstructorLookup: {
 	[K in InventoryRowField]: FieldConstructor<InventoryFieldLookup, K>;
 } = {
@@ -315,8 +312,10 @@ const historyFieldConstructorLookup: {
 } = {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
+	authors: stringFieldConstructor("authors"),
 	quantity: stringFieldConstructor("quantity"),
 	warehouseName: stringFieldConstructor("warehouseName"),
-	noteName: noteNameFieldConstructor
+	noteName: noteNameFieldConstructor,
+	committedAt: committedAtConstructor
 };
 // #endregion row_fields

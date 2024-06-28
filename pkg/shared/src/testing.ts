@@ -19,7 +19,7 @@ export type WebClientView =
 	| "history/warehouse"
 	| "debug";
 /** Union of names for all views containing entity lists (warehouses / notes) */
-export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list";
+export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list" | "history/notes";
 /** Union of names for all views regarding history (summaries, past notes/transactions) */
 export type HistoryView = "history/date" | "history/isbn" | "history/notes" | "history/warehouse";
 
@@ -38,6 +38,8 @@ export type TestId =
 	| "dropdown-menu"
 	| "scan-input"
 	| "search-input"
+	| "search-completions-container"
+	| "search-completion"
 	| "popover-control"
 	| "popover-container"
 	| "edit-row"
@@ -49,7 +51,11 @@ export type TestId =
 	| "calendar-picker"
 	| "calendar-picker-day-select"
 	| "calendar-picker-month-select"
-	| "history-date-stats";
+	| "calendar-from"
+	| "calendar-to"
+	| "history-date-stats"
+	| "history-stock-report"
+	| "history-stock-report-entry";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
