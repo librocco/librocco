@@ -7,11 +7,12 @@ import { getDashboard, getDbHandle } from "@/helpers";
 import { getDateStub } from "@/helpers/dateStub";
 
 const books: BookEntry[] = [
-	{ isbn: "1111111111", title: "Book 1", price: 10 },
-	{ isbn: "2222222222", title: "Book 2", price: 20 }
+	{ isbn: "1111111111", title: "Book 1", authors: "Author 1", publisher: "Publisher 1", year: "2021", price: 10 },
+	{ isbn: "2222222222", title: "Book 2", authors: "Author 2", publisher: "Publisher 2", year: "2022", price: 20 }
 ];
 
-const TIME_DAY = 24 * 60 * 60 * 1000;
+const TIME_MIN = 60 * 1000;
+const TIME_DAY = 24 * 60 * TIME_MIN;
 
 test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
@@ -397,4 +398,287 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 			{ isbn: "1111111111", quantity: 1, warehouseName: "Warehouse 1", noteName: "Note 2" },
 			{ isbn: "2222222222", quantity: 1, warehouseName: "Warehouse 1", noteName: "Note 2" }
 		]);
+});
+
+test("history/isbn - base functionality", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/isbn' subview
+	await dashboard.content().navigate("history/isbn");
+
+	// Without selected isbn, a message (to select an isbn) should be shown
+	await dashboard.content().getByText("No book selected").waitFor();
+	await dashboard.content().getByText("Use the search field to find the book you're looking for").waitFor();
+
+	// We're able to navigate to the book by typing in the isbn (into the search field) and pressing enter
+	await dashboard.content().searchField().type("1234567890");
+	await page.keyboard.press("Enter");
+
+	// No transactions - should show the appropriate message
+	await dashboard.content().getByText("No transactions found").waitFor();
+	await dashboard.content().getByText("There seems to be no record of transactions for the given isbn volumes going in or out").waitFor();
+});
+
+// This test is a product of a regression we had
+test("history/isbn - search results", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dbHandle = await getDbHandle(page);
+	const search = dashboard.content().searchField();
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/isbn' subview
+	await dashboard.content().navigate("history/isbn");
+
+	// Searching for a book that exists in two warehouses should display only one result
+	//
+	// Add the same book in two warehouses
+	dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.commit({}))
+	);
+	dbHandle.evaluateHandle((db) =>
+		db
+			.warehouse("wh2")
+			.note()
+			.create()
+			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.commit({}))
+	);
+
+	// Check search results
+	await search.type("Book 1");
+	await search.completions().assert([
+		{
+			isbn: "1111111111",
+			title: "Book 1",
+			authors: "Author 1",
+			publisher: "Publisher 1",
+			year: "2021"
+		}
+	]);
+
+	// Searching for a book that doesn't exist in stock (currently), but exists as book entry should be displayed in the results all the same
+	await search.clear();
+	await search.type("Book 2");
+	await search.completions().assert([
+		{
+			isbn: "2222222222",
+			title: "Book 2",
+			authors: "Author 2",
+			publisher: "Publisher 2",
+			year: "2022"
+		}
+	]);
+
+	// Full text search shold be applied (show multiple results if multiple matched)
+	await search.clear();
+	await search.type("Book");
+	await search.completions().assert([
+		{
+			isbn: "1111111111",
+			title: "Book 1",
+			authors: "Author 1",
+			publisher: "Publisher 1",
+			year: "2021"
+		},
+		{
+			isbn: "2222222222",
+			title: "Book 2",
+			authors: "Author 2",
+			publisher: "Publisher 2",
+			year: "2022"
+		}
+	]);
+});
+
+test("history/isbn - transaction display", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dbHandle = await getDbHandle(page);
+	const search = dashboard.content().searchField();
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/isbn' subview
+	await dashboard.content().navigate("history/isbn");
+	// Navigate to the page for 1111111111
+	await search.type("1111111111");
+	await search.completions().n(0).click();
+
+	// Check the book data header
+	await dashboard.content().header().title().assert("1111111111");
+	await dashboard.content().header().getByText("Book 1").waitFor();
+	await dashboard.content().header().getByText("Author 1").waitFor();
+	await dashboard.content().header().getByText("Publisher 1").waitFor();
+	await dashboard.content().header().getByText("2021").waitFor();
+
+	// Add some trasnactions
+	const txn2Date = await dbHandle
+		.evaluateHandle((db) =>
+			db
+				.warehouse("wh1")
+				.note()
+				.create()
+				.then((n) => n.setName({}, "Note 1"))
+				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.commit({}))
+		)
+		// Return the (close) timestamp of the update
+		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	// Stock should be updated
+	await dashboard
+		.content()
+		.stockReport()
+		.assert([["Warehouse 1", 2]]);
+
+	// Transaction should be displayed
+	await dashboard
+		.content()
+		.table("history/isbn")
+		.assertRows([{ committedAt: txn2Date, warehouseName: "Warehouse 1", quantity: 2, noteName: "Note 1" }]);
+
+	// Add a transaction in the past
+	const dateStub = await getDateStub(page);
+	dateStub.mock(new Date(Date.now() - 2 * TIME_DAY));
+
+	const txn1Date = await dbHandle
+		.evaluateHandle((db) =>
+			db
+				.warehouse("wh1")
+				.note()
+				.create()
+				.then((n) => n.setName({}, "Note -1"))
+				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }))
+				.then((n) => n.commit({}))
+		)
+		// Return the (close) timestamp of the update
+		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	// Check stock and transactions
+	await dashboard
+		.content()
+		.stockReport()
+		.assert([["Warehouse 1", 5]]);
+
+	await dashboard
+		.content()
+		.table("history/isbn")
+		.assertRows([
+			{ committedAt: txn1Date, warehouseName: "Warehouse 1", quantity: 3, noteName: "Note -1" },
+			{ committedAt: txn2Date, warehouseName: "Warehouse 1", quantity: 2, noteName: "Note 1" }
+		]);
+
+	// Add stock to different warehouse
+	//
+	// Reset the date
+	await dateStub.reset();
+	const txn3Date = await dbHandle
+		.evaluateHandle((db) =>
+			db
+				.warehouse("wh2")
+				.note()
+				.create()
+				.then((n) => n.setName({}, "Note 2"))
+				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.commit({}))
+		)
+		// Return the (close) timestamp of the update
+		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	// Check stock and transactions
+	await dashboard
+		.content()
+		.stockReport()
+		.assert([
+			["Warehouse 1", 5],
+			["Warehouse 2", 2]
+		]);
+
+	await dashboard
+		.content()
+		.table("history/isbn")
+		.assertRows([
+			{ committedAt: txn1Date, warehouseName: "Warehouse 1", quantity: 3, noteName: "Note -1" },
+			{ committedAt: txn2Date, warehouseName: "Warehouse 1", quantity: 2, noteName: "Note 1" },
+			{ committedAt: txn3Date, warehouseName: "Warehouse 2", quantity: 2, noteName: "Note 2" }
+		]);
+
+	// Add one outbound transaction (should reduce warehouse stock)
+	//
+	// We're stubbing the date to be 2mins into the future (to ensure the txn ordering)
+	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
+
+	const txn4Date = await dbHandle
+		.evaluateHandle((db) =>
+			db
+				.warehouse()
+				.note()
+				.create()
+				.then((n) => n.setName({}, "Note 3"))
+				.then((n) =>
+					n.addVolumes({ isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh2" })
+				)
+				.then((n) => n.commit({}))
+		)
+		// Return the (close) timestamp of the update
+		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	await dashboard
+		.content()
+		.stockReport()
+		.assert([
+			["Warehouse 1", 3],
+			["Warehouse 2", 1]
+		]);
+
+	await dashboard
+		.content()
+		.table("history/isbn")
+		.assertRows([
+			{ committedAt: txn1Date, warehouseName: "Warehouse 1", quantity: 3, noteName: "Note -1" },
+			{ committedAt: txn2Date, warehouseName: "Warehouse 1", quantity: 2, noteName: "Note 1" },
+			{ committedAt: txn3Date, warehouseName: "Warehouse 2", quantity: 2, noteName: "Note 2" },
+			{ committedAt: txn4Date, warehouseName: "Warehouse 1", quantity: 2, noteName: "Note 3" },
+			{ committedAt: txn4Date, warehouseName: "Warehouse 2", quantity: 1, noteName: "Note 3" }
+		]);
+});
+
+test("history/isbn - navigation", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const dbHandle = await getDbHandle(page);
+	const search = dashboard.content().searchField();
+
+	// Navigate to (default) history view
+	await dashboard.navigate("history/date");
+	// Navigate to 'history/isbn' subview
+	await dashboard.content().navigate("history/isbn");
+	// Navigate to the page for 1111111111
+	await search.type("1111111111");
+	await search.completions().n(0).click();
+	await dashboard.content().header().title().assert("1111111111");
+
+	// Add some trasnactions
+	await dbHandle
+		.evaluateHandle((db) =>
+			db
+				.warehouse("wh1")
+				.note()
+				.create()
+				.then((n) => n.setName({}, "Note 1"))
+				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.commit({}))
+		)
+		// Return the (close) timestamp of the update
+		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	// Clickiong on the note name should redirect to the (committed) note page
+	await dashboard.content().table("history/isbn").row(0).field("noteName").click();
+	await dashboard.content().header().title().assert("Note 1");
 });
