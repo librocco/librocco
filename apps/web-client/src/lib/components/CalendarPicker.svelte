@@ -4,8 +4,9 @@
 	import { Calendar, ChevronLeft, ChevronRight } from "lucide-svelte";
 	import { fade } from "svelte/transition";
 
-	import { testId } from "@librocco/shared";
+	import { testId, type TestId } from "@librocco/shared";
 
+	export let id: TestId | undefined = undefined;
 	export let defaultValue: DateValue = now(getLocalTimeZone());
 	export let onValueChange: (args: { curr: DateValue; next: DateValue }) => DateValue = ({ next }) => next;
 	let checkIsDateDisabled: (date: DateValue) => boolean = () => false;
@@ -54,6 +55,7 @@
 		</p>
 
 		<button
+			data-calendarid={id || ""}
 			data-testid={testId("calendar-picker-control")}
 			data-open={$open}
 			class="rounded-md p-1 text-gray-600 transition-all"

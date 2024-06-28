@@ -1,4 +1,4 @@
-import type { EntityListView, WebClientView } from "@librocco/shared";
+import type { EntityListView, TestId, WebClientView } from "@librocco/shared";
 
 import type {
 	ContentInterface,
@@ -14,9 +14,10 @@ import { getHeader } from "./header";
 import { getEntityList } from "./entityList";
 import { getScanField } from "./scanField";
 import { getHistoryTable, getInventoryTable } from "./table";
-import { selector, testIdSelector } from "./utils";
+// import { selector, testIdSelector } from "./utils";
 import { getCalendar } from "./calendar";
-import { getHistoryStats } from "./historyStats";
+import { getHistoryStats, getStockReport } from "./history";
+import { getSearchField } from "./searchField";
 
 export function getContent(_parent: DashboardNode): ContentInterface {
 	const dashboard = _parent.dashboard;
@@ -28,7 +29,7 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 	const entityList = (view: EntityListView) => getEntityList(container, view);
 
 	const scanField = () => getScanField(container);
-	const searchField = () => container.locator(selector(testIdSelector("search-input")));
+	const searchField = () => getSearchField(container);
 
 	const table = <V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface => {
 		const isInventoryView = (view: TableView): view is InventoryTableView =>
@@ -52,9 +53,11 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 							.waitFor()
 			);
 
-	const calendar = () => getCalendar(container);
+	const calendar = (id?: TestId) => getCalendar(container, id);
 
 	const historyStats = () => getHistoryStats(container);
 
-	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table, calendar, historyStats });
+	const stockReport = () => getStockReport(container);
+
+	return Object.assign(container, { header, entityList, navigate, scanField, searchField, table, calendar, historyStats, stockReport });
 }

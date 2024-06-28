@@ -2,6 +2,7 @@ import { Locator, expect } from "@playwright/test";
 
 import { assertionTimeout } from "@/constants";
 import { EntityListView, TestId, WebClientView } from "@librocco/shared";
+import { FieldConstructor, WaitForOpts } from "./types";
 
 export async function compareEntries(container: Locator, labels: string[], selector: string, opts?: { timeout?: number }) {
 	for (let i = 0; i <= labels.length; i++) {
@@ -57,3 +58,19 @@ export const conditionalSelector = (segment?: SelectorSegment, condition = false
 /** Accepts typo-safe selector segments and joins them in to the selector string */
 export const selector = (...segments: SelectorSegment[]): string => segments.join("");
 // #endregion selectors
+
+// #region assertions
+export const stringFieldConstructor =
+	<L extends Record<string, any>, K extends keyof L>(
+		name: K,
+		transformDisplay: (x: string) => string | RegExp = (x: string) => x
+	): FieldConstructor<L, K> =>
+	(parent: Locator) =>
+		({
+			assert: (want: K, opts?: WaitForOpts) =>
+				expect(parent.locator(`[data-property="${name as string}"]`)).toHaveText(transformDisplay(want.toString()), {
+					timeout: assertionTimeout,
+					...opts
+				})
+		} as L[K]);
+// #endregion assertions
