@@ -6,7 +6,7 @@
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 	import { firstValueFrom, map } from "rxjs";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
