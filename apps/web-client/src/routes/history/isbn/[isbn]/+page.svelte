@@ -15,7 +15,7 @@
 	import { createSearchStore } from "$lib/stores/proto/search";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { createSearchDropdown } from "./actions";
 
 	const { db } = getDB();
