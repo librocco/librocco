@@ -6,7 +6,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
 
@@ -63,7 +63,7 @@
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const { db } = getDB();
-	// if(!status) goto(appPath("settings"))
+	// if (!status) goto(appPath("settings"));
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	const warehouseListStream = db
