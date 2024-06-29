@@ -9,7 +9,7 @@
 	import { entityListView, filter, testId } from "@librocco/shared";
 	import { NEW_WAREHOUSE } from "@librocco/db";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";

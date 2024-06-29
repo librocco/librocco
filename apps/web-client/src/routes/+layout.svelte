@@ -7,7 +7,7 @@
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import type { LayoutData } from "./$types";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: LayoutData & { status: boolean };

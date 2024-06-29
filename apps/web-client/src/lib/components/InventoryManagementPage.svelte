@@ -5,7 +5,7 @@
 	import { entityListView } from "@librocco/shared";
 
 	import { page } from "$app/stores";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { ExtensionAvailabilityToast, Page } from "$lib/components";
 
