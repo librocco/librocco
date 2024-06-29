@@ -3,7 +3,7 @@
 
 	import { historyView, type HistoryView } from "@librocco/shared";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { page } from "$app/stores";
 
 	import Page from "$lib/components/Page.svelte";

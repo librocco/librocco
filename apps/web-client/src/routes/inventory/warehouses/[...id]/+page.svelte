@@ -24,7 +24,7 @@
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 

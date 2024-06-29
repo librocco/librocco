@@ -12,7 +12,7 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { getDB } from "$lib/db";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 

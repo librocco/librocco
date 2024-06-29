@@ -6,7 +6,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";

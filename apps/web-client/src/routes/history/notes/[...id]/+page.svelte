@@ -14,7 +14,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;

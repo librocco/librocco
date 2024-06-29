@@ -12,7 +12,7 @@
 	import { getDB } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";

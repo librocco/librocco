@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Search } from "lucide-svelte";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { SettingsForm } from "$lib/forms";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";

@@ -8,7 +8,22 @@ const tsPaths = [path.join(__dirname, "./tsconfig.json")];
 module.exports = useTSConfig(
 	{
 		...scaffoldConfig,
-		ignorePatterns: [...scaffoldConfig.ignorePatterns, "playwright.config.ts"]
+		ignorePatterns: [...scaffoldConfig.ignorePatterns, "playwright.config.ts"],
+		rules: {
+			...scaffoldConfig.rules,
+			"no-restricted-imports": [
+				"error",
+				{
+					paths: [
+						{
+							name: "$app/navigation",
+							importNames: ["goto"],
+							message: "Please use `goto` from `$lib/utils/navigation` instead."
+						}
+					]
+				}
+			]
+		}
 	},
 	tsPaths
 );

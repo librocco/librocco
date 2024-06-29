@@ -6,7 +6,7 @@
 	import { testId, type WebClientView } from "@librocco/shared";
 
 	import { page } from "$app/stores";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { TooltipWrapper } from "$lib/components";
 
