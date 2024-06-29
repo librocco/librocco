@@ -12,7 +12,7 @@
 
 	import { createSearchStore } from "$lib/stores/proto/search";
 	import { createSearchDropdown } from "./[isbn]/actions";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	const { db } = getDB();

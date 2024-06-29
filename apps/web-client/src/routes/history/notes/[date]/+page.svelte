@@ -4,7 +4,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
