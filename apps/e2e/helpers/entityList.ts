@@ -4,7 +4,7 @@ import { DashboardNode, EntityListInterface, EntityListItem, EntityListMatcher, 
 
 import { assertionTimeout } from "@/constants";
 
-import { getUpdatedAt } from "./updatedAt";
+import { getDateString } from "./dateString";
 import { classSelector, entityListViewSelector, loadedSelector, selector } from "./utils";
 import { getDropdown } from "./dropdown";
 
@@ -23,12 +23,20 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 		// are no more elements (than specified) in a list (when asserting for the entire list)
 		if (element === null) return locator.waitFor({ state: "detached" });
 
-		const { name, updatedAt, numBooks, discount } = element;
+		const { name, updatedAt, numBooks, discount, totalCoverPrice, totalDiscountedPrice } = element;
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
-		if (updatedAt) await getUpdatedAt(Object.assign(locator, { dashboard })).assert(updatedAt);
+		if (updatedAt) {
+			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
+			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Last updated:", extractDateFromUpdatedAtString).assert(
+				updatedAt
+			);
+		}
+
 		if (numBooks) await locator.getByText(`${numBooks} books`).waitFor();
 		if (discount) await locator.getByText(`${discount}% discount`).waitFor();
+		if (totalCoverPrice) await locator.getByText(`Total cover price: ${totalCoverPrice.toFixed(2)}`).waitFor();
+		if (totalDiscountedPrice) await locator.getByText(`Total discounted price: ${totalDiscountedPrice.toFixed(2)}`).waitFor();
 	}
 
 	async function assertElements(elements: EntityListMatcher[]): Promise<void> {

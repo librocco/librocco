@@ -24,7 +24,8 @@
 		"eslint-config-prettier": "^8.3.0",
 		"prettier": "~2.7.1",
 		"typescript": "^5.3.3",
-		"@types/node": "~20.4.1"
+		"@types/node": "~20.4.1",
+		"@internationalized/date": "~3.5.2"
 	},
 	"type": "module"
 }
