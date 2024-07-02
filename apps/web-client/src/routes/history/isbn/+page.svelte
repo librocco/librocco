@@ -43,7 +43,7 @@
 <HistoryPage view="history/isbn">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input autofocus use:input placeholder="Search" {...inputProps} />
+		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -72,12 +72,16 @@
 
 {#if $open && $entries?.length}
 	<div use:dropdown>
-		<ul class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
 			{#each $entries as { isbn, title, authors, year, publisher }}
-				<li on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))} class="w-full cursor-pointer px-4 py-3">
-					<p class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-					<p class="text-xl font-medium">{title || "Unknown Title"}</p>
-					<p>{createMetaString({ authors, year, publisher })}</p>
+				<li
+					data-testid={testId("search-completion")}
+					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
+					class="w-full cursor-pointer px-4 py-3"
+				>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+					<p data-property="title" class="text-xl font-medium">{title}</p>
+					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>
 			{/each}
 		</ul>

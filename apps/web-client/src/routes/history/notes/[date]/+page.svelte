@@ -45,7 +45,7 @@
 	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
 </script>
 
-<HistoryPage view="history/date">
+<HistoryPage view="history/notes">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
@@ -60,7 +60,7 @@
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
+		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")} data-loaded={true}>
 			{#if !$notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" class="center-absolute" />
