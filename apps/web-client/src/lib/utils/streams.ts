@@ -49,10 +49,17 @@ export const readableFromStream = <T>(ctx: debug.DebugCtx, observable: Observabl
 			// eslint-disable-next-line @typescript-eslint/no-empty-function
 			return () => {};
 		}
-		const observer = observable.subscribe((value) => {
-			debug.log(ctx, "redable_from_stream:update")(value);
-			set(value || fallback);
+
+		const observer = observable.subscribe({
+			next: (value) => {
+				debug.log(ctx, "redable_from_stream:update")(value);
+				set(value || fallback);
+			},
+			error: (error) => {
+				console.log({ error });
+			}
 		});
+
 		return () => observer.unsubscribe();
 	});
 };

@@ -14,6 +14,9 @@ let reason = "";
 
 export const checkUrlConnection = async (url: string) => {
 	const [credenialsAndUrl, urlEnd] = url.split("@");
+
+	url = urlEnd === undefined ? url : `https://${urlEnd}`;
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const [_, credentials] = credenialsAndUrl.split("//");
 
@@ -21,12 +24,13 @@ export const checkUrlConnection = async (url: string) => {
 	const encodedCredentials = btoa(credentials);
 	headers.append("Authorization", `Basic ${encodedCredentials}`);
 
-	return fetch(`https://${urlEnd}`, {
+	return fetch(url, {
 		method: "GET",
 		headers: headers,
 		credentials: "include"
 	});
 };
+
 /**
  * We're using createDB() instead of exporting the db itself because we don't want to
  * instantiate the db on the server, as it leaves annoying '/dev' folder on the filesystem and
@@ -44,28 +48,19 @@ export const createDB = async (url?: string): Promise<{ db: InventoryDatabaseInt
 	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
 	 * There will be no local persistence.
 	 */
-	let connectionUrl = LOCAL_POUCH_DB_NAME;
+	let connectionUrl = url ? url : LOCAL_POUCH_DB_NAME;
 	if (url && browser) {
 		try {
-			const response = await checkUrlConnection(url);
+			const pouch = new pouchdb(connectionUrl);
+			db = newInventoryDatabaseInterface(pouch);
+			await db.init();
 
-			if (!response.ok) {
-				status = false;
-				reason = `Failed to connect using provided username and password.`;
-			} else {
-				status = true;
-				connectionUrl = url;
-			}
+			status = true;
+			connectionUrl = url;
 		} catch (err) {
 			status = false;
 			reason = "Failed to connect to provided URL.";
 		}
-	}
-
-	if (status) {
-		const pouch = new pouchdb(connectionUrl);
-		db = newInventoryDatabaseInterface(pouch);
-		await db.init();
 	}
 
 	return { db, status, reason };
