@@ -1,33 +1,43 @@
-import { expect } from "@playwright/test";
+import { Locator, expect } from "@playwright/test";
 
 import {
 	AssertRowFieldsOpts,
 	DashboardNode,
-	DisplayRow,
-	EntriesRowInterface,
-	EntriesTableInterface,
-	GenericTransactionField,
 	IBookPrice,
-	TableView,
-	TransactionFieldInterfaceLookup,
-	TransactionRowField,
-	TransactionRowValues,
-	WaitForOpts
+	InventoryFieldLookup,
+	InventoryRowField,
+	InventoryRowValues,
+	HistoryRowField,
+	InventoryTableView,
+	WaitForOpts,
+	HistoryFieldLookup,
+	InventoryRowInterface,
+	InventoryTableInterface,
+	HistoryRowValues,
+	HistoryRowInterface,
+	HistoryTableInterface,
+	HistoryTableView,
+	Asserter,
+	FieldConstructor,
+	TableView
 } from "./types";
 
 import { assertionTimeout } from "@/constants";
 
 import { getDropdown } from "./dropdown";
 
-import { selector, testIdSelector } from "./utils";
+import { selector, stringFieldConstructor, testIdSelector } from "./utils";
+import { getDateString } from "./dateString";
 
-export function getEntriesTable(parent: DashboardNode, view: TableView): EntriesTableInterface {
+// #region inventory table
+export function getInventoryTable(parent: DashboardNode, view: InventoryTableView): InventoryTableInterface {
 	const dashboard = parent.dashboard;
+
 	const container = parent.locator("#inventory-table");
 
-	const row = (index: number) => getEntriesRow(getEntriesTable(parent, view), view, index);
+	const row = (index: number) => getInventoryRow(getInventoryTable(parent, view), view, index);
 
-	const assertRows = async (rows: Partial<DisplayRow>[], opts: AssertRowFieldsOpts) => {
+	const assertRows = async (rows: Partial<InventoryRowValues>[], opts: AssertRowFieldsOpts) => {
 		await Promise.all(
 			rows.map(async (values, index) => {
 				// We're waiting for the row to be present before asserting the fields
@@ -45,7 +55,7 @@ export function getEntriesTable(parent: DashboardNode, view: TableView): Entries
 	return Object.assign(container, { dashboard, row, assertRows });
 }
 
-const defaultValues: Omit<TransactionRowValues, "price"> & { price: string | number } = {
+const defaultInventoryRowValues: InventoryRowValues = {
 	isbn: "",
 	price: "N/A",
 	quantity: 1,
@@ -59,21 +69,21 @@ const defaultValues: Omit<TransactionRowValues, "price"> & { price: string | num
 	category: ""
 };
 
-function getEntriesRow(parent: DashboardNode, view: TableView, index: number): EntriesRowInterface {
+function getInventoryRow(parent: DashboardNode, view: InventoryTableView, index: number): InventoryRowInterface {
 	const dashboard = parent.dashboard;
 	const container = parent.locator("tbody").getByRole("row").nth(index);
 
-	const field = <K extends TransactionRowField>(name: K) => fieldConstructorLookup[name](getEntriesRow(parent, view, index), view);
+	const field = <K extends InventoryRowField>(name: K) => inventoryFieldConstructorLookup[name](getInventoryRow(parent, view, index), view);
 
-	const actions = () => getRowActions(getEntriesRow(parent, view, index));
+	const actions = () => getRowActions(getInventoryRow(parent, view, index));
 
 	const edit = () => actions().edit();
 	const _delete = () => actions().delete();
 
-	const assertFields = async (row: Partial<TransactionRowValues>, opts: AssertRowFieldsOpts) => {
+	const assertFields = async (row: Partial<InventoryRowValues>, opts: AssertRowFieldsOpts) => {
 		// If strict we're asserting that the non-provided fields are the default values
 		// whereas, for non-strict, we're asserting only for provided fields
-		const compareObj = opts?.strict ? { ...defaultValues, ...row } : row;
+		const compareObj = opts?.strict ? { ...defaultInventoryRowValues, ...row } : row;
 
 		// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
 		const rowFieldsLookup = {
@@ -87,7 +97,7 @@ function getEntriesRow(parent: DashboardNode, view: TableView, index: number): E
 			Object.entries(compareObj).map(async ([name, value]) => {
 				// Skip fields not visible in the particular view
 				if (!rowFieldsLookup[view].includes(name)) return;
-				return field<any>(name as keyof TransactionFieldInterfaceLookup).assert(value, opts);
+				return field<any>(name).assert(value, opts);
 			})
 		);
 	};
@@ -133,20 +143,55 @@ function getRowActions(parent: DashboardNode): RowActions {
 
 	return Object.assign(container, { dashboard, edit, delete: _delete });
 }
+// #region inventory table
 
-// #region row_fields
-interface FieldConstructor<K extends keyof TransactionFieldInterfaceLookup> {
-	(parent: DashboardNode, view: TableView): TransactionFieldInterfaceLookup[K];
+// #region history table
+export function getHistoryTable(parent: DashboardNode, view: HistoryTableView): HistoryTableInterface {
+	const dashboard = parent.dashboard;
+
+	const container = parent.locator("#history-table");
+
+	const row = (index: number) => getHistoryRow(getHistoryTable(parent, view), view, index);
+
+	const assertRows = async (rows: Partial<HistoryRowValues>[], opts: Pick<AssertRowFieldsOpts, "timeout">) => {
+		await Promise.all(
+			rows.map(async (values, index) => {
+				// We're waiting for the row to be present before asserting the fields
+				// this is for 'strict: false' case where we can pass an empty object and the assertion will pass without making any
+				// DOM/locator queries (which is perfectly fine), but we want to make sure the row exists (even if we don't care about the fields)
+				await row(index).waitFor({ timeout: assertionTimeout, ...opts });
+				return row(index).assertFields(values, opts);
+			})
+		);
+
+		// Check that there are no more rows than specified in the want 'rows' array
+		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+	};
+
+	return Object.assign(container, { dashboard, row, assertRows });
 }
 
-const stringFieldConstructor =
-	<K extends GenericTransactionField>(name: K, transformDisplay = (x: string) => x): FieldConstructor<K> =>
-	(row) => ({
-		assert: (want: string | number | boolean, opts?: WaitForOpts) =>
-			expect(row.locator(`[data-property="${name}"]`)).toHaveText(transformDisplay(want.toString()), { timeout: assertionTimeout, ...opts })
-	});
+function getHistoryRow(parent: DashboardNode, view: HistoryTableView, index: number): HistoryRowInterface {
+	const dashboard = parent.dashboard;
+	const container = parent.locator("li").nth(index);
 
-const priceFieldConstructor: FieldConstructor<"price"> = (row) => ({
+	// We're using the following lookups to skip the fields, possibly provided in the `compareObj`, but not present in the view
+	const field = <K extends HistoryRowField>(name: K) => historyFieldConstructorLookup[name](getHistoryRow(parent, view, index), view);
+
+	const assertFields = async (row: Partial<HistoryRowValues>, opts: Pick<AssertRowFieldsOpts, "timeout">) => {
+		await Promise.all(
+			Object.entries(row).map(async ([name, value]) => {
+				return field<any>(name).assert(value, opts);
+			})
+		);
+	};
+
+	return Object.assign(container, { dashboard, field, assertFields });
+}
+// #region history table
+
+// #region row_fields
+const priceFieldConstructor: FieldConstructor<InventoryFieldLookup, "price"> = (row) => ({
 	assert: (want: string | number | IBookPrice, opts) => {
 		switch (typeof want) {
 			case "number":
@@ -178,7 +223,8 @@ const priceFieldConstructor: FieldConstructor<"price"> = (row) => ({
 		}
 	}
 });
-const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
+
+const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFieldLookup, "quantity"> = (row, view) => ({
 	assert: (want, opts) =>
 		view === "warehouse"
 			? expect(row.locator('[data-property="quantity"]')).toHaveText(want.toString(), { timeout: assertionTimeout, ...opts })
@@ -193,7 +239,7 @@ const quantityFieldCostructor: FieldConstructor<"quantity"> = (row, view) => ({
 	}
 });
 
-const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
+const outOfPrintFieldConstructor: FieldConstructor<InventoryFieldLookup, "outOfPrint"> = (row) => ({
 	assert: (want, opts) => {
 		const el = row.locator('[data-property="outOfPrint"]').locator(`input`);
 		return want
@@ -202,7 +248,7 @@ const outOfPrintFieldConstructor: FieldConstructor<"outOfPrint"> = (row) => ({
 	}
 });
 
-const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) => {
+const warehouseNameFieldConstructor: FieldConstructor<InventoryFieldLookup, "warehouseName"> = (row) => {
 	const container = row.locator('[data-property="warehouseName"]');
 
 	const dropdown = getDropdown(row);
@@ -210,7 +256,8 @@ const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) =
 
 	const set = async (value: string) => {
 		await opened(() => dropdown.getByText(value).click())();
-		return dropdown.close();
+		// Close the dropdown if open (we're not doing this over the dropdown interface as the disappearing dropdown might cause flaky tests)
+		return container.page().keyboard.press("Escape");
 	};
 
 	const assert = (want: string, opts?: WaitForOpts) => expect(container).toContainText(want, { timeout: assertionTimeout, ...opts });
@@ -228,8 +275,24 @@ const warehouseNameFieldConstructor: FieldConstructor<"warehouseName"> = (row) =
 	return Object.assign(container, { assert, set, assertOptions });
 };
 
-const fieldConstructorLookup: {
-	[K in TransactionRowField]: FieldConstructor<K>;
+const noteNameFieldConstructor = (row: DashboardNode): Locator & Asserter<string> => {
+	const container = row.locator('[data-property="noteName"]');
+	return Object.assign(container, {
+		assert: (want: string, opts?: WaitForOpts) => expect(container).toHaveText(want, { timeout: assertionTimeout, ...opts })
+	});
+};
+
+const committedAtConstructor = (row: DashboardNode, view: TableView): Asserter<string | Date> => {
+	const container = Object.assign(row.locator('[data-property="committedAt"]'), { dashboard: row.dashboard });
+
+	const extractDate = (str: string) => (view === "history/isbn" ? new Date(str) : new Date(str));
+	const dateElement = getDateString(container, "", extractDate);
+
+	return { assert: (want: string, opts?: WaitForOpts) => dateElement.assert(want, opts) };
+};
+
+const inventoryFieldConstructorLookup: {
+	[K in InventoryRowField]: FieldConstructor<InventoryFieldLookup, K>;
 } = {
 	isbn: stringFieldConstructor("isbn"),
 	title: stringFieldConstructor("title"),
@@ -242,5 +305,17 @@ const fieldConstructorLookup: {
 	editedBy: stringFieldConstructor("editedBy"),
 	category: stringFieldConstructor("category"),
 	year: stringFieldConstructor("year")
+};
+
+const historyFieldConstructorLookup: {
+	[K in HistoryRowField]: FieldConstructor<HistoryFieldLookup, K>;
+} = {
+	isbn: stringFieldConstructor("isbn"),
+	title: stringFieldConstructor("title"),
+	authors: stringFieldConstructor("authors"),
+	quantity: stringFieldConstructor("quantity"),
+	warehouseName: stringFieldConstructor("warehouseName"),
+	noteName: noteNameFieldConstructor,
+	committedAt: committedAtConstructor
 };
 // #endregion row_fields

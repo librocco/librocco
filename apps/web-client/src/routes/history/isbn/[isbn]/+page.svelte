@@ -55,7 +55,7 @@
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		{#key isbn}
-			<input autofocus use:input placeholder="Search" {...inputProps} />
+			<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
 		{/key}
 	</svelte:fragment>
 
@@ -85,15 +85,19 @@
 				<div class="border-b border-gray-300">
 					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
 
-					<div class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
+					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each $stock as s}
-							<div class="flex items-center justify-between">
+							<div
+								data-testid={testId("history-stock-report-entry")}
+								data-warehouse={s.warehouseName}
+								class="flex items-center justify-between"
+							>
 								<p class="flex items-center">
 									<Library class="mr-1" size={20} />
-									<span class="entity-list-text-sm mr-4">{s.warehouseName}</span>
+									<span data-property="warehouse" class="entity-list-text-sm mr-4">{s.warehouseName}</span>
 								</p>
 
-								<p class="rounded border border-gray-500 bg-gray-100 py-0.5 px-2">{s.quantity}</p>
+								<p data-property="quantity" class="rounded border border-gray-500 bg-gray-100 py-0.5 px-2">{s.quantity}</p>
 							</div>
 						{/each}
 					</div>
@@ -103,7 +107,7 @@
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox
 						title="No transactions found"
-						description="There seems to be no record for transactions of the given isbn volumes going in or out"
+						description="There seems to be no record of transactions for the given isbn volumes going in or out"
 						class="center-absolute"
 					/>
 					<!-- End entity list placeholder -->
@@ -111,7 +115,7 @@
 					<div class="sticky top-0">
 						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
 					</div>
-					<ul class="grid w-full grid-cols-12 divide-y">
+					<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 						{#each $transactions as txn}
 							{@const quantity = txn.quantity}
 							{@const noteId = txn.noteId}
@@ -122,27 +126,27 @@
 
 							<li class="col-span-12 grid grid-cols-12">
 								<div class="entity-list-row col-span-8 grid grid-cols-8 items-center text-gray-800">
-									<p class="col-span-2">
+									<p data-property="committedAt" class="col-span-2">
 										{generateUpdatedAtString(committedAt)}
 									</p>
 
 									<div class="col-span-2 flex items-center">
 										<Library class="mr-1" size={20} />
-										<p class="entity-list-text-sm">{warehouseName}</p>
+										<p data-property="warehouseName" class="entity-list-text-sm">{warehouseName}</p>
 									</div>
 
 									<a href={appPath("history/notes", noteId)} class="col-span-4 flex items-center">
 										<div class="{noteType === 'outbound' ? 'badge-red' : 'badge-green'} mx-4 flex items-center rounded-sm px-3">
 											{#if noteType === "inbound"}
 												<p><ArrowLeft size={16} /></p>
-												<p>{quantity}</p>
+												<p data-property="quantity">{quantity}</p>
 											{:else}
-												<p>{quantity}</p>
+												<p data-property="quantity">{quantity}</p>
 												<p><ArrowRight size={16} /></p>
 											{/if}
 										</div>
 
-										<p>{noteName}</p>
+										<p data-property="noteName">{noteName}</p>
 									</a>
 								</div>
 							</li>
@@ -159,12 +163,16 @@
 
 {#if $open && $entries?.length}
 	<div use:dropdown>
-		<ul class="w-full divide-y overflow-y-auto rounded border border-gray-300 bg-white shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
 			{#each $entries as { isbn, title, authors, year, publisher }}
-				<li on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))} class="w-full cursor-pointer px-4 py-3">
-					<p class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-					<p class="text-xl font-medium">{title}</p>
-					<p>{createMetaString({ authors, year, publisher })}</p>
+				<li
+					data-testid={testId("search-completion")}
+					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
+					class="w-full cursor-pointer px-4 py-3"
+				>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+					<p data-property="title" class="text-xl font-medium">{title}</p>
+					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>
 			{/each}
 		</ul>

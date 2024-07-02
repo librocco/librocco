@@ -20,6 +20,7 @@
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import type { DisplayRow } from "$lib/types/inventory";
+	import test from "node:test";
 
 	export let data: PageData;
 
@@ -113,15 +114,20 @@
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
 				<p>From:</p>
 				<div class="mb-4 inline-block md:mb-0">
-					<CalendarPicker onValueChange={onDateValueChange("from")} defaultValue={data.from.dateValue} {isDateDisabled} />
+					<CalendarPicker
+						id="calendar-from"
+						onValueChange={onDateValueChange("from")}
+						defaultValue={data.from.dateValue}
+						{isDateDisabled}
+					/>
 				</div>
 				<p>To:</p>
 				<div class="mb-4 inline-block md:mb-0">
-					<CalendarPicker onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
+					<CalendarPicker id="calendar-to" onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
 				</div>
 
 				<p>Filter:</p>
-				<div class="inline-block">
+				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
 							{@const active = value === filter}
@@ -148,7 +154,7 @@
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox
 					title="No transactions found"
-					description="There seems to be no record for transactions of the given isbn volumes going in or out"
+					description="There seem to be no transactions going in/out for the selected date range"
 					class="center-absolute"
 				/>
 				<!-- End entity list placeholder -->
@@ -156,19 +162,19 @@
 				<div class="sticky top-0">
 					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
 				</div>
-				<ul class="grid w-full grid-cols-12 divide-y">
+				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 					{#each $transactions as txn}
 						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-gray-800">
-							<p class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
+							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
 								{generateUpdatedAtString(txn.date)}
 							</p>
 
 							<div class="col-span-8 grid items-center gap-x-4 md:grid-cols-1 lg:col-span-7 lg:grid-cols-7 xl:col-span-8 xl:grid-cols-8">
-								<p class="col-span-2 overflow-hidden">{txn.isbn}</p>
+								<p data-property="isbn" class="col-span-2 overflow-hidden">{txn.isbn}</p>
 
-								<p class="col-span-3 overflow-hidden">{txn.title || "Unkonwn Title"}</p>
+								<p data-property="title" class="col-span-3 overflow-hidden">{txn.title || "Unkonwn Title"}</p>
 
-								<p class="col-span-2 overflow-hidden xl:col-span-3">{txn.authors || ""}</p>
+								<p data-property="authors" class="col-span-2 overflow-hidden xl:col-span-3">{txn.authors || ""}</p>
 							</div>
 
 							<a
@@ -178,16 +184,16 @@
 								{#if txn.noteType === "inbound"}
 									<div class="badge-green mx-4 flex items-center rounded-sm px-3">
 										<p><ArrowLeft size={16} /></p>
-										<p>{txn.quantity}</p>
+										<p data-property="quantity">{txn.quantity}</p>
 									</div>
 								{:else}
 									<div class="badge-red mx-4 flex items-center rounded-sm px-3">
-										<p>{txn.quantity}</p>
+										<p data-property="quantity">{txn.quantity}</p>
 										<p><ArrowRight size={16} /></p>
 									</div>
 								{/if}
 
-								<p>{txn.noteDisplayName}</p>
+								<p data-property="noteName">{txn.noteDisplayName}</p>
 							</a>
 						</li>
 					{/each}

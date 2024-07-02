@@ -49,7 +49,8 @@
 		{
 			label: "History",
 			href: appPath("history/date"),
-			icon: Book
+			icon: Book,
+			linkto: "history/date"
 		}
 	];
 
