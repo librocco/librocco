@@ -10,6 +10,7 @@ import { get } from "svelte/store";
 import { settingsStore } from "$lib/stores";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -30,6 +31,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { db, status } = await createDB(remoteUrl);
 
 		if (status) {
+			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
 			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
 			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
