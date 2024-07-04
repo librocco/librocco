@@ -65,7 +65,13 @@ class Books implements BooksInterface {
 			.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 			// The rows are returned in the same order as the supplied keys array.
 			// The row for a nonexistent document will just contain an "error" property with the value "not_found".
-			.then((docs) => unwrapDocs(docs));
+			.then((docs) => unwrapDocs(docs))
+
+			.catch((err) => {
+				if ((err as any).status === 404 || (err as any).status === 401) return [];
+				// For all other errors, throw
+				throw err;
+			});
 
 		return books;
 	}
@@ -99,7 +105,6 @@ class Books implements BooksInterface {
 			});
 
 			const initialState = from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:initial_state")));
-
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				tap(debug.log(ctx, "books:change")),
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
