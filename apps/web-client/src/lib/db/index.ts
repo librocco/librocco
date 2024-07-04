@@ -1,4 +1,4 @@
-import pouchdb from "pouchdb";
+import PouchDB from "pouchdb";
 
 import { newInventoryDatabaseInterface, type InventoryDatabaseInterface } from "@librocco/db";
 
@@ -39,7 +39,7 @@ export const checkUrlConnection = async (url: string) => {
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = async (url?: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
+export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
 	if (db) {
 		return { db, status: true, reason };
 	}
@@ -48,15 +48,13 @@ export const createDB = async (url?: string): Promise<{ db: InventoryDatabaseInt
 	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
 	 * There will be no local persistence.
 	 */
-	let connectionUrl = url ? url : LOCAL_POUCH_DB_NAME;
-	if (url && browser) {
+	const url = _url || LOCAL_POUCH_DB_NAME;
+	if (browser) {
 		try {
-			const pouch = new pouchdb(connectionUrl);
+			const pouch = new PouchDB(url);
 			db = newInventoryDatabaseInterface(pouch);
 			await db.init();
-
 			status = true;
-			connectionUrl = url;
 		} catch (err) {
 			status = false;
 			reason = "Failed to connect to provided URL.";
