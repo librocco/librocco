@@ -170,7 +170,7 @@ class Warehouse implements WarehouseInterface {
 			return this.updateInstance(res);
 		} catch (err) {
 			// If not found, return undefined
-			if ((err as any).status === 404) return undefined;
+			if ((err as any).status === 404 || (err as any).status === 401) return undefined;
 			// For all other errors, throw
 			throw err;
 		}
