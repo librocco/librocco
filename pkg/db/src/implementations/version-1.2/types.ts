@@ -17,6 +17,7 @@ import {
 	NavEntry
 } from "@/types";
 import { DocType } from "@/enums";
+import { StockInterface } from "./stock";
 
 /** Both the warehouse and note have additional `entries` field in this implementation */
 export type AdditionalData = {
@@ -33,8 +34,10 @@ export type WarehouseData = WD;
 export type WarehouseInterface = WI<NoteInterface>;
 export type InventoryDatabaseInterface = IDI<WarehouseInterface, NoteInterface> & {
 	view<R extends MapReduceRow, M extends CouchDocument = CouchDocument>(name: string): ViewInterface<R, M>;
-	getStock: () => Promise<StockMap>;
+	getStock: (endDate?: Date) => Promise<StockMap>;
 	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
+	archive(): ArchiveInterface;
+	stock(): StockInterface;
 };
 
 export interface ViewInterface<R extends MapReduceRow, M extends CouchDocument> {
@@ -52,3 +55,19 @@ export type PublishersListRow = MapReduceRow<string, number>;
 
 // Orders datbase interface
 export type OrdersDatabaseInterface = ODI;
+
+// Archive
+export type StockArchiveDoc = CouchDocument<{
+	month: string;
+	entries: VolumeStock[];
+	// Checksum ??
+}>;
+
+export interface StockArchiveInterface extends StockArchiveDoc {
+	get(): Promise<StockArchiveInterface>;
+	upsert(ctx: debug.DebugCtx, month: string, entries: VolumeStock[]): Promise<StockArchiveInterface>;
+}
+
+export interface ArchiveInterface {
+	stock(): StockArchiveInterface;
+}

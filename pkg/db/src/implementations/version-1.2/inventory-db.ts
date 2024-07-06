@@ -25,7 +25,8 @@ import {
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface
+	ViewInterface,
+	ArchiveInterface
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -35,12 +36,13 @@ import { newWarehouse } from "./warehouse";
 import { newBooksInterface } from "./books";
 import { newDbReplicator } from "./replicator";
 import { newView } from "./view";
-import { newStock } from "./stock";
+import { newStock, StockInterface } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 import { newHistoryProvider } from "./history";
 
 import { scanDesignDocuments } from "@/utils/pouchdb";
 import { versionId } from "./utils";
+import { newArchive } from "./archive";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -134,8 +136,8 @@ class Database implements InventoryDatabaseInterface {
 		return newDbReplicator(this);
 	}
 
-	getStock(): Promise<StockMap> {
-		return newStock(this).query();
+	getStock(endDate?: Date): Promise<StockMap> {
+		return newStock(this).query(endDate);
 	}
 
 	async buildIndices() {
@@ -197,6 +199,14 @@ class Database implements InventoryDatabaseInterface {
 			this.#history = newHistoryProvider(this);
 		}
 		return this.#history;
+	}
+
+	stock(): StockInterface {
+		return newStock(this);
+	}
+
+	archive(): ArchiveInterface {
+		return newArchive(this);
 	}
 
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {

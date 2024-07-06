@@ -38,18 +38,32 @@ export const processVersionName = (s: string): string => s.replace("_", " ").rep
 export const processTestName = (s: string): string => s.replaceAll(/([A-Z]|[0-9]+)/g, (c) => " " + c.toLowerCase());
 
 /**
+ * Returns a timestamp (UNIX millis), hashed to base 36. Used for generating or accessing note ids.
+ * @param {Date} [date] optional date to hash, defaults to current date
+ *
+ * @example
+ * ```ts
+ * // We want to get all notes for wh1 starting from "2024-01-01"
+ * import PouchDB from "pouchdb";
+ * const startkey = versionId(`${warehouseId}/notes/${getHashedTimestamp(new Date("2024-01-01"))}`);
+ * const notes = await new PouchDB("db-name").allDocs({ startkey })
+ * ```
+ */
+export const getHashedTimestamp = (date = new Date()) => date.getTime().toString(36);
+
+/**
  * A util used to generate a timestamped unique string.
  * - starts by UNIX timestamp converted to hex for brevity
  * - adds two character hex order
  * - finishes with random 2-character hex
  * @param {number} [i] ordering index to append after the timestamp, in case we have a lot of entries and
+ * @param {Date} [date] this will mostly be used for tests as, in production, we want to use the current date/time
  * wish to order them regardless of them, possibly, receiving the same UNIX timestamp
  * @returns a semi-unique string generated from timestamp, so the results can be sorted chronologically.
  */
-export const uniqueTimestamp = (i = 0) => {
-	// Get hex timestamp (for brevity)
-	const millis = Date.now();
-	const hexTimestamp = millis.toString(36);
+export const uniqueTimestamp = (i = 0, date = new Date()) => {
+	// Get hashed timestamp (for brevity)
+	const hashedTimestmap = getHashedTimestamp(date);
 
 	// Create a standardised (2 character) order number
 	// Able to represent 1296 numbers and it's safe to assume no more
@@ -60,8 +74,14 @@ export const uniqueTimestamp = (i = 0) => {
 	// Additional two characters for uniqueness buffer
 	const additional = Math.floor(Math.random() * 1296).toString(36);
 
-	return [hexTimestamp, index, additional].join("");
+	return [hashedTimestmap, index, additional].join("");
 };
+
+/**
+ * Unpacks the unique timestamped id (of a note) and extracts the date the note was created
+ * it accepts both note id (as a unique timestmap) as well as the full note _id - "/" separated namespaced path ending with unique timestamp
+ */
+export const getCreatedAt = (id: string): Date => new Date(parseInt(id.split("/").pop()!.slice(0, 8), 36));
 
 export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Observable<boolean>): Promise<R> => {
 	// Create a stream to emit the result of the 'cb' function

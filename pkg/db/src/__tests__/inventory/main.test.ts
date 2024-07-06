@@ -13,6 +13,7 @@ import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatch
 
 import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
+import { addAndCommitNotes, assertStock } from "@/__testUtils__/misc";
 import { createSingleSourceBookFetcher } from "@/utils/plugins";
 
 import { fiftyEntries } from "./data";
@@ -2542,6 +2543,121 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			expect(index.search("Penguin Classics")).toEqual([lotr, werther].map((b) => ({ ...b, updatedAt: expect.any(String) })))
 		);
 	});
+
+	test("calc stock over a long period", async () => {
+		await addAndCommitNotes(db, [
+			{
+				date: "2021-01-01",
+				type: "inbound",
+				warehouseId: "wh1",
+				entries: [
+					{ isbn: "1", quantity: 10, warehouseId: "wh1" },
+					{ isbn: "2", quantity: 20, warehouseId: "wh1" }
+				]
+			},
+			{
+				date: "2021-01-01",
+				type: "inbound",
+				warehouseId: "wh2",
+				entries: [{ isbn: "1", quantity: 20, warehouseId: "wh2" }]
+			},
+			{
+				date: "2021-01-02",
+				type: "outbound",
+				entries: [
+					{ isbn: "1", quantity: 5, warehouseId: "wh1" },
+					{ isbn: "1", quantity: 5, warehouseId: "wh2" },
+					{ isbn: "2", quantity: 5, warehouseId: "wh1" }
+				]
+			},
+			// Warehouse 1:
+			// - 1 - 5
+			// - 2 - 15
+			// Warehouse 2:
+			// - 1 - 15
+
+			{
+				date: "2022-01-01",
+				type: "inbound",
+				warehouseId: "wh1",
+				entries: [{ isbn: "1", quantity: 5, warehouseId: "wh1" }]
+			},
+			// Warehouse 1:
+			// - 1 - 10
+			// - 2 - 15
+			// Warehouse 2:
+			// - 1 - 15
+
+			{
+				date: "2022-02-01",
+				type: "outbound",
+				entries: [
+					{ isbn: "1", quantity: 5, warehouseId: "wh1" },
+					{ isbn: "1", quantity: 5, warehouseId: "wh2" }
+				]
+			},
+			// Warehouse 1:
+			// - 1 - 5
+			// - 2 - 15
+			// Warehouse 2:
+			// - 1 - 10
+
+			{
+				date: new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10),
+				type: "inbound",
+				warehouseId: "wh2",
+				entries: [
+					{ isbn: "3", quantity: 5, warehouseId: "wh2" },
+					{ isbn: "4", quantity: 5, warehouseId: "wh2" }
+				]
+			},
+			{
+				date: new Date(Date.now() - 1 * TIME_DAY).toISOString().slice(0, 10),
+				type: "inbound",
+				warehouseId: "wh3",
+				entries: [{ isbn: "1", quantity: 5, warehouseId: "wh3" }]
+			},
+			{
+				date: new Date().toISOString().slice(0, 10),
+				type: "outbound",
+				entries: [
+					{ isbn: "3", quantity: 3, warehouseId: "wh2" },
+					{ isbn: "1", quantity: 3, warehouseId: "wh3" }
+				]
+			}
+			// Warehouse 1:
+			// - 1 - 5
+			// - 2 - 15
+			// Warehouse 2:
+			// - 1 - 10
+			// - 3 - 2
+			// - 4 - 5
+			// Warehouse 3:
+			// - 1 - 2
+		]);
+
+		await assertStock(db, versionId, [
+			{
+				warehouseId: "wh1",
+				entries: [
+					{ isbn: "1", quantity: 5, warehouseId: "wh1" },
+					{ isbn: "2", quantity: 15, warehouseId: "wh1" }
+				]
+			},
+			{
+				warehouseId: "wh2",
+				entries: [
+					{ isbn: "1", quantity: 10, warehouseId: "wh2" },
+					{ isbn: "3", quantity: 2, warehouseId: "wh2" },
+					{ isbn: "4", quantity: 5, warehouseId: "wh2" }
+				]
+			},
+			{
+				warehouseId: "wh3",
+				entries: [{ isbn: "1", quantity: 2, warehouseId: "wh3" }]
+			}
+		]);
+	});
 });
 
 // #region helpers
@@ -2571,4 +2687,6 @@ const volumeStockClientToVolumeStockClientOld = (entry: VolumeStockClient): Volu
 		...(availableWarehouses ? { availableWarehouses: navMapToNavList(availableWarehouses) } : {})
 	};
 };
+
+const TIME_DAY = 1000 * 60 * 60 * 24;
 // #endregion
