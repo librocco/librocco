@@ -18,7 +18,15 @@ describe("Implementation specific unit tests", () => {
 	// Initialise a new db for each test
 	beforeEach(async () => {
 		db = newTestDB(inventoryDb);
+
+		// Here we NEED to initialise the db as we need the design docs to be added to the db, for setup operations
+		// e.g. note/warehouse seq for note/warehouse creation
 		await db.init();
+		// We, however, want a clean slate with regard to the stock archive (not have the one created on init).
+		// We can't achieve this by deleting the doc as the doc will be there, only with _deleted: true flag.
+		// Instead we're removing the month tag - effectively voiding the archive relevance (a bit hacky, but here we are)
+		await db.archive().stock().upsert({}, "", []);
+
 		await db.warehouse("wh1").create();
 	});
 
@@ -29,8 +37,8 @@ describe("Implementation specific unit tests", () => {
 
 		await addAndCommitNotes(db, baseNotes);
 
-		// Should crete a new doc
-		await db.stock().init();
+		// Should crete a new archive doc (as part of db initalisation)
+		await db.init();
 
 		await waitFor(async () => {
 			const { entries } = await db.archive().stock().get();
@@ -60,8 +68,8 @@ describe("Implementation specific unit tests", () => {
 			}
 		]);
 
-		// Should crete a new doc
-		await db.stock().init();
+		// Should update the archive (as part of db initialisation)
+		await db.init();
 
 		await waitFor(async () => {
 			const { month, entries } = await db.archive().stock().get();
@@ -100,8 +108,8 @@ describe("Implementation specific unit tests", () => {
 			}
 		]);
 
-		// Should crete a new doc
-		await db.stock().init();
+		// Should update the archive (as part of db initialisation)
+		await db.init();
 
 		await waitFor(async () => {
 			const { month, entries } = await db.archive().stock().get();
@@ -122,8 +130,8 @@ describe("Implementation specific unit tests", () => {
 		expect(entries).toEqual(baseStock);
 		expect(month).toEqual("2023-01-01");
 
-		// Should crete a new doc
-		await db.stock().init();
+		// Should update the archive (as part of db initialisation)
+		await db.init();
 
 		await waitFor(async () => {
 			const { month, entries } = await db.archive().stock().get();
@@ -188,6 +196,3 @@ const baseStock = [
 		warehouseId: versionId("wh1")
 	}
 ];
-
-const TIME_DAY = 1000 * 60 * 60 * 24;
-// #endregion

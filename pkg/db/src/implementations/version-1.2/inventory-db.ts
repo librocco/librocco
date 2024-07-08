@@ -162,6 +162,9 @@ class Database implements InventoryDatabaseInterface {
 		}
 
 		await Promise.all(dbSetup);
+		// By initialising the stock, we're ensuring the archive doc is up-to-date
+		await this.stock().init();
+
 		return this;
 	}
 

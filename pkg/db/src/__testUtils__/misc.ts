@@ -36,8 +36,8 @@ export const addAndCommitNotes = async (db: InventoryDatabaseInterface, notes: T
 		vi.setSystemTime(new Date(note.date).getTime());
 
 		await wh
+			.note()
 			.create()
-			.then((w) => w.note().create())
 			.then((n) => n.addVolumes(...note.entries))
 			.then((n) => n.commit({}));
 	}
