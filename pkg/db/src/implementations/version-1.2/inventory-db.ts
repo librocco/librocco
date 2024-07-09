@@ -136,8 +136,8 @@ class Database implements InventoryDatabaseInterface {
 		return newDbReplicator(this);
 	}
 
-	getStock(endDate?: Date): Promise<StockMap> {
-		return newStock(this).query(endDate);
+	getStock(): Promise<StockMap> {
+		return newStock(this).query({});
 	}
 
 	async buildIndices() {
@@ -165,6 +165,11 @@ class Database implements InventoryDatabaseInterface {
 		// By initialising the stock, we're ensuring the archive doc is up-to-date
 		await this.stock().init();
 
+		return this;
+	}
+
+	async clearCacheAndArchive() {
+		await this.archive().stock().clear({});
 		return this;
 	}
 

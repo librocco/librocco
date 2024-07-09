@@ -59,13 +59,15 @@ export type OrdersDatabaseInterface = ODI;
 // Archive
 export type StockArchiveDoc = CouchDocument<{
 	month: string;
-	entries: VolumeStock[];
+	entries: VolumeStock<"book">[];
 	// Checksum ??
 }>;
 
 export interface StockArchiveInterface extends StockArchiveDoc {
 	get(): Promise<StockArchiveInterface>;
 	upsert(ctx: debug.DebugCtx, month: string, entries: VolumeStock[]): Promise<StockArchiveInterface>;
+	stream(ctx: debug.DebugCtx): Observable<StockArchiveDoc>;
+	clear(ctx: debug.DebugCtx): Promise<void>;
 }
 
 export interface ArchiveInterface {

@@ -1,6 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
+import {
+	BooksInterface,
+	DesignDocument,
+	Replicator,
+	PluginInterfaceLookup,
+	LibroccoPlugin,
+	CustomerOrderInterface,
+	DatabaseInterface
+} from "@/types";
 import { OrdersDatabaseInterface } from "./types";
 
 import { orders as designDocs } from "./designDocuments";
@@ -52,6 +60,11 @@ class Database implements OrdersDatabaseInterface {
 
 		await Promise.all(dbSetup);
 		return this;
+	}
+
+	// Noop: here only for compatibility with the public interface
+	clearCacheAndArchive(): Promise<DatabaseInterface> {
+		return Promise.resolve(this);
 	}
 
 	updateDesignDoc(doc: DesignDocument) {

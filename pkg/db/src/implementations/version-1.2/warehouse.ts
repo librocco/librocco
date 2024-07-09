@@ -273,7 +273,7 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async getEntries(): Promise<Iterable<VolumeStockClient>> {
-		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
+		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query({}), this.#db.getWarehouseDataMap()]);
 		const entries = wrapIter(queryRes.rows())
 			.filter(isBookRow)
 			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));

@@ -2545,6 +2545,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 	});
 
 	test("calc stock over a long period", async () => {
+		// Here we're testing that the long term stock will yield same results for all implementations.
+		// However, since we're going back in history and adding notes, that might conflict with implementation specific
+		// details around caching and archive, so we clear the archive (if any) to get the clean slate.
+		await db.clearCacheAndArchive();
+
 		await addAndCommitNotes(db, [
 			{
 				date: "2021-01-01",
@@ -2635,6 +2640,32 @@ describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => 
 			// Warehouse 3:
 			// - 1 - 2
 		]);
+
+		await assertStock(db, versionId, [
+			{
+				warehouseId: "wh1",
+				entries: [
+					{ isbn: "1", quantity: 5, warehouseId: "wh1" },
+					{ isbn: "2", quantity: 15, warehouseId: "wh1" }
+				]
+			},
+			{
+				warehouseId: "wh2",
+				entries: [
+					{ isbn: "1", quantity: 10, warehouseId: "wh2" },
+					{ isbn: "3", quantity: 2, warehouseId: "wh2" },
+					{ isbn: "4", quantity: 5, warehouseId: "wh2" }
+				]
+			},
+			{
+				warehouseId: "wh3",
+				entries: [{ isbn: "1", quantity: 2, warehouseId: "wh3" }]
+			}
+		]);
+
+		// Running db.init will, for some implementations, update the archive and cache part of the stock.
+		// We want to ensure the results are same, regardless.
+		await db.init();
 
 		await assertStock(db, versionId, [
 			{

@@ -113,17 +113,25 @@ export interface BooksInterface {
 export type DatabaseInterface<T = {}> = {
 	/** A reference to the pouch db instance the db interface was built around. */
 	_pouch: PouchDB.Database;
-	/** Update design doc is here more for internal usage and, shouldn't really be called explicitly (call `db.init` instead). */
-	updateDesignDoc(doc: DesignDocument): Promise<PouchDB.Core.Response>;
 	/**
 	 * Init initialises the db:
 	 * - creates the default warehouse
 	 * - uploads the design docs
+	 * - initialises cache (if applicable)
 	 *
 	 * _Note: this has to be called only the first time the db is initialised (unless using live replication), but is
 	 * idempotent in nature and it's good to run it each time the app is loaded (+ it's necessary if using live replication)._
 	 */
 	init: () => Promise<DatabaseInterface<T>>;
+	/**
+	 * Clear cache and archive clears any would-be cached data and archives - the cache
+	 * and archives are arbitraty and implementation specific. It's perfectly fine if this function is a no-op for
+	 * some implementations, but needs to be part of the standard interface as a "reset" button.
+	 *
+	 * _Note: this will most likely be used for testing purposes._
+	 * @returns
+	 */
+	clearCacheAndArchive(): Promise<DatabaseInterface>;
 	/**
 	 * Sets up replication by returning four methods that enable the client to schedule the init stages more explicitly
 	 */

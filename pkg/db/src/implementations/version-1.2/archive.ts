@@ -1,4 +1,4 @@
-import { BehaviorSubject } from "rxjs";
+import { BehaviorSubject, Observable } from "rxjs";
 
 import { VolumeStock, debug } from "@librocco/shared";
 
@@ -9,6 +9,7 @@ import { DocType } from "@/enums";
 
 import { versionId } from "./utils";
 import { isEmpty, runAfterCondition } from "@/utils/misc";
+import { newDocumentStream } from "@/utils/pouchdb";
 
 class Archive implements ArchiveInterface {
 	#db: DatabaseInterface;
@@ -34,7 +35,7 @@ class StockArchive implements StockArchiveInterface {
 	_id = versionId(`archive/stock`);
 	_rev?: string;
 	month = "";
-	entries: VolumeStock[] = [];
+	entries: VolumeStock<"book">[] = [];
 	docType = DocType.StockArchive;
 
 	constructor(db: DatabaseInterface) {
@@ -97,7 +98,15 @@ class StockArchive implements StockArchiveInterface {
 		return runAfterCondition(async () => this, this.#initialized);
 	}
 
-	async upsert(ctx: debug.DebugCtx, month: string, entries: VolumeStock[]): Promise<StockArchiveInterface> {
+	async upsert(ctx: debug.DebugCtx, month: string, entries: VolumeStock<"book">[]): Promise<StockArchiveInterface> {
 		return this._update(ctx, { month, entries });
+	}
+
+	async clear(ctx: debug.DebugCtx) {
+		await this._update(ctx, { month: "", entries: [] });
+	}
+
+	stream(ctx: debug.DebugCtx): Observable<StockArchiveDoc> {
+		return newDocumentStream(ctx, this.#db._pouch, this._id);
 	}
 }

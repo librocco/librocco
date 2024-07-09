@@ -18,6 +18,14 @@ export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Itera
 	});
 }
 
+export function concat<T>(...iterables: Iterable<T>[]): ReusableGenerator<T> {
+	return iterableFromGenerator(function* () {
+		for (const iterable of iterables) {
+			yield* iterable;
+		}
+	});
+}
+
 export function _groupIntoMap<T, K, V>(iterable: Iterable<T>, selector: (entry: T) => [K, V]): Map<K, Iterable<V>> {
 	const map = new Map<K, V[]>();
 	const add = (key: K, value: V) => map.get(key)?.push(value) || map.set(key, [value]);
@@ -167,6 +175,7 @@ export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGen
 interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
+	concat(...iterables: Iterable<T>[]): TransformableIterable<T>;
 	_group<K, V>(selector: (entry: T) => [K, V]): TransformableIterable<[K, Iterable<V>]>;
 	_groupIntoMap<K, V>(selector: (entry: T) => [K, V]): Map<K, Iterable<V>>;
 	filter<S extends T>(predicate: (value: T) => value is S): TransformableIterable<S>;
@@ -208,6 +217,7 @@ interface TransformableIterable<T> extends Iterable<T> {
 export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => {
 	const m = <R>(mapper: (value: T) => R) => wrapIter(map(iterable, mapper));
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
+	const c = (...iterables: Iterable<T>[]) => wrapIter(concat(iterable, ...iterables));
 	const _g = <K, V>(selector: (entry: T) => [K, V]) => wrapIter(_group(iterable, selector));
 	const _gim = <K, V>(selector: (entry: T) => [K, V]) => _groupIntoMap(iterable, selector);
 	const f = (predicate: (value: T) => boolean) => wrapIter(filter(iterable, predicate));
@@ -224,6 +234,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 		[Symbol.iterator]: iterable[Symbol.iterator],
 		map: m,
 		flatMap: fm,
+		concat: c,
 		_group: _g,
 		_groupIntoMap: _gim,
 		filter: f,
