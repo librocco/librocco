@@ -121,5 +121,61 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
+/**
+ * Creates a stock design document view for the specific month. It captures all changes to stock after that month (for running changes and so)
+ */
+const createRunningStockLogic = ($month$: string): DesignDocument["views"][string] => ({
+	map: function (doc: WarehouseData | NoteData) {
+		if (doc.docType !== "note") {
+			return;
+		}
+
+		const { entries, committedAt, noteType } = doc as NoteData;
+
+		// Check if note is applicable for the given month
+		// Note: Any time after the month start is applicable, as it might happen that the
+		// archive is stale (e.g. two, three months ago, so we need to capture all of the running stock)
+		if (!entries || !committedAt || committedAt < $month$) {
+			return;
+		}
+
+		entries.forEach((entry) => {
+			// Only book transactions are accounted for in stock
+			if (entry.__kind !== "custom") {
+				// Check if we should be incrementing or decrementing the overall quantity
+				const delta = noteType === "inbound" ? entry.quantity : -entry.quantity;
+
+				emit([entry.warehouseId, entry.isbn], delta);
+			}
+		});
+	}
+		.toString()
+		.replace(/\$month\$/g, `"${$month$}"`),
+	reduce: "_sum"
+});
+
+/** Create a new stock design document with the single view - current month */
+export const createStockDesignDocument = (month: string): DesignDocument => ({
+	_id: "_design/v1_stock",
+	views: {
+		[month]: createRunningStockLogic(month)
+	}
+});
+
+/**
+ * Updates the existing stock design document by adding a new view for the given month. It's safe to keep previous months as views, even though they, in theory,
+ * listen to all updates, my understanding is that the view won't be recalculated until it's queries, so, as long as we query only the latest, the previous ones
+ * aren't much of a liability.
+ */
+export const updateStockDesignDocument =
+	(month: string) =>
+	(prev: DesignDocument): DesignDocument => ({
+		...prev,
+		views: {
+			...prev.views,
+			[month]: createRunningStockLogic(month)
+		}
+	});
+
 export const inventory = [listDeisgnDocument, sequenceNamingDesignDocument];
 export const orders = [listDeisgnDocument, sequenceNamingDesignDocument];

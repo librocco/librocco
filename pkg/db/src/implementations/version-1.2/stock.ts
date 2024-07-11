@@ -2,12 +2,14 @@ import { concat, from, map, Observable, switchMap } from "rxjs";
 
 import { debug, StockMap, VolumeStock, VolumeStockInput, wrapIter } from "@librocco/shared";
 
+import { DesignDocument, MapReduceRow, NoteType } from "@/types";
 import { InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
+
+import { createStockDesignDocument, updateStockDesignDocument } from "./designDocuments";
 
 import { newChangesStream } from "@/utils/pouchdb";
 import { versionId } from "./utils";
 import { /* getCreatedAt, */ isBookRow } from "@/utils/misc";
-import { NoteType } from "@/types";
 
 export interface StockQueryParams {
 	startDate?: Date;
@@ -40,19 +42,19 @@ class Stock implements StockInterface {
 		};
 	}
 
-	changes({ startDate, endDate }: StockQueryParams = {}) {
+	changes(startMonth?: string) {
 		return this.#db._pouch.changes<Doc>({
 			...this.options,
 			include_docs: false,
 			since: "now",
 			live: true,
-			// We don't care about changes to non-committed notes (as they don't affect the stock)
-			filter: (doc) => doc.committed && filterByStartDate(startDate)(doc) && filterByEndDate(endDate)(doc)
+			filter: startMonth ? "_view" : (doc) => doc.committed,
+			view: startMonth ? `v1_stock/${startMonth}` : undefined
 		});
 	}
 
-	changesStream(ctx: debug.DebugCtx, params?: StockQueryParams) {
-		return newChangesStream(ctx, this.changes(params));
+	changesStream(ctx: debug.DebugCtx, startMonth?: string) {
+		return newChangesStream(ctx, this.changes(startMonth));
 	}
 
 	async init(): Promise<void> {
@@ -76,6 +78,29 @@ class Stock implements StockInterface {
 			.archive()
 			.stock()
 			.upsert({}, startOfCurrentMonth, [...entries]);
+
+		// Update (or create if not exist) the design document
+		await this.#db._pouch
+			.get<DesignDocument>("_design/v1_stock")
+			// If document found updated it - add current month
+			.then(updateStockDesignDocument(startOfCurrentMonth))
+			.then((doc) => this.#db._pouch.put(doc))
+			.catch((err) => err.status !== 404 && Promise.reject(err))
+			// If doc not found, create it
+			.then(() => this.#db._pouch.put(createStockDesignDocument(startOfCurrentMonth)))
+			// Finally, if update conflict, the same init had been ran concurrently, there's an astronomical chance
+			// that the documents are different - simply absorb the 409
+			.catch((err) => err.status !== 409 && Promise.reject(err));
+	}
+
+	private async _queryDesignDoc(startMonth: string) {
+		const queryRes = await this.#db.view<MapReduceRow<[string, string], number>>(`v1_stock/${startMonth}`).query({ group_level: 2 });
+		return wrapIter(queryRes.rows).map(({ key: [warehouseId, isbn], value: quantity }) => ({
+			warehouseId,
+			isbn,
+			quantity,
+			noteType: "inbound" as NoteType
+		}));
 	}
 
 	private async _query({ startDate, endDate }: StockQueryParams = {}) {
@@ -105,13 +130,13 @@ class Stock implements StockInterface {
 	}
 
 	private _getRunningEntries(ctx: debug.DebugCtx, startDate?: Date) {
-		const res = this._query({ startDate });
+		const res = startDate ? this._queryDesignDoc(startDate.toISOString().slice(0, 7)) : this._query();
 		debug.log(ctx, "get_running_entries: got res")(res);
 		return res;
 	}
 
 	private _streamRunningEntries(ctx: debug.DebugCtx, startDate?: Date) {
-		const trigger = concat(from(Promise.resolve()), this.changesStream(ctx, { startDate }));
+		const trigger = concat(from(Promise.resolve()), this.changesStream(ctx, startDate?.toISOString().slice(0, 7)));
 		return trigger.pipe(switchMap(() => this._getRunningEntries(ctx, startDate)));
 	}
 

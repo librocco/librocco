@@ -154,7 +154,7 @@ class Database implements InventoryDatabaseInterface {
 		// create default warehouse
 		dbSetup.push(this.warehouse().create());
 
-		// Upload design documents if any
+		// Upload inventory design documents
 		if (designDocs.length) {
 			designDocs.forEach((dd) => {
 				dbSetup.push(this.updateDesignDoc(dd));
