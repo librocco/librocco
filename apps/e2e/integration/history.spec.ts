@@ -299,7 +299,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh1")
-			.note()
+			.note("note-1")
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
 			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 3 }))
@@ -309,7 +309,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse()
-			.note()
+			.note("note-2")
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
 			.then((n) =>
@@ -324,7 +324,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh1")
-			.note()
+			.note("note-3")
 			.create()
 			.then((n) => n.setName({}, "Note 3"))
 			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }))
@@ -333,7 +333,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse()
-			.note()
+			.note("note-4")
 			.create()
 			.then((n) => n.setName({}, "Note 4"))
 			.then((n) => n.addVolumes({ isbn: "2222222222", quantity: 1, warehouseId: "wh1" }))
