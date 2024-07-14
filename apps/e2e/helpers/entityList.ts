@@ -40,12 +40,9 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 	}
 
 	async function assertElements(elements: EntityListMatcher[]): Promise<void> {
-		for (let i = 0; i <= elements.length; i++) {
-			// For the element after the last, we're asserting that there are no more elements in the list.
-			// This is a more Playwright-friendly way of asserting the list than checking for length explicitly.
-			const element = i === elements.length ? null : elements[i];
-			await assertElement(element, i);
-		}
+		// Assert that there are no more than required elements (last element + 1 should be null)
+		await assertElement(null, elements.length);
+		await Promise.all(elements.map(assertElement));
 	}
 
 	const item = (nth: number) => getEntityListItem(getEntityList(_parent, view), nth);
