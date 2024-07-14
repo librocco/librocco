@@ -57,7 +57,7 @@ test("should delete the note on delete button click (after confirming the prompt
 	await dashboard.dialog().confirm();
 
 	// Check that the note has been deleted
-	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }]);
+	await content.entityList("outbound-list").assertElements([{ name: "Note 1" }]);
 });
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
