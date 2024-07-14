@@ -38,6 +38,9 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 	const row = (index: number) => getInventoryRow(getInventoryTable(parent, view), view, index);
 
 	const assertRows = async (rows: Partial<InventoryRowValues>[], opts: AssertRowFieldsOpts) => {
+		// Check that there are no more rows than specified in the want 'rows' array
+		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
+
 		await Promise.all(
 			rows.map(async (values, index) => {
 				// We're waiting for the row to be present before asserting the fields
@@ -47,9 +50,6 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 				return row(index).assertFields(values, opts);
 			})
 		);
-
-		// Check that there are no more rows than specified in the want 'rows' array
-		await row(rows.length).waitFor({ state: "detached", timeout: assertionTimeout, ...opts });
 	};
 
 	return Object.assign(container, { dashboard, row, assertRows });
