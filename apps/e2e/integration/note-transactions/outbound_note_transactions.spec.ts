@@ -322,10 +322,7 @@ test("if there are two transactions, one with specified and one with unspecified
 			await db
 				.warehouse(`wh-${i}`)
 				.create()
-				.then((wh) => wh.setName({}, `Warehouse ${i}`))
-				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
-				.then((n) => n.commit({}));
+				.then((wh) => wh.setName({}, `Warehouse ${i}`));
 		}
 		// Add two transactions to the note, one belonging to the first warehouse (specified warehouse) and one with unspecified warehouse
 		await db
