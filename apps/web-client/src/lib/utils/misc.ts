@@ -1,7 +1,7 @@
 import { Observable, combineLatest, map } from "rxjs";
 
-import type { BookEntry, BookFetchResultEntry, PastTransaction, WarehouseDataMap } from "@librocco/db";
-import { wrapIter, debug, composeCompare, asc } from "@librocco/shared";
+import type { BookEntry, BookFetchResultEntry, WarehouseDataMap } from "@librocco/db";
+import { wrapIter, debug } from "@librocco/shared";
 
 import type { DailySummaryStore } from "$lib/types/inventory";
 
@@ -29,13 +29,6 @@ export const compareNotes = <N extends { updatedAt?: string | Date | null }>({ u
 	return _a < _b ? 1 : -1;
 };
 
-const compareTxns = composeCompare<Pick<PastTransaction, "isbn" | "noteId" | "warehouseId" | "date">>(
-	asc(({ date }) => date),
-	asc(({ noteId }) => noteId.split("/").pop()),
-	asc(({ isbn }) => isbn),
-	asc(({ warehouseId }) => warehouseId)
-);
-
 export const mapMergeBookWarehouseData =
 	(ctx: debug.DebugCtx, entries: Iterable<any>, warehouseListStream: Observable<WarehouseDataMap>) =>
 	(books: Observable<Iterable<BookEntry | undefined>>): Observable<DailySummaryStore> =>
@@ -56,7 +49,7 @@ export const mapMergeBookWarehouseData =
 					.array();
 
 				return {
-					bookList: books.sort(compareTxns),
+					bookList: books,
 
 					stats: books.reduce(
 						(acc, { quantity, noteType, discountPercentage, price = 0 }) => {

@@ -122,7 +122,7 @@
 							</div>-->
 
 							<li
-								class="entity-list-row grid w-full w-full grid-cols-2 items-center gap-y-3 gap-x-4 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
+								class="entity-list-row grid w-full grid-cols-2 items-center gap-y-3 gap-x-4 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
 							>
 								<p data-property="isbn" class="text-xl font-medium leading-none text-gray-900 lg:col-span-3 xl:col-span-2">{isbn}</p>
 								<p
