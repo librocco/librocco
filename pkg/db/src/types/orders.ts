@@ -2,16 +2,18 @@
 
 import { CustomerOrderState, OrderItemStatus, debug } from "@librocco/shared";
 
-import { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument } from "./misc";
+import { DatabaseInterface as BaseDatabaseInterface, BooksInterface, TimestampedDoc } from "./misc";
 import { Observable } from "rxjs";
 
-export type OrdersDatabaseInterface = BaseDatabaseInterface<{
-	books(): BooksInterface;
-	customerOrder(id?: string): CustomerOrderInterface;
-}>;
+export type OrdersDatabaseInterface<T extends Record<string, any> = {}> = BaseDatabaseInterface<
+	{
+		books(): BooksInterface;
+		customerOrder(id?: string): CustomerOrderInterface;
+	} & T
+>;
 
-export interface NewOrdersDatabase {
-	(db: PouchDB.Database): OrdersDatabaseInterface;
+export interface OrdersDatabaseConstructor {
+	(name: string, opts?: { test?: boolean }): OrdersDatabaseInterface;
 }
 
 /**
@@ -76,8 +78,9 @@ export interface OrderItem {
  * Standardized data that should be present in any customer order
  * (different implementations might differ, but should extend this structure)
  */
-export type CustomerOrderData<A extends Record<string, any> = {}> = CouchDocument<
+export type CustomerOrderData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
+		id: string;
 		updatedAt: string | null;
 		state: CustomerOrderState;
 		email: string;

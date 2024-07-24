@@ -1,9 +1,11 @@
-import { DatabaseInterface as BaseDatabaseInterface, Replicator } from "@/types";
+import { Replicator, DatabaseInterface } from "@/types";
+
+type PouchDBDatabase = DatabaseInterface & { _pouch: PouchDB.Database };
 
 export class DbReplicator implements Replicator {
-	#db: BaseDatabaseInterface;
+	#db: PouchDBDatabase;
 
-	constructor(db: BaseDatabaseInterface) {
+	constructor(db: PouchDBDatabase) {
 		this.#db = db;
 	}
 
@@ -20,4 +22,4 @@ export class DbReplicator implements Replicator {
 	}
 }
 
-export const newDbReplicator = (db: BaseDatabaseInterface) => new DbReplicator(db);
+export const newDbReplicator = (db: PouchDBDatabase) => new DbReplicator(db);

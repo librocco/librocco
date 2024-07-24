@@ -1,7 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import PouchDB from "pouchdb";
+import MemoryAdapter from "pouchdb-adapter-memory"; // For testing
 
-import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
-import { OrdersDatabaseInterface } from "./types";
+import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
+import { DesignDocument, OrdersDatabaseInterface } from "./types";
 
 import { orders as designDocs } from "./designDocuments";
 
@@ -38,7 +40,7 @@ class Database implements OrdersDatabaseInterface {
 		return this.#plugins.get(type);
 	}
 
-	async init(): Promise<OrdersDatabaseInterface> {
+	async init(): Promise<void> {
 		// Start initialisation with db setup:
 		// - update design documents
 		const dbSetup: Promise<any>[] = [];
@@ -51,7 +53,6 @@ class Database implements OrdersDatabaseInterface {
 		}
 
 		await Promise.all(dbSetup);
-		return this;
 	}
 
 	updateDesignDoc(doc: DesignDocument) {
@@ -84,6 +85,15 @@ class Database implements OrdersDatabaseInterface {
 	// #endregion instances
 }
 
-export const newDatabase = (db: PouchDB.Database): OrdersDatabaseInterface => {
-	return new Database(db);
+export const newDatabase = (name: string, { test = false }: { test?: boolean } = {}): OrdersDatabaseInterface => {
+	if (test) {
+		// Enable running of the tests against in-memory PouchDB
+		PouchDB.plugin(MemoryAdapter);
+		const pouchInstance = new PouchDB(name, { adapter: "memory" });
+
+		return new Database(pouchInstance);
+	}
+
+	const pouchInstance = new PouchDB(name);
+	return new Database(pouchInstance);
 };

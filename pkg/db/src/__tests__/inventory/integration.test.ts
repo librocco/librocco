@@ -6,8 +6,8 @@ import { __withDocker__ } from "@/__tests__/constants";
 
 import * as implementations from "@/implementations/inventory";
 
-import { newTestDB } from "@/__testUtils__/db";
 import newInventoryDataLoader from "@/__testUtils__/inventoryDataLoader";
+import { newTestDBName } from "@/__testUtils__/db";
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
@@ -16,7 +16,7 @@ describe
 	// Skip integration tests, if not testing with docker, as the data needed is loaded from the docker container.
 	.skipIf(!__withDocker__)
 	.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => {
-	let db = newTestDB(getDB);
+	let db = getDB(newTestDBName(), { test: true });
 	const dataLoader = newInventoryDataLoader();
 
 	beforeAll(async () => {
@@ -25,7 +25,7 @@ describe
 
 	// Initialise a new db for each test
 	beforeEach(async () => {
-		db = newTestDB(getDB);
+		db = getDB(newTestDBName(), { test: true });
 		await db.init();
 	});
 

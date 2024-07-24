@@ -2,8 +2,8 @@ import { BehaviorSubject, Observable, map, share, tap } from "rxjs";
 
 import { wrapIter, debug } from "@librocco/shared";
 
-import { HistoryInterface, MapReduceRow } from "@/types";
-import { InventoryDatabaseInterface, NoteData } from "./types";
+import { HistoryInterface } from "@/types";
+import { InventoryDatabaseInterface, NoteData, MapReduceRow } from "./types";
 
 import { PastTransactions } from "./past-transactions";
 

@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Observable } from "rxjs";
-import PouchDB from "pouchdb";
 
 import { NoteState, StockMap, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
-import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
+import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, PickPartial, TimestampedDoc } from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -38,12 +37,12 @@ export type NoteType = "inbound" | "outbound";
  * Standardized data that should be present in any note
  * (different implementations might differ, but should extend this structure)
  */
-export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
+export type NoteData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
+		id: string;
 		noteType: NoteType;
 		committed: boolean;
 		displayName: string;
-		updatedAt: string | null;
 		committedAt: string | null;
 		reconciliationNote?: boolean;
 	} & A
@@ -148,8 +147,9 @@ export type NoteInterface<A extends Record<string, any> = {}> = NoteProto<A> & N
  * Standardized data that should be present in any note
  * (different implementations might differ, but should extend this structure)
  */
-export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
+export type WarehouseData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
+		id: string;
 		displayName: string;
 		discountPercentage: number;
 	} & A
@@ -333,7 +333,7 @@ export type InventoryDatabaseInterface<
 	history(): HistoryInterface;
 }>;
 
-export interface NewDatabase {
-	(db: PouchDB.Database): InventoryDatabaseInterface;
+export interface InventoryDatabaseContructor {
+	(name: string, opts?: { test?: boolean }): InventoryDatabaseInterface;
 }
 // #endregion db

@@ -4,8 +4,7 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
 
-import { newChangesStream } from "@/utils/pouchdb";
-import { versionId } from "./utils";
+import { versionId, newChangesStream } from "./utils";
 import { isBookRow } from "@/utils/misc";
 
 export interface StockInterface {

@@ -3,13 +3,13 @@ import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
-import { DatabaseInterface as BaseDatabaseInterface, BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
+import { BookEntry, BooksInterface, SearchIndex } from "@/types";
 
-import { PublishersListRow } from "./types";
+import { DatabaseInterface as BaseDatabaseInterface, PublishersListRow, CouchDocument } from "./types";
 
 import { newView } from "./view";
 
-import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
+import { newChangesStream, unwrapDocs } from "./utils";
 
 class Books implements BooksInterface {
 	#db: BaseDatabaseInterface;
@@ -144,5 +144,5 @@ const createSearchIndex = (books: BookEntry[]) => {
 
 	index.addDocuments(books);
 
-	return index;
+	return index as unknown as SearchIndex;
 };
