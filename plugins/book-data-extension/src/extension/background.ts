@@ -1,9 +1,13 @@
 // #region content_script_interface
 chrome.runtime.onMessage.addListener(
-	async ({ kind, isbn }: { kind: string; isbn: string }, _: chrome.runtime.MessageSender, senderResponse: (response?: any) => void) => {
+	async (
+		{ kind, isbn }: { kind: string; isbn: string },
+		sender: chrome.runtime.MessageSender,
+		senderResponse: (response?: any) => void
+	) => {
 		switch (kind) {
 			case "FETCH_BOOK_DATA":
-				return handleFetchBookData(isbn, senderResponse);
+				return handleFetchBookData(isbn, sender, senderResponse);
 			case "PING":
 				return handlePing(senderResponse);
 			default:
@@ -12,8 +16,8 @@ chrome.runtime.onMessage.addListener(
 	}
 );
 
-const handleFetchBookData = (isbn: string, senderResponse: (response?: any) => void) => {
-	fetchUrl(isbn, senderResponse);
+const handleFetchBookData = (isbn: string, sender: chrome.runtime.MessageSender, senderResponse: (response?: any) => void) => {
+	fetchUrl(isbn, sender, senderResponse);
 	return true;
 };
 
@@ -30,7 +34,7 @@ const urls: Record<string, string> = {
 
 const cache: { [key: string]: string } = {};
 
-function fetchUrl(isbn: string, senderResponse: (response?: any) => void) {
+function fetchUrl(isbn: string, sender: chrome.runtime.MessageSender, senderResponse: (response?: any) => void) {
 	// If the `isbn` is already in the cache, return it
 	if (cache[isbn]) {
 		senderResponse(cache[isbn]);
@@ -46,15 +50,13 @@ function fetchUrl(isbn: string, senderResponse: (response?: any) => void) {
 				.then((res) => {
 					// handle serialization here because otherwise
 					// the html gets messed up in the sending process
-					chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
-						const activeTab = tabs[0];
-						const result = JSON.stringify(res);
-						cache[isbn] = result;
-						if (activeTab.id) {
-							// to content script
-							chrome.tabs.sendMessage(activeTab.id, result);
-						}
-					});
+
+					const result = JSON.stringify(res);
+					cache[isbn] = result;
+					if (sender.tab?.id) {
+						// to content script
+						chrome.tabs.sendMessage(sender.tab?.id, result);
+					}
 					senderResponse(`message sent back from ${url}`);
 				})
 		);
