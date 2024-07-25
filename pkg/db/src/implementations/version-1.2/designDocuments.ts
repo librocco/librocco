@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import { BookEntry, DesignDocument } from "@/types";
-import { WarehouseData, NoteData } from "./types";
+import { BookEntry } from "@/types";
+import { DesignDocument, WarehouseData, NoteData } from "./types";
 
 const sequenceNamingDesignDocument: DesignDocument = {
 	_id: "_design/v1_sequence",

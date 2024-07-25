@@ -40,7 +40,7 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		await goto(appPath("warehouses", warehouse._id));
+		await goto(appPath("warehouses", warehouse.id));
 	};
 </script>
 

@@ -74,7 +74,7 @@ export const getDB = (): { db: InventoryDatabaseInterface | undefined; status: b
 
 export const destroyDB = async () => {
 	if (db) {
-		await db._pouch.destroy();
+		// await db._pouch.destroy();
 		db = undefined;
 	}
 };

@@ -32,23 +32,23 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (note) => {
-	const noteStateCtx = { name: `[NOTE_STATE::${note?._id}]`, debug: false };
+	const noteStateCtx = { name: `[NOTE_STATE::${note?.id}]`, debug: false };
 	const internalState = createInternalStateStore(noteStateCtx, note);
 
-	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?._id}]`, debug: false };
+	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?.id}]`, debug: false };
 	const updatedAt = readableFromStream(updatedAtCtx, note?.stream().updatedAt(updatedAtCtx), null);
 
 	const currentPage = writable(0);
 
-	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?._id}]`, debug: false };
+	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?.id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, note, undefined);
 
-	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSEE::${note?._id}]`, debug: false };
+	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSEE::${note?.id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, undefined);
 
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
-	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
+	const entriesCtx = { name: `[NOTE_ENTRIES::${note?.id}]`, debug: false };
 	const { entries } = createDisplayEntriesStore(entriesCtx, getDB().db, note, currentPage);
 
 	return {
@@ -91,10 +91,10 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 			: { searchString: "", isbns: new Set<string>() }
 	);
 
-	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
+	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?.id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
 
-	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
+	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?.id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
 	const { entries } = createDisplayEntriesStore(ctx, getDB().db, warehouse, currentPageStore, controlledSearchStore);

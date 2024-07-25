@@ -3,7 +3,8 @@ import { beforeEach, describe, expect, test } from "vitest";
 
 import { CustomerOrderState, OrderItemStatus, testUtils } from "@librocco/shared";
 
-import { OrderItem, VersionString } from "@/types";
+import { OrderItem } from "@/types";
+import { VersionString } from "@/implementations/version-1.2/types";
 
 import * as implementations from "@/implementations/orders";
 

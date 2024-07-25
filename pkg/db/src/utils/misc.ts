@@ -2,7 +2,7 @@ import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription
 
 import type { VolumeStock } from "@librocco/shared";
 
-import { VersionedString, VersionString } from "../types";
+import { VersionedString, VersionString } from "../implementations/version-1.2/types";
 
 const compareCustomItems = (a: VolumeStock, b: VolumeStock) =>
 	!(isCustomItemRow(a) && isCustomItemRow(b))

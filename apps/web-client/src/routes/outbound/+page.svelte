@@ -53,7 +53,7 @@
 	 */
 	const handleCreateNote = async () => {
 		const note = await db.warehouse().note().create();
-		await goto(appPath("outbound", note._id));
+		await goto(appPath("outbound", note.id));
 	};
 
 	const dialog = createDialog({ forceVisible: true });

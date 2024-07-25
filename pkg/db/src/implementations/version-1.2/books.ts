@@ -3,9 +3,9 @@ import { Search } from "js-search";
 
 import { debug, wrapIter } from "@librocco/shared";
 
-import { DatabaseInterface as BaseDatabaseInterface, BookEntry, BooksInterface, CouchDocument, SearchIndex } from "@/types";
+import { BookEntry, BooksInterface } from "@/types";
 
-import { PublishersListRow } from "./types";
+import { DatabaseInterface as BaseDatabaseInterface, PublishersListRow, CouchDocument } from "./types";
 
 import { newView } from "./view";
 
@@ -14,7 +14,7 @@ import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
 class Books implements BooksInterface {
 	#db: BaseDatabaseInterface;
 
-	#searchIndexStream?: Observable<SearchIndex>;
+	#searchIndexStream?: Observable<Search>;
 
 	constructor(db: BaseDatabaseInterface) {
 		this.#db = db;
@@ -81,7 +81,7 @@ class Books implements BooksInterface {
 	 * Returns the created stream.
 	 */
 	private createSearchIndexStream() {
-		const searchStreamCache = new ReplaySubject<SearchIndex>();
+		const searchStreamCache = new ReplaySubject<Search>();
 		return (this.#searchIndexStream = concat(from(Promise.resolve()), this.streamChanges()).pipe(
 			switchMap(() => from(this.getAllBooks())),
 			map(createSearchIndex),

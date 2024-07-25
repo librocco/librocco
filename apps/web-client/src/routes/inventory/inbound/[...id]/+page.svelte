@@ -195,8 +195,8 @@
 	// #endregion book-form
 
 	$: breadcrumbs =
-		note?._id && warehouse?._id
-			? createBreadcrumbs("inbound", { id: warehouse._id, displayName: warehouse.displayName }, { id: note._id, displayName: $displayName })
+		note?.id && warehouse?.id
+			? createBreadcrumbs("inbound", { id: warehouse.id, displayName: warehouse.displayName }, { id: note.id, displayName: $displayName })
 			: [];
 
 	const dialog = createDialog({

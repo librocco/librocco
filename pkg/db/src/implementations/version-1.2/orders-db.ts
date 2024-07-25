@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
-import { OrdersDatabaseInterface } from "./types";
+import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin } from "@/types";
+import { OrdersDatabaseInterface, DesignDocument, CustomerOrderInterface } from "./types";
 
 import { orders as designDocs } from "./designDocuments";
 
