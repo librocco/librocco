@@ -78,7 +78,7 @@ describe("tableContentStore", () => {
 					...book1,
 					__kind: "book",
 					quantity: 12,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -94,7 +94,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					isbn: book3.isbn,
 					quantity: 5,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -104,7 +104,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -114,7 +114,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book1,
 					quantity: 12,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -130,7 +130,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book3,
 					quantity: 5,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -139,7 +139,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -149,7 +149,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book1,
 					quantity: 12,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -166,7 +166,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book3,
 					quantity: 5,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -175,7 +175,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -185,7 +185,7 @@ describe("tableContentStore", () => {
 					...book1,
 					title: "The Age of Wonder (updated)",
 					quantity: 12,
-					warehouseId: `v1/jazz`,
+					warehouseId: `jazz`,
 					warehouseName: "not-found",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -243,7 +243,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/wh-2`,
+					warehouseId: `wh-2`,
 					warehouseName: "Warehouse 2",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -252,7 +252,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book1,
 					quantity: 12,
-					warehouseId: `v1/wh-1`,
+					warehouseId: `wh-1`,
 					warehouseName: "Warehouse 1",
 					availableWarehouses: new Map(),
 					warehouseDiscount: 0
@@ -269,7 +269,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/wh-2`,
+					warehouseId: `wh-2`,
 					warehouseName: "Warehouse 2",
 					price: 12,
 					availableWarehouses: new Map(),
@@ -280,7 +280,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book1,
 					quantity: 12,
-					warehouseId: `v1/wh-1`,
+					warehouseId: `wh-1`,
 					warehouseName: "Warehouse 1",
 					price: 54,
 					availableWarehouses: new Map(),
@@ -298,7 +298,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book2,
 					quantity: 10,
-					warehouseId: `v1/wh-2`,
+					warehouseId: `wh-2`,
 					warehouseName: "Warehouse 2",
 					price: 9.6,
 					availableWarehouses: new Map(),
@@ -309,7 +309,7 @@ describe("tableContentStore", () => {
 					__kind: "book",
 					...book1,
 					quantity: 12,
-					warehouseId: `v1/wh-1`,
+					warehouseId: `wh-1`,
 					warehouseName: "Warehouse 1",
 					price: 54,
 					availableWarehouses: new Map(),
