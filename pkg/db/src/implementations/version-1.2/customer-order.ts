@@ -10,8 +10,7 @@ import { VersionedString } from "./types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
-import { versionId } from "./utils";
+import { newDocumentStream, versionId } from "./utils";
 
 class CustomerOrder implements CustomerOrderInterface {
 	_id: VersionedString;

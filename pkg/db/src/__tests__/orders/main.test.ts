@@ -4,11 +4,10 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { CustomerOrderState, OrderItemStatus, testUtils } from "@librocco/shared";
 
 import { OrderItem } from "@/types";
-import { VersionString } from "@/implementations/version-1.2/types";
 
 import * as implementations from "@/implementations/orders";
 
-import { createVersioningFunction } from "@/utils/misc";
+import { versionId } from "@/implementations/version-1.2/utils";
 import { newTestDB } from "@/__testUtils__/db";
 
 const { waitFor } = testUtils;
@@ -22,9 +21,8 @@ type PossiblyEmpty<T> = typeof EMPTY | T;
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
-describe.each(schema)("Orders unit tests: $version", ({ version, getDB }) => {
+describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 	let db = newTestDB(getDB);
-	const versionId = createVersioningFunction(version as VersionString);
 
 	// Initialise a new db for each test
 	beforeEach(async () => {
