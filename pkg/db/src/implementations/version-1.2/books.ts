@@ -9,7 +9,7 @@ import { DatabaseInterface as BaseDatabaseInterface, PublishersListRow, CouchDoc
 
 import { newView } from "./view";
 
-import { newChangesStream, unwrapDocs } from "@/utils/pouchdb";
+import { newChangesStream, unwrapDocs } from "./utils";
 
 class Books implements BooksInterface {
 	#db: BaseDatabaseInterface;

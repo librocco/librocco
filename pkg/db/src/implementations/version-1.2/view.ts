@@ -4,7 +4,7 @@ import { debug } from "@librocco/shared";
 
 import type { ViewInterface, CouchDocument, MapReduceRes, MapReduceRow } from "./types";
 
-import { newChangesStream } from "@/utils/pouchdb";
+import { newChangesStream } from "./utils";
 
 class View<R extends MapReduceRow, M extends CouchDocument = CouchDocument> implements ViewInterface<R, M> {
 	#db: PouchDB.Database;

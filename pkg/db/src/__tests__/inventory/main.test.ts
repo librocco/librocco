@@ -6,13 +6,12 @@ import { Search } from "js-search";
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
 import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, VolumeStockClient, WarehouseData } from "@/types";
-import { VersionString } from "@/implementations/version-1.2/types";
 
 import * as implementations from "@/implementations/inventory";
 
 import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
 
-import { createVersioningFunction } from "@/utils/misc";
+import { versionId } from "@/implementations/version-1.2/utils";
 import { newTestDB } from "@/__testUtils__/db";
 import { createSingleSourceBookFetcher } from "@/utils/plugins";
 
@@ -29,9 +28,8 @@ type PossiblyEmpty<T> = typeof EMPTY | T;
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
-describe.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => {
+describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	let db = newTestDB(getDB);
-	const versionId = createVersioningFunction(version as VersionString);
 
 	// Initialise a new db for each test
 	beforeEach(async () => {
