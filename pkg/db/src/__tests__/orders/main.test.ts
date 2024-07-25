@@ -6,8 +6,6 @@ import { CustomerOrderState, OrderItemStatus, testUtils } from "@librocco/shared
 import { OrderItem } from "@/types";
 
 import * as implementations from "@/implementations/orders";
-
-import { versionId } from "@/implementations/version-1.2/utils";
 import { newTestDB } from "@/__testUtils__/db";
 
 const { waitFor } = testUtils;
@@ -35,7 +33,7 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 		// If a customer order doesn't exist, a new one should be initialised with default values
 		// but no data should be saved to the db until explicitly done so.
 		let order1 = db.customerOrder("order1");
-		expect(order1._id).toEqual(versionId("order1"));
+		expect(order1.id).toEqual("order1");
 
 		// Order doesn't yet exist in the db.
 		const orderInDB = await order1.get();
