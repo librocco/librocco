@@ -2,7 +2,7 @@ import PouchDB from "pouchdb";
 
 import { VolumeStock } from "@librocco/shared";
 
-import { unwrapDocs } from "@/utils/pouchdb";
+import { unwrapDocs } from "@/implementations/version-1.2/utils";
 import { sortBooks } from "@/utils/misc";
 
 export type NoteType = "inbound" | "outbound";

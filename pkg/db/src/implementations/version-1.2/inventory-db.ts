@@ -39,8 +39,7 @@ import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 import { newHistoryProvider } from "./history";
 
-import { scanDesignDocuments } from "@/utils/pouchdb";
-import { versionId } from "./utils";
+import { scanDesignDocuments, versionId } from "./utils";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;

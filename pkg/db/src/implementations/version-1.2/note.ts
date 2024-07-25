@@ -15,9 +15,8 @@ import {
 } from "@/types";
 import { VersionedString, NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
-import { versionId } from "./utils";
-import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
+import { isBookRow, isCustomItemRow, isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
+import { newDocumentStream, versionId, isVersioned, addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 import {
 	EmptyNoteError,
 	OutOfStockError,
@@ -25,7 +24,6 @@ import {
 	EmptyTransactionError,
 	NoWarehouseSelectedError
 } from "@/errors";
-import { addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.

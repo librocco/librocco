@@ -22,8 +22,7 @@ import { newStock } from "./stock";
 
 import { versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow, isCustomItemRow } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
-import { combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
+import { newDocumentStream, combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
