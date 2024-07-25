@@ -15,7 +15,7 @@ const schema = Object.entries(implementations).map(([version, getDB]) => ({ vers
 describe
 	// Skip integration tests, if not testing with docker, as the data needed is loaded from the docker container.
 	.skipIf(!__withDocker__)
-	.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => {
+	.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	let db = newTestDB(getDB);
 	const dataLoader = newInventoryDataLoader();
 
@@ -64,7 +64,7 @@ describe
 					expect.objectContaining({
 						...volumeStock,
 						// We're versioning the warehouseId at assertions, rather than at data generation
-						warehouseId: `${version}/${warehouseId}`
+						warehouseId: warehouseId
 					})
 				)
 			)

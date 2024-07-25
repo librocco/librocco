@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { BookEntry } from "@/types";
-import { DesignDocument, WarehouseData, NoteData } from "./types";
+import { WarehouseData, NoteData, DesignDocument } from "./types";
 
 const sequenceNamingDesignDocument: DesignDocument = {
 	_id: "_design/v1_sequence",
@@ -121,5 +121,18 @@ export const listDeisgnDocument: DesignDocument = {
 	}
 };
 
-export const inventory = [listDeisgnDocument, sequenceNamingDesignDocument];
+const notes: DesignDocument = {
+	_id: "_design/v1_notes",
+	views: {
+		by_id: {
+			map: function (doc: WarehouseData) {
+				if (doc.docType === "note") {
+					emit(doc.id, doc._id);
+				}
+			}.toString()
+		}
+	}
+};
+
+export const inventory = [listDeisgnDocument, sequenceNamingDesignDocument, notes];
 export const orders = [listDeisgnDocument, sequenceNamingDesignDocument];

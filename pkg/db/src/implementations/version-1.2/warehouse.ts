@@ -7,8 +7,8 @@ import { DocType } from "@/enums";
 import { EntriesStreamResult, VolumeStockClient } from "@/types";
 import {
 	CouchDocument,
-	NoteInterface,
 	VersionedString,
+	NoteInterface,
 	WarehouseInterface,
 	InventoryDatabaseInterface,
 	WarehouseData,
@@ -20,9 +20,8 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { newNote } from "./note";
 import { newStock } from "./stock";
 
-import { versionId } from "./utils";
 import { runAfterCondition, uniqueTimestamp, isEmpty, sortBooks, isBookRow, isCustomItemRow } from "@/utils/misc";
-import { newDocumentStream, combineTransactionsWarehouses, addWarehouseData, TableData } from "./utils";
+import { combineTransactionsWarehouses, addWarehouseData, TableData, versionId, newDocumentStream } from "./utils";
 
 class Warehouse implements WarehouseInterface {
 	// We wish the db back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -48,12 +47,12 @@ class Warehouse implements WarehouseInterface {
 	_rev?: string;
 	_deleted?: boolean;
 
+	id: string;
 	displayName = "";
 	discountPercentage = 0;
 
-	id = "";
-	createdAt = "";
-	updatedAt = "";
+	createdAt: string | null = null;
+	updatedAt: string | null = null;
 
 	constructor(db: InventoryDatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
@@ -66,7 +65,7 @@ class Warehouse implements WarehouseInterface {
 			? versionId(uniqueTimestamp())
 			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
 			  versionId(id);
-		this.id = this._id;
+		this.id = this._id.split("/").pop() as string;
 
 		const updateSubject = new Subject<WarehouseData>();
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
@@ -86,7 +85,7 @@ class Warehouse implements WarehouseInterface {
 			.stream()
 			.stock()
 			.pipe(
-				map((stock) => stock.warehouse(this._id)),
+				map((stock) => stock.warehouse(this.id)),
 				share({ connector: () => stockCache, resetOnError: false, resetOnComplete: false, resetOnRefCountZero: false })
 			);
 
@@ -149,12 +148,16 @@ class Warehouse implements WarehouseInterface {
 			const initialValues = {
 				...this,
 				// If creating a default warehouse, we're initialising the 'displayName' as "All"
-				displayName: this._id === versionId("0-all") ? "All" : `New Warehouse${seqIndex}`
+				displayName: this.id === "0-all" ? "All" : `New Warehouse${seqIndex}`
 			};
 			// Try and store the warehouse in the db
 			try {
-				const { rev } = await this.#db._pouch.put(initialValues);
-				this.updateInstance({ ...initialValues, _rev: rev });
+				const createdAt = new Date().toISOString();
+				const updatedAt = createdAt;
+
+				const { rev } = await this.#db._pouch.put({ ...initialValues, createdAt, updatedAt });
+
+				this.updateInstance({ ...initialValues, _rev: rev, createdAt, updatedAt });
 				return this;
 				// This might sometimes fail as we might be running concurrent updates so
 				// multiple instances of the same warehosue might write to the db: this will mostly happen in tests.
@@ -194,7 +197,7 @@ class Warehouse implements WarehouseInterface {
 	 */
 	private update(ctx: debug.DebugCtx, data: Partial<WarehouseData>): Promise<WarehouseInterface> {
 		return runAfterCondition(async () => {
-			const updatedData = { ...this, ...data };
+			const updatedData = { ...this, ...data, updatedAt: new Date().toISOString() };
 			this.#db._pouch.put(updatedData);
 
 			// We're waiting for the first value from stream (updating local instance) before resolving the
@@ -221,7 +224,7 @@ class Warehouse implements WarehouseInterface {
 					include_docs: true
 				})
 				.then(({ rows }) => rows.filter(({ doc }) => !!doc).map(({ doc }) => doc as NoteData | WarehouseData))
-				.catch((e) => (console.error(e), []));
+				.catch((e) => (console.error(e), [] as (NoteData | WarehouseData)[]));
 
 			const docsToDelete = docs.flatMap((doc): CouchDocument[] => {
 				// warehouse and inbound notes
@@ -288,7 +291,7 @@ class Warehouse implements WarehouseInterface {
 		const [queryRes, warehouses] = await Promise.all([newStock(this.#db).query(), this.#db.getWarehouseDataMap()]);
 		const entries = wrapIter(queryRes.rows())
 			.filter(isBookRow)
-			.filter(({ warehouseId }) => [versionId("0-all"), warehouseId].includes(this._id));
+			.filter(({ warehouseId }) => ["0-all", warehouseId].includes(this.id));
 		return addWarehouseData(entries, warehouses);
 	}
 
