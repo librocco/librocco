@@ -5,7 +5,8 @@ import { Search } from "js-search";
 
 import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
 
-import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, VersionString, VolumeStockClient, WarehouseData } from "@/types";
+import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, VolumeStockClient, WarehouseData } from "@/types";
+import { VersionString } from "@/implementations/version-1.2/types";
 
 import * as implementations from "@/implementations/inventory";
 

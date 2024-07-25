@@ -4,14 +4,9 @@ import { CustomerOrderState, debug, OrderItemStatus } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import {
-	VersionedString,
-	OrdersDatabaseInterface,
-	CustomerOrderInterface,
-	CustomerOrderData,
-	CustomerOrderStream,
-	OrderItem
-} from "@/types";
+import { CustomerOrderStream, OrderItem } from "@/types";
+import { CustomerOrderInterface, OrdersDatabaseInterface, CustomerOrderData } from "./types";
+import { VersionedString } from "./types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -43,7 +38,10 @@ class CustomerOrder implements CustomerOrderInterface {
 	displayName = "";
 
 	docType = DocType.CustomerOrder;
+	createdAt: string | null = null;
 	updatedAt: string | null = null;
+
+	id = "";
 
 	constructor(db: OrdersDatabaseInterface, id?: string) {
 		this.#db = db;
@@ -52,6 +50,7 @@ class CustomerOrder implements CustomerOrderInterface {
 		// - if id is a single segment id, prepend the warehouse id and version the string
 		// - if id is a full id, assign it as is
 		this._id = !id ? versionId(`${uniqueTimestamp()}`) : versionId(`${id}`);
+		this.id = this._id;
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<CustomerOrderData>();

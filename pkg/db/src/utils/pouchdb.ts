@@ -3,7 +3,7 @@ import { concat, from, map, Observable, tap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import { CouchDocument, DesignDocument } from "@/types";
+import { CouchDocument, DesignDocument } from "@/implementations/version-1.2/types";
 
 /**
  * Takes in a response from the `PouchDB.allDocs`, maps through the

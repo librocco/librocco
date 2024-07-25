@@ -5,10 +5,7 @@ import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared
 
 import {
 	BooksInterface,
-	CouchDocument,
 	DbStream,
-	DesignDocument,
-	MapReduceRow,
 	Replicator,
 	InNoteMap,
 	NavEntry,
@@ -19,6 +16,9 @@ import {
 	HistoryInterface
 } from "@/types";
 import {
+	CouchDocument,
+	DesignDocument,
+	MapReduceRow,
 	InventoryDatabaseInterface,
 	WarehouseInterface,
 	WarehouseListRow,

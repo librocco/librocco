@@ -2,8 +2,7 @@ import { concat, from, switchMap } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import type { ViewInterface } from "./types";
-import { CouchDocument, MapReduceRes, MapReduceRow } from "@/types";
+import type { ViewInterface, CouchDocument, MapReduceRes, MapReduceRow } from "./types";
 
 import { newChangesStream } from "@/utils/pouchdb";
 
