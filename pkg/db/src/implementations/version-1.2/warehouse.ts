@@ -4,8 +4,16 @@ import { debug, StockMap, wrapIter } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import { CouchDocument, EntriesStreamResult, VersionedString, VolumeStockClient } from "@/types";
-import { NoteInterface, WarehouseInterface, InventoryDatabaseInterface, WarehouseData, NoteData } from "./types";
+import { EntriesStreamResult, VolumeStockClient } from "@/types";
+import {
+	CouchDocument,
+	NoteInterface,
+	VersionedString,
+	WarehouseInterface,
+	InventoryDatabaseInterface,
+	WarehouseData,
+	NoteData
+} from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -44,6 +52,10 @@ class Warehouse implements WarehouseInterface {
 	displayName = "";
 	discountPercentage = 0;
 
+	id = "";
+	createdAt = "";
+	updatedAt = "";
+
 	constructor(db: InventoryDatabaseInterface, id?: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
 
@@ -55,6 +67,7 @@ class Warehouse implements WarehouseInterface {
 			? versionId(uniqueTimestamp())
 			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
 			  versionId(id);
+		this.id = this._id;
 
 		const updateSubject = new Subject<WarehouseData>();
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.

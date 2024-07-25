@@ -6,7 +6,6 @@ import { DocType } from "@/enums";
 
 import {
 	NoteType,
-	VersionedString,
 	PickPartial,
 	EntriesStreamResult,
 	VolumeStockClient,
@@ -14,7 +13,7 @@ import {
 	ReceiptData,
 	UpdateTransactionParams
 } from "@/types";
-import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
+import { VersionedString, NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
 import { versionId } from "./utils";
 import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
@@ -61,6 +60,9 @@ class Note implements NoteInterface {
 	updatedAt: string | null = null;
 	committedAt: string | null = null;
 
+	id = "";
+	createdAt = "";
+
 	constructor(warehouse: WarehouseInterface, db: InventoryDatabaseInterface, id?: string) {
 		this.#w = warehouse;
 		this.#db = db;
@@ -97,6 +99,7 @@ class Note implements NoteInterface {
 			: isVersioned(id, "v1") // If id is versioned, it's a full id, assign it as is
 			? id
 			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
+		this.id = this._id;
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<NoteData>();

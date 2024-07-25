@@ -13,15 +13,15 @@ export class PastTransactions implements PastTransactionsInterface {
 
 	public static fromNotes(
 		notes: Iterable<
-			Pick<NoteData, "_id" | "committed" | "noteType" | "updatedAt" | "committedAt" | "displayName"> & { entries: VolumeStock[] }
+			Pick<NoteData, "id" | "committed" | "noteType" | "updatedAt" | "committedAt" | "displayName"> & { entries: VolumeStock[] }
 		>
 	) {
 		const entries = wrapIter(notes)
 			.filter(({ committed }) => committed)
-			.flatMap(({ _id, entries, committedAt, updatedAt, noteType, displayName: noteDisplayName }) =>
+			.flatMap(({ id, entries, committedAt, updatedAt, noteType, displayName: noteDisplayName }) =>
 				wrapIter(entries)
 					.filter(isBookRow)
-					.map((e) => ({ ...e, noteId: _id, date: committedAt || updatedAt!, noteType, noteDisplayName }))
+					.map((e) => ({ ...e, noteId: id, date: committedAt || updatedAt!, noteType, noteDisplayName }))
 			);
 		return new PastTransactions(entries);
 	}

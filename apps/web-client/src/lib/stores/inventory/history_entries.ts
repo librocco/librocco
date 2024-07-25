@@ -201,7 +201,7 @@ export const createWarehouseHistoryStores: CreateWarehouseHistoryStore = (ctx, d
 			wrapIter(dateRange)
 				.flatMap((date) => history.get(date) || [])
 				// We're checking against warehouse document's id as that provides us with the full doc path
-				.filter((txn) => txn.warehouseId === wh._id)
+				.filter((txn) => txn.warehouseId === wh.id)
 				.filter((txn) => txn.noteType.includes(filter))
 		),
 		switchMap((txns) => {

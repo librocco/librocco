@@ -57,7 +57,7 @@
 	 */
 	const handleCreateWarehouse = async () => {
 		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		await goto(appPath("warehouses", warehouse._id));
+		await goto(appPath("warehouses", warehouse.id));
 	};
 
 	/**
@@ -66,7 +66,7 @@
 	 */
 	const handleCreateNote = (warehouseId: string) => async () => {
 		const note = await db?.warehouse(warehouseId).note().create();
-		await goto(appPath("inbound", note._id));
+		await goto(appPath("inbound", note.id));
 	};
 
 	const dialog = createDialog({ forceVisible: true });

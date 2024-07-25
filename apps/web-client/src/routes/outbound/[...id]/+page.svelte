@@ -313,7 +313,7 @@
 	};
 	// #endregion book-form
 
-	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
+	$: breadcrumbs = note?.id ? createBreadcrumbs("outbound", { id: note.id, displayName: $displayName }) : [];
 
 	// #region temp
 	$: handlePrintReceipt = async () => {
