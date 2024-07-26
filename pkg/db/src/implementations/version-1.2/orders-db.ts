@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import PouchDB from "pouchdb";
 
 import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin } from "@/types";
 import { OrdersDatabaseInterface, DesignDocument, CustomerOrderInterface } from "./types";
@@ -63,6 +64,13 @@ class Database implements OrdersDatabaseInterface {
 			// If the error was a conflict (document exists), update the document
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
+	}
+
+	/**
+	 * Destroy the current db instance and clear the data
+	 */
+	destroy() {
+		return this._pouch.destroy();
 	}
 	// #endregion setup
 

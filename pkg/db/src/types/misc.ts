@@ -102,6 +102,10 @@ export type DatabaseInterface<T = {}> = {
 	 * @param type type of the plugin (essentially a name)
 	 */
 	plugin<K extends keyof PluginInterfaceLookup>(type: K): LibroccoPlugin<PluginInterfaceLookup[K]>;
+	/**
+	 * Destroy the current db instance and clear the data
+	 */
+	destroy(): Promise<void>;
 } & T;
 // #endregion db
 
