@@ -1,6 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import PouchDB from "pouchdb";
-
 import { CustomerOrderState, OrderItemStatus, debug } from "@librocco/shared";
 
 import { DatabaseInterface as BaseDatabaseInterface, BooksInterface, TimestampedDoc } from "./misc";
@@ -15,9 +13,8 @@ export type OrdersDatabaseInterface<
 		customerOrder(id?: string): O;
 	} & T
 >;
-
 export interface OrdersDatabaseConstructor {
-	(pouch: PouchDB.Database): OrdersDatabaseInterface;
+	(name: string, opts?: { test?: boolean }): OrdersDatabaseInterface;
 }
 
 /**

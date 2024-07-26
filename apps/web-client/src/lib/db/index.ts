@@ -1,5 +1,3 @@
-import PouchDB from "pouchdb";
-
 import { newInventoryDatabaseInterface, type InventoryDatabaseInterface } from "@librocco/db";
 
 import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
@@ -51,8 +49,7 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 	const url = _url || LOCAL_POUCH_DB_NAME;
 	if (browser) {
 		try {
-			const pouch = new PouchDB(url);
-			db = newInventoryDatabaseInterface(pouch);
+			db = newInventoryDatabaseInterface(url);
 			await db.init();
 			status = true;
 		} catch (err) {
