@@ -135,7 +135,7 @@
 										<p data-property="warehouseName" class="entity-list-text-sm">{warehouseName}</p>
 									</div>
 
-									<a href={appPath("history/notes", noteId)} class="col-span-4 flex items-center">
+									<a href={appPath("history/notes/archive", noteId)} class="col-span-4 flex items-center">
 										<div class="{noteType === 'outbound' ? 'badge-red' : 'badge-green'} mx-4 flex items-center rounded-sm px-3">
 											{#if noteType === "inbound"}
 												<p><ArrowLeft size={16} /></p>

@@ -30,7 +30,7 @@
 		if (browser && !isEqualDateValue(data.dateValue, next)) {
 			// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
 			// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
-			goto(appPath("history/notes", next.toString().slice(0, 10)), { replaceState: true });
+			goto(appPath("history/notes/date", next.toString().slice(0, 10)), { replaceState: true });
 		}
 		return next;
 	};
@@ -70,7 +70,7 @@
 				{#each $notes as note}
 					{@const displayName = `${note.warehouseName} / ${note.displayName}`}
 					{@const totalBooks = note.books}
-					{@const href = appPath("history/notes", note.id)}
+					{@const href = appPath("history/notes/archive", note.id)}
 
 					<div class="group entity-list-row">
 						<div class="block w-full">

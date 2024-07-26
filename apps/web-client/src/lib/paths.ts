@@ -11,7 +11,8 @@ const PATHS = {
 	settings: `${basepath}/settings/`,
 	"history/date": `${basepath}/history/date/`,
 	"history/isbn": `${basepath}/history/isbn/`,
-	"history/notes": `${basepath}/history/notes/`,
+	"history/notes/date": `${basepath}/history/notes/`,
+	"history/notes/archive": `${basepath}/history/notes/archive`,
 	"history/warehouse": `${basepath}/history/warehouse/`
 };
 
