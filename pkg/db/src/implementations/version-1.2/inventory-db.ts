@@ -177,6 +177,10 @@ class Database implements InventoryDatabaseInterface {
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
+
+	destroy() {
+		return this._pouch.destroy();
+	}
 	// #endregion setup
 
 	// #region instances
