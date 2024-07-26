@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import PouchDB from "pouchdb";
 
-import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin } from "@/types";
+import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin, OrdersDatabaseConstructor } from "@/types";
 import { OrdersDatabaseInterface, DesignDocument, CustomerOrderInterface } from "./types";
 
 import { orders as designDocs } from "./designDocuments";
@@ -92,6 +92,7 @@ class Database implements OrdersDatabaseInterface {
 	// #endregion instances
 }
 
-export const newDatabase = (db: PouchDB.Database): OrdersDatabaseInterface => {
-	return new Database(db);
+export const newDatabase: OrdersDatabaseConstructor = (name, { test = false } = {}) => {
+	const pouch = test ? new PouchDB(name, { adapter: "memory" }) : new PouchDB(name);
+	return new Database(pouch);
 };

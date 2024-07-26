@@ -10,12 +10,10 @@ PouchDB.plugin(MemoryAdapter);
 
 type Database = InventoryDatabaseInterface | OrdersDatabaseInterface;
 
-export const newTestDB = <D extends Database>(newDatabase: (pouch: PouchDB.Database) => D): D => {
+export const newTestDB = <D extends Database>(newDatabase: (name: string, opts?: { test?: boolean }) => D): D => {
 	// Get new db per test basis (ids are timestamped for easier debugging)
 	const dbName = new Date().toISOString().replaceAll(/[.:]/g, "-").toLowerCase();
-	const pouchInstance = new PouchDB(dbName, { adapter: "memory" });
-
-	const db = newDatabase(pouchInstance);
+	const db = newDatabase(dbName, { test: true });
 
 	// If testing with docker support, we're using the remote db to replicate to/from
 	if (__withDocker__) {

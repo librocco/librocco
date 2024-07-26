@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Observable } from "rxjs";
-import PouchDB from "pouchdb";
 
 import { NoteState, StockMap, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
@@ -338,6 +337,6 @@ export type InventoryDatabaseInterface<
 >;
 
 export interface InventoryDatabaseConstructor {
-	(db: PouchDB.Database): InventoryDatabaseInterface;
+	(name: string, opts?: { test?: boolean }): InventoryDatabaseInterface;
 }
 // #endregion db
