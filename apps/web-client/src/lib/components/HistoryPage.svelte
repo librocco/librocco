@@ -31,7 +31,7 @@
 			label: "Notes by date",
 			// Keep the date when switching from one dated tab to another
 			// We're doing this in browser only so as to not produce errors during static build.
-			href: appPath("history/notes", (browser && $page.params?.date) || ""),
+			href: appPath("history/notes/date", (browser && $page.params?.date) || ""),
 			linkto: historyView("history/notes")
 		},
 		{
