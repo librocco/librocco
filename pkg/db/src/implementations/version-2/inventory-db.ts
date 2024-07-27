@@ -742,4 +742,9 @@ const createHistoryInterface = (db: InventoryDatabaseInterface): HistoryInterfac
 	} as HistoryInterface;
 };
 
-export const newDatabase: InventoryDatabaseConstructor = (name) => createDB(schema, name);
+export const newDatabase: InventoryDatabaseConstructor = (_name, { test = false } = {}) => {
+	// If testing, we're namespacing the db as SQLite writes to fs, so it's easy to write to the designated folder,
+	// and then, clean up and / or ignore the folder
+	const name = test ? `test-dbs/${_name}` : _name;
+	return createDB(schema, name);
+};

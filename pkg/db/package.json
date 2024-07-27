@@ -21,13 +21,15 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "eslint . --max-warnings=0",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"test:ci": "docker compose up -d && ( [ $(sleep 1; docker compose ps -q|wc -l) -gt 1 ] || (echo Could not start docker containers; docker compose down; exit 1) ) && TEST_MODE=current FULL_TEST_SUPPORT=true vitest run; RESULT=$?; docker compose down; exit $RESULT",
+		"test:ci": "docker compose up -d && ( [ $(sleep 1; docker compose ps -q|wc -l) -gt 1 ] || (echo Could not start docker containers; docker compose down; exit 1) ) && export TEST_MODE=current && export FULL_TEST_SUPPORT=true && rushx test:run; RESULT=$?; docker compose down; exit $RESULT",
 		"test": "echo 'Running tests only for the current version' && export TEST_MODE=current-version && rushx test:with-docker",
 		"test:quicktest": "echo 'Running tests only for the current version' && export TEST_MODE=current-version && rushx test:no-docker",
 		"test:all-versions": "echo 'Running tests for all versions' && rushx test:with-docker",
 		"test:all-versions:quicktest": "echo 'Running tests for all versions' && rushx test:no-docker",
-		"test:no-docker": "echo 'Running unit tests without docker support' && vitest --ui",
-		"test:with-docker": "echo 'Running tests with full docker support' && docker compose up -d && FULL_TEST_SUPPORT=true vitest --ui; docker compose down",
+		"test:no-docker": "echo 'Running unit tests without docker support' && rushx test:open",
+		"test:with-docker": "echo 'Running tests with full docker support' && docker compose up -d && export FULL_TEST_SUPPORT=true && rushx test:open; docker compose down",
+		"test:open": "rm -rf test-dbs; mkdir test-dbs; vitest --ui; rm -rf test-dbs",
+		"test:run": "rm -rf test-dbs; mkdir test-dbs; vitest run; rm -rf test-dbs",
 		"typecheck": "tsc --noEmit"
 	},
 	"peerDependencies": {
