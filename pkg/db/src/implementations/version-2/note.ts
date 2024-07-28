@@ -1,7 +1,11 @@
+import { sql } from "crstore";
+
+import { VolumeStock, wrapIter } from "@librocco/shared";
+
 import { NoteData, NoteStream, NoteType, ReceiptData, VolumeStockClient } from "@/types";
 import { InventoryDatabaseInterface, NoteInterface } from "./types";
 
-import { uniqueTimestamp } from "@/utils/misc";
+import { isBookRow, uniqueTimestamp } from "@/utils/misc";
 
 class Note implements NoteInterface {
 	#db: InventoryDatabaseInterface;
@@ -96,9 +100,21 @@ class Note implements NoteInterface {
 		return;
 	}
 
-	// TODO
 	async getEntries(): Promise<VolumeStockClient[]> {
-		return [];
+		const conn = await this.#db._db.connection;
+		const books = await conn
+			.selectFrom("bookTransactions as t")
+			.leftJoin("warehouses as w", "t.warehouseId", "w.id")
+			.where("t.noteId", "==", this.id)
+			.select(["t.isbn", "t.quantity", "t.warehouseId", "w.discountPercentage as warehouseDiscount", "w.displayName as warehouseName"])
+			.execute();
+		const customItems = await conn
+			.selectFrom("customItemTransactions as t")
+			.where("t.noteId", "==", this.id)
+			.select(["id", "title", "price"])
+			.execute();
+
+		return books.map((b) => ({ __kind: "book", ...b } as VolumeStockClient)).concat(customItems as VolumeStockClient[]);
 	}
 
 	async setName(_: any, displayName: string): Promise<NoteInterface> {
@@ -117,8 +133,38 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	// TODO
-	async addVolumes(): Promise<NoteInterface> {
+	async addVolumes(...volumes: VolumeStock[]): Promise<NoteInterface> {
+		const [_books, _customIteme] = wrapIter(volumes).partition(isBookRow);
+		const books = _books
+			.map(({ warehouseId, ...txn }) => ({
+				...txn,
+				noteId: this.id,
+				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || ""
+			}))
+			.array();
+		const customItems = _customIteme.map((txn) => ({ ...txn, noteId: this.id })).array();
+
+		await Promise.all([
+			!books.length
+				? Promise.resolve()
+				: this.#db._db.update((db) =>
+						db
+							.insertInto("bookTransactions")
+							.values(books)
+							.onConflict((oc) => oc.doUpdateSet((eb) => ({ quantity: sql`${eb.ref("quantity")} + ${eb.ref("excluded.quantity")}` })))
+							.execute()
+				  ),
+			!customItems.length
+				? Promise.resolve()
+				: this.#db._db.update((db) =>
+						db
+							.insertInto("customItemTransactions")
+							.values(customItems)
+							.onConflict((oc) => oc.doNothing())
+							.execute()
+				  )
+		]);
+
 		return this;
 	}
 
