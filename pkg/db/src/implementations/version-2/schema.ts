@@ -22,11 +22,11 @@ const noteSchema = crr(
 			warehouseId: ss.string(),
 
 			noteType: ss.string(),
-			committed: ss.boolean(),
+			committed: ss.number(),
 
 			displayName: ss.string(),
 			defaultWarehouse: ss.optional(ss.string()),
-			reconciliationNote: ss.boolean(),
+			reconciliationNote: ss.number(),
 
 			createdAt: ss.string(),
 			updatedAt: ss.string(),
@@ -75,7 +75,7 @@ const bookDataSchema = crr(
 			authors: ss.optional(ss.string()),
 			publisher: ss.optional(ss.string()),
 			editedBy: ss.optional(ss.string()),
-			outOfPrint: ss.optional(ss.boolean()),
+			outOfPrint: ss.optional(ss.number()),
 			category: ss.optional(ss.string()),
 			updatedAt: ss.optional(ss.string())
 		}),
