@@ -1,4 +1,5 @@
 import { map, of } from "rxjs";
+import { sql } from "crstore";
 
 import { NoteInterface, VolumeStockClient, WarehouseData, WarehouseStream } from "@/types";
 import { InventoryDatabaseInterface, WarehouseInterface } from "./types";
@@ -57,14 +58,35 @@ class Warehouse implements WarehouseInterface {
 		return;
 	}
 
-	// TODO
-	async setName(): Promise<WarehouseInterface> {
-		return this;
+	async setName(_: any, displayName: string): Promise<WarehouseInterface> {
+		return this._update({ displayName });
 	}
 
-	// TODO
 	async getEntries(): Promise<VolumeStockClient<"book">[]> {
-		return [];
+		const conn = await this.#db._db.connection;
+
+		const coreQuery = conn
+			.selectFrom("bookTransactions as t")
+			.innerJoin("notes as n", "t.noteId", "n.id")
+			.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+			.where("n.committed", "==", 1);
+
+		// When querying for default pseudo-warehouse, we're retrieving all stock
+		const whParametrized = this.id === "all" ? coreQuery : coreQuery.where("t.warehouseId", "==", this.id);
+
+		const stock = whParametrized
+			.select([
+				"t.isbn",
+				"t.warehouseId",
+				"w.displayName as warehouseName",
+				"w.discountPercentage as warehouseDiscount",
+				(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
+			])
+			.groupBy(["t.warehouseId", "t.isbn"]);
+
+		// TODO: join book data here (instead of frontend)
+		const rows = await conn.selectFrom(stock.as("s")).where("s.quantity", "!=", 0).selectAll().execute();
+		return rows.map((r) => ({ __kind: "book", ...r }));
 	}
 
 	note(id?: string): NoteInterface {

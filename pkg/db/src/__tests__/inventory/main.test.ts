@@ -137,7 +137,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(ua1).toEqual(ua2);
 	});
 
-	test("getEntriesQueries", async () => {
+	test.only("getEntriesQueries", async () => {
 		// Set up warehouses
 		const defaultWh = await db.warehouse().create();
 		const wh1 = await db
