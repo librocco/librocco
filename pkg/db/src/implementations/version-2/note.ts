@@ -1,290 +1,158 @@
-import { Schema, sql } from "crstore";
-import { combineLatest, firstValueFrom, map } from "rxjs";
+import { NoteData, NoteStream, NoteType, ReceiptData, VolumeStockClient } from "@/types";
+import { InventoryDatabaseInterface, NoteInterface } from "./types";
 
-import { NoteState, VolumeStock, wrapIter } from "@librocco/shared";
+import { uniqueTimestamp } from "@/utils/misc";
 
-import { NoteStream, NoteType, ReceiptItem, UpdateTransactionParams, VolumeStockClient } from "@/types";
-import { InventoryDatabaseInterface, DatabaseSchema, NoteInterface } from "./types";
+class Note implements NoteInterface {
+	#db: InventoryDatabaseInterface;
 
-import { isBookRow, uniqueTimestamp } from "@/utils/misc";
-import { observableFromStore } from "@/helpers";
+	id: string;
+	warehouseId: string;
 
-export const createNoteInterface = (
-	db: InventoryDatabaseInterface,
-	warehouseId: string,
-	_id?: string,
-	data?: Partial<Schema<DatabaseSchema>["notes"]>
-): NoteInterface => {
-	const id: string = _id || uniqueTimestamp();
+	noteType: NoteType;
 
-	const noteType = (warehouseId === "all" ? "inventory" : "inbound") as NoteType;
+	displayName = "";
+	defaultWarehouse = "";
 
-	// Use the seed data if provided, if not set to default (if note exists the values will be updated by the stream)
-	let {
-		displayName = "",
-		committed = false,
-		createdAt = null,
-		updatedAt = null,
-		committedAt = null,
-		reconciliationNote = false
-	} = data || {};
+	committed = false;
+	reconciliationNote = false;
 
-	const streamed = () =>
-		observableFromStore(db.replicated((db) => db.selectFrom("notes").where("id", "==", _id).selectAll())).pipe(map(([n]) => n));
-	streamed().subscribe((n) => {
-		displayName = n.displayName;
-		committed = n.committed;
+	createdAt: string | null = null;
+	updatedAt: string | null = null;
+	committedAt: string | null = null;
 
-		createdAt = n.createdAt;
-		updatedAt = n.updatedAt;
-		committedAt = n.committedAt ?? null;
-		reconciliationNote = n.reconciliationNote;
-	});
+	constructor(db: InventoryDatabaseInterface, warehouseId: string, id?: string) {
+		this.#db = db;
 
-	const streamedEntries = () => {
-		const books = observableFromStore(
-			db.replicated((db) =>
-				db
-					.selectFrom("bookTransactions as t")
-					.leftJoin("warehouses as w", "t.warehouseId", "w.id")
-					.where("t.noteId", "==", _id)
-					.select(["t.isbn", "t.quantity", "t.warehouseId", "w.displayName as warehouseName", "w.discountPercentage as warehouseDiscount"])
-			)
-		);
+		this.id = id || uniqueTimestamp();
+		this.warehouseId = warehouseId;
 
-		const customItems = observableFromStore(
-			db.replicated((db) =>
-				db.selectFrom("customItemTransactions as t").where("t.noteId", "==", _id).select(["t.id", "t.title", "t.price"])
-			)
-		);
+		this.noteType = warehouseId === "all" ? "outbound" : "inbound";
+	}
 
-		return combineLatest([books, customItems]).pipe(
-			map(([b, ca]) => (b as VolumeStockClient[]).concat(ca.map((ca) => ({ ...ca, __kind: "custom" }))))
-		);
-	};
+	private async _getNameSeq(): Promise<number> {
+		const conn = await this.#db._db.connection;
+		const res = await conn
+			.selectFrom("notes as n")
+			.where("n.displayName", "like", "New Note%")
+			.orderBy("n.displayName", "desc")
+			.select("n.displayName")
+			.executeTakeFirst();
 
-	const getReceiptItems = () => {
-		const books = observableFromStore(
-			db.replicated((db) =>
-				db
-					.selectFrom("bookTransactions as t")
-					.leftJoin("warehouses as w", "t.warehouseId", "w.id")
-					.leftJoin("books as b", "t.isbn", "b.isbn")
-					.where("t.noteId", "==", _id)
-					.select(["t.isbn", "b.title", "t.quantity", "b.price", "w.discountPercentage as discount"])
-			)
-		).pipe(map((x) => x as ReceiptItem[]));
+		if (!res) return 1;
 
-		const customItems = observableFromStore(
-			db.replicated((db) => db.selectFrom("customItemTransactions as t").where("t.noteId", "==", _id).select(["t.title", "t.price"]))
-		).pipe(map((ci) => ci.map(({ title, price }) => ({ title, price, quantity: 1, discount: 0 }))));
+		if (res.displayName === "New Note") return 2;
 
-		const full = combineLatest([books, customItems]).pipe(map(([b, ci]) => b.concat(ci)));
-		return firstValueFrom(full);
-	};
+		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
+	}
 
-	const create = async () => {
-		const createdAt = new Date().toISOString();
-		const updatedAt = createdAt;
+	private async _update({ committed, reconciliationNote, ...data }: Partial<NoteData>): Promise<NoteInterface> {
+		if (committed !== undefined) data["committed"] = Number(committed);
+		if (reconciliationNote !== undefined) data["committed"] = Number(committed);
 
-		// This is a noop if warehouse already exists
-		await db.warehouse(warehouseId).create();
-		return db.update((db) =>
-			// TODO: default name - naming sequence
+		// No updates to committed notes
+		await this.get();
+		if (this.committed) return this;
+
+		await this.#db._db.update((db) => db.updateTable("notes").set(data).where("id", "==", this.id).execute());
+
+		return this.get();
+	}
+
+	async create(): Promise<NoteInterface> {
+		await this.#db.warehouse(this.warehouseId).create();
+
+		const seq = await this._getNameSeq();
+		const displayName = seq === 1 ? "New Note" : `New Note (${seq})`;
+
+		await this.#db._db.update((db) =>
 			db
 				.insertInto("notes")
-				.values({ id: _id, warehouseId, displayName: "", committed: false, createdAt, updatedAt, noteType, reconciliationNote: false })
+				.values({
+					id: this.id,
+					warehouseId: this.warehouseId,
+					noteType: this.noteType,
+					displayName,
+					defaultWarehouse: this.defaultWarehouse
+				})
+				.onConflict((oc) => oc.doNothing())
 				.execute()
 		);
-	};
+		return this.get();
+	}
 
-	const addVolumes = async (...volumes: VolumeStock[]) => {
-		const [_books, _customIteme] = wrapIter(volumes).partition(isBookRow);
-		const books = _books.map((txn) => ({ ...txn, noteId: _id })).array();
-		const customItems = _customIteme.map((txn) => ({ ...txn, noteId: _id })).array();
+	async get(): Promise<NoteInterface | undefined> {
+		const conn = await this.#db._db.connection;
+		const res = await conn.selectFrom("notes").where("id", "==", this.id).selectAll().executeTakeFirst();
 
-		await Promise.all([
-			!books.length
-				? Promise.resolve()
-				: db.update((db) =>
-						db
-							.insertInto("bookTransactions")
-							.values(books)
-							.onConflict((oc) => oc.doUpdateSet({ quantity: sql`sql.ref("excluded.quantity") + sql.ref("excluded.quantity")` }))
-							.execute()
-				  ),
-			!customItems.length
-				? Promise.resolve()
-				: db.update((db) =>
-						db
-							.insertInto("customItemTransactions")
-							.values(customItems)
-							.onConflict((oc) => oc.doNothing())
-							.execute()
-				  )
-		]);
-	};
+		if (!res) return undefined;
 
-	const updateTransaction = async (params: UpdateTransactionParams<"book"> | UpdateTransactionParams<"custom">) => {
-		if (typeof params[0] === "string") {
-			const [id, update] = params as UpdateTransactionParams<"custom">;
-			await db.update((db) =>
-				db.updateTable("customItemTransactions").where("noteId", "==", _id).where("id", "==", id).set(update).execute()
-			);
-		} else {
-			const [match, update] = params as UpdateTransactionParams<"book">;
-			const matchIsbn = match.isbn;
-			const matchWarehouseId = match.warehouseId || (noteType === "inbound" ? warehouseId : "");
+		const { committed, reconciliationNote, ...rest } = res;
+		return Object.assign(this, rest, { committed: !!committed, reconciliationNote: !!reconciliationNote });
+	}
 
-			// We're removing the matched transaction first, as changing the warehouseId might result in aggregation
-			// with the existing (isbn/warehouseId) entry - in which case the quantities are aggregated
-			await db.update((db) =>
-				db
-					.deleteFrom("bookTransactions")
-					.where("noteId", "==", _id)
-					.where("isbn", "==", matchIsbn)
-					.where("warehouseId", "==", matchWarehouseId)
-					.execute()
-			);
+	// TODO
+	async delete(): Promise<void> {
+		return;
+	}
 
-			// After removing the match txn, we're running addVolumes - it will take care of insertion
-			// or aggregation of the new transaction
-			await addVolumes({ ...match, ...update });
-		}
-	};
+	// TODO
+	async getEntries(): Promise<VolumeStockClient[]> {
+		return [];
+	}
 
-	const removeTransactions = (...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>) => {
-		const [_books, _customItems] = wrapIter(transactions).partition((t) => typeof t !== "string");
+	async setName(_: any, displayName: string): Promise<NoteInterface> {
+		return this._update({ displayName });
+	}
 
-		const books = _books.array();
+	// TODO
+	async setReconciliationNote(_: any, value: boolean): Promise<NoteInterface> {
+		this.reconciliationNote = value;
+		return this;
+	}
 
-		const customItems = _customItems.array();
+	// TODO
+	async setDefaultWarehouse(_: any, warehouseId: string): Promise<NoteInterface> {
+		this.defaultWarehouse = warehouseId;
+		return this;
+	}
 
-		return Promise.all([
-			books.map(({ isbn, warehouseId }) =>
-				db.update((db) =>
-					db
-						.deleteFrom("bookTransactions")
-						.where("noteId", "==", _id)
-						.where("isbn", "==", isbn)
-						.where("warehouseId", "==", warehouseId)
-						.execute()
-				)
-			),
-			!customItems.length
-				? Promise.resolve()
-				: db.update((db) => db.deleteFrom("customItemTransactions").where("noteId", "==", _id).where("id", "in", customItems).execute())
-		]);
-	};
+	// TODO
+	async addVolumes(): Promise<NoteInterface> {
+		return this;
+	}
 
-	const commit = async () => {
-		// TODO: blockers/reconciliation
-		await db.update((db) => db.updateTable("notes").where("id", "==", _id).set("committed", true).execute());
-	};
+	// TODO
+	async updateTransaction(): Promise<NoteInterface> {
+		return this;
+	}
 
-	/** A helper used to await the updated data (after an update) and return the updated note interface */
-	const runUpdate = async (cb: () => Promise<any>) => {
-		// If note is committed, we can't update it
-		if (committed) throw new Error("Cannot update a committed note"); // TODO: check if there's a standard err for this
+	// TODO
+	async removeTransactions(): Promise<NoteInterface> {
+		return this;
+	}
 
-		// Perform the update
-		await cb();
+	commit(): Promise<NoteInterface> {
+		const updatedAt = new Date().toISOString();
+		const committedAt = updatedAt;
 
-		// Return the updated note interface
-		const data = await firstValueFrom(streamed());
-		return createNoteInterface(db, warehouseId, _id, data);
-	};
+		return this._update({ committed: true, updatedAt, committedAt });
+	}
 
-	const updateField = <F extends keyof Schema<DatabaseSchema>["notes"]>(field: F, value: Schema<DatabaseSchema>["notes"][F]) =>
-		runUpdate(() =>
-			db.update((db) =>
-				db
-					.updateTable("notes")
-					.where("id", "==", _id)
-					.set({ [field]: value })
-					.execute()
-			)
-		);
+	// TODO
+	async intoReceipt(): Promise<ReceiptData> {
+		return { timestamp: Date.now(), items: [] };
+	}
 
-	const stream = (): NoteStream => {
-		return {
-			displayName: () => streamed().pipe(map(({ displayName }) => displayName)),
-			state: () => streamed().pipe(map(({ committed }) => (committed ? NoteState.Committed : NoteState.Draft))),
-			entries: () => streamedEntries().pipe(map((rows) => ({ rows, total: rows.filter(isBookRow).reduce((a, b) => a + b.quantity, 0) }))),
-			defaultWarehouseId: () => streamed().pipe(map(({ defaultWarehouse }) => defaultWarehouse || "")),
-			updatedAt: () => streamed().pipe(map(({ updatedAt }) => (updatedAt ? new Date(updatedAt) : null)))
-		};
-	};
+	// TODO
+	async reconcile(): Promise<NoteInterface> {
+		return this;
+	}
 
-	return {
-		id,
+	stream(): NoteStream {
+		return {} as NoteStream;
+	}
+}
 
-		noteType,
-
-		displayName,
-		committed,
-
-		createdAt,
-		updatedAt,
-		committedAt,
-
-		reconciliationNote,
-
-		async create() {
-			return runUpdate(create);
-		},
-
-		get() {
-			return runUpdate(() => Promise.resolve()); // Empty update to load the data
-		},
-
-		async delete() {
-			if (committed) throw new Error("Cannot delete a committed note"); // TODO: check if there's a standard err for this
-			await db.update((db) => db.deleteFrom("notes").where("id", "==", _id).execute());
-		},
-
-		getEntries() {
-			return firstValueFrom(streamedEntries());
-		},
-
-		setName(_: any, name: string) {
-			return updateField("displayName", name);
-		},
-
-		setReconciliationNote(_: any, value: boolean) {
-			return updateField("reconciliationNote", value);
-		},
-
-		setDefaultWarehouse(_: any, warehouseId: string) {
-			return updateField("defaultWarehouse", warehouseId);
-		},
-
-		addVolumes(...volumes: VolumeStock[]) {
-			return runUpdate(() => addVolumes(...volumes));
-		},
-
-		async updateTransaction(_: any, ...params: UpdateTransactionParams<"book"> | UpdateTransactionParams<"custom">) {
-			return runUpdate(() => updateTransaction(params));
-		},
-
-		removeTransactions(...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>) {
-			return runUpdate(() => removeTransactions(...transactions));
-		},
-
-		async commit() {
-			return runUpdate(commit);
-		},
-
-		async intoReceipt() {
-			const items = await getReceiptItems();
-			return { timestamp: Date.now(), items };
-		},
-
-		async reconcile() {
-			// TODO
-			return runUpdate(() => Promise.resolve());
-		},
-
-		stream
-	};
-};
+export const createNoteInterface = (db: InventoryDatabaseInterface, warehouseId: string, id?: string): NoteInterface =>
+	new Note(db, warehouseId, id);

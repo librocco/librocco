@@ -7,9 +7,8 @@ import { schema } from "./schema";
 
 export type NoteInterface = NI;
 
-export type AdditionalWarehouseData = { exists: boolean };
-export type WarehouseData = WD<AdditionalWarehouseData>;
-export type WarehouseInterface = WI<NoteInterface, { exists: boolean }>;
+export type WarehouseData = WD;
+export type WarehouseInterface = WI;
 
 export type DatabaseSchema = typeof schema;
-export type InventoryDatabaseInterface = IDB<WarehouseInterface, NoteInterface> & SvelteDatabase<Schema<DatabaseSchema>>;
+export type InventoryDatabaseInterface = IDB<WarehouseInterface, NoteInterface, { _db: SvelteDatabase<Schema<DatabaseSchema>> }>;
