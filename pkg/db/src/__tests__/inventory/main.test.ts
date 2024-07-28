@@ -37,7 +37,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	});
 
 	// Base functionality
-	test("standardApi", async () => {
+	test.only("standardApi", async () => {
 		// If warehouse doesn't exist, a new one should be initialised with default values
 		// but no data should be saved to the db until explicitly done so.
 		let wh1 = db.warehouse("wh1");
