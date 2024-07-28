@@ -107,7 +107,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(inboundNote.noteType).toEqual("inbound");
 	});
 
-	test("warehouseDiscount", async () => {
+	test.only("warehouseDiscount", async () => {
 		const wh1 = await db.warehouse("wh1").create();
 
 		let discount: PossiblyEmpty<number> = EMPTY;

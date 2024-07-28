@@ -1,6 +1,6 @@
-import { of } from "rxjs";
+import { map, of } from "rxjs";
 
-import { NoteInterface, VolumeStockClient, WarehouseStream } from "@/types";
+import { NoteInterface, VolumeStockClient, WarehouseData, WarehouseStream } from "@/types";
 import { InventoryDatabaseInterface, WarehouseInterface } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -8,6 +8,7 @@ import { NEW_WAREHOUSE } from "@/constants";
 import { createNoteInterface } from "./note";
 
 import { uniqueTimestamp } from "@/utils/misc";
+import { observableFromStore } from "@/helpers";
 
 class Warehouse implements WarehouseInterface {
 	#db: InventoryDatabaseInterface;
@@ -25,7 +26,11 @@ class Warehouse implements WarehouseInterface {
 		this.id = id;
 	}
 
-	// TODO
+	private async _update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
+		await this.#db._db.update((db) => db.updateTable("warehouses").set(data).where("id", "==", this.id).execute());
+		return this.get();
+	}
+
 	async create(): Promise<WarehouseInterface> {
 		await this.#db._db.update((db) =>
 			db
@@ -39,13 +44,12 @@ class Warehouse implements WarehouseInterface {
 
 	async get(): Promise<WarehouseInterface | undefined> {
 		const conn = await this.#db._db.connection;
-		const [res] = await conn.selectFrom("warehouses").where("id", "==", this.id).selectAll().execute();
+		const res = await conn.selectFrom("warehouses").where("id", "==", this.id).selectAll().executeTakeFirst();
 		return res ? Object.assign(this, res) : undefined;
 	}
 
-	// TODO
-	async setDiscount(): Promise<WarehouseInterface> {
-		return this;
+	setDiscount(_: any, discountPercentage: number): Promise<WarehouseInterface> {
+		return this._update({ discountPercentage });
 	}
 
 	// TODO
@@ -71,7 +75,10 @@ class Warehouse implements WarehouseInterface {
 	stream(): WarehouseStream {
 		return {
 			displayName: () => of(this.displayName),
-			discount: () => of(this.discountPercentage),
+			discount: () =>
+				observableFromStore(
+					this.#db._db.replicated((db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"))
+				).pipe(map((res) => res[0]?.discountPercentage || 0)),
 			entries: () => of({ rows: [], total: 0 })
 		};
 	}
