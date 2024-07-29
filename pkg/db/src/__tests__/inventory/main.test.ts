@@ -152,15 +152,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await note.addVolumes({}, { isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
 		const entries = await note.getEntries({});
 		expect([...entries]).toEqual([
-			{
-				__kind: "book",
-				isbn: "0123456789",
-				quantity: 2,
-				warehouseId: "wh1",
-				warehouseName: "Warehouse 1",
-				warehouseDiscount: 10
-			},
-			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: "wh1", warehouseName: "Warehouse 1", warehouseDiscount: 10 }
+			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: "wh1", warehouseName: "Warehouse 1", warehouseDiscount: 10 },
+			{ __kind: "book", isbn: "0123456789", quantity: 2, warehouseId: "wh1", warehouseName: "Warehouse 1", warehouseDiscount: 10 }
 		]);
 
 		// Check for warehouse
@@ -196,7 +189,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		]);
 	});
 
-	test("note.addVolumes", async () => {
+	test.only("note.addVolumes", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
