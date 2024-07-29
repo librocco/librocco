@@ -1,11 +1,13 @@
-import { sql } from "crstore";
+import { Kysely, Schema, sql } from "crstore";
+import { combineLatest, map, Observable } from "rxjs";
 
-import { VolumeStock, wrapIter } from "@librocco/shared";
+import { composeCompare, desc, VolumeStock, wrapIter } from "@librocco/shared";
 
-import { NoteData, NoteStream, NoteType, ReceiptData, VolumeStockClient } from "@/types";
-import { InventoryDatabaseInterface, NoteInterface } from "./types";
+import { EntriesStreamResult, NoteData, NoteStream, NoteType, ReceiptData, VolumeStockClient } from "@/types";
+import { DatabaseSchema, InventoryDatabaseInterface, NoteInterface } from "./types";
 
 import { isBookRow, uniqueTimestamp } from "@/utils/misc";
+import { observableFromStore } from "@/helpers";
 
 class Note implements NoteInterface {
 	#db: InventoryDatabaseInterface;
@@ -102,19 +104,38 @@ class Note implements NoteInterface {
 
 	async getEntries(): Promise<VolumeStockClient[]> {
 		const conn = await this.#db._db.connection;
-		const books = await conn
-			.selectFrom("bookTransactions as t")
-			.leftJoin("warehouses as w", "t.warehouseId", "w.id")
-			.where("t.noteId", "==", this.id)
-			.select(["t.isbn", "t.quantity", "t.warehouseId", "w.discountPercentage as warehouseDiscount", "w.displayName as warehouseName"])
-			.execute();
-		const customItems = await conn
-			.selectFrom("customItemTransactions as t")
-			.where("t.noteId", "==", this.id)
-			.select(["id", "title", "price"])
-			.execute();
+		const books = await createBooksQuery(conn, this.id)
+			.execute()
+			.then((res) => res.map((b) => ({ __kind: "book", ...b } as VolumeStockClient & { updatedAt: string })));
 
-		return books.map((b) => ({ __kind: "book", ...b } as VolumeStockClient)).concat(customItems as VolumeStockClient[]);
+		const customItems = await createCustomItemsQuery(conn, this.id)
+			.execute()
+			.then((res) => res.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string })));
+
+		return (
+			[...books, ...customItems]
+				.sort(composeCompare(desc(({ updatedAt }) => updatedAt)))
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				.map(({ updatedAt, ...item }) => item)
+		);
+	}
+
+	private _streamEntries(): Observable<EntriesStreamResult> {
+		const books = observableFromStore(this.#db._db.replicated((db) => createBooksQuery(db, this.id))).pipe(
+			map((b) => b.map((b) => ({ __kind: "book", ...b, availableWarehouses: new Map() } as VolumeStockClient & { updatedAt: string })))
+		);
+		const customItems = observableFromStore(this.#db._db.replicated((db) => createCustomItemsQuery(db, this.id))).pipe(
+			map((ci) => ci.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string })))
+		);
+
+		return combineLatest([books, customItems]).pipe(
+			map(([books, customItems]) => books.concat(customItems)),
+			map((items) => ({
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				rows: items.sort(composeCompare(desc(({ updatedAt }) => updatedAt))).map(({ updatedAt, ...item }) => item),
+				total: items.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0)
+			}))
+		);
 	}
 
 	async setName(_: any, displayName: string): Promise<NoteInterface> {
@@ -135,14 +156,23 @@ class Note implements NoteInterface {
 
 	async addVolumes(...volumes: VolumeStock[]): Promise<NoteInterface> {
 		const [_books, _customIteme] = wrapIter(volumes).partition(isBookRow);
-		const books = _books
-			.map(({ warehouseId, ...txn }) => ({
-				...txn,
-				noteId: this.id,
-				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || ""
-			}))
-			.array();
-		const customItems = _customIteme.map((txn) => ({ ...txn, noteId: this.id })).array();
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const books = _books.array().map(({ __kind, warehouseId, ...txn }, i) => ({
+			...txn,
+			noteId: this.id,
+			warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || "",
+			// We add 1 millisecond to each transaction to ensure unique updatedAt values
+			updatedAt: new Date(Date.now() + i).toISOString()
+		}));
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		const customItems = _customIteme.array().map(({ __kind, id, price, title }, i) => ({
+			id: id || uniqueTimestamp(),
+			title,
+			price,
+			noteId: this.id,
+			// We add 1 millisecond to each transaction to ensure unique updatedAt values
+			updatedAt: new Date(Date.now() + i).toISOString()
+		}));
 
 		await Promise.all([
 			!books.length
@@ -151,7 +181,12 @@ class Note implements NoteInterface {
 						db
 							.insertInto("bookTransactions")
 							.values(books)
-							.onConflict((oc) => oc.doUpdateSet((eb) => ({ quantity: sql`${eb.ref("quantity")} + ${eb.ref("excluded.quantity")}` })))
+							.onConflict((oc) =>
+								oc.doUpdateSet((eb) => ({
+									quantity: sql`${eb.ref("quantity")} + ${eb.ref("excluded.quantity")}`,
+									updatedAt: eb.ref("excluded.updatedAt")
+								}))
+							)
 							.execute()
 				  ),
 			!customItems.length
@@ -196,9 +231,33 @@ class Note implements NoteInterface {
 	}
 
 	stream(): NoteStream {
-		return {} as NoteStream;
+		return {
+			entries: this._streamEntries.bind(this)
+		} as NoteStream;
 	}
 }
 
 export const createNoteInterface = (db: InventoryDatabaseInterface, warehouseId: string, id?: string): NoteInterface =>
 	new Note(db, warehouseId, id);
+
+// #region utils
+const createBooksQuery = (conn: Kysely<Schema<DatabaseSchema>>, noteId: string) =>
+	conn
+		.selectFrom("bookTransactions as t")
+		.leftJoin("warehouses as w", "t.warehouseId", "w.id")
+		.where("t.noteId", "==", noteId)
+		.select([
+			"t.isbn",
+			"t.quantity",
+			"t.warehouseId",
+			(qb) => qb.fn.coalesce(qb.ref("w.discountPercentage"), qb.val(0)).as("warehouseDiscount"),
+			(qb) => qb.fn.coalesce(qb.ref("w.displayName"), qb.val("not-found")).as("warehouseName"),
+			"t.updatedAt"
+		]);
+
+const createCustomItemsQuery = (conn: Kysely<Schema<DatabaseSchema>>, noteId: string) =>
+	conn
+		.selectFrom("customItemTransactions as t")
+		.where("t.noteId", "==", noteId)
+		.orderBy("t.updatedAt", "desc")
+		.select(["id", "title", "price", "t.updatedAt"]);

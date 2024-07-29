@@ -44,10 +44,13 @@ const bookTransctionSchema = crr(
 			noteId: ss.string(),
 
 			isbn: ss.string(),
-			quantity: ss.number()
+			quantity: ss.number(),
+
+			updatedAt: ss.string()
 		}),
 		"isbn",
-		"noteId"
+		"noteId",
+		"warehouseId"
 	)
 );
 
@@ -58,7 +61,9 @@ const customItemTransactionSchema = crr(
 
 			id: ss.string(),
 			title: ss.string(),
-			price: ss.number()
+			price: ss.number(),
+
+			updatedAt: ss.string()
 		}),
 		"id",
 		"noteId"
