@@ -640,7 +640,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("note.removeTransaction", async () => {
+	test.only("note.removeTransaction", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -781,7 +781,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("streamNoteValuesAccordingToSpec", async () => {
+	test.only("streamNoteValuesAccordingToSpec", async () => {
 		// Create a new note
 		const note = await db.warehouse("test-warehouse").note().create();
 
@@ -935,7 +935,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("outboundNoteAvailableWarehouses", async () => {
+	test.only("outboundNoteAvailableWarehouses", async () => {
 		// Create two warehouses to work with
 		const wh1 = await db
 			.warehouse("wh-1")

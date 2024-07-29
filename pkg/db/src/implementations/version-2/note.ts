@@ -1,13 +1,15 @@
 import { Kysely, Schema, sql } from "crstore";
-import { combineLatest, map, Observable } from "rxjs";
+import { combineLatest, filter, map, Observable, switchMap } from "rxjs";
 
-import { composeCompare, desc, VolumeStock, wrapIter } from "@librocco/shared";
+import { debug, composeCompare, desc, NoteState, VolumeStock, VolumeStockKind, wrapIter } from "@librocco/shared";
 
-import { EntriesStreamResult, NoteData, NoteStream, NoteType, ReceiptData, UpdateTransactionParams, VolumeStockClient } from "@/types";
+import { EntriesStreamResult, NavMap, NoteStream, NoteType, ReceiptData, UpdateTransactionParams, VolumeStockClient } from "@/types";
 import { DatabaseSchema, InventoryDatabaseInterface, NoteInterface } from "./types";
 
 import { isBookRow, uniqueTimestamp } from "@/utils/misc";
 import { observableFromStore } from "@/helpers";
+
+type TimestampedVolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = VolumeStockClient<K> & { updatedAt: string };
 
 class Note implements NoteInterface {
 	#db: InventoryDatabaseInterface;
@@ -52,7 +54,39 @@ class Note implements NoteInterface {
 		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
 	}
 
-	private async _update({ committed, reconciliationNote, ...data }: Partial<NoteData>): Promise<NoteInterface> {
+	/** Used to check for book availability across warehouses */
+	private _streamExistingStock(isbns: string[]): Observable<Map<string, NavMap<{ quantity: number }>>> {
+		const store = this.#db._db.replicated((db) => {
+			const stock = db
+				.selectFrom("bookTransactions as t")
+				.innerJoin("notes as n", "t.noteId", "n.id")
+				.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+				.where("n.committed", "==", 1)
+				.where("t.isbn", "in", isbns)
+				.select([
+					"t.isbn",
+					"t.warehouseId",
+					"w.displayName as displayName",
+					(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
+				])
+				.groupBy(["t.warehouseId", "t.isbn"]);
+
+			return db.selectFrom(stock.as("s")).where("s.quantity", ">", 0).selectAll();
+		});
+
+		const rowsToMap = (rows: { isbn: string; warehouseId: string; quantity: number; displayName: string }[]) => {
+			const mapGenerator = wrapIter(rows)
+				// Group by isbn: { isbn => Iterable { warehouseId => data } }
+				._group(({ isbn, warehouseId, quantity, displayName }) => [isbn, [warehouseId, { quantity, displayName }] as const])
+				// Convert each internal iterable into a map: Iterable { warehouseId => data } -> Map { warehouseId => data }
+				.map(([isbn, warehouses]) => [isbn, new Map(warehouses)] as const);
+			return new Map(mapGenerator);
+		};
+
+		return observableFromStore(store).pipe(map(rowsToMap));
+	}
+
+	private async _update({ committed, reconciliationNote, ...data }: Partial<Schema<DatabaseSchema>["notes"]>): Promise<NoteInterface> {
 		if (committed !== undefined) data["committed"] = Number(committed);
 		if (reconciliationNote !== undefined) data["committed"] = Number(committed);
 
@@ -97,20 +131,19 @@ class Note implements NoteInterface {
 		return Object.assign(this, rest, { committed: !!committed, reconciliationNote: !!reconciliationNote });
 	}
 
-	// TODO
 	async delete(): Promise<void> {
-		return;
+		await this._update({ deleted: 1 });
 	}
 
 	async getEntries(): Promise<VolumeStockClient[]> {
 		const conn = await this.#db._db.connection;
 		const books = await createBooksQuery(conn, this.id)
 			.execute()
-			.then((res) => res.map((b) => ({ __kind: "book", ...b } as VolumeStockClient & { updatedAt: string })));
+			.then((res) => res.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient)));
 
 		const customItems = await createCustomItemsQuery(conn, this.id)
 			.execute()
-			.then((res) => res.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string })));
+			.then((res) => res.map((ci) => ({ __kind: "custom", ...ci } as TimestampedVolumeStockClient)));
 
 		return (
 			[...books, ...customItems]
@@ -120,20 +153,52 @@ class Note implements NoteInterface {
 		);
 	}
 
+	private _streamValues() {
+		return observableFromStore(this.#db._db.replicated((db) => db.selectFrom("notes").where("id", "==", this.id).selectAll())).pipe(
+			map(([n]) => n),
+			filter(Boolean),
+			map(({ committed, reconciliationNote, noteType, ...note }) => ({
+				...note,
+				committed: !!committed,
+				reconciliationNote: !!reconciliationNote,
+				noteType: noteType as NoteType,
+				deleted: !!note.deleted
+			}))
+		);
+	}
+
 	private _streamEntries(): Observable<EntriesStreamResult> {
+		// const constructBookEntry = (b: VolumeStockClient<"book">) =>
+		const mergeWarehouseAvailability = (obs: Observable<TimestampedVolumeStockClient<"book">[]>) =>
+			this.noteType === "inbound"
+				? obs
+				: obs.pipe(
+						switchMap((books) => {
+							const isbns = books.map((b) => b.isbn);
+							return this._streamExistingStock(isbns).pipe(
+								map((availability) =>
+									books.map((b) => ({ ...b, availableWarehouses: availability.get(b.isbn) || new Map() } as TimestampedVolumeStockClient))
+								)
+							);
+						})
+				  );
+
 		const books = observableFromStore(this.#db._db.replicated((db) => createBooksQuery(db, this.id))).pipe(
-			map((b) => b.map((b) => ({ __kind: "book", ...b, availableWarehouses: new Map() } as VolumeStockClient & { updatedAt: string })))
+			map((b) => b.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient<"book">))),
+			mergeWarehouseAvailability
 		);
 		const customItems = observableFromStore(this.#db._db.replicated((db) => createCustomItemsQuery(db, this.id))).pipe(
 			map((ci) => ci.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string })))
 		);
 
 		return combineLatest([books, customItems]).pipe(
-			map(([books, customItems]) => books.concat(customItems)),
-			map((items) => ({
-				// eslint-disable-next-line @typescript-eslint/no-unused-vars
-				rows: items.sort(composeCompare(desc(({ updatedAt }) => updatedAt))).map(({ updatedAt, ...item }) => item),
-				total: items.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0)
+			map(([books, customItems]) => ({
+				rows: books
+					.concat(customItems)
+					.sort(composeCompare(desc(({ updatedAt }) => updatedAt)))
+					// eslint-disable-next-line @typescript-eslint/no-unused-vars
+					.map(({ updatedAt, ...item }) => item),
+				total: books.length
 			}))
 		);
 	}
@@ -154,7 +219,7 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	async addVolumes(...volumes: VolumeStock[]): Promise<NoteInterface> {
+	async addVolumes(_: debug.DebugCtx, ...volumes: VolumeStock[]): Promise<NoteInterface> {
 		const [_books, _customIteme] = wrapIter(volumes)
 			.enumerate()
 			.partition((tup): tup is [number, VolumeStockClient<"book">] => isBookRow(tup[1]));
@@ -270,8 +335,31 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	// TODO
-	async removeTransactions(): Promise<NoteInterface> {
+	async removeTransactions(_: debug.DebugCtx, ...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>) {
+		const [_books, _customItems] = wrapIter(transactions).partition((t) => typeof t !== "string");
+
+		const books = _books.array();
+
+		const customItems = _customItems.array();
+
+		await Promise.all([
+			books.map(({ isbn, warehouseId }) =>
+				this.#db._db.update((db) =>
+					db
+						.deleteFrom("bookTransactions")
+						.where("noteId", "==", this.id)
+						.where("isbn", "==", isbn)
+						.where("warehouseId", "==", warehouseId)
+						.execute()
+				)
+			),
+			!customItems.length
+				? Promise.resolve()
+				: this.#db._db.update((db) =>
+						db.deleteFrom("customItemTransactions").where("noteId", "==", this.id).where("id", "in", customItems).execute()
+				  )
+		]);
+
 		return this;
 	}
 
@@ -279,7 +367,7 @@ class Note implements NoteInterface {
 		const updatedAt = new Date().toISOString();
 		const committedAt = updatedAt;
 
-		return this._update({ committed: true, updatedAt, committedAt });
+		return this._update({ committed: 1, updatedAt, committedAt });
 	}
 
 	// TODO
@@ -294,7 +382,14 @@ class Note implements NoteInterface {
 
 	stream(): NoteStream {
 		return {
-			entries: this._streamEntries.bind(this)
+			entries: this._streamEntries.bind(this),
+			displayName: () => this._streamValues().pipe(map(({ displayName }) => displayName)),
+			defaultWarehouseId: () => this._streamValues().pipe(map(({ defaultWarehouse }) => defaultWarehouse)),
+			state: () =>
+				this._streamValues().pipe(
+					map(({ deleted, committed }) => (deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft))
+				),
+			updatedAt: () => this._streamValues().pipe(map(({ updatedAt }) => (updatedAt ? new Date(updatedAt) : null)))
 		} as NoteStream;
 	}
 }
