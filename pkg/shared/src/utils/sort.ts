@@ -25,7 +25,7 @@
  * ) // [{ a: 1, b: 1 }, { a: 1, b: 2 }, { a: 2, b: 3 }]
  */
 export function asc<T extends string | number>(): (a: T, b: T) => number;
-export function asc<T, R extends string | number>(selector: (x: T) => R): (a: R, b: R) => number;
+export function asc<T, R extends string | number>(selector: (x: T) => R): (a: T, b: T) => number;
 export function asc(selector?: any) {
 	return (a: any, b: any) => {
 		const aVal = selector ? selector(a) : a;
@@ -61,7 +61,7 @@ export function asc(selector?: any) {
  * ) // [{ a: 2, b: 3 }, { a: 1, b: 2 }, { a: 1, b: 1 }]
  */
 export function desc<T extends string | number>(): (a: T, b: T) => number;
-export function desc<T, R extends string | number>(selector: (x: T) => R): (a: R, b: R) => number;
+export function desc<T, R extends string | number>(selector: (x: T) => R): (a: T, b: T) => number;
 export function desc(selector?: any) {
 	return (a: any, b: any) => {
 		const aVal = selector ? selector(a) : a;
