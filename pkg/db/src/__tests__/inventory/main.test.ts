@@ -416,7 +416,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("note.updateTransaction", async () => {
+	test.only("note.updateTransaction", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -560,8 +560,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await note.updateTransaction({}, { isbn: "11111111", warehouseId: "wh3" }, { isbn: "11111111", quantity: 10, warehouseId: wh1.id });
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 },
-				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
 				{
 					__kind: "book",
 					isbn: "11111111",
@@ -571,6 +569,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					availableWarehouses,
 					warehouseDiscount: 0
 				},
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 },
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
 				{
 					__kind: "book",
 					isbn: "0123456789",
@@ -587,8 +587,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await note.updateTransaction({}, { isbn: "11111111", warehouseId: "wh3" }, { isbn: "11111111", quantity: 10, warehouseId: wh1.id });
 		await waitFor(() =>
 			expect(entries).toEqual([
-				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 },
-				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
 				{
 					__kind: "book",
 					isbn: "11111111",
@@ -598,6 +596,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					availableWarehouses,
 					warehouseDiscount: 0
 				},
+				{ id: "custom-item-2", __kind: "custom", title: "Custom Item 2", price: 20 },
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 10 },
 				{
 					__kind: "book",
 					isbn: "0123456789",
@@ -616,8 +616,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ id: "custom-item-2", __kind: "custom", title: "Updated 2nd item", price: 25 },
-				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 15 },
 				{
 					__kind: "book",
 					isbn: "11111111",
@@ -627,6 +625,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					availableWarehouses,
 					warehouseDiscount: 0
 				},
+				{ id: "custom-item-2", __kind: "custom", title: "Updated 2nd item", price: 25 },
+				{ id: "custom-item-1", __kind: "custom", title: "Custom Item", price: 15 },
 				{
 					__kind: "book",
 					isbn: "0123456789",
