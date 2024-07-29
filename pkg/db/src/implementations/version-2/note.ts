@@ -3,7 +3,7 @@ import { combineLatest, map, Observable } from "rxjs";
 
 import { composeCompare, desc, VolumeStock, wrapIter } from "@librocco/shared";
 
-import { EntriesStreamResult, NoteData, NoteStream, NoteType, ReceiptData, VolumeStockClient } from "@/types";
+import { EntriesStreamResult, NoteData, NoteStream, NoteType, ReceiptData, UpdateTransactionParams, VolumeStockClient } from "@/types";
 import { DatabaseSchema, InventoryDatabaseInterface, NoteInterface } from "./types";
 
 import { isBookRow, uniqueTimestamp } from "@/utils/misc";
@@ -155,24 +155,33 @@ class Note implements NoteInterface {
 	}
 
 	async addVolumes(...volumes: VolumeStock[]): Promise<NoteInterface> {
-		const [_books, _customIteme] = wrapIter(volumes).partition(isBookRow);
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const books = _books.array().map(({ __kind, warehouseId, ...txn }, i) => ({
-			...txn,
-			noteId: this.id,
-			warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || "",
-			// We add 1 millisecond to each transaction to ensure unique updatedAt values
-			updatedAt: new Date(Date.now() + i).toISOString()
-		}));
-		// eslint-disable-next-line @typescript-eslint/no-unused-vars
-		const customItems = _customIteme.array().map(({ __kind, id, price, title }, i) => ({
-			id: id || uniqueTimestamp(),
-			title,
-			price,
-			noteId: this.id,
-			// We add 1 millisecond to each transaction to ensure unique updatedAt values
-			updatedAt: new Date(Date.now() + i).toISOString()
-		}));
+		const [_books, _customIteme] = wrapIter(volumes)
+			.enumerate()
+			.partition((tup): tup is [number, VolumeStockClient<"book">] => isBookRow(tup[1]));
+		const books = _books
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			.map(([i, { __kind, warehouseId, ...txn }]) => ({
+				...txn,
+				noteId: this.id,
+				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || "",
+				// We add 1 millisecond to each transaction to ensure unique updatedAt values
+				updatedAt: new Date(Date.now() + i).toISOString()
+			}))
+			.array();
+		const customItems = _customIteme
+			.map((tup) => {
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				const [i, { __kind, id, price, title }] = tup as [number, VolumeStockClient<"custom">];
+				return {
+					id: id || uniqueTimestamp(),
+					title,
+					price,
+					noteId: this.id,
+					// We add 1 millisecond to each transaction to ensure unique updatedAt values
+					updatedAt: new Date(Date.now() + i).toISOString()
+				};
+			})
+			.array();
 
 		await Promise.all([
 			!books.length
@@ -203,8 +212,61 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	// TODO
-	async updateTransaction(): Promise<NoteInterface> {
+	async updateTransaction(_: any, ...params: UpdateTransactionParams<"book"> | UpdateTransactionParams<"custom">) {
+		if (typeof params[0] === "string") {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const [id, { __kind, ...update }] = params as UpdateTransactionParams<"custom">;
+			await this.#db._db.update((db) =>
+				db.updateTable("customItemTransactions").where("noteId", "==", this.id).where("id", "==", id).set(update).execute()
+			);
+		} else {
+			// eslint-disable-next-line @typescript-eslint/no-unused-vars
+			const [{ __kind: _0, ...match }, { __kind: _1, ...update }] = params as UpdateTransactionParams<"book">;
+			const matchIsbn = match.isbn;
+			const matchWarehouseId = match.warehouseId || (this.noteType === "inbound" ? this.warehouseId : "");
+
+			// Get the existing txn - this serves as both a check that it exists, and to get the updatedAt value
+			// The updatedAt value is used to keep order as it was (for FE UX), unless two rows are merged - in which case the result gets bubbled up
+			const existing = await this.#db._db.connection.then((conn) =>
+				conn
+					.selectFrom("bookTransactions as t")
+					.where("t.noteId", "==", this.id)
+					.where("t.isbn", "==", matchIsbn)
+					.where("t.warehouseId", "==", matchWarehouseId)
+					.select("updatedAt")
+					.executeTakeFirst()
+			);
+
+			// If txn is not matched - noop
+			if (!existing) return this;
+
+			// We're removing the matched transaction first, as changing the warehouseId might result in aggregation
+			// with the existing (isbn/warehouseId) entry - in which case the quantities are aggregated
+			await this.#db._db.update((db) =>
+				db
+					.deleteFrom("bookTransactions")
+					.where("noteId", "==", this.id)
+					.where("isbn", "==", matchIsbn)
+					.where("warehouseId", "==", matchWarehouseId)
+					.execute()
+			);
+
+			// After removing the match txn, we're adding a new one, so that we can automatically aggregate
+			// quantity if there already exists a transaction with the same isbn and warehouseId
+			await this.#db._db.update((db) =>
+				db
+					.insertInto("bookTransactions")
+					.values({ ...match, ...update, noteId: this.id, updatedAt: existing.updatedAt })
+					.onConflict((oc) =>
+						oc.doUpdateSet((eb) => ({
+							quantity: sql`${eb.ref("quantity")} + ${eb.ref("excluded.quantity")}`,
+							updatedAt: new Date().toISOString()
+						}))
+					)
+					.execute()
+			);
+		}
+
 		return this;
 	}
 
