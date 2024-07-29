@@ -22,7 +22,9 @@ const noteSchema = crr(
 			warehouseId: ss.string(),
 
 			noteType: ss.string(),
+
 			committed: ss.number(),
+			deleted: ss.number(),
 
 			displayName: ss.string(),
 			defaultWarehouse: ss.optional(ss.string()),

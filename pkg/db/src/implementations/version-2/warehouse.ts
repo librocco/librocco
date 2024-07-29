@@ -27,16 +27,35 @@ class Warehouse implements WarehouseInterface {
 		this.id = id;
 	}
 
+	private async _getNameSeq(): Promise<number> {
+		const conn = await this.#db._db.connection;
+		const res = await conn
+			.selectFrom("warehouses as w")
+			.where("w.displayName", "like", "New Warehouse%")
+			.orderBy("w.displayName", "desc")
+			.select("w.displayName")
+			.executeTakeFirst();
+
+		if (!res) return 1;
+
+		if (res.displayName === "New Warehouse") return 2;
+
+		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
+	}
+
 	private async _update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
 		await this.#db._db.update((db) => db.updateTable("warehouses").set(data).where("id", "==", this.id).execute());
 		return this.get();
 	}
 
 	async create(): Promise<WarehouseInterface> {
+		const seq = await this._getNameSeq();
+		const displayName = seq === 1 ? "New Warehouse" : `New Warehouse (${seq})`;
+
 		await this.#db._db.update((db) =>
 			db
 				.insertInto("warehouses")
-				.values({ id: this.id, displayName: this.displayName, discountPercentage: this.discountPercentage })
+				.values({ id: this.id, displayName, discountPercentage: this.discountPercentage })
 				.onConflict((oc) => oc.doNothing())
 				.execute()
 		);
