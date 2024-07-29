@@ -10,6 +10,15 @@ export function map<T, R>(iterable: Iterable<T>, mapper: (value: T) => R): Reusa
 	});
 }
 
+export function enumerate<T>(iterable: Iterable<T>): ReusableGenerator<[number, T]> {
+	return iterableFromGenerator(function* () {
+		let i = 0;
+		for (const value of iterable) {
+			yield [i++, value];
+		}
+	});
+}
+
 export function flatMap<T, R>(iterable: Iterable<T>, mapper: (value: T) => Iterable<R>): ReusableGenerator<R> {
 	return iterableFromGenerator(function* () {
 		for (const value of iterable) {
@@ -166,6 +175,7 @@ export function iterableFromGenerator<T>(genFn: () => Generator<T>): ReusableGen
 
 interface TransformableIterable<T> extends Iterable<T> {
 	map<R>(mapper: (value: T) => R): TransformableIterable<R>;
+	enumerate(): TransformableIterable<[number, T]>;
 	flatMap<R>(bind: (value: T) => Iterable<R>): TransformableIterable<R>;
 	_group<K, V>(selector: (entry: T) => [K, V]): TransformableIterable<[K, Iterable<V>]>;
 	_groupIntoMap<K, V>(selector: (entry: T) => [K, V]): Map<K, Iterable<V>>;
@@ -207,6 +217,7 @@ interface TransformableIterable<T> extends Iterable<T> {
  */
 export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => {
 	const m = <R>(mapper: (value: T) => R) => wrapIter(map(iterable, mapper));
+	const e = () => wrapIter(enumerate(iterable));
 	const fm = <R>(mapper: (value: T) => Iterable<R>) => wrapIter(flatMap(iterable, mapper));
 	const _g = <K, V>(selector: (entry: T) => [K, V]) => wrapIter(_group(iterable, selector));
 	const _gim = <K, V>(selector: (entry: T) => [K, V]) => _groupIntoMap(iterable, selector);
@@ -223,6 +234,7 @@ export const wrapIter = <T>(iterable: Iterable<T>): TransformableIterable<T> => 
 	return {
 		[Symbol.iterator]: iterable[Symbol.iterator],
 		map: m,
+		enumerate: e,
 		flatMap: fm,
 		_group: _g,
 		_groupIntoMap: _gim,
