@@ -1513,7 +1513,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("inNotesStream", async () => {
+	test("inNotesStream", async () => {
 		const inl$ = db.stream().inNoteList({});
 		let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 		let actual: PossiblyEmpty<InNoteMap> = EMPTY;
@@ -1524,16 +1524,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			inNoteList = inNoteMapToInNoteList(inl);
 			actual = inl;
 		});
-
-		(db as any)._db
-			.replicated((db) =>
-				db
-					.selectFrom("notes as n")
-					.fullJoin("warehouses as w", "n.warehouseId", "w.id")
-					.where("n.committed", "==", 0)
-					.select(["n.id", "n.displayName", "w.id as warehouseId", "w.displayName as warehouseName"])
-			)
-			.subscribe(console.log);
 
 		try {
 			await waitFor(() => {
@@ -1680,7 +1670,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		}
 	});
 
-	test("outNotesStream", async () => {
+	test.only("outNotesStream", async () => {
 		const onl$ = db.stream().outNoteList({});
 		let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 
