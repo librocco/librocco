@@ -33,16 +33,22 @@ class Warehouse implements WarehouseInterface {
 		const conn = await this.#db._db.connection;
 		const res = await conn
 			.selectFrom("warehouses as w")
-			.where(() => sql`w.displayName GLOB 'New Warehouse' OR displayName GLOB 'New Warehouse ([0-9]*)'`)
+			.where("w.displayName", "like", "New Warehouse%")
 			.orderBy("w.displayName", "desc")
 			.select("w.displayName")
-			.executeTakeFirst();
+			.execute();
 
-		if (!res) return 1;
+		const filtered = res.map(({ displayName }) => displayName).filter((displayName) => /^New Warehouse( \([0-9]+\))?$/.test(displayName));
 
-		if (res.displayName === "New Warehouse") return 2;
+		// No 'New Warehouse (X)' entries (including "New Warehouse")
+		if (!filtered.length) return 1;
 
-		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
+		const match = filtered[0].match(/\([0-9]*\)/);
+
+		// No match found - only "New Warehouse" exists
+		if (!match) return 2;
+
+		return match ? parseInt(match[0].replace(/[()]/g, "")) + 1 : 2;
 	}
 
 	private _streamEntries(): Observable<EntriesStreamResult> {
