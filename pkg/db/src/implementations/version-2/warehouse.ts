@@ -61,6 +61,7 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	private async _update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
+		await this.create();
 		await this.#db._db.update((db) => db.updateTable("warehouses").set(data).where("id", "==", this.id).execute());
 		return this.get();
 	}

@@ -1140,7 +1140,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		);
 	});
 
-	test.only("streamWarehouseStock", async () => {
+	test("streamWarehouseStock", async () => {
 		const warehouse1 = await db.warehouse("warehouse-1").create();
 		const warehouse2 = await db.warehouse("warehouse-2").create();
 		const defaultWarehouse = await db.warehouse().create();
@@ -1465,7 +1465,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("warehouseDataMapStream", async () => {
+	test.only("warehouseDataMapStream", async () => {
 		const wl$ = db.stream().warehouseMap({});
 		let warehouseDataMap: PossiblyEmpty<Array<Pick<WarehouseData, "displayName" | "discountPercentage"> & { id: string }>> = EMPTY;
 		wl$.subscribe(
@@ -1474,13 +1474,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// The default warehouse should be created automatically
 		await waitFor(() => {
-			expect(warehouseDataMap).toEqual([{ id: "0-all", displayName: "All", discountPercentage: 0 }]);
+			expect(warehouseDataMap).toEqual([{ id: "all", displayName: "All", discountPercentage: 0 }]);
 		});
 		const warehouse = await db.warehouse("new-warehouse").create();
 		await waitFor(() => {
-			// The default ("0-all") warehouse should be created as well (when the first warehouse is created)
+			// The default ("all") warehouse should be created as well (when the first warehouse is created)
 			expect(warehouseDataMap).toEqual([
-				{ id: "0-all", displayName: "All", discountPercentage: 0 },
+				{ id: "all", displayName: "All", discountPercentage: 0 },
 				{ id: "new-warehouse", displayName: "New Warehouse", discountPercentage: 0 }
 			]);
 		});
@@ -1489,7 +1489,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await warehouse.setName({}, "New Name");
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "0-all", displayName: "All", discountPercentage: 0 },
+				{ id: "all", displayName: "All", discountPercentage: 0 },
 				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 0 }
 			]);
 		});
@@ -1498,7 +1498,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await warehouse.setDiscount({}, 10);
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "0-all", displayName: "All", discountPercentage: 0 },
+				{ id: "all", displayName: "All", discountPercentage: 0 },
 				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10 }
 			]);
 		});
@@ -1507,7 +1507,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await warehouse.note().create();
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "0-all", displayName: "All", discountPercentage: 0 },
+				{ id: "all", displayName: "All", discountPercentage: 0 },
 				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10 }
 			]);
 		});
@@ -1528,7 +1528,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		try {
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "0-all", displayName: "All", notes: [] },
+					{ id: "all", displayName: "All", notes: [] },
 					{ id: "warehouse-1", displayName: "New Warehouse", notes: [] }
 				]);
 			});
@@ -1537,7 +1537,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			const note1 = await warehouse1.note().create();
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "0-all", displayName: "All", notes: [{ id: note1.id, displayName: "New Note" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Note" }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
@@ -1550,7 +1550,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await note1.setName({}, "New Name");
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "0-all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
@@ -1564,7 +1564,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
 					{
-						id: "0-all",
+						id: "all",
 						displayName: "All",
 						notes: [
 							{ id: note1.id, displayName: "New Name" },
@@ -1588,7 +1588,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await note2.delete({});
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "0-all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
@@ -1607,7 +1607,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
 					{
-						id: "0-all",
+						id: "all",
 						displayName: "All",
 						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
 					},
@@ -1625,7 +1625,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
 					{
-						id: "0-all",
+						id: "all",
 						displayName: "All",
 						notes: [
 							{ id: note1.id, displayName: "New Note - Updated" },
@@ -1652,7 +1652,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
 					{
-						id: "0-all",
+						id: "all",
 						displayName: "All",
 						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
 					},
@@ -1892,7 +1892,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// The default warehosue gets created automatically, so we will essentially
 		// always be receiving the default warehouse in the warehouse (and in-note) list
 		const defaultWarehouse = {
-			id: "0-all",
+			id: "all",
 			displayName: "All"
 		};
 		await waitFor(() => {
