@@ -115,9 +115,9 @@ class Database implements InventoryDatabaseInterface {
 					this._db.replicated((db) =>
 						db
 							.selectFrom("notes as n")
-							.where("n.committed", "is not", 1)
+							.where("n.committed", "!=", 1)
 							// TODO: this should also probably be removed (delete should delete)
-							.where("n.deleted", "is not", 1)
+							.where("n.deleted", "!=", 1)
 							.where("n.noteType", "==", "inbound")
 							.select(["id", "warehouseId", "displayName"])
 					)
