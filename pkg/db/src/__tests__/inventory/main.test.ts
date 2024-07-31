@@ -1670,7 +1670,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		}
 	});
 
-	test.only("outNotesStream", async () => {
+	test("outNotesStream", async () => {
 		const onl$ = db.stream().outNoteList({});
 		let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
 
@@ -1858,7 +1858,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		const note2 = await defaultWarehouse.note().create(); // New Note (2)
 
-		const note3 = await defaultWarehouse.note().create(); // New Note (2)
+		const note3 = await defaultWarehouse.note().create(); // New Note (3)
 		expect(note1).toMatchObject({ displayName: "New Note" });
 		expect(note2).toMatchObject({ displayName: "New Note (2)" });
 		expect(note3).toMatchObject({ displayName: "New Note (3)" });
@@ -1875,7 +1875,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(note5).toMatchObject({ displayName: "New Note" });
 	});
 
-	test("streamsShouldFallBackToDefaultValueForTheirType", async () => {
+	test.only("streams should fall back to default value for their type", async () => {
 		// Db streams
 		let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 		let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
