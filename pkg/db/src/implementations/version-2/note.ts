@@ -213,10 +213,8 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	// TODO
-	async setDefaultWarehouse(_: any, warehouseId: string): Promise<NoteInterface> {
-		this.defaultWarehouse = warehouseId;
-		return this;
+	async setDefaultWarehouse(_: any, defaultWarehouse: string): Promise<NoteInterface> {
+		return this._update({ defaultWarehouse });
 	}
 
 	async addVolumes(_: debug.DebugCtx, ...volumes: VolumeStock[]): Promise<NoteInterface> {
@@ -228,7 +226,7 @@ class Note implements NoteInterface {
 			.map(([i, { __kind, warehouseId, ...txn }]) => ({
 				...txn,
 				noteId: this.id,
-				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || "",
+				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || this.defaultWarehouse || "",
 				// We add 1 millisecond to each transaction to ensure unique updatedAt values
 				updatedAt: new Date(Date.now() + i).toISOString()
 			}))
