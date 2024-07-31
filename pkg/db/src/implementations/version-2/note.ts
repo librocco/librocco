@@ -87,6 +87,8 @@ class Note implements NoteInterface {
 	}
 
 	private async _update({ committed, reconciliationNote, ...data }: Partial<Schema<DatabaseSchema>["notes"]>): Promise<NoteInterface> {
+		await this.create();
+
 		if (committed !== undefined) data["committed"] = Number(committed);
 		if (reconciliationNote !== undefined) data["committed"] = Number(committed);
 

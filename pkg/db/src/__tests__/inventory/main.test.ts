@@ -37,7 +37,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	});
 
 	// Base functionality
-	test.only("standardApi", async () => {
+	test("standardApi", async () => {
 		// If warehouse doesn't exist, a new one should be initialised with default values
 		// but no data should be saved to the db until explicitly done so.
 		let wh1 = db.warehouse("wh1");
@@ -107,7 +107,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(inboundNote.noteType).toEqual("inbound");
 	});
 
-	test.only("warehouseDiscount", async () => {
+	test("warehouseDiscount", async () => {
 		const wh1 = await db.warehouse("wh1").create();
 
 		let discount: PossiblyEmpty<number> = EMPTY;
@@ -137,7 +137,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(ua1).toEqual(ua2);
 	});
 
-	test.only("getEntriesQueries", async () => {
+	test("getEntriesQueries", async () => {
 		// Set up warehouses
 		const defaultWh = await db.warehouse().create();
 		const wh1 = await db
@@ -189,7 +189,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		]);
 	});
 
-	test.only("note.addVolumes", async () => {
+	test("note.addVolumes", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -416,7 +416,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("note.updateTransaction", async () => {
+	test("note.updateTransaction", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -640,7 +640,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("note.removeTransaction", async () => {
+	test("note.removeTransaction", async () => {
 		// Set up two warehouses (with display names) and an outbound note
 		const [wh1, wh2] = await Promise.all([db.warehouse("wh1").create(), db.warehouse("wh2").create()]);
 		await Promise.all([wh1.setName({}, "Warehouse 1"), wh2.setName({}, "Warehouse 2")]);
@@ -781,7 +781,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("streamNoteValuesAccordingToSpec", async () => {
+	test("streamNoteValuesAccordingToSpec", async () => {
 		// Create a new note
 		const note = await db.warehouse("test-warehouse").note().create();
 
@@ -935,7 +935,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("outboundNoteAvailableWarehouses", async () => {
+	test("outboundNoteAvailableWarehouses", async () => {
 		// Create two warehouses to work with
 		const wh1 = await db
 			.warehouse("wh-1")
@@ -1140,7 +1140,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		);
 	});
 
-	test("streamWarehouseStock", async () => {
+	test.only("streamWarehouseStock", async () => {
 		const warehouse1 = await db.warehouse("warehouse-1").create();
 		const warehouse2 = await db.warehouse("warehouse-2").create();
 		const defaultWarehouse = await db.warehouse().create();
@@ -1175,7 +1175,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await note1.addVolumes({}, { isbn: "0123456789", quantity: 3 });
 		await note1.commit();
 
-		await waitFor(() => {
+		await waitFor(() =>
 			expect(warehouse1Stock).toEqual([
 				{
 					__kind: "book",
@@ -1185,7 +1185,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					warehouseName: "New Warehouse",
 					warehouseDiscount: 0
 				}
-			]);
+			])
+		);
+		await waitFor(() =>
 			expect(defaultWarehouseStock).toEqual([
 				{
 					__kind: "book",
@@ -1195,9 +1197,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					warehouseName: "New Warehouse",
 					warehouseDiscount: 0
 				}
-			]);
-			expect(warehouse2Stock).toEqual([]);
-		});
+			])
+		);
+		await waitFor(() => expect(warehouse2Stock).toEqual([]));
 
 		// Adding books to warehouse 2 should display changes in warehouse 2 and aggregate the stock of both warehouses in the default warehouse stock stream
 		const note2 = warehouse2.note();
