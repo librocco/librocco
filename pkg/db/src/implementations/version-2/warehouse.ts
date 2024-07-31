@@ -33,7 +33,7 @@ class Warehouse implements WarehouseInterface {
 		const conn = await this.#db._db.connection;
 		const res = await conn
 			.selectFrom("warehouses as w")
-			.where("w.displayName", "like", "New Warehouse%")
+			.where(() => sql`w.displayName GLOB 'New Warehouse' OR displayName GLOB 'New Warehouse ([0-9]*)'`)
 			.orderBy("w.displayName", "desc")
 			.select("w.displayName")
 			.executeTakeFirst();
@@ -68,7 +68,7 @@ class Warehouse implements WarehouseInterface {
 
 	async create(): Promise<WarehouseInterface> {
 		const seq = await this._getNameSeq();
-		const displayName = seq === 1 ? "New Warehouse" : `New Warehouse (${seq})`;
+		const displayName = this.id === "all" ? "All" : seq === 1 ? "New Warehouse" : `New Warehouse (${seq})`;
 
 		await this.#db._db.update((db) =>
 			db

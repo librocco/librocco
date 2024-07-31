@@ -1465,7 +1465,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("warehouseDataMapStream", async () => {
+	test("warehouseDataMapStream", async () => {
 		const wl$ = db.stream().warehouseMap({});
 		let warehouseDataMap: PossiblyEmpty<Array<Pick<WarehouseData, "displayName" | "discountPercentage"> & { id: string }>> = EMPTY;
 		wl$.subscribe(
@@ -1513,7 +1513,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("inNotesStream", async () => {
+	test.only("inNotesStream", async () => {
 		const inl$ = db.stream().inNoteList({});
 		let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 		let actual: PossiblyEmpty<InNoteMap> = EMPTY;
@@ -1524,6 +1524,16 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			inNoteList = inNoteMapToInNoteList(inl);
 			actual = inl;
 		});
+
+		(db as any)._db
+			.replicated((db) =>
+				db
+					.selectFrom("notes as n")
+					.fullJoin("warehouses as w", "n.warehouseId", "w.id")
+					.where("n.committed", "==", 0)
+					.select(["n.id", "n.displayName", "w.id as warehouseId", "w.displayName as warehouseName"])
+			)
+			.subscribe(console.log);
 
 		try {
 			await waitFor(() => {
@@ -1829,7 +1839,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("sequenceWarehouseDesignDocument", async () => {
+	test("warehouse naming sequence", async () => {
 		const wh1 = await db.warehouse("0").create(); // New Warehouse
 		const wh2 = await db.warehouse("1").create(); // New Warehouse (2)
 		const wh3 = await db.warehouse("2").create(); // New Warehouse (3)
@@ -1851,7 +1861,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(wh5.displayName).toEqual("New Warehouse");
 	});
 
-	test("sequenceNoteDesignDocument", async () => {
+	test("note naming sequence", async () => {
 		const defaultWarehouse = await db.warehouse().create();
 
 		const note1 = await defaultWarehouse.note().create(); // New Note

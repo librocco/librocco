@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { map, of } from "rxjs";
+import { combineLatest, map, of } from "rxjs";
 import { Schema } from "crstore";
 import { database, SvelteDatabase } from "crstore/svelte";
 
-import { asc } from "@librocco/shared";
+import { asc, wrapIter } from "@librocco/shared";
 
 import {
 	Replicator,
@@ -45,9 +45,9 @@ class Database implements InventoryDatabaseInterface {
 		return createWarehouseInterface(this, id);
 	}
 
-	// TODO
 	async init(): Promise<InventoryDatabaseInterface> {
-		return Promise.resolve(this);
+		await this.warehouse().create();
+		return;
 	}
 
 	// TODO
@@ -55,7 +55,6 @@ class Database implements InventoryDatabaseInterface {
 		return Promise.resolve();
 	}
 
-	// TODO
 	async findNote(noteId: string): Promise<NoteLookupResult<NoteInterface, WarehouseInterface> | undefined> {
 		const res = await this._db.connection.then((conn) =>
 			conn
@@ -86,7 +85,6 @@ class Database implements InventoryDatabaseInterface {
 		return {} as HistoryInterface;
 	}
 
-	// TODO
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
 		return this._plugins.get(type);
 	}
@@ -108,7 +106,47 @@ class Database implements InventoryDatabaseInterface {
 					map((rows) => rows.sort(asc(({ id }) => id))),
 					map((rows) => new Map(rows.map((r) => [r.id, r])))
 				),
-			inNoteList: () => of(new Map()),
+
+			// TODO: this should really be changed since we only care about notes (not warehouses without open notes)
+			inNoteList: () => {
+				const warehouses = this.stream().warehouseMap({});
+
+				const inNotes = observableFromStore(
+					this._db.replicated((db) =>
+						db
+							.selectFrom("notes as n")
+							.where("n.committed", "is not", 1)
+							// TODO: this should also probably be removed (delete should delete)
+							.where("n.deleted", "is not", 1)
+							.where("n.noteType", "==", "inbound")
+							.select(["id", "warehouseId", "displayName"])
+					)
+				).pipe(
+					map((notes) =>
+						wrapIter(notes)
+							._group(({ warehouseId, id, displayName }) => [warehouseId, [id, { displayName }] as const])
+							.map(([id, notes]) => [id, new Map(notes)] as const)
+					),
+					map((n) => new Map(n))
+				);
+
+				return combineLatest([warehouses, inNotes]).pipe(
+					map(([warehouses, inNotes]) =>
+						wrapIter(warehouses).map(
+							([id, { displayName }]) =>
+								[
+									id,
+									{
+										displayName,
+										notes: id === "all" ? new Map(wrapIter(inNotes).flatMap(([, notes]) => notes)) : inNotes.get(id) || new Map()
+									}
+								] as const
+						)
+					),
+					map((rows) => new Map(rows))
+				);
+			},
+
 			outNoteList: () => of(new Map()),
 
 			// TODO: might not be necessary as part of public API
