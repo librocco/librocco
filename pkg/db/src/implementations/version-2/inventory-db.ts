@@ -1,6 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { map, of } from "rxjs";
 import { Schema } from "crstore";
 import { database, SvelteDatabase } from "crstore/svelte";
+
+import { asc } from "@librocco/shared";
 
 import {
 	Replicator,
@@ -22,6 +25,7 @@ import { schema } from "./schema";
 
 import { newPluginsInterface } from "./plugins";
 import { createWarehouseInterface } from "./warehouse";
+import { observableFromStore } from "@/helpers";
 
 class Database implements InventoryDatabaseInterface {
 	_db: SvelteDatabase<Schema<DatabaseSchema>>;
@@ -39,11 +43,6 @@ class Database implements InventoryDatabaseInterface {
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE) {
 		return createWarehouseInterface(this, id);
-	}
-
-	// TODO
-	stream() {
-		return {} as DbStream;
 	}
 
 	// TODO
@@ -77,7 +76,7 @@ class Database implements InventoryDatabaseInterface {
 		return { warehouse, note };
 	}
 
-	// TODO
+	// TODO: might not be necessary as part of public API
 	getWarehouseDataMap(): Promise<WarehouseDataMap> {
 		return Promise.resolve(new Map());
 	}
@@ -95,6 +94,26 @@ class Database implements InventoryDatabaseInterface {
 	// TODO
 	replicate(): Replicator {
 		return {} as Replicator;
+	}
+
+	// TODO
+	stream() {
+		return {
+			warehouseMap: () =>
+				observableFromStore(
+					this._db.replicated((db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"]))
+				).pipe(
+					// Add a default "all" (pseudo) warehouse
+					map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0 }, ...rows]),
+					map((rows) => rows.sort(asc(({ id }) => id))),
+					map((rows) => new Map(rows.map((r) => [r.id, r])))
+				),
+			inNoteList: () => of(new Map()),
+			outNoteList: () => of(new Map()),
+
+			// TODO: might not be necessary as part of public API
+			stock: () => of(new Map() as any)
+		} as DbStream;
 	}
 }
 
