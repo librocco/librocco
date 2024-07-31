@@ -1,5 +1,5 @@
 import { Kysely, Schema, sql } from "crstore";
-import { combineLatest, filter, map, Observable, switchMap } from "rxjs";
+import { combineLatest, map, Observable, switchMap } from "rxjs";
 
 import { debug, composeCompare, desc, NoteState, VolumeStock, VolumeStockKind, wrapIter } from "@librocco/shared";
 
@@ -176,14 +176,18 @@ class Note implements NoteInterface {
 	private _streamValues() {
 		return observableFromStore(this.#db._db.replicated((db) => db.selectFrom("notes").where("id", "==", this.id).selectAll())).pipe(
 			map(([n]) => n),
-			filter(Boolean),
-			map(({ committed, reconciliationNote, noteType, ...note }) => ({
-				...note,
-				committed: !!committed,
-				reconciliationNote: !!reconciliationNote,
-				noteType: noteType as NoteType,
-				deleted: !!note.deleted
-			}))
+			map((n) => {
+				if (!n) return undefined;
+
+				const { committed, reconciliationNote, noteType, ...note } = n;
+				return {
+					...note,
+					committed: !!committed,
+					reconciliationNote: !!reconciliationNote,
+					noteType: noteType as NoteType,
+					deleted: !!note.deleted
+				};
+			})
 		);
 	}
 
@@ -401,13 +405,11 @@ class Note implements NoteInterface {
 	stream(): NoteStream {
 		return {
 			entries: this._streamEntries.bind(this),
-			displayName: () => this._streamValues().pipe(map(({ displayName }) => displayName)),
+			displayName: () => this._streamValues().pipe(map((n) => n?.displayName || "")),
 			defaultWarehouseId: () => this._streamValues().pipe(map(({ defaultWarehouse }) => defaultWarehouse)),
 			state: () =>
-				this._streamValues().pipe(
-					map(({ deleted, committed }) => (deleted ? NoteState.Deleted : committed ? NoteState.Committed : NoteState.Draft))
-				),
-			updatedAt: () => this._streamValues().pipe(map(({ updatedAt }) => (updatedAt ? new Date(updatedAt) : null)))
+				this._streamValues().pipe(map((n) => (n?.deleted ? NoteState.Deleted : n?.committed ? NoteState.Committed : NoteState.Draft))),
+			updatedAt: () => this._streamValues().pipe(map((n) => (n?.updatedAt ? new Date(n?.updatedAt) : null)))
 		} as NoteStream;
 	}
 }
