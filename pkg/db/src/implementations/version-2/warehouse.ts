@@ -1,8 +1,10 @@
-import { map, of } from "rxjs";
-import { sql } from "crstore";
+import { map, Observable, of } from "rxjs";
+import { Kysely, Schema, sql } from "crstore";
 
-import { NoteInterface, VolumeStockClient, WarehouseData, WarehouseStream } from "@/types";
-import { InventoryDatabaseInterface, WarehouseInterface } from "./types";
+import { asc, composeCompare } from "@librocco/shared";
+
+import { EntriesStreamResult, NoteInterface, VolumeStockClient, WarehouseData, WarehouseStream } from "@/types";
+import { DatabaseSchema, InventoryDatabaseInterface, WarehouseInterface } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -41,6 +43,21 @@ class Warehouse implements WarehouseInterface {
 		if (res.displayName === "New Warehouse") return 2;
 
 		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
+	}
+
+	private _streamEntries(): Observable<EntriesStreamResult> {
+		return observableFromStore(this.#db._db.replicated((db) => createStockQuery(db, this.id))).pipe(
+			map((rows) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
+			map((rows) =>
+				rows.sort(
+					composeCompare(
+						asc((r) => r.isbn),
+						asc((r) => r.warehouseId)
+					)
+				)
+			),
+			map((rows) => ({ rows, total: rows.length }))
+		);
 	}
 
 	private async _update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
@@ -83,28 +100,7 @@ class Warehouse implements WarehouseInterface {
 
 	async getEntries(): Promise<VolumeStockClient<"book">[]> {
 		const conn = await this.#db._db.connection;
-
-		const coreQuery = conn
-			.selectFrom("bookTransactions as t")
-			.innerJoin("notes as n", "t.noteId", "n.id")
-			.innerJoin("warehouses as w", "t.warehouseId", "w.id")
-			.where("n.committed", "==", 1);
-
-		// When querying for default pseudo-warehouse, we're retrieving all stock
-		const whParametrized = this.id === "all" ? coreQuery : coreQuery.where("t.warehouseId", "==", this.id);
-
-		const stock = whParametrized
-			.select([
-				"t.isbn",
-				"t.warehouseId",
-				"w.displayName as warehouseName",
-				"w.discountPercentage as warehouseDiscount",
-				(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
-			])
-			.groupBy(["t.warehouseId", "t.isbn"]);
-
-		// TODO: join book data here (instead of frontend)
-		const rows = await conn.selectFrom(stock.as("s")).where("s.quantity", "!=", 0).selectAll().execute();
+		const rows = await createStockQuery(conn, this.id).execute();
 		return rows.map((r) => ({ __kind: "book", ...r }));
 	}
 
@@ -120,10 +116,34 @@ class Warehouse implements WarehouseInterface {
 				observableFromStore(
 					this.#db._db.replicated((db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"))
 				).pipe(map((res) => res[0]?.discountPercentage || 0)),
-			entries: () => of({ rows: [], total: 0 })
+			entries: this._streamEntries.bind(this)
 		};
 	}
 }
 
 export const createWarehouseInterface = (db: InventoryDatabaseInterface, id?: string | typeof NEW_WAREHOUSE): WarehouseInterface =>
 	new Warehouse(db, id === NEW_WAREHOUSE ? uniqueTimestamp() : id || "all");
+
+const createStockQuery = (conn: Kysely<Schema<DatabaseSchema>>, warehouseId: string) => {
+	const coreQuery = conn
+		.selectFrom("bookTransactions as t")
+		.innerJoin("notes as n", "t.noteId", "n.id")
+		.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+		.where("n.committed", "==", 1);
+
+	// When querying for default pseudo-warehouse, we're retrieving all stock
+	const whParametrized = warehouseId === "all" ? coreQuery : coreQuery.where("t.warehouseId", "==", warehouseId);
+
+	const stock = whParametrized
+		.select([
+			"t.isbn",
+			"t.warehouseId",
+			"w.displayName as warehouseName",
+			"w.discountPercentage as warehouseDiscount",
+			(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
+		])
+		.groupBy(["t.warehouseId", "t.isbn"]);
+
+	// TODO: join book data here (instead of frontend)
+	return conn.selectFrom(stock.as("s")).where("s.quantity", "!=", 0).selectAll();
+};
