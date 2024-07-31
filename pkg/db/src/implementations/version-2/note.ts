@@ -42,17 +42,23 @@ class Note implements NoteInterface {
 		const conn = await this.#db._db.connection;
 		const res = await conn
 			.selectFrom("notes as n")
-			.where(() => sql`n.displayName GLOB 'New Note' OR displayName GLOB 'New Note ([0-9]*)'`)
 			.where("n.deleted", "!=", 1)
+			.where("n.displayName", "like", "New Note%")
 			.orderBy("n.displayName", "desc")
-			.select("n.displayName")
-			.executeTakeFirst();
+			.selectAll()
+			.execute();
 
-		if (!res) return 1;
+		const filtered = res.map(({ displayName }) => displayName).filter((displayName) => /^New Note( \([0-9]+\))?$/.test(displayName));
 
-		if (res.displayName === "New Note") return 2;
+		// No 'New Note (X)' entries (including "New Note")
+		if (!filtered.length) return 1;
 
-		return parseInt(res.displayName.match(/\([0-9]+\)/)[0].replace(/[()]/g, "")) + 1;
+		const match = filtered[0].match(/\([0-9]*\)/);
+
+		// No match found - only "New Note" exists
+		if (!match) return 2;
+
+		return match ? parseInt(match[0].replace(/[()]/g, "")) + 1 : 2;
 	}
 
 	/** Used to check for book availability across warehouses */
@@ -108,6 +114,9 @@ class Note implements NoteInterface {
 		const seq = await this._getNameSeq();
 		const displayName = seq === 1 ? "New Note" : `New Note (${seq})`;
 
+		const createdAt = new Date().toISOString();
+		const updatedAt = createdAt;
+
 		await this.#db._db.update((db) =>
 			db
 				.insertInto("notes")
@@ -116,7 +125,15 @@ class Note implements NoteInterface {
 					warehouseId: this.warehouseId,
 					noteType: this.noteType,
 					displayName,
-					defaultWarehouse: this.defaultWarehouse
+					defaultWarehouse: this.defaultWarehouse,
+
+					committed: 0,
+					deleted: 0,
+					reconciliationNote: 0,
+
+					createdAt,
+					updatedAt,
+					committedAt: null
 				})
 				.onConflict((oc) => oc.doNothing())
 				.execute()
