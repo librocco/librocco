@@ -147,7 +147,17 @@ class Database implements InventoryDatabaseInterface {
 				);
 			},
 
-			outNoteList: () => of(new Map()),
+			outNoteList: () =>
+				observableFromStore(
+					this._db.replicated((db) =>
+						db
+							.selectFrom("notes")
+							.where("committed", "is not", 1)
+							.where("noteType", "==", "outbound")
+							.where("deleted", "is not", 1)
+							.select(["id", "displayName", "updatedAt"])
+					)
+				).pipe(map((rows) => new Map(rows.map((r) => [r.id, r])))),
 
 			// TODO: might not be necessary as part of public API
 			stock: () => of(new Map() as any)
