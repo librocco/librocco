@@ -42,7 +42,8 @@ class Note implements NoteInterface {
 		const conn = await this.#db._db.connection;
 		const res = await conn
 			.selectFrom("notes as n")
-			.where("n.displayName", "like", "New Note%")
+			.where(() => sql`n.displayName GLOB 'New Note' OR displayName GLOB 'New Note ([0-9]*)'`)
+			.where("n.deleted", "!=", 1)
 			.orderBy("n.displayName", "desc")
 			.select("n.displayName")
 			.executeTakeFirst();
