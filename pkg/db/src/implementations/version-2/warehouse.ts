@@ -25,8 +25,10 @@ class Warehouse implements WarehouseInterface {
 
 	constructor(db: InventoryDatabaseInterface, id: string) {
 		this.#db = db;
-
 		this.id = id;
+
+		// Update the instance every time there's a change in values in the db
+		this._streamEntries().subscribe(this.get.bind(this));
 	}
 
 	private async _getNameSeq(): Promise<number> {
@@ -115,7 +117,6 @@ class Warehouse implements WarehouseInterface {
 		return createNoteInterface(this.#db, this.id, id);
 	}
 
-	// TODO
 	stream(): WarehouseStream {
 		return {
 			displayName: () => of(this.displayName),
