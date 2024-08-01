@@ -25,6 +25,8 @@ import { schema } from "./schema";
 
 import { newPluginsInterface } from "./plugins";
 import { createWarehouseInterface } from "./warehouse";
+import { createBooksInterface } from "./books";
+
 import { observableFromStore } from "@/helpers";
 
 class Database implements InventoryDatabaseInterface {
@@ -36,9 +38,8 @@ class Database implements InventoryDatabaseInterface {
 		this._db = database(schema, { name });
 	}
 
-	// TODO
 	books(): BooksInterface {
-		return {} as BooksInterface;
+		return createBooksInterface(this);
 	}
 
 	warehouse(id?: string | typeof NEW_WAREHOUSE) {
