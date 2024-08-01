@@ -9,7 +9,7 @@ import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, SearchIndex, VolumeS
 
 import * as implementations from "@/implementations/inventory";
 
-import { NoWarehouseSelectedError, OutOfStockError, TransactionWarehouseMismatchError } from "@/errors";
+import { NoWarehouseSelectedError, OutOfStockError } from "@/errors";
 
 import { newTestDB } from "@/__testUtils__/db";
 import { createSingleSourceBookFetcher } from "@/utils/plugins";
@@ -293,6 +293,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 				}
 			]);
 		});
+
+		// Transactions added to inbound notes should have the warehouseId set to the warehouse's id (regerdless of input)
+		const inNote = await db
+			.warehouse("wh1")
+			.note()
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "0123456789", quantity: 5, warehouseId: "wh2" }));
+		const inNoteEntries = await inNote.getEntries({});
+		expect(inNoteEntries).toEqual([
+			{ __kind: "book", isbn: "0123456789", quantity: 5, warehouseId: "wh1", warehouseName: "Warehouse 1", warehouseDiscount: 0 }
+		]);
 
 		// Adding a custom item should assign a random id to the item
 		await note.addVolumes({}, { __kind: "custom", title: "Custom Item", price: 10 });
@@ -1875,7 +1886,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(note5).toMatchObject({ displayName: "New Note" });
 	});
 
-	test.only("streams should fall back to default value for their type", async () => {
+	test("streams should fall back to default value for their type", async () => {
 		// Db streams
 		let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
 		let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
@@ -1981,7 +1992,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const booksInterface = db.books();
 
 		// Insert test
-		await Promise.all([booksInterface.upsert({}, [{ ...book1 }, { ...book2 }])]);
+		await booksInterface.upsert({}, [book1, book2]);
 
 		const booksFromDb = await booksInterface.get({}, [book1.isbn, book2.isbn]);
 
@@ -2078,35 +2089,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 	});
 
-	test("committing of an inbound note", async () => {
-		// The db should not allow for committing of inbound notes with transactions belonging
-		// to warehouse different then note's parent warehouse.
-		const warehouse1 = await db.warehouse("warehouse-1").create();
-		const note1 = await warehouse1.note().create();
-		await note1.addVolumes(
-			{},
-			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
-			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" },
-			// Adding custom item as noise - shouldn't affect these checks
-			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }
-		);
-
-		await expect(note1.commit()).rejects.toThrow(
-			new TransactionWarehouseMismatchError("warehouse-1", [{ isbn: "22222222", warehouseId: "warehouse-2", quantity: 2 }])
-		);
-
-		// Fix the invalid transactions and commit the note
-		await note1
-			.updateTransaction(
-				{},
-				{ isbn: "22222222", warehouseId: "warehouse-2" },
-				{ isbn: "22222222", warehouseId: "warehouse-1", quantity: 2 }
-			)
-			.then((n) => n.commit());
-
-		await waitFor(() => note1.get().then((n) => expect(n!.committed).toEqual(true)));
-	});
-
 	test("committing of an outbound note", async () => {
 		// Create two warehouses and add some stock
 		const [wh1, wh2] = await Promise.all([
@@ -2157,9 +2139,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Can't commit the note as it contains out-of-stock transactions
 		await expect(note.commit()).rejects.toThrow(
 			new OutOfStockError([
+				{ isbn: "11111111", warehouseId: "warehouse-2", warehouseName: "Warehouse 2", quantity: 1, available: 0 },
 				{ isbn: "22222222", warehouseId: "warehouse-1", warehouseName: "Warehouse 1", quantity: 2, available: 0 },
-				{ isbn: "22222222", warehouseId: "warehouse-2", warehouseName: "Warehouse 2", quantity: 3, available: 2 },
-				{ isbn: "11111111", warehouseId: "warehouse-2", warehouseName: "Warehouse 2", quantity: 1, available: 0 }
+				{ isbn: "22222222", warehouseId: "warehouse-2", warehouseName: "Warehouse 2", quantity: 3, available: 2 }
 			])
 		);
 
@@ -2262,10 +2244,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		]);
 	});
 
-	test("syncNoteAndWarehouseInterfaceWithTheDb", async () => {
-		// NoteInterface should always be able to update (_rev should be in sync)
-
-		// Create and displayName "store" for the note
+	// TODO: this should be unnecessary if we simplify the interfaces to split interfaces (behaviour) and data (retrieved or streamed)
+	test("sync note and warehouse interface with the db", async () => {
+		// Create a displayName "store" for the note
 		let ndn: PossiblyEmpty<string> = EMPTY;
 
 		const note = await db.warehouse().note("note-1").create();
@@ -2392,18 +2373,20 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(res1Val!.title).toEqual(res2Val!.title);
 	});
 
-	test("receipt generation", async () => {
+	test.only("receipt generation", async () => {
 		// We're creating a bunch of transactions to test the receipt
 		// taking into account entries which would be omitted in the UI by pagination.
 		const transactions = Array(20)
 			.fill(null)
 			.map((_, i) => ({
-				isbn: `transaction-${i}`,
+				isbn: `transaction-${`0${i}`.slice(-2)}`,
 				title: `Transaction ${i}`,
 				quantity: 2,
 				warehouseId: "wh-1",
 				price: (1 + i) * 2
 			}));
+
+		(db as any)._db.replicated((db) => db.selectFrom("customItemTransactions").selectAll()).subscribe(console.log);
 
 		// Setup: Create a note and book data for transactions
 		const [note] = await Promise.all([
@@ -2464,7 +2447,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Add custom items - they should also end up in the receipt (each with quantity 1 and discount 0)
-		note.addVolumes({}, { __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
+		await note.addVolumes({}, { __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
 
 		// The print job should have been added to the print queue with discounted prices
 		receipt = await note.intoReceipt();

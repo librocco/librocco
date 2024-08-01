@@ -1,13 +1,24 @@
 import { Kysely, Schema, sql } from "crstore";
-import { combineLatest, map, Observable, switchMap } from "rxjs";
+import { combineLatest, firstValueFrom, map, Observable, switchMap } from "rxjs";
 
-import { debug, composeCompare, desc, NoteState, VolumeStock, VolumeStockKind, wrapIter } from "@librocco/shared";
+import { asc, composeCompare, desc, NoteState, VolumeStock, VolumeStockKind, wrapIter, debug } from "@librocco/shared";
 
-import { EntriesStreamResult, NavMap, NoteStream, NoteType, ReceiptData, UpdateTransactionParams, VolumeStockClient } from "@/types";
+import {
+	EntriesStreamResult,
+	NavMap,
+	NoteStream,
+	NoteType,
+	OutOfStockTransaction,
+	ReceiptData,
+	UpdateTransactionParams,
+	VolumeStockClient
+} from "@/types";
 import { DatabaseSchema, InventoryDatabaseInterface, NoteInterface } from "./types";
 
 import { isBookRow, uniqueTimestamp } from "@/utils/misc";
 import { observableFromStore } from "@/helpers";
+
+import { EmptyNoteError, NoWarehouseSelectedError, OutOfStockError } from "@/errors";
 
 type TimestampedVolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = VolumeStockClient<K> & { updatedAt: string };
 
@@ -36,6 +47,9 @@ class Note implements NoteInterface {
 		this.warehouseId = warehouseId;
 
 		this.noteType = warehouseId === "all" ? "outbound" : "inbound";
+
+		// Update the instance every time there's a change in values in the db
+		this._streamEntries().subscribe(this.get.bind(this));
 	}
 
 	private async _getNameSeq(): Promise<number> {
@@ -63,34 +77,14 @@ class Note implements NoteInterface {
 
 	/** Used to check for book availability across warehouses */
 	private _streamExistingStock(isbns: string[]): Observable<Map<string, NavMap<{ quantity: number }>>> {
-		const store = this.#db._db.replicated((db) => {
-			const stock = db
-				.selectFrom("bookTransactions as t")
-				.innerJoin("notes as n", "t.noteId", "n.id")
-				.innerJoin("warehouses as w", "t.warehouseId", "w.id")
-				.where("n.committed", "==", 1)
-				.where("t.isbn", "in", isbns)
-				.select([
-					"t.isbn",
-					"t.warehouseId",
-					"w.displayName as displayName",
-					(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
-				])
-				.groupBy(["t.warehouseId", "t.isbn"]);
+		const store = this.#db._db.replicated((db) => createExistingStockQuery(db, isbns));
 
-			return db.selectFrom(stock.as("s")).where("s.quantity", ">", 0).selectAll();
-		});
+		return observableFromStore(store).pipe(map(createExistingStockMap));
+	}
 
-		const rowsToMap = (rows: { isbn: string; warehouseId: string; quantity: number; displayName: string }[]) => {
-			const mapGenerator = wrapIter(rows)
-				// Group by isbn: { isbn => Iterable { warehouseId => data } }
-				._group(({ isbn, warehouseId, quantity, displayName }) => [isbn, [warehouseId, { quantity, displayName }] as const])
-				// Convert each internal iterable into a map: Iterable { warehouseId => data } -> Map { warehouseId => data }
-				.map(([isbn, warehouses]) => [isbn, new Map(warehouses)] as const);
-			return new Map(mapGenerator);
-		};
-
-		return observableFromStore(store).pipe(map(rowsToMap));
+	private async _getExistingStock(isbns: string[]): Promise<Map<string, NavMap<{ quantity: number }>>> {
+		const conn = await this.#db._db.connection;
+		return createExistingStockQuery(conn, isbns).execute().then(createExistingStockMap);
 	}
 
 	private async _update({ committed, reconciliationNote, ...data }: Partial<Schema<DatabaseSchema>["notes"]>): Promise<NoteInterface> {
@@ -106,6 +100,46 @@ class Note implements NoteInterface {
 		await this.#db._db.update((db) => db.updateTable("notes").set(data).where("id", "==", this.id).execute());
 
 		return this.get();
+	}
+
+	/**
+	 * Checks that all transactions have a warehouse assigned to them.
+	 * @returns a list of all invalid transactions in that regard.
+	 */
+	private _getNoWarehouseTransactions(entries: VolumeStock[]): VolumeStock<"book">[] {
+		return entries
+			.filter(isBookRow)
+			.filter(({ warehouseId }) => !warehouseId)
+			.sort(
+				composeCompare(
+					asc(({ isbn }) => isbn),
+					asc(({ warehouseId }) => warehouseId)
+				)
+			);
+	}
+
+	private async _getOutOfStockTransactions(_entries: VolumeStockClient[]): Promise<OutOfStockTransaction[]> {
+		const entries = _entries.filter(isBookRow);
+		const stock = await this._getExistingStock(entries.map(({ isbn }) => isbn));
+		const warehouseMap = await firstValueFrom(this.#db.stream().warehouseMap({}));
+		return (
+			entries
+				.map(({ isbn, quantity, warehouseId }) => ({
+					isbn,
+					quantity,
+					warehouseId,
+					available: stock.get(isbn)?.get(warehouseId)?.quantity || 0,
+					warehouseName: warehouseMap.get(warehouseId)?.displayName || "unkonwn"
+				}))
+				// Filter out transactions that are valid
+				.filter(({ quantity, available }) => quantity > available)
+				.sort(
+					composeCompare(
+						asc(({ isbn }) => isbn),
+						asc(({ warehouseId }) => warehouseId)
+					)
+				)
+		);
 	}
 
 	async create(): Promise<NoteInterface> {
@@ -231,10 +265,8 @@ class Note implements NoteInterface {
 		return this._update({ displayName });
 	}
 
-	// TODO
 	async setReconciliationNote(_: any, value: boolean): Promise<NoteInterface> {
-		this.reconciliationNote = value;
-		return this;
+		return this._update({ reconciliationNote: value ? 1 : 0 });
 	}
 
 	async setDefaultWarehouse(_: any, defaultWarehouse: string): Promise<NoteInterface> {
@@ -242,20 +274,22 @@ class Note implements NoteInterface {
 	}
 
 	async addVolumes(_: debug.DebugCtx, ...volumes: VolumeStock[]): Promise<NoteInterface> {
-		const [_books, _customIteme] = wrapIter(volumes)
+		await this.create();
+		const [_books, _customItems] = wrapIter(volumes)
 			.enumerate()
 			.partition((tup): tup is [number, VolumeStockClient<"book">] => isBookRow(tup[1]));
 		const books = _books
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
-			.map(([i, { __kind, warehouseId, ...txn }]) => ({
-				...txn,
+			.map(([i, { __kind, isbn, warehouseId, quantity }]) => ({
+				isbn,
 				noteId: this.id,
 				warehouseId: this.noteType === "inbound" ? this.warehouseId : warehouseId || this.defaultWarehouse || "",
+				quantity,
 				// We add 1 millisecond to each transaction to ensure unique updatedAt values
 				updatedAt: new Date(Date.now() + i).toISOString()
 			}))
 			.array();
-		const customItems = _customIteme
+		const customItems = _customItems
 			.map((tup) => {
 				// eslint-disable-next-line @typescript-eslint/no-unused-vars
 				const [i, { __kind, id, price, title }] = tup as [number, VolumeStockClient<"custom">];
@@ -296,7 +330,7 @@ class Note implements NoteInterface {
 				  )
 		]);
 
-		return this;
+		return this.get();
 	}
 
 	async updateTransaction(_: any, ...params: UpdateTransactionParams<"book"> | UpdateTransactionParams<"custom">) {
@@ -385,21 +419,106 @@ class Note implements NoteInterface {
 		return this;
 	}
 
-	commit(): Promise<NoteInterface> {
+	async commit(_: any, options: { force?: boolean } = {}): Promise<NoteInterface> {
+		const entries = await this.getEntries();
+
+		// Don't allow for committing of empty notes.
+		// We're allowing commit if 'force === true' (this should only be used in tests)
+		if (entries.length === 0 && !options?.force) {
+			throw new EmptyNoteError();
+		}
+
+		// Check transactions before committing
+		if (this.noteType === "outbound") {
+			// Check for transactions without a warehouse assigned - outbound note can't be committed in this state
+			const invalidTransactions = this._getNoWarehouseTransactions(entries);
+			if (invalidTransactions.length) {
+				throw new NoWarehouseSelectedError(invalidTransactions);
+			}
+
+			// Check for out-of-stock transactions - outbound note can't be committed in this state, but the state can be reconciled
+			const outOfStockTransactions = await this._getOutOfStockTransactions(entries);
+			if (outOfStockTransactions.length) {
+				throw new OutOfStockError(outOfStockTransactions);
+			}
+		}
+
 		const updatedAt = new Date().toISOString();
 		const committedAt = updatedAt;
 
 		return this._update({ committed: 1, updatedAt, committedAt });
 	}
 
-	// TODO
-	async intoReceipt(): Promise<ReceiptData> {
-		return { timestamp: Date.now(), items: [] };
+	async reconcile(ctx: debug.DebugCtx): Promise<NoteInterface> {
+		// Only outbound note can be reconciled
+		const inbound = this.noteType === "inbound";
+		// Committed notes don't need reconciliation
+		const committed = this.committed;
+		if (inbound || committed) {
+			debug.log(ctx, "note:reconcile:noop")({ noteType: this.noteType, committed });
+			return this;
+		}
+
+		const entries = await this.getEntries().then((rows) => rows.filter(isBookRow));
+		const stock = await this._getExistingStock(entries.map(({ isbn }) => isbn));
+
+		const getQuantity = (isbn: string, warehouseId: string) => stock.get(isbn)?.get(warehouseId)?.quantity || 0;
+
+		const toUpdate = wrapIter(entries)
+			// Custom items are irrelevant for this action
+			.filter(isBookRow)
+			// Filter out rows with no 'warehouseId' assigned - those aren't ready
+			// for reconciliation and should be handled somewhere else
+			.filter(({ warehouseId }) => Boolean(warehouseId))
+			// Check the difference in quantity available and quantity demanded
+			.map(({ isbn, warehouseId, quantity }) => ({ warehouseId, isbn, diff: getQuantity(isbn, warehouseId) - quantity }))
+			// Filter out rows that don't need to be reconciled - they are fully in stock for desired warehouse/quantity
+			.filter(({ diff }) => diff < 0)
+			// Prepare the rows for reconciliation notes - make the quantity positive
+			.map(({ diff, ...txn }) => ({ ...txn, quantity: -diff }))
+			// Group remaining rows by warehouse
+			.reduce((acc, txn) => {
+				const whId = txn.warehouseId;
+				const existing = acc.get(whId) || [];
+				return acc.set(whId, [...existing, txn]);
+			}, new Map<string, VolumeStock[]>());
+
+		// Create a reconciliation note for each warehouse
+		const updates = wrapIter(toUpdate).map(([whId, transactions]) =>
+			this.#db
+				.warehouse(whId)
+				.note()
+				.create()
+				.then((n) => n.setReconciliationNote(ctx, true))
+				.then((n) => n.addVolumes({}, ...transactions))
+				.then((n) => n.commit(ctx))
+		);
+		await Promise.all(updates);
+
+		return this;
 	}
 
-	// TODO
-	async reconcile(): Promise<NoteInterface> {
-		return this;
+	async intoReceipt(): Promise<ReceiptData> {
+		const conn = await this.#db._db.connection;
+
+		const books = conn
+			.selectFrom(createBooksQuery(conn, this.id).as("e"))
+			.leftJoin("books as b", "e.isbn", "b.isbn")
+			.select(["e.isbn", "b.title", "e.quantity", "b.price", "e.warehouseDiscount as discount"])
+			.execute();
+		const customItems = conn
+			.selectFrom(createCustomItemsQuery(conn, this.id).as("e"))
+			.select(["e.title", "e.price", "e.id", "e.updatedAt"])
+			.execute()
+			.then((res) =>
+				res
+					.sort(asc(({ updatedAt }) => updatedAt))
+					.map(({ id, title, price }) => ({ __kind: "custom", id, title, price, quantity: 1, discount: 0 }))
+			);
+
+		const items = await Promise.all([books, customItems]).then(([books, customItems]) => [...books, ...customItems]);
+
+		return { timestamp: Date.now(), items };
 	}
 
 	stream(): NoteStream {
@@ -438,3 +557,30 @@ const createCustomItemsQuery = (conn: Kysely<Schema<DatabaseSchema>>, noteId: st
 		.where("t.noteId", "==", noteId)
 		.orderBy("t.updatedAt", "desc")
 		.select(["id", "title", "price", "t.updatedAt"]);
+
+const createExistingStockQuery = (conn: Kysely<Schema<DatabaseSchema>>, isbns: string[]) => {
+	const stock = conn
+		.selectFrom("bookTransactions as t")
+		.innerJoin("notes as n", "t.noteId", "n.id")
+		.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+		.where("n.committed", "==", 1)
+		.where("t.isbn", "in", isbns)
+		.select([
+			"t.isbn",
+			"t.warehouseId",
+			"w.displayName as displayName",
+			(qb) => qb.fn.sum<number>(sql`CASE WHEN n.noteType == 'inbound' THEN t.quantity ELSE -t.quantity END`).as("quantity")
+		])
+		.groupBy(["t.warehouseId", "t.isbn"]);
+
+	return conn.selectFrom(stock.as("s")).where("s.quantity", ">", 0).selectAll();
+};
+
+const createExistingStockMap = (rows: { isbn: string; warehouseId: string; quantity: number; displayName: string }[]) => {
+	const mapGenerator = wrapIter(rows)
+		// Group by isbn: { isbn => Iterable { warehouseId => data } }
+		._group(({ isbn, warehouseId, quantity, displayName }) => [isbn, [warehouseId, { quantity, displayName }] as const])
+		// Convert each internal iterable into a map: Iterable { warehouseId => data } -> Map { warehouseId => data }
+		.map(([isbn, warehouses]) => [isbn, new Map(warehouses)] as const);
+	return new Map(mapGenerator);
+};
