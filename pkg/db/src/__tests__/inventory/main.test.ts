@@ -2386,8 +2386,6 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 				price: (1 + i) * 2
 			}));
 
-		(db as any)._db.replicated((db) => db.selectFrom("customItemTransactions").selectAll()).subscribe(console.log);
-
 		// Setup: Create a note and book data for transactions
 		const [note] = await Promise.all([
 			db
