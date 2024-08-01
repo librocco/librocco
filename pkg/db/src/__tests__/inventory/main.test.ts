@@ -2373,7 +2373,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(res1Val!.title).toEqual(res2Val!.title);
 	});
 
-	test.only("receipt generation", async () => {
+	test("receipt generation", async () => {
 		// We're creating a bunch of transactions to test the receipt
 		// taking into account entries which would be omitted in the UI by pagination.
 		const transactions = Array(20)
@@ -2465,7 +2465,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test("search", async () => {
+	test.only("search", async () => {
 		// Setup: Add three books to the db
 		const lotr = {
 			isbn: "11111111",
