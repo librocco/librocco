@@ -1,4 +1,5 @@
-import { map, Observable } from "rxjs";
+import { Search } from "js-search";
+import { map, Observable, ReplaySubject, share } from "rxjs";
 import { Schema } from "crstore";
 
 import { debug } from "@librocco/shared";
@@ -10,9 +11,30 @@ import { observableFromStore } from "@/helpers";
 
 class Books implements BooksInterface {
 	#db: DatabaseInterface;
+	#searchIndexStream?: Observable<SearchIndex>;
 
 	constructor(db: DatabaseInterface) {
 		this.#db = db;
+	}
+
+	private _streamAll() {
+		return observableFromStore(this.#db._db.replicated((db) => db.selectFrom("books").selectAll())).pipe(
+			map((rows) => rows.map(bookRowToBookEntry))
+		);
+	}
+
+	/**
+	 * Creates a search index stream, assigns it to this.#searchIndexStream and multicasts it.
+	 * Returns the created stream.
+	 */
+	private _createSearchIndexStream() {
+		const searchStreamCache = new ReplaySubject<SearchIndex>();
+		return (this.#searchIndexStream = this._streamAll().pipe(
+			map(createSearchIndex),
+			// Share the stream in case multiple subscribers request it (to prevent duplication as the index takes up quite a bit of memory)
+			// Reset the stream when there are no more subscribers (for the same reasons as above)
+			share({ connector: () => searchStreamCache, resetOnRefCountZero: true })
+		));
 	}
 
 	async get(_: debug.DebugCtx, isbns: string[]): Promise<BookEntry[]> {
@@ -76,7 +98,10 @@ class Books implements BooksInterface {
 		);
 	}
 
-	streamSearchIndex: () => Observable<SearchIndex>;
+	// TODO: investigate SQLite (native) FTS5 instead of js-search
+	streamSearchIndex() {
+		return this.#searchIndexStream ?? this._createSearchIndexStream();
+	}
 }
 
 export const createBooksInterface = (db: DatabaseInterface): BooksInterface => new Books(db);
@@ -98,3 +123,16 @@ const bookRowToBookEntry = (row: Schema<DatabaseSchema>["books"]): BookEntry | u
 					["updatedAt", row.updatedAt]
 				].filter(([, val]) => !!val)
 		  );
+
+const createSearchIndex = (books: BookEntry[]) => {
+	const index = new Search("isbn");
+	index.addIndex("isbn");
+	index.addIndex("title");
+	index.addIndex("authors");
+	index.addIndex("publisher");
+	index.addIndex("editedBy");
+
+	index.addDocuments(books);
+
+	return index;
+};
