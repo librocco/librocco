@@ -1814,6 +1814,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		note3.commit();
 
 		transactions = [
+			...transactions,
 			{
 				isbn: "11111111",
 				quantity: 1,
@@ -1831,8 +1832,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 				warehouseId: warehouse2.id,
 				noteId: note3.id,
 				noteDisplayName: note3.displayName
-			},
-			...transactions
+			}
 		];
 
 		await waitFor(() => {
@@ -2465,7 +2465,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
-	test.only("search", async () => {
+	test("search", async () => {
 		// Setup: Add three books to the db
 		const lotr = {
 			isbn: "11111111",

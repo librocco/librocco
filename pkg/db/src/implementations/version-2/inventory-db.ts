@@ -28,6 +28,7 @@ import { createWarehouseInterface } from "./warehouse";
 import { createBooksInterface } from "./books";
 
 import { observableFromStore } from "@/helpers";
+import { createHistoryInterface } from "./history";
 
 class Database implements InventoryDatabaseInterface {
 	_db: SvelteDatabase<Schema<DatabaseSchema>>;
@@ -83,7 +84,7 @@ class Database implements InventoryDatabaseInterface {
 
 	// TODO
 	history(): HistoryInterface {
-		return {} as HistoryInterface;
+		return createHistoryInterface(this);
 	}
 
 	plugin<T extends keyof PluginInterfaceLookup>(type: T): LibroccoPlugin<PluginInterfaceLookup[T]> {
