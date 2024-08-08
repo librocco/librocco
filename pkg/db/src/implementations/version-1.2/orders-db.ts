@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import PouchDB from "pouchdb";
 
-import { BooksInterface, DesignDocument, Replicator, PluginInterfaceLookup, LibroccoPlugin, CustomerOrderInterface } from "@/types";
-import { OrdersDatabaseInterface } from "./types";
+import { BooksInterface, Replicator, PluginInterfaceLookup, LibroccoPlugin, OrdersDatabaseConstructor } from "@/types";
+import { OrdersDatabaseInterface, DesignDocument, CustomerOrderInterface } from "./types";
 
 import { orders as designDocs } from "./designDocuments";
 
@@ -64,6 +65,13 @@ class Database implements OrdersDatabaseInterface {
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
+
+	/**
+	 * Destroy the current db instance and clear the data
+	 */
+	destroy() {
+		return this._pouch.destroy();
+	}
 	// #endregion setup
 
 	// #region instances
@@ -84,6 +92,7 @@ class Database implements OrdersDatabaseInterface {
 	// #endregion instances
 }
 
-export const newDatabase = (db: PouchDB.Database): OrdersDatabaseInterface => {
-	return new Database(db);
+export const newDatabase: OrdersDatabaseConstructor = (name, { test = false } = {}) => {
+	const pouch = test ? new PouchDB(name, { adapter: "memory" }) : new PouchDB(name);
+	return new Database(pouch);
 };

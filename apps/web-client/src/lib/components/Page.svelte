@@ -70,7 +70,7 @@
 	 */
 	const handleCreateNote = async () => {
 		const note = await getDB().db?.warehouse().note().create();
-		await goto(appPath("outbound", note._id));
+		await goto(appPath("outbound", note.id));
 	};
 </script>
 

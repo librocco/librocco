@@ -1,14 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import PouchDB from "pouchdb";
 import { map, Observable, ReplaySubject, share, switchMap, tap, startWith, mergeMap, of } from "rxjs";
 
 import { debug, wrapIter, map as mapIter, type StockMap } from "@librocco/shared";
 
 import {
 	BooksInterface,
-	CouchDocument,
 	DbStream,
-	DesignDocument,
-	MapReduceRow,
 	Replicator,
 	InNoteMap,
 	NavEntry,
@@ -16,16 +14,21 @@ import {
 	PluginInterfaceLookup,
 	LibroccoPlugin,
 	WarehouseDataMap,
-	HistoryInterface
+	HistoryInterface,
+	InventoryDatabaseConstructor
 } from "@/types";
 import {
+	CouchDocument,
+	DesignDocument,
+	MapReduceRow,
 	InventoryDatabaseInterface,
 	WarehouseInterface,
 	WarehouseListRow,
 	OutNoteListRow,
 	InNoteListRow,
 	WarehouseData,
-	ViewInterface
+	ViewInterface,
+	VersionedString
 } from "./types";
 
 import { NEW_WAREHOUSE } from "@/constants";
@@ -39,8 +42,7 @@ import { newStock } from "./stock";
 import { newPluginsInterface, PluginsInterface } from "./plugins";
 import { newHistoryProvider } from "./history";
 
-import { scanDesignDocuments } from "@/utils/pouchdb";
-import { versionId } from "./utils";
+import { scanDesignDocuments } from "./utils";
 
 class Database implements InventoryDatabaseInterface {
 	_pouch: PouchDB.Database;
@@ -68,7 +70,9 @@ class Database implements InventoryDatabaseInterface {
 			.pipe(
 				// Organise the warehouse design doc result as iterable of { id => NavEntry } pairs (NavEntry being a warehouse nav entry without 'totalBooks')
 				map(({ rows }) =>
-					wrapIter(rows).map(({ key: id, value }) => [id, { ...value, displayName: value.displayName || "", totalBooks: -1 }] as const)
+					wrapIter(rows).map(
+						({ key: id, value }) => [id.split("/").pop()!, { ...value, displayName: value.displayName || "", totalBooks: -1 }] as const
+					)
 				), // Combine the stream with stock map stream to get the 'totalBooks' for each warehouse
 				switchMap((warehouses) =>
 					this.#stockStream.pipe(
@@ -104,7 +108,7 @@ class Database implements InventoryDatabaseInterface {
 						new Map(
 							wrapIter(rows)
 								.filter(({ value: { committed } }) => !committed)
-								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id, { displayName, ...rest }])
+								.map(({ key: id, value: { displayName = "not-found", ...rest } }) => [id.split("/").pop()!, { displayName, ...rest }])
 						)
 				),
 				share({ connector: () => new ReplaySubject(1), resetOnRefCountZero: false })
@@ -173,6 +177,10 @@ class Database implements InventoryDatabaseInterface {
 			return this._pouch.get(doc._id).then(({ _rev }) => this._pouch.put({ ...doc, _rev }));
 		});
 	}
+
+	destroy() {
+		return this._pouch.destroy();
+	}
 	// #endregion setup
 
 	// #region instances
@@ -206,20 +214,12 @@ class Database implements InventoryDatabaseInterface {
 	// #endregion instances
 
 	// #region queries
-	async findNote(noteId: string) {
-		// Remove trailing slash if any
-		const id = noteId.replace(/\/$/, "");
-		// Note id looks something like this: "v1/<warehouse-id>/<note-type>/<note-id>"
-		const idSegments = id.split("/").filter(Boolean);
+	async findNote(id: string) {
+		const { rows } = await this.view<MapReduceRow<string, VersionedString>>("v1_notes/by_id").query();
 
-		// Validate the id is correct
-		if (idSegments.length !== 4) {
-			throw new Error(`Invalid note id: ${id}`);
-		}
+		const noteId = rows.find(({ key }) => key === id)?.value;
+		const warehouseId = noteId?.split("/")[1];
 
-		// Get version number and warehouse id from the path segments
-		const [v, w] = idSegments;
-		const warehouseId = `${v}/${w}`;
 		const [note, warehouse] = await Promise.all([this.warehouse(warehouseId).note(id).get(), this.warehouse(warehouseId).get()]);
 
 		return note && warehouse ? { note, warehouse } : undefined;
@@ -232,7 +232,7 @@ class Database implements InventoryDatabaseInterface {
 				({ rows }) =>
 					new Map(
 						mapIter(rows, ({ key: id, value: { displayName = "", discountPercentage = 0, ...rest } }) => [
-							id,
+							id.split("/").pop()!,
 							{ displayName, discountPercentage, ...rest }
 						])
 					)
@@ -252,8 +252,9 @@ class Database implements InventoryDatabaseInterface {
 	}
 }
 
-export const newDatabase = (db: PouchDB.Database): InventoryDatabaseInterface => {
-	return new Database(db);
+export const newDatabase: InventoryDatabaseConstructor = (name, { test = false } = {}) => {
+	const pouch = test ? new PouchDB(name, { adapter: "memory" }) : new PouchDB(name);
+	return new Database(pouch);
 };
 
 // #region helpers
@@ -265,7 +266,7 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 	#currentWarehouseId = "";
 
 	private getDefaultWarehouse() {
-		return this.get(versionId("0-all"));
+		return this.get("0-all");
 	}
 
 	private getCurrentWarehouse() {
@@ -290,7 +291,7 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 		} = row;
 
 		if (type === "warehouse") {
-			this.addWarehouse(key, { displayName, ...rest });
+			this.addWarehouse(key.split("/").pop()!, { displayName, ...rest });
 			return this;
 		}
 
@@ -299,7 +300,7 @@ class InNoteAggregator extends Map<string, NavEntry<{ notes: NavMap }>> implemen
 			return this;
 		}
 
-		this.addNote(key, { displayName, ...rest });
+		this.addNote(key.split("/").pop()!, { displayName, ...rest });
 
 		return this;
 	}

@@ -3,11 +3,9 @@ import { beforeEach, describe, expect, test } from "vitest";
 
 import { CustomerOrderState, OrderItemStatus, testUtils } from "@librocco/shared";
 
-import { OrderItem, VersionString } from "@/types";
+import { OrderItem } from "@/types";
 
 import * as implementations from "@/implementations/orders";
-
-import { createVersioningFunction } from "@/utils/misc";
 import { newTestDB } from "@/__testUtils__/db";
 
 const { waitFor } = testUtils;
@@ -21,9 +19,8 @@ type PossiblyEmpty<T> = typeof EMPTY | T;
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
-describe.each(schema)("Orders unit tests: $version", ({ version, getDB }) => {
+describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 	let db = newTestDB(getDB);
-	const versionId = createVersioningFunction(version as VersionString);
 
 	// Initialise a new db for each test
 	beforeEach(async () => {
@@ -36,7 +33,7 @@ describe.each(schema)("Orders unit tests: $version", ({ version, getDB }) => {
 		// If a customer order doesn't exist, a new one should be initialised with default values
 		// but no data should be saved to the db until explicitly done so.
 		let order1 = db.customerOrder("order1");
-		expect(order1._id).toEqual(versionId("order1"));
+		expect(order1.id).toEqual("order1");
 
 		// Order doesn't yet exist in the db.
 		const orderInDB = await order1.get();

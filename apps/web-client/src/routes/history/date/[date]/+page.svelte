@@ -144,7 +144,7 @@
 									</div>
 
 									<a
-										href={appPath("history/notes", noteId)}
+										href={appPath("history/notes/archive", noteId)}
 										class="{noteType === 'outbound'
 											? 'text-red-700'
 											: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 py-0.5 px-3 hover:font-semibold"
