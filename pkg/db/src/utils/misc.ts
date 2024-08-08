@@ -2,8 +2,6 @@ import { distinctUntilChanged, firstValueFrom, Observable, Subject, Subscription
 
 import type { VolumeStock } from "@librocco/shared";
 
-import { VersionedString, VersionString } from "../types";
-
 const compareCustomItems = (a: VolumeStock, b: VolumeStock) =>
 	!(isCustomItemRow(a) && isCustomItemRow(b))
 		? // This comparison is applicable only if both items are custom items,
@@ -110,25 +108,6 @@ export const runAfterCondition = async <R>(cb: () => Promise<R>, condition: Obse
 	// Return a promise from result stream, eventually resolving to the result of the 'cb' function
 	return firstValueFrom(resultStream);
 };
-
-/**
- * A HOF used to create a versioning function for document ids.
- * It accepts a version string (e.g. `"v1"`) and returns a function which:
- * - takes in a document id,
- * - checks if the id is versioned
- * - if it's not versioned, prepends it with version string, e.g. `"doc-id"` -> `"v1/doc-id"`
- * @param version
- * @returns
- */
-export const createVersioningFunction =
-	(version: VersionString) =>
-	(id: string): VersionedString =>
-		isVersioned(id, version) ? id : `${version}/${id}`;
-
-/**
- * Returns true if the id is a versioned string.
- */
-export const isVersioned = (id: string, versionString: VersionString): id is VersionedString => id.startsWith(`${versionString}/`);
 
 /** Is empty is a helper function, checking for an object being defined, but empty (`{}`) */
 export const isEmpty = (obj: Record<string, unknown>): boolean => Object.keys(obj).length === 0;

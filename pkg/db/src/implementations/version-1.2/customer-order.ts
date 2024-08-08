@@ -4,19 +4,12 @@ import { CustomerOrderState, debug, OrderItemStatus } from "@librocco/shared";
 
 import { DocType } from "@/enums";
 
-import {
-	VersionedString,
-	OrdersDatabaseInterface,
-	CustomerOrderInterface,
-	CustomerOrderData,
-	CustomerOrderStream,
-	OrderItem
-} from "@/types";
+import { CustomerOrderStream, OrderItem } from "@/types";
+import { OrdersDatabaseInterface, CustomerOrderInterface, VersionedString, CustomerOrderData } from "./types";
 import { EmptyCustomerOrderError } from "@/errors";
 
 import { isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
-import { versionId } from "./utils";
+import { newDocumentStream, versionId } from "./utils";
 
 class CustomerOrder implements CustomerOrderInterface {
 	_id: VersionedString;
@@ -43,6 +36,10 @@ class CustomerOrder implements CustomerOrderInterface {
 	displayName = "";
 
 	docType = DocType.CustomerOrder;
+
+	id = "";
+
+	createdAt: string | null = null;
 	updatedAt: string | null = null;
 
 	constructor(db: OrdersDatabaseInterface, id?: string) {
@@ -52,6 +49,7 @@ class CustomerOrder implements CustomerOrderInterface {
 		// - if id is a single segment id, prepend the warehouse id and version the string
 		// - if id is a full id, assign it as is
 		this._id = !id ? versionId(`${uniqueTimestamp()}`) : versionId(`${id}`);
+		this.id = this._id.split("/").pop()!;
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<CustomerOrderData>();

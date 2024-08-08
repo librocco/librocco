@@ -1,28 +1,17 @@
 <script lang="ts">
-	import { filter, map, scan } from "rxjs";
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 
-	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
-
-	import {
-		OutOfStockError,
-		type BookEntry,
-		type NavEntry,
-		isCustomItemRow,
-		type OutOfStockTransaction,
-		NoWarehouseSelectedError,
-		isBookRow
-	} from "@librocco/db";
+	import { NoteState, testId } from "@librocco/shared";
+	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
-
-	import { getDB } from "$lib/db";
+	import type { DisplayRow } from "$lib/types/inventory";
 
 	import {
 		Breadcrumbs,
@@ -31,14 +20,15 @@
 		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
-		Dialog,
-		OutboundTable,
 		TextEditable,
-		type WarehouseChangeDetail,
+		Dialog,
+		InboundTable,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import type { InventoryTableData } from "$lib/components/Tables/types";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
+
+	import { getDB } from "$lib/db";
+	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -51,89 +41,51 @@
 	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
-	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
-	import { printBookLabel, printReceipt } from "$lib/printer";
-
 	import { appPath } from "$lib/paths";
+	import { autoPrintLabels } from "$lib/stores/app";
+	import { filter, onErrorResumeNextWith, scan } from "rxjs";
 
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db } = getDB();
-	// if (!status) goto(appPath("settings"));
-
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
-		?.stream()
-		.warehouseMap(warehouseListCtx)
-		.pipe(map((m) => new Map<string, NavEntry>(wrapIter(m).filter(([warehouseId]) => !warehouseId.includes("0-all")))));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
+	const { db, status } = getDB()!;
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
 	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
 
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
-	$: note = data.note;
+
+	$: note = data.note!;
+	$: warehouse = data.warehouse!;
 
 	$: noteStores = createNoteStores(note);
 
 	$: displayName = noteStores.displayName;
-	$: defaultWarehouse = noteStores.defaultWarehouse;
 	$: state = noteStores.state;
 	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
+	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
 
 	// #region note-actions
 	//
-	// When the note is committed or deleted, automatically redirect to 'outbound' page.
+	// When the note is committed or deleted, automatically redirect to 'inbound' page.
 	$: {
 		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(appPath("outbound"));
+			goto(appPath("inbound"));
 		}
 	}
 
-	const openNoWarehouseSelectedDialog = (invalidTransactions: VolumeStock<"book">[]) => {
-		dialogContent = {
-			type: "no-warehouse-selected",
-			invalidTransactions
-		};
-		open.set(true);
-	};
-
-	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
-		dialogContent = {
-			type: "reconcile",
-			invalidTransactions
-		};
-		open.set(true);
-	};
-
 	const handleCommitSelf = async (closeDialog: () => void) => {
-		try {
-			await note.commit({});
-			closeDialog();
-		} catch (err) {
-			if (err instanceof NoWarehouseSelectedError) {
-				return openNoWarehouseSelectedDialog(err.invalidTransactions);
-			}
-			if (err instanceof OutOfStockError) {
-				return openReconciliationDialog(err.invalidTransactions);
-			}
-			throw err;
-		}
-	};
-
-	const handleReconcileAndCommitSelf = async (closeDialog: () => void) => {
-		await note.reconcile({});
 		await note.commit({});
 		closeDialog();
 	};
 
-	const handleDeleteSelf = async () => {
+	const handleDeleteSelf = async (closeDialog: () => void) => {
 		await note.delete({});
+		closeDialog();
 	};
 	// #region note-actions
 
@@ -146,18 +98,13 @@
 	// #endregion infinite-scroll
 
 	// #region table
-	const tableOptions = writable<{ data: InventoryTableData[] }>({
-		data: $entries
-			?.slice(0, maxResults)
-			// TEMP: remove this when the db is updated
-			.map((entry) => ({ __kind: "book", ...entry }))
+	const tableOptions = writable({
+		data: $entries?.slice(0, maxResults)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({
-		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
-	});
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
 	// #region transaction-actions
@@ -192,22 +139,7 @@
 			.subscribe((b) => db.books().upsert([b]));
 	};
 
-	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
-		const { isbn, quantity, warehouseId: currentWarehouseId } = data;
-		const { warehouseId: nextWarehouseId } = e.detail;
-		// Number form control validation means this string->number conversion should yield a valid result
-		const transaction = { isbn, warehouseId: currentWarehouseId, quantity };
-
-		// Block identical updates (with respect to the existing state) as they might cause an feedback loop when connected to the live db.
-		if (currentWarehouseId === nextWarehouseId) {
-			return;
-		}
-
-		// TODO: error handling
-		await note.updateTransaction({}, transaction, { ...transaction, warehouseId: nextWarehouseId });
-	};
-
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -221,45 +153,15 @@
 		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
 	};
 
-	const deleteRow = async (rowIx: number) => {
-		const row = $table.rows[rowIx];
-		const match = isCustomItemRow(row) ? row.id : row;
-		await note.removeTransactions(match);
+	const deleteRow = async (isbn: string, warehouseId: string) => {
+		await note.removeTransactions({ isbn, warehouseId });
 	};
 	// #region transaction-actions
 
 	// #region book-form
 	let bookFormData = null;
-	let customItemFormData = null;
 
-	/**
-	 * A HOF takes in the row and decides on the appropriate handler to return (for appropriate form):
-	 * - book form
-	 * - custom item form
-	 */
-	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () =>
-		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
-
-	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
-		bookFormData = row;
-		dialogContent = {
-			onConfirm: () => {},
-			title: dialogTitle.editBook(),
-			description: dialogDescription.editBook(),
-			type: "edit-row"
-		};
-	};
-	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
-		customItemFormData = row;
-		dialogContent = {
-			onConfirm: () => {},
-			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
-			description: "",
-			type: "custom-item-form"
-		};
-	};
-
-	const onBookFormUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -283,46 +185,19 @@
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 
-	const onCustomItemUpdated: CustomItemOptions["onUpdated"] = async ({ form }) => {
-		/**
-		 * This is a quick fix for `form.data` having all optional properties
-		 *
-		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
-		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
-		 * to fix these properly.
-		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
-		 */
-		const data = form?.data as VolumeStock<"custom">;
-
-		try {
-			// Check if create or update and dispatch appropriate action
-			//
-			// Presence of id indicates the existing custom item (update action)
-			if (data.id) {
-				await note.updateTransaction({ name: "UPDATE_TXN", debug: false }, data.id, data);
-			} else {
-				await note.addVolumes({ __kind: "custom", ...data });
-			}
-
-			bookFormData = null;
-			open.set(false);
-		} catch (err) {
-			console.error(err);
-		}
-	};
-	// #endregion book-form
-
-	$: breadcrumbs = note?._id ? createBreadcrumbs("outbound", { id: note._id, displayName: $displayName }) : [];
-
-	// #region temp
+	// #region printing
 	$: handlePrintReceipt = async () => {
 		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
 	};
 	$: handlePrintLabel = (book: BookEntry) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
-	// #endregion temp
+	// #endregion book-form
+
+	$: breadcrumbs =
+		note?.id && warehouse?.id
+			? createBreadcrumbs("inbound", { id: warehouse.id, displayName: warehouse.displayName }, { id: note.id, displayName: $displayName })
+			: [];
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -332,13 +207,10 @@
 		states: { open }
 	} = dialog;
 
-	let dialogContent:
-		| ({ type: "commit" | "delete" | "edit-row" | "custom-item-form" } & DialogContent)
-		| { type: "no-warehouse-selected"; invalidTransactions: VolumeStock<"book">[] }
-		| { type: "reconcile"; invalidTransactions: OutOfStockTransaction[] };
+	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
 </script>
 
-<Page view="outbound-note" loaded={!loading}>
+<Page view="inbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
@@ -352,6 +224,17 @@
 				onUpdated: async ({ form }) => {
 					const { isbn } = form?.data;
 					await handleAddTransaction(isbn);
+
+					if ($autoPrintLabels) {
+						try {
+							db.books()
+								.get([isbn])
+								.then(([b]) => handlePrintLabel(b)());
+							// Success
+						} catch (err) {
+							// Show error
+						}
+					}
 				}
 			}}
 		/>
@@ -359,7 +242,7 @@
 
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<div class="flex w-full items-center justify-between">
+		<div class="flex w-full flex-wrap items-center justify-between gap-2">
 			<div class="flex max-w-md flex-col">
 				<TextEditable
 					name="title"
@@ -377,34 +260,22 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<div class="flex flex-col">
-					<select
-						id="defaultWarehouse"
-						name="defaultWarehouse"
-						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
-						bind:value={$defaultWarehouse}
-					>
-						{#each $warehouseList as warehouse}
-							<option value={warehouse[0]}>{warehouse[1].displayName}</option>
-						{/each}
-					</select>
-				</div>
 				<button
 					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(note.displayName),
-							description: dialogDescription.commitOutbound($entries.length),
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(note.displayName),
-							description: dialogDescription.commitOutbound($entries.length),
+							title: dialogTitle.commitInbound(note.displayName),
+							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
 							type: "commit"
 						};
 					}}
@@ -436,6 +307,16 @@
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+					</div>
+					<div
+						{...item}
+						use:item.action
+						on:m-click={autoPrintLabels.toggle}
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+							? '!bg-green-400'
+							: ''}"
+					>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Auto print book labels</span>
 					</div>
 					<div
 						{...item}
@@ -479,12 +360,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OutboundTable
-						{table}
-						warehouseList={$warehouseList}
-						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
-						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
-					>
+					<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
@@ -507,14 +383,29 @@
 									</span>
 								</button>
 
-								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 									<button
 										use:melt={$dialogTrigger}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("edit-row")}
-										on:m-click={handleOpenFormPopover(row)}
-										on:m-keydown={handleOpenFormPopover(row)}
+										on:m-click={() => {
+											bookFormData = row;
+											dialogContent = {
+												onConfirm: () => {},
+												title: dialogTitle.editBook(),
+												description: dialogDescription.editBook(),
+												type: "edit-row"
+											};
+										}}
+										on:m-keydown={() => {
+											bookFormData = row;
+											dialogContent = {
+												onConfirm: () => {},
+												title: dialogTitle.editBook(),
+												description: dialogDescription.editBook(),
+												type: "edit-row"
+											};
+										}}
 									>
 										<span class="sr-only">Edit row {rowIx}</span>
 										<span class="aria-hidden">
@@ -522,21 +413,19 @@
 										</span>
 									</button>
 
-									{#if isBookRow(row)}
-										<button
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-											data-testid={testId("print-book-label")}
-											on:click={handlePrintLabel(row)}
-										>
-											<span class="sr-only">Print book label {rowIx}</span>
-											<span class="aria-hidden">
-												<Printer />
-											</span>
-										</button>
-									{/if}
+									<button
+										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+										data-testid={testId("print-book-label")}
+										on:click={handlePrintLabel(row)}
+									>
+										<span class="sr-only">Print book label {rowIx}</span>
+										<span class="aria-hidden">
+											<Printer />
+										</span>
+									</button>
 
 									<button
-										on:click={() => deleteRow(rowIx)}
+										on:click={() => deleteRow(row.isbn, row.warehouseId)}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
@@ -548,16 +437,7 @@
 								</div>
 							</PopoverWrapper>
 						</div>
-					</OutboundTable>
-				</div>
-
-				<div class="flex h-24 w-full items-center justify-end px-8">
-					<button
-						use:melt={$dialogTrigger}
-						on:m-click={() => openCustomItemForm()}
-						on:m-keydown={() => openCustomItemForm()}
-						class="button button-green">Custom item</button
-					>
+					</InboundTable>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
@@ -575,55 +455,14 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		{#if dialogContent.type === "no-warehouse-selected"}
-			<!-- No warehouse selecter dialog -->
-			{@const { invalidTransactions } = dialogContent}
+		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={() => {}}>
-					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please select a warehouse for each of the following transactions:</h3>
-					<ul class="pl-2">
-						{#each invalidTransactions as { isbn }}
-							<li>{isbn}</li>
-						{/each}
-					</ul>
-					<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
-					<svelte:fragment slot="confirm-button"><span /></svelte:fragment>
-				</Dialog>
-			</div>
-			<!-- No warehouse selecter dialog end -->
-		{:else if dialogContent.type === "reconcile"}
-			<!-- Note reconciliation dialog -->
-			{@const { invalidTransactions } = dialogContent}
-
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf}>
-					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please review the following tranasctions:</h3>
-					<ul class="pl-2">
-						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
-							<li class="mb-2">
-								<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
-								<p class="pl-2">requested quantity: {quantity}</p>
-								<p class="pl-2">available: {available}</p>
-								<p class="pl-2">
-									quantity for reconciliation: <span class="font-semibold">{quantity - available}</span>
-								</p>
-							</li>
-						{/each}
-					</ul>
-				</Dialog>
-			</div>
-			<!-- Note reconciliation dialog end -->
-		{:else if dialogContent.type === "edit-row"}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }} />
+		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
-				shadow-lg focus:outline-none"
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
+				bg-white shadow-lg focus:outline-none"
 				in:fly|global={{
 					x: 350,
 					duration: 150,
@@ -644,6 +483,7 @@
 					</button>
 				</div>
 				<div class="px-6">
+					<!-- {$connectivity} -->
 					<BookForm
 						data={bookFormData}
 						publisherList={$publisherList}
@@ -652,7 +492,7 @@
 							dataType: "json",
 							validators: bookSchema,
 							validationMethod: "submit-only",
-							onUpdated: onBookFormUpdated
+							onUpdated
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
@@ -672,51 +512,9 @@
 					/>
 				</div>
 			</div>
-		{:else if dialogContent.type === "custom-item-form"}
-			{@const { title: dialogTitle, description: dialogDescription } = dialogContent}
-
-			<div
-				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
-				shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 150,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
-					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
-				</div>
-				<div class="px-6">
-					<CustomItemForm
-						data={customItemFormData}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: customItemSchema,
-							validationMethod: "submit-only",
-							onUpdated: onCustomItemUpdated
-						}}
-						onCancel={() => open.set(false)}
-					/>
-				</div>
-			</div>
 		{:else}
-			{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent}
-
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} {type} onConfirm={dialogContent.onConfirm}>
+				<Dialog {dialog} {type} {onConfirm}>
 					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 				</Dialog>

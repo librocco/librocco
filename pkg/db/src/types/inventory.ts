@@ -1,10 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Observable } from "rxjs";
-import PouchDB from "pouchdb";
 
 import { NoteState, StockMap, VolumeStock, VolumeStockKind, debug } from "@librocco/shared";
 
-import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, CouchDocument, PickPartial } from "./misc";
+import type { DatabaseInterface as BaseDatabaseInterface, BooksInterface, PickPartial, TimestampedDoc } from "./misc";
 
 import { NEW_WAREHOUSE } from "@/constants";
 
@@ -38,12 +37,12 @@ export type NoteType = "inbound" | "outbound";
  * Standardized data that should be present in any note
  * (different implementations might differ, but should extend this structure)
  */
-export type NoteData<A extends Record<string, any> = {}> = CouchDocument<
+export type NoteData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
+		id: string;
 		noteType: NoteType;
 		committed: boolean;
 		displayName: string;
-		updatedAt: string | null;
 		committedAt: string | null;
 		reconciliationNote?: boolean;
 	} & A
@@ -148,8 +147,9 @@ export type NoteInterface<A extends Record<string, any> = {}> = NoteProto<A> & N
  * Standardized data that should be present in any note
  * (different implementations might differ, but should extend this structure)
  */
-export type WarehouseData<A extends Record<string, any> = {}> = CouchDocument<
+export type WarehouseData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
+		id: string;
 		displayName: string;
 		discountPercentage: number;
 	} & A
@@ -287,53 +287,56 @@ export interface DbStream {
  */
 export type InventoryDatabaseInterface<
 	W extends WarehouseInterface = WarehouseInterface,
-	N extends NoteInterface = NoteInterface
-> = BaseDatabaseInterface<{
-	/**
-	 * Books constructs an interface used for book operations agains the db:
-	 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
-	 * - `upsert` - accepts an array of book data and upserts them into the db. If a book data already exists, it will be
-	 * updated, otherwise it will be created.
-	 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
-	 */
-	books: () => BooksInterface;
-	/**
-	 * Warehouse returns a warehouse interface for a given warehouse id.
-	 * If no id is provided, it falls back to the default (`0-all`) warehouse.
-	 *
-	 * To assign a new unique id to the warehouse, use `NEW_WAREHOUSE` as the id.
-	 * @example
-	 * ```ts
-	 * import { NEW_WAREHOUSE } from '@librocco/db';
-	 * const newWarehouse = db.warehouse(NEW_WAREHOUSE);
-	 * ```
-	 */
-	warehouse: (id?: string | typeof NEW_WAREHOUSE) => W;
-	/**
-	 * Find note accepts a note id and returns:
-	 * - if note exists: the note interface and warehouse interface for its parent warehouse
-	 * - if note doesn't exist: `undefined`
-	 */
-	findNote: FindNote<N, W>;
-	/**
-	 * Stream returns an object containing note streams:
-	 * - `warehouseList` - a stream of warehouse list entries (for navigation)
-	 * - `outNoteList` a stream of out note list entries (for navigation)
-	 * - `inNoteList` - a stream of in note list entries (for navigation)
-	 */
-	stream: () => DbStream;
-	/**
-	 * returns warehouse data map
-	 */
-	getWarehouseDataMap: () => Promise<WarehouseDataMap>;
-	/**
-	 * Returns a history interface for the db, handling queries/streams with regard
-	 * to past transactions, notes, etc.
-	 */
-	history(): HistoryInterface;
-}>;
+	N extends NoteInterface = NoteInterface,
+	Ext extends Record<string, any> = {}
+> = BaseDatabaseInterface<
+	{
+		/**
+		 * Books constructs an interface used for book operations agains the db:
+		 * - `get` - accepts an array of isbns and returns a same length array of book data or `undefined`.
+		 * - `upsert` - accepts an array of book data and upserts them into the db. If a book data already exists, it will be
+		 * updated, otherwise it will be created.
+		 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
+		 */
+		books: () => BooksInterface;
+		/**
+		 * Warehouse returns a warehouse interface for a given warehouse id.
+		 * If no id is provided, it falls back to the default (`0-all`) warehouse.
+		 *
+		 * To assign a new unique id to the warehouse, use `NEW_WAREHOUSE` as the id.
+		 * @example
+		 * ```ts
+		 * import { NEW_WAREHOUSE } from '@librocco/db';
+		 * const newWarehouse = db.warehouse(NEW_WAREHOUSE);
+		 * ```
+		 */
+		warehouse: (id?: string | typeof NEW_WAREHOUSE) => W;
+		/**
+		 * Find note accepts a note id and returns:
+		 * - if note exists: the note interface and warehouse interface for its parent warehouse
+		 * - if note doesn't exist: `undefined`
+		 */
+		findNote: FindNote<N, W>;
+		/**
+		 * Stream returns an object containing note streams:
+		 * - `warehouseList` - a stream of warehouse list entries (for navigation)
+		 * - `outNoteList` a stream of out note list entries (for navigation)
+		 * - `inNoteList` - a stream of in note list entries (for navigation)
+		 */
+		stream: () => DbStream;
+		/**
+		 * returns warehouse data map
+		 */
+		getWarehouseDataMap: () => Promise<WarehouseDataMap>;
+		/**
+		 * Returns a history interface for the db, handling queries/streams with regard
+		 * to past transactions, notes, etc.
+		 */
+		history(): HistoryInterface;
+	} & Ext
+>;
 
-export interface NewDatabase {
-	(db: PouchDB.Database): InventoryDatabaseInterface;
+export interface InventoryDatabaseConstructor {
+	(name: string, opts?: { test?: boolean }): InventoryDatabaseInterface;
 }
 // #endregion db
