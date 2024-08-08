@@ -57,7 +57,7 @@
 
 	$: warehouse = data.warehouse!;
 
-	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?._id}]`, { debug: false, logTimes: false });
+	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?.id}]`, { debug: false, logTimes: false });
 	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
 
 	$: displayName = warehouesStores.displayName;
@@ -97,7 +97,7 @@
 	const handleCreateNote = async () => {
 		loading = true;
 		const note = await warehouse.note().create();
-		await goto(appPath("inbound", note._id));
+		await goto(appPath("inbound", note.id));
 	};
 	// #endregion warehouse-actions
 
@@ -147,7 +147,7 @@
 	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
 	// #endregion table
 
-	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?._id, displayName: warehouse?.displayName });
+	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?.id, displayName: warehouse?.displayName });
 
 	const {
 		elements: { trigger, overlay, content, title, description, close, portalled },

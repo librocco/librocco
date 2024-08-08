@@ -6,7 +6,6 @@ import { DocType } from "@/enums";
 
 import {
 	NoteType,
-	VersionedString,
 	PickPartial,
 	EntriesStreamResult,
 	VolumeStockClient,
@@ -14,11 +13,10 @@ import {
 	ReceiptData,
 	UpdateTransactionParams
 } from "@/types";
-import { NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
+import { VersionedString, NoteInterface, WarehouseInterface, NoteData, InventoryDatabaseInterface } from "./types";
 
-import { versionId } from "./utils";
-import { isBookRow, isCustomItemRow, isEmpty, isVersioned, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
-import { newDocumentStream } from "@/utils/pouchdb";
+import { isBookRow, isCustomItemRow, isEmpty, runAfterCondition, uniqueTimestamp } from "@/utils/misc";
+import { newDocumentStream, versionId, addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 import {
 	EmptyNoteError,
 	OutOfStockError,
@@ -26,7 +24,6 @@ import {
 	EmptyTransactionError,
 	NoWarehouseSelectedError
 } from "@/errors";
-import { addWarehouseData, combineTransactionsWarehouses, TableData } from "./utils";
 
 class Note implements NoteInterface {
 	// We wish the warehouse back-reference to be "invisible" when printing, serializing JSON, etc.
@@ -51,6 +48,7 @@ class Note implements NoteInterface {
 	_rev?: string;
 	_deleted?: boolean;
 
+	id = "";
 	noteType: NoteType;
 	reconciliationNote?: boolean;
 	defaultWarehouseId?: string | undefined;
@@ -58,6 +56,8 @@ class Note implements NoteInterface {
 	entries: VolumeStock[] = [];
 	committed = false;
 	displayName = "";
+
+	createdAt: string | null = null;
 	updatedAt: string | null = null;
 	committedAt: string | null = null;
 
@@ -66,37 +66,22 @@ class Note implements NoteInterface {
 		this.#db = db;
 
 		// Outbound notes are assigned to the default warehouse, while inbound notes are assigned to a non-default warehouse
-		this.noteType = warehouse._id === versionId("0-all") ? "outbound" : "inbound";
+		this.noteType = warehouse.id === "0-all" ? "outbound" : "inbound";
 
 		const idSegments = id?.split("/").filter(Boolean) || [];
 
 		// If id provided, validate it:
 		// - it should either be a full id - 'v1/<warehouse-id>/<note-type>/<note-id>'
 		// - or a single segment id - '<note-id>'
-		if (id && ![1, 4].includes(idSegments.length)) {
+		if (id && idSegments.length !== 1) {
 			throw new Error("Invalid note id: " + id);
-		}
-
-		// If warehouse provided as part of the id, verify there's
-		// no mismatch between backreferenced warehouse and the provided one.
-		if (idSegments.length === 4 && idSegments[1] !== warehouse._id) {
-			const wId = versionId(idSegments[1]);
-			const refWId = versionId(warehouse._id);
-			if (wId !== refWId) {
-				throw new Error(
-					"Warehouse referenced in the note and one provided in note id mismatch:" + "\n		referenced: " + refWId + "\n		provided: " + wId
-				);
-			}
 		}
 
 		// Store the id internally:
 		// - if id is a single segment id, prepend the warehouse id and note type, and version the string
 		// - if id is a full id, assign it as is
-		this._id = !id
-			? versionId(`${warehouse._id}/${this.noteType}/${uniqueTimestamp()}`)
-			: isVersioned(id, "v1") // If id is versioned, it's a full id, assign it as is
-			? id
-			: versionId(`${warehouse._id}/${this.noteType}/${id}`);
+		this._id = versionId(`${warehouse._id}/${this.noteType}/${id || uniqueTimestamp()}`);
+		this.id = this._id.split("/").pop()!;
 
 		// Create the internal document stream, which will be used to update the local instance on each change in the db.
 		const updateSubject = new Subject<NoteData>();
@@ -170,12 +155,13 @@ class Note implements NoteInterface {
 			// No need to await this, as the warehouse is not needed for the note to function.
 			this.#w.create();
 
-			const updatedAt = new Date().toISOString();
+			const createdAt = new Date().toISOString();
+			const updatedAt = createdAt;
 
 			const sequentialNumber = (await this.#db._pouch.query("v1_sequence/note")).rows[0];
 			const seqIndex = sequentialNumber ? sequentialNumber.value.max && ` (${sequentialNumber.value.max + 1})` : "";
 
-			const initialValues = { ...this, displayName: `New Note${seqIndex}`, updatedAt };
+			const initialValues = { ...this, displayName: `New Note${seqIndex}`, createdAt, updatedAt };
 			const { rev } = await this.#db._pouch.put<NoteData>(initialValues);
 
 			return this.updateInstance({ ...initialValues, _rev: rev });
@@ -306,9 +292,9 @@ class Note implements NoteInterface {
 				if (!update.isbn) throw new EmptyTransactionError();
 
 				update.warehouseId = update.warehouseId
-					? versionId(update.warehouseId)
+					? update.warehouseId
 					: this.noteType === "inbound"
-					? this.#w._id
+					? this.#w.id
 					: this.defaultWarehouseId || "";
 
 				const matchIndex = this.entries
@@ -356,13 +342,13 @@ class Note implements NoteInterface {
 
 		const matchTr = {
 			...match,
-			warehouseId: match.warehouseId ? versionId(match.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
+			warehouseId: match.warehouseId ? match.warehouseId : this.noteType === "inbound" ? this.#w.id : ""
 		};
 
 		const updateTr = {
 			isbn: update.isbn,
 			quantity: update.quantity,
-			warehouseId: update.warehouseId ? versionId(update.warehouseId) : this.noteType === "inbound" ? this.#w._id : ""
+			warehouseId: update.warehouseId ? update.warehouseId : this.noteType === "inbound" ? this.#w.id : ""
 		};
 
 		debug.log(ctx, "update_transaction:book_row:data")({ matchTr, updateTr });
@@ -410,7 +396,7 @@ class Note implements NoteInterface {
 		const booksToRemove = wrapIter(_books)
 			.map((e) => ({
 				isbn: e.isbn,
-				warehouseId: e.warehouseId ? versionId(e.warehouseId) : noteWarehouse
+				warehouseId: e.warehouseId || noteWarehouse
 			}))
 			.array();
 
@@ -430,7 +416,7 @@ class Note implements NoteInterface {
 	 */
 	private getInvalidInboundTransactions(): VolumeStock<"book">[] {
 		// All transactions in an inbound note must be assigned to the same (note parent) warehouse.
-		return this.entries.filter(isBookRow).filter(({ warehouseId }) => warehouseId !== this.#w._id);
+		return this.entries.filter(isBookRow).filter(({ warehouseId }) => warehouseId !== this.#w.id);
 	}
 
 	/**
@@ -478,7 +464,7 @@ class Note implements NoteInterface {
 				// Check that all transactions are assigned to the parent warehouse
 				const invalidTransactions = this.getInvalidInboundTransactions();
 				if (invalidTransactions.length) {
-					throw new TransactionWarehouseMismatchError(this.#w._id, invalidTransactions);
+					throw new TransactionWarehouseMismatchError(this.#w.id, invalidTransactions);
 				}
 				break;
 			}

@@ -20,7 +20,6 @@
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import type { DisplayRow } from "$lib/types/inventory";
-	import test from "node:test";
 
 	export let data: PageData;
 
@@ -178,7 +177,7 @@
 							</div>
 
 							<a
-								href={appPath("history/notes", txn.noteId)}
+								href={appPath("history/notes/archive", txn.noteId)}
 								class="col-span-4 flex items-center overflow-hidden lg:col-span-3 xl:col-span-2"
 							>
 								{#if txn.noteType === "inbound"}

@@ -12,7 +12,7 @@ export const load: LayoutLoad = ({ route }) => {
 			throw redirect(307, appPath("history/date", new Date().toISOString().slice(0, 10)));
 		// Use today as default past notes view
 		case "/history/notes":
-			throw redirect(307, appPath("history/notes", new Date().toISOString().slice(0, 10)));
+			throw redirect(307, appPath("history/notes/date", new Date().toISOString().slice(0, 10)));
 		default:
 			return;
 	}

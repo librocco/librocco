@@ -30,21 +30,21 @@ interface CreateNoteStores {
  * @returns
  */
 export const createNoteStores: CreateNoteStores = (note) => {
-	const noteStateCtx = { name: `[NOTE_STATE::${note?._id}]`, debug: false };
+	const noteStateCtx = { name: `[NOTE_STATE::${note?.id}]`, debug: false };
 	const internalState = createInternalStateStore(noteStateCtx, note);
 
-	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?._id}]`, debug: false };
+	const updatedAtCtx = { name: `[NOTE_UPDATED_AT::${note?.id}]`, debug: false };
 	const updatedAt = readableFromStream(updatedAtCtx, note?.stream().updatedAt(updatedAtCtx), null);
 
-	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?._id}]`, debug: false };
+	const displayNameCtx = { name: `[NOTE_DISPLAY_NAME::${note?.id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, note, undefined);
 
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
-	const entriesCtx = { name: `[NOTE_ENTRIES::${note?._id}]`, debug: false };
+	const entriesCtx = { name: `[NOTE_ENTRIES::${note?.id}]`, debug: false };
 	const entries = createDisplayEntriesStore(entriesCtx, getDB().db, note, mapMergeBookData);
 
-	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?._id}]`, debug: false };
+	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?.id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
 
 	return {
@@ -79,10 +79,10 @@ interface CreateWarehouseStores {
  * @returns
  */
 export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => {
-	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?._id}]`, debug: false };
+	const displayNameCtx = { name: `[WAREHOUSE_DISPLAY_NAME::${warehouse?.id}]`, debug: false };
 	const displayName = createDisplayNameStore(displayNameCtx, warehouse, null);
 
-	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?._id}]`, debug: false };
+	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?.id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
 	const entries = createDisplayEntriesStore<"book">(ctx, getDB().db, warehouse, mapMergeBookData);

@@ -6,8 +6,8 @@ import { __withDocker__ } from "@/__tests__/constants";
 
 import * as implementations from "@/implementations/inventory";
 
-import { newTestDB } from "@/__testUtils__/db";
 import newInventoryDataLoader from "@/__testUtils__/inventoryDataLoader";
+import { newTestDB } from "@/__testUtils__/db";
 
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
@@ -15,7 +15,7 @@ const schema = Object.entries(implementations).map(([version, getDB]) => ({ vers
 describe
 	// Skip integration tests, if not testing with docker, as the data needed is loaded from the docker container.
 	.skipIf(!__withDocker__)
-	.each(schema)("Inventory unit tests: $version", ({ version, getDB }) => {
+	.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	let db = newTestDB(getDB);
 	const dataLoader = newInventoryDataLoader();
 
@@ -64,7 +64,7 @@ describe
 					expect.objectContaining({
 						...volumeStock,
 						// We're versioning the warehouseId at assertions, rather than at data generation
-						warehouseId: `${version}/${warehouseId}`
+						warehouseId: warehouseId
 					})
 				)
 			)
