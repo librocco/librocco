@@ -39,7 +39,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 			.create()
 			.then((n) => n.setName({}, "Test Note"))
 			// Add two transactions to the note
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
 	);
 
 	// Initial view: Warehouse 1 stock page
@@ -83,7 +83,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 			wh1
 				.note()
 				.create()
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
 				.then((n) => n.commit({})),
 
 			// Create another (non-committed) note
@@ -92,7 +92,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 				.create()
 				.then((n) => n.setName({}, "Test Note"))
 				// Add two transactions to the note
-				.then((n) => n.addVolumes({ isbn: "1234567891", quantity: 2 }, { isbn: "1234567893", quantity: 1 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567891", quantity: 2 }, { isbn: "1234567893", quantity: 1 }))
 		]);
 	});
 
@@ -140,7 +140,7 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 				.warehouse("warehouse-1")
 				.note()
 				.create()
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
 				.then((n) => n.commit({})),
 
 			// Create a second warehouse and add some stock to it
@@ -149,7 +149,7 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 				.create()
 				.then((wh) => wh.setName({}, "Warehouse 2"))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567891", quantity: 3 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567891", quantity: 3 }))
 				.then((n) => n.commit({}))
 		])
 	);
@@ -179,7 +179,7 @@ test("committing an outbound note should decrement the stock by the quantities i
 				.note()
 				.create()
 				.then((n) =>
-					n.addVolumes({ isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }, { isbn: "1234567892", quantity: 2 })
+					n.addVolumes({}, { isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }, { isbn: "1234567892", quantity: 2 })
 				)
 				.then((n) => n.commit({})),
 
@@ -191,6 +191,7 @@ test("committing an outbound note should decrement the stock by the quantities i
 				.then((n) => n.setName({}, "Test Note"))
 				.then((n) =>
 					n.addVolumes(
+						{},
 						{ isbn: "1234567890", quantity: 2, warehouseId: "warehouse-1" },
 						{ isbn: "1234567891", quantity: 3, warehouseId: "warehouse-1" }
 					)
@@ -237,7 +238,7 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 				.warehouse("warehouse-1")
 				.note()
 				.create()
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }))
 				.then((n) => n.commit({})),
 
 			// Create (but don't commit) an outbound note with transaction, which, when committed should result in 0-quantity
@@ -246,7 +247,7 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 				.note()
 				.create()
 				.then((n) => n.setName({}, "Test Note"))
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 3, warehouseId: "warehouse-1" }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3, warehouseId: "warehouse-1" }))
 		])
 	);
 
@@ -285,7 +286,7 @@ test("committing an outbound note with transactions in two warehouses should dec
 				.create()
 				.then((wh) => wh.setName({}, "Warehouse 1"))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
 				.then((n) => n.commit({})),
 
 			// Create warehouse 2 and add some stock to it
@@ -294,7 +295,7 @@ test("committing an outbound note with transactions in two warehouses should dec
 				.create()
 				.then((wh) => wh.setName({}, "Warehouse 2"))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 3 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3 }))
 				.then((n) => n.commit({})),
 
 			// Create (but don't commit) an outbound note with two tranasctions (with isbns of stock already contained in the warehouse, one in each)
@@ -305,6 +306,7 @@ test("committing an outbound note with transactions in two warehouses should dec
 				.then((n) => n.setName({}, "Test Note"))
 				.then((n) =>
 					n.addVolumes(
+						{},
 						{ isbn: "1234567890", quantity: 1, warehouseId: "warehouse-1" },
 						{ isbn: "1234567890", quantity: 1, warehouseId: "warehouse-2" }
 					)

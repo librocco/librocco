@@ -29,7 +29,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 			.create()
 			.then((wh) => wh.setName({}, "Warehouse 1"))
 			.then((wh) => wh.note().create())
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -68,7 +68,7 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 			.then((wh) => wh.setName({}, "Warehouse 1"))
 			.then((wh) => wh.note().create())
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 	);
 
 	// Navigate to the note page
@@ -105,7 +105,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 	);
 
 	// Navigate to the note page
@@ -142,7 +142,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 	);
 
 	// Navigate to the note page

@@ -62,9 +62,9 @@ describe("tableContentStore", () => {
 		const note = await db.warehouse().note("note-1").create();
 		await Promise.all([
 			// Only the transaction for book1 is present
-			note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "jazz" }),
+			note.addVolumes({}, { isbn: book1.isbn, quantity: 12, warehouseId: "jazz" }),
 			// Both books are present in the db
-			db.books().upsert([book1, book2])
+			db.books().upsert({}, [book1, book2])
 		]);
 
 		const tableData = createDisplayEntriesStore({}, db, note, readable(0));
@@ -87,7 +87,11 @@ describe("tableContentStore", () => {
 		);
 
 		// Update the note (add additional transactions)
-		await note.addVolumes({ isbn: book2.isbn, quantity: 10, warehouseId: "jazz" }, { isbn: book3.isbn, quantity: 5, warehouseId: "jazz" });
+		await note.addVolumes(
+			{},
+			{ isbn: book2.isbn, quantity: 10, warehouseId: "jazz" },
+			{ isbn: book3.isbn, quantity: 5, warehouseId: "jazz" }
+		);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
 				{
@@ -123,7 +127,7 @@ describe("tableContentStore", () => {
 		});
 
 		// Update book data for book3
-		await db.books().upsert([book3]);
+		await db.books().upsert({}, [book3]);
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
 				{
@@ -158,7 +162,7 @@ describe("tableContentStore", () => {
 		});
 
 		// Update the first book data
-		await db.books().upsert([{ ...book1, title: "The Age of Wonder (updated)" }]);
+		await db.books().upsert({}, [{ ...book1, title: "The Age of Wonder (updated)" }]);
 		// The update should be reflected in the resulting stream
 		await waitFor(() => {
 			expect(displayEntries).toEqual([
@@ -227,9 +231,9 @@ describe("tableContentStore", () => {
 		]);
 		const note = await db.warehouse().note("note-1").create();
 		await Promise.all([
-			note.addVolumes({ isbn: book1.isbn, quantity: 12, warehouseId: "wh-1" }, { isbn: book2.isbn, quantity: 10, warehouseId: "wh-2" }),
+			note.addVolumes({}, { isbn: book1.isbn, quantity: 12, warehouseId: "wh-1" }, { isbn: book2.isbn, quantity: 10, warehouseId: "wh-2" }),
 			// Both books are present in the db
-			db.books().upsert([book1, book2])
+			db.books().upsert({}, [book1, book2])
 		]);
 
 		const tableData = createDisplayEntriesStore({}, db, note, readable(0));

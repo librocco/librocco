@@ -109,12 +109,12 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		await note.addVolumes({ isbn, quantity: 1 });
+		await note.addVolumes({}, { isbn, quantity: 1 });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get([isbn]);
+		const [localBookData] = await db.books().get({}, [isbn]);
 
 		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
 		// no need for further action
@@ -124,7 +124,7 @@
 
 		// If local book data doesn't exist at all, create an isbn-only entry
 		if (!localBookData) {
-			await db.books().upsert([{ isbn }]);
+			await db.books().upsert({}, [{ isbn }]);
 		}
 
 		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
@@ -136,7 +136,7 @@
 				// Here we're prefering the latest result to be able to observe the updates as they come in
 				scan((acc, next) => ({ ...acc, ...next }))
 			)
-			.subscribe((b) => db.books().upsert([b]));
+			.subscribe((b) => db.books().upsert({}, [b]));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
@@ -154,7 +154,7 @@
 	};
 
 	const deleteRow = async (isbn: string, warehouseId: string) => {
-		await note.removeTransactions({ isbn, warehouseId });
+		await note.removeTransactions({}, { isbn, warehouseId });
 	};
 	// #region transaction-actions
 
@@ -174,7 +174,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert([data]);
+			await db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
@@ -228,7 +228,7 @@
 					if ($autoPrintLabels) {
 						try {
 							db.books()
-								.get([isbn])
+								.get({}, [isbn])
 								.then(([b]) => handlePrintLabel(b)());
 							// Success
 						} catch (err) {

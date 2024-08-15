@@ -31,13 +31,16 @@ test("should progressively load entries until all are shown", async ({ page }) =
 				// We're matching transactions using isbn here, a book data entry (albeit and empty one) has to exist
 				//
 				// TODO: we might want to update the functionality so that books an be matched by isbn-only
-				db.books().upsert(entries.map(({ isbn }) => ({ title: "", price: 0, isbn }))),
+				db.books().upsert(
+					{},
+					entries.map(({ isbn }) => ({ title: "", price: 0, isbn }))
+				),
 				db
 					.warehouse("warehouse-1")
 					.create()
 					.then((w) => w.setName({}, "Warehouse 1"))
 					.then((w) => w.note("note-1").create())
-					.then((n) => n.addVolumes(...entries))
+					.then((n) => n.addVolumes({}, ...entries))
 					.then((n) => n.commit({}))
 			]),
 		entries

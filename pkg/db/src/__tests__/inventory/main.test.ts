@@ -149,7 +149,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Check for note
 		const note = await wh1.note().create();
-		await note.addVolumes({ isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
+		await note.addVolumes({}, { isbn: "0123456789", quantity: 2 }, { isbn: "11111111", quantity: 4 });
 		const entries = await note.getEntries({});
 		expect([...entries]).toEqual([
 			{
@@ -167,7 +167,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Note is not yet committed, so no entries should be returned.
 		let wh1Entries = await wh1.getEntries({});
 		expect([...wh1Entries]).toEqual([]);
-		await note.commit({});
+		await note.commit();
 		wh1Entries = await wh1.getEntries({});
 		expect([...wh1Entries]).toEqual([
 			{
@@ -221,6 +221,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Adding volumes should add transactions to the note
 		await note.addVolumes(
+			{},
 			{ isbn: "0123456789", quantity: 2, warehouseId: wh1.id },
 			// Having the same isbn for different warehouses will come in handy when testing update/remove transaction
 			{ isbn: "11111111", quantity: 4, warehouseId: wh1.id },
@@ -262,6 +263,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Adding volumes to the same ISBN/warheouseId pair should simply aggregate the quantities
 		await note.addVolumes(
+			{},
 			// The add volumes operation should not confuse the transaction with the same isbn, but different warehouse
 			{ isbn: "0123456789", quantity: 3, warehouseId: wh1.id },
 			// This should also work if warehouse is not provided (falls back to "", in case of outbound note)
@@ -300,7 +302,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Adding a custom item should assign a random id to the item
-		await note.addVolumes({ __kind: "custom", title: "Custom Item", price: 10 });
+		await note.addVolumes({}, { __kind: "custom", title: "Custom Item", price: 10 });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{ id: expect.any(String), __kind: "custom", title: "Custom Item", price: 10 },
@@ -340,7 +342,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const customItemId = await note
 			.getEntries({})
 			.then((entries) => [...entries].find((e): e is VolumeStockClient<"custom"> => e.__kind === "custom")!.id);
-		await note.addVolumes({ __kind: "custom", title: "Custom Item 2", price: 20 });
+		await note.addVolumes({}, { __kind: "custom", title: "Custom Item 2", price: 20 });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{ id: expect.any(String), __kind: "custom", title: "Custom Item 2", price: 20 },
@@ -384,7 +386,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Regression: should overwrite the id (always generate a new id) on add volumes - the custom item form assigns 'undefined' to id - this caused a regression
 		// we're testing for here
-		await note.addVolumes({ __kind: "custom", id: undefined, title: "Custom Item 3", price: 20 });
+		await note.addVolumes({}, { __kind: "custom", id: undefined, title: "Custom Item 3", price: 20 });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{ id: expect.any(String), __kind: "custom", title: "Custom Item 3", price: 20 },
@@ -441,6 +443,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Setup is the same as the result of previous test (tests were broken down due to log run times and growing number of assertions)
 		await note.addVolumes(
+			{},
 			{ __kind: "book", isbn: "0123456789", quantity: 5, warehouseId: wh1.id },
 			{ __kind: "book", isbn: "11111111", quantity: 10, warehouseId: "" },
 			{ __kind: "book", isbn: "11111111", quantity: 4, warehouseId: wh1.id },
@@ -664,6 +667,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Setup is the same as the result of previous test (tests were broken down due to log run times and growing number of assertions)
 		await note.addVolumes(
+			{},
 			{ __kind: "book", isbn: "0123456789", quantity: 5, warehouseId: wh1.id },
 			{ __kind: "book", isbn: "11111111", quantity: 18, warehouseId: wh1.id },
 			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 15 },
@@ -706,7 +710,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Remove transaction should remove the transaction (and not confuse it with the same isbn, but different warehouse)
-		await note.removeTransactions({ isbn: "0123456789", warehouseId: wh1.id }, { isbn: "11111111", warehouseId: "wh3" });
+		await note.removeTransactions({}, { isbn: "0123456789", warehouseId: wh1.id }, { isbn: "11111111", warehouseId: "wh3" });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
@@ -734,7 +738,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Running remove transaction should be a no-op if the transaction doesn't exist
-		await note.removeTransactions({ isbn: "12345678", warehouseId: wh1.id });
+		await note.removeTransactions({}, { isbn: "12345678", warehouseId: wh1.id });
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
@@ -762,7 +766,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Should be able to remove custom items using their id
-		await note.removeTransactions("custom-item-2");
+		await note.removeTransactions({}, "custom-item-2");
 		await waitFor(() => {
 			expect(entries).toEqual([
 				{
@@ -829,7 +833,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Check for entries stream
 		expect(entries.rows).toEqual([]);
-		await note.addVolumes({ isbn: "0123456789", quantity: 2 });
+		await note.addVolumes({}, { isbn: "0123456789", quantity: 2 });
 		await waitFor(() => {
 			expect(entries.rows).toEqual([
 				{
@@ -846,10 +850,10 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Entries stream
 		//
 		// Reset the entries
-		await note.removeTransactions({ isbn: "0123456789", warehouseId: "test-warehouse" });
+		await note.removeTransactions({}, { isbn: "0123456789", warehouseId: "test-warehouse" });
 		await waitFor(() => expect(entries.rows).toEqual([]));
 		// Add 20 entries and check the results
-		await note.addVolumes(...fiftyEntries.slice(0, 20));
+		await note.addVolumes({}, ...fiftyEntries.slice(0, 20));
 		await waitFor(() => {
 			expect(entries.rows).toEqual(
 				fiftyEntries
@@ -907,14 +911,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Check for state stream
 		expect(state).toEqual(NoteState.Draft);
-		await note.commit({});
+		await note.commit();
 		await waitFor(() => {
 			expect(state).toEqual(NoteState.Committed);
 		});
 		// Check for updatedAt stream
 		const ts1 = note.updatedAt;
 		// Perform any update
-		const { updatedAt: ts2 } = await note.addVolumes({ isbn: "0123456789", quantity: 2 });
+		const { updatedAt: ts2 } = await note.addVolumes({}, { isbn: "0123456789", quantity: 2 });
 		// Check that the latest timestamp is the same as the previous one (no update should have taken place)
 		expect(ts1).toEqual(ts2);
 		// Wait for the stream to update
@@ -962,7 +966,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await waitFor(() => expect(entries).toEqual([]));
 
 		// Add a tranasction with isbn not available in any warehouse
-		await note.addVolumes({ isbn: "1234567890", quantity: 1 });
+		await note.addVolumes({}, { isbn: "1234567890", quantity: 1 });
 
 		// Should display the transaction, but no 'availableWarehouses'
 		await waitFor(() =>
@@ -983,8 +987,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await wh1
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
-			.then((n) => n.commit({}));
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
+			.then((n) => n.commit());
 
 		// 'availableWarehouses' (in outbound note transaction) should display the first warehouse
 		await waitFor(() =>
@@ -1005,8 +1009,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await wh2
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 2 }))
-			.then((n) => n.commit({}));
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
+			.then((n) => n.commit());
 
 		// 'availableWarehouses' (in outbound note transaction) should now display both warehouses
 		await waitFor(() =>
@@ -1030,11 +1034,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await wh1
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
-			.then((n) => n.commit({}));
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.commit());
 
 		// Adding the same book to the outbound note should display only the first warehouse
-		await note.addVolumes({ isbn: "1111111111", quantity: 1 });
+		await note.addVolumes({}, { isbn: "1111111111", quantity: 1 });
 		await waitFor(() =>
 			expect(entries).toEqual([
 				{
@@ -1087,7 +1091,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await waitFor(() => expect(entries).toEqual([]));
 
 		// Add a tranasction
-		await note.addVolumes({ isbn: "1234567890", quantity: 1 });
+		await note.addVolumes({}, { isbn: "1234567890", quantity: 1 });
 
 		// Should display the transaction with the default warehouse as warehouseId
 		await waitFor(() =>
@@ -1106,7 +1110,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		await note.setDefaultWarehouse({}, "wh-1");
 
-		await note.addVolumes({ __kind: "book", isbn: "1234567890", quantity: 1 }, { __kind: "book", isbn: "1234567770", quantity: 1 });
+		await note.addVolumes({}, { __kind: "book", isbn: "1234567890", quantity: 1 }, { __kind: "book", isbn: "1234567770", quantity: 1 });
 
 		// Should display the second transaction with the default warehouse as warehouseId
 		// and the first interaction should keep its default warehouseId
@@ -1175,8 +1179,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Adding books to warehouse 1 should display changes in warehouse 1 and default warehouse stock streams
 		const note1 = warehouse1.note();
-		await note1.addVolumes({ isbn: "0123456789", quantity: 3 });
-		await note1.commit({});
+		await note1.addVolumes({}, { isbn: "0123456789", quantity: 3 });
+		await note1.commit();
 
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
@@ -1204,8 +1208,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Adding books to warehouse 2 should display changes in warehouse 2 and aggregate the stock of both warehouses in the default warehouse stock stream
 		const note2 = warehouse2.note();
-		await note2.addVolumes({ isbn: "0123456789", quantity: 3 });
-		await note2.commit({});
+		await note2.addVolumes({}, { isbn: "0123456789", quantity: 3 });
+		await note2.commit();
 
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
@@ -1250,7 +1254,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Non committed notes should not be taken into account (when calculating the stock)
 		const note3 = warehouse1.note();
-		await note3.addVolumes({ isbn: "0123456789", quantity: 3 });
+		await note3.addVolumes({}, { isbn: "0123456789", quantity: 3 });
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
 				{
@@ -1269,11 +1273,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Outbound notes should decrement the stock (of both the particular warehouse, as well as the default warehouse)
 		const note4 = defaultWarehouse.note();
 		await note4.addVolumes(
+			{},
 			{ isbn: "0123456789", quantity: 2, warehouseId: "warehouse-1" },
 			{ isbn: "0123456789", quantity: 1, warehouseId: "warehouse-2" }
 		);
 
-		await note4.commit({});
+		await note4.commit();
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
 				{
@@ -1383,8 +1388,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Zero quantity should remove the entry from the stock stream
 		const note5 = defaultWarehouse.note();
-		await note5.addVolumes({ isbn: "0123456789", quantity: 1, warehouseId: "warehouse-1" });
-		await note5.commit({});
+		await note5.addVolumes({}, { isbn: "0123456789", quantity: 1, warehouseId: "warehouse-1" });
+		await note5.commit();
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([]);
 			expect(defaultWarehouseStock).toEqual([
@@ -1402,13 +1407,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Note transactions with zero quantity should not affect the stock
 		const note6 = warehouse1.note();
 		await note6.addVolumes(
+			{},
 			{ isbn: "0123456789", quantity: 0, warehouseId: "warehouse-1" },
 			// Other transaction is here to:
 			// - check that it is taken into account (only 0-quantity transactions are ignored, not the entire note)
 			// - to confirm an update has happened (as testing for something not being applied will pass immeditealy, due to async nature)
 			{ isbn: "11111111", quantity: 1, warehouseId: "warehouse-1" }
 		);
-		await note6.commit({});
+		await note6.commit();
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([
 				{
@@ -1443,11 +1449,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Custom items should not affect the stock
 		const note7 = defaultWarehouse.note();
 		await note7.addVolumes(
+			{},
 			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 },
 			// Removing one book from stock, the regular way, to assert that the update did happen (and custom item just wasn't taken into account)
 			{ isbn: "11111111", quantity: 1, warehouseId: "warehouse-1" }
 		);
-		await note7.commit({});
+		await note7.commit();
 		await waitFor(() => {
 			expect(warehouse1Stock).toEqual([]);
 			expect(defaultWarehouseStock).toEqual([
@@ -1745,8 +1752,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const note1 = await warehouse1.note().create();
 		const note2 = await warehouse2.note().create();
 
-		await note1.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit({}));
-		await note2.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit({}));
+		await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit());
+		await note2.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 }).then((n) => n.commit());
 
 		let transactions = [
 			{
@@ -1794,10 +1801,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// add some outbound notes
 		const note3 = await db.warehouse().note().create();
 		await note3.addVolumes(
+			{},
 			{ isbn: "11111111", quantity: 1, warehouseId: warehouse1.id },
 			{ isbn: "22222222", quantity: 1, warehouseId: warehouse2.id }
 		);
-		note3.commit({});
+		note3.commit();
 
 		transactions = [
 			{
@@ -1978,9 +1986,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const booksInterface = db.books();
 
 		// Insert test
-		await Promise.all([booksInterface.upsert([{ ...book1 }, { ...book2 }])]);
+		await Promise.all([booksInterface.upsert({}, [{ ...book1 }, { ...book2 }])]);
 
-		const booksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
+		const booksFromDb = await booksInterface.get({}, [book1.isbn, book2.isbn]);
 
 		// There's a full book data in each entry, the operation should assign 'updatedAt'
 		expect(booksFromDb).toEqual([book1, book2].map((b) => ({ ...b, updatedAt: expect.any(String) })));
@@ -1988,13 +1996,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// Update test
 		await Promise.all([
-			booksInterface.upsert([
+			booksInterface.upsert({}, [
 				{ ...book1, title: "Updated Title" },
 				{ ...book2, title: "Updated Title 12" }
 			])
 		]);
 
-		const updatedBooksFromDb = await booksInterface.get([book1.isbn, book2.isbn]);
+		const updatedBooksFromDb = await booksInterface.get({}, [book1.isbn, book2.isbn]);
 
 		expect(updatedBooksFromDb).toEqual([
 			{ ...book1, title: "Updated Title", updatedAt: expect.any(String) },
@@ -2004,13 +2012,13 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(updatedBooksFromDb[0]!.updatedAt).not.toEqual(updatedAt);
 
 		// ISBN-only entries should not get the 'updatedAt' assigned to them
-		await db.books().upsert([{ isbn: "1111111111" }]);
-		await db.books().upsert([{ isbn: "1111111111" }]); // One more (update) for good measure
-		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111" }]);
+		await db.books().upsert({}, [{ isbn: "1111111111" }]);
+		await db.books().upsert({}, [{ isbn: "1111111111" }]); // One more (update) for good measure
+		expect(await db.books().get({}, ["1111111111"])).toEqual([{ isbn: "1111111111" }]);
 
 		// Adding at least one additiona field should assign the 'updatedAt'
-		await db.books().upsert([{ isbn: "1111111111", title: "Title 1" }]); // One more (update) for good measure
-		expect(await db.books().get(["1111111111"])).toEqual([{ isbn: "1111111111", title: "Title 1", updatedAt: expect.any(String) }]);
+		await db.books().upsert({}, [{ isbn: "1111111111", title: "Title 1" }]); // One more (update) for good measure
+		expect(await db.books().get({}, ["1111111111"])).toEqual([{ isbn: "1111111111", title: "Title 1", updatedAt: expect.any(String) }]);
 
 		// Stream test
 		let bookEntries: (BookEntry | undefined)[] = [];
@@ -2028,7 +2036,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Stream should update when the book in the db is updated
-		await db.books().upsert([{ ...book1, title: "Stream updated title" }]);
+		await db.books().upsert({}, [{ ...book1, title: "Stream updated title" }]);
 
 		await waitFor(() => {
 			expect(bookEntries).toEqual([
@@ -2039,7 +2047,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Stream should update if the book we're requesting (which didn't exist) is added
-		await db.books().upsert([book3]);
+		await db.books().upsert({}, [book3]);
 
 		await waitFor(() => {
 			expect(bookEntries).toEqual([
@@ -2061,17 +2069,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await waitFor(() => expect(publishers).toEqual([]));
 
 		// Adding a new book (with not-yet-registered publisher) should update the publishers stream
-		await db.books().upsert([{ isbn: "new-isbn", publisher: "HarperCollins UK" } as BookEntry]);
+		await db.books().upsert({}, [{ isbn: "new-isbn", publisher: "HarperCollins UK" } as BookEntry]);
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK"]));
 
-		await db.books().upsert([
+		await db.books().upsert({}, [
 			{ isbn: "new-isbn-2", publisher: "Oxford" },
 			{ isbn: "new-isbn-3", publisher: "Penguin" }
 		] as BookEntry[]);
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 
 		// Adding a book with existing publisher should not duplicate the publisher in the stream
-		await db.books().upsert([{ isbn: "new-isbn-4", publisher: "Oxford" } as BookEntry]);
+		await db.books().upsert({}, [{ isbn: "new-isbn-4", publisher: "Oxford" } as BookEntry]);
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK", "Oxford", "Penguin"]));
 	});
 
@@ -2081,13 +2089,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const warehouse1 = await db.warehouse("warehouse-1").create();
 		const note1 = await warehouse1.note().create();
 		await note1.addVolumes(
+			{},
 			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
 			{ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" },
 			// Adding custom item as noise - shouldn't affect these checks
 			{ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }
 		);
 
-		await expect(note1.commit({})).rejects.toThrow(
+		await expect(note1.commit()).rejects.toThrow(
 			new TransactionWarehouseMismatchError("warehouse-1", [{ isbn: "22222222", warehouseId: "warehouse-2", quantity: 2 }])
 		);
 
@@ -2098,7 +2107,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 				{ isbn: "22222222", warehouseId: "warehouse-2" },
 				{ isbn: "22222222", warehouseId: "warehouse-1", quantity: 2 }
 			)
-			.then((n) => n.commit({}));
+			.then((n) => n.commit());
 
 		await waitFor(() => note1.get().then((n) => expect(n!.committed).toEqual(true)));
 	});
@@ -2118,16 +2127,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await Promise.all([
 			wh1
 				.note()
-				.addVolumes({ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" })
-				.then((n) => n.commit({})),
+				.addVolumes({}, { isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" })
+				.then((n) => n.commit()),
 			wh2
 				.note()
-				.addVolumes({ isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" })
-				.then((n) => n.commit({}))
+				.addVolumes({}, { isbn: "22222222", quantity: 2, warehouseId: "warehouse-2" })
+				.then((n) => n.commit())
 		]);
 
 		// Create an outbound note with invalid transactions
 		const note = await db.warehouse().note().addVolumes(
+			{},
 			// A valid transaction - selected warehouse has enough stock
 			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
 			// Invalid transaction - no warehouse selected
@@ -2139,7 +2149,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		);
 
 		// Can't commit the note as one transaction has no warehouse selected
-		await expect(note.commit({})).rejects.toThrow(new NoWarehouseSelectedError([{ isbn: "22222222", quantity: 2, warehouseId: "" }]));
+		await expect(note.commit()).rejects.toThrow(new NoWarehouseSelectedError([{ isbn: "22222222", quantity: 2, warehouseId: "" }]));
 
 		// Fix warehouse selection
 		await note.updateTransaction({}, { isbn: "22222222" }, { isbn: "22222222", quantity: 2, warehouseId: "warehouse-1" });
@@ -2150,7 +2160,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// - "11111111": 1 (warehouse-2) - invalid - no "11111111" in warehouse-2 stock
 
 		// Can't commit the note as it contains out-of-stock transactions
-		await expect(note.commit({})).rejects.toThrow(
+		await expect(note.commit()).rejects.toThrow(
 			new OutOfStockError([
 				{ isbn: "22222222", warehouseId: "warehouse-1", warehouseName: "Warehouse 1", quantity: 2, available: 0 },
 				{ isbn: "22222222", warehouseId: "warehouse-2", warehouseName: "Warehouse 2", quantity: 3, available: 2 },
@@ -2159,7 +2169,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		);
 
 		// Fix the note - remove excess quantity/transactions
-		await note.removeTransactions({ isbn: "22222222", warehouseId: "warehouse-1" }, { isbn: "11111111", warehouseId: "warehouse-2" });
+		await note.removeTransactions({}, { isbn: "22222222", warehouseId: "warehouse-1" }, { isbn: "11111111", warehouseId: "warehouse-2" });
 		await note.updateTransaction(
 			{},
 			{ isbn: "22222222", warehouseId: "warehouse-2" },
@@ -2169,7 +2179,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// - "11111111": 2 (warehouse-1) - valid
 		// - "22222222": 2 (warehouse-2) - valid
 
-		await note.commit({});
+		await note.commit();
 		await waitFor(() => note.get().then((n) => expect(n!.committed).toEqual(true)));
 
 		// Committing a note with custom item only should be allowed
@@ -2177,8 +2187,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			.warehouse()
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }))
-			.then((n) => n.commit({}));
+			.then((n) => n.addVolumes({}, { __kind: "custom", id: "custom-item-1", title: "Custom Item", price: 10 }))
+			.then((n) => n.commit());
 	});
 
 	test("reconcile outbound notes", async () => {
@@ -2194,18 +2204,19 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			warehouse1
 				.note()
 				.addVolumes(
+					{},
 					{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
 					{ isbn: "22222222", quantity: 3, warehouseId: "warehouse-1" }
 				)
-				.then((n) => n.commit({})),
+				.then((n) => n.commit()),
 			warehouse2
 				.note()
-				.addVolumes({ isbn: "11111111", quantity: 1, warehouseId: "warehouse-2" })
-				.then((n) => n.commit({})),
+				.addVolumes({}, { isbn: "11111111", quantity: 1, warehouseId: "warehouse-2" })
+				.then((n) => n.commit()),
 			warehouse3
 				.note()
-				.addVolumes({ isbn: "11111111", quantity: 1, warehouseId: "warehouse-3" })
-				.then((n) => n.commit({}))
+				.addVolumes({}, { isbn: "11111111", quantity: 1, warehouseId: "warehouse-3" })
+				.then((n) => n.commit())
 		]);
 
 		// Current state:
@@ -2220,6 +2231,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Add books to an outbound note
 		const note = await db.warehouse().note().create();
 		await note.addVolumes(
+			{},
 			// In-stock - all fine
 			{ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" },
 			// In-stock - one should remain after the note is committed
@@ -2236,7 +2248,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 		// We can't commit the note yet
 		try {
-			await note.commit({});
+			await note.commit();
 		} catch (err) {
 			expect(err instanceof OutOfStockError).toEqual(true);
 		}
@@ -2244,7 +2256,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Reconcile and commit the note
 		await note.reconcile({});
 		// We should be able to commit the note now
-		await note.commit({});
+		await note.commit();
 
 		// Check remaining stock (all warehouses)
 		const stock = await db.warehouse().getEntries({});
@@ -2288,7 +2300,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// The note interface should be in sync with the db
 		// We test this by instantianting a new note interface for the same note and checking equality after updates
 		const noteInst2 = db.warehouse().note("note-1");
-		await noteInst2.addVolumes({ isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" });
+		await noteInst2.addVolumes({}, { isbn: "11111111", quantity: 2, warehouseId: "warehouse-1" });
 
 		await waitFor(() => expect(note).toEqual(noteInst2));
 
@@ -2405,9 +2417,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 				.note()
 				.create()
 				// Add all transactions to the note
-				.then((n) => n.addVolumes(...transactions.map(({ isbn, quantity, warehouseId }) => ({ isbn, quantity, warehouseId })))),
+				.then((n) => n.addVolumes({}, ...transactions.map(({ isbn, quantity, warehouseId }) => ({ isbn, quantity, warehouseId })))),
 			// Create book data entries for transactions
-			db.books().upsert(transactions.map(({ isbn, title, price }) => ({ isbn, title, price })))
+			db.books().upsert(
+				{},
+				transactions.map(({ isbn, title, price }) => ({ isbn, title, price }))
+			)
 		]);
 
 		// Get the receipt items from the note
@@ -2439,7 +2454,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		//
 		// Transactions are the first two from the previous array (they already have a price set with book data), but since
 		// they belong to wh-2, no discount will be applied
-		await note.addVolumes(...transactions.slice(0, 2).map((txn) => ({ ...txn, warehouseId: "wh-2" })));
+		await note.addVolumes({}, ...transactions.slice(0, 2).map((txn) => ({ ...txn, warehouseId: "wh-2" })));
 
 		// The print job should have been added to the print queue with discounted prices
 		receipt = await note.intoReceipt();
@@ -2454,7 +2469,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 
 		// Add custom items - they should also end up in the receipt (each with quantity 1 and discount 0)
-		note.addVolumes({ __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
+		note.addVolumes({}, { __kind: "custom", title: "Item 1", price: 20 }, { __kind: "custom", title: "Item 2", price: 35 });
 
 		// The print job should have been added to the print queue with discounted prices
 		receipt = await note.intoReceipt();
@@ -2491,7 +2506,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		};
 
 		const books = [lotr, pets, time];
-		await db.books().upsert(books);
+		await db.books().upsert({}, books);
 
 		let index: SearchIndex = new Search([]);
 		db.books()
@@ -2515,7 +2530,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			publisher: "Penguin Classics",
 			price: 40
 		};
-		await db.books().upsert([werther]);
+		await db.books().upsert({}, [werther]);
 		await waitFor(() =>
 			expect(index.search("Penguin Classics")).toEqual([lotr, werther].map((b) => ({ ...b, updatedAt: expect.any(String) })))
 		);
