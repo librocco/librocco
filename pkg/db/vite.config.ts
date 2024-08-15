@@ -1,15 +1,9 @@
 import { defineConfig } from "vite";
 import path from "path";
+import tsPaths from "vite-tsconfig-paths";
 
 export default defineConfig({
-	resolve: {
-		alias: {
-			"@": path.join(__dirname, "src"),
-			"@test-runner": path.join(__dirname, "src", "test-runner"),
-			"@data-loaders": path.join(__dirname, "src", "data-loaders"),
-			"@unit-test-data": path.join(__dirname, "src", "test-runner", "__testData__")
-		}
-	},
+	plugins: [tsPaths()],
 	build: {
 		sourcemap: true,
 		lib: {
@@ -19,7 +13,7 @@ export default defineConfig({
 			formats: ["es", "cjs"]
 		},
 		rollupOptions: {
-			external: ["rxjs", "pouchdb"],
+			external: ["svelte", "rxjs", "pouchdb", "crstore"],
 			output: {
 				exports: "named"
 			}
