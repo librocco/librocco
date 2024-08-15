@@ -255,7 +255,7 @@ test("should display book count and warehouse discount for each respective wareh
 		db
 			.warehouse("warehouse-1")
 			.note()
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
 			.then((n) => n.commit({}))
 	);
 
@@ -269,7 +269,7 @@ test("should display book count and warehouse discount for each respective wareh
 		db
 			.warehouse("warehouse-2")
 			.note()
-			.addVolumes({ isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
+			.addVolumes({}, { isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
 			.then((n) => n.commit({}))
 	);
 
@@ -312,7 +312,7 @@ test("should update the warehouse using the 'Edit' dialog", async ({ page }) => 
 		db
 			.warehouse("warehouse-1")
 			.note()
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
 			.then((n) => n.commit({}))
 	);
 
@@ -356,14 +356,14 @@ test("should display book original price and discounted price as well as the war
 	);
 
 	// Create a new book with price
-	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
+	await dbHandle.evaluate((db, book) => db.books().upsert({}, [book]), book1);
 
 	// Add book to warehouse
 	await dbHandle.evaluate((db) =>
 		db
 			.warehouse("warehouse-1")
 			.note()
-			.addVolumes({ isbn: "1234567890", quantity: 1 })
+			.addVolumes({}, { isbn: "1234567890", quantity: 1 })
 			.then((n) => n.commit({}))
 	);
 
@@ -390,7 +390,7 @@ test("should progressively load entries until all are shown", async ({ page }) =
 				.create()
 				.then((w) => w.setName({}, "Warehouse 1"))
 				.then((w) => w.note("note-1").create())
-				.then((n) => n.addVolumes(...entries))
+				.then((n) => n.addVolumes({}, ...entries))
 				.then((n) => n.commit({})),
 		entries
 	);

@@ -117,7 +117,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert([data]);
+			await db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
