@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { readable, writable } from "svelte/store";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { debug, testId } from "@librocco/shared";
-	import type { BookEntry } from "@librocco/db";
+	import type { BookEntry, WarehouseData } from "@librocco/db";
 
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
@@ -45,47 +45,60 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
+	// const { db, status } = getDB();
+	const { status } = getDB();
 	if (!status) goto(appPath("settings"));
 
-	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	//
+	// TEMP
+	const publisherList = readable([]);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
 	$: warehouse = data.warehouse!;
-
-	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?.id}]`, { debug: false, logTimes: false });
-	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
-
-	$: displayName = warehouesStores.displayName;
-	$: entries = warehouesStores.entries;
-	$: csvEntries = warehouesStores.csvEntries;
+	//
+	// const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?.id}]`, { debug: false, logTimes: false });
+	// $: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
+	//
+	// $: displayName = warehouesStores.displayName;
+	// $: entries = warehouesStores.entries;
+	// $: csvEntries = warehouesStores.csvEntries;
+	//
+	// TEMP
+	let displayName = writable(warehouse?.displayName || "");
+	$: $displayName = warehouse.displayName;
+	$: entries = readable([]);
+	$: csvEntries = readable([]);
 
 	// #region csv
-	type CsvEntries = Omit<InventoryTableData, "warehouseId">;
-	const handleExportCsv = () => {
-		const csvConfig = mkConfig({
-			columnHeaders: [
-				{ displayLabel: "Quantity", key: "quantity" },
-				{ displayLabel: "ISBN", key: "isbn" },
-				{ displayLabel: "Title", key: "title" },
-				{ displayLabel: "Publisher", key: "publisher" },
-				{ displayLabel: "Authors", key: "authors" },
-				{ displayLabel: "Year", key: "year" },
-				{ displayLabel: "Price", key: "price" },
-				{ displayLabel: "Category", key: "category" },
-				{ displayLabel: "Edited by", key: "edited_by" },
-				{ displayLabel: "Out of print", key: "out_of_print" }
-			],
-			filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
-		});
-
-		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
-		download(csvConfig)(gen);
-	};
+	// type CsvEntries = Omit<InventoryTableData, "warehouseId">;
+	// const handleExportCsv = () => {
+	// 	const csvConfig = mkConfig({
+	// 		columnHeaders: [
+	// 			{ displayLabel: "Quantity", key: "quantity" },
+	// 			{ displayLabel: "ISBN", key: "isbn" },
+	// 			{ displayLabel: "Title", key: "title" },
+	// 			{ displayLabel: "Publisher", key: "publisher" },
+	// 			{ displayLabel: "Authors", key: "authors" },
+	// 			{ displayLabel: "Year", key: "year" },
+	// 			{ displayLabel: "Price", key: "price" },
+	// 			{ displayLabel: "Category", key: "category" },
+	// 			{ displayLabel: "Edited by", key: "edited_by" },
+	// 			{ displayLabel: "Out of print", key: "out_of_print" }
+	// 		],
+	// 		filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
+	// 	});
+	//
+	// 	const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
+	// 	download(csvConfig)(gen);
+	// };
+	//
+	// TEMP
+	const handleExportCsv = () => {};
 
 	// #endregion csv
 
@@ -94,48 +107,57 @@
 	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
-	const handleCreateNote = async () => {
-		loading = true;
-		const note = await warehouse.note().create();
-		await goto(appPath("inbound", note.id));
-	};
+	// const handleCreateNote = async () => {
+	// 	loading = true;
+	// 	const note = await warehouse.note().create();
+	// 	await goto(appPath("inbound", note.id));
+	// };
+	//
+	// TEMP
+	const handleCreateNote = async () => {};
 	// #endregion warehouse-actions
 
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
-		/**
-		 * This is a quick fix for `form.data` having all optional properties
-		 *
-		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
-		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
-		 * to fix these properly.
-		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
-		 */
-		const data = form?.data as BookEntry;
+	// 	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	// 		/**
+	// 		 * This is a quick fix for `form.data` having all optional properties
+	// 		 *
+	// 		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+	// 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+	// 		 * to fix these properly.
+	// 		 *
+	// 		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+	// 		 */
+	// 		const data = form?.data as BookEntry;
+	//
+	// 		try {
+	// 			await db.books().upsert({}, [data]);
+	//
+	// 			bookFormData = null;
+	// 			open.set(false);
+	// 		} catch (err) {
+	// 			// toastError(`Error: ${err.message}`);
+	// 		}
+	// 	};
+	//
+	// TEMP
+	const onUpdated: BookFormOptions["onUpdated"] = async () => {};
 
-		try {
-			await db.books().upsert({}, [data]);
-
-			bookFormData = null;
-			open.set(false);
-		} catch (err) {
-			// toastError(`Error: ${err.message}`);
-		}
-	};
-
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	//
+	// TEMP
+	const bookDataExtensionAvailable = readable(false);
 	// #endregion book-form
 
-	// #region infinite-scroll
+	// // #region infinite-scroll
 	let maxResults = 20;
-	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	const seeMore = () => (maxResults += 20);
-	// We're using in intersection observer to create an infinite scroll effect
+	// // We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
-	// #endregion infinite-scroll
+	// // #endregion infinite-scroll
 
 	// #region table
 	const tableOptions = writable({
@@ -298,16 +320,16 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
-
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
-							}
-
-							form.update((data) => ({ ...data, ...bookData }));
+							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							// // Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							// const bookData = mergeBookData(results);
+							//
+							// // If there's no book was retrieved from any of the sources, exit early
+							// if (!bookData) {
+							// 	return;
+							// }
+							//
+							// form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
 						isExtensionAvailable={$bookDataExtensionAvailable}

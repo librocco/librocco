@@ -5,6 +5,7 @@ import type { NoteInterface, WarehouseInterface } from "@librocco/db";
 import type { LayoutLoad } from "./$types";
 
 import { appPath } from "$lib/paths";
+import { getWarehouse } from "$lib/temp";
 
 export const load: LayoutLoad = async ({
 	route,
@@ -34,7 +35,10 @@ export const load: LayoutLoad = async ({
 	if (location === "warehouses" && docId) {
 		const warehouseId = docId?.trim().replace(/^\//, "").replace(/\/$/, "");
 
-		const warehouse = await db.warehouse(warehouseId).get();
+		// const warehouse = await db.warehouse(warehouseId).get();
+		//
+		// TEMP
+		const warehouse = (await getWarehouse(warehouseId)) as WarehouseInterface;
 
 		if (!warehouse) {
 			redirect(307, appPath("warehouses"));

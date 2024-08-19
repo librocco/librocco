@@ -27,47 +27,76 @@
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
+	// TEMP
+	import { readable } from "svelte/store";
+
 	const { db, status } = getDB();
 
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
-		?.stream()
-		.warehouseMap(warehouseListCtx)
-		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+	// const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
+	// const warehouseListStream = db
+	// 	?.stream()
+	// 	.warehouseMap(warehouseListCtx)
+	// 	/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
+	// 	.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
+
+	// const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+	//
+	// TEMP
+	const warehouseList = readable([]);
 
 	let initialized = false;
 	onMount(() => {
 		if (status) {
-			firstValueFrom(warehouseListStream).then((wls) => (initialized = true));
+			// firstValueFrom(warehouseListStream).then(() => (initialized = true));
+			//
+			// TEMP
+			initialized = true;
 		} else {
 			goto(appPath("settings"));
 		}
 	});
 
-	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
-		await db?.warehouse(warehouseId).delete();
-		open.set(false);
-	};
+	// const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
+	// 	await db?.warehouse(warehouseId).delete();
+	// 	open.set(false);
+	// };
+	//
+	// TEMP
+	const handleDeleteWarehouse = (id: string, name: string) => () => Promise.resolve();
 
 	/**
 	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
-	const handleCreateWarehouse = async () => {
-		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		await goto(appPath("warehouses", warehouse.id));
-	};
+	// const handleCreateWarehouse = async () => {
+	// 	const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
+	// 	await goto(appPath("warehouses", warehouse.id));
+	// };
+	//
+	// TEMP
+	import { handleCreateWarehouse } from "$lib/temp";
+
+	// const handleUpdateWarehouse = async ({ id, name, discount }: { id: string; name: string; discount: number }) => {
+	// 	const warehouseInterface = db.warehouse(id);
+	// 	await warehouseInterface.setName({}, name);
+	// 	await warehouseInterface.setDiscount({}, discount);
+	// 	open.set(false);
+	// };
+	//
+	// TEMP
+	const handleUpdateWarehouse = async (x: any) => {};
 
 	/**
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateNote = (warehouseId: string) => async () => {
-		const note = await db?.warehouse(warehouseId).note().create();
-		await goto(appPath("inbound", note.id));
-	};
+	// const handleCreateNote = (warehouseId: string) => async () => {
+	// 	const note = await db?.warehouse(warehouseId).note().create();
+	// 	await goto(appPath("inbound", note.id));
+	// };
+	//
+	// TEMP
+	const handleCreateNote = (warehouseId: string) => async () => {};
 
 	const dialog = createDialog({ forceVisible: true });
 	const {
@@ -104,7 +133,7 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -158,7 +187,7 @@
 											type: "edit"
 										};
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Edit class="text-gray-400" size={20} />
 									<span class="text-gray-700">Edit</span>
@@ -170,7 +199,7 @@
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Table2 class="text-gray-400" size={20} />
 									<span class="text-gray-700">View Stock</span>
@@ -198,7 +227,7 @@
 											type: "delete"
 										};
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+									class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Trash2 class="text-white" size={20} />
 									<span class="text-white">Delete</span>
@@ -236,14 +265,9 @@
 							dataType: "json",
 							validators: warehouseSchema,
 							validationMethod: "submit-only",
-							onUpdated: async ({ form }) => {
-								const { id, name, discount } = form?.data;
-								const warehouseInterface = db.warehouse(id);
-
-								await warehouseInterface.setName({}, name);
-								await warehouseInterface.setDiscount({}, discount);
-
-								open.set(false);
+							onUpdated: ({ form }) => {
+								const { id, name, discount } = form?.data || {};
+								return handleUpdateWarehouse({ id, name, discount });
 							}
 						}}
 						onCancel={() => open.set(false)}
