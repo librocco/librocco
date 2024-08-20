@@ -4,6 +4,7 @@ import { baseURL } from "./constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
 import { book1 } from "@/integration/data";
+import { getDbHandleTemp, handleCreateWarehouse, setWarehouseName } from "@/helpers/db";
 
 test.beforeEach(async ({ page }) => {
 	// Load the app
@@ -36,19 +37,26 @@ test("should delete the warehouse on delete button click (after confirming the p
 	await content.entityList("warehouse-list").waitFor();
 
 	// Create two warehouses to work with
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-2")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 2"))
-	);
+	// const dbHandle = await getDbHandle(page);
+	// await dbHandle.evaluate((db) =>
+	// 	db
+	// 		.warehouse("warehouse-1")
+	// 		.create()
+	// 		.then((w) => w.setName({}, "Warehouse 1"))
+	// );
+	// await dbHandle.evaluate((db) =>
+	// 	db
+	// 		.warehouse("warehouse-2")
+	// 		.create()
+	// 		.then((w) => w.setName({}, "Warehouse 2"))
+	// );
+	//
+	// TEMP
+	const dbHandleTemp = await getDbHandleTemp(page);
+	await handleCreateWarehouse(dbHandleTemp, "warehouse-1");
+	await setWarehouseName(dbHandleTemp, "warehouse-1", "Warehouse 1");
+	await handleCreateWarehouse(dbHandleTemp, "warehouse-2");
+	await setWarehouseName(dbHandleTemp, "warehouse-2", "Warehouse 2");
 
 	// Wait for the warehouses to appear
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);

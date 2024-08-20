@@ -3,10 +3,10 @@
 	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { firstValueFrom, map } from "rxjs";
+	import { firstValueFrom, map, Observable, pipe } from "rxjs";
 	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
 
-	import { entityListView, filter, testId } from "@librocco/shared";
+	import { entityListView, filter, testId, debug } from "@librocco/shared";
 	import { NEW_WAREHOUSE } from "@librocco/db";
 
 	import { goto } from "$lib/utils/navigation";
@@ -28,9 +28,10 @@
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	// TEMP
-	import { readable } from "svelte/store";
+	import { readable, type Readable } from "svelte/store";
 
-	const { db, status } = getDB();
+	// const { db, status } = getDB();
+	const { status } = getDB();
 
 	// const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
 	// const warehouseListStream = db
@@ -42,7 +43,30 @@
 	// const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
 	//
 	// TEMP
-	const warehouseList = readable([]);
+	export const readableFromStreamTemp = <T>(ctx: debug.DebugCtx, observable: Observable<T> | undefined, fallback: T): Readable<T> => {
+		return readable<T>(fallback, (set) => {
+			if (!observable) {
+				debug.log(ctx, "readable_from_stream: stream not provided:fallback:")(fallback);
+				// eslint-disable-next-line @typescript-eslint/no-empty-function
+				return () => {};
+			}
+
+			const observer = observable.subscribe({
+				next: (value) => {
+					debug.log(ctx, "redable_from_stream:update")(value);
+					set(value || fallback);
+				},
+				error: (error) => {
+					console.log({ error });
+				}
+			});
+
+			return () => observer.unsubscribe();
+		});
+	};
+	import { streamWarehouseMap } from "$lib/temp";
+	const warehouseListStream = streamWarehouseMap()?.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("all"))]));
+	const warehouseList = readableFromStream({}, warehouseListStream, []);
 
 	let initialized = false;
 	onMount(() => {
@@ -62,7 +86,8 @@
 	// };
 	//
 	// TEMP
-	const handleDeleteWarehouse = (id: string, name: string) => () => Promise.resolve();
+	import { handleDeleteWarehouse as hdw } from "$lib/temp";
+	const handleDeleteWarehouse = (id: string) => () => hdw(id).then(() => open.set(false));
 
 	/**
 	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
@@ -212,7 +237,7 @@
 									on:m-click={() => {
 										deleteWarehouse = { id: warehouseId, displayName };
 										dialogContent = {
-											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											onConfirm: handleDeleteWarehouse(warehouseId),
 											title: dialogTitle.delete(displayName),
 											description: dialogDescription.deleteWarehouse(totalBooks),
 											type: "delete"
@@ -221,7 +246,7 @@
 									on:m-keydown={() => {
 										deleteWarehouse = { id: warehouseId, displayName };
 										dialogContent = {
-											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											onConfirm: handleDeleteWarehouse(warehouseId),
 											title: dialogTitle.delete(displayName),
 											description: dialogDescription.deleteWarehouse(totalBooks),
 											type: "delete"
@@ -284,7 +309,7 @@
 							SPA: true,
 							dataType: "json",
 							validationMethod: "submit-only",
-							onSubmit: handleDeleteWarehouse(deleteWarehouse.id, deleteWarehouse.displayName)
+							onSubmit: handleDeleteWarehouse(deleteWarehouse.id)
 						}}
 					/>
 				</div>

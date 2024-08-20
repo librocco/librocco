@@ -5,6 +5,9 @@ import { database } from "crstore/svelte";
 import { goto } from "./utils/navigation";
 import { appPath } from "./paths";
 import type { WarehouseData } from "@librocco/db";
+import { map, Observable } from "rxjs";
+import { asc } from "@librocco/shared";
+import type { Readable } from "svelte/store";
 
 let db: ReturnType<typeof createSQLite> | null = null;
 const createSQLite = () => database(schema, { name: "temp" });
@@ -142,4 +145,36 @@ export const getWarehouse = async (id: string): Promise<WarehouseData> => {
 	const conn = await getSQLite().connection;
 	const warehouse = await conn.selectFrom("warehouses").where("id", "==", id).selectAll().executeTakeFirst();
 	return warehouse;
+};
+
+export const observableFromStore = <T>(store: Readable<T>): Observable<T> => {
+	return new Observable((subscriber) => {
+		const unsubscribe = store.subscribe((value) => {
+			subscriber.next(value);
+		});
+		return unsubscribe;
+	});
+};
+
+// TODO: implement this on the db interface + add unit test
+export const handleDeleteWarehouse = (id: string) => {
+	console.log("handleDeleteWarehouse", id);
+	return getSQLite()?.update((db) => db.deleteFrom("warehouses").where("id", "==", id).execute());
+};
+
+// #region streams
+
+// Note: Streams seem to be the most problematic part of the app
+export const streamWarehouseMap = () => {
+	const db = getSQLite();
+	if (!db) return undefined;
+
+	return observableFromStore(
+		db.replicated((db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"]))
+	).pipe(
+		// Add a default "all" (pseudo) warehouse
+		map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0 }, ...rows]),
+		map((rows) => rows.sort(asc(({ id }) => id))),
+		map((rows) => new Map(rows.map((r) => [r.id, { ...r, totalBooks: 0 }])))
+	);
 };

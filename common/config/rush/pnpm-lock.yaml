@@ -9,6 +9,13 @@ importers:
   .: {}
 
   ../../apps/e2e:
+    dependencies:
+      crstore:
+        specifier: ~0.23.1
+        version: 0.23.1
+      superstruct:
+        specifier: ~2.0.2
+        version: 2.0.2
     devDependencies:
       '@internationalized/date':
         specifier: ~3.5.2

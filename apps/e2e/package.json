@@ -27,5 +27,9 @@
 		"@types/node": "~20.4.1",
 		"@internationalized/date": "~3.5.2"
 	},
-	"type": "module"
+	"type": "module",
+	"dependencies": {
+	  "crstore": "~0.23.1",
+	  "superstruct": "~2.0.2"
+	}
 }

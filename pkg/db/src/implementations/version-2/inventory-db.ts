@@ -103,6 +103,7 @@ class Database implements InventoryDatabaseInterface {
 				observableFromStore(
 					this._db.replicated((db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"]))
 				).pipe(
+					// TODO: check if this is at all necessary -- inventory/warehouse filters out the default wh
 					// Add a default "all" (pseudo) warehouse
 					map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0 }, ...rows]),
 					map((rows) => rows.sort(asc(({ id }) => id))),

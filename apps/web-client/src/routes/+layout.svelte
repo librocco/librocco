@@ -9,6 +9,7 @@
 	import type { LayoutData } from "./$types";
 	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
+	import { getSQLite } from "$lib/temp";
 
 	export let data: LayoutData & { status: boolean };
 
@@ -23,10 +24,19 @@
 		if (!status) {
 			await goto(appPath("settings"));
 		}
+
 		if (db) {
 			window["db_ready"] = true;
 			window["_db"] = db;
 			window.dispatchEvent(new Event("db_ready"));
+		}
+
+		// TEMP
+		const db_temp = getSQLite();
+		if (db_temp) {
+			window["_db_temp"] = db_temp;
+			window["db_ready_temp"] = true;
+			window.dispatchEvent(new Event("db_ready_temp"));
 		}
 
 		if (pwaInfo) {
