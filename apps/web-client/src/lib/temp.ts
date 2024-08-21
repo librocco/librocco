@@ -10,10 +10,12 @@ import { asc } from "@librocco/shared";
 import type { Readable } from "svelte/store";
 
 let db: ReturnType<typeof createSQLite> | null = null;
-const createSQLite = () => database(schema, { name: "temp" });
+const createSQLite = () => database(schema, { name: "temp", error: console.error });
 
 export const getSQLite = () => {
 	if (browser) {
+		window.schema = schema;
+		window.database = database;
 		db = createSQLite();
 	}
 	return db;
@@ -120,23 +122,28 @@ export const schema = ss.object({
 // #region impl
 
 export const handleCreateWarehouse = async () => {
+	console.log("new warehouse");
 	const id = new Date().toISOString();
 
-	// const seq = await this._getNameSeq();
+	// const seq = await getWarehouseNameSeq();
 	const seq = 1;
 	const displayName = seq === 1 ? "New Warehouse" : `New Warehouse (${seq})`;
 
-	await getSQLite().update((db) =>
+	const db = getSQLite();
+	if (!db) console.log("nodb");
+
+	console.log("creating a warehouse in db");
+	await db.update((db) =>
 		db
 			.insertInto("warehouses")
 			.values({ id, displayName, discountPercentage: 0 })
 			.onConflict((oc) => oc.doNothing())
 			.execute()
 	);
+	console.log("created");
 
-	// const warehouse = this.get();
-	const conn = await getSQLite().connection;
-	const warehouse = await conn.selectFrom("warehouses").where("id", "==", id).selectAll().executeTakeFirst();
+	const warehouse = await getWarehouse(id);
+	console.log("warehouse", warehouse);
 
 	await goto(appPath("warehouses", warehouse.id));
 };
@@ -145,6 +152,28 @@ export const getWarehouse = async (id: string): Promise<WarehouseData> => {
 	const conn = await getSQLite().connection;
 	const warehouse = await conn.selectFrom("warehouses").where("id", "==", id).selectAll().executeTakeFirst();
 	return warehouse;
+};
+
+const getWarehouseNameSeq = async (): Promise<number> => {
+	const conn = await getSQLite().connection;
+	const res = await conn
+		.selectFrom("warehouses as w")
+		.where("w.displayName", "like", "New Warehouse%")
+		.orderBy("w.displayName", "desc")
+		.select("w.displayName")
+		.execute();
+
+	const filtered = res.map(({ displayName }) => displayName).filter((displayName) => /^New Warehouse( \([0-9]+\))?$/.test(displayName));
+
+	// No 'New Warehouse (X)' entries (including "New Warehouse")
+	if (!filtered.length) return 1;
+
+	const match = filtered[0].match(/\([0-9]*\)/);
+
+	// No match found - only "New Warehouse" exists
+	if (!match) return 2;
+
+	return match ? parseInt(match[0].replace(/[()]/g, "")) + 1 : 2;
 };
 
 export const observableFromStore = <T>(store: Readable<T>): Observable<T> => {
