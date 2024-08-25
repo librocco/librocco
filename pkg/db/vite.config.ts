@@ -13,7 +13,7 @@ export default defineConfig({
 			formats: ["es", "cjs"]
 		},
 		rollupOptions: {
-			external: ["svelte", "rxjs", "pouchdb", "crstore"],
+			external: ["svelte", "rxjs", "pouchdb", "crstore", "kysely", "sqlocal"],
 			output: {
 				exports: "named"
 			}
