@@ -6,8 +6,8 @@ import { base } from "$app/paths";
 import { createDB } from "$lib/db";
 
 import type { LayoutLoad } from "./$types";
-import { get } from "svelte/store";
-import { settingsStore } from "$lib/stores";
+// import { get } from "svelte/store";
+// import { settingsStore } from "$lib/stores";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
@@ -26,9 +26,9 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
-		const remoteUrl = get(settingsStore).couchUrl;
+		// const remoteUrl = get(settingsStore).couchUrl;
 
-		const { db, status } = await createDB(remoteUrl);
+		const { db, status } = await createDB("dev");
 
 		if (status) {
 			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
