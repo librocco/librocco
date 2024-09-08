@@ -50,9 +50,13 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 	if (browser) {
 		try {
 			db = newInventoryDatabaseInterface(url);
-			await db.init();
+
+			const ctx = { name: "[db init]", debug: false };
+			await db.init(ctx);
+
 			status = true;
 		} catch (err) {
+			console.error(err);
 			status = false;
 			reason = "Failed to connect to provided URL.";
 		}

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, of } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, of, tap } from "rxjs";
 import { Kysely } from "kysely";
 
-import { asc, wrapIter } from "@librocco/shared";
+import { asc, wrapIter, debug } from "@librocco/shared";
 
 import {
 	Replicator,
@@ -31,11 +31,13 @@ import { createHistoryInterface } from "./history";
 class Database implements InventoryDatabaseInterface {
 	#db: ReturnType<typeof database>;
 	#ready = new BehaviorSubject(false);
+	_sql: ReturnType<typeof database>["sql"];
 
 	private _plugins = newPluginsInterface();
 
 	constructor(name: string) {
 		this.#db = database(name);
+		this._sql = this.#db.sql;
 	}
 
 	async _connection() {
@@ -58,8 +60,16 @@ class Database implements InventoryDatabaseInterface {
 		return createWarehouseInterface(this, id);
 	}
 
-	async init(): Promise<InventoryDatabaseInterface> {
-		await this.warehouse().create();
+	async init(ctx: debug.DebugCtx = {}): Promise<InventoryDatabaseInterface> {
+		debug.log(ctx, "[db init] in progress...")("");
+		await this.#db.init(ctx);
+		debug.log(ctx, "[db init] initialised the core db!")("");
+		this.#ready.next(true);
+		debug.log(ctx, "[db init] db ready!")("");
+
+		debug.log(ctx, "[db init] creating initiali wh...")("");
+		await this.warehouse().create(ctx);
+		debug.log(ctx, "[db init] done!")("");
 		return;
 	}
 
@@ -110,11 +120,14 @@ class Database implements InventoryDatabaseInterface {
 	// TODO
 	stream() {
 		return {
-			warehouseMap: () =>
+			warehouseMap: (ctx: debug.DebugCtx) =>
 				this._stream((db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"])).pipe(
 					// Add a default "all" (pseudo) warehouse
+					map((rows) => rows || []),
+					tap(debug.log(ctx, "warehouse_map:got_res_from_db")),
 					map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0 }, ...rows]),
 					map((rows) => rows.sort(asc(({ id }) => id))),
+					tap(debug.log(ctx, "warehouse_map:sorted")),
 					map((rows) => new Map(rows.map((r) => [r.id, r])))
 				),
 
@@ -172,9 +185,11 @@ class Database implements InventoryDatabaseInterface {
 	}
 }
 
-export const newDatabase: InventoryDatabaseConstructor = (_name, { test = false } = {}) => {
+export const newDatabase: InventoryDatabaseConstructor = (_name = "dev", { test = false } = {}) => {
 	// If testing, we're namespacing the db as SQLite writes to fs, so it's easy to write to the designated folder,
 	// and then, clean up and / or ignore the folder
-	const name = test ? `test-dbs/${_name}` : _name;
+	let name = test ? `test-dbs/${_name}` : _name;
+	name = name.endsWith(".sqlite3") ? name : name + ".sqlite3";
+
 	return new Database(name);
 };
