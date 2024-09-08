@@ -1,7 +1,7 @@
 import { map, Observable, of } from "rxjs";
 import { Kysely, sql } from "crstore";
 
-import { asc, composeCompare } from "@librocco/shared";
+import { asc, composeCompare, debug } from "@librocco/shared";
 
 import { EntriesStreamResult, NoteInterface, VolumeStockClient, WarehouseData, WarehouseStream } from "@/types";
 import { DatabaseSchema, InventoryDatabaseInterface, WarehouseInterface } from "./types";
@@ -30,16 +30,22 @@ class Warehouse implements WarehouseInterface {
 		this._streamEntries().subscribe(this.get.bind(this));
 	}
 
-	private async _getNameSeq(): Promise<number> {
+	private async _getNameSeq(ctx: debug.DebugCtx): Promise<number> {
+		debug.log(ctx, "[WAREHOUSE:_getNameSeq] started...")("");
 		const conn = await this.#db._connection();
+		debug.log(ctx, "[WAREHOUSE:_getNameSeq] got connection!")("");
 		const res = await conn
 			.selectFrom("warehouses as w")
 			.where("w.displayName", "like", "New Warehouse%")
 			.orderBy("w.displayName", "desc")
 			.select("w.displayName")
 			.execute();
+		debug.log(ctx, "[WAREHOUSE:_getNameSeq] got res:")(res);
 
-		const filtered = res.map(({ displayName }) => displayName).filter((displayName) => /^New Warehouse( \([0-9]+\))?$/.test(displayName));
+		const filtered = (res || [])
+			.map(({ displayName }) => displayName)
+			.filter((displayName) => /^New Warehouse( \([0-9]+\))?$/.test(displayName));
+		debug.log(ctx, "[WAREHOUSE:_getNameSeq] filtered:")(filtered);
 
 		// No 'New Warehouse (X)' entries (including "New Warehouse")
 		if (!filtered.length) return 1;
@@ -56,7 +62,7 @@ class Warehouse implements WarehouseInterface {
 		return this.#db
 			._stream((db) => createStockQuery(db, this.id))
 			.pipe(
-				map((rows) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
+				map((rows = []) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
 				map((rows) =>
 					rows.sort(
 						composeCompare(
@@ -75,17 +81,29 @@ class Warehouse implements WarehouseInterface {
 		return this.get();
 	}
 
-	async create(): Promise<WarehouseInterface> {
-		const seq = await this._getNameSeq();
+	async create(ctx: debug.DebugCtx = {}): Promise<WarehouseInterface> {
+		// When creating the default pseudo-warehouse, we're not waiting for the db to be initialised,
+		// as this is the part of the initalisation process itself
+		debug.log(ctx, "[WAREHOUSE:create] started...")("");
+		const seq = await this._getNameSeq(ctx);
+		debug.log(ctx, "[WAREHOUSE:create] got seq:")(seq);
 		const displayName = this.id === "all" ? "All" : seq === 1 ? "New Warehouse" : `New Warehouse (${seq})`;
+		debug.log(ctx, "[WAREHOUSE:create] displayName:")(displayName);
+
+		const createdAt = new Date().toISOString();
+		const updatedAt = createdAt;
+		const values = { id: this.id, displayName, discountPercentage: this.discountPercentage, createdAt, updatedAt };
+		debug.log(ctx, "[WAREHOUSE:create] values:")(values);
 
 		await this.#db._update((db) =>
 			db
 				.insertInto("warehouses")
-				.values({ id: this.id, displayName, discountPercentage: this.discountPercentage })
+				.values(values)
 				.onConflict((oc) => oc.doNothing())
 				.execute()
 		);
+		debug.log(ctx, "[WAREHOUSE:create] done!")("");
+
 		return this.get();
 	}
 
