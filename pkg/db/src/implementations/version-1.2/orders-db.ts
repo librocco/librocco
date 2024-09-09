@@ -93,6 +93,6 @@ class Database implements OrdersDatabaseInterface {
 }
 
 export const newDatabase: OrdersDatabaseConstructor = (name, { test = false } = {}) => {
-	const pouch = test ? new PouchDB(name, { adapter: "memory" }) : new PouchDB(name);
+	const pouch = test ? new PouchDB(name) : new PouchDB(name);
 	return new Database(pouch);
 };
