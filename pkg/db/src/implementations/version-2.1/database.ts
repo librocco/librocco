@@ -52,24 +52,25 @@ export default (name: string) => {
 
 		const createNotesTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS notes (
-			    id INTEGER PRIMARY KEY AUTOINCREMENT,
+			    id TEXT PRIMARY KEY,
 			    displayName TEXT,
-			    warehouseId INTEGER,
+			    warehouseId TEXT,
 			    noteType TEXT,
 			    committed INTEGER,
 			    deleted INTEGER,
 			    defaultWarehouse TEXT,
 			    reconciliationNote INTEGER,
 			    createdAt TEXT,
-			    updatedAt TEXT
+			    updatedAt TEXT,
+			    committedAt TEXT
 			)`);
 			await createReactiveTrigger("notes");
 		};
 
 		const createBookTransactionsTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS bookTransactions (
-			    warehouseId INTEGER,
-			    noteId INTEGER,
+			    warehouseId TEXT,
+			    noteId TEXT,
 			    isbn TEXT,
 			    quantity INTEGER,
 			    updatedAt TEXT
@@ -79,8 +80,8 @@ export default (name: string) => {
 
 		const createCustomItemTransactionsTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS customItemTransactions (
-			    id INTEGER PRIMARY KEY AUTOINCREMENT,
-			    noteId INTEGER,
+			    id TEXT PRIMARY KEY,
+			    noteId TEXT,
 			    title TEXT,
 			    price DECIMAL(5,2),
 			    updatedAt TEXT
