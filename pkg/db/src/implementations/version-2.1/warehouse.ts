@@ -142,7 +142,7 @@ class Warehouse implements WarehouseInterface {
 			discount: () =>
 				this.#db
 					._stream((db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"))
-					.pipe(map((res) => res[0]?.discountPercentage || 0)),
+					.pipe(map((res = []) => res[0]?.discountPercentage || 0)),
 			entries: this._streamEntries.bind(this)
 		};
 	}
