@@ -22,9 +22,9 @@ class Warehouse implements WarehouseInterface {
 	createdAt: string | null = null;
 	updatedAt: string | null = null;
 
-	constructor(db: InventoryDatabaseInterface, id: string) {
+	constructor(db: InventoryDatabaseInterface, id: string | typeof NEW_WAREHOUSE) {
 		this.#db = db;
-		this.id = id;
+		this.id = !id ? "all" : id === NEW_WAREHOUSE ? uniqueTimestamp() : id;
 
 		// Update the instance every time there's a change in values in the db
 		this._streamEntries().subscribe(this.get.bind(this));
