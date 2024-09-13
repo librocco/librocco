@@ -1,4 +1,7 @@
 import { Kysely, SelectQueryNode, type CompiledQuery } from "kysely";
+import { Observable } from "rxjs";
+
+import { debug } from "@librocco/shared";
 
 import type {
 	DatabaseInterface as DI,
@@ -8,7 +11,6 @@ import type {
 	WarehouseInterface as WI,
 	InventoryDatabaseInterface as IDB
 } from "@/types";
-import { Observable } from "rxjs";
 
 export type NoteData = ND;
 export type NoteInterface = NI;
@@ -78,8 +80,10 @@ export type Selectable<T> = {
 	compile(): CompiledQuery;
 	toOperationNode(): SelectQueryNode;
 };
+
 export type SelectedStream<S extends Selectable<any>> = Observable<Awaited<ReturnType<S["execute"]>>>;
 export type SelectedStreamFn<DB extends Record<string, any>> = <S extends Selectable<any>>(
+	ctx: debug.DebugCtx,
 	qb: (db: Kysely<DB>) => S,
 	idPrefix?: string
 ) => SelectedStream<S>;
