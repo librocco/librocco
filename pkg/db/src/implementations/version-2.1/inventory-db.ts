@@ -44,8 +44,8 @@ class Database implements InventoryDatabaseInterface {
 		await firstValueFrom(this.#ready.pipe(filter(Boolean)));
 		return this.#db;
 	}
-	_stream<S extends Selectable<any>>(qb: (db: Kysely<DatabaseSchema>) => S, idPrefix?: string): SelectedStream<S> {
-		return this.#db.stream(qb, idPrefix);
+	_stream<S extends Selectable<any>>(ctx: debug.DebugCtx, qb: (db: Kysely<DatabaseSchema>) => S, idPrefix?: string): SelectedStream<S> {
+		return this.#db.stream(ctx, qb, idPrefix);
 	}
 
 	async _update(cb: (db: Kysely<DatabaseSchema>) => Promise<any>): Promise<void> {
@@ -120,8 +120,8 @@ class Database implements InventoryDatabaseInterface {
 	// TODO
 	stream() {
 		return {
-			warehouseMap: (ctx: debug.DebugCtx) =>
-				this._stream((db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"])).pipe(
+			warehouseMap: (ctx: debug.DebugCtx = {}) =>
+				this._stream(ctx, (db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"])).pipe(
 					// Add a default "all" (pseudo) warehouse
 					map((rows) => rows || []),
 					tap(debug.log(ctx, "warehouse_map:got_res_from_db")),
@@ -132,10 +132,10 @@ class Database implements InventoryDatabaseInterface {
 				),
 
 			// TODO: this should really be changed since we only care about notes (not warehouses without open notes)
-			inNoteList: () => {
+			inNoteList: (ctx: debug.DebugCtx = {}) => {
 				const warehouses = this.stream().warehouseMap({});
 
-				const inNotes = this._stream((db) =>
+				const inNotes = this._stream(ctx, (db) =>
 					db
 						.selectFrom("notes as n")
 						.where("n.committed", "!=", 1)
@@ -169,8 +169,8 @@ class Database implements InventoryDatabaseInterface {
 				);
 			},
 
-			outNoteList: () =>
-				this._stream((db) =>
+			outNoteList: (ctx: debug.DebugCtx = {}) =>
+				this._stream(ctx, (db) =>
 					db
 						.selectFrom("notes")
 						.where("committed", "is not", 1)

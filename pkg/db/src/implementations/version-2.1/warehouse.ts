@@ -58,9 +58,9 @@ class Warehouse implements WarehouseInterface {
 		return match ? parseInt(match[0].replace(/[()]/g, "")) + 1 : 2;
 	}
 
-	private _streamEntries(): Observable<EntriesStreamResult> {
+	private _streamEntries(ctx: debug.DebugCtx = {}): Observable<EntriesStreamResult> {
 		return this.#db
-			._stream((db) => createStockQuery(db, this.id))
+			._stream(ctx, (db) => createStockQuery(db, this.id), `wh_${this.id}_entries`)
 			.pipe(
 				map((rows = []) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
 				map((rows) =>
@@ -138,10 +138,11 @@ class Warehouse implements WarehouseInterface {
 
 	stream(): WarehouseStream {
 		return {
+			// TODO
 			displayName: () => of(this.displayName),
-			discount: () =>
+			discount: (ctx: debug.DebugCtx = {}) =>
 				this.#db
-					._stream((db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"))
+					._stream(ctx, (db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"), "wh_discount")
 					.pipe(map((res = []) => res[0]?.discountPercentage || 0)),
 			entries: this._streamEntries.bind(this)
 		};

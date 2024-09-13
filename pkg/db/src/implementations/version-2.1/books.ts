@@ -14,8 +14,8 @@ class Books implements BooksInterface {
 		this.#db = db;
 	}
 
-	private _streamAll() {
-		return this.#db._stream((db) => db.selectFrom("books").selectAll()).pipe(map((rows) => rows.map(bookRowToBookEntry)));
+	private _streamAll(ctx: debug.DebugCtx = {}) {
+		return this.#db._stream(ctx, (db) => db.selectFrom("books").selectAll()).pipe(map((rows) => rows.map(bookRowToBookEntry)));
 	}
 
 	/**
@@ -76,8 +76,8 @@ class Books implements BooksInterface {
 		);
 	}
 
-	stream(_: any, isbns: string[]): Observable<(BookEntry | undefined)[]> {
-		const bookDataStore = this.#db._stream((db) => db.selectFrom("books").where("isbn", "in", isbns).selectAll());
+	stream(ctx: debug.DebugCtx, isbns: string[]): Observable<(BookEntry | undefined)[]> {
+		const bookDataStore = this.#db._stream(ctx, (db) => db.selectFrom("books").where("isbn", "in", isbns).selectAll());
 
 		return bookDataStore.pipe(
 			// First we construct a lookup map: { isbn => book data }
@@ -87,8 +87,10 @@ class Books implements BooksInterface {
 		);
 	}
 
-	streamPublishers() {
-		return this.#db._stream((db) => db.selectFrom("books").select("publisher").distinct()).pipe(map((res) => res.map((r) => r.publisher)));
+	streamPublishers(ctx: debug.DebugCtx = {}) {
+		return this.#db
+			._stream(ctx, (db) => db.selectFrom("books").select("publisher").distinct())
+			.pipe(map((res) => res.map((r) => r.publisher)));
 	}
 
 	// TODO: investigate SQLite (native) FTS5 instead of js-search
