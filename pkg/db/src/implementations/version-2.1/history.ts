@@ -1,11 +1,9 @@
 import { map } from "rxjs";
 
-import { VolumeStock, wrapIter } from "@librocco/shared";
+import { VolumeStock, wrapIter, debug } from "@librocco/shared";
 
 import { HistoryInterface, NoteType, PastTransaction } from "@/types";
 import { InventoryDatabaseInterface } from "./types";
-
-import {} from "@/helpers";
 
 class History implements HistoryInterface {
 	#db: InventoryDatabaseInterface;
@@ -14,9 +12,9 @@ class History implements HistoryInterface {
 		this.#db = db;
 	}
 
-	stream() {
+	stream(ctx: debug.DebugCtx = {}) {
 		return this.#db
-			._stream((db) =>
+			._stream(ctx, (db) =>
 				db
 					.selectFrom("notes as n")
 					.innerJoin("bookTransactions as t", "n.id", "t.noteId")

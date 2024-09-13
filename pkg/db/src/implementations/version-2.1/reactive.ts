@@ -10,26 +10,38 @@ import {
 	TableNode
 } from "kysely";
 import { Observable } from "rxjs";
+
+import { debug } from "@librocco/shared";
+
 import { Selectable, SelectedStream } from "./types";
+
+type NotifyFn = (table: string) => void;
 
 export class SubsMap {
 	#subscriptions = new Map<string, Set<string>>();
-	#subscribers = new Map<string, () => void>();
+	#subscribers = new Map<string, NotifyFn>();
 
-	private _unsubscribe(id: string) {
+	private _unsubscribe(ctx: debug.DebugCtx, id: string) {
+		debug.log(ctx, "reactive: unsubscribe: id")(id);
 		this.#subscribers.delete(id);
+		debug.log(ctx, "reactive: unsubscribe: subscribers")(`[ ${[...this.#subscribers.keys()].join(",\n  ")} ]`);
 	}
 
-	subscribe(tables: string[], notify: () => void, subscriberPrefix = "") {
+	subscribe(ctx: debug.DebugCtx, tables: string[], notify: NotifyFn, subscriberPrefix = "") {
 		const id = [subscriberPrefix, Date.now().toString(36)].join("_");
+		debug.log(ctx, "reactive: subscribe: id")(id);
 		this.#subscribers.set(id, notify);
+		debug.log(ctx, "reactive: subscribe: subscribers")(`[ ${[...this.#subscribers.keys()].join(",\n  ")} ]`);
 
+		debug.log(ctx, "reactive: subscribe: tables")(`[ ${tables.join(", ")} ]`);
+		debug.log(ctx, "reactive: subscribe: existing tables")(`[ ${[...this.#subscriptions.keys()].join(",\n  ")} ]`);
 		for (const table of tables) {
 			const subscribers = this.#subscriptions.get(table) || this.#subscriptions.set(table, new Set()).get(table)!;
 			subscribers.add(id);
 		}
+		debug.log(ctx, "reactive: subscribe: updated tables:")(`[ ${[...this.#subscriptions.keys()].join(",\n  ")} ]`);
 
-		return () => this._unsubscribe(id);
+		return () => this._unsubscribe(ctx, id);
 	}
 
 	notify(table: string) {
@@ -42,24 +54,27 @@ export class SubsMap {
 				subscriberIds.delete(id);
 				continue;
 			}
-
-			notify();
+			notify(table);
 		}
 	}
 }
-
 export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsMap()) => {
 	return {
 		notify: subsMap.notify.bind(subsMap) as SubsMap["notify"],
-		stream: <S extends Selectable<any>>(qb: (db: K) => S, idPrefix = ""): SelectedStream<S> => {
+		stream: <S extends Selectable<any>>(ctx: debug.DebugCtx, qb: (db: K) => S, idPrefix = ""): SelectedStream<S> => {
 			const q = qb(db);
 			const tables = affectedTables(q.toOperationNode());
 
 			return new Observable<Awaited<ReturnType<S["execute"]>>>((s) => {
 				s.next(undefined);
-				const executeQuery = () => q.execute().then(s.next.bind(s));
-				executeQuery();
-				return subsMap.subscribe(tables, executeQuery, idPrefix);
+				const executeQuery = (table: string) => {
+					debug.log(ctx, "reactive:notify:table")(table);
+					q.execute()
+						.then((x) => x || [])
+						.then(s.next.bind(s));
+				};
+				executeQuery("INITIAL");
+				return subsMap.subscribe(ctx, tables, executeQuery, idPrefix);
 			});
 		}
 	};

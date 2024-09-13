@@ -1,5 +1,5 @@
 import { Kysely, sql } from "crstore";
-import { combineLatest, firstValueFrom, map, Observable, switchMap } from "rxjs";
+import { combineLatest, firstValueFrom, map, Observable, switchMap, tap } from "rxjs";
 
 import { asc, composeCompare, desc, NoteState, VolumeStock, VolumeStockKind, wrapIter, debug } from "@librocco/shared";
 
@@ -75,10 +75,14 @@ class Note implements NoteInterface {
 	}
 
 	/** Used to check for book availability across warehouses */
-	private _streamExistingStock(isbns: string[]): Observable<Map<string, NavMap<{ quantity: number }>>> {
-		const store = this.#db._stream((db) => createExistingStockQuery(db, isbns));
+	private _streamExistingStock(ctx: debug.DebugCtx, isbns: string[]): Observable<Map<string, NavMap<{ quantity: number }>>> {
+		const store = this.#db._stream(ctx, (db) => createExistingStockQuery(db, isbns), `n_${this.id}_existing_stock`);
 
-		return store.pipe(map(createExistingStockMap));
+		return store.pipe(
+			tap(debug.log(ctx, "note:stream:existing_stock:input")),
+			map(createExistingStockMap),
+			tap(debug.log(ctx, "note:stream:existing_stock:res"))
+		);
 	}
 
 	private async _getExistingStock(isbns: string[]): Promise<Map<string, NavMap<{ quantity: number }>>> {
@@ -206,9 +210,9 @@ class Note implements NoteInterface {
 		);
 	}
 
-	private _streamValues() {
+	private _streamValues(ctx: debug.DebugCtx = {}) {
 		return this.#db
-			._stream((db) => db.selectFrom("notes").where("id", "==", this.id).selectAll())
+			._stream(ctx, (db) => db.selectFrom("notes").where("id", "==", this.id).selectAll())
 			.pipe(
 				map(([n]) => n),
 				map((n) => {
@@ -226,7 +230,7 @@ class Note implements NoteInterface {
 			);
 	}
 
-	private _streamEntries(): Observable<EntriesStreamResult> {
+	private _streamEntries(ctx: debug.DebugCtx = {}): Observable<EntriesStreamResult> {
 		// const constructBookEntry = (b: VolumeStockClient<"book">) =>
 		const mergeWarehouseAvailability = (obs: Observable<TimestampedVolumeStockClient<"book">[]>) =>
 			this.noteType === "inbound"
@@ -234,7 +238,7 @@ class Note implements NoteInterface {
 				: obs.pipe(
 						switchMap((books) => {
 							const isbns = books.map((b) => b.isbn);
-							return this._streamExistingStock(isbns).pipe(
+							return this._streamExistingStock(ctx, isbns).pipe(
 								map((availability) =>
 									books.map((b) => ({ ...b, availableWarehouses: availability.get(b.isbn) || new Map() } as TimestampedVolumeStockClient))
 								)
@@ -243,14 +247,20 @@ class Note implements NoteInterface {
 				  );
 
 		const books = this.#db
-			._stream((db) => createBooksQuery(db, this.id))
+			._stream(ctx, (db) => createBooksQuery(db, this.id), `n_${this.id}_entries_books`)
 			.pipe(
-				map((b) => b.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient<"book">))),
-				mergeWarehouseAvailability
+				tap(debug.log(ctx, "note:stream:entries:books")),
+				map((b = []) => b.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient<"book">))),
+				mergeWarehouseAvailability,
+				tap(debug.log(ctx, "note:stream:entries:books:res"))
 			);
 		const customItems = this.#db
-			._stream((db) => createCustomItemsQuery(db, this.id))
-			.pipe(map((ci) => ci.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string }))));
+			._stream(ctx, (db) => createCustomItemsQuery(db, this.id), `n_${this.id}_entries_custom`)
+			.pipe(
+				tap(debug.log(ctx, "note:stream:entries:customItems")),
+				map((ci = []) => ci.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string }))),
+				tap(debug.log(ctx, "note:stream:entries:customItems:res"))
+			);
 
 		return combineLatest([books, customItems]).pipe(
 			map(([books, customItems]) => ({
@@ -260,7 +270,8 @@ class Note implements NoteInterface {
 					// eslint-disable-next-line @typescript-eslint/no-unused-vars
 					.map(({ updatedAt, ...item }) => item),
 				total: books.length
-			}))
+			})),
+			tap(debug.log(ctx, "note:stream:entries:res"))
 		);
 	}
 
