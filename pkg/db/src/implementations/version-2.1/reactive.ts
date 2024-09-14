@@ -14,6 +14,7 @@ import { Observable } from "rxjs";
 import { debug } from "@librocco/shared";
 
 import { Selectable, SelectedStream } from "./types";
+import { uniqueTimestamp } from "@/utils/misc";
 
 type NotifyFn = (table: string) => void;
 
@@ -28,7 +29,7 @@ export class SubsMap {
 	}
 
 	subscribe(ctx: debug.DebugCtx, tables: string[], notify: NotifyFn, subscriberPrefix = "") {
-		const id = [subscriberPrefix, Date.now().toString(36)].join("_");
+		const id = [subscriberPrefix, uniqueTimestamp()].join("_");
 		debug.log(ctx, "reactive: subscribe: id")(id);
 		this.#subscribers.set(id, notify);
 		debug.log(ctx, "reactive: subscribe: subscribers")(`[ ${[...this.#subscribers.keys()].join(",\n  ")} ]`);
@@ -66,7 +67,6 @@ export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsM
 			const tables = affectedTables(q.toOperationNode());
 
 			return new Observable<Awaited<ReturnType<S["execute"]>>>((s) => {
-				s.next(undefined);
 				const executeQuery = (table: string) => {
 					debug.log(ctx, "reactive:notify:table")(table);
 					q.execute()
