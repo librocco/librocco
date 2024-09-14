@@ -41,18 +41,19 @@ export default (name: string) => {
 
 		const createWarehousesTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS warehouses (
-			    id TEXT PRIMARY KEY,
+			    id TEXT,
 			    displayName TEXT,
 			    discountPercentage INTEGER,
 			    createdAt TEXT,
-			    updatedAt TEXT
+			    updatedAt TEXT,
+				PRIMARY KEY (id)
 			)`);
 			await createReactiveTrigger("warehouses");
 		};
 
 		const createNotesTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS notes (
-			    id TEXT PRIMARY KEY,
+			    id TEXT,
 			    displayName TEXT,
 			    warehouseId TEXT,
 			    noteType TEXT,
@@ -62,7 +63,8 @@ export default (name: string) => {
 			    reconciliationNote INTEGER,
 			    createdAt TEXT,
 			    updatedAt TEXT,
-			    committedAt TEXT
+			    committedAt TEXT,
+				PRIMARY KEY (id)
 			)`);
 			await createReactiveTrigger("notes");
 		};
@@ -73,24 +75,26 @@ export default (name: string) => {
 			    noteId TEXT,
 			    isbn TEXT,
 			    quantity INTEGER,
-			    updatedAt TEXT
+			    updatedAt TEXT,
+				PRIMARY KEY (warehouseId, noteId, isbn)
             )`);
 			await createReactiveTrigger("bookTransactions");
 		};
 
 		const createCustomItemTransactionsTable = async () => {
 			await sql(`CREATE TABLE IF NOT EXISTS customItemTransactions (
-			    id TEXT PRIMARY KEY,
+			    id TEXT,
 			    noteId TEXT,
 			    title TEXT,
 			    price DECIMAL(5,2),
-			    updatedAt TEXT
+			    updatedAt TEXT,
+				PRIMARY KEY (id)
             )`);
 			await createReactiveTrigger("customItemTransactions");
 		};
 
 		const createBookDataTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS bookData (
+			await sql(`CREATE TABLE IF NOT EXISTS books (
 			    isbn TEXT,
 			    title TEXT,
 			    price DECIMAL(5,2),
@@ -100,9 +104,10 @@ export default (name: string) => {
 			    editedBy TEXT,
 			    outOfPrint INTEGER,
 			    category TEXT,
-			    updatedAt TEXT
+			    updatedAt TEXT,
+				PRIMARY KEY (isbn)
             )`);
-			await createReactiveTrigger("bookData");
+			await createReactiveTrigger("books");
 		};
 
 		await createWarehousesTable();
