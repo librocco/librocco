@@ -49,6 +49,7 @@ class Note implements NoteInterface {
 
 		// Update the instance every time there's a change in values in the db
 		this._streamEntries().subscribe(this.get.bind(this));
+		this._streamValues().subscribe(this.get.bind(this));
 	}
 
 	private async _getNameSeq(): Promise<number> {

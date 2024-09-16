@@ -28,6 +28,7 @@ class Warehouse implements WarehouseInterface {
 
 		// Update the instance every time there's a change in values in the db
 		this._streamEntries().subscribe(this.get.bind(this));
+		this._streamValues().subscribe(this.get.bind(this));
 	}
 
 	private async _getNameSeq(ctx: debug.DebugCtx): Promise<number> {
@@ -56,6 +57,22 @@ class Warehouse implements WarehouseInterface {
 		if (!match) return 2;
 
 		return match ? parseInt(match[0].replace(/[()]/g, "")) + 1 : 2;
+	}
+
+	private _streamValues(ctx: debug.DebugCtx = {}) {
+		return this.#db
+			._stream(ctx, (db) => db.selectFrom("warehouses").where("id", "==", this.id).selectAll())
+			.pipe(
+				map(([w]) => w),
+				map((w) => {
+					if (!w) return undefined;
+
+					const { ...warehouse } = w;
+					return {
+						...warehouse
+					};
+				})
+			);
 	}
 
 	private _streamEntries(ctx: debug.DebugCtx = {}): Observable<EntriesStreamResult> {
