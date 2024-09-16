@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, test } from "vitest";
 import { firstValueFrom, toArray } from "rxjs";
 import { Search } from "js-search";
 
-import { NoteState, testUtils, VolumeStock } from "@librocco/shared";
+import { NoteState, StockMap, testUtils, VolumeStock } from "@librocco/shared";
 
 import { BookEntry, InNoteMap, NavMap, PastTransactionsMap, SearchIndex, VolumeStockClient, WarehouseData } from "@/types";
 
@@ -2287,6 +2287,122 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await wInst2.setName({}, "Warehouse 1's name");
 
 		await waitFor(() => expect(wInst1).toEqual(wInst2));
+	});
+
+	test("stock stream", async () => {
+		// Create a displayName "store" for the note
+		let stock: StockMap = EMPTY as any;
+
+		db.stream()
+			.stock()
+			.subscribe(($s) => (stock = $s));
+
+		// Initial stream should be an empty map
+		await waitFor(() => expect(stock).toEqual(new StockMap()));
+
+		const wh1 = await db.warehouse("wh1").create();
+		await wh1
+			.note("note-1")
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.commit());
+
+		await waitFor(() => expect([...stock.isbn("1111111111")]).toEqual([[["1111111111", "wh1"], { quantity: 2 }]]));
+		await waitFor(() => expect([...stock.warehouse("wh1")]).toEqual([[["1111111111", "wh1"], { quantity: 2 }]]));
+		await waitFor(() => expect(stock.get(["1111111111", "wh1"])).toEqual({ quantity: 2 }));
+
+		await wh1
+			.note("note-2")
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.commit());
+
+		await waitFor(() => expect([...stock.isbn("1111111111")]).toEqual([[["1111111111", "wh1"], { quantity: 2 }]]));
+		await waitFor(() => expect([...stock.isbn("2222222222")]).toEqual([[["2222222222", "wh1"], { quantity: 3 }]]));
+		await waitFor(() =>
+			expect([...stock.warehouse("wh1")]).toEqual([
+				[["1111111111", "wh1"], { quantity: 2 }],
+				[["2222222222", "wh1"], { quantity: 3 }]
+			])
+		);
+		await waitFor(() => expect(stock.get(["1111111111", "wh1"])).toEqual({ quantity: 2 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh1"])).toEqual({ quantity: 3 }));
+
+		const wh2 = await db.warehouse("wh2").create();
+		await wh2
+			.note("note-3")
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 5 }))
+			.then((n) => n.commit({}));
+
+		await waitFor(() => expect([...stock.isbn("1111111111")]).toEqual([[["1111111111", "wh1"], { quantity: 2 }]]));
+		await waitFor(() =>
+			expect([...stock.isbn("2222222222")]).toEqual([
+				[["2222222222", "wh1"], { quantity: 3 }],
+				[["2222222222", "wh2"], { quantity: 5 }]
+			])
+		);
+		await waitFor(() =>
+			expect([...stock.warehouse("wh1")]).toEqual([
+				[["1111111111", "wh1"], { quantity: 2 }],
+				[["2222222222", "wh1"], { quantity: 3 }]
+			])
+		);
+		await waitFor(() => expect([...stock.warehouse("wh2")]).toEqual([[["2222222222", "wh2"], { quantity: 5 }]]));
+		await waitFor(() => expect(stock.get(["1111111111", "wh1"])).toEqual({ quantity: 2 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh1"])).toEqual({ quantity: 3 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh2"])).toEqual({ quantity: 5 }));
+
+		await wh1
+			.note("note-4")
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.commit({}));
+
+		await waitFor(() => expect([...stock.isbn("1111111111")]).toEqual([[["1111111111", "wh1"], { quantity: 4 }]]));
+		await waitFor(() =>
+			expect([...stock.isbn("2222222222")]).toEqual([
+				[["2222222222", "wh1"], { quantity: 3 }],
+				[["2222222222", "wh2"], { quantity: 5 }]
+			])
+		);
+		await waitFor(() =>
+			expect([...stock.warehouse("wh1")]).toEqual([
+				[["1111111111", "wh1"], { quantity: 4 }],
+				[["2222222222", "wh1"], { quantity: 3 }]
+			])
+		);
+		await waitFor(() => expect([...stock.warehouse("wh2")]).toEqual([[["2222222222", "wh2"], { quantity: 5 }]]));
+		await waitFor(() => expect(stock.get(["1111111111", "wh1"])).toEqual({ quantity: 4 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh1"])).toEqual({ quantity: 3 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh2"])).toEqual({ quantity: 5 }));
+
+		await db
+			.warehouse()
+			.note("note-5")
+			.create()
+			.then((n) =>
+				n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 2, warehouseId: "wh2" })
+			)
+			.then((n) => n.commit({}));
+
+		await waitFor(() => expect([...stock.isbn("1111111111")]).toEqual([[["1111111111", "wh1"], { quantity: 3 }]]));
+		await waitFor(() =>
+			expect([...stock.isbn("2222222222")]).toEqual([
+				[["2222222222", "wh1"], { quantity: 3 }],
+				[["2222222222", "wh2"], { quantity: 3 }]
+			])
+		);
+		await waitFor(() =>
+			expect([...stock.warehouse("wh1")]).toEqual([
+				[["1111111111", "wh1"], { quantity: 3 }],
+				[["2222222222", "wh1"], { quantity: 3 }]
+			])
+		);
+		await waitFor(() => expect([...stock.warehouse("wh2")]).toEqual([[["2222222222", "wh2"], { quantity: 3 }]]));
+		await waitFor(() => expect(stock.get(["1111111111", "wh1"])).toEqual({ quantity: 3 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh1"])).toEqual({ quantity: 3 }));
+		await waitFor(() => expect(stock.get(["2222222222", "wh2"])).toEqual({ quantity: 3 }));
 	});
 
 	test("bookFetcherPlugin", async () => {
