@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, of, tap } from "rxjs";
+import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, tap } from "rxjs";
 import { Kysely } from "kysely";
 
-import { asc, wrapIter, debug } from "@librocco/shared";
+import { asc, wrapIter, debug, StockMap, VolumeStockInput } from "@librocco/shared";
 
 import {
 	Replicator,
@@ -180,7 +180,14 @@ class Database implements InventoryDatabaseInterface {
 				).pipe(map((rows) => new Map(rows.map((r) => [r.id, r])))),
 
 			// TODO: might not be necessary as part of public API
-			stock: () => of(new Map() as any)
+			stock: () =>
+				this._stream({}, (db) =>
+					db
+						.selectFrom("notes as n")
+						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
+						.where("n.committed", "==", 1)
+						.select(["isbn", "noteType", "txn.warehouseId", "quantity"])
+				).pipe(map((x) => StockMap.fromDbRows(x as VolumeStockInput[])))
 		} as DbStream;
 	}
 }
