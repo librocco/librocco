@@ -1,4 +1,4 @@
-import { map, Observable, of } from "rxjs";
+import { map, Observable } from "rxjs";
 import { Kysely, sql } from "crstore";
 
 import { asc, composeCompare, debug } from "@librocco/shared";
@@ -156,7 +156,7 @@ class Warehouse implements WarehouseInterface {
 	stream(): WarehouseStream {
 		return {
 			// TODO
-			displayName: () => of(this.displayName),
+			displayName: () => this._streamValues().pipe(map((w) => w?.displayName || "")),
 			discount: (ctx: debug.DebugCtx = {}) =>
 				this.#db
 					._stream(ctx, (db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"), "wh_discount")
