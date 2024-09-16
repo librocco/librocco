@@ -946,6 +946,38 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		});
 	});
 
+	test("stream warehouse values according to spec", async () => {
+		const warehouse = await db.warehouse("wh1").create();
+
+		const { discount: discountStream, displayName: displayNameStram } = warehouse.stream();
+
+		// Check for inital values
+		expect(await firstValueFrom(discountStream({}))).toEqual(0);
+		expect(await firstValueFrom(displayNameStram({}))).toEqual("New Warehouse");
+
+		await warehouse.setDiscount({}, 5);
+		await warehouse.setName({}, "Warehouse 1");
+
+		let discount: PossiblyEmpty<number> = EMPTY;
+		let displayName: PossiblyEmpty<string> = EMPTY;
+
+		discountStream({}).subscribe((d) => (discount = d));
+		displayNameStram({}).subscribe((dn) => (displayName = dn));
+
+		// Check that the stream gets initialised with current values
+		await waitFor(() => {
+			expect(discount).toEqual(5);
+			expect(displayName).toEqual("Warehouse 1");
+		});
+
+		// Check for updates
+		await warehouse.setDiscount({}, 15);
+		await warehouse.setName({}, "Warehouse 1 - updated");
+
+		await waitFor(() => expect(discount).toEqual(15));
+		await waitFor(() => expect(displayName).toEqual("Warehouse 1 - updated"));
+	});
+
 	test("outboundNoteAvailableWarehouses", async () => {
 		// Create two warehouses to work with
 		const wh1 = await db
