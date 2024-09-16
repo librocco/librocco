@@ -85,9 +85,8 @@ class Note implements NoteInterface {
 		);
 	}
 
-	private async _getExistingStock(isbns: string[]): Promise<Map<string, NavMap<{ quantity: number }>>> {
-		const conn = await this.#db._connection();
-		return createExistingStockQuery(conn, isbns).execute().then(createExistingStockMap);
+	private async _getExistingStock() {
+		return firstValueFrom(this.#db.stream().stock());
 	}
 
 	private async _update({ committed, reconciliationNote, ...data }: Partial<DatabaseSchema["notes"]>): Promise<NoteInterface> {
@@ -123,7 +122,7 @@ class Note implements NoteInterface {
 
 	private async _getOutOfStockTransactions(_entries: VolumeStockClient[]): Promise<OutOfStockTransaction[]> {
 		const entries = _entries.filter(isBookRow);
-		const stock = await this._getExistingStock(entries.map(({ isbn }) => isbn));
+		const stock = await this._getExistingStock();
 		const warehouseMap = await firstValueFrom(this.#db.stream().warehouseMap({}));
 		return (
 			entries
@@ -131,7 +130,7 @@ class Note implements NoteInterface {
 					isbn,
 					quantity,
 					warehouseId,
-					available: stock.get(isbn)?.get(warehouseId)?.quantity || 0,
+					available: stock.get([isbn, warehouseId])?.quantity || 0,
 					warehouseName: warehouseMap.get(warehouseId)?.displayName || "unkonwn"
 				}))
 				// Filter out transactions that are valid
@@ -476,9 +475,9 @@ class Note implements NoteInterface {
 		}
 
 		const entries = await this.getEntries().then((rows) => rows.filter(isBookRow));
-		const stock = await this._getExistingStock(entries.map(({ isbn }) => isbn));
+		const stock = await this._getExistingStock();
 
-		const getQuantity = (isbn: string, warehouseId: string) => stock.get(isbn)?.get(warehouseId)?.quantity || 0;
+		const getQuantity = (isbn: string, warehouseId: string) => stock.get([isbn, warehouseId])?.quantity || 0;
 
 		const toUpdate = wrapIter(entries)
 			// Custom items are irrelevant for this action
