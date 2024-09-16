@@ -21,7 +21,7 @@
 		?.stream()
 		.warehouseMap(warehouseListCtx)
 		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("0-all"))]));
+		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("all"))]));
 	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
 
 	let initialised = false;
