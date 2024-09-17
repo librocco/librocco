@@ -158,14 +158,14 @@ class Database implements InventoryDatabaseInterface {
 						// TODO: this should also probably be removed (delete should delete)
 						.where("n.deleted", "!=", 1)
 						.where("n.noteType", "==", "inbound")
-						.select(["id", "n.warehouseId", "displayName", (qb) => qb.fn.sum("txn.quantity").as("totalBooks")])
+						.select(["id", "n.warehouseId", "displayName", "n.updatedAt", (qb) => qb.fn.sum("txn.quantity").as("totalBooks")])
 						.groupBy("n.id")
 				).pipe(
 					map((notes) =>
 						wrapIter(notes)
-							._group(({ warehouseId, id, displayName, totalBooks }) => [
+							._group(({ warehouseId, id, displayName, updatedAt, totalBooks }) => [
 								warehouseId,
-								[id, { displayName, totalBooks: totalBooks || 0 }] as const
+								[id, { displayName, updatedAt, totalBooks: totalBooks || 0 }] as const
 							])
 							.map(([id, notes]) => [id, new Map(notes)] as const)
 					),

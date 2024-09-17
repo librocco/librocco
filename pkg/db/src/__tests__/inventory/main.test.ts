@@ -1591,235 +1591,293 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 
 	test("inNotesStream", async () => {
 		const inl$ = db.stream().inNoteList({});
-		let inNoteList: PossiblyEmpty<InNoteList> = EMPTY;
-		let actual: PossiblyEmpty<InNoteMap> = EMPTY;
+		let inNoteList: InNoteList = EMPTY as any;
 
 		// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 		const warehouse1 = await db.warehouse("warehouse-1").create();
-		inl$.subscribe((inl) => {
-			inNoteList = inNoteMapToInNoteList(inl);
-			actual = inl;
+		inl$.subscribe((inl) => (inNoteList = inNoteMapToInNoteList(inl)));
+
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{ id: "all", displayName: "All", notes: [] },
+				{ id: "warehouse-1", displayName: "New Warehouse", notes: [] }
+			]);
 		});
 
-		try {
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [] },
-					{ id: "warehouse-1", displayName: "New Warehouse", notes: [] }
-				]);
-			});
+		// When a new inbound note is created, it should be added to the list (for both the particular warehouse, as well as the default warehouse)
+		const note1 = await warehouse1.note().create();
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [
+						{
+							id: note1.id,
+							displayName: "New Note",
+							totalBooks: 0,
+							updatedAt: expect.any(String)
+						}
+					]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [
+						{
+							id: note1.id,
+							displayName: "New Note",
+							totalBooks: 0,
+							updatedAt: expect.any(String)
+						}
+					]
+				}
+			]);
+		});
 
-			// When a new inbound note is created, it should be added to the list (for both the particular warehouse, as well as the default warehouse)
-			const note1 = await warehouse1.note().create();
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Note", totalBooks: 0 }] },
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [
-							{
-								id: note1.id,
-								displayName: "New Note",
-								totalBooks: 0
-							}
-						]
-					}
-				]);
-			});
+		// Keep track of updatedAt values for all notes
+		const updatedAtMap = UpdatedAtMap.inbound(inNoteList);
 
-			// Updating of the note name should be reflected in the stream
-			await note1.setName({}, "New Name");
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }] },
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
-					}
-				]);
-			});
+		// Updating of the note name should be reflected in the stream
+		await note1.setName({}, "New Name");
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]
+				}
+			]);
+		});
 
-			// Adding a note in another warehouse should add it to a particular warehouse, as well as the default warehouse
-			const note2 = await db.warehouse("warehouse-2").note().create();
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [
-							{ id: note1.id, displayName: "New Name", totalBooks: 0 },
-							{ id: note2.id, displayName: "New Note", totalBooks: 0 }
-						]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
-					},
-					{
-						id: "warehouse-2",
-						displayName: "New Warehouse (2)",
-						notes: [{ id: note2.id, displayName: "New Note", totalBooks: 0 }]
-					}
-				]);
-			});
+		updatedAtMap.update(inNoteList);
 
-			// Deleting a note should remove it from the list (but the warehouse should still be there)
-			await note2.delete({});
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }] },
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
+		// Adding a note in another warehouse should add it to a particular warehouse, as well as the default warehouse
+		const note2 = await db.warehouse("warehouse-2").note().create();
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [
+						{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) },
+						{ id: note2.id, displayName: "New Note", totalBooks: 0, updatedAt: expect.any(String) }
+					]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-2",
+					displayName: "New Warehouse (2)",
+					notes: [{ id: note2.id, displayName: "New Note", totalBooks: 0, updatedAt: expect.any(String) }]
+				}
+			]);
+		});
 
-			// Outbound notes should not be included in the list
-			await db.warehouse().note().create();
-			// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
-			// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
-			// only the latter took place.
-			await note1.setName({}, "New Note - Updated");
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
+		updatedAtMap.update(inNoteList);
 
-			// Should not stream committed notes
-			const note3 = await warehouse1.note().create();
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [
-							{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
-							{
-								id: note3.id,
-								// There's already an outbound note with the name "New Note"
-								displayName: "New Note (2)",
-								totalBooks: 0
-							}
-						]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [
-							{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
-							{ id: note3.id, displayName: "New Note (2)", totalBooks: 0 }
-						]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
+		// Deleting a note should remove it from the list (but the warehouse should still be there)
+		await note2.delete({});
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
 
-			await note3.commit({}, { force: true });
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
+		updatedAtMap.update(inNoteList);
 
-			// Adding books to a note should be reflected in the stream
-			await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
+		// Outbound notes should not be included in the list
+		await db.warehouse().note().create();
+		// Testing the async update which shouldn't happen is a bit tricky, so we're applying additional update
+		// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
+		// only the latter took place.
+		await note1.setName({}, "New Note - Updated");
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
 
-			await note1.removeTransactions({}, { isbn: "11111111", warehouseId: warehouse1.id });
-			await waitFor(() => {
-				expect(inNoteList).toEqual([
-					{
-						id: "all",
-						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]
-					},
-					{
-						id: "warehouse-1",
-						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]
-					},
-					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
-				]);
-			});
-		} catch (err) {
-			console.log(actual);
-			throw err;
-		}
+		updatedAtMap.update(inNoteList);
+
+		// Should not stream committed notes
+		const note3 = await warehouse1.note().create();
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [
+						{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) },
+						{
+							id: note3.id,
+							// There's already an outbound note with the name "New Note"
+							displayName: "New Note (2)",
+							totalBooks: 0,
+							updatedAt: expect.any(String)
+						}
+					]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [
+						{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) },
+						{ id: note3.id, displayName: "New Note (2)", totalBooks: 0, updatedAt: expect.any(String) }
+					]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
+
+		updatedAtMap.update(inNoteList);
+
+		await note3.commit({}, { force: true });
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
+
+		updatedAtMap.update(inNoteList);
+
+		// Adding books to a note should be reflected in the stream
+		await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4, updatedAt: expect.any(String) }]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
+
+		updatedAtMap.update(inNoteList);
+
+		await note1.removeTransactions({}, { isbn: "11111111", warehouseId: warehouse1.id });
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
+		await waitFor(() => {
+			expect(inNoteList).toEqual([
+				{
+					id: "all",
+					displayName: "All",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2, updatedAt: expect.any(String) }]
+				},
+				{
+					id: "warehouse-1",
+					displayName: "New Warehouse",
+					notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2, updatedAt: expect.any(String) }]
+				},
+				{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+			]);
+		});
 	});
 
 	test("outNotesStream", async () => {
 		const onl$ = db.stream().outNoteList({});
-		let outNoteList: PossiblyEmpty<NavListEntry[]> = EMPTY;
+		let outNoteList: NavListEntry<{ updatedAt: string }>[] = EMPTY as any;
 
 		// The stream should be initialized with the existing documents (it should display current state, not only the changes)
 		const note1 = await db.warehouse().note().create();
 		// Subscribe after the initial update to test the initial state being streamed
 		onl$.subscribe((onl) => (outNoteList = navMapToNavList(onl)));
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0, updatedAt: expect.any(String) }]);
 		});
+
+		// Keep track of updatedAt values for all notes
+		const updatedAtMap = UpdatedAtMap.outbound(outNoteList);
 
 		// Add another note
 		const note2 = await db.warehouse().note().create();
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
 		await waitFor(() => {
 			expect(outNoteList).toEqual([
-				{ id: note1.id, displayName: "New Note", totalBooks: 0 },
-				{ id: note2.id, displayName: "New Note (2)", totalBooks: 0 }
+				{ id: note1.id, displayName: "New Note", totalBooks: 0, updatedAt: expect.any(String) },
+				{ id: note2.id, displayName: "New Note (2)", totalBooks: 0, updatedAt: expect.any(String) }
 			]);
 		});
 
+		updatedAtMap.update(outNoteList);
+
 		// Deleting the note should be reflected in the stream
 		await note2.delete({});
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0, updatedAt: expect.any(String) }]);
 		});
+
+		updatedAtMap.update(outNoteList);
 
 		// Change of note display name should be reflected in the stream
 		await note1.setName({}, "New Name");
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Name", totalBooks: 0 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Name", totalBooks: 0, updatedAt: expect.any(String) }]);
 		});
+
+		updatedAtMap.update(outNoteList);
 
 		// Inbound notes should not be included in the list
 		await db.warehouse("warehouse-1").note().create();
@@ -1827,34 +1885,53 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// which, most certainly should happen, but would happen after the not-wanted update, so we can assert that
 		// only the latter took place.
 		await note1.setName({}, "New Note - Updated");
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]);
 		});
+
+		updatedAtMap.update(outNoteList);
 
 		// Should not stream committed notes
 		const note3 = await db.warehouse().note().create();
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
 		await waitFor(() => {
 			expect(outNoteList).toEqual([
-				{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
+				{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) },
 				// There's already an inbound note with the name "New Note"
-				{ id: note3.id, displayName: "New Note (2)", totalBooks: 0 }
+				{ id: note3.id, displayName: "New Note (2)", totalBooks: 0, updatedAt: expect.any(String) }
 			]);
 		});
 
+		updatedAtMap.update(outNoteList);
+
 		await note3.commit({}, { force: true });
+		expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBe(0);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0, updatedAt: expect.any(String) }]);
 		});
+
+		updatedAtMap.update(outNoteList);
 
 		// Book count should be reflected in the stream
 		await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4, updatedAt: expect.any(String) }]);
 		});
 
+		updatedAtMap.update(outNoteList);
+
 		await note1.removeTransactions({}, { isbn: "11111111", warehouseId: "" });
+		await waitFor(async () =>
+			expect(getMillisDiff(updatedAtMap.get(note1.id)!, await note1.get().then(({ updatedAt }) => updatedAt))).toBeGreaterThan(0)
+		);
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2, updatedAt: expect.any(String) }]);
 		});
 	});
 
@@ -2025,9 +2102,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			displayName: "All"
 		};
 		await waitFor(() => {
-			expect(inNoteList).toEqual([{ ...defaultWarehouse, notes: [] }]);
+			expect(inNoteList).toEqual([expect.objectContaining({ ...defaultWarehouse, notes: [] })]);
 			expect(outNoteList).toEqual([]);
-			expect(warehouseList).toEqual([defaultWarehouse]);
+			expect(warehouseList).toEqual([expect.objectContaining(defaultWarehouse)]);
 		});
 
 		// Warehouse streams
@@ -2753,14 +2830,14 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 type NavListEntry<A = {}> = { id: string; displayName: string } & A;
 
 /** Old in note list - an array instead of currently used Map */
-type InNoteList = NavListEntry<{ notes: NavListEntry[] }>[];
+type InNoteList = NavListEntry<{ notes: NavListEntry<{ updatedAt: string }>[] }>[];
 
 /** Volume stock client with 'availableWarehouses' being NavListEntry */
 type VolumeStockClientOld = Omit<VolumeStockClient, "availableWarehouses"> & { availableWarehouses?: NavListEntry[] };
 
 // Functions used to convert the new Map types to the legacy ones (for easier testing)
-const navMapToNavList = (navMap: NavMap): NavListEntry[] =>
-	[...navMap].map(([id, { displayName, totalBooks }]) => ({ id, displayName, totalBooks }));
+const navMapToNavList = (navMap: NavMap): NavListEntry<{ updatedAt: string }>[] =>
+	[...navMap].map(([id, { displayName, totalBooks, updatedAt }]) => ({ id, displayName, totalBooks, updatedAt }));
 
 const inNoteMapToInNoteList = (inNoteMap: InNoteMap): InNoteList =>
 	[...inNoteMap].map(([id, { displayName, notes }]) => ({ id, displayName, notes: navMapToNavList(notes) }));
@@ -2776,3 +2853,39 @@ const volumeStockClientToVolumeStockClientOld = (entry: VolumeStockClient): Volu
 	};
 };
 // #endregion
+
+class UpdatedAtMap<T extends InNoteList | NavListEntry<{ updatedAt: string }>[]> {
+	private _kind: "inbound" | "outbound";
+
+	_internal = new Map<string, string>();
+
+	private constructor(entries: InNoteList, kind: "inbound");
+	private constructor(entries: NavListEntry<{ updatedAt: string }>[], kind: "outbound");
+	private constructor(entries: InNoteList | NavListEntry<{ updatedAt: string }>[], kind: "inbound" | "outbound") {
+		this._kind = kind;
+		this.update(entries as T);
+	}
+
+	public static inbound(entries: InNoteList): UpdatedAtMap<InNoteList> {
+		return new UpdatedAtMap(entries, "inbound");
+	}
+
+	public static outbound(entries: NavListEntry<{ updatedAt: string }>[]): UpdatedAtMap<NavListEntry<{ updatedAt: string }>[]> {
+		return new UpdatedAtMap(entries, "outbound");
+	}
+
+	get(id: string) {
+		return this._internal.get(id);
+	}
+
+	update(entries: T) {
+		const notes =
+			this._kind === "inbound" ? (entries as InNoteList).flatMap(({ notes }) => notes) : (entries as NavListEntry<{ updatedAt: string }>[]);
+		this._internal = new Map(notes.map(({ id, updatedAt }) => [id, updatedAt]));
+		return this;
+	}
+}
+const getMillisDiff = (_start: Date | string | number, _end: Date | string | number): number => {
+	const [start, end] = [new Date(_start), new Date(_end)];
+	return Number(end) - Number(start);
+};
