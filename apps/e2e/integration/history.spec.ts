@@ -435,7 +435,7 @@ test("history/isbn - search results", async ({ page }) => {
 	// Searching for a book that exists in two warehouses should display only one result
 	//
 	// Add the same book in two warehouses
-	dbHandle.evaluateHandle((db) =>
+	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh1")
 			.note()
@@ -443,7 +443,7 @@ test("history/isbn - search results", async ({ page }) => {
 			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
-	dbHandle.evaluateHandle((db) =>
+	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh2")
 			.note()
