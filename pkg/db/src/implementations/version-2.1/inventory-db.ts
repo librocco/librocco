@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, tap } from "rxjs";
-import { Kysely } from "kysely";
+import { Kysely, sql } from "kysely";
 
 import { asc, wrapIter, debug, StockMap, VolumeStockInput } from "@librocco/shared";
 
@@ -121,14 +121,29 @@ class Database implements InventoryDatabaseInterface {
 	stream() {
 		return {
 			warehouseMap: (ctx: debug.DebugCtx = {}) =>
-				this._stream(ctx, (db) => db.selectFrom("warehouses").select(["id", "displayName", "updatedAt", "discountPercentage"])).pipe(
+				this._stream(ctx, (db) => {
+					const totalBooksQuery = db
+						.selectFrom("notes as n")
+						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
+						.where("n.committed", "==", 1)
+						.select([
+							"txn.warehouseId",
+							(qb) => qb.fn.sum(sql`CASE WHEN n.noteType == 'inbound' THEN txn.quantity ELSE -txn.quantity END`).as("totalBooks")
+						])
+						.groupBy("txn.warehouseId");
+
+					return db
+						.selectFrom("warehouses as w")
+						.leftJoin(totalBooksQuery.as("tb"), "tb.warehouseId", "w.id")
+						.select(["w.id", "w.displayName", "w.updatedAt", "w.discountPercentage", "tb.totalBooks"]);
+				}).pipe(
 					// Add a default "all" (pseudo) warehouse
 					map((rows) => rows || []),
 					tap(debug.log(ctx, "warehouse_map:got_res_from_db")),
-					map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0 }, ...rows]),
+					map((rows) => [{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 }, ...rows]),
 					map((rows) => rows.sort(asc(({ id }) => id))),
 					tap(debug.log(ctx, "warehouse_map:sorted")),
-					map((rows) => new Map(rows.map((r) => [r.id, r])))
+					map((rows) => new Map(rows.map(({ totalBooks, ...r }) => [r.id, { ...r, totalBooks: totalBooks || 0 }])))
 				),
 
 			// TODO: this should really be changed since we only care about notes (not warehouses without open notes)
@@ -138,15 +153,20 @@ class Database implements InventoryDatabaseInterface {
 				const inNotes = this._stream(ctx, (db) =>
 					db
 						.selectFrom("notes as n")
+						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
 						.where("n.committed", "!=", 1)
 						// TODO: this should also probably be removed (delete should delete)
 						.where("n.deleted", "!=", 1)
 						.where("n.noteType", "==", "inbound")
-						.select(["id", "warehouseId", "displayName"])
+						.select(["id", "n.warehouseId", "displayName", (qb) => qb.fn.sum("txn.quantity").as("totalBooks")])
+						.groupBy("n.id")
 				).pipe(
 					map((notes) =>
 						wrapIter(notes)
-							._group(({ warehouseId, id, displayName }) => [warehouseId, [id, { displayName }] as const])
+							._group(({ warehouseId, id, displayName, totalBooks }) => [
+								warehouseId,
+								[id, { displayName, totalBooks: totalBooks || 0 }] as const
+							])
 							.map(([id, notes]) => [id, new Map(notes)] as const)
 					),
 					map((n) => new Map(n))
@@ -172,14 +192,15 @@ class Database implements InventoryDatabaseInterface {
 			outNoteList: (ctx: debug.DebugCtx = {}) =>
 				this._stream(ctx, (db) =>
 					db
-						.selectFrom("notes")
+						.selectFrom("notes as n")
+						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
 						.where("committed", "is not", 1)
 						.where("noteType", "==", "outbound")
 						.where("deleted", "is not", 1)
-						.select(["id", "displayName", "updatedAt"])
-				).pipe(map((rows) => new Map(rows.map((r) => [r.id, r])))),
+						.select(["id", "displayName", "n.updatedAt", (qb) => qb.fn.sum("txn.quantity").as("totalBooks")])
+						.groupBy("n.id")
+				).pipe(map((rows) => new Map(rows.map(({ totalBooks, ...r }) => [r.id, { ...r, totalBooks: totalBooks || 0 }])))),
 
-			// TODO: might not be necessary as part of public API
 			stock: () =>
 				this._stream({}, (db) =>
 					db
