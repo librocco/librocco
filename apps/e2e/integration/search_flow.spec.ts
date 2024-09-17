@@ -26,23 +26,13 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	const db = await getDbHandle(page);
 	await db.evaluate(
 		(db, entries) =>
-			Promise.all([
-				// Add fake book data for each transaction as the won't be matched otherwise
-				// We're matching transactions using isbn here, a book data entry (albeit and empty one) has to exist
-				//
-				// TODO: we might want to update the functionality so that books an be matched by isbn-only
-				db.books().upsert(
-					{},
-					entries.map(({ isbn }) => ({ title: "", price: 0, isbn }))
-				),
-				db
-					.warehouse("warehouse-1")
-					.create()
-					.then((w) => w.setName({}, "Warehouse 1"))
-					.then((w) => w.note("note-1").create())
-					.then((n) => n.addVolumes({}, ...entries))
-					.then((n) => n.commit({}))
-			]),
+			db
+				.warehouse("warehouse-1")
+				.create()
+				.then((w) => w.setName({}, "Warehouse 1"))
+				.then((w) => w.note("note-1").create())
+				.then((n) => n.addVolumes({}, ...entries))
+				.then((n) => n.commit({})),
 		entries
 	);
 	await new Promise((res) => setTimeout(res, 3000));
