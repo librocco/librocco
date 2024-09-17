@@ -466,6 +466,13 @@ class Note implements NoteInterface {
 			}
 		}
 
+		// Store all committed isbns as book data (for search purposes)
+		// If there's additional book data (already in the db), this is a noop
+		await this.#db.books().upsert(
+			{},
+			entries.filter(isBookRow).map(({ isbn }) => ({ isbn }))
+		);
+
 		const updatedAt = new Date().toISOString();
 		const committedAt = updatedAt;
 
