@@ -54,6 +54,8 @@ class Books implements BooksInterface {
 			// Convert the (out of print) boolean to a number.
 			.map(({ outOfPrint, ...book }) => (outOfPrint !== undefined ? { ...book, outOfPrint: outOfPrint ? 1 : 0 } : book));
 
+		if (!values.length) return;
+
 		await this.#db._update((db) =>
 			db
 				.insertInto("books")
