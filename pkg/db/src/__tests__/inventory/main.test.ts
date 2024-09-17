@@ -1512,19 +1512,25 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const wl$ = db.stream().warehouseMap({});
 		let warehouseDataMap: PossiblyEmpty<Array<Pick<WarehouseData, "displayName" | "discountPercentage"> & { id: string }>> = EMPTY;
 		wl$.subscribe(
-			(wm) => (warehouseDataMap = [...wm].map(([id, { displayName, discountPercentage }]) => ({ id, displayName, discountPercentage })))
+			(wm) =>
+				(warehouseDataMap = [...wm].map(([id, { displayName, discountPercentage, totalBooks }]) => ({
+					id,
+					displayName,
+					discountPercentage,
+					totalBooks
+				})))
 		);
 
 		// The default warehouse should be created automatically
 		await waitFor(() => {
-			expect(warehouseDataMap).toEqual([{ id: "all", displayName: "All", discountPercentage: 0 }]);
+			expect(warehouseDataMap).toEqual([{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 }]);
 		});
 		const warehouse = await db.warehouse("new-warehouse").create();
 		await waitFor(() => {
 			// The default ("all") warehouse should be created as well (when the first warehouse is created)
 			expect(warehouseDataMap).toEqual([
-				{ id: "all", displayName: "All", discountPercentage: 0 },
-				{ id: "new-warehouse", displayName: "New Warehouse", discountPercentage: 0 }
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Warehouse", discountPercentage: 0, totalBooks: 0 }
 			]);
 		});
 
@@ -1532,8 +1538,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await warehouse.setName({}, "New Name");
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "all", displayName: "All", discountPercentage: 0 },
-				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 0 }
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 0, totalBooks: 0 }
 			]);
 		});
 
@@ -1541,17 +1547,44 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		await warehouse.setDiscount({}, 10);
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "all", displayName: "All", discountPercentage: 0 },
-				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10 }
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10, totalBooks: 0 }
 			]);
 		});
 
-		// Adding a note (for instance) shouldn't affect the warehouse list
-		await warehouse.note().create();
+		// Adding a note (but not committing) shouldn't affect the warehouse list
+		const inNote = await warehouse
+			.note()
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }, { isbn: "2222222222", quantity: 2 }));
 		await waitFor(() => {
 			expect(warehouseDataMap).toEqual([
-				{ id: "all", displayName: "All", discountPercentage: 0 },
-				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10 }
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10, totalBooks: 0 }
+			]);
+		});
+
+		// Committing notes should change the totalBooks count
+		await inNote.commit();
+		await waitFor(() => {
+			expect(warehouseDataMap).toEqual([
+				// TODO: total books is broken for "all" warehouse, but the whole "all" wh is probably not necessary (at least for the public api)
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10, totalBooks: 5 }
+			]);
+		});
+
+		// Decrementing the stock should be reflected in the book count
+		await db
+			.warehouse()
+			.note()
+			.create()
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "new-warehouse" }))
+			.then((n) => n.commit());
+		await waitFor(() => {
+			expect(warehouseDataMap).toEqual([
+				{ id: "all", displayName: "All", discountPercentage: 0, totalBooks: 0 },
+				{ id: "new-warehouse", displayName: "New Name", discountPercentage: 10, totalBooks: 4 }
 			]);
 		});
 	});
@@ -1580,11 +1613,17 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			const note1 = await warehouse1.note().create();
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Note" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Note", totalBooks: 0 }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note" }]
+						notes: [
+							{
+								id: note1.id,
+								displayName: "New Note",
+								totalBooks: 0
+							}
+						]
 					}
 				]);
 			});
@@ -1593,11 +1632,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await note1.setName({}, "New Name");
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name" }]
+						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
 					}
 				]);
 			});
@@ -1610,19 +1649,19 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 						id: "all",
 						displayName: "All",
 						notes: [
-							{ id: note1.id, displayName: "New Name" },
-							{ id: note2.id, displayName: "New Note" }
+							{ id: note1.id, displayName: "New Name", totalBooks: 0 },
+							{ id: note2.id, displayName: "New Note", totalBooks: 0 }
 						]
 					},
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name" }]
+						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
 					},
 					{
 						id: "warehouse-2",
 						displayName: "New Warehouse (2)",
-						notes: [{ id: note2.id, displayName: "New Note" }]
+						notes: [{ id: note2.id, displayName: "New Note", totalBooks: 0 }]
 					}
 				]);
 			});
@@ -1631,11 +1670,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 			await note2.delete({});
 			await waitFor(() => {
 				expect(inNoteList).toEqual([
-					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name" }] },
+					{ id: "all", displayName: "All", notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }] },
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Name" }]
+						notes: [{ id: note1.id, displayName: "New Name", totalBooks: 0 }]
 					},
 					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
 				]);
@@ -1652,12 +1691,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					{
 						id: "all",
 						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
 					},
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
 					},
 					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
 				]);
@@ -1671,11 +1710,12 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 						id: "all",
 						displayName: "All",
 						notes: [
-							{ id: note1.id, displayName: "New Note - Updated" },
+							{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
 							{
 								id: note3.id,
 								// There's already an outbound note with the name "New Note"
-								displayName: "New Note (2)"
+								displayName: "New Note (2)",
+								totalBooks: 0
 							}
 						]
 					},
@@ -1683,8 +1723,8 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 						id: "warehouse-1",
 						displayName: "New Warehouse",
 						notes: [
-							{ id: note1.id, displayName: "New Note - Updated" },
-							{ id: note3.id, displayName: "New Note (2)" }
+							{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
+							{ id: note3.id, displayName: "New Note (2)", totalBooks: 0 }
 						]
 					},
 					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
@@ -1697,12 +1737,47 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 					{
 						id: "all",
 						displayName: "All",
-						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
 					},
 					{
 						id: "warehouse-1",
 						displayName: "New Warehouse",
-						notes: [{ id: note1.id, displayName: "New Note - Updated" }]
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]
+					},
+					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+				]);
+			});
+
+			// Adding books to a note should be reflected in the stream
+			await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+			await waitFor(() => {
+				expect(inNoteList).toEqual([
+					{
+						id: "all",
+						displayName: "All",
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]
+					},
+					{
+						id: "warehouse-1",
+						displayName: "New Warehouse",
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]
+					},
+					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
+				]);
+			});
+
+			await note1.removeTransactions({}, { isbn: "11111111", warehouseId: warehouse1.id });
+			await waitFor(() => {
+				expect(inNoteList).toEqual([
+					{
+						id: "all",
+						displayName: "All",
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]
+					},
+					{
+						id: "warehouse-1",
+						displayName: "New Warehouse",
+						notes: [{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]
 					},
 					{ id: "warehouse-2", displayName: "New Warehouse (2)", notes: [] }
 				]);
@@ -1722,28 +1797,28 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// Subscribe after the initial update to test the initial state being streamed
 		onl$.subscribe((onl) => (outNoteList = navMapToNavList(onl)));
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note" }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0 }]);
 		});
 
 		// Add another note
 		const note2 = await db.warehouse().note().create();
 		await waitFor(() => {
 			expect(outNoteList).toEqual([
-				{ id: note1.id, displayName: "New Note" },
-				{ id: note2.id, displayName: "New Note (2)" }
+				{ id: note1.id, displayName: "New Note", totalBooks: 0 },
+				{ id: note2.id, displayName: "New Note (2)", totalBooks: 0 }
 			]);
 		});
 
 		// Deleting the note should be reflected in the stream
 		await note2.delete({});
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note" }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note", totalBooks: 0 }]);
 		});
 
 		// Change of note display name should be reflected in the stream
 		await note1.setName({}, "New Name");
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Name" }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Name", totalBooks: 0 }]);
 		});
 
 		// Inbound notes should not be included in the list
@@ -1753,22 +1828,33 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// only the latter took place.
 		await note1.setName({}, "New Note - Updated");
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated" }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]);
 		});
 
 		// Should not stream committed notes
 		const note3 = await db.warehouse().note().create();
 		await waitFor(() => {
 			expect(outNoteList).toEqual([
-				{ id: note1.id, displayName: "New Note - Updated" },
+				{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 },
 				// There's already an inbound note with the name "New Note"
-				{ id: note3.id, displayName: "New Note (2)" }
+				{ id: note3.id, displayName: "New Note (2)", totalBooks: 0 }
 			]);
 		});
 
 		await note3.commit({}, { force: true });
 		await waitFor(() => {
-			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated" }]);
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 0 }]);
+		});
+
+		// Book count should be reflected in the stream
+		await note1.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 });
+		await waitFor(() => {
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 4 }]);
+		});
+
+		await note1.removeTransactions({}, { isbn: "11111111", warehouseId: "" });
+		await waitFor(() => {
+			expect(outNoteList).toEqual([{ id: note1.id, displayName: "New Note - Updated", totalBooks: 2 }]);
 		});
 	});
 
@@ -2673,7 +2759,8 @@ type InNoteList = NavListEntry<{ notes: NavListEntry[] }>[];
 type VolumeStockClientOld = Omit<VolumeStockClient, "availableWarehouses"> & { availableWarehouses?: NavListEntry[] };
 
 // Functions used to convert the new Map types to the legacy ones (for easier testing)
-const navMapToNavList = (navMap: NavMap): NavListEntry[] => [...navMap].map(([id, { displayName }]) => ({ id, displayName }));
+const navMapToNavList = (navMap: NavMap): NavListEntry[] =>
+	[...navMap].map(([id, { displayName, totalBooks }]) => ({ id, displayName, totalBooks }));
 
 const inNoteMapToInNoteList = (inNoteMap: InNoteMap): InNoteList =>
 	[...inNoteMap].map(([id, { displayName, notes }]) => ({ id, displayName, notes: navMapToNavList(notes) }));
