@@ -100,7 +100,14 @@ class Note implements NoteInterface {
 		await this.get();
 		if (this.committed) return this;
 
-		await this.#db._update((db) => db.updateTable("notes").set(data).where("id", "==", this.id).execute());
+		const updatedAt = new Date().toISOString();
+		await this.#db._update((db) =>
+			db
+				.updateTable("notes")
+				.set({ ...data, updatedAt })
+				.where("id", "==", this.id)
+				.execute()
+		);
 
 		return this.get();
 	}
@@ -344,7 +351,7 @@ class Note implements NoteInterface {
 				  )
 		]);
 
-		return this.get();
+		return this._update({});
 	}
 
 	async updateTransaction(_: any, ...params: UpdateTransactionParams<"book"> | UpdateTransactionParams<"custom">) {
@@ -432,7 +439,7 @@ class Note implements NoteInterface {
 				  )
 		]);
 
-		return this;
+		return this._update({});
 	}
 
 	async commit(_: any, options: { force?: boolean } = {}): Promise<NoteInterface> {
