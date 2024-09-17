@@ -134,9 +134,8 @@ class Warehouse implements WarehouseInterface {
 		return this.__update({ discountPercentage });
 	}
 
-	// TODO
 	async delete(): Promise<void> {
-		return;
+		return this.#db._update((db) => db.deleteFrom("warehouses").where("id", "==", this.id).execute());
 	}
 
 	async setName(_: any, displayName: string): Promise<WarehouseInterface> {
