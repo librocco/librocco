@@ -2269,6 +2269,11 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		// There are no books in the db, should stream an empty array
 		await waitFor(() => expect(publishers).toEqual([]));
 
+		// Regression: adding a book with no publisher might, depending on the implementation, have `null` value for publisher.
+		// Those should be filtered out
+		await db.books().upsert({}, [{ isbn: "book-with-no-publisher" } as BookEntry]);
+		// No assertion here, we're implicitly testing this with the next assertion
+
 		// Adding a new book (with not-yet-registered publisher) should update the publishers stream
 		await db.books().upsert({}, [{ isbn: "new-isbn", publisher: "HarperCollins UK" } as BookEntry]);
 		await waitFor(() => expect(publishers).toEqual(["HarperCollins UK"]));
