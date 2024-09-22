@@ -92,7 +92,7 @@ class Books implements BooksInterface {
 	streamPublishers(ctx: debug.DebugCtx = {}) {
 		return this.#db
 			._stream(ctx, (db) => db.selectFrom("books").select("publisher").distinct())
-			.pipe(map((res) => res.map((r) => r.publisher)));
+			.pipe(map((res) => res.map((r) => r.publisher).filter(Boolean)));
 	}
 
 	// TODO: investigate SQLite (native) FTS5 instead of js-search
