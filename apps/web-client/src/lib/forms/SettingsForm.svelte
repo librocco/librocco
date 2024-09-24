@@ -12,7 +12,6 @@
 
 	import { Input } from "$lib/components";
 	import { settingsSchema } from "$lib/forms/schemas";
-	import { getDB } from "$lib/db";
 
 	export let form: SuperValidated<typeof settingsSchema>;
 	export let options: SettingsFormOptions;
@@ -21,26 +20,12 @@
 
 	const { form: formStore, enhance, tainted } = _form;
 
-	const { reason } = getDB();
-
 	$: hasChanges = $tainted && !compare($formStore, form.data);
 </script>
 
 <form class="flex h-auto flex-col gap-y-6" use:enhance method="POST" aria-label="Edit remote database connection config">
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div class="basis-full">
-				<Input
-					id="url"
-					name="couchUrl"
-					label="Remote CouchDB URL"
-					helpText="Couch DB Url's should be formatted https://user:password@host:post/db_name. 
-						When no url is provided, the app will use local browser storage to persist data."
-					errorText={reason}
-					bind:value={$formStore.couchUrl}
-				/>
-			</div>
-
 			<div class="basis-full">
 				<Input id="url" name="labelPrinterUrl" label="Label Printer URL" bind:value={$formStore.labelPrinterUrl} />
 			</div>
