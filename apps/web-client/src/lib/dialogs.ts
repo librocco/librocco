@@ -29,6 +29,8 @@ export const dialogDescription = {
 	// Misc
 	deleteNote: () => "Once you delete this note, you will not be able to access it again",
 	deleteWarehouse: (bookCount: number) => `Once you delete this warehouse ${bookCount} books will be removed from your stock`,
+	deleteDatabase: () =>
+		`Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`,
 
 	// Inbound
 	commitInbound: (bookCount: number, warehouseName: string) => `${bookCount} books will be added to ${warehouseName}`,
