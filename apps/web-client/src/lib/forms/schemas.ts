@@ -16,6 +16,14 @@ export const warehouseDeleteSchema = (matchConfirmation: string) => {
 	});
 };
 
+export type DatabaseDeleteFormData = SuperValidated<ReturnType<typeof databaseDeleteSchema>>["data"];
+export const databaseDeleteSchema = (matchConfirmation: string) => {
+	const reg = new RegExp("^" + matchConfirmation + "$");
+	return z.object({
+		confirmation: z.string().regex(reg)
+	});
+};
+
 export type BookFormData = SuperValidated<typeof bookSchema>["data"];
 export const bookSchema = z.object({
 	isbn: z.string(),

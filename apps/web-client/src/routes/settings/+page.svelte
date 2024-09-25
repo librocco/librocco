@@ -1,20 +1,26 @@
 <script lang="ts">
 	import { Search, Download, Trash } from "lucide-svelte";
 	import { onMount } from "svelte";
+	import { get } from "svelte/store";
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { fade } from "svelte/transition";
 
-	import { goto } from "$lib/utils/navigation";
+	import { testId } from "@librocco/shared";
+
+	import type { PageData } from "./$types";
+
+	import { appPath } from "$lib/paths";
 
 	import { currentDB, select } from "$lib/db";
 
-	import { SettingsForm } from "$lib/forms";
+	import { SettingsForm, DatabaseDeleteForm, settingsSchema } from "$lib/forms";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { appPath } from "$lib/paths";
-	import { settingsSchema } from "$lib/forms";
 	import { settingsStore } from "$lib/stores";
 
-	import type { PageData } from "./$types";
-	import { testId } from "@librocco/shared";
+	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
+
+	import { goto } from "$lib/utils/navigation";
 
 	export let data: PageData;
 
@@ -68,11 +74,29 @@
 		const dir = await window.navigator.storage.getDirectory();
 		await dir.removeEntry(name);
 		files = await getFiles();
+
+		// If we've just deleted the current database, select the first one in the list
+		if (!files.includes(get(currentDB)) && files.length) {
+			currentDB.set(files[0]);
+		}
+
+		open.set(false);
+		deleteDatabase = null;
 	};
 
 	onMount(async () => {
 		files = await getFiles();
 	});
+
+	// #region dialog
+	const dialog = createDialog({ forceVisible: true });
+	const {
+		elements: { portalled, overlay, trigger },
+		states: { open }
+	} = dialog;
+	let deleteDatabase = { name: "" };
+
+	let dialogContent: (DialogContent & { type: "create" | "delete" | "import" }) | null = null;
 </script>
 
 <Page view="settings" loaded={true}>
@@ -94,7 +118,7 @@
 				</div>
 				<div class="w-full basis-2/3">
 					<ul data-testid={testId("database-management-list")} class="max-h-[240px] w-full overflow-y-auto overflow-x-hidden border">
-						{#each files as file}
+						{#each files as file (file)}
 							{@const active = file === $currentDB}
 							{#if selection}
 								<li
@@ -107,7 +131,11 @@
 									<span>{file}</span>
 								</li>
 							{:else}
-								<li data-active={active} class="group flex h-16 items-center justify-between py-3 px-4 {active ? 'bg-gray-100' : ''}">
+								<li
+									data-file={file}
+									data-active={active}
+									class="group flex h-16 items-center justify-between py-3 px-4 {active ? 'bg-gray-100' : ''}"
+								>
 									<span>{file}</span>
 									<div class="hidden gap-x-2 group-hover:flex">
 										<button
@@ -118,7 +146,25 @@
 										>
 										<button
 											data-testid={testId("db-action-delete")}
-											on:click={handleDelete(file)}
+											use:melt={$trigger}
+											on:m-click={() => {
+												deleteDatabase = { name: file };
+												dialogContent = {
+													onConfirm: handleDelete(file),
+													title: dialogTitle.delete(file),
+													description: dialogDescription.deleteDatabase(),
+													type: "delete"
+												};
+											}}
+											on:m-keydown={() => {
+												deleteDatabase = { name: file };
+												dialogContent = {
+													onConfirm: handleDelete(file),
+													title: dialogTitle.delete(file),
+													description: dialogDescription.deleteDatabase(),
+													type: "delete"
+												};
+											}}
 											type="button"
 											class="button cursor-pointer"><Trash /></button
 										>
@@ -165,3 +211,32 @@
 		<ExtensionAvailabilityToast />
 	</svelte:fragment>
 </Page>
+
+<div use:melt={$portalled}>
+	{#if $open}
+		{@const { type, title: dialogTitle, description: dialogDescription, onConfirm } = dialogContent};
+		{#if type === "create"}
+			<!-- Create database dialog -->
+		{:else if type === "delete"}
+			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<DatabaseDeleteForm
+					{dialog}
+					{dialogTitle}
+					{dialogDescription}
+					name={deleteDatabase.name}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validationMethod: "submit-only",
+						onSubmit: handleDelete(deleteDatabase.name)
+					}}
+				/>
+			</div>
+		{:else if type === "import"}
+			<!-- Import dialog -->
+		{:else}
+			<!---->
+		{/if}
+	{/if}
+</div>
