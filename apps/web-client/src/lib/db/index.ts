@@ -1,11 +1,16 @@
+import { persisted } from "svelte-local-storage-store";
+import { writable } from "svelte/store";
+
 import { newInventoryDatabaseInterface, type InventoryDatabaseInterface } from "@librocco/db";
 
-import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 import { browser } from "$app/environment";
 
 let db: InventoryDatabaseInterface = undefined;
-// it's INITIALLY true because the db could be local/pouch
-// in which case we'd only need the catch statement to set it to false let
+
+/** Name of the currently active (and initalised) db - used to control the current in-app state */
+export const dbName = writable("");
+/** Persisted db name, this serves a way to persist currently used db between reloads (sessions) */
+export const dbNamePersisted = persisted("librocco-current-db", "dev");
 
 let status = true;
 let reason = "";
@@ -37,7 +42,7 @@ export const checkUrlConnection = async (url: string) => {
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
+export const createDB = async (name: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
 	if (db) {
 		return { db, status: true, reason };
 	}
@@ -46,10 +51,10 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
 	 * There will be no local persistence.
 	 */
-	const url = _url || LOCAL_POUCH_DB_NAME;
+	// const url = _url || LOCAL_POUCH_DB_NAME;
 	if (browser) {
 		try {
-			db = newInventoryDatabaseInterface(url);
+			db = newInventoryDatabaseInterface(name);
 
 			const ctx = { name: "[db init]", debug: false };
 			await db.init(ctx);
@@ -62,7 +67,16 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 		}
 	}
 
+	dbName.set(name);
 	return { db, status, reason };
+};
+
+/** Resets the db setup (we're using this when invalidating the root load -- changing the currently selected db) */
+export const resetDB = () => {
+	db = undefined;
+	status = true;
+	reason = "";
+	dbName.set("");
 };
 
 /**
