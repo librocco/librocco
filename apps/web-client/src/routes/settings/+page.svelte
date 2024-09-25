@@ -5,15 +5,15 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { fade } from "svelte/transition";
 
-	import { testId } from "@librocco/shared";
+	import { testId, addSQLite3Suffix } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 
 	import { appPath } from "$lib/paths";
 
-	import { currentDB, select } from "$lib/db";
+	import { currentDB, select as selectDB } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, settingsSchema } from "$lib/forms";
+	import { SettingsForm, DatabaseDeleteForm, settingsSchema, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { settingsStore } from "$lib/stores";
@@ -24,40 +24,33 @@
 
 	export let data: PageData;
 
+	// #region files list
 	let files: string[] = [];
-
-	let selection = false;
-	const toggleSelection = () => (selection = !selection);
-
-	const createFile = async () => {
-		const dir = await window.navigator.storage.getDirectory();
-
-		const ts = Number(new Date()) % 1000000;
-		const fname = `file-${ts}.txt`;
-
-		const file = await dir.getFileHandle(fname, { create: true });
-
-		const writable = await file.createWritable();
-
-		await writable.write("Hello world");
-		await writable.close();
-
-		files = await getFiles();
-	};
 
 	const getFiles = async () => {
 		return window.navigator.storage.getDirectory().then(async (dir) => {
 			const files = [] as string[];
 			for await (const [name] of (dir as any).entries() as AsyncIterableIterator<[string, FileSystemHandle]>) {
-				files.push(name);
+				// We're interested only in .sqlite3 files
+				if (name.endsWith(".sqlite3")) {
+					files.push(name);
+				}
 			}
 			return files;
 		});
 	};
 
-	const handleSelect = (name: string) => () => (select(name), (selection = false));
+	onMount(async () => {
+		files = await getFiles();
+	});
 
-	const handleDownload = (name: string) => async () => {
+	// #region select db control
+	let selectionOn = false;
+	const toggleSelection = () => (selectionOn = !selectionOn);
+	const handleSelect = (name: string) => () => (selectDB(name), (selectionOn = false));
+
+	// #region db operations
+	const handleExportDatabase = (name: string) => async () => {
 		const dir = await window.navigator.storage.getDirectory();
 		const file = await dir.getFileHandle(name);
 		const blob = await file.getFile();
@@ -70,7 +63,13 @@
 		document.removeChild(a);
 	};
 
-	const handleDelete = (name: string) => async () => {
+	const handleCreateDatabase = async (name: string) => {
+		await selectDB(name);
+		open.set(false);
+		files = await getFiles();
+	};
+
+	const handleDeleteDatabase = (name: string) => async () => {
 		const dir = await window.navigator.storage.getDirectory();
 		await dir.removeEntry(name);
 		files = await getFiles();
@@ -84,14 +83,10 @@
 		deleteDatabase = null;
 	};
 
-	onMount(async () => {
-		files = await getFiles();
-	});
-
 	// #region dialog
 	const dialog = createDialog({ forceVisible: true });
 	const {
-		elements: { portalled, overlay, trigger },
+		elements: { portalled, overlay, trigger, title, description, content },
 		states: { open }
 	} = dialog;
 	let deleteDatabase = { name: "" };
@@ -119,8 +114,8 @@
 				<div class="w-full basis-2/3">
 					<ul data-testid={testId("database-management-list")} class="max-h-[240px] w-full overflow-y-auto overflow-x-hidden border">
 						{#each files as file (file)}
-							{@const active = file === $currentDB}
-							{#if selection}
+							{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($currentDB)}
+							{#if selectionOn}
 								<li
 									data-active={active}
 									on:click={handleSelect(file)}
@@ -140,7 +135,7 @@
 									<div class="hidden gap-x-2 group-hover:flex">
 										<button
 											data-testid={testId("db-action-export")}
-											on:click={handleDownload(file)}
+											on:click={handleExportDatabase(file)}
 											type="button"
 											class="button cursor-pointer"><Download /></button
 										>
@@ -150,7 +145,7 @@
 											on:m-click={() => {
 												deleteDatabase = { name: file };
 												dialogContent = {
-													onConfirm: handleDelete(file),
+													onConfirm: () => {}, // Note: confirm handler is called directly from the form element
 													title: dialogTitle.delete(file),
 													description: dialogDescription.deleteDatabase(),
 													type: "delete"
@@ -159,7 +154,7 @@
 											on:m-keydown={() => {
 												deleteDatabase = { name: file };
 												dialogContent = {
-													onConfirm: handleDelete(file),
+													onConfirm: () => {}, // Note: confirm handler is called directly from the form element
 													title: dialogTitle.delete(file),
 													description: dialogDescription.deleteDatabase(),
 													type: "delete"
@@ -174,8 +169,28 @@
 						{/each}
 					</ul>
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={toggleSelection} type="button" class="button {!selection ? 'button-white' : 'button-green'}">Select</button>
-						<button on:click={createFile} type="button" class="button button-green">New</button>
+						<button on:click={toggleSelection} type="button" class="button {!selectionOn ? 'button-white' : 'button-green'}">Select</button>
+						<button
+							use:melt={$trigger}
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+									title: dialogTitle.createDatabase(),
+									description: dialogDescription.createDatabase(),
+									type: "create"
+								};
+							}}
+							on:m-keydown={() => {
+								dialogContent = {
+									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+									title: dialogTitle.createDatabase(),
+									description: dialogDescription.createDatabase(),
+									type: "create"
+								};
+							}}
+							type="button"
+							class="button button-green">New</button
+						>
 					</div>
 				</div>
 			</div>
@@ -214,11 +229,32 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		{@const { type, title: dialogTitle, description: dialogDescription, onConfirm } = dialogContent};
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+		{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+
 		{#if type === "create"}
-			<!-- Create database dialog -->
+			<div
+				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
+				use:melt={$content}
+			>
+				<h2 class="sr-only" use:melt={$title}>
+					{dialogTitle}
+				</h2>
+				<p class="sr-only" use:melt={$description}>
+					{dialogDescription}
+				</p>
+				<DatabaseCreateForm
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: databaseCreateSchema,
+						validationMethod: "submit-only",
+						onUpdated: ({ form }) => handleCreateDatabase(form?.data?.name)
+					}}
+					onCancel={() => open.set(false)}
+				/>
+			</div>
 		{:else if type === "delete"}
-			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 				<DatabaseDeleteForm
 					{dialog}
@@ -229,7 +265,7 @@
 						SPA: true,
 						dataType: "json",
 						validationMethod: "submit-only",
-						onSubmit: handleDelete(deleteDatabase.name)
+						onSubmit: handleDeleteDatabase(deleteDatabase.name)
 					}}
 				/>
 			</div>

@@ -22,7 +22,10 @@ export const dialogTitle = {
 	editCustomItem: () => "Edit custom item",
 
 	// WarehouseForm
-	editWarehouse: () => "Update book details"
+	editWarehouse: () => "Update book details",
+
+	// DatabaseForm
+	createDatabase: () => "Create new database"
 };
 
 export const dialogDescription = {
@@ -45,5 +48,8 @@ export const dialogDescription = {
 	editBook: () => "Update book details",
 
 	// WarehouseForm
-	editWarehouse: () => "Update warehouse details"
+	editWarehouse: () => "Update warehouse details",
+
+	// DatabaseForm
+	createDatabase: () => "Please type in the name for the new database"
 };
