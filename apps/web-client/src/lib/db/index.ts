@@ -1,7 +1,9 @@
+import { get } from "svelte/store";
+
 import { newInventoryDatabaseInterface, type InventoryDatabaseInterface } from "@librocco/db";
 
-import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 import { browser } from "$app/environment";
+import { persisted } from "svelte-local-storage-store";
 
 let db: InventoryDatabaseInterface = undefined;
 // it's INITIALLY true because the db could be local/pouch
@@ -37,8 +39,8 @@ export const checkUrlConnection = async (url: string) => {
  * It should be initialized in the browser environment and is idempotent (if the db is already instantiated, it will return the existing instance).
  * This is to prevent expensive `db.init()` operations on each route change.
  */
-export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
-	if (db) {
+export const createDB = async (name: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
+	if (db && name === get(currentDB)) {
 		return { db, status: true, reason };
 	}
 
@@ -46,10 +48,10 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 	 * If a URL is passed, pouchdb will be used as a client only to speak with a couchdb instance.
 	 * There will be no local persistence.
 	 */
-	const url = _url || LOCAL_POUCH_DB_NAME;
+	// const url = _url || LOCAL_POUCH_DB_NAME;
 	if (browser) {
 		try {
-			db = newInventoryDatabaseInterface(url);
+			db = newInventoryDatabaseInterface(name);
 
 			const ctx = { name: "[db init]", debug: false };
 			await db.init(ctx);
@@ -78,4 +80,11 @@ export const destroyDB = async () => {
 		await db.destroy();
 		db = undefined;
 	}
+};
+
+export const currentDB = persisted("librocco-current-db", "dev");
+export const select = async (name: string) => {
+	if (get(currentDB) === name) return;
+	await createDB(name);
+	currentDB.set(name);
 };

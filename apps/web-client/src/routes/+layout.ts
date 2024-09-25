@@ -1,12 +1,13 @@
+import { get } from "svelte/store";
+
 import { redirect } from "@sveltejs/kit";
 
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { createDB } from "$lib/db";
+import { createDB, currentDB } from "$lib/db";
 
 import type { LayoutLoad } from "./$types";
-// import { get } from "svelte/store";
 // import { settingsStore } from "$lib/stores";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
@@ -30,7 +31,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// const remoteUrl = get(settingsStore).couchUrl;
 
-		const { db, status } = await createDB("dev");
+		const name = get(currentDB);
+		const { db, status } = await createDB(name);
 
 		// Register plugins
 		//
