@@ -1,3 +1,5 @@
+import { get } from "svelte/store";
+
 import { redirect } from "@sveltejs/kit";
 
 import { navigatorDetector } from "typesafe-i18n/detectors";
@@ -9,12 +11,11 @@ import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
 import { detectLocale } from "$i18n/i18n-util";
 
-import { createDB } from "$lib/db";
+import { createDB, currentDB } from "$lib/db";
 
 import { DEFAULT_LOCALE } from "$lib/constants";
 
 import type { LayoutLoad } from "./$types";
-// import { get } from "svelte/store";
 // import { settingsStore } from "$lib/stores";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
@@ -54,7 +55,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// const remoteUrl = get(settingsStore).couchUrl;
 
-		const { db, status } = await createDB("dev");
+		const name = get(currentDB);
+		const { db, status } = await createDB(name);
 
 		// Register plugins
 		//
