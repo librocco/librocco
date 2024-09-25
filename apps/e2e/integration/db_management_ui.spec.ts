@@ -73,6 +73,35 @@ test("selecting a db should be reflected in app data", async ({ page }) => {
 	await warehouseList.assertElements([{ name: "Warehouse 1 - db 1" }]);
 });
 
+test("creating the db should make it appear in the list and select as active db", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const dbSelectionBox = getDBSelection(dashboard);
+	const dialog = dashboard.dialog();
+
+	// Only the default db should be present
+	await dbSelectionBox.list().locator("li").nth(0).waitFor();
+	await dbSelectionBox.list().locator("li").nth(1).waitFor({ state: "detached" });
+
+	// Create a new db
+	await dbSelectionBox.new();
+	await dialog.waitFor();
+
+	// Should not allow whitespace
+	await dialog.getByRole("textbox", { name: "name" }).fill("new db");
+	await dialog.getByRole("button", { name: "Save" }).click();
+
+	// Type in a valid name
+	await dialog.getByRole("textbox", { name: "name" }).fill("new_db");
+	await dialog.getByRole("button", { name: "Save" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	await dbSelectionBox.getByFilename("new_db.sqlite3").waitFor();
+	await expect(dbSelectionBox.getByFilename("new_db.sqlite3")).toHaveAttribute("data-active", "true");
+	// Check that there are only two dbs: default and new
+	await dbSelectionBox.list().locator("li").nth(2).waitFor({ state: "detached" });
+});
+
 test("deleting a db should remove it from the list", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
@@ -154,5 +183,7 @@ export function getDBSelection(parent: DashboardNode) {
 			.click();
 	};
 
-	return Object.assign(container, { dashboard, select, getByFilename, delete: _delete, list });
+	const _new = () => container.getByRole("button", { name: "New" }).click();
+
+	return Object.assign(container, { dashboard, select, getByFilename, delete: _delete, list, new: _new });
 }
