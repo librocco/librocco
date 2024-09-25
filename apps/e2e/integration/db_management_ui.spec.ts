@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 
@@ -20,6 +20,8 @@ test.beforeEach(async ({ page }) => {
 test("selecting a db should be reflected in app data", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	const warehouseList = dashboard.content().entityList("warehouse-list");
+
+	const dbSelectionBox = getDBSelection(dashboard);
 	const dialog = dashboard.dialog();
 
 	await page.evaluate(() => window.navigator.storage.getDirectory().then((dir) => dir.getFileHandle("db_1.sqlite3", { create: true })));
@@ -27,12 +29,9 @@ test("selecting a db should be reflected in app data", async ({ page }) => {
 
 	await page.reload();
 
-	const container = page.locator(selector(testIdSelector("database-management-container")));
-	const list = container.locator(selector(testIdSelector("database-management-list")));
-
 	// The dbs should appear in the list
-	await list.getByText("db_1.sqlite3").waitFor();
-	await list.getByText("db_2.sqlite3").waitFor();
+	await dbSelectionBox.getByFilename("db_1.sqlite3").waitFor();
+	await dbSelectionBox.getByFilename("db_2.sqlite3").waitFor();
 
 	// Testing for db selection: create something distinct in both dbs and observe the behaviour
 	//
@@ -74,17 +73,86 @@ test("selecting a db should be reflected in app data", async ({ page }) => {
 	await warehouseList.assertElements([{ name: "Warehouse 1 - db 1" }]);
 });
 
+test("deleting a db should remove it from the list", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const dbSelectionBox = getDBSelection(dashboard);
+	const dialog = dashboard.dialog();
+
+	await page.evaluate(() => window.navigator.storage.getDirectory().then((dir) => dir.getFileHandle("db_1.sqlite3", { create: true })));
+	await page.evaluate(() => window.navigator.storage.getDirectory().then((dir) => dir.getFileHandle("db_2.sqlite3", { create: true })));
+	await page.evaluate(() => window.navigator.storage.getDirectory().then((dir) => dir.getFileHandle("db_3.sqlite3", { create: true })));
+
+	await page.reload();
+
+	// The dbs should appear in the list
+	await dbSelectionBox.getByFilename("db_1.sqlite3").waitFor();
+	await dbSelectionBox.getByFilename("db_2.sqlite3").waitFor();
+
+	// Delete the db
+	await dbSelectionBox.delete("db_1.sqlite3");
+	await dialog.waitFor();
+
+	// The dialog should display the db name (without .sqlite3 ext) to type in as confirmation
+	await dialog.getByPlaceholder("db_1").waitFor();
+	await dialog.confirm();
+
+	// The dialog should not have been closed (nor db deleted) without name input as confirmation
+	await dbSelectionBox.getByFilename("db_1.sqlite3").waitFor();
+
+	// Type in the wrong text (the dialog should not close nor warehouse be deleted)
+	await dialog.getByPlaceholder("db_1").fill("db_2");
+	await dialog.confirm();
+	await dbSelectionBox.getByFilename("db_1.sqlite3").waitFor();
+	await dbSelectionBox.getByFilename("db_2.sqlite3").waitFor();
+
+	// Type in the correct confirmation name and complete the deletion
+	await dialog.getByPlaceholder("db_1").fill("db_1");
+	await dialog.confirm();
+
+	await dialog.waitFor({ state: "detached" });
+	await dbSelectionBox.getByFilename("db_1.sqlite3").waitFor({ state: "detached" });
+	await dbSelectionBox.getByFilename("db_2.sqlite3").waitFor();
+
+	// Deleting a currently active db should fall back to the first available in the list
+	//
+	// Select db_2
+	await dbSelectionBox.select("db_2.sqlite3");
+
+	// Delete the db
+	await dbSelectionBox.delete("db_2.sqlite3");
+	await dialog.waitFor();
+	await dialog.getByPlaceholder("db_2").fill("db_2");
+	await dialog.confirm();
+
+	await dialog.waitFor({ state: "detached" });
+	await dbSelectionBox.getByFilename("db_2.sqlite3").waitFor({ state: "detached" });
+
+	// We're left with two dbs: dev.slite3 and db_3.sqlite3
+	// Whichever is first in the list should also be active
+	await expect(dbSelectionBox.list().locator("li").nth(0)).toHaveAttribute("data-active", "true");
+});
+
 export function getDBSelection(parent: DashboardNode) {
 	const dashboard = parent.dashboard;
 
 	const container = parent.locator(selector(testIdSelector("database-management-container")));
-	const list = parent.locator(selector(testIdSelector("database-management-list")));
+	const list = () => parent.locator(selector(testIdSelector("database-management-list")));
 
 	const select = async (name: string) => {
 		await container.getByRole("button", { name: "Select" }).click();
-		await list.getByText(name).click();
-		await list.locator(`[data-active=true]`).getByText(name).waitFor();
+		await list().getByText(name).click();
+		await list().locator(`[data-active=true]`).getByText(name).waitFor();
 	};
 
-	return Object.assign(container, { dashboard, select });
+	const getByFilename = (name: string) => list().locator(`[data-file="${name}"]`);
+
+	const _delete = async (name: string) => {
+		await getByFilename(name).hover();
+		return getByFilename(name)
+			.locator(selector(testIdSelector("db-action-delete")))
+			.click();
+	};
+
+	return Object.assign(container, { dashboard, select, getByFilename, delete: _delete, list });
 }
