@@ -44,6 +44,48 @@
 		files = await getFiles();
 	});
 
+	// #region import control
+	let importOn = false;
+
+	const toggleImport = () => (importOn = !importOn);
+
+	const handleDrop = async (event: DragEvent) => {
+		event.preventDefault();
+		if (event.dataTransfer?.items) {
+			for (let i = 0; i < event.dataTransfer.items.length; i++) {
+				const item = event.dataTransfer.items[i];
+				if (item.kind === "file") {
+					const file = item.getAsFile();
+					if (file && file.name.endsWith(".sqlite3")) {
+						await importDatabase(file);
+					}
+				}
+			}
+		} else if (event.dataTransfer?.files) {
+			for (let i = 0; i < event.dataTransfer.files.length; i++) {
+				const file = event.dataTransfer.files[i];
+				if (file && file.name.endsWith(".sqlite3")) {
+					await importDatabase(file);
+				}
+			}
+		}
+		files = await getFiles();
+		importOn = false;
+	};
+
+	const handleDragOver = (event: DragEvent) => {
+		event.preventDefault();
+	};
+
+	const importDatabase = async (file: File) => {
+		const dir = await window.navigator.storage.getDirectory();
+		const fileHandle = await dir.getFileHandle(file.name, { create: true });
+		const writable = await fileHandle.createWritable();
+		await writable.write(await file.arrayBuffer());
+		await writable.close();
+		await selectDB(file.name);
+	};
+
 	// #region select db control
 	let selectionOn = false;
 	const toggleSelection = () => (selectionOn = !selectionOn);
@@ -75,7 +117,7 @@
 		files = await getFiles();
 
 		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(get(currentDB)) && files.length) {
+		if (!files.includes(addSQLite3Suffix(get(currentDB)))) {
 			currentDB.set(files[0]);
 		}
 
@@ -91,7 +133,7 @@
 	} = dialog;
 	let deleteDatabase = { name: "" };
 
-	let dialogContent: (DialogContent & { type: "create" | "delete" | "import" }) | null = null;
+	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
 </script>
 
 <Page view="settings" loaded={true}>
@@ -112,63 +154,76 @@
 					<p class="mt-1 text-sm leading-6 text-gray-600">Use this section to create, select, import, export or delete a database</p>
 				</div>
 				<div class="w-full basis-2/3">
-					<ul data-testid={testId("database-management-list")} class="max-h-[240px] w-full overflow-y-auto overflow-x-hidden border">
-						{#each files as file (file)}
-							{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($currentDB)}
-							{#if selectionOn}
-								<li
-									data-active={active}
-									on:click={handleSelect(file)}
-									class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
-										? 'bg-green-300'
-										: 'hover:bg-gray-50'}"
-								>
-									<span>{file}</span>
-								</li>
-							{:else}
-								<li
-									data-file={file}
-									data-active={active}
-									class="group flex h-16 items-center justify-between py-3 px-4 {active ? 'bg-gray-100' : ''}"
-								>
-									<span>{file}</span>
-									<div class="hidden gap-x-2 group-hover:flex">
-										<button
-											data-testid={testId("db-action-export")}
-											on:click={handleExportDatabase(file)}
-											type="button"
-											class="button cursor-pointer"><Download /></button
-										>
-										<button
-											data-testid={testId("db-action-delete")}
-											use:melt={$trigger}
-											on:m-click={() => {
-												deleteDatabase = { name: file };
-												dialogContent = {
-													onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-													title: dialogTitle.delete(file),
-													description: dialogDescription.deleteDatabase(),
-													type: "delete"
-												};
-											}}
-											on:m-keydown={() => {
-												deleteDatabase = { name: file };
-												dialogContent = {
-													onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-													title: dialogTitle.delete(file),
-													description: dialogDescription.deleteDatabase(),
-													type: "delete"
-												};
-											}}
-											type="button"
-											class="button cursor-pointer"><Trash /></button
-										>
-									</div>
-								</li>
-							{/if}
-						{/each}
+					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
+						{#if !importOn}
+							{#each files as file (file)}
+								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($currentDB)}
+								{#if selectionOn}
+									<li
+										data-active={active}
+										on:click={handleSelect(file)}
+										class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
+											? 'bg-green-300'
+											: 'hover:bg-gray-50'}"
+									>
+										<span>{file}</span>
+									</li>
+								{:else}
+									<li
+										data-file={file}
+										data-active={active}
+										class="group flex h-16 items-center justify-between py-3 px-4 {active ? 'bg-gray-100' : ''}"
+									>
+										<span>{file}</span>
+										<div class="hidden gap-x-2 group-hover:flex">
+											<button
+												data-testid={testId("db-action-export")}
+												on:click={handleExportDatabase(file)}
+												type="button"
+												class="button cursor-pointer"><Download /></button
+											>
+											<button
+												data-testid={testId("db-action-delete")}
+												use:melt={$trigger}
+												on:m-click={() => {
+													deleteDatabase = { name: file };
+													dialogContent = {
+														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+														title: dialogTitle.delete(file),
+														description: dialogDescription.deleteDatabase(),
+														type: "delete"
+													};
+												}}
+												on:m-keydown={() => {
+													deleteDatabase = { name: file };
+													dialogContent = {
+														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
+														title: dialogTitle.delete(file),
+														description: dialogDescription.deleteDatabase(),
+														type: "delete"
+													};
+												}}
+												type="button"
+												class="button cursor-pointer"><Trash /></button
+											>
+										</div>
+									</li>
+								{/if}
+							{/each}
+						{:else}
+							<div
+								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
+								on:drop={handleDrop}
+								on:dragover={handleDragOver}
+							>
+								<p>Drag and drop your .sqlite3 file here to import</p>
+							</div>
+						{/if}
 					</ul>
 					<div class="flex justify-end gap-x-2 px-4 py-6">
+						<button on:click={toggleImport} type="button" class="button button-white">
+							{importOn ? "Cancel" : "Import"}
+						</button>
 						<button on:click={toggleSelection} type="button" class="button {!selectionOn ? 'button-white' : 'button-green'}">Select</button>
 						<button
 							use:melt={$trigger}
@@ -269,8 +324,6 @@
 					}}
 				/>
 			</div>
-		{:else if type === "import"}
-			<!-- Import dialog -->
 		{:else}
 			<!---->
 		{/if}
