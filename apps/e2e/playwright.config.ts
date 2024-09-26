@@ -38,13 +38,12 @@ export default defineConfig({
 		{
 			name: "chromium",
 			use: { ...devices["Desktop Chrome"] }
-		}
+		},
 
-		// Skipped as SQLocal doesn't seem to play that well with Firefox, TODO: support firefox as well
-		// {
-		// 	name: "firefox",
-		// 	use: { ...devices["Desktop Firefox"] }
-		// }
+		{
+			name: "firefox",
+			use: { ...devices["Desktop Firefox"] }
+		}
 
 		// Skipped as some tests are failing on webkit in CI. The functionality is there and we wish to still
 		// run those tests, and have the ability for PRs to be green.
