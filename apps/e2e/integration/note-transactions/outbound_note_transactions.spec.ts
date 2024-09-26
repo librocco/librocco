@@ -579,6 +579,7 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	// Confirm the reconciliation
 	await dialog.confirm();
+	await dialog.waitFor({ state: "detached" });
 
 	// The note should be committed, we're redirected to '/outbound' page
 	await dashboard.view("outbound").waitFor();
