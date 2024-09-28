@@ -31,7 +31,7 @@ jobs:
       -  #@ rush_install()
       -  #@ rush_build()
       - name: Build the app
-        run: cd apps/web-client && rushx build:prod
+        run: cd apps/web-client && rushx build:e2e
       - name: Run Playwright tests
         run: cd apps/e2e && rushx test:ci
       - uses: actions/upload-artifact@v3
