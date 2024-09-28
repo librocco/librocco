@@ -13,7 +13,7 @@
 
 	import { createWarehouseHistoryStores } from "$lib/stores/inventory/history_entries";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -95,10 +95,10 @@
 	};
 	// #endregion csv
 
-	const { db } = getDB();
+	const { instance: db } = dbController;
 
 	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
-	$: historyStores = createWarehouseHistoryStores(dailySummaryCtx, db, data.warehouseId, data.from.dateValue, data.to.dateValue, filter);
+	$: historyStores = createWarehouseHistoryStores(dailySummaryCtx, $db, data.warehouseId, data.from.dateValue, data.to.dateValue, filter);
 	$: transactions = historyStores.transactions;
 	$: displayName = historyStores.displayName;
 </script>

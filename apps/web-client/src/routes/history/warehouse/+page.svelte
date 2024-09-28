@@ -8,16 +8,16 @@
 
 	import HistoryPage from "$lib/components/HistoryPage.svelte";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
 
-	const { db } = getDB();
+	const { instance: db } = dbController;
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
+	const warehouseListStream = $db
 		?.stream()
 		.warehouseMap(warehouseListCtx)
 		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
@@ -51,7 +51,7 @@
 					{@const href = appPath("history/warehouse", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 

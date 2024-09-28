@@ -8,14 +8,14 @@
 	import { appPath } from "$lib/paths";
 
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { createSearchStore } from "$lib/stores/proto/search";
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
-	const { db } = getDB();
+	const { instance: db } = dbController;
 
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
@@ -25,7 +25,8 @@
 	// Create a search index for books in the db. Each time the books change, we recreate the index.
 	// This is more/less inexpensive (around 2sec), considering it runs in the background.
 	let index: SearchIndex | undefined;
-	db?.books()
+	$db
+		?.books()
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
 	$: if (browser) window["_search_index"] = index;

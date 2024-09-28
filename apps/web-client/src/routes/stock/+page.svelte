@@ -9,7 +9,7 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { testId } from "@librocco/shared";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
 
 	import { goto } from "$lib/utils/navigation";
@@ -28,20 +28,21 @@
 
 	import { appPath } from "$lib/paths";
 
-	const { db, status } = getDB();
+	const { instance: db, ok } = dbController;
 	if (!status) goto(appPath("settings"));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readableFromStream(publisherListCtx, $db?.books().streamPublishers(publisherListCtx), []);
 
 	// Create a search index for books in the db. Each time the books change, we recreate the index.
 	// This is more/less inexpensive (around 2sec), considering it runs in the background.
 	let index: SearchIndex | undefined;
-	db?.books()
+	$db
+		?.books()
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
 
-	$: stores = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
+	$: stores = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, $db, index);
 
 	$: search = stores.search;
 	$: entries = stores.entries;
@@ -82,7 +83,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
+			await $db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
@@ -91,7 +92,7 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore($db);
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookEntry) => async () => {
@@ -258,7 +259,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = await $db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 

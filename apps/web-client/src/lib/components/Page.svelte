@@ -11,7 +11,8 @@
 	import { TooltipWrapper } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
+	import { get } from "svelte/store";
 
 	interface Link {
 		label: string;
@@ -69,7 +70,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
-		const note = await getDB().db?.warehouse().note().create();
+		const note = await get(dbController.instance)?.warehouse().note().create();
 		await goto(appPath("outbound", note.id));
 	};
 </script>
@@ -143,7 +144,7 @@
 		<!-- Topbar container end -->
 
 		<!-- Heading section -->
-		<header class="w-full px-4 pt-5 pb-6 xs:px-8">
+		<header class="xs:px-8 w-full px-4 pt-5 pb-6">
 			<slot name="heading" />
 		</header>
 		<!-- Heading section end -->

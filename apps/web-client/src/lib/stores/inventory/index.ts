@@ -1,4 +1,4 @@
-import { writable, type Readable, type Writable, derived } from "svelte/store";
+import { writable, type Readable, type Writable, derived, get } from "svelte/store";
 
 import type { NoteInterface, WarehouseInterface, SearchIndex } from "@librocco/db";
 import type { debug } from "@librocco/shared";
@@ -11,7 +11,7 @@ import { createDisplayStateStore, createInternalStateStore } from "./note_state"
 import { createDisplayEntriesStore } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
-import { getDB } from "$lib/db";
+import { dbController } from "$lib/db";
 import { createWarehouseDiscountStore } from "./warehouse_discount";
 
 interface NoteDisplayStores {
@@ -49,7 +49,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?.id}]`, debug: false };
-	const { entries } = createDisplayEntriesStore(entriesCtx, getDB().db, note, currentPage);
+	const { entries } = createDisplayEntriesStore(entriesCtx, get(dbController.instance), note, currentPage);
 
 	return {
 		displayName,
@@ -97,7 +97,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?.id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const { entries } = createDisplayEntriesStore(ctx, getDB().db, warehouse, currentPageStore, controlledSearchStore);
+	const { entries } = createDisplayEntriesStore(ctx, get(dbController.instance), warehouse, currentPageStore, controlledSearchStore);
 
 	return {
 		displayName,

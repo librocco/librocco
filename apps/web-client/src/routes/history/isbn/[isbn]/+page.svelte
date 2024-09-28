@@ -9,7 +9,7 @@
 	import { appPath } from "$lib/paths";
 
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { createBookHistoryStores } from "$lib/stores/inventory/history_entries";
 	import { createSearchStore } from "$lib/stores/proto/search";
@@ -18,12 +18,12 @@
 	import { goto } from "$lib/utils/navigation";
 	import { createSearchDropdown } from "./actions";
 
-	const { db } = getDB();
+	const { instance: db } = dbController;
 
 	$: isbn = $page.params.isbn;
 
 	const dailySummaryCtx = { name: "[BOOK_HISTORY]", debug: false };
-	$: stores = createBookHistoryStores(dailySummaryCtx, db, isbn);
+	$: stores = createBookHistoryStores(dailySummaryCtx, $db, isbn);
 
 	$: bookData = stores.bookData;
 	$: transactions = stores.transactions;
@@ -37,7 +37,8 @@
 	// Create a search index for books in the db. Each time the books change, we recreate the index.
 	// This is more/less inexpensive (around 2sec), considering it runs in the background.
 	let index: SearchIndex | undefined;
-	db?.books()
+	$db
+		?.books()
 		.streamSearchIndex()
 		.subscribe((ix) => (index = ix));
 

@@ -27,7 +27,7 @@
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -43,17 +43,17 @@
 
 	import { appPath } from "$lib/paths";
 	import { autoPrintLabels } from "$lib/stores/app";
-	import { filter, onErrorResumeNextWith, scan } from "rxjs";
+	import { filter, scan } from "rxjs";
 
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB()!;
+	const { instance: db } = dbController!;
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readableFromStream(publisherListCtx, $db?.books().streamPublishers(publisherListCtx), []);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -114,7 +114,7 @@
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get({}, [isbn]);
+		const [localBookData] = await $db.books().get({}, [isbn]);
 
 		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
 		// no need for further action
@@ -124,11 +124,12 @@
 
 		// If local book data doesn't exist at all, create an isbn-only entry
 		if (!localBookData) {
-			await db.books().upsert({}, [{ isbn }]);
+			await $db.books().upsert({}, [{ isbn }]);
 		}
 
 		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		db.plugin("book-fetcher")
+		$db
+			.plugin("book-fetcher")
 			.fetchBookData(isbn)
 			.stream()
 			.pipe(
@@ -136,7 +137,7 @@
 				// Here we're prefering the latest result to be able to observe the updates as they come in
 				scan((acc, next) => ({ ...acc, ...next }))
 			)
-			.subscribe((b) => db.books().upsert({}, [b]));
+			.subscribe((b) => $db.books().upsert({}, [b]));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
@@ -174,7 +175,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
+			await $db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
@@ -183,7 +184,7 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore($db);
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
@@ -227,7 +228,8 @@
 
 					if ($autoPrintLabels) {
 						try {
-							db.books()
+							$db
+								.books()
 								.get({}, [isbn])
 								.then(([b]) => handlePrintLabel(b)());
 							// Success
@@ -261,7 +263,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -296,7 +298,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -304,7 +306,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -312,7 +314,7 @@
 						{...item}
 						use:item.action
 						on:m-click={autoPrintLabels.toggle}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
 							? '!bg-green-400'
 							: ''}"
 					>
@@ -322,7 +324,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -496,7 +498,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = await $db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 

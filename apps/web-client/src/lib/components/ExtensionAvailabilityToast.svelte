@@ -1,9 +1,9 @@
 <script lang="ts">
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { createDBConnectivityStore, createExtensionAvailabilityStore } from "$lib/stores";
 
-	const { db } = getDB();
-	$: extensionAvailable = createExtensionAvailabilityStore(db);
+	const { instance: db } = dbController;
+	$: extensionAvailable = createExtensionAvailabilityStore($db);
 	$: dbConnectivity = createDBConnectivityStore();
 </script>
 

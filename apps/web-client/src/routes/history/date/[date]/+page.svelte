@@ -13,7 +13,7 @@
 
 	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -40,11 +40,11 @@
 	};
 	// #endregion date picker
 
-	const { db, status } = getDB();
-	if (!status) goto(appPath("settings"));
+	const { instance: db, ok } = dbController;
+	if (!ok) goto(appPath("settings"));
 
 	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
-	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, data.date);
+	$: dailySummary = createDailySummaryStore(dailySummaryCtx, $db, data.date);
 </script>
 
 <HistoryPage view="history/date">

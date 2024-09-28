@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
+	import { get } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
@@ -10,7 +11,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
 
@@ -22,10 +23,10 @@
 
 	import { appPath } from "$lib/paths";
 
-	const { db, status } = getDB();
+	const { instance: db } = dbController;
 
 	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteListStream = db
+	const outNoteListStream = $db
 		?.stream()
 		.outNoteList(outNoteListCtx)
 		.pipe(map((m) => [...m].sort(([, a], [, b]) => compareNotes(a, b))));
@@ -33,7 +34,7 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status) {
+		if (get(dbController.ok)) {
 			firstValueFrom(outNoteListStream).then(() => (initialized = true));
 		} else {
 			goto(appPath("settings"));
@@ -42,7 +43,7 @@
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
 	const handleDeleteNote = (noteId: string) => async (closeDialog: () => void) => {
-		const { note } = await db?.findNote(noteId);
+		const { note } = await $db?.findNote(noteId);
 		await note?.delete({});
 		closeDialog();
 	};
@@ -52,7 +53,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
-		const note = await db.warehouse().note().create();
+		const note = await $db.warehouse().note().create();
 		await goto(appPath("outbound", note.id));
 	};
 
@@ -110,7 +111,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", noteId)}
 
-						<div class="group entity-list-row">
+						<div class="entity-list-row group">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 

@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
+	import { get } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { firstValueFrom, map } from "rxjs";
@@ -14,7 +15,7 @@
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
@@ -27,10 +28,10 @@
 	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
-	const { db, status } = getDB();
+	const { instance: db } = dbController;
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
+	const warehouseListStream = $db
 		?.stream()
 		.warehouseMap(warehouseListCtx)
 		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
@@ -39,7 +40,7 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status) {
+		if (get(dbController.ok)) {
 			firstValueFrom(warehouseListStream).then((wls) => (initialized = true));
 		} else {
 			goto(appPath("settings"));
@@ -47,7 +48,7 @@
 	});
 
 	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
-		await db?.warehouse(warehouseId).delete();
+		await $db?.warehouse(warehouseId).delete();
 		open.set(false);
 	};
 
@@ -56,7 +57,7 @@
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
 	const handleCreateWarehouse = async () => {
-		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
+		const warehouse = await $db.warehouse(NEW_WAREHOUSE).create();
 		await goto(appPath("warehouses", warehouse.id));
 	};
 
@@ -65,7 +66,7 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = (warehouseId: string) => async () => {
-		const note = await db?.warehouse(warehouseId).note().create();
+		const note = await $db?.warehouse(warehouseId).note().create();
 		await goto(appPath("inbound", note.id));
 	};
 
@@ -104,7 +105,7 @@
 					{@const href = appPath("warehouses", warehouseId)}
 					{@const warehouseDiscount = warehouse.discountPercentage}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -158,7 +159,7 @@
 											type: "edit"
 										};
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Edit class="text-gray-400" size={20} />
 									<span class="text-gray-700">Edit</span>
@@ -170,7 +171,7 @@
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Table2 class="text-gray-400" size={20} />
 									<span class="text-gray-700">View Stock</span>
@@ -198,7 +199,7 @@
 											type: "delete"
 										};
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+									class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Trash2 class="text-white" size={20} />
 									<span class="text-white">Delete</span>
@@ -238,7 +239,7 @@
 							validationMethod: "submit-only",
 							onUpdated: async ({ form }) => {
 								const { id, name, discount } = form?.data;
-								const warehouseInterface = db.warehouse(id);
+								const warehouseInterface = $db.warehouse(id);
 
 								await warehouseInterface.setName({}, name);
 								await warehouseInterface.setDiscount({}, discount);

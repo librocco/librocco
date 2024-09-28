@@ -9,7 +9,7 @@
 	import type { PageData } from "./$types";
 
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
 	import { createPastNotesStore } from "$lib/stores/inventory/history_entries";
 	import { browser } from "$app/environment";
@@ -39,10 +39,10 @@
 	};
 	// #endregion date picker
 
-	const { db } = getDB();
+	const { instance: db } = dbController;
 
 	const pastNotesCtx = { name: "[NOTES_BY_DAY]", debug: false };
-	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
+	$: notes = createPastNotesStore(pastNotesCtx, $db, data.date);
 </script>
 
 <HistoryPage view="history/notes">
@@ -72,7 +72,7 @@
 					{@const totalBooks = note.books}
 					{@const href = appPath("history/notes/archive", note.id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="block w-full">
 							<a {href} class="entity-list-text-lg mb-2 block text-gray-900 hover:underline focus:underline">{displayName}</a>
 

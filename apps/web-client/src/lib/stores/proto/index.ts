@@ -1,4 +1,4 @@
-import type { Readable, Writable } from "svelte/store";
+import { get, type Readable, type Writable } from "svelte/store";
 
 import type { BookEntry, NoteInterface, WarehouseInterface } from "@librocco/db";
 import type { debug } from "@librocco/shared";
@@ -11,7 +11,7 @@ import { createDisplayStateStore, createInternalStateStore } from "$lib/stores/i
 import { createDisplayEntriesStore, mapMergeBookData, mapMergeBookDataCsv } from "./table_content";
 
 import { readableFromStream } from "$lib/utils/streams";
-import { getDB } from "$lib/db";
+import { dbController } from "$lib/db";
 import { createWarehouseDiscountStore } from "$lib/stores/inventory/warehouse_discount";
 interface NoteDisplayStores {
 	displayName: Writable<string | undefined>;
@@ -42,7 +42,7 @@ export const createNoteStores: CreateNoteStores = (note) => {
 	const state = createDisplayStateStore(noteStateCtx, note, internalState);
 
 	const entriesCtx = { name: `[NOTE_ENTRIES::${note?.id}]`, debug: false };
-	const entries = createDisplayEntriesStore(entriesCtx, getDB().db, note, mapMergeBookData);
+	const entries = createDisplayEntriesStore(entriesCtx, get(dbController.instance), note, mapMergeBookData);
 
 	const defaultWarehouseCtx = { name: `[NOTE_DEFAULT_WAREHOUSE::${note?.id}]`, debug: false };
 	const defaultWarehouse = createDefaultWarehouseStore(defaultWarehouseCtx, note, internalState);
@@ -85,8 +85,8 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse) => 
 	const warehouseDiscountCtx = { name: `[WAREHOUSE_DISCOUNT::${warehouse?.id}]`, debug: false };
 	const warehouseDiscount = createWarehouseDiscountStore(warehouseDiscountCtx, warehouse);
 
-	const entries = createDisplayEntriesStore<"book">(ctx, getDB().db, warehouse, mapMergeBookData);
-	const csvEntries = createDisplayEntriesStore<"book">(ctx, getDB().db, warehouse, mapMergeBookDataCsv);
+	const entries = createDisplayEntriesStore<"book">(ctx, get(dbController.instance), warehouse, mapMergeBookData);
+	const csvEntries = createDisplayEntriesStore<"book">(ctx, get(dbController.instance), warehouse, mapMergeBookDataCsv);
 
 	return {
 		displayName,

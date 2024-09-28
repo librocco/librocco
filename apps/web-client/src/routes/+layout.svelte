@@ -9,10 +9,11 @@
 	import type { LayoutData } from "./$types";
 	import { goto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
+	import { get } from "svelte/store";
 
 	export let data: LayoutData & { status: boolean };
 
-	const { db, status } = data;
+	const { instance: db, ok } = data;
 
 	let availabilitySubscription: Subscription;
 
@@ -20,10 +21,10 @@
 		// Register the db to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// This is not a security concern as the db is in the user's browser anyhow.
-		if (!status) {
+		if (!get(ok)) {
 			await goto(appPath("settings"));
 		}
-		if (db) {
+		if (get(db)) {
 			window["db_ready"] = true;
 			window["_db"] = db;
 			window.dispatchEvent(new Event("db_ready"));

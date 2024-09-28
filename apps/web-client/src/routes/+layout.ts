@@ -5,7 +5,7 @@ import { redirect } from "@sveltejs/kit";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { createDB, currentDB } from "$lib/db";
+import { dbController } from "$lib/db";
 
 import type { LayoutLoad } from "./$types";
 // import { settingsStore } from "$lib/stores";
@@ -31,25 +31,25 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// const remoteUrl = get(settingsStore).couchUrl;
 
-		const name = get(currentDB);
-		const { db, status } = await createDB(name);
+		await dbController.init(get(dbController.name));
+
+		// const { db, status } = await createDB(name);
 
 		// Register plugins
 		//
-		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
-		if (status && !IS_E2E) {
-			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
-			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
-			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		// Note: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
+		// TODO: move this to db api
+		if (get(dbController.exists) && !IS_E2E) {
+			const dbInstance = get(dbController.instance)!;
+			dbInstance.plugin("book-fetcher").register(createBookDataExtensionPlugin());
+			dbInstance.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
+			dbInstance.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
 
-		return {
-			db,
-			status
-		};
+		return dbController;
 	}
 
-	return { status: false };
+	return dbController;
 };
 export const prerender = true;
 export const trailingSlash = "always";

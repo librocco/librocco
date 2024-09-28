@@ -7,9 +7,6 @@ import { appPath } from "$lib/paths";
 
 export const load: LayoutLoad = async ({ params }) => {
 	const { warehouseId, from: _from, to: _to } = params;
-	console.log("warehoseId:", warehouseId);
-	console.log("from:", _from);
-	console.log("to:", _to);
 
 	// Validate dates - if not valid, redirect to default
 	if (!_from || !_to || ![_from, _to].every((date) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date))) {

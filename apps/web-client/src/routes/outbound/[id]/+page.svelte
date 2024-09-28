@@ -22,7 +22,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 
 	import {
 		Breadcrumbs,
@@ -62,18 +62,18 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db } = getDB();
+	const { instance: db } = dbController;
 	// if (!status) goto(appPath("settings"));
 
 	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
+	const warehouseListStream = $db
 		?.stream()
 		.warehouseMap(warehouseListCtx)
 		.pipe(map((m) => new Map<string, NavEntry>(wrapIter(m).filter(([warehouseId]) => !warehouseId.includes("0-all")))));
 	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readableFromStream(publisherListCtx, $db?.books().streamPublishers(publisherListCtx), []);
 
 	$: loading = !data;
 	$: note = data.note;
@@ -167,7 +167,7 @@
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get({}, [isbn]);
+		const [localBookData] = await $db.books().get({}, [isbn]);
 
 		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
 		// no need for further action
@@ -177,11 +177,12 @@
 
 		// If local book data doesn't exist at all, create an isbn-only entry
 		if (!localBookData) {
-			await db.books().upsert({}, [{ isbn }]);
+			await $db.books().upsert({}, [{ isbn }]);
 		}
 
 		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		db.plugin("book-fetcher")
+		$db
+			.plugin("book-fetcher")
 			.fetchBookData(isbn)
 			.stream()
 			.pipe(
@@ -189,7 +190,7 @@
 				// Here we're prefering the latest result to be able to observe the updates as they come in
 				scan((acc, next) => ({ ...acc, ...next }))
 			)
-			.subscribe((b) => db.books().upsert({}, [b]));
+			.subscribe((b) => $db.books().upsert({}, [b]));
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
@@ -272,7 +273,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
+			await $db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
@@ -281,7 +282,7 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore($db);
 
 	const onCustomItemUpdated: CustomItemOptions["onUpdated"] = async ({ form }) => {
 		/**
@@ -390,7 +391,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -425,7 +426,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="data-[highlighted]:bg-gray-100 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -433,7 +434,7 @@
 						{...item}
 						use:item.action
 						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="data-[highlighted]:bg-gray-100 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
 					</div>
@@ -441,7 +442,7 @@
 						{...item}
 						use:item.action
 						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+						class="data-[highlighted]:bg-red-500 flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
@@ -656,7 +657,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = await $db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 

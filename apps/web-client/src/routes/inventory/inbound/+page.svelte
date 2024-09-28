@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
+	import { get } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
@@ -11,7 +12,7 @@
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { goto } from "$lib/utils/navigation";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -25,10 +26,10 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
+	const { instance: db } = dbController;
 
 	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteListStream = db
+	const inNoteListStream = $db
 		?.stream()
 		.inNoteList(inNoteListCtx)
 		.pipe(
@@ -44,7 +45,7 @@
 
 	let initialized = false;
 	onMount(() => {
-		if (status) {
+		if (get(dbController.ok)) {
 			firstValueFrom(inNoteListStream).then(() => (initialized = true));
 		} else {
 			goto(appPath("settings"));
@@ -53,7 +54,7 @@
 
 	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
 	const handleDeleteNote = (noteId: string) => async (closeDialog: () => void) => {
-		const result = await db?.findNote(noteId);
+		const result = await $db?.findNote(noteId);
 
 		if (!result) {
 			return;
@@ -104,7 +105,7 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", noteId)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 

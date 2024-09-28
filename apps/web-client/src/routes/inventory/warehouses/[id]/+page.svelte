@@ -28,7 +28,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { getDB } from "$lib/db";
+	import { dbController } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
 
 	import { createWarehouseStores } from "$lib/stores/proto";
@@ -45,11 +45,11 @@
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
+	const { instance: db, ok } = dbController;
 	if (!status) goto(appPath("settings"));
 
 	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readableFromStream(publisherListCtx, $db?.books().streamPublishers(publisherListCtx), []);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -117,7 +117,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
+			await $db.books().upsert({}, [data]);
 
 			bookFormData = null;
 			open.set(false);
@@ -126,7 +126,7 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore($db);
 	// #endregion book-form
 
 	// #region infinite-scroll
@@ -298,7 +298,7 @@
 						}}
 						onCancel={() => open.set(false)}
 						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = await $db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 
