@@ -11,16 +11,16 @@
 
 	import { appPath } from "$lib/paths";
 
-	import { currentDB, select as selectDB } from "$lib/db";
+	import { dbName, dbNamePersisted, resetDB } from "$lib/db";
 
 	import { SettingsForm, DatabaseDeleteForm, settingsSchema, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { settingsStore } from "$lib/stores";
-
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
 
 	import { goto } from "$lib/utils/navigation";
+	import { invalidateAll } from "$app/navigation";
 
 	export let data: PageData;
 
@@ -83,13 +83,22 @@
 		const writable = await fileHandle.createWritable();
 		await writable.write(await file.arrayBuffer());
 		await writable.close();
-		await selectDB(file.name);
+		await handleSelect(file.name)();
 	};
 
 	// #region select db control
 	let selectionOn = false;
 	const toggleSelection = () => (selectionOn = !selectionOn);
-	const handleSelect = (name: string) => () => (selectDB(name), (selectionOn = false));
+	const handleSelect = (name: string) => async () => {
+		// Persist the selection
+		dbNamePersisted.set(name);
+		// Reset the db (allowing the root load function to reinstantiate the db)
+		resetDB();
+		// Recalculate the data from root load down
+		await invalidateAll();
+		// Close the modal
+		selectionOn = false;
+	};
 
 	// #region db operations
 	const handleExportDatabase = (name: string) => async () => {
@@ -106,7 +115,7 @@
 	};
 
 	const handleCreateDatabase = async (name: string) => {
-		await selectDB(name);
+		await handleSelect(name)();
 		open.set(false);
 		files = await getFiles();
 	};
@@ -117,8 +126,8 @@
 		files = await getFiles();
 
 		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(addSQLite3Suffix(get(currentDB)))) {
-			currentDB.set(files[0]);
+		if (!files.includes(addSQLite3Suffix(get(dbNamePersisted)))) {
+			await handleSelect(files[0])();
 		}
 
 		open.set(false);
@@ -157,7 +166,7 @@
 					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
 						{#if !importOn}
 							{#each files as file (file)}
-								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($currentDB)}
+								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
 								{#if selectionOn}
 									<li
 										data-active={active}
