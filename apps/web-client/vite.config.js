@@ -125,6 +125,9 @@ const config = {
 		// deps: { inline: true },
 		// Add @testing-library/jest-dom matchers and mock modules
 		setupFiles: ["./vitest.setup.ts"]
+	},
+	preview: {
+		port: 4174
 	}
 };
 

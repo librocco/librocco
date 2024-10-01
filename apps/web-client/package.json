@@ -12,7 +12,7 @@
 		"postinstall": "svelte-kit sync",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
-		"preview": "vite preview",
+		"preview": "vite preview & PREVIEW_ID=$!; node cors-friendly-preview-proxy/index.cjs; kill $PREVIEW_ID",
 		"story:build": "histoire build",
 		"story:dev": "histoire dev",
 		"story:preview": "histoire preview",
@@ -86,6 +86,8 @@
 		"vitest": "~1.1.0",
 		"workbox-window": "~6.5.4",
 		"zod": "~3.22.2",
-		"@internationalized/date": "~3.5.2"
+		"@internationalized/date": "~3.5.2",
+		"express": "~4.21.0",
+		"http-proxy-middleware": "~3.0.2"
 	}
 }
