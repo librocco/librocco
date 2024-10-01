@@ -66,6 +66,9 @@ export default (name: string) => {
 			    committedAt TEXT,
 				PRIMARY KEY (id)
 			)`);
+			await sql(`CREATE INDEX notesIndex ON notes (warehouseId)`);
+			await sql(`CREATE INDEX idx_notes_committed_id ON notes(committed, id)`);
+			await sql(`CREATE INDEX idx_notes_committed_notetype_id ON notes(committed, noteType, id)`);
 			await createReactiveTrigger("notes");
 		};
 
@@ -78,6 +81,14 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (warehouseId, noteId, isbn)
             )`);
+			await sql(`CREATE INDEX bookTransactionsNoteIdIndex ON bookTransactions (isbn)`);
+			await sql(
+				`CREATE INDEX bookTransactionsIsbnNoteIdWarehouseIdQuantityIndex ON bookTransactions (isbn, noteId, warehouseId, quantity)`
+			);
+			await sql(`CREATE INDEX bookTransactionsNoteIdWarehouseIdIsbnIndex ON bookTransactions (noteId, warehouseId, isbn)`);
+			// ChatGPT said this "covering index" would save a lookup since it provides all the necessary data for some queries
+			await sql(`CREATE INDEX idx_cover_bookTransactions ON bookTransactions(warehouseId, isbn, quantity, noteId)`);
+			await sql(`CREATE INDEX idx_cover_two_bookTransactions ON bookTransactions(noteId, warehouseId, isbn, quantity)`);
 			await createReactiveTrigger("bookTransactions");
 		};
 
@@ -90,6 +101,7 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (id)
             )`);
+			await sql(`CREATE INDEX customItemTransactionsIndex ON customItemTransactions (noteId)`);
 			await createReactiveTrigger("customItemTransactions");
 		};
 
