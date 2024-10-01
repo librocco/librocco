@@ -1,13 +1,16 @@
 import { newInventoryDatabaseInterface, type InventoryDatabaseInterface, type LogLevel } from "@librocco/db";
-import { get } from "svelte/store";
+import { persisted } from "svelte-local-storage-store";
+import { writable } from "svelte/store";
 
 import { browser } from "$app/environment";
 import { LOG_LEVEL } from "$lib/constants";
-import { persisted } from "svelte-local-storage-store";
 
 let db: InventoryDatabaseInterface = undefined;
-// it's INITIALLY true because the db could be local/pouch
-// in which case we'd only need the catch statement to set it to false let
+
+/** Name of the currently active (and initalised) db - used to control the current in-app state */
+export const dbName = writable("");
+/** Persisted db name, this serves a way to persist currently used db between reloads (sessions) */
+export const dbNamePersisted = persisted("librocco-current-db", "dev");
 
 let status = true;
 let reason = "";
@@ -40,7 +43,7 @@ export const checkUrlConnection = async (url: string) => {
  * This is to prevent expensive `db.init()` operations on each route change.
  */
 export const createDB = async (name: string): Promise<{ db: InventoryDatabaseInterface | undefined; status: boolean; reason: string }> => {
-	if (db && name === get(currentDB)) {
+	if (db) {
 		return { db, status: true, reason };
 	}
 
@@ -64,7 +67,16 @@ export const createDB = async (name: string): Promise<{ db: InventoryDatabaseInt
 		}
 	}
 
+	dbName.set(name);
 	return { db, status, reason };
+};
+
+/** Resets the db setup (we're using this when invalidating the root load -- changing the currently selected db) */
+export const resetDB = () => {
+	db = undefined;
+	status = true;
+	reason = "";
+	dbName.set("");
 };
 
 /**
@@ -80,11 +92,4 @@ export const destroyDB = async () => {
 		await db.destroy();
 		db = undefined;
 	}
-};
-
-export const currentDB = persisted("librocco-current-db", "dev");
-export const select = async (name: string) => {
-	if (get(currentDB) === name) return;
-	await createDB(name);
-	currentDB.set(name);
 };

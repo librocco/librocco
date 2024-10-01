@@ -11,7 +11,7 @@ import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
 import { detectLocale } from "$i18n/i18n-util";
 
-import { createDB, currentDB } from "$lib/db";
+import { createDB, dbNamePersisted } from "$lib/db";
 
 import { DEFAULT_LOCALE } from "$lib/constants";
 
@@ -53,9 +53,8 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
-		// const remoteUrl = get(settingsStore).couchUrl;
-
-		const name = get(currentDB);
+		// Init the db
+		const name = get(dbNamePersisted);
 		const { db, status } = await createDB(name);
 
 		// Register plugins
