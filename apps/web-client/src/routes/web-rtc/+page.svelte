@@ -5,7 +5,6 @@
 	import { appPath } from "$lib/paths";
 	import type { PageData } from "./$types";
 	import { dataChannel } from "$lib/stores/rtc";
-	import { get } from "svelte/store";
 
 	let outOffer = "";
 	let inOffer = "";
@@ -14,8 +13,22 @@
 	let offererPeerConnection: RTCPeerConnection;
 	let answererPeerConnection: RTCPeerConnection;
 
+	// Define ICE servers with Tailscale DNS
+	const iceServers = [
+		{
+			urls: "stun:stun.tailscale.com:3478" // Tailscale STUN server
+		}
+	];
+
+	// RTCPeerConnection configuration
+	const rtcConfig: RTCConfiguration = {
+		iceServers: iceServers,
+		iceTransportPolicy: "all" // Include all ICE candidates
+	};
+
 	const handleCreateOffer = async () => {
-		offererPeerConnection = new RTCPeerConnection();
+		// Initialize RTCPeerConnection with Tailscale configuration
+		offererPeerConnection = new RTCPeerConnection(rtcConfig);
 
 		// Create data channel
 		const dataChannelInstance = offererPeerConnection.createDataChannel("dataChannel");
@@ -29,6 +42,9 @@
 		offererPeerConnection.onicecandidate = (event) => {
 			if (event.candidate) {
 				console.log("Offerer ICE candidate:", event.candidate);
+			} else {
+				// ICE gathering complete
+				outOffer = JSON.stringify(offererPeerConnection.localDescription);
 			}
 		};
 
@@ -50,7 +66,7 @@
 			}
 		});
 
-		outOffer = JSON.stringify(offererPeerConnection.localDescription);
+		// Copy the offer to the clipboard
 		await navigator.clipboard.writeText(outOffer);
 	};
 
@@ -58,7 +74,8 @@
 		if (!inOffer) return;
 
 		const remoteOffer = JSON.parse(inOffer);
-		answererPeerConnection = new RTCPeerConnection();
+		// Initialize RTCPeerConnection with Tailscale configuration
+		answererPeerConnection = new RTCPeerConnection(rtcConfig);
 
 		answererPeerConnection.ondatachannel = (event) => {
 			const dataChannelInstance = event.channel;
@@ -73,6 +90,9 @@
 		answererPeerConnection.onicecandidate = (event) => {
 			if (event.candidate) {
 				console.log("Answerer ICE candidate:", event.candidate);
+			} else {
+				// ICE gathering complete
+				outAnswer = JSON.stringify(answererPeerConnection.localDescription);
 			}
 		};
 
@@ -96,7 +116,7 @@
 			}
 		});
 
-		outAnswer = JSON.stringify(answererPeerConnection.localDescription);
+		// Copy the answer to the clipboard
 		await navigator.clipboard.writeText(outAnswer);
 	};
 
