@@ -39,8 +39,8 @@ export default (name: string) => {
 			         END`);
 		};
 
-		const createWarehousesTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS warehouses (
+		const createWarehouseTable = async () => {
+			await sql(`CREATE TABLE IF NOT EXISTS warehouse (
 			    id TEXT,
 			    displayName TEXT,
 			    discountPercentage INTEGER,
@@ -48,11 +48,11 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (id)
 			)`);
-			await createReactiveTrigger("warehouses");
+			await createReactiveTrigger("warehouse");
 		};
 
-		const createNotesTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS notes (
+		const createNoteTable = async () => {
+			await sql(`CREATE TABLE IF NOT EXISTS note (
 			    id TEXT,
 			    displayName TEXT,
 			    warehouseId TEXT,
@@ -66,11 +66,11 @@ export default (name: string) => {
 			    committedAt TEXT,
 				PRIMARY KEY (id)
 			)`);
-			await createReactiveTrigger("notes");
+			await createReactiveTrigger("note");
 		};
 
-		const createBookTransactionsTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS bookTransactions (
+		const createBookTransactionTable = async () => {
+			await sql(`CREATE TABLE IF NOT EXISTS book_transaction (
 			    warehouseId TEXT,
 			    noteId TEXT,
 			    isbn TEXT,
@@ -78,11 +78,11 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (warehouseId, noteId, isbn)
             )`);
-			await createReactiveTrigger("bookTransactions");
+			await createReactiveTrigger("book_transaction");
 		};
 
-		const createCustomItemTransactionsTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS customItemTransactions (
+		const createCustomItemTransactionTable = async () => {
+			await sql(`CREATE TABLE IF NOT EXISTS custom_item_transaction (
 			    id TEXT,
 			    noteId TEXT,
 			    title TEXT,
@@ -90,11 +90,11 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (id)
             )`);
-			await createReactiveTrigger("customItemTransactions");
+			await createReactiveTrigger("custom_item_transaction");
 		};
 
-		const createBookDataTable = async () => {
-			await sql(`CREATE TABLE IF NOT EXISTS books (
+		const createBookTable = async () => {
+			await sql(`CREATE TABLE IF NOT EXISTS book (
 			    isbn TEXT,
 			    title TEXT,
 			    price DECIMAL(5,2),
@@ -107,14 +107,14 @@ export default (name: string) => {
 			    updatedAt TEXT,
 				PRIMARY KEY (isbn)
             )`);
-			await createReactiveTrigger("books");
+			await createReactiveTrigger("book");
 		};
 
-		await createWarehousesTable();
-		await createNotesTable();
-		await createBookTransactionsTable();
-		await createCustomItemTransactionsTable();
-		await createBookDataTable();
+		await createWarehouseTable();
+		await createNoteTable();
+		await createBookTransactionTable();
+		await createCustomItemTransactionTable();
+		await createBookTable();
 
 		debug.log(ctx, "[db core init] done!")("");
 	};
