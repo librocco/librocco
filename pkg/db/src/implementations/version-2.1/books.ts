@@ -15,7 +15,7 @@ class Books implements BooksInterface {
 	}
 
 	private _streamAll(ctx: debug.DebugCtx = {}) {
-		return this.#db._stream(ctx, (db) => db.selectFrom("books").selectAll()).pipe(map((rows) => rows.map(bookRowToBookEntry)));
+		return this.#db._stream(ctx, (db) => db.selectFrom("book").selectAll()).pipe(map((rows) => rows.map(bookRowToBookEntry)));
 	}
 
 	/**
@@ -36,7 +36,7 @@ class Books implements BooksInterface {
 		const conn = await this.#db._connection();
 
 		const bookDataMap = await conn
-			.selectFrom("books")
+			.selectFrom("book")
 			.where("isbn", "in", isbns)
 			.selectAll()
 			.execute()
@@ -58,20 +58,20 @@ class Books implements BooksInterface {
 
 		await this.#db._update((db) =>
 			db
-				.insertInto("books")
+				.insertInto("book")
 				.values(values)
 				.onConflict((oc) =>
 					oc.column("isbn").doUpdateSet((du) => ({
-						isbn: du.fn.coalesce(du.ref("excluded.isbn"), du.ref("books.isbn")),
-						authors: du.fn.coalesce(du.ref("excluded.authors"), du.ref("books.authors")),
-						category: du.fn.coalesce(du.ref("excluded.category"), du.ref("books.category")),
-						editedBy: du.fn.coalesce(du.ref("excluded.editedBy"), du.ref("books.editedBy")),
-						outOfPrint: du.fn.coalesce(du.ref("excluded.outOfPrint"), du.ref("books.outOfPrint")),
-						price: du.fn.coalesce(du.ref("excluded.price"), du.ref("books.price")),
-						publisher: du.fn.coalesce(du.ref("excluded.publisher"), du.ref("books.publisher")),
-						title: du.fn.coalesce(du.ref("excluded.title"), du.ref("books.title")),
-						updatedAt: du.fn.coalesce(du.ref("excluded.updatedAt"), du.ref("books.updatedAt")),
-						year: du.fn.coalesce(du.ref("excluded.year"), du.ref("books.year"))
+						isbn: du.fn.coalesce(du.ref("excluded.isbn"), du.ref("book.isbn")),
+						authors: du.fn.coalesce(du.ref("excluded.authors"), du.ref("book.authors")),
+						category: du.fn.coalesce(du.ref("excluded.category"), du.ref("book.category")),
+						editedBy: du.fn.coalesce(du.ref("excluded.editedBy"), du.ref("book.editedBy")),
+						outOfPrint: du.fn.coalesce(du.ref("excluded.outOfPrint"), du.ref("book.outOfPrint")),
+						price: du.fn.coalesce(du.ref("excluded.price"), du.ref("book.price")),
+						publisher: du.fn.coalesce(du.ref("excluded.publisher"), du.ref("book.publisher")),
+						title: du.fn.coalesce(du.ref("excluded.title"), du.ref("book.title")),
+						updatedAt: du.fn.coalesce(du.ref("excluded.updatedAt"), du.ref("book.updatedAt")),
+						year: du.fn.coalesce(du.ref("excluded.year"), du.ref("book.year"))
 					}))
 				)
 				.execute()
@@ -79,7 +79,7 @@ class Books implements BooksInterface {
 	}
 
 	stream(ctx: debug.DebugCtx, isbns: string[]): Observable<(BookEntry | undefined)[]> {
-		const bookDataStore = this.#db._stream(ctx, (db) => db.selectFrom("books").where("isbn", "in", isbns).selectAll());
+		const bookDataStore = this.#db._stream(ctx, (db) => db.selectFrom("book").where("isbn", "in", isbns).selectAll());
 
 		return bookDataStore.pipe(
 			// First we construct a lookup map: { isbn => book data }
@@ -91,7 +91,7 @@ class Books implements BooksInterface {
 
 	streamPublishers(ctx: debug.DebugCtx = {}) {
 		return this.#db
-			._stream(ctx, (db) => db.selectFrom("books").select("publisher").distinct())
+			._stream(ctx, (db) => db.selectFrom("book").select("publisher").distinct())
 			.pipe(map((res) => res.map((r) => r.publisher).filter(Boolean)));
 	}
 
@@ -103,7 +103,7 @@ class Books implements BooksInterface {
 
 export const createBooksInterface = (db: DatabaseInterface): BooksInterface => new Books(db);
 
-const bookRowToBookEntry = (row: DatabaseSchema["books"]): BookEntry | undefined =>
+const bookRowToBookEntry = (row: DatabaseSchema["book"]): BookEntry | undefined =>
 	!row
 		? undefined
 		: Object.fromEntries(

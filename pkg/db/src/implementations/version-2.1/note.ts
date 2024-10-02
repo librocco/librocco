@@ -55,7 +55,7 @@ class Note implements NoteInterface {
 	private async _getNameSeq(): Promise<number> {
 		const conn = await this.#db._connection();
 		const res = await conn
-			.selectFrom("notes as n")
+			.selectFrom("note as n")
 			.where("n.deleted", "!=", 1)
 			.where("n.displayName", "like", "New Note%")
 			.orderBy("n.displayName", "desc")
@@ -90,7 +90,7 @@ class Note implements NoteInterface {
 		return firstValueFrom(this.#db.stream().stock());
 	}
 
-	private async _update({ committed, reconciliationNote, ...data }: Partial<DatabaseSchema["notes"]>): Promise<NoteInterface> {
+	private async _update({ committed, reconciliationNote, ...data }: Partial<DatabaseSchema["note"]>): Promise<NoteInterface> {
 		await this.create();
 
 		if (committed !== undefined) data["committed"] = Number(committed);
@@ -103,7 +103,7 @@ class Note implements NoteInterface {
 		const updatedAt = new Date().toISOString();
 		await this.#db._update((db) =>
 			db
-				.updateTable("notes")
+				.updateTable("note")
 				.set({ ...data, updatedAt })
 				.where("id", "==", this.id)
 				.execute()
@@ -163,7 +163,7 @@ class Note implements NoteInterface {
 
 		await this.#db._update((db) =>
 			db
-				.insertInto("notes")
+				.insertInto("note")
 				.values({
 					id: this.id,
 					warehouseId: this.warehouseId,
@@ -187,7 +187,7 @@ class Note implements NoteInterface {
 
 	async get(): Promise<NoteInterface | undefined> {
 		const conn = await this.#db._connection();
-		const res = await conn.selectFrom("notes").where("id", "==", this.id).selectAll().executeTakeFirst();
+		const res = await conn.selectFrom("note").where("id", "==", this.id).selectAll().executeTakeFirst();
 
 		if (!res) return undefined;
 
@@ -219,7 +219,7 @@ class Note implements NoteInterface {
 
 	private _streamValues(ctx: debug.DebugCtx = {}) {
 		return this.#db
-			._stream(ctx, (db) => db.selectFrom("notes").where("id", "==", this.id).selectAll())
+			._stream(ctx, (db) => db.selectFrom("note").where("id", "==", this.id).selectAll())
 			.pipe(
 				map(([n]) => n),
 				map((n) => {
@@ -330,7 +330,7 @@ class Note implements NoteInterface {
 				? Promise.resolve()
 				: this.#db._update((db) =>
 						db
-							.insertInto("bookTransactions")
+							.insertInto("book_transaction")
 							.values(books)
 							.onConflict((oc) =>
 								oc.doUpdateSet((eb) => ({
@@ -344,7 +344,7 @@ class Note implements NoteInterface {
 				? Promise.resolve()
 				: this.#db._update((db) =>
 						db
-							.insertInto("customItemTransactions")
+							.insertInto("custom_item_transaction")
 							.values(customItems)
 							.onConflict((oc) => oc.doNothing())
 							.execute()
@@ -359,7 +359,7 @@ class Note implements NoteInterface {
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
 			const [id, { __kind, ...update }] = params as UpdateTransactionParams<"custom">;
 			await this.#db._update((db) =>
-				db.updateTable("customItemTransactions").where("noteId", "==", this.id).where("id", "==", id).set(update).execute()
+				db.updateTable("custom_item_transaction").where("noteId", "==", this.id).where("id", "==", id).set(update).execute()
 			);
 		} else {
 			// eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -373,7 +373,7 @@ class Note implements NoteInterface {
 				._connection()
 				.then((conn) =>
 					conn
-						.selectFrom("bookTransactions as t")
+						.selectFrom("book_transaction as t")
 						.where("t.noteId", "==", this.id)
 						.where("t.isbn", "==", matchIsbn)
 						.where("t.warehouseId", "==", matchWarehouseId)
@@ -388,7 +388,7 @@ class Note implements NoteInterface {
 			// with the existing (isbn/warehouseId) entry - in which case the quantities are aggregated
 			await this.#db._update((db) =>
 				db
-					.deleteFrom("bookTransactions")
+					.deleteFrom("book_transaction")
 					.where("noteId", "==", this.id)
 					.where("isbn", "==", matchIsbn)
 					.where("warehouseId", "==", matchWarehouseId)
@@ -399,7 +399,7 @@ class Note implements NoteInterface {
 			// quantity if there already exists a transaction with the same isbn and warehouseId
 			await this.#db._update((db) =>
 				db
-					.insertInto("bookTransactions")
+					.insertInto("book_transaction")
 					.values({ ...match, ...update, noteId: this.id, updatedAt: existing.updatedAt })
 					.onConflict((oc) =>
 						oc.doUpdateSet((eb) => ({
@@ -425,7 +425,7 @@ class Note implements NoteInterface {
 			books.map(({ isbn, warehouseId }) =>
 				this.#db._update((db) =>
 					db
-						.deleteFrom("bookTransactions")
+						.deleteFrom("book_transaction")
 						.where("noteId", "==", this.id)
 						.where("isbn", "==", isbn)
 						.where("warehouseId", "==", warehouseId)
@@ -435,7 +435,7 @@ class Note implements NoteInterface {
 			!customItems.length
 				? Promise.resolve()
 				: this.#db._update((db) =>
-						db.deleteFrom("customItemTransactions").where("noteId", "==", this.id).where("id", "in", customItems).execute()
+						db.deleteFrom("custom_item_transaction").where("noteId", "==", this.id).where("id", "in", customItems).execute()
 				  )
 		]);
 
@@ -533,7 +533,7 @@ class Note implements NoteInterface {
 
 		const books = conn
 			.selectFrom(createBooksQuery(conn, this.id).as("e"))
-			.leftJoin("books as b", "e.isbn", "b.isbn")
+			.leftJoin("book as b", "e.isbn", "b.isbn")
 			.select(["e.isbn", "b.title", "e.quantity", "b.price", "e.warehouseDiscount as discount"])
 			.execute();
 		const customItems = conn
@@ -569,8 +569,8 @@ export const createNoteInterface = (db: InventoryDatabaseInterface, warehouseId:
 // #region utils
 const createBooksQuery = (conn: Kysely<DatabaseSchema>, noteId: string) =>
 	conn
-		.selectFrom("bookTransactions as t")
-		.leftJoin("warehouses as w", "t.warehouseId", "w.id")
+		.selectFrom("book_transaction as t")
+		.leftJoin("warehouse as w", "t.warehouseId", "w.id")
 		.where("t.noteId", "==", noteId)
 		.select([
 			"t.isbn",
@@ -583,16 +583,16 @@ const createBooksQuery = (conn: Kysely<DatabaseSchema>, noteId: string) =>
 
 const createCustomItemsQuery = (conn: Kysely<DatabaseSchema>, noteId: string) =>
 	conn
-		.selectFrom("customItemTransactions as t")
+		.selectFrom("custom_item_transaction as t")
 		.where("t.noteId", "==", noteId)
 		.orderBy("t.updatedAt", "desc")
 		.select(["id", "title", "price", "t.updatedAt"]);
 
 const createExistingStockQuery = (conn: Kysely<DatabaseSchema>, isbns: string[]) => {
 	const stock = conn
-		.selectFrom("bookTransactions as t")
-		.innerJoin("notes as n", "t.noteId", "n.id")
-		.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+		.selectFrom("book_transaction as t")
+		.innerJoin("note as n", "t.noteId", "n.id")
+		.innerJoin("warehouse as w", "t.warehouseId", "w.id")
 		.where("n.committed", "==", 1)
 		.where("t.isbn", "in", isbns)
 		.select([

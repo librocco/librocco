@@ -19,7 +19,7 @@ export type WarehouseData = WD;
 export type WarehouseInterface = WI;
 
 export type DatabaseSchema = {
-	warehouses: {
+	warehouse: {
 		id: string;
 		displayName: string;
 		discountPercentage: number;
@@ -27,7 +27,7 @@ export type DatabaseSchema = {
 		updatedAt: string;
 	};
 
-	notes: {
+	note: {
 		id: string;
 		warehouseId: string;
 		noteType: string;
@@ -41,7 +41,7 @@ export type DatabaseSchema = {
 		committedAt: string;
 	};
 
-	bookTransactions: {
+	book_transaction: {
 		warehouseId: string;
 		noteId: string;
 		isbn: string;
@@ -49,7 +49,7 @@ export type DatabaseSchema = {
 		updatedAt: string;
 	};
 
-	customItemTransactions: {
+	custom_item_transaction: {
 		noteId: string;
 		id: string;
 		title: string;
@@ -57,7 +57,7 @@ export type DatabaseSchema = {
 		updatedAt: string;
 	};
 
-	books: {
+	book: {
 		isbn: string;
 		title: string;
 		price: number;

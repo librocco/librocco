@@ -91,9 +91,9 @@ const bookDataSchema = crr(
 );
 
 export const schema = ss.object({
-	warehouses: warehouseSchema,
-	notes: noteSchema,
-	bookTransactions: bookTransctionSchema,
-	customItemTransactions: customItemTransactionSchema,
-	books: bookDataSchema
+	warehouse: warehouseSchema,
+	note: noteSchema,
+	book_transaction: bookTransctionSchema,
+	custom_item_transaction: customItemTransactionSchema,
+	book: bookDataSchema
 });

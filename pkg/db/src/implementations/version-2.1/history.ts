@@ -16,8 +16,8 @@ class History implements HistoryInterface {
 		return this.#db
 			._stream(ctx, (db) =>
 				db
-					.selectFrom("notes as n")
-					.innerJoin("bookTransactions as t", "n.id", "t.noteId")
+					.selectFrom("note as n")
+					.innerJoin("book_transaction as t", "n.id", "t.noteId")
 					.where("n.committed", "==", 1)
 					.select([
 						"t.isbn",

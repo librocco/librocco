@@ -36,7 +36,7 @@ class Warehouse implements WarehouseInterface {
 		const conn = await this.#db._connection();
 		debug.log(ctx, "[WAREHOUSE:_getNameSeq] got connection!")("");
 		const res = await conn
-			.selectFrom("warehouses as w")
+			.selectFrom("warehouse as w")
 			.where("w.displayName", "like", "New Warehouse%")
 			.orderBy("w.displayName", "desc")
 			.select("w.displayName")
@@ -61,7 +61,7 @@ class Warehouse implements WarehouseInterface {
 
 	private _streamValues(ctx: debug.DebugCtx = {}) {
 		return this.#db
-			._stream(ctx, (db) => db.selectFrom("warehouses").where("id", "==", this.id).selectAll())
+			._stream(ctx, (db) => db.selectFrom("warehouse").where("id", "==", this.id).selectAll())
 			.pipe(
 				map(([w]) => w),
 				map((w) => {
@@ -94,7 +94,7 @@ class Warehouse implements WarehouseInterface {
 
 	private async __update(data: Partial<WarehouseData>): Promise<WarehouseInterface> {
 		await this.create();
-		await this.#db._update((db) => db.updateTable("warehouses").set(data).where("id", "==", this.id).execute());
+		await this.#db._update((db) => db.updateTable("warehouse").set(data).where("id", "==", this.id).execute());
 		return this.get();
 	}
 
@@ -114,7 +114,7 @@ class Warehouse implements WarehouseInterface {
 
 		await this.#db._update((db) =>
 			db
-				.insertInto("warehouses")
+				.insertInto("warehouse")
 				.values(values)
 				.onConflict((oc) => oc.doNothing())
 				.execute()
@@ -126,7 +126,7 @@ class Warehouse implements WarehouseInterface {
 
 	async get(): Promise<WarehouseInterface | undefined> {
 		const conn = await this.#db._connection();
-		const res = await conn.selectFrom("warehouses").where("id", "==", this.id).selectAll().executeTakeFirst();
+		const res = await conn.selectFrom("warehouse").where("id", "==", this.id).selectAll().executeTakeFirst();
 		return res ? Object.assign(this, res) : undefined;
 	}
 
@@ -135,7 +135,7 @@ class Warehouse implements WarehouseInterface {
 	}
 
 	async delete(): Promise<void> {
-		return this.#db._update((db) => db.deleteFrom("warehouses").where("id", "==", this.id).execute());
+		return this.#db._update((db) => db.deleteFrom("warehouse").where("id", "==", this.id).execute());
 	}
 
 	async setName(_: any, displayName: string): Promise<WarehouseInterface> {
@@ -158,7 +158,7 @@ class Warehouse implements WarehouseInterface {
 			displayName: () => this._streamValues().pipe(map((w) => w?.displayName || "")),
 			discount: (ctx: debug.DebugCtx = {}) =>
 				this.#db
-					._stream(ctx, (db) => db.selectFrom("warehouses as w").where("w.id", "==", this.id).select("w.discountPercentage"), "wh_discount")
+					._stream(ctx, (db) => db.selectFrom("warehouse as w").where("w.id", "==", this.id).select("w.discountPercentage"), "wh_discount")
 					.pipe(map((res = []) => res[0]?.discountPercentage || 0)),
 			entries: this._streamEntries.bind(this)
 		};
@@ -170,9 +170,9 @@ export const createWarehouseInterface = (db: InventoryDatabaseInterface, id?: st
 
 const createStockQuery = (conn: Kysely<DatabaseSchema>, warehouseId: string) => {
 	const coreQuery = conn
-		.selectFrom("bookTransactions as t")
-		.innerJoin("notes as n", "t.noteId", "n.id")
-		.innerJoin("warehouses as w", "t.warehouseId", "w.id")
+		.selectFrom("book_transaction as t")
+		.innerJoin("note as n", "t.noteId", "n.id")
+		.innerJoin("warehouse as w", "t.warehouseId", "w.id")
 		.where("n.committed", "==", 1);
 
 	// When querying for default pseudo-warehouse, we're retrieving all stock

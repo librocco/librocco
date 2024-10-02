@@ -81,8 +81,8 @@ class Database implements InventoryDatabaseInterface {
 	async findNote(noteId: string): Promise<NoteLookupResult<NoteInterface, WarehouseInterface> | undefined> {
 		const res = await this._connection().then((conn) =>
 			conn
-				.selectFrom("notes as n")
-				.leftJoin("warehouses as w", "n.warehouseId", "w.id")
+				.selectFrom("note as n")
+				.leftJoin("warehouse as w", "n.warehouseId", "w.id")
 				.select("w.id as warehouseId")
 				.select("n.id as noteId")
 				.where("n.id", "==", noteId)
@@ -123,8 +123,8 @@ class Database implements InventoryDatabaseInterface {
 			warehouseMap: (ctx: debug.DebugCtx = {}) =>
 				this._stream(ctx, (db) => {
 					const totalBooksQuery = db
-						.selectFrom("notes as n")
-						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
+						.selectFrom("note as n")
+						.leftJoin("book_transaction as txn", "n.id", "txn.noteId")
 						.where("n.committed", "==", 1)
 						.select([
 							"txn.warehouseId",
@@ -133,7 +133,7 @@ class Database implements InventoryDatabaseInterface {
 						.groupBy("txn.warehouseId");
 
 					return db
-						.selectFrom("warehouses as w")
+						.selectFrom("warehouse as w")
 						.leftJoin(totalBooksQuery.as("tb"), "tb.warehouseId", "w.id")
 						.select(["w.id", "w.displayName", "w.updatedAt", "w.discountPercentage", "tb.totalBooks"]);
 				}).pipe(
@@ -152,8 +152,8 @@ class Database implements InventoryDatabaseInterface {
 
 				const inNotes = this._stream(ctx, (db) =>
 					db
-						.selectFrom("notes as n")
-						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
+						.selectFrom("note as n")
+						.leftJoin("book_transaction as txn", "n.id", "txn.noteId")
 						.where("n.committed", "!=", 1)
 						// TODO: this should also probably be removed (delete should delete)
 						.where("n.deleted", "!=", 1)
@@ -192,8 +192,8 @@ class Database implements InventoryDatabaseInterface {
 			outNoteList: (ctx: debug.DebugCtx = {}) =>
 				this._stream(ctx, (db) =>
 					db
-						.selectFrom("notes as n")
-						.leftJoin("bookTransactions as txn", "n.id", "txn.noteId")
+						.selectFrom("note as n")
+						.leftJoin("book_transaction as txn", "n.id", "txn.noteId")
 						.where("committed", "is not", 1)
 						.where("noteType", "==", "outbound")
 						.where("deleted", "is not", 1)
