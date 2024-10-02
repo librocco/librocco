@@ -4,6 +4,8 @@
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 	import { appPath } from "$lib/paths";
 	import type { PageData } from "./$types";
+	import { dataChannel } from "$lib/stores/rtc";
+	import { get } from "svelte/store";
 
 	let outOffer = "";
 	let inOffer = "";
@@ -13,24 +15,19 @@
 	let answererPeerConnection: RTCPeerConnection;
 
 	const handleCreateOffer = async () => {
-		// Create the Web RTC offer, store it to outOffer and copy it to the clipboard
 		offererPeerConnection = new RTCPeerConnection();
 
 		// Create data channel
-		const dataChannel = offererPeerConnection.createDataChannel("dataChannel");
+		const dataChannelInstance = offererPeerConnection.createDataChannel("dataChannel");
 
-		dataChannel.onopen = () => {
-			console.log("Data channel is open");
-			dataChannel.send("Hello from offerer");
-		};
-
-		dataChannel.onmessage = (event) => {
-			console.log("Received message:", event.data);
+		dataChannelInstance.onopen = () => {
+			console.log("Data channel is open (Offerer)");
+			dataChannel.set(dataChannelInstance);
+			goto(appPath("web-rtc/chat"));
 		};
 
 		offererPeerConnection.onicecandidate = (event) => {
 			if (event.candidate) {
-				// Normally, you would send the candidate to the remote peer
 				console.log("Offerer ICE candidate:", event.candidate);
 			}
 		};
@@ -58,26 +55,23 @@
 	};
 
 	const handleAcceptOffer = async () => {
-		// Accept the Web RTC offer from inOffer
 		if (!inOffer) return;
 
 		const remoteOffer = JSON.parse(inOffer);
 		answererPeerConnection = new RTCPeerConnection();
 
 		answererPeerConnection.ondatachannel = (event) => {
-			const dataChannel = event.channel;
-			dataChannel.onopen = () => {
-				console.log("Data channel is open");
-				dataChannel.send("Hello from answerer");
-			};
-			dataChannel.onmessage = (event) => {
-				console.log("Received message:", event.data);
+			const dataChannelInstance = event.channel;
+
+			dataChannelInstance.onopen = () => {
+				console.log("Data channel is open (Answerer)");
+				dataChannel.set(dataChannelInstance);
+				goto(appPath("web-rtc/chat"));
 			};
 		};
 
 		answererPeerConnection.onicecandidate = (event) => {
 			if (event.candidate) {
-				// Normally, you would send the candidate to the remote peer
 				console.log("Answerer ICE candidate:", event.candidate);
 			}
 		};

@@ -13,7 +13,9 @@ const PATHS = {
 	"history/isbn": `${basepath}/history/isbn/`,
 	"history/notes/date": `${basepath}/history/notes/`,
 	"history/notes/archive": `${basepath}/history/notes/archive`,
-	"history/warehouse": `${basepath}/history/warehouse/`
+	"history/warehouse": `${basepath}/history/warehouse/`,
+	"web-rtc": `${basepath}/web-rtc`,
+	"web-rtc/chat": `${basepath}/web-rtc/chat`
 };
 
 /**
