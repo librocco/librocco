@@ -3,14 +3,16 @@ import { Kysely } from "kysely";
 
 import { debug } from "@librocco/shared";
 
+import { DBConfigOpts } from "@/types";
 import type { DatabaseSchema } from "./types";
+
 import { createReactive } from "./reactive";
 
-export default (name: string) => {
+export default (name: string, opts?: DBConfigOpts) => {
 	const { dialect, sql, createCallbackFunction } = new SQLocalKysely(name);
 	const db = new Kysely<DatabaseSchema>({ dialect });
 
-	const { stream, notify } = createReactive(db);
+	const { stream, notify } = createReactive(db, undefined, opts.logLevel);
 
 	const init = async (ctx: debug.DebugCtx = {}) => {
 		debug.log(ctx, "[db core init] in progress...")("");
