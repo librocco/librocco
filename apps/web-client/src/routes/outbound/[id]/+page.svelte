@@ -153,7 +153,7 @@
 			.map((entry) => ({ __kind: "book", ...entry }))
 	});
 
-	const table = createTable(tableOptions);
+	const table = createTable(tableOptions, (row) => Object.values(row).join("-"));
 
 	$: tableOptions.set({
 		data: ($entries as InventoryTableData[])?.slice(0, maxResults)

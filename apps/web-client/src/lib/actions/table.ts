@@ -14,7 +14,7 @@ type WritableOrValue<T> = T | Writable<T>;
 type Options<T> = WritableOrValue<TableOptions<T>>;
 
 // eslint-disable-next-line
-export function createTable<T = object>(options: Options<T>) {
+export function createTable<T = object>(options: Options<T>, createKey: (row: T) => string = uuidv4) {
 	let optionsStore: Writable<TableOptions<T>>;
 
 	if ("subscribe" in options) {
@@ -34,7 +34,7 @@ export function createTable<T = object>(options: Options<T>) {
 	// const _data = writable(setRowKeys(rows));
 	const data = derived(optionsStore, ($options) => {
 		const { data = [] } = $options;
-		return data.map((row, ix) => ({ ...row, key: uuidv4(), rowIx: ix }));
+		return data.map((row, ix) => ({ ...row, key: createKey(row), rowIx: ix }));
 	});
 
 	/**
