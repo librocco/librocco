@@ -22,7 +22,7 @@ export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind
 	total: number;
 }
 
-export type EntriesQuery = (ctx: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
+export type EntriesQuery = (ctx?: debug.DebugCtx) => Promise<Iterable<VolumeStockClient>>;
 
 export interface OutOfStockTransaction extends VolumeStock<"book"> {
 	warehouseName: string;
@@ -52,11 +52,11 @@ export type NoteData<A extends Record<string, any> = {}> = TimestampedDoc<
  * A standardized interface for streams received from a note
  */
 export interface NoteStream {
-	state: (ctx: debug.DebugCtx) => Observable<NoteState>;
-	displayName: (ctx: debug.DebugCtx) => Observable<string>;
-	defaultWarehouseId: (ctx: debug.DebugCtx) => Observable<string>;
-	updatedAt: (ctx: debug.DebugCtx) => Observable<Date | null>;
-	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult>;
+	state(ctx?: debug.DebugCtx): Observable<NoteState>;
+	displayName(ctx?: debug.DebugCtx): Observable<string>;
+	defaultWarehouseId(ctx?: debug.DebugCtx): Observable<string>;
+	updatedAt(ctx?: debug.DebugCtx): Observable<Date | null>;
+	entries(ctx?: debug.DebugCtx): Observable<EntriesStreamResult>;
 }
 
 export type UpdateTransactionParams<K extends VolumeStockKind = VolumeStockKind> = K extends "custom"
@@ -69,10 +69,10 @@ export type UpdateTransactionParams<K extends VolumeStockKind = VolumeStockKind>
  */
 export interface NoteProto<A extends Record<string, any> = {}> {
 	// CRUD
-	create(): Promise<NoteInterface<A>>;
-	get(): Promise<NoteInterface<A> | undefined>;
+	create(ctx?: debug.DebugCtx): Promise<NoteInterface<A>>;
+	get(ctx?: debug.DebugCtx): Promise<NoteInterface<A> | undefined>;
 	// NOTE: update is private
-	delete(ctx: debug.DebugCtx): Promise<void>;
+	delete(ctx?: debug.DebugCtx): Promise<void>;
 
 	// Note specific methods
 	/** Set name updates the `displayName` of the note. */
@@ -83,12 +83,13 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * Marks the note as a 'reconciliationNote' - an inbound note used to reconcile the state
 	 * in case an outbound note contains some out-of-stock books (but they exist in physical state).
 	 */
-	setReconciliationNote: (ctx: debug.DebugCtx, value: boolean) => Promise<NoteInterface<A>>;
+	setReconciliationNote(ctx: debug.DebugCtx, value: boolean): Promise<NoteInterface<A>>;
 	/**
 	 * Add volumes accepts an array of volume stock entries and adds them to the note.
 	 * If any transactions (for a given isbn and warehouse) already exist, the quantity gets aggregated.
 	 */
 	addVolumes(
+		ctx: debug.DebugCtx,
 		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface<A>>;
 	/**
@@ -102,6 +103,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * The transaction is matched by both isbn and warehouseId.
 	 */
 	removeTransactions(
+		ctx: debug.DebugCtx,
 		...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>
 	): Promise<NoteInterface<A>>;
 	/**
@@ -110,7 +112,7 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	 * @param options object
 	 * @param options.force force commit, even if the note is empty (this should be used only in tests)
 	 */
-	commit(ctx: debug.DebugCtx, options?: { force: true }): Promise<NoteInterface<A>>;
+	commit(ctx?: debug.DebugCtx, options?: { force: true }): Promise<NoteInterface<A>>;
 	/**
 	 * Stream returns an object containing observable streams for the note:
 	 * - `state` - streams the note's `state`
@@ -126,12 +128,12 @@ export interface NoteProto<A extends Record<string, any> = {}> {
 	/**
 	 * Creates a receipt object (of ReceiptData type) for printing. Doesn't do the actual printing.
 	 */
-	intoReceipt(): Promise<ReceiptData>;
+	intoReceipt(ctx?: debug.DebugCtx): Promise<ReceiptData>;
 	/**
 	 * For outbound notes: this function reconciles the missing stock (in the outbound note) by creating new inbound note(s), in the
 	 * background, and committing those before committing the outbound note so that the resulting for each entry will at least be 0 (no negative quantities).
 	 */
-	reconcile: (ctx: debug.DebugCtx) => Promise<NoteInterface<A>>;
+	reconcile(ctx?: debug.DebugCtx): Promise<NoteInterface<A>>;
 }
 
 /**
@@ -159,9 +161,9 @@ export type WarehouseData<A extends Record<string, any> = {}> = TimestampedDoc<
  * A standardized interface for streams received from a warehouse
  */
 export interface WarehouseStream {
-	displayName: (ctx: debug.DebugCtx) => Observable<string>;
-	discount: (ctx: debug.DebugCtx) => Observable<number>;
-	entries: (ctx: debug.DebugCtx) => Observable<EntriesStreamResult<"book">>;
+	displayName(ctx?: debug.DebugCtx): Observable<string>;
+	discount(ctx?: debug.DebugCtx): Observable<number>;
+	entries(ctx?: debug.DebugCtx): Observable<EntriesStreamResult<"book">>;
 }
 
 /**
@@ -170,27 +172,27 @@ export interface WarehouseStream {
  */
 export interface WarehouseProto<N extends NoteInterface = NoteInterface, A extends Record<string, any> = {}> {
 	// CRUD
-	create: () => Promise<WarehouseInterface<N, A>>;
-	get: () => Promise<WarehouseInterface<N, A> | undefined>;
+	create(ctx?: debug.DebugCtx): Promise<WarehouseInterface<N, A>>;
+	get(ctx?: debug.DebugCtx): Promise<WarehouseInterface<N, A> | undefined>;
 	// NOTE: update is private
-	delete: () => Promise<void>;
+	delete(ctx?: debug.DebugCtx): Promise<void>;
 
 	/** Note constructs a note interface for the note with the provided id. If ommitted, a new (timestamped) id is generated (for note creation). */
-	note: (id?: string) => N;
+	note(id?: string): N;
 	/** Set name udpates the `displayName` of the warehouse */
-	setName: (ctx: debug.DebugCtx, name: string) => Promise<WarehouseInterface<N, A>>;
+	setName(ctx: debug.DebugCtx, name: string): Promise<WarehouseInterface<N, A>>;
 	/**
 	 * Set discount percentage to be applied to original book prices for all books belonging to the particular warehouse.
 	 * @param ctx debug context
 	 * @param discountPercentage discount percentage as two digit integer, e.g. 20 for 20% discount
 	 */
-	setDiscount: (ctx: debug.DebugCtx, discountPercentage: number) => Promise<WarehouseInterface<N, A>>;
+	setDiscount(ctx: debug.DebugCtx, discountPercentage: number): Promise<WarehouseInterface<N, A>>;
 	/**
 	 * Stream returns an object containing observable streams for the warehouse:
 	 * - `displayName` - streams the warehouse's `displayName`
 	 * - `entries` - streams the warehouse's `entries` (stock)
 	 */
-	stream: () => WarehouseStream;
+	stream(): WarehouseStream;
 	/**
 	 * An imperative query (single response) of warehouse stock (as opposed to the entries stream - an observable stream).
 	 */
@@ -237,7 +239,7 @@ export interface PastTransactionsInterface {
 }
 
 export interface HistoryInterface {
-	stream(ctx: debug.DebugCtx): Observable<PastTransactionsInterface>;
+	stream(ctx?: debug.DebugCtx): Observable<PastTransactionsInterface>;
 }
 // #endregion history
 
@@ -275,11 +277,11 @@ export interface FindNote<N extends NoteInterface, W extends WarehouseInterface>
  * A standardized interface for streams received from a db
  */
 export interface DbStream {
-	warehouseMap: (ctx: debug.DebugCtx) => Observable<WarehouseDataMap>;
-	outNoteList: (ctx: debug.DebugCtx) => Observable<NavMap>;
-	inNoteList: (ctx: debug.DebugCtx) => Observable<InNoteMap>;
+	warehouseMap(ctx?: debug.DebugCtx): Observable<WarehouseDataMap>;
+	outNoteList(ctx?: debug.DebugCtx): Observable<NavMap>;
+	inNoteList(ctx?: debug.DebugCtx): Observable<InNoteMap>;
 
-	stock: () => Observable<StockMap>;
+	stock(ctx?: debug.DebugCtx): Observable<StockMap>;
 }
 
 /**
@@ -298,7 +300,7 @@ export type InventoryDatabaseInterface<
 		 * updated, otherwise it will be created.
 		 * - `stream` - accepts an array of isbns and returns a stream, streaming an array of same length, containing book data or `undefined`.
 		 */
-		books: () => BooksInterface;
+		books(): BooksInterface;
 		/**
 		 * Warehouse returns a warehouse interface for a given warehouse id.
 		 * If no id is provided, it falls back to the default (`0-all`) warehouse.
@@ -310,7 +312,7 @@ export type InventoryDatabaseInterface<
 		 * const newWarehouse = db.warehouse(NEW_WAREHOUSE);
 		 * ```
 		 */
-		warehouse: (id?: string | typeof NEW_WAREHOUSE) => W;
+		warehouse(id?: string | typeof NEW_WAREHOUSE): W;
 		/**
 		 * Find note accepts a note id and returns:
 		 * - if note exists: the note interface and warehouse interface for its parent warehouse
@@ -323,11 +325,11 @@ export type InventoryDatabaseInterface<
 		 * - `outNoteList` a stream of out note list entries (for navigation)
 		 * - `inNoteList` - a stream of in note list entries (for navigation)
 		 */
-		stream: () => DbStream;
+		stream(): DbStream;
 		/**
 		 * returns warehouse data map
 		 */
-		getWarehouseDataMap: () => Promise<WarehouseDataMap>;
+		getWarehouseDataMap(ctx?: debug.DebugCtx): Promise<WarehouseDataMap>;
 		/**
 		 * Returns a history interface for the db, handling queries/streams with regard
 		 * to past transactions, notes, etc.
@@ -336,7 +338,10 @@ export type InventoryDatabaseInterface<
 	} & Ext
 >;
 
+export type LogLevel = "none" | "log" | "debug";
+export type DBConfigOpts = { test?: boolean; logLevel?: LogLevel };
+
 export interface InventoryDatabaseConstructor {
-	(name: string, opts?: { test?: boolean }): InventoryDatabaseInterface;
+	(name: string, opts?: DBConfigOpts): InventoryDatabaseInterface;
 }
 // #endregion db

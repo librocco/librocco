@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import { filter, map } from "./generators";
 import { VolumeStock } from "./types";
+import { asc, composeCompare } from "./utils";
 
 /**
  * Input for VolumeStockMap, used to aggregate the transactions and calculate stock.
@@ -53,7 +54,18 @@ export class StockMap implements Map<StockKey, StockElement> {
 	static fromDbRows(rows: Iterable<VolumeStockInput>) {
 		const map = new StockMap();
 		map.aggregate(rows);
-		return map;
+		return map.sort();
+	}
+
+	sort() {
+		return new StockMap(
+			[...this.entries()].sort(
+				composeCompare(
+					asc(([[isbn]]) => isbn),
+					asc(([[, warehouseId]]) => warehouseId)
+				)
+			)
+		);
 	}
 
 	// #region Map interface

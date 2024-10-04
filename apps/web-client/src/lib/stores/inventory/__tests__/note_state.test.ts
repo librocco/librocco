@@ -51,7 +51,7 @@ describe("createDisplayStateStore", () => {
 		const cleanupSubscription = displayStateStore.subscribe(() => null);
 
 		// Add a transaction to the note, so we can test committing (would throw if there are no transactions)
-		await note.addVolumes({ isbn: "12345678", quantity: 1 });
+		await note.addVolumes({}, { isbn: "12345678", quantity: 1 });
 
 		displayStateStore.set(NoteState.Committed);
 		// The internal state is streamed back to the display state store, so we can test the display store for temp state

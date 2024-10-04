@@ -3,6 +3,8 @@ import { filter, reduce } from "./generators";
 export interface DebugCtx {
 	name?: string;
 	debug?: boolean;
+	include?: string[];
+	exclude?: string[];
 	logTimes?: boolean;
 	logTimerStart?: (name: string) => void;
 	logTimerEnd?: (name: string) => void;
@@ -21,6 +23,14 @@ export const log =
 			console.log(payload);
 		}
 	};
+
+export const addNode = (ctx: DebugCtx, id: string, meta = "") => {
+	// Check if the node should be included in the logs tree
+	const exclude = (ctx.include && !ctx.include.includes(id)) || ctx.exclude?.includes(id);
+	const debug = !exclude && ctx.debug;
+	const name = [id, meta].filter(Boolean).join("::");
+	return { name: [ctx.name, name].filter(Boolean).join(": "), debug };
+};
 
 export class DebugCtxWithTimer implements DebugCtx {
 	name?: string;

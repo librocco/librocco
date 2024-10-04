@@ -1,2 +1,3 @@
 # Ignore test db files
-.test-dbs
+test-dbs/*
+./**/__screenshots__/*
