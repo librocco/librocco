@@ -1,7 +1,8 @@
-import { newInventoryDatabaseInterface, type InventoryDatabaseInterface } from "@librocco/db";
+import { newInventoryDatabaseInterface, type InventoryDatabaseInterface, type LogLevel } from "@librocco/db";
 
 import { LOCAL_POUCH_DB_NAME } from "$lib/constants";
 import { browser } from "$app/environment";
+import { LOG_LEVEL } from "$lib/constants";
 
 let db: InventoryDatabaseInterface = undefined;
 // it's INITIALLY true because the db could be local/pouch
@@ -49,10 +50,14 @@ export const createDB = async (_url?: string): Promise<{ db: InventoryDatabaseIn
 	const url = _url || LOCAL_POUCH_DB_NAME;
 	if (browser) {
 		try {
-			db = newInventoryDatabaseInterface(url);
-			await db.init();
+			db = newInventoryDatabaseInterface(url, { logLevel: LOG_LEVEL as LogLevel });
+
+			const ctx = { name: "[db init]", debug: false };
+			await db.init(ctx);
+
 			status = true;
 		} catch (err) {
+			console.error(err);
 			status = false;
 			reason = "Failed to connect to provided URL.";
 		}

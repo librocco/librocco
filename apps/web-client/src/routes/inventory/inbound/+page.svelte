@@ -34,7 +34,7 @@
 		.pipe(
 			map((m) =>
 				wrapIter(m)
-					.filter(([warehouseId]) => !warehouseId.includes("0-all"))
+					.filter(([warehouseId]) => !warehouseId.includes("all"))
 					.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
 					.array()
 					.sort(([, [, a]], [, [, b]]) => compareNotes(a, b))

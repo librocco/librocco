@@ -34,7 +34,7 @@ class Books implements BooksInterface {
 			.then((books) => books.filter((book): book is BookEntry => Boolean(book)));
 	}
 
-	async upsert(_docs: (Partial<BookEntry> | undefined)[]): Promise<void> {
+	async upsert(_: debug.DebugCtx, _docs: (Partial<BookEntry> | undefined)[]): Promise<void> {
 		// Filter out (possibly) undefined inputs
 
 		const docsToUpsert = _docs.filter((d): d is BookEntry => Boolean(d));
@@ -60,7 +60,7 @@ class Books implements BooksInterface {
 		await this.#db._pouch.bulkDocs(updates);
 	}
 
-	async get(isbns: string[]): Promise<(BookEntry | undefined)[]> {
+	async get(_: debug.DebugCtx, isbns: string[]): Promise<(BookEntry | undefined)[]> {
 		const books = await this.#db._pouch
 			.allDocs<BookEntry>({ keys: isbns.map((isbn) => `books/${isbn}`), include_docs: true })
 			// The rows are returned in the same order as the supplied keys array.
@@ -104,11 +104,11 @@ class Books implements BooksInterface {
 				filter: (doc) => isbns.includes(doc._id.replace("books/", ""))
 			});
 
-			const initialState = from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:initial_state")));
+			const initialState = from(this.get(ctx, isbns)).pipe(tap(debug.log(ctx, "books:initial_state")));
 			const changeStream = newChangesStream<BookEntry[]>(ctx, emitter).pipe(
 				tap(debug.log(ctx, "books:change")),
 				// The change only triggers a new query (as changes are partial and we need the "all docs" update)
-				switchMap(() => from(this.get(isbns)).pipe(tap(debug.log(ctx, "books:change:stream"))))
+				switchMap(() => from(this.get(ctx, isbns)).pipe(tap(debug.log(ctx, "books:change:stream"))))
 			);
 
 			concat(initialState, changeStream)

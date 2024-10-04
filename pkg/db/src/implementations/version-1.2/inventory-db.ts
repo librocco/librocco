@@ -253,7 +253,7 @@ class Database implements InventoryDatabaseInterface {
 }
 
 export const newDatabase: InventoryDatabaseConstructor = (name, { test = false } = {}) => {
-	const pouch = test ? new PouchDB(name, { adapter: "memory" }) : new PouchDB(name);
+	const pouch = test ? new PouchDB(name) : new PouchDB(name);
 	return new Database(pouch);
 };
 

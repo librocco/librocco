@@ -48,7 +48,7 @@ describe
 		for (const note of notes) {
 			await (note.type === "inbound" ? db.warehouse(note.books[0].warehouseId).create() : db.warehouse().create())
 				.then((w) => w.note(note.id).create())
-				.then((n) => n.addVolumes(...note.books))
+				.then((n) => n.addVolumes({}, ...note.books))
 				.then((n) => n.commit({}));
 		}
 
