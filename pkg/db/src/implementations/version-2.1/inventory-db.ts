@@ -14,7 +14,9 @@ import {
 	InventoryDatabaseConstructor,
 	BooksInterface,
 	DbStream,
-	HistoryInterface
+	HistoryInterface,
+	DBConfigOpts,
+	LogLevel
 } from "@/types";
 import { DatabaseSchema, InventoryDatabaseInterface, Selectable, SelectedStream, WarehouseInterface } from "./types";
 
@@ -31,12 +33,15 @@ import { createHistoryInterface } from "./history";
 class Database implements InventoryDatabaseInterface {
 	#db: ReturnType<typeof database>;
 	#ready = new BehaviorSubject(false);
+	#logLevel: LogLevel;
+
 	_sql: ReturnType<typeof database>["sql"];
 
 	private _plugins = newPluginsInterface();
 
-	constructor(name: string) {
-		this.#db = database(name);
+	constructor(name: string, opts?: DBConfigOpts) {
+		this.#db = database(name, opts);
+		this.#logLevel = opts.logLevel;
 		this._sql = this.#db.sql;
 	}
 
@@ -213,11 +218,11 @@ class Database implements InventoryDatabaseInterface {
 	}
 }
 
-export const newDatabase: InventoryDatabaseConstructor = (_name = "dev", { test = false } = {}) => {
+export const newDatabase: InventoryDatabaseConstructor = (_name = "dev", opts?: DBConfigOpts) => {
 	// If testing, we're namespacing the db as SQLite writes to fs, so it's easy to write to the designated folder,
 	// and then, clean up and / or ignore the folder
-	let name = test ? `test-dbs/${_name}` : _name;
+	let name = opts.test ? `test-dbs/${_name}` : _name;
 	name = name.endsWith(".sqlite3") ? name : name + ".sqlite3";
 
-	return new Database(name);
+	return new Database(name, opts);
 };

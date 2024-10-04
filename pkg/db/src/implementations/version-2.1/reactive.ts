@@ -13,6 +13,7 @@ import { Observable } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
+import { LogLevel } from "@/types";
 import { Selectable, SelectedStream } from "./types";
 import { uniqueTimestamp } from "@/utils/misc";
 
@@ -59,7 +60,9 @@ export class SubsMap {
 		}
 	}
 }
-export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsMap()) => {
+export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsMap(), logLevel: LogLevel = "none") => {
+	const timeLogger = newTimeLogger(logLevel);
+
 	return {
 		notify: subsMap.notify.bind(subsMap) as SubsMap["notify"],
 		stream: <S extends Selectable<any>>(ctx: debug.DebugCtx, qb: (db: K) => S, idPrefix = ""): SelectedStream<S> => {
@@ -69,8 +72,11 @@ export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsM
 			return new Observable<Awaited<ReturnType<S["execute"]>>>((s) => {
 				const executeQuery = (table: string) => {
 					debug.log(ctx, "reactive:notify:table")(table);
+					const logId = uniqueTimestamp();
+					timeLogger.start(q, logId)
 					q.execute()
 						.then((x) => x || [])
+						.then((x) => (timeLogger.end(q, logId), x))
 						.then(s.next.bind(s));
 				};
 				executeQuery("INITIAL");
@@ -121,3 +127,33 @@ function affectedTables(target: Node): string[] {
 	}
 	return [];
 }
+
+const newTimeLogger = (logLevel: LogLevel) => {
+	const seen = {
+		start: new Map<string, boolean>(),
+		end: new Map<string, boolean>()
+	}
+
+	const _log = (kind: "start" | "end") => (query: Selectable<any>, id: string) => {
+		const _logKind = (logId: string) => (kind === "start" ? console.time(logId) : console.timeEnd(logId));
+
+		// Don't log anything
+		if (logLevel === "none") return;
+
+		const queryStr = query.compile().sql;
+		const logId = [queryStr, id].join("::");
+
+		// If log level == "debug" log every time
+		if (logLevel === "debug") return _logKind(logId);
+
+		// If log level == "log" log every query only once
+		if (seen[kind].get(queryStr)) return
+		seen[kind].set(queryStr, true);
+		return _logKind(logId);
+	};
+
+	const start = _log("start")
+	const end = _log("end");
+
+	return { start, end };
+};
