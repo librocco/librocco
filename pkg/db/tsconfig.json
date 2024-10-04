@@ -1,6 +1,6 @@
 {
-	"extends": "../scaffold/tsconfig.json",
 	"compilerOptions": {
+		"moduleResolution": "bundler",
 		"paths": {
 			"@/*": ["src/*"],
 			"@test-runner/*": ["src/test-runner/*"],
@@ -9,9 +9,11 @@
 		},
 		"rootDir": "src",
 		"baseUrl": ".",
+		"target": "ESNext",
 
 		"lib": ["ESNext"],
-		"esModuleInterop": true
+		"esModuleInterop": true,
+		"skipLibCheck": true
 	},
 	"exclude": ["node_modules"],
 	"include": ["src"]

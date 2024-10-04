@@ -354,7 +354,7 @@ test("should display book count for each respective note in the list", async ({ 
 
 	// Add two books to first note
 	await dbHandle.evaluate((db) =>
-		db.warehouse("warehouse-1").note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
+		db.warehouse("warehouse-1").note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
 	);
 
 	await content.entityList("inbound-list").assertElements([
@@ -367,7 +367,7 @@ test("should display book count for each respective note in the list", async ({ 
 		db
 			.warehouse("warehouse-1")
 			.note("note-2")
-			.addVolumes({ isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
+			.addVolumes({}, { isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
 	);
 
 	await content.entityList("inbound-list").assertElements([
@@ -396,10 +396,10 @@ test("should display book original price and discounted price as well as the war
 	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").setDiscount({}, 10));
 
 	// Create a new book with price
-	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
+	await dbHandle.evaluate((db, book) => db.books().upsert({}, [book]), book1);
 
 	// Add book to note
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }));
+	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }));
 
 	// Navigate to the inbound list
 	await content.navigate("inbound-list");

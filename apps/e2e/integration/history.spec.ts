@@ -39,7 +39,7 @@ test.beforeEach(async ({ page }) => {
 	await dbHandle.evaluateHandle((db) => db.warehouse("wh2").setDiscount({}, 10));
 
 	// Add book data to db as we'll be needing some book data (for testing of stats and such)
-	await dbHandle.evaluateHandle((db, books) => db.books().upsert(books), books);
+	await dbHandle.evaluateHandle((db, books) => db.books().upsert({}, books), books);
 });
 
 test("history/date - display", async ({ page }) => {
@@ -58,7 +58,7 @@ test("history/date - display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -91,7 +91,7 @@ test("history/date - display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -124,7 +124,7 @@ test("history/date - display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -158,7 +158,7 @@ test("history/date - display", async ({ page }) => {
 			.create()
 			.then((n) => n.setName({}, "Note 4"))
 			.then((n) =>
-				n.addVolumes({ isbn: "1111111111", quantity: 2, warehouseId: "wh2" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" })
+				n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh2" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" })
 			)
 			.then((n) => n.commit({}))
 	);
@@ -199,7 +199,7 @@ test("history/date - display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 5"))
-			.then((n) => n.addVolumes({ isbn: "3333333333", quantity: 2 }))
+			.then((n) => n.addVolumes({}, { isbn: "3333333333", quantity: 2 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -266,7 +266,7 @@ test("history/date - general navigation", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -302,7 +302,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 			.note("note-1")
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 3 }))
 			.then((n) => n.commit({}))
 	);
 	// ...and one outbound note
@@ -313,7 +313,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
 			.then((n) =>
-				n.addVolumes({ isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh1" })
+				n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh1" })
 			)
 			.then((n) => n.commit({}))
 	);
@@ -327,7 +327,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 			.note("note-3")
 			.create()
 			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }))
 			.then((n) => n.commit({}))
 	);
 	await dbHandle.evaluateHandle((db) =>
@@ -336,7 +336,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 			.note("note-4")
 			.create()
 			.then((n) => n.setName({}, "Note 4"))
-			.then((n) => n.addVolumes({ isbn: "2222222222", quantity: 1, warehouseId: "wh1" }))
+			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 1, warehouseId: "wh1" }))
 			.then((n) => n.commit({}))
 	);
 
@@ -435,20 +435,20 @@ test("history/isbn - search results", async ({ page }) => {
 	// Searching for a book that exists in two warehouses should display only one result
 	//
 	// Add the same book in two warehouses
-	dbHandle.evaluateHandle((db) =>
+	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh1")
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
-	dbHandle.evaluateHandle((db) =>
+	await dbHandle.evaluateHandle((db) =>
 		db
 			.warehouse("wh2")
 			.note()
 			.create()
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -526,7 +526,7 @@ test("history/isbn - transaction display", async ({ page }) => {
 				.note()
 				.create()
 				.then((n) => n.setName({}, "Note 1"))
-				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
 				.then((n) => n.commit({}))
 		)
 		// Return the (close) timestamp of the update
@@ -555,7 +555,7 @@ test("history/isbn - transaction display", async ({ page }) => {
 				.note()
 				.create()
 				.then((n) => n.setName({}, "Note -1"))
-				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }))
+				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }))
 				.then((n) => n.commit({}))
 		)
 		// Return the (close) timestamp of the update
@@ -586,7 +586,7 @@ test("history/isbn - transaction display", async ({ page }) => {
 				.note()
 				.create()
 				.then((n) => n.setName({}, "Note 2"))
-				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
 				.then((n) => n.commit({}))
 		)
 		// Return the (close) timestamp of the update
@@ -623,7 +623,7 @@ test("history/isbn - transaction display", async ({ page }) => {
 				.create()
 				.then((n) => n.setName({}, "Note 3"))
 				.then((n) =>
-					n.addVolumes({ isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh2" })
+					n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh2" })
 				)
 				.then((n) => n.commit({}))
 		)
@@ -672,7 +672,7 @@ test("history/isbn - navigation", async ({ page }) => {
 				.note()
 				.create()
 				.then((n) => n.setName({}, "Note 1"))
-				.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
 				.then((n) => n.commit({}))
 		)
 		// Return the (close) timestamp of the update
@@ -715,7 +715,7 @@ test("history/notes - date display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -740,7 +740,7 @@ test("history/notes - date display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1, warehouseId: "wh1" }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }))
 			.then((n) => n.commit({}))
 	);
 	await dashboard
@@ -767,7 +767,7 @@ test("history/notes - date display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({ isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 3 }))
 			.then((n) => n.commit({}))
 	);
 	await dashboard
@@ -800,7 +800,7 @@ test("history/notes - date display", async ({ page }) => {
 			.create()
 			.then((n) => n.setName({}, "Note 4"))
 			.then((n) =>
-				n.addVolumes({ isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh2" })
+				n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh2" })
 			)
 			.then((n) => n.commit({}))
 	);
@@ -839,7 +839,7 @@ test("history/notes - date display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Past Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }))
 			.then((n) => n.commit({}))
 	);
 	await dateStub.mock(new Date(new Date(twoDaysAgo).getTime() + TIME_MIN));
@@ -849,7 +849,7 @@ test("history/notes - date display", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Past Note 2"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3, warehouseId: "wh1" }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3, warehouseId: "wh1" }))
 			.then((n) => n.commit({}))
 	);
 
@@ -951,7 +951,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
 			.then((n) => n.commit({}))
 	);
 	await dateStub.mock(new Date(new Date(t_minus_2).getTime() + TIME_MIN));
@@ -962,7 +962,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.create()
 			.then((n) => n.setName({}, "Note 2"))
 			.then((n) =>
-				n.addVolumes({ isbn: "1111111111", quantity: 3, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 3, warehouseId: "wh1" })
+				n.addVolumes({}, { isbn: "1111111111", quantity: 3, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 3, warehouseId: "wh1" })
 			)
 			.then((n) => n.commit({}))
 	);
@@ -976,7 +976,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 3 }, { isbn: "2222222222", quantity: 3 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }, { isbn: "2222222222", quantity: 3 }))
 			.then((n) => n.commit({}))
 	);
 	await dateStub.mock(new Date(new Date(t_minus_1).getTime() + TIME_MIN));
@@ -987,7 +987,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.create()
 			.then((n) => n.setName({}, "Note 4"))
 			.then((n) =>
-				n.addVolumes({ isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 2, warehouseId: "wh1" })
+				n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 2, warehouseId: "wh1" })
 			)
 			.then((n) => n.commit({}))
 	);
@@ -1000,7 +1000,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 5"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 1 }, { isbn: "2222222222", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }, { isbn: "2222222222", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 	await dateStub.mock(new Date(Date.now() + TIME_MIN));
@@ -1013,7 +1013,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 6"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
 			.then((n) => n.commit({}))
 	);
 	await dbHandle.evaluateHandle((db) =>
@@ -1024,6 +1024,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 			.then((n) => n.setName({}, "Note 7"))
 			.then((n) =>
 				n.addVolumes(
+					{},
 					{ isbn: "1111111111", quantity: 1, warehouseId: "wh1" },
 					// Note: This transaction is an intruder (wh2) - it shouldn't be shown
 					{ isbn: "2222222222", quantity: 3, warehouseId: "wh2" }
@@ -1185,7 +1186,7 @@ test("history/warehose - navigation", async ({ page }) => {
 			.note()
 			.create()
 			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({ isbn: "1111111111", quantity: 2 }))
+			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
 			.then((n) => n.commit({}))
 	);
 

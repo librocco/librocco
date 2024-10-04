@@ -219,7 +219,7 @@ class Note implements NoteInterface {
 	/**
 	 * Delete the note from the db.
 	 */
-	delete(ctx: debug.DebugCtx): Promise<void> {
+	delete(ctx: debug.DebugCtx = {}): Promise<void> {
 		debug.log(ctx, "note:delete")({});
 		return runAfterCondition(async () => {
 			// Committed notes cannot be deleted.
@@ -276,6 +276,7 @@ class Note implements NoteInterface {
 	 * entry is pushed to the list of entries.
 	 */
 	addVolumes(
+		_: debug.DebugCtx,
 		...params: Array<PickPartial<VolumeStock<"custom">, "id"> | PickPartial<VolumeStock<"book">, "warehouseId">>
 	): Promise<NoteInterface> {
 		return runAfterCondition(() => {
@@ -386,7 +387,10 @@ class Note implements NoteInterface {
 		return this.update(ctx, this);
 	}
 
-	removeTransactions(...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>): Promise<NoteInterface> {
+	removeTransactions(
+		_: debug.DebugCtx,
+		...transactions: Array<VolumeStock<"custom">["id"] | Omit<VolumeStock<"book">, "quantity">>
+	): Promise<NoteInterface> {
 		const [_customItems, _books] = wrapIter(transactions).partition((e): e is string => typeof e === "string");
 		const [customItemRows, bookRows] = wrapIter(this.entries).partition(isCustomItemRow);
 
@@ -449,7 +453,7 @@ class Note implements NoteInterface {
 	 * Commit the note, disabling further updates and deletions. Committing a note also accounts for note's transactions
 	 * when calculating the stock of the warehouse.
 	 */
-	async commit(ctx: debug.DebugCtx, options?: { force: boolean }): Promise<NoteInterface> {
+	async commit(ctx: debug.DebugCtx = {}, options?: { force: boolean }): Promise<NoteInterface> {
 		debug.log(ctx, "note:commit")({});
 
 		// Don't allow for committing of empty notes.
@@ -487,7 +491,7 @@ class Note implements NoteInterface {
 		return this.update(ctx, { committed: true, committedAt });
 	}
 
-	reconcile(ctx: debug.DebugCtx): Promise<NoteInterface> {
+	reconcile(ctx: debug.DebugCtx = {}): Promise<NoteInterface> {
 		return runAfterCondition(async () => {
 			// Only outbound note can be reconciled
 			const inbound = this.noteType === "inbound";
@@ -526,7 +530,7 @@ class Note implements NoteInterface {
 					.note()
 					.create()
 					.then((n) => n.setReconciliationNote(ctx, true))
-					.then((n) => n.addVolumes(...transactions))
+					.then((n) => n.addVolumes(ctx, ...transactions))
 					.then((n) => n.commit(ctx))
 			);
 			await Promise.all(updates);
@@ -541,11 +545,14 @@ class Note implements NoteInterface {
 		return addWarehouseData(entries, warehouses);
 	}
 
-	async intoReceipt(): Promise<ReceiptData> {
+	async intoReceipt(ctx: debug.DebugCtx): Promise<ReceiptData> {
 		const timestamp = Number(new Date());
 		const entries = await this.getEntries().then((e) => [...e]);
 		const [bookEntries, customItemEntries] = wrapIter(entries).partition(isBookRow);
-		const bookData = await this.#db.books().get(bookEntries.array().map(({ isbn }) => isbn));
+		const bookData = await this.#db.books().get(
+			ctx,
+			bookEntries.array().map(({ isbn }) => isbn)
+		);
 		const bookEntriesFull = wrapIter(bookEntries)
 			.zip(bookData)
 			.map(([{ isbn, quantity, warehouseDiscount: discount }, { title = "", price = 0 } = {}]) => ({

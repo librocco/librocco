@@ -35,7 +35,7 @@ test.beforeEach(async ({ page }) => {
 test("should display correct transaction fields for the outbound note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db, book) => db.books().upsert([book]), book1);
+	await dbHandle.evaluate(async (db, book) => db.books().upsert({}, [book]), book1);
 
 	const content = getDashboard(page).content();
 
@@ -95,7 +95,7 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	// Setup: Add two transactions to the note
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate((db) =>
-		db.warehouse().note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 })
+		db.warehouse().note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 })
 	);
 
 	const scanField = getDashboard(page).content().scanField();
@@ -121,7 +121,7 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 test("should autofill the existing book data when adding a transaction with existing isbn", async ({ page }) => {
 	// Setup: Add book data to the database
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db, book) => db.books().upsert([book]), book1);
+	await dbHandle.evaluate((db, book) => db.books().upsert({}, [book]), book1);
 
 	const content = getDashboard(page).content();
 
@@ -135,7 +135,7 @@ test("should autofill the existing book data when adding a transaction with exis
 test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
 	// Setup: Add one transaction to the note
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) => db.warehouse().note("note-1").addVolumes({ isbn: "1234567890", quantity: 1 }));
+	await dbHandle.evaluate((db) => db.warehouse().note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }));
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -184,7 +184,7 @@ test("should delete the transaction from the note when when selected for deletio
 		db
 			.warehouse()
 			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
+			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
 	);
 
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -208,7 +208,7 @@ test("transaction should default to the only warehouse the given book is availab
 			.warehouse("wh-1")
 			.setName({}, "Warehouse 1")
 			.then((wh) => wh.note().create())
-			.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 			.then((n) => n.commit({}))
 	);
 
@@ -237,7 +237,7 @@ test("transaction should allow for warehouse selection if there is more than one
 				.create()
 				.then((wh) => wh.setName({}, `Warehouse ${i}`))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 				.then((n) => n.commit({}));
 		}
 
@@ -273,11 +273,11 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 				.create()
 				.then((wh) => wh.setName({}, `Warehouse ${i}`))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 				.then((n) => n.commit({}));
 		}
 		// Add a transaction to the note, belonging to the first warehouse - specified warehouse
-		await db.warehouse().note("note-1").addVolumes({ isbn: "1234567890", quantity: 1, warehouseId: `wh-1` });
+		await db.warehouse().note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1, warehouseId: `wh-1` });
 	});
 
 	const scanField = getDashboard(page).content().scanField();
@@ -328,7 +328,7 @@ test("if there are two transactions, one with specified and one with unspecified
 		await db
 			.warehouse()
 			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 1, warehouseId: `wh-1` }, { isbn: "1234567890", quantity: 1 });
+			.addVolumes({}, { isbn: "1234567890", quantity: 1, warehouseId: `wh-1` }, { isbn: "1234567890", quantity: 1 });
 	});
 
 	const scanField = getDashboard(page).content().scanField();
@@ -362,14 +362,14 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 				.create()
 				.then((wh) => wh.setName({}, `Warehouse ${i}`))
 				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({ isbn: "1234567890", quantity: 1 }))
+				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
 				.then((n) => n.commit({}));
 		}
 		// Add two transactions to the note, one belonging to the first warehouse (specified warehouse) and one belonging to the second warehouse
 		await db
 			.warehouse()
 			.note("note-1")
-			.addVolumes({ isbn: "1234567890", quantity: 3, warehouseId: `wh-1` }, { isbn: "1234567890", quantity: 2, warehouseId: `wh-2` });
+			.addVolumes({}, { isbn: "1234567890", quantity: 3, warehouseId: `wh-1` }, { isbn: "1234567890", quantity: 2, warehouseId: `wh-2` });
 	});
 
 	const entries = getDashboard(page).content().table("outbound-note");
@@ -389,7 +389,7 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 test("should add custom item on 'Custom Item' button click after filling out the form", async ({ page }) => {
 	// Setup: add one non-custom transaction
 	const db = await getDbHandle(page);
-	await db.evaluateHandle((db) => db.warehouse().note("note-1").addVolumes({ isbn: "11111111", quantity: 1 }));
+	await db.evaluateHandle((db) => db.warehouse().note("note-1").addVolumes({}, { isbn: "11111111", quantity: 1 }));
 
 	const content = getDashboard(page).content();
 
@@ -439,6 +439,7 @@ test("should allow for editing of custom items using the custom item form", asyn
 			.warehouse()
 			.note("note-1")
 			.addVolumes(
+				{},
 				{ isbn: "11111111", quantity: 1 },
 				{ isbn: "22222222", quantity: 1 },
 				{ __kind: "custom", id: "custom-item-1", title: "Custom item 1", price: 10 },
@@ -485,12 +486,12 @@ test("should check validity of the transactions and commit the note on 'commit' 
 			db
 				.warehouse("warehouse-1")
 				.note()
-				.addVolumes({ isbn: "11111111", quantity: 4 }, { isbn: "22222222", quantity: 5 })
+				.addVolumes({}, { isbn: "11111111", quantity: 4 }, { isbn: "22222222", quantity: 5 })
 				.then((n) => n.commit({})),
 			db
 				.warehouse("warehouse-2")
 				.note()
-				.addVolumes({ isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 })
+				.addVolumes({}, { isbn: "11111111", quantity: 2 }, { isbn: "22222222", quantity: 2 })
 				.then((n) => n.commit({}))
 		])
 	);
@@ -498,6 +499,7 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	// Add some books to the note
 	await db.evaluateHandle((db) =>
 		db.warehouse().note("note-1").addVolumes(
+			{},
 			// All fine, enough books in stock (required 3, 4 available in the warehouse)
 			{ isbn: "11111111", quantity: 3, warehouseId: "warehouse-1" },
 			// Invalid - out of stock (required 3, only 2 available in the warehouse)
@@ -577,6 +579,7 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	// Confirm the reconciliation
 	await dialog.confirm();
+	await dialog.waitFor({ state: "detached" });
 
 	// The note should be committed, we're redirected to '/outbound' page
 	await dashboard.view("outbound").waitFor();

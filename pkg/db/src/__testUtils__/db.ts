@@ -1,12 +1,6 @@
-import PouchDB from "pouchdb";
-import MemoryAdapter from "pouchdb-adapter-memory";
-
 import { InventoryDatabaseInterface, OrdersDatabaseInterface } from "@/types";
 
 import { __withDocker__ } from "@/__tests__/constants";
-
-// Enable running of the tests against in-memory PouchDB
-PouchDB.plugin(MemoryAdapter);
 
 type Database = InventoryDatabaseInterface | OrdersDatabaseInterface;
 
