@@ -106,6 +106,14 @@ const config = {
 		// Add @testing-library/jest-dom matchers and mock modules
 		setupFiles: ["./vitest.setup.ts"]
 	}
+	// TODO: Uncomment this when we figure out how to make it work
+	// preview: {
+	// 	port: 4173,
+	// 	headers: {
+	// 		"Cross-Origin-Embedder-Policy": "require-corp",
+	// 		"Cross-Origin-Opener-Policy": "same-origin"
+	// 	}
+	// }
 };
 
 export default config;
