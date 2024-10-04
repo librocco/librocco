@@ -338,7 +338,10 @@ export type InventoryDatabaseInterface<
 	} & Ext
 >;
 
+export type LogLevel = "none" | "log" | "debug";
+export type DBConfigOpts = { test?: boolean; logLevel?: LogLevel };
+
 export interface InventoryDatabaseConstructor {
-	(name: string, opts?: { test?: boolean }): InventoryDatabaseInterface;
+	(name: string, opts?: DBConfigOpts): InventoryDatabaseInterface;
 }
 // #endregion db
