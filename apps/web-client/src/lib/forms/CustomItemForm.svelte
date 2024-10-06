@@ -7,7 +7,7 @@
 
 <script lang="ts">
 	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
+	import { superForm, superValidateSync, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { testId } from "@librocco/shared";
 
@@ -28,6 +28,7 @@
 
 	const { form: formStore, constraints, enhance } = form;
 
+	const titleProxy = stringProxy(formStore, "title", { empty: "undefined" });
 	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
 </script>
 
@@ -37,11 +38,12 @@
 	use:enhance
 	method="POST"
 	id={testId("custom-item-form")}
+	autocomplete="librocco-custom-item-title"
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
 			<div id="title-field-container" class="basis-full">
-				<Input bind:value={$formStore.title} name="title" label="Title" placeholder="" {...$constraints.title} />
+				<Input bind:value={$formStore.title} name="librocco-custom-item-title" label="Title" placeholder="" {...$constraints.title} />
 			</div>
 			<div id="price-field-container" class="flex basis-full justify-between gap-x-4">
 				<Input bind:value={$priceProxy} name="price" label="Price" placeholder="0" type="number" step="any" required>
