@@ -127,7 +127,7 @@
 
 		// If we've just deleted the current database, select the first one in the list
 		if (!files.includes(addSQLite3Suffix(get(dbNamePersisted)))) {
-			await handleSelect(files[0])();
+			await handleSelect(files[0] || "dev")(); // If this was the last file, create a new (default) db
 		}
 
 		open.set(false);
