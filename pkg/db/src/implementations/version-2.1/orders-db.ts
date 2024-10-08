@@ -1,34 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BehaviorSubject, combineLatest, filter, firstValueFrom, map, tap } from "rxjs";
-import { Kysely, sql } from "kysely";
+import { BehaviorSubject } from "rxjs";
 
-import { asc, wrapIter, debug, StockMap, VolumeStockInput } from "@librocco/shared";
+import { debug } from "@librocco/shared";
 
 import {
-	Replicator,
-	WarehouseDataMap,
-	NoteInterface,
-	NoteLookupResult,
-	PluginInterfaceLookup,
-	LibroccoPlugin,
 	OrdersDatabaseConstructor,
-	BooksInterface,
-	DbStream,
-	HistoryInterface,
 	DBConfigOpts,
 	LogLevel
 } from "@/types";
-import { DatabaseSchema, OrdersDatabaseInterface, Selectable, SelectedStream, WarehouseInterface } from "./types";
+import { OrdersDatabaseInterface } from "./types";
 
-import { NEW_WAREHOUSE } from "@/constants";
 
 import database from "./database";
 
 import { newPluginsInterface } from "./plugins";
-import { createWarehouseInterface } from "./warehouse";
-import { createBooksInterface } from "./books";
 
-import { createHistoryInterface } from "./history";
 
 class Database implements OrdersDatabaseInterface {
 	#db: ReturnType<typeof database>;

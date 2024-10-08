@@ -1,5 +1,5 @@
 // empty test
-import { beforeEach, describe, expect, test } from "vitest";
+import { beforeEach, describe, test } from "vitest";
 import * as implementations from "@/implementations/orders";
 import { newTestDB } from "@/__testUtils__/db";
 
