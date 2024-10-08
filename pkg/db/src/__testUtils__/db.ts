@@ -1,6 +1,5 @@
 import { InventoryDatabaseInterface, OrdersDatabaseInterface } from "@/types";
 
-import { __withDocker__ } from "@/__tests__/constants";
 
 type Database = InventoryDatabaseInterface | OrdersDatabaseInterface;
 
