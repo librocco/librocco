@@ -28,7 +28,7 @@ type PossiblyEmpty<T> = typeof EMPTY | T;
 // Using 'describe.each' allows us to run tests against each version of the db interface implementation.
 const schema = Object.entries(implementations).map(([version, getDB]) => ({ version, getDB }));
 describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
-	let db = newTestDB(getDB);
+	let db;
 
 	// Initialise a new db for each test
 	beforeEach(async () => {
