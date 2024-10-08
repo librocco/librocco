@@ -3,18 +3,12 @@ import { BehaviorSubject } from "rxjs";
 
 import { debug } from "@librocco/shared";
 
-import {
-	OrdersDatabaseConstructor,
-	DBConfigOpts,
-	LogLevel
-} from "@/types";
+import { OrdersDatabaseConstructor, DBConfigOpts, LogLevel } from "@/types";
 import { OrdersDatabaseInterface } from "./types";
-
 
 import database from "./database";
 
 import { newPluginsInterface } from "./plugins";
-
 
 class Database implements OrdersDatabaseInterface {
 	#db: ReturnType<typeof database>;

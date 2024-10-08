@@ -7,6 +7,7 @@ import { DBConfigOpts } from "@/types";
 import type { DatabaseSchema } from "./types";
 
 import { createReactive } from "./reactive";
+import { createCustomerTables } from "./database-customers";
 
 export default (name: string, opts?: DBConfigOpts) => {
 	const { dialect, sql, createCallbackFunction } = new SQLocalKysely(name);
@@ -129,6 +130,8 @@ export default (name: string, opts?: DBConfigOpts) => {
 		await createBookTransactionsTable();
 		await createCustomItemTransactionsTable();
 		await createBookDataTable();
+
+		await createCustomerTables(createReactiveTrigger, sql);
 
 		debug.log(ctx, "[db core init] done!")("");
 	};
