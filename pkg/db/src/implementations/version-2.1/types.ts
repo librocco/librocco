@@ -9,7 +9,10 @@ import type {
 	NoteData as ND,
 	WarehouseData as WD,
 	WarehouseInterface as WI,
-	InventoryDatabaseInterface as IDB
+	InventoryDatabaseInterface as IDB,
+	OrdersDatabaseInterface as ODI,
+	CustomerOrderInterface as COI,
+	CustomerOrderData as COD
 } from "@/types";
 
 export type NoteData = ND;
@@ -17,6 +20,9 @@ export type NoteInterface = NI;
 
 export type WarehouseData = WD;
 export type WarehouseInterface = WI;
+
+export type CustomerOrderData = COD;
+export type CustomerOrderInterface = COI;
 
 export type DatabaseSchema = {
 	warehouses: {
@@ -101,6 +107,16 @@ export type InventoryDatabaseInterface = IDB<
 	{
 		_connection(): Promise<Kysely<DatabaseSchema>>;
 		// TODO: This is rather sloppy, update the type in a cleaner way
+		_stream: SelectedStreamFn<DatabaseSchema>;
+		_update(cb: (db: Kysely<DatabaseSchema>) => Promise<any>): Promise<void>;
+	}
+>;
+
+export type OrdersDatabaseInterface = ODI<
+	CustomerOrderInterface,
+	CustomerOrderData,
+	{
+		_connection(): Promise<Kysely<DatabaseSchema>>;
 		_stream: SelectedStreamFn<DatabaseSchema>;
 		_update(cb: (db: Kysely<DatabaseSchema>) => Promise<any>): Promise<void>;
 	}
