@@ -10,7 +10,7 @@ export default defineConfig({
 		includeTaskLocation: true,
 		browser: {
 			enabled: true,
-			headless: true,
+			headless: process.env.CI ? true : false,
 			screenshotFailures: false,
 			provider: "webdriverio",
 			name: "chrome"

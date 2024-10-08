@@ -28,7 +28,7 @@
 		"test:all-versions:quicktest": "echo 'Running tests for all versions' && rushx test:no-docker",
 		"test:no-docker": "echo 'Running unit tests without docker support' && rushx test:open",
 		"test:with-docker": "echo 'Running tests with full docker support' && docker compose up -d && export FULL_TEST_SUPPORT=true && rushx test:open; docker compose down",
-		"test:open": "rm -rf test-dbs; mkdir test-dbs; vitest --ui; rm -rf test-dbs",
+		"test:open": "rm -rf test-dbs; mkdir test-dbs; vitest --ui --no-open; rm -rf test-dbs",
 		"test:run": "rm -rf test-dbs; mkdir test-dbs; vitest run; rm -rf test-dbs",
 		"typecheck": "tsc --noEmit"
 	},
