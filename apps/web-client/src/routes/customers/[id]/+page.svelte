@@ -115,7 +115,7 @@
 	$: name = `${data.name || ""} ${data.surname || ""}`;
 	$: email = data.email;
 
-	$: orderLines = data.orderLines;
+	$: orderLines = data.orderLines || [];
 	const customer = readable(data);
 
 	// #region table
