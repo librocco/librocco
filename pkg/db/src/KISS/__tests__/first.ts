@@ -13,5 +13,6 @@ describe('KISS test suite', () => {
   it('should return a database instance', async () => {
     const db = await getDB('testdb')
     expect(db).toBeDefined()
+    expect(db).toBeInstanceOf(SQLite3.oo1.DB)
   })
 })
