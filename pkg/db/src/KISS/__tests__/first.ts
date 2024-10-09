@@ -1,5 +1,13 @@
 import { describe, it, expect, beforeEach } from "vitest";
-import { getDB, initializeDB, getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer } from "../orders";
+import {
+	getDB,
+	initializeDB,
+	getAllCustomers,
+	upsertCustomer,
+	getCustomerBooks,
+	addBooksToCustomer,
+	removeBooksFromCustomer
+} from "../orders";
 
 describe("Customer order tests", () => {
 	let db;
@@ -36,25 +44,38 @@ describe("Customer order tests", () => {
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
 		addBooksToCustomer(db, 1, [
-			["9780000000000", 1],
-			["9780000000000", 1]
+			{ isbn: "9780000000000", quantity: 1 },
+			{ isbn: "9780000000000", quantity: 1 }
 		]);
 		books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2);
+		expect(books[0].id).toBeTypeOf("number");
 	});
-	it("can add two books to a customer 1000 times and not take too long", async () => {
+	it("can add two books to a customer 100 times and not take more than 100ms", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-		const howMany = 1000;
+		const howMany = 100;
 		const startTime = Date.now();
 		for (let i = 0; i < howMany; i++) {
 			addBooksToCustomer(db, 1, [
-				["9780000000000", 1],
-				["9780000000000", 1]
+				{ isbn: "9780000000000", quantity: 1 },
+				{ isbn: "9780000000000", quantity: 3 }
 			]);
 		}
+		const duration = Date.now() - startTime;
 		const books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2 * howMany);
-		const duration = Date.now() - startTime;
-		expect(duration).toBeLessThanOrEqual(1000);
+		expect(duration).toBeLessThanOrEqual(100);
+	});
+	it("can remove books from a customer order", async () => {
+		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+		addBooksToCustomer(db, 1, [
+			{ isbn: "9780000000000", quantity: 1 },
+			{ isbn: "9780000000000", quantity: 1 }
+		]);
+		let books = await getCustomerBooks(db, 1);
+		expect(books.length).toBe(2);
+		removeBooksFromCustomer(db, 1, [books[0].id]);
+		books = await getCustomerBooks(db, 1);
+		expect(books.length).toBe(1);
 	});
 });

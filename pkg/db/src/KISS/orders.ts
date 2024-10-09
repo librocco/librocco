@@ -31,7 +31,7 @@ export async function initializeDB(db) {
 		received TIMESTAMP,
 		collected TIMESTAMP,
 		PRIMARY KEY (id),
-		FOREIGN KEY (customer_id) REFERENCES customer(id)
+		FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
 	)`);
 }
 
@@ -75,14 +75,15 @@ export async function upsertCustomer(db, customer) {
 
 export const getCustomerBooks = async (db, customerId) => {
 	const result = await db.exec({
-		sql: "SELECT isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
+		sql: "SELECT id, isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
 		bind: { $customerId: customerId },
 		returnValue: "resultRows"
 	});
 	return result.map((row) => {
 		return {
-			isbn: row[0],
-			quantity: row[1]
+			id: row[0],
+			isbn: row[1],
+			quantity: row[2]
 		};
 	});
 	return [];
@@ -93,7 +94,7 @@ export const addBooksToCustomer = async (db, customerId, books) => {
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql =
 		`INSERT INTO customer_order_lines (customer_id, isbn, quantity)
-    VALUES ` + multiplyString("( ?, ?, ? )", books.length);
+    VALUES ` + multiplyString("(?,?,?)", books.length);
 	await db.exec({
 		sql: sql,
 		bind: params,
@@ -103,3 +104,12 @@ export const addBooksToCustomer = async (db, customerId, books) => {
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
 const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+export const removeBooksFromCustomer = async (db, customerId, bookIds) => {
+	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;
+	const params = [customerId, ...bookIds];
+	await db.exec({
+		sql: sql,
+		bind: params
+	});
+};
