@@ -4,7 +4,7 @@ import { BehaviorSubject } from "rxjs";
 import { debug } from "@librocco/shared";
 
 import { OrdersDatabaseConstructor, DBConfigOpts, LogLevel } from "@/types";
-import { OrdersDatabaseInterface } from "./types";
+import { OrdersDatabaseInterface, CustomerOrderInterface } from "./types";
 
 import database from "./database";
 
@@ -32,9 +32,20 @@ class Database implements OrdersDatabaseInterface {
 		this.#ready.next(true);
 		debug.log(ctx, "[db init] db ready!")("");
 	}
+
+	/**
+	 * Instantiate a new customer order instance, with the provided id.
+	1. db.customerOrder()
+	2. db.customerOrder(1)
+	3. db.customerOrder(1).create()
+	 */
+	customerOrder(id?: number): CustomerOrderInterface {
+		return new CustomerOrder(this, id);
+	}
+	// #endregion instances
 }
 
-export const newDatabase: OrdersDatabaseConstructor = (_name = "dev", opts?: DBConfigOpts) => {
+export const newDatabase: OrdersDatabaseInterface = (_name = "dev", opts?: DBConfigOpts) => {
 	// If testing, we're namespacing the db as SQLite writes to fs, so it's easy to write to the designated folder,
 	// and then, clean up and / or ignore the folder
 	let name = opts.test ? `test-dbs/${_name}` : _name;
@@ -42,3 +53,32 @@ export const newDatabase: OrdersDatabaseConstructor = (_name = "dev", opts?: DBC
 
 	return new Database(name, opts);
 };
+
+class CustomerOrder implements CustomerOrderInterface {
+	#db: OrdersDatabaseInterface;
+
+	id: number;
+
+	constructor(db: OrdersDatabaseInterface, id: number) {
+		this.#db = db;
+		this.id = id;
+	}
+
+	get() {
+		return;
+	}
+
+	async create(ctx: debug.DebugCtx = {}): Promise<CustomerOrderInterface> {
+		const values = { id: this.id };
+		await this.#db._update((db) =>
+			db
+				.insertInto("warehouses")
+				.values(values)
+				.onConflict((oc) => oc.doNothing())
+				.execute()
+		);
+		debug.log(ctx, "[WAREHOUSE:create] done!")("");
+
+		return this.get();
+	}
+}

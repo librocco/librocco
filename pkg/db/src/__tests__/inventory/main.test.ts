@@ -37,9 +37,10 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 	});
 
 	// Base functionality
-	test("standardApi", async () => {
+	test.only("standardApi", async () => {
 		// If warehouse doesn't exist, a new one should be initialised with default values
 		// but no data should be saved to the db until explicitly done so.
+		console.time("whole");
 		let wh1 = db.warehouse("wh1");
 		expect(wh1.id).toEqual("wh1");
 
@@ -48,7 +49,9 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		expect(whInDB).toBeUndefined();
 
 		// Save the warehouse to db and access from different instance.
+		console.time("creation");
 		wh1 = await wh1.create();
+		console.timeEnd("creation");
 		const wh1newInstance = await db.warehouse("wh1").get();
 		expect(wh1newInstance).toEqual(wh1);
 
@@ -105,6 +108,7 @@ describe.each(schema)("Inventory unit tests: $version", ({ getDB }) => {
 		const inboundNote = db.warehouse("wh1").note();
 		expect(outboundNote.noteType).toEqual("outbound");
 		expect(inboundNote.noteType).toEqual("inbound");
+		console.timeEnd("whole");
 	});
 
 	test("warehouseDiscount", async () => {

@@ -81,12 +81,9 @@ export interface OrderItem {
  */
 export type CustomerOrderData<A extends Record<string, any> = {}> = TimestampedDoc<
 	{
-		id: string;
-		updatedAt: string | null;
-		state: CustomerOrderState;
+		id: number;
+		fullname: string;
 		email: string;
 		deposit: number;
-		books: OrderItem[];
-		displayName: string;
 	} & A
 >;

@@ -29,11 +29,10 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 	});
 
 	// Base functionality
-	test("standardApi", async () => {
-		// If a customer order doesn't exist, a new one should be initialised with default values
-		// but no data should be saved to the db until explicitly done so.
-		let order1 = db.customerOrder("order1");
-		expect(order1.id).toEqual("order1");
+	test.only("standardApi", async () => {
+		// We can create a customer order with a given id.
+		let order1 = db.customerOrder(1);
+		expect(order1.id).toEqual(1);
 
 		// Order doesn't yet exist in the db.
 		const orderInDB = await order1.get();
@@ -41,11 +40,11 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 
 		// Save the order to db and access from different instance.
 		order1 = await order1.create();
-		const order1newInstance = await db.customerOrder("order1").get();
+		const order1newInstance = await db.customerOrder(1).get();
 		expect(order1newInstance).toEqual(order1);
 
 		// Order creation is idempotent
-		const order1newInstance2 = await db.customerOrder("order1").create();
+		const order1newInstance2 = await db.customerOrder(1).create();
 		expect(order1newInstance2).toEqual(order1);
 	});
 

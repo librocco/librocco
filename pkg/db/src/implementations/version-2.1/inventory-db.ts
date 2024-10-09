@@ -46,7 +46,9 @@ class Database implements InventoryDatabaseInterface {
 	}
 
 	async _connection() {
+		console.time("connection");
 		await firstValueFrom(this.#ready.pipe(filter(Boolean)));
+		console.timeEnd("connection");
 		return this.#db;
 	}
 	_stream<S extends Selectable<any>>(ctx: debug.DebugCtx, qb: (db: Kysely<DatabaseSchema>) => S, idPrefix?: string): SelectedStream<S> {
@@ -68,6 +70,7 @@ class Database implements InventoryDatabaseInterface {
 	async init(ctx: debug.DebugCtx = {}): Promise<InventoryDatabaseInterface> {
 		debug.log(ctx, "[db init] in progress...")("");
 		await this.#db.init(ctx);
+		console.log("The db is initialized");
 		debug.log(ctx, "[db init] initialised the core db!")("");
 		this.#ready.next(true);
 		debug.log(ctx, "[db init] db ready!")("");
