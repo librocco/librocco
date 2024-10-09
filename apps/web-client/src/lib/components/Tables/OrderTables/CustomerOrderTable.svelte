@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { UserRound, Hash, CalendarClock } from "lucide-svelte";
-	import type { Writable } from "svelte/store";
+	import type { Writable, Readable } from "svelte/store";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";
 
@@ -9,7 +9,17 @@
 
 	import type { OrderData } from "../types";
 
-	export let data: Writable<OrderData[]>;
+	import { appPath } from "$lib/paths";
+
+	export let data: Readable<
+		{
+			name: string;
+			surname: string;
+			id: number;
+			email: string;
+			// : Writable<OrderData[]>;
+		}[]
+	>;
 </script>
 
 <table id="customer-orders">
@@ -31,10 +41,12 @@
 	</thead>
 	<tbody>
 		{#each $data as row (row.id)}
-			{@const { name, email, id, lastUpdated, draft, actionLink } = row}
+			{@const { name, email, id } = row}
 			<tr>
 				<th scope="row" data-property="customer">
-					<BodyHead borderStyle={draft ? "gray" : "yellow"}>
+					<BodyHead borderStyle={"gray"}>
+						<!-- <BodyHead borderStyle={draft ? "gray" : "yellow"}> -->
+
 						<BodyMultiRow
 							rows={{
 								name: { data: name, className: "text-md font-medium" },
@@ -45,12 +57,12 @@
 				</th>
 				<td data-property="id">{id}</td>
 				<td data-property="last-updated">
-					<span class="badge badge-md {draft ? 'badge-gray' : 'badge-yellow'}">
-						{lastUpdated}
+					<span class="badge badge-md {'badge-gray'}">
+						{"lastUpdated"}
 					</span>
 				</td>
 				<td data-property="action">
-					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
+					<BodyLink link={appPath("customers", id.toString())} label={"Manage"} style={"yellow"} />
 				</td>
 			</tr>
 		{/each}
