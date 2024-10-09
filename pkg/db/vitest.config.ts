@@ -8,6 +8,7 @@ const rushDir = path.join(__dirname, "..", "..", "common");
 export default defineConfig({
 	test: {
 		includeTaskLocation: true,
+		include: ["src/KISS/__tests__/*.ts"],
 		browser: {
 			enabled: true,
 			headless: process.env.CI ? true : false,

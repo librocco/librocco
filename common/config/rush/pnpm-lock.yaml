@@ -241,6 +241,13 @@ importers:
         version: 3.22.5
 
   ../../pkg/db:
+    dependencies:
+      '@sqlite.org/sqlite-wasm':
+        specifier: ~3.46.1-build3
+        version: 3.46.1-build3
+      '@types/sqlite3':
+        specifier: ~3.1.11
+        version: 3.1.11
     devDependencies:
       '@librocco/shared':
         specifier: workspace:*
@@ -3494,8 +3501,8 @@ packages:
       '@sinonjs/commons': 1.8.6
     dev: true
 
-  /@sqlite.org/sqlite-wasm@3.46.0-build2:
-    resolution: {integrity: sha512-10s/u/Main1RGO+jjzK+mgC/zh1ls1CEnq3Dujr03TwvzLg+j4FAohOmlYkQj8KQOj1vGR9cuB9F8tVBTwVGVA==}
+  /@sqlite.org/sqlite-wasm@3.46.1-build3:
+    resolution: {integrity: sha512-9FY9C1A8jZTU8Lm6sz16zBeBN+jFIUL/LGAZMym9QaRB796/KHHL9xo6OgaTL8iDw2VeltGen7hNwJedVN/j4w==}
     hasBin: true
 
   /@surma/rollup-plugin-off-main-thread@2.2.3:
@@ -3880,7 +3887,6 @@ packages:
 
   /@types/node@20.4.10:
     resolution: {integrity: sha512-vwzFiiy8Rn6E0MtA13/Cxxgpan/N6UeNYR9oUu6kuJWxu6zCk98trcDp8CBhbtaeuq9SykCmXkFr2lWLoPcvLg==}
-    dev: true
 
   /@types/node@22.7.3:
     resolution: {integrity: sha512-qXKfhXXqGTyBskvWEzJZPUxSslAiLaB6JGP1ic/XTH9ctGgzdgYguuLP1C601aRTSDNlLb0jbKqXjZ48GNraSA==}
@@ -4031,6 +4037,12 @@ packages:
 
   /@types/semver@7.5.8:
     resolution: {integrity: sha512-I8EUhyrgfLrcTkzV3TSsGyl1tSuPrEDzr0yd5m90UgNxQkyDXULk3b6MlQqTCpZpNtWe1K0hzclnZkTcLBe2UQ==}
+
+  /@types/sqlite3@3.1.11:
+    resolution: {integrity: sha512-KYF+QgxAnnAh7DWPdNDroxkDI3/MspH1NMx6m/N/6fT1G6+jvsw4/ZePt8R8cr7ta58aboeTfYFBDxTJ5yv15w==}
+    dependencies:
+      '@types/node': 20.4.10
+    dev: false
 
   /@types/stack-utils@2.0.3:
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
@@ -11701,7 +11713,7 @@ packages:
       kysely:
         optional: true
     dependencies:
-      '@sqlite.org/sqlite-wasm': 3.46.0-build2
+      '@sqlite.org/sqlite-wasm': 3.46.1-build3
       coincident: 1.2.3
       kysely: 0.27.4
       nanoid: 5.0.7

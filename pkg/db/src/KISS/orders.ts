@@ -14,18 +14,30 @@ export async function getDB(dbname: string): Promise<SQLite3.oo1.DB> {
 }
 
 export async function initializeDB(db) {
-	await db.exec(`CREATE TABLE IF NOT EXISTS customer (
+	await db.exec(`CREATE TABLE customer (
 		id INTEGER,
 		fullname TEXT,
 		email TEXT,
 		deposit DECIMAL,
 		PRIMARY KEY (id)
 	)`);
+	await db.exec(`CREATE TABLE IF NOT EXISTS customer_order_lines (
+		id INTEGER,
+		customer_id TEXT,
+		isbn TEXT,
+		quantity INTEGER,
+		created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+		placed TIMESTAMP,
+		received TIMESTAMP,
+		collected TIMESTAMP,
+		PRIMARY KEY (id),
+		FOREIGN KEY (customer_id) REFERENCES customer(id)
+	)`);
 }
 
 export async function getAllCustomers(db) {
 	const result = await db.exec({
-		sql: "SELECT id, fullname, email, deposit FROM customer;",
+		sql: "SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;",
 		returnValue: "resultRows"
 	});
 	return result.map((row) => {
@@ -43,20 +55,51 @@ export async function upsertCustomer(db, customer) {
 		throw new Error("Customer must have an id");
 	}
 	const params = {
-		id: customer.id,
-		fullname: customer.fullname || null,
-		email: customer.email || null,
-		deposit: customer.deposit || null
+		$id: customer.id,
+		$fullname: customer.fullname,
+		$email: customer.email,
+		$deposit: customer.deposit
 	};
 
-	return await db.exec({
+	await db.exec({
 		sql: `INSERT INTO customer (id, fullname, email, deposit)
-        VALUES (:id, :fullname, :email, :deposit)
+        VALUES ($id, $fullname, $email, $deposit)
         ON CONFLICT(id) DO UPDATE SET
-          fullname = COALESCE(:fullname, fullname),
-          email = COALESCE(:email, email),
-          deposit = COALESCE(:deposit, deposit);`,
-		params,
+          fullname = $fullname,
+          email = $email,
+          deposit = $deposit;`,
+		bind: params,
 		returnValue: "resultRows"
-	})[0];
+	});
 }
+
+export const getCustomerBooks = async (db, customerId) => {
+	const result = await db.exec({
+		sql: "SELECT isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
+		bind: { $customerId: customerId },
+		returnValue: "resultRows"
+	});
+	return result.map((row) => {
+		return {
+			isbn: row[0],
+			quantity: row[1]
+		};
+	});
+	return [];
+};
+
+export const addBooksToCustomer = async (db, customerId, books) => {
+	// books is a list of { isbn, quantity }
+	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
+	const sql =
+		`INSERT INTO customer_order_lines (customer_id, isbn, quantity)
+    VALUES ` + multiplyString("( ?, ?, ? )", books.length);
+	await db.exec({
+		sql: sql,
+		bind: params,
+		returnValue: "resultRows"
+	});
+};
+
+// Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
+const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
