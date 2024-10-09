@@ -9,7 +9,7 @@ export type WebClientView =
 	| "inbound-note"
 	| "outbound-note"
 	| "warehouse"
-	| "settings"
+	| "customers"
 	| "history"
 	| "history/date"
 	| "history/isbn"
