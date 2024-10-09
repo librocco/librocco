@@ -44,18 +44,18 @@ export async function upsertCustomer(db, customer) {
 	}
 	const params = {
 		id: customer.id,
-		fullname: customer.fullname,
-		email: customer.email,
-		deposit: customer.deposit
+		fullname: customer.fullname || null,
+		email: customer.email || null,
+		deposit: customer.deposit || null
 	};
 
 	return await db.exec({
 		sql: `INSERT INTO customer (id, fullname, email, deposit)
         VALUES (:id, :fullname, :email, :deposit)
         ON CONFLICT(id) DO UPDATE SET
-          fullname = :fullname,
-          email = :email,
-          deposit = :deposit;`,
+          fullname = COALESCE(:fullname, fullname),
+          email = COALESCE(:email, email),
+          deposit = COALESCE(:deposit, deposit);`,
 		params,
 		returnValue: "resultRows"
 	})[0];
