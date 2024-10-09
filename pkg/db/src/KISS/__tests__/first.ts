@@ -19,8 +19,8 @@ describe("Customer order tests", () => {
 	});
 	it("can create and update a customer", async () => {
 		await expect(upsertCustomer(db, { fullname: "John Doe" })).rejects.toThrow("Customer must have an id");
-		upsertCustomer(db, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
-		upsertCustomer(db, { fullname: "Jane Doe", id: 2 });
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2 });
 		let customers = await getAllCustomers(db);
 		expect(customers.length).toBe(2);
 		expect(customers[0].fullname).toBe("John Doe");
