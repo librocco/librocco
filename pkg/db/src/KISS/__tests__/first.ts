@@ -1,18 +1,11 @@
-import { describe, it, expect } from 'vitest'
-import { getDB } from '../orders'
+import { describe, it, expect } from "vitest";
+import { getDB, initializeDB, getAllCustomers } from "../orders";
 
-describe('KISS test suite', () => {
-  it('should pass a simple assertion', () => {
-    expect(true).toBe(true)
-  })
-
-  it('should correctly add two numbers', () => {
-    expect(2 + 2).toBe(4)
-  })
-
-  it('should return a database instance', async () => {
-    const db = await getDB('testdb')
-    expect(db).toBeDefined()
-    expect(db).toBeInstanceOf(SQLite3.oo1.DB)
-  })
-})
+describe("KISS test suite", () => {
+	it("should allow initializing a database", async () => {
+		const db = await getDB("testdb");
+		await expect(getAllCustomers(db)).rejects.toThrow();
+		initializeDB(db);
+		expect((await getAllCustomers(db)).length).toBe(0);
+	});
+});
