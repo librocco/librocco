@@ -22,13 +22,18 @@ export const dialogTitle = {
 	editCustomItem: () => "Edit custom item",
 
 	// WarehouseForm
-	editWarehouse: () => "Update book details"
+	editWarehouse: () => "Update book details",
+
+	// DatabaseForm
+	createDatabase: () => "Create new database"
 };
 
 export const dialogDescription = {
 	// Misc
 	deleteNote: () => "Once you delete this note, you will not be able to access it again",
 	deleteWarehouse: (bookCount: number) => `Once you delete this warehouse ${bookCount} books will be removed from your stock`,
+	deleteDatabase: () =>
+		`Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`,
 
 	// Inbound
 	commitInbound: (bookCount: number, warehouseName: string) => `${bookCount} books will be added to ${warehouseName}`,
@@ -43,5 +48,8 @@ export const dialogDescription = {
 	editBook: () => "Update book details",
 
 	// WarehouseForm
-	editWarehouse: () => "Update warehouse details"
+	editWarehouse: () => "Update warehouse details",
+
+	// DatabaseForm
+	createDatabase: () => "Please type in the name for the new database"
 };
