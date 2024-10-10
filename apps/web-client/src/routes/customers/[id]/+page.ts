@@ -1,11 +1,6 @@
-import { redirect } from "@sveltejs/kit";
-
 import type { PageLoad } from "./$types";
 
-import { appPath } from "$lib/paths";
-
 export const load: PageLoad = async ({
-	params,
 	parent
 }): Promise<Partial<{ name: string; surname: string; id: number; email: string; orderLines: { isbn: string; quantity: number }[] }>> => {
 	// await db init in ../layout.ts

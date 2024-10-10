@@ -11,6 +11,7 @@
 	import { entityListView, testId } from "@librocco/shared";
 
 	import { getDB } from "$lib/db";
+	// import { KISS } from "@librocco/db";
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast, CustomerOrderTable } from "$lib/components";
 
@@ -26,23 +27,22 @@
 
 	const { db, status } = getDB();
 
-	const customersCtx = { name: "[CUSTOMERS_LIST]", debug: false };
-	const customersPromise = new Promise<{ name: string; surname: string; id: number; email: string }[]>((resolve) =>
-		setTimeout(() => {
-			resolve([
-				{ name: "Fadwa", surname: "Mahmoud", id: 1234, email: "fadwa.mahmoud@gmail.com" },
-				{ name: "Not Fadwa", surname: "Mahmoud", id: 112234, email: "not.fadwa.mahmoud@gmail.com" }
-			]);
-		}, 500)
-	);
-	const customerStream = from(customersPromise);
-
-	const customerOrdersList = readable([
-		{ name: "Fadwa", surname: "Mahmoud", id: 1234, email: "fadwa.mahmoud@gmail.com" },
-		{ name: "Not Fadwa", surname: "Mahmoud", id: 112234, email: "not.fadwa.mahmoud@gmail.com" }
-	]);
-
-	// const customerOrdersList = readableFromStream(customersCtx, customerStream, []);
+	const customerOrdersList = writable([]);
+	(async () => {
+		// This is currently not working: the WASM file is not leaded correctly.
+		// When using `vite start` It looks like a `data:` URL gets mangled by some
+		// tool and prefixed with the local dev server path.
+		// The server then (rightfully) complains about too big of a URL
+		//
+		// When building it complains like this:
+		// error during build:
+		// [vite-plugin-sveltekit-compile] [vite:worker-import-meta-url] Could not resolve entry module "static/assets/sqlite3-opfs-async-proxy-D34PESGD.js".
+		//
+		// console.log("Before db init");
+		// const db = await KISS.db.getInitializedDB("librocco");
+		// console.log("After db init");
+		// console.log(db);
+	})();
 
 	let initialized = true;
 </script>
