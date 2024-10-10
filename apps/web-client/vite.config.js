@@ -100,7 +100,14 @@ const config = {
 				RollupNodePolyfill({
 					include: ["events"]
 				})
-			]
+			],
+			onwarn(warning, warn) {
+				// Suppress warning:
+				// new URL("data:application/wasm;base64,AGFzbQEAAA ... ... ... VERY LONG URL
+				// import.meta.url) doesn't exist at build time, it will remain unchanged to be resolved at runtime. If this is intended, you can use the /* @vite-ignore */ comment to suppress this warning.
+				if (warning.message.includes("doesn't exist at build time")) return;
+				warn(warning);
+			}
 		}
 	},
 	histoire: {

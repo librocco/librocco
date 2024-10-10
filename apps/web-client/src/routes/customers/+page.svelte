@@ -27,7 +27,7 @@
 
 	const { db, status } = getDB();
 
-	const customerOrdersList = writable([]);
+	const customerOrdersList = writable([{ id: 1, fullname: "John Doe" }]);
 	(async () => {
 		// This is currently not working: the WASM file is not leaded correctly.
 		// When using `vite start` It looks like a `data:` URL gets mangled by some

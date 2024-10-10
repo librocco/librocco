@@ -9,7 +9,7 @@
 		"build:prod": "vite build",
 		"build:e2e": "PUBLIC_IS_E2E=true vite build",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"postinstall": "svelte-kit sync",
+		"postinstall": "mkdir -p ../../pkg/db/dist/assets/ && svelte-kit sync",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"preview": "vite preview",

@@ -23,6 +23,7 @@ export default defineConfig({
 	},
 	build: {
 		sourcemap: true,
+		assetsDir: "assets",
 		lib: {
 			name: "@librocco/db",
 			entry: path.join(__dirname, "src", "index.ts"),
@@ -32,7 +33,8 @@ export default defineConfig({
 		rollupOptions: {
 			external: ["svelte", "rxjs", "pouchdb", "crstore", "kysely", "sqlocal", "sqlocal/kysely"],
 			output: {
-				exports: "named"
+				exports: "named",
+				assetFileNames: "[name][extname]"
 			}
 		},
 		outDir: "dist"
