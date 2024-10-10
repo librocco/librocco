@@ -49,6 +49,9 @@ importers:
       '@librocco/db':
         specifier: workspace:*
         version: link:../../pkg/db
+      '@vlcn.io/crsqlite-wasm':
+        specifier: 0.16.0
+        version: 0.16.0
       crstore:
         specifier: ~0.23.1
         version: 0.23.1
