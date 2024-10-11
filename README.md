@@ -20,7 +20,7 @@ An offline first book store inventory management tool.
 - Client app and the UI components are written in [Svelte](https://svelte.dev) and the app is bootstrapped using [Svelte kit](https://kit.svelte.dev/)
 - For presentation layer, we're using [Tailwind](https://tailwindcss.com) almost exclusively
 - The packages are built and bundled with [Vite](https://vitejs.dev)
-- We're using [Histoire](https://histoire.dev/) for component preview/development
+- We're using [Storybook](https://storybook.js.org/) for component preview/development
 - Static typing, Linting and formatting are enforced with [TypeScript](https://www.typescriptlang.org), [ESLint](https://eslint.org) and [Prettier](https://prettier.io) respectively
 - For unit tests we're using [Vitest](https://vitest.dev/)
 
