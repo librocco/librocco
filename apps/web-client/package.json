@@ -16,6 +16,9 @@
 		"story:build": "histoire build",
 		"story:dev": "histoire dev",
 		"story:preview": "histoire preview",
+		"storybook:build": "storybook build",
+		"storybook:dev": "storybook dev",
+		"storybook:preview": "storybook preview",
 		"test": "vitest --ui",
 		"test:ci": "vitest --",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning"
@@ -86,6 +89,12 @@
 		"vitest": "~1.1.0",
 		"workbox-window": "~6.5.4",
 		"zod": "~3.22.2",
-		"@internationalized/date": "~3.5.2"
+		"@internationalized/date": "~3.5.2",
+		"storybook": "~8.2.9",
+		"@storybook/sveltekit": "~8.2.9",
+		"@storybook/svelte": "~8.2.9",
+		"@storybook/addon-svelte-csf": "~4.1.6",
+		"@storybook/addon-essentials": "~8.2.9",
+		"@storybook/addon-a11y": "~8.2.9"
 	}
 }
