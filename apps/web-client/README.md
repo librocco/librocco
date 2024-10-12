@@ -9,6 +9,8 @@ This is our main app, using modules from `db`, `js-search` and `shared` packages
      - [1.1.1. Views](#111-views)
      - [1.1.2. Data flows](#112-data-flows)
 2. [Development](#2-development)
+3. [Plugins](#3-plugins)
+4. [i18n](#4-i18n)
 
 ## 1. Structure
 
@@ -315,3 +317,12 @@ _Note: CouchDB instance is populated with test data, which will get replicated t
 ## 3. Plugins
 
 The plugins interface in WIP. For not we only feature the book data extension plugin: [see more](../../plugins/book-data-extension/README.md)
+
+## 4. i18n
+
+The project uses [typesafe-i18n](https://github.com/ivanhofer/typesafe-i18n) to manage localisation. Dictionaries, types & utilities are setup in `./src/i18n`. The only files that we need to work with are `./src/i18n/[lang]/*` and `./src/i18n/formatters.ts`, everything else is generated when we run the command `rushx typesafe-i18n`. While adding or editing locales, it is useful to have a shell running this command as it will watch our dictionaries and regenerate types & utilities on demand.
+
+Some useful resources:
+
+- [svelte adapter docs](https://github.com/ivanhofer/typesafe-i18n/tree/main/packages/adapter-svelte) - importantly exposes the `$LL` store for us to access our current locale translation functions in components/views
+- [syntax docs](https://github.com/ivanhofer/typesafe-i18n/tree/main/packages/runtime#syntax) - reference for e.g passing args, plurals and switch cases...
