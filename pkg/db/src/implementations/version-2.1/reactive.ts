@@ -73,7 +73,7 @@ export const createReactive = <K extends Kysely<any>>(db: K, subsMap = new SubsM
 				const executeQuery = (table: string) => {
 					debug.log(ctx, "reactive:notify:table")(table);
 					const logId = uniqueTimestamp();
-					timeLogger.start(q, logId)
+					timeLogger.start(q, logId);
 					q.execute()
 						.then((x) => x || [])
 						.then((x) => (timeLogger.end(q, logId), x))
@@ -132,7 +132,7 @@ const newTimeLogger = (logLevel: LogLevel) => {
 	const seen = {
 		start: new Map<string, boolean>(),
 		end: new Map<string, boolean>()
-	}
+	};
 
 	const _log = (kind: "start" | "end") => (query: Selectable<any>, id: string) => {
 		const _logKind = (logId: string) => (kind === "start" ? console.time(logId) : console.timeEnd(logId));
@@ -147,12 +147,12 @@ const newTimeLogger = (logLevel: LogLevel) => {
 		if (logLevel === "debug") return _logKind(logId);
 
 		// If log level == "log" log every query only once
-		if (seen[kind].get(queryStr)) return
+		if (seen[kind].get(queryStr)) return;
 		seen[kind].set(queryStr, true);
 		return _logKind(logId);
 	};
 
-	const start = _log("start")
+	const start = _log("start");
 	const end = _log("end");
 
 	return { start, end };
