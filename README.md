@@ -23,6 +23,7 @@ An offline first book store inventory management tool.
 - We're using [Storybook](https://storybook.js.org/) for component preview/development
 - Static typing, Linting and formatting are enforced with [TypeScript](https://www.typescriptlang.org), [ESLint](https://eslint.org) and [Prettier](https://prettier.io) respectively
 - For unit tests we're using [Vitest](https://vitest.dev/)
+- For i18n we're using [typesafe-i18n](https://github.com/ivanhofer/typesafe-i18n)
 
 ## 2. Monorepo management and day to day commands
 

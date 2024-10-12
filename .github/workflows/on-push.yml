@@ -166,6 +166,35 @@ jobs:
     - name: Typecheck all the packages
       if: success() || failure()
       run: rush typecheck
+  check-i18n-sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      id-token: write
+      contents: read
+      checks: write
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-node@v4
+      with:
+        node-version: "20"
+    - name: Cache node modules
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.rush
+          ~/.pnpm-store
+          common/temp
+          **/node_modules
+        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+    - name: Add local rush scripts to PATH
+      run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
+    - name: Install packages
+      run: rush update
+    - name: Build packages
+      run: rush build
+    - name: Run the check
+      run: cd apps/web-client && rushx typesafe-i18n-check
   perform-monorepo-checks:
     runs-on: ubuntu-latest
     timeout-minutes: 10
