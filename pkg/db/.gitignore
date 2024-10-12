@@ -1,3 +1,0 @@
-# Ignore test db files
-test-dbs/*
-./**/__screenshots__/*
