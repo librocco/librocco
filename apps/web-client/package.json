@@ -19,7 +19,8 @@
 		"test": "vitest --ui",
 		"test:ci": "vitest --",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
-		"typesafe-i18n": "typesafe-i18n"
+		"typesafe-i18n": "typesafe-i18n",
+		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
 		"@librocco/db": "workspace:*",
