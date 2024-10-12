@@ -5,13 +5,14 @@
 
 	import { testId, type WebClientView } from "@librocco/shared";
 
-	import { page } from "$app/stores";
+	import { LL } from "$i18n/i18n-svelte";
+
 	import { goto } from "$lib/utils/navigation";
-
 	import { TooltipWrapper } from "$lib/components";
-
 	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
+
+	import { page } from "$app/stores";
 
 	interface Link {
 		label: string;
@@ -21,33 +22,36 @@
 		linkto?: WebClientView;
 	}
 
-	export const links: Link[] = [
+	$: ({ nav: tNav } = $LL);
+
+	let links: Link[];
+	$: links = [
 		{
-			label: "Search stock",
+			label: tNav.search(),
 			href: appPath("stock"),
 			icon: Search,
 			linkto: "stock"
 		},
 		{
-			label: "Manage inventory",
+			label: tNav.inventory(),
 			href: appPath("inventory"),
 			icon: Library,
 			linkto: "inventory"
 		},
 		{
-			label: "Outbound",
+			label: tNav.outbound(),
 			href: appPath("outbound"),
 			icon: PackageMinus,
 			linkto: "outbound"
 		},
 		{
-			label: "Settings",
+			label: tNav.settings(),
 			href: appPath("settings"),
 			icon: Settings,
 			linkto: "settings"
 		},
 		{
-			label: "History",
+			label: tNav.history(),
 			href: appPath("history/date"),
 			icon: Book,
 			linkto: "history/date"
@@ -143,7 +147,7 @@
 		<!-- Topbar container end -->
 
 		<!-- Heading section -->
-		<header class="w-full px-4 pt-5 pb-6 xs:px-8">
+		<header class="xs:px-8 w-full px-4 pt-5 pb-6">
 			<slot name="heading" />
 		</header>
 		<!-- Heading section end -->

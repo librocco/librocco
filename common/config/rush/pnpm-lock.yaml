@@ -79,6 +79,9 @@ importers:
       svelte-local-storage-store:
         specifier: ~0.6.4
         version: 0.6.4(svelte@4.2.19)
+      typesafe-i18n:
+        specifier: ~5.26.2
+        version: 5.26.2(typescript@5.6.2)
       uuid:
         specifier: ~9.0.0
         version: 9.0.1
@@ -12634,6 +12637,15 @@ packages:
     dependencies:
       is-typedarray: 1.0.0
     dev: true
+
+  /typesafe-i18n@5.26.2(typescript@5.6.2):
+    resolution: {integrity: sha512-2QAriFmiY5JwUAJtG7yufoE/XZ1aFBY++wj7YFS2yo89a3jLBfKoWSdq5JfQYk1V2BS7V2c/u+KEcaCQoE65hw==}
+    hasBin: true
+    peerDependencies:
+      typescript: '>=3.5.1'
+    dependencies:
+      typescript: 5.6.2
+    dev: false
 
   /typescript@4.9.5:
     resolution: {integrity: sha512-1FXk9E2Hm+QzZQ7z+McJiHL4NW1F2EzMu9Nq9i3zAaGqibafqYwCVU6WyWAuyQRRzOlxou8xZSyXLEN8oKj24g==}
