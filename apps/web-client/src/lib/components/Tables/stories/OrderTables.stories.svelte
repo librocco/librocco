@@ -1,10 +1,17 @@
-<script lang="ts">
-	import { writable } from "svelte/store";
-	import type { Hst } from "@histoire/plugin-svelte";
-
+<script context="module" lang="ts">
+	import type { Meta } from "@storybook/svelte";
 	import { CustomerOrderTable, SupplierOrderTable } from "../OrderTables";
 
-	export let Hst: Hst;
+	export const meta: Meta = {
+		title: "Tables / Order tables",
+		subcomponents: { CustomerOrderTable, SupplierOrderTable }
+	};
+</script>
+
+<script lang="ts">
+	import { Story } from "@storybook/addon-svelte-csf";
+
+	import { writable } from "svelte/store";
 
 	const customerData = writable([
 		{
@@ -45,11 +52,10 @@
 	]);
 </script>
 
-<Hst.Story title="Tables / Order Tables">
-	<Hst.Variant title="Customers">
-		<CustomerOrderTable data={customerData} />
-	</Hst.Variant>
-	<Hst.Variant title="Suppliers">
-		<SupplierOrderTable data={supplierData} />
-	</Hst.Variant>
-</Hst.Story>
+<Story name="Customers">
+	<CustomerOrderTable data={customerData} />
+</Story>
+
+<Story name="Suppliers">
+	<SupplierOrderTable data={supplierData} />
+</Story>
