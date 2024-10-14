@@ -9,7 +9,8 @@
 		AlignLeft as Menu,
 		ArrowLeftToLine,
 		QrCode,
-		Book
+		Book,
+		Truck
 	} from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -71,7 +72,13 @@
 			label: "Customers",
 			href: appPath("customers"),
 			icon: PersonStanding,
-			linkto: "customers"
+			linkto: "orders/customers"
+		},
+		{
+			label: tNav.supplier_orders(),
+			href: appPath("supplier_orders"),
+			icon: Truck,
+			linkto: "orders/supplier_orders"
 		}
 	];
 

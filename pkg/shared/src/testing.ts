@@ -9,15 +9,15 @@ export type WebClientView =
 	| "inbound-note"
 	| "outbound-note"
 	| "warehouse"
-	| "customers"
 	| "history"
 	| "history/date"
 	| "history/isbn"
 	| "history/notes"
+	| "history/warehouse"
 	| "debug"
 	| "error"
-	| "history/warehouse"
-	| "debug";
+	| "orders/customers"
+	| "orders/supplier_orders";
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list" | "history/notes";
 /** Union of names for all views regarding history (summaries, past notes/transactions) */
