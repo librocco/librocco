@@ -9,6 +9,8 @@
 	import type { SearchIndex, BookEntry } from "@librocco/db";
 	import { testId } from "@librocco/shared";
 
+	import { LL } from "$i18n/i18n-svelte";
+
 	import { getDB } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
 
@@ -104,6 +106,8 @@
 	} = createDialog({
 		forceVisible: true
 	});
+
+	$: ({ search: tSearch } = $LL);
 </script>
 
 <Page view="stock" loaded={true}>
@@ -113,12 +117,12 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Search</h1>
+		<h1 class="text-2xl font-bold leading-7 text-gray-900">{tSearch.title()}</h1>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
 		{#if !$search.length}
-			<PlaceholderBox title="Search for stock" description="Get started by searching by title, author, ISBN" class="center-absolute">
+			<PlaceholderBox title={tSearch.empty.title()} description={tSearch.empty.description()} class="center-absolute">
 				<Search slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
 		{:else if !$entries?.length}
