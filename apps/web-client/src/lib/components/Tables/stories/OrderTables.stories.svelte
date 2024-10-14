@@ -36,21 +36,22 @@
 			data: customerData
 		})
 	);
+
 	const supplierData = writable([
 		{
-			name: "Penguin Random House",
-			email: "p@randoh.com",
-			id: "BB-1021921",
-			draft: true,
-			lastUpdated: "01/01/2024 12:33pm",
+			id: 1,
+			supplierId: 1,
+			supplierName: "Supplier 1",
+			totalBooks: 34,
+			placedAt: null,
 			actionLink: ""
 		},
 		{
-			name: "Elsevier",
-			email: "elsivier@books.com",
-			id: "KK-119281023",
-			draft: false,
-			lastUpdated: "02/01/2024 17:33pm",
+			id: 2,
+			supplierId: 1,
+			supplierName: "Supplier 2",
+			totalBooks: 34,
+			placedAt: "02/01/2024 17:33pm",
 			actionLink: ""
 		}
 	]);
