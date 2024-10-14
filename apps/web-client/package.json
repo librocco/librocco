@@ -13,12 +13,14 @@
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"preview": "vite preview",
-		"story:build": "histoire build",
-		"story:dev": "histoire dev",
-		"story:preview": "histoire preview",
+		"story:build": "storybook build",
+		"story:dev": "storybook dev",
+		"story:preview": "storybook preview",
 		"test": "vitest --ui",
 		"test:ci": "vitest --",
-		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning"
+		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
+		"typesafe-i18n": "typesafe-i18n",
+		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
 		"@librocco/db": "workspace:*",
@@ -32,13 +34,12 @@
 		"crstore": "~0.23.1",
 		"superstruct": "~2.0.2",
 		"kysely": "~0.27.4",
-		"sqlocal": "~0.11.1"
+		"sqlocal": "~0.11.1",
+		"typesafe-i18n": "~5.26.2"
 	},
 	"devDependencies": {
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",
 		"@esbuild-plugins/node-modules-polyfill": "~0.1.4",
-		"@histoire/controls": "~0.17.0",
-		"@histoire/plugin-svelte": "~0.17.0",
 		"@librocco/book-data-extension": "workspace:*",
 		"@librocco/google-books-api-plugin": "workspace:*",
 		"@librocco/open-library-api-plugin": "workspace:*",
@@ -64,7 +65,6 @@
 		"eslint-config-prettier": "^8.3.0",
 		"eslint-plugin-svelte": "^2.33.2",
 		"fast-glob": "~3.3.0",
-		"histoire": "~0.17.0",
 		"postcss": "~8.4.13",
 		"pouchdb-adapter-memory": "~8.0.1",
 		"prettier": "~2.7.1",
@@ -86,6 +86,12 @@
 		"vitest": "~1.1.0",
 		"workbox-window": "~6.5.4",
 		"zod": "~3.22.2",
-		"@internationalized/date": "~3.5.2"
+		"@internationalized/date": "~3.5.2",
+		"storybook": "~8.2.9",
+		"@storybook/sveltekit": "~8.2.9",
+		"@storybook/svelte": "~8.2.9",
+		"@storybook/addon-svelte-csf": "~4.1.6",
+		"@storybook/addon-essentials": "~8.2.9",
+		"@storybook/addon-a11y": "~8.2.9"
 	}
 }

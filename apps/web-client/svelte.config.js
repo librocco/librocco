@@ -12,6 +12,9 @@ const config = {
 	// for more information about preprocessors
 	preprocess: sequence([preprocess(), preprocessMeltUI()]),
 	kit: {
+		alias: {
+			"$i18n/*": "./src/i18n/*"
+		},
 		serviceWorker: {
 			register: false
 		},
