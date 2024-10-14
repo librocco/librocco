@@ -1,10 +1,17 @@
-<script lang="ts">
-	import { writable } from "svelte/store";
-	import type { Hst } from "@histoire/plugin-svelte";
-
+<script context="module" lang="ts">
+	import type { Meta } from "@storybook/svelte";
 	import { CustomerOrderTable, SupplierOrderTable } from "../OrderTables";
 
-	export let Hst: Hst;
+	export const meta: Meta = {
+		title: "Tables / Order tables",
+		subcomponents: { CustomerOrderTable, SupplierOrderTable }
+	};
+</script>
+
+<script lang="ts">
+	import { Story } from "@storybook/addon-svelte-csf";
+
+	import { writable } from "svelte/store";
 
 	import { createTable } from "$lib/actions";
 	import type { CustomerOrderData } from "../types";
@@ -49,11 +56,10 @@
 	]);
 </script>
 
-<Hst.Story title="Tables / Order Tables">
-	<Hst.Variant title="Customers">
-		<CustomerOrderTable table={customerTable} />
-	</Hst.Variant>
-	<Hst.Variant title="Suppliers">
-		<SupplierOrderTable data={supplierData} />
-	</Hst.Variant>
-</Hst.Story>
+<Story name="Customers">
+	<CustomerOrderTable table={customerTable} />
+</Story>
+
+<Story name="Suppliers">
+	<SupplierOrderTable data={supplierData} />
+</Story>
