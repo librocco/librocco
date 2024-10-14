@@ -64,6 +64,9 @@
 					</span>
 				</td>
 				<td data-property="id">{id}</td>
+				<td data-property="action">
+					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
+				</td>
 			</tr>
 		{/each}
 	</tbody>
