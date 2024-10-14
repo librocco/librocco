@@ -10,11 +10,17 @@ interface BreadcrumbSegment {
 type WarehouseSegments = [warehouse: BreadcrumbSegment];
 type InboundSegments = [warehouse: BreadcrumbSegment, note: BreadcrumbSegment];
 type OutboundSegments = [note: BreadcrumbSegment];
+type CustomerSegments = [customer: BreadcrumbSegment];
 
 export function createBreadcrumbs(type: "warehouse", ...segments: WarehouseSegments): Breadcrumb[];
 export function createBreadcrumbs(type: "inbound", ...segments: InboundSegments): Breadcrumb[];
 export function createBreadcrumbs(type: "outbound", ...segments: OutboundSegments): Breadcrumb[];
-export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ...segments: BreadcrumbSegment[]): Breadcrumb[] {
+export function createBreadcrumbs(type: "customers", ...segments: CustomerSegments): Breadcrumb[];
+
+export function createBreadcrumbs(
+	type: "warehouse" | "inbound" | "outbound" | "customers",
+	...segments: BreadcrumbSegment[]
+): Breadcrumb[] {
 	switch (type) {
 		case "warehouse": {
 			const [{ id, displayName }] = segments as WarehouseSegments;
@@ -37,6 +43,12 @@ export function createBreadcrumbs(type: "warehouse" | "inbound" | "outbound", ..
 			const [{ id, displayName }] = segments as OutboundSegments;
 			const label = displayName || id;
 			return [{ label: "Outbound", href: appPath("outbound") }, { label }];
+		}
+
+		case "customers": {
+			const [{ id, displayName }] = segments as OutboundSegments;
+			const label = displayName || id;
+			return [{ label: "Customers", href: appPath("customers") }, { label }];
 		}
 	}
 }

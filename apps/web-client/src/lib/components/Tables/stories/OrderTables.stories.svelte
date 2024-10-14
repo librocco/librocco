@@ -13,25 +13,29 @@
 
 	import { writable } from "svelte/store";
 
-	const customerData = writable([
+	import { createTable } from "$lib/actions";
+	import type { CustomerOrderData } from "../types";
+
+	const customerData: CustomerOrderData[] = [
 		{
 			name: "Billy Bob",
 			email: "bill@bbob.com",
-			id: "BB-1021921",
-			draft: true,
-			lastUpdated: "01/01/2024 12:33pm",
-			actionLink: ""
+			id: 1021921,
+			surname: "Bob"
 		},
 		{
 			name: "Kim K",
 			email: "kim@spills-it.com",
-			id: "KK-119281023",
-			draft: false,
-			lastUpdated: "02/01/2024 17:33pm",
-			actionLink: ""
+			id: 119281023,
+			surname: "Kardashian"
 		}
-	]);
+	];
 
+	const customerTable = createTable(
+		writable({
+			data: customerData
+		})
+	);
 	const supplierData = writable([
 		{
 			name: "Penguin Random House",
@@ -53,7 +57,7 @@
 </script>
 
 <Story name="Customers">
-	<CustomerOrderTable data={customerData} />
+	<CustomerOrderTable table={customerTable} />
 </Story>
 
 <Story name="Suppliers">

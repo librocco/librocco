@@ -1,15 +1,25 @@
 <script lang="ts">
 	import { UserRound, Hash, CalendarClock } from "lucide-svelte";
-	import type { Writable } from "svelte/store";
+	import type { Writable, Readable } from "svelte/store";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";
 
 	import BodyHead from "./BodyHead.svelte";
 	import BodyLink from "./BodyLink.svelte";
 
-	import type { OrderData } from "../types";
+	import type { CustomerOrderData } from "../types";
 
-	export let data: Writable<OrderData[]>;
+	import type { createTable } from "$lib/actions";
+
+	interface CustomerOrderData {
+		name: string;
+		surname: string;
+		id: number;
+		email: string;
+	}
+
+	export let table: ReturnType<typeof createTable<CustomerOrderData>>;
+	$: ({ rows } = $table);
 </script>
 
 <table id="customer-orders">
@@ -24,17 +34,18 @@
 			<th scope="col">
 				<HeadCol icon={CalendarClock} label="Last updated" />
 			</th>
-			<th scope="col">
-				<HeadCol label="Edit Row" srOnly />
-			</th>
+
+			{#if $$slots["row-actions"]}
+				<th scope="col" class="table-cell-fit"> <HeadCol label="Row Actions" srOnly /> </th>
+			{/if}
 		</tr>
 	</thead>
 	<tbody>
-		{#each $data as row (row.id)}
-			{@const { name, email, id, lastUpdated, draft, actionLink } = row}
+		{#each rows as row (row.key)}
+			{@const { name, email, id, rowIx } = row}
 			<tr>
 				<th scope="row" data-property="customer">
-					<BodyHead borderStyle={draft ? "gray" : "yellow"}>
+					<BodyHead borderStyle={"gray"}>
 						<BodyMultiRow
 							rows={{
 								name: { data: name, className: "text-md font-medium" },
@@ -45,13 +56,16 @@
 				</th>
 				<td data-property="id">{id}</td>
 				<td data-property="last-updated">
-					<span class="badge badge-md {draft ? 'badge-gray' : 'badge-yellow'}">
-						{lastUpdated}
+					<span class="badge badge-md {'badge-gray'}">
+						{"lastUpdated"}
 					</span>
 				</td>
-				<td data-property="action">
-					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
-				</td>
+
+				{#if $$slots["row-actions"]}
+					<td class="table-cell-fit">
+						<slot name="row-actions" {row} {rowIx} />
+					</td>
+				{/if}
 			</tr>
 		{/each}
 	</tbody>
