@@ -1,5 +1,16 @@
 <script lang="ts">
-	import { BookCopy, Library, PackageMinus, Search, Settings, AlignLeft as Menu, ArrowLeftToLine, QrCode, Book } from "lucide-svelte";
+	import {
+		BookCopy,
+		Library,
+		PackageMinus,
+		Search,
+		Settings,
+		PersonStanding,
+		AlignLeft as Menu,
+		ArrowLeftToLine,
+		QrCode,
+		Book
+	} from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
 
@@ -55,6 +66,12 @@
 			href: appPath("history/date"),
 			icon: Book,
 			linkto: "history/date"
+		},
+		{
+			label: "Customers",
+			href: appPath("customers"),
+			icon: PersonStanding,
+			linkto: "customers"
 		}
 	];
 
