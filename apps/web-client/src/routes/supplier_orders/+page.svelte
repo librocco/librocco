@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
+	import { Plus, Search, Loader2 as Loader } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 
@@ -7,14 +7,11 @@
 
 	import { Page, PlaceholderBox, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { generateUpdatedAtString } from "$lib/utils/time";
-
 	import { appPath } from "$lib/paths";
 
 	import { LL } from "$i18n/i18n-svelte";
 	import { writable } from "svelte/store";
-	import SupplierOrderTable from "$lib/components/Tables/OrderTables/SupplierOrderTable.svelte";
-	import type { SupplierOrderData } from "$lib/components/Tables/OrderTables/SupplierOrderTable.svelte";
+	import SupplierOrderTable, { type SupplierOrderData } from "$lib/components/Tables/OrderTables/SupplierOrderTable.svelte";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -26,13 +23,14 @@
 		// Append the new order to the orders list
 		orders.update((orders) => {
 			// Create a new order object
+			const id = orders.length ? [...orders].pop().id + 1 : 1;
 			const newOrder: SupplierOrderData = {
-				id: orders.length ? [...orders].pop().id + 1 : 1,
+				id,
 				supplierId: 1, // Assuming a default supplierId for new orders
 				supplierName: "New Supplier",
 				totalBooks: 0,
 				placedAt: new Date().toISOString(),
-				actionLink: "/dont_change_this"
+				actionLink: appPath("supplier_orders", id.toString())
 			};
 			return [...orders, newOrder];
 		});
