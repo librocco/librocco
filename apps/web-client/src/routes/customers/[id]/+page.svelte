@@ -168,7 +168,7 @@
 	} = dialog;
 </script>
 
-<Page view="customers" loaded={!loading}>
+<Page view="orders/customers" loaded={!loading}>
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 	</svelte:fragment>
