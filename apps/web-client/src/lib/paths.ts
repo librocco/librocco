@@ -3,6 +3,7 @@ import { base } from "$app/paths";
 const basepath = `${base}`;
 
 const PATHS = {
+	// Inventory mgmt
 	stock: `${basepath}/stock/`,
 	warehouses: `${basepath}/inventory/warehouses/`,
 	inventory: `${basepath}/inventory/`,
@@ -14,7 +15,10 @@ const PATHS = {
 	"history/isbn": `${basepath}/history/isbn/`,
 	"history/notes/date": `${basepath}/history/notes/`,
 	"history/notes/archive": `${basepath}/history/notes/archive`,
-	"history/warehouse": `${basepath}/history/warehouse/`
+	"history/warehouse": `${basepath}/history/warehouse/`,
+
+	// Order mgmt
+	supplier_orders: `${basepath}/supplier_orders/`
 };
 
 /**

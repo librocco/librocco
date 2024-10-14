@@ -2,12 +2,16 @@
 // import type { BaseTranslation } from '../i18n-types.js'
 
 const nav = {
+	// Inventory mgmt
 	search: "Search stock",
 	inventory: "Manage inventory",
 	outbound: "Outbound",
 	inbound: "Inbound",
 	settings: "Settings",
-	history: "History"
+	history: "History",
+
+	// Orders mgmt
+	supplier_orders: "Suppliers orders"
 };
 
 const search = {
