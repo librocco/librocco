@@ -2,6 +2,7 @@ import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 
 import { type DB } from "./types";
+import { browser } from "$app/environment";
 
 const dbCache: Record<string, DB> = {};
 
@@ -50,3 +51,8 @@ export const getInitializedDB = async (dbname: string) => {
 	}
 	return db;
 };
+
+if (browser) {
+	window["getDB"] = getDB;
+	window["getInitializedDB"] = getInitializedDB;
+}

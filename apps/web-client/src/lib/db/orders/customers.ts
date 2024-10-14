@@ -1,3 +1,4 @@
+import { browser } from "$app/environment";
 import { type DB } from "./types";
 
 type Customer = {
@@ -55,3 +56,11 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 	const params = [customerId, ...bookIds];
 	await db.execO(sql, params);
 };
+
+if (browser) {
+	window["getAllCustomers"] = getAllCustomers;
+	window["upsertCustomer"] = upsertCustomer;
+	window["getCustomerBooks"] = getCustomerBooks;
+	window["addBooksToCustomer"] = addBooksToCustomer;
+	window["removeBooksFromCustomer"] = removeBooksFromCustomer;
+}

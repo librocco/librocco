@@ -1,6 +1,8 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import "$lib/db/orders";
+	import "$lib/db/orders/customers";
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
