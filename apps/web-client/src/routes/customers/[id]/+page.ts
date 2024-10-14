@@ -1,41 +1,29 @@
-import { redirect } from "@sveltejs/kit";
-
 import type { PageLoad } from "./$types";
 
-import { appPath } from "$lib/paths";
+import type { CustomerOrderLine } from "$lib/components/Tables/types";
 
 export const load: PageLoad = async ({
-	params,
 	parent
-}): Promise<Partial<{ name: string; surname: string; id: number; email: string; orderLines: { isbn: string; quantity: number }[] }>> => {
-	// await db init in ../layout.ts
+}): Promise<Partial<{ name: string; surname: string; id: number; email: string; orderLines: CustomerOrderLine[] }>> => {
 	const { db } = await parent();
-
-	// This should re-run on change to path, as far as I understand: https://kit.svelte.dev/docs/load#invalidation
-	// const docId = params?.id;
 
 	// If db is not returned (we're not in the browser environment, no need for additional loading)
 	if (!db) {
 		return {};
 	}
 
-	// const findNoteRes = await db.findNote(docId);
-	// if (!findNoteRes) {
-	// 	redirect(307, appPath("outbound"));
-	// }
-	return new Promise<{ name: string; surname: string; id: number; email: string; orderLines: { isbn: string; quantity: number }[] }>(
-		(resolve) =>
-			resolve({
-				name: "Fadwa",
-				surname: "Mahmoud",
-				id: 1234,
-				email: "fadwa.mahmoud@gmail.com",
-				orderLines: [
-					{ isbn: "9786556356", quantity: 1 },
-					{ isbn: "9786556356", quantity: 1 },
-					{ isbn: "9786556356", quantity: 1 },
-					{ isbn: "9786556356", quantity: 2 }
-				]
-			})
+	return new Promise<{ name: string; surname: string; id: number; email: string; orderLines: CustomerOrderLine[] }>((resolve) =>
+		resolve({
+			name: "Fadwa",
+			surname: "Mahmoud",
+			id: 1234,
+			email: "fadwa.mahmoud@gmail.com",
+			orderLines: [
+				{ isbn: "9786556356", quantity: 1, title: "Book 1", authors: "Author 1", publisher: "penguin", price: 198 },
+				{ isbn: "9786545357", quantity: 1, title: "Book 1", authors: "Author 2", publisher: "bloomsbury", price: 704 },
+				{ isbn: "9786556358", quantity: 1, title: "Book 1", authors: "Author 3", publisher: "nahdet misr", price: 42 },
+				{ isbn: "9786556859", quantity: 2, title: "Book 1", authors: "Author 5", publisher: "penguin ", price: 690 }
+			]
+		})
 	);
 };
