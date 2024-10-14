@@ -18,8 +18,7 @@
 		type NavEntry,
 		isCustomItemRow,
 		type OutOfStockTransaction,
-		NoWarehouseSelectedError,
-		isBookRow
+		NoWarehouseSelectedError
 	} from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -34,21 +33,13 @@
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
-		OutboundTable,
+		OrderLineTable,
 		TextEditable,
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import type { InventoryTableData } from "$lib/components/Tables/types";
-	import {
-		BookForm,
-		bookSchema,
-		customerOrderSchema,
-		type BookFormOptions,
-		ScannerForm,
-		scannerSchema,
-		customItemSchema
-	} from "$lib/forms";
+	import type { CustomerOrderLine, InventoryTableData } from "$lib/components/Tables/types";
+	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -71,38 +62,13 @@
 
 	export let data: PageData;
 
-	export let onCancel: (e: Event) => void = () => {};
-
-	export let onFetch: (isbn: string, form: BookForm["form"]) => void = () => {};
-
-	export let type = "commit";
-
-	const options = {
-		validators: customerOrderSchema
-	};
-	// TODO: add schema
-	const _form = superValidateSync(data, customerOrderSchema);
-	const form = superForm(_form, options);
-
-	const { form: formStore, constraints, enhance } = form;
-
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
 	const { db } = getDB();
-	// if (!status) goto(appPath("settings"));
 
-	// const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	// const warehouseListStream = db
-	// 	?.stream()
-	// 	.warehouseMap(warehouseListCtx)
-	// 	.pipe(map((m) => new Map<string, NavEntry>(wrapIter(m).filter(([warehouseId]) => !warehouseId.includes("0-all")))));
-	// const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
-
-	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
-
-	// TODO: delete this if not needed (only a few books in table)
+	/**  @TODO: delete this if not needed (only a few books in table)
+	 */
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
@@ -119,7 +85,7 @@
 	const customer = readable(data);
 
 	// #region table
-	const tableOptions = writable<{ data: InventoryTableData[] }>({
+	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
 		data: orderLines
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
@@ -128,21 +94,27 @@
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (orderLines as InventoryTableData[])?.slice(0, maxResults)
+		data: (orderLines as CustomerOrderLine[])?.slice(0, maxResults)
 	});
 	// #endregion table
 
-	// $: noteStores = createNoteStores(note);
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
+		const formData = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(formData.get("quantity"));
 
-	// $: displayName = noteStores.displayName;
-	// $: defaultWarehouse = noteStores.defaultWarehouse;
-	// $: state = noteStores.state;
-	// $: updatedAt = noteStores.updatedAt;
-	// $: entries = noteStores.entries;
-	//
+		const updatedCustomerOrder = { id: data.id, isbn };
+		if (currentQty == nextQty) {
+			return;
+		}
+
+		/** @TODO wire in when API is implemented */
+		// await customerOrder.update(data.id, { quantity: nextQty, ...updatedCustomerOrder });
+	};
 
 	const handleAddOrderLine = async (isbn: string) => {
-		// TODO: wire in when API is implemented
+		/**  @TODO: wire in when API is implemented
+		 */
 		// await customerOrder.addOrderLine({}, { isbn, quantity: 1 });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
@@ -172,7 +144,7 @@
 				scan((acc, next) => ({ ...acc, ...next })),
 				tap((data) => {
 					const { isbn, title } = data;
-					orderLines = [...orderLines, data];
+					// orderLines = [...orderLines, data];
 					console.log({ data });
 				})
 			)
@@ -220,7 +192,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		{#if !orderLines.length}
+		{#if !orderLines?.length}
 			<PlaceholderBox title="Enter ISBN" description="Enter ISBN to add books" class="center-absolute">
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
@@ -228,7 +200,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OutboundTable {table} warehouseList={[]} on:edit-row-quantity={() => {}} on:edit-row-warehouse={() => {}}>
+					<OrderLineTable {table} editQuantity={updateRowQuantity}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
@@ -254,30 +226,14 @@
 								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 									<button
-										use:melt={$dialogTrigger}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("edit-row")}
-										on:m-click={() => {}}
-										on:m-keydown={() => {}}
 									>
 										<span class="sr-only">Edit row {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
 									</button>
-
-									{#if isBookRow(row)}
-										<button
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-											data-testid={testId("print-book-label")}
-											on:click={() => {}}
-										>
-											<span class="sr-only">Print book label {rowIx}</span>
-											<span class="aria-hidden">
-												<Printer />
-											</span>
-										</button>
-									{/if}
 
 									<button
 										on:click={() => {}}
@@ -292,7 +248,7 @@
 								</div>
 							</PopoverWrapper>
 						</div>
-					</OutboundTable>
+					</OrderLineTable>
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->

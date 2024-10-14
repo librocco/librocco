@@ -13,6 +13,13 @@ export interface OrderData {
 	actionLink: string;
 }
 
+export interface CustomerOrderData {
+	name: string;
+	surname: string;
+	id: number;
+	email: string;
+}
+
 export type InventoryTableData<K extends VolumeStockKind = VolumeStockKind> = K extends "book"
 	? BookCoreRowData & {
 			publisher?: string;
@@ -23,6 +30,11 @@ export type InventoryTableData<K extends VolumeStockKind = VolumeStockKind> = K 
 	  } & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
 	: VolumeStockClient<K>;
 
+export type CustomerOrderLine = Omit<BookCoreRowData, "warehouseId" | "warehouseName" | "warehouseDiscount"> & {
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+};
 export type BookCoreRowData = {
 	isbn: string;
 	title: string;
