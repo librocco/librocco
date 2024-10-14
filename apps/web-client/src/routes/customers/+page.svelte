@@ -53,8 +53,6 @@
 
 	const customerOrdersList = readable(customerData);
 
-	// const customerOrdersList = readableFromStream(customersCtx, customerStream, []);
-
 	const tableOptions = writable<{ data: CustomerOrderData[] }>({
 		data: customerData
 	});
