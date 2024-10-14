@@ -39,12 +39,18 @@
 **/build
 **/.svelte-kit
 
-# Test reports
+# Unit tests
 **/junit.xml
+**/test-dbs/*
+**/__screenshots__/*
 
 # Playwright metedata
 **/test-results
 **/playwright-report
+# Ignore test db files
+
+# Rush temporary files
+**/.rush/temp/
 
 # -------Ignored contents of the root of the repo------- #
 
@@ -52,5 +58,7 @@
 common/deploy/
 common/temp/
 common/autoinstallers/*/.npmrc
-**/.rush/temp/
+
+# Aider logs/caches
 .aider*
+
