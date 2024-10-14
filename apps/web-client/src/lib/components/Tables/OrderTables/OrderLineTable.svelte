@@ -28,7 +28,6 @@
 	export let editQuantity: (e: SubmitEvent, b: CustomerOrderLine) => Promise<void>;
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
-	// const { editQuantity } = createOutboundTableEvents(dispatch);
 </script>
 
 <table id="inventory-table" class="table table-auto" use:tableAction={{ rowCount }}>
