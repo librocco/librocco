@@ -7,7 +7,7 @@ import { getDB, initializeDB } from "../db";
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
 
 describe.skip("Customer order tests", () => {
-	let db;
+	let db: DB;
 	// Each test run will use a different db
 	// birthday paradox chance of collision for 1k runs is 0.5%)
 	let randomTestRunId: number;
