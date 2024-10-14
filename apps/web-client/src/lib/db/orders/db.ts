@@ -43,7 +43,7 @@ export const getInitializedDB = async (dbname: string) => {
 	const db = await getDB(dbname);
 	// Check if it's already initialized
 	// TODO: check the return type
-	const result = await db.execO<{}>("SELECT name FROM sqlite_master WHERE type='table' AND name='customer';");
+	const result = await db.execO("SELECT name FROM sqlite_master WHERE type='table' AND name='customer';");
 
 	if (result.length === 0) {
 		await initializeDB(db);
