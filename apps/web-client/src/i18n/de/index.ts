@@ -7,7 +7,9 @@ const nav = {
 	outbound: "Ausgehend",
 	inbound: "Eingehend",
 	settings: "Einstellungen",
-	history: "Verlauf"
+	history: "Verlauf",
+
+	supplier_orders: "Lieferantenbestellungen"
 };
 
 const search = {
