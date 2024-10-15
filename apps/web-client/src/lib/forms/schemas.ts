@@ -16,6 +16,20 @@ export const warehouseDeleteSchema = (matchConfirmation: string) => {
 	});
 };
 
+export type DatabaseCreateFormData = SuperValidated<typeof databaseCreateSchema>["data"];
+const dbNameRegex = /^[a-zA-Z0-9._]+$/;
+export const databaseCreateSchema = z.object({
+	name: z.string().regex(dbNameRegex, "Invalid name, please use the combination of alphanumeric characters or '_', '/', '.'")
+});
+
+export type DatabaseDeleteFormData = SuperValidated<ReturnType<typeof databaseDeleteSchema>>["data"];
+export const databaseDeleteSchema = (matchConfirmation: string) => {
+	const reg = new RegExp("^" + matchConfirmation + "$");
+	return z.object({
+		confirmation: z.string().regex(reg)
+	});
+};
+
 export type BookFormData = SuperValidated<typeof bookSchema>["data"];
 export const bookSchema = z.object({
 	isbn: z.string(),
