@@ -55,7 +55,11 @@ export type TestId =
 	| "calendar-to"
 	| "history-date-stats"
 	| "history-stock-report"
-	| "history-stock-report-entry";
+	| "history-stock-report-entry"
+	| "database-management-container"
+	| "database-management-list"
+	| "db-action-export"
+	| "db-action-delete";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
