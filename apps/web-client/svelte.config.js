@@ -35,6 +35,8 @@ const config = {
 				"/outbound/1/",
 				"/customers/",
 				"/customers/1/",
+				"/supplier_orders/",
+				"/supplier_orders/1/",
 				"/history/date/1/",
 				"/history/isbn/",
 				"/history/isbn/1/",

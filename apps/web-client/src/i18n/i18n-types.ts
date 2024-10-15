@@ -39,6 +39,10 @@ type RootTranslation = {
 		 * H​i​s​t​o​r​y
 		 */
 		history: string
+		/**
+		 * S​u​p​p​l​i​e​r​s​ ​o​r​d​e​r​s
+		 */
+		supplier_orders: string
 	}
 	search: {
 		/**
@@ -84,6 +88,10 @@ export type TranslationFunctions = {
 		 * History
 		 */
 		history: () => LocalizedString
+		/**
+		 * Suppliers orders
+		 */
+		supplier_orders: () => LocalizedString
 	}
 	search: {
 		/**
