@@ -11,7 +11,7 @@ export async function getDB(dbname: string) {
 	}
 
 	const sqlite = await initWasm(() => wasmUrl);
-	const db = await sqlite.open("todos.sqlite3");
+	const db = await sqlite.open(dbname);
 
 	dbCache[dbname] = db;
 	return db;
@@ -19,14 +19,14 @@ export async function getDB(dbname: string) {
 
 export async function initializeDB(db: DB) {
 	await db.exec(`CREATE TABLE customer (
-		id INTEGER,
+		id INTEGER NOT NULL,
 		fullname TEXT,
 		email TEXT,
 		deposit DECIMAL,
 		PRIMARY KEY (id)
 	)`);
-	await db.exec(`CREATE TABLE IF NOT EXISTS customer_order_lines (
-		id INTEGER,
+	await db.exec(`CREATE TABLE customer_order_lines (
+		id INTEGER NOT NULL,
 		customer_id TEXT,
 		isbn TEXT,
 		quantity INTEGER,
@@ -34,9 +34,16 @@ export async function initializeDB(db: DB) {
 		placed TIMESTAMP,
 		received TIMESTAMP,
 		collected TIMESTAMP,
-		PRIMARY KEY (id),
-		FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
+		PRIMARY KEY (id)
 	)`);
+	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
+	// Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
+	// but must not have checked foreign key constraints as they can be violated by row level security or replication.
+	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+	// Activate the crsql extension
+	await db.exec("SELECT crsql_as_crr('customer');");
+	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
 }
 
 export const getInitializedDB = async (dbname: string) => {
