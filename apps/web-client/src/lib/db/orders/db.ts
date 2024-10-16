@@ -11,7 +11,7 @@ export async function getDB(dbname: string) {
 	}
 
 	const sqlite = await initWasm(() => wasmUrl);
-	const db = await sqlite.open("todos.sqlite3");
+	const db = await sqlite.open(dbname);
 
 	dbCache[dbname] = db;
 	return db;
