@@ -24,8 +24,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -61,8 +61,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -91,8 +91,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -116,8 +116,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -153,8 +153,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -185,8 +185,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -212,8 +212,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -237,8 +237,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
