@@ -6,7 +6,17 @@ import { getDB, initializeDB } from "../db";
 
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
 
-describe.skip("Customer order tests", () => {
+describe("Db creation tests", () => {
+	it("should allow initializing a database", async () => {
+		const randomTestRunId = Math.floor(Math.random() * 100000000);
+		const db = await getDB("init-db-test" + randomTestRunId);
+		await expect(getAllCustomers(db)).rejects.toThrow();
+		initializeDB(db);
+		expect((await getAllCustomers(db)).length).toBe(0);
+	});
+});
+
+describe("Customer order tests", () => {
 	let db: DB;
 	// Each test run will use a different db
 	// birthday paradox chance of collision for 1k runs is 0.5%)
@@ -16,13 +26,6 @@ describe.skip("Customer order tests", () => {
 		randomTestRunId = Math.floor(Math.random() * 100000000);
 		db = await getDB("testdb" + randomTestRunId);
 		await initializeDB(db);
-	});
-
-	it("should allow initializing a database", async () => {
-		const db = await getDB("init-db-test" + randomTestRunId);
-		await expect(getAllCustomers(db)).rejects.toThrow();
-		initializeDB(db);
-		expect((await getAllCustomers(db)).length).toBe(0);
 	});
 
 	it("can create and update a customer", async () => {
