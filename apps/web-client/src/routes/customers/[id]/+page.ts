@@ -1,10 +1,10 @@
 import type { PageLoad } from "./$types";
 
-import type { CustomerOrderLine } from "$lib/components/Tables/types";
+// import type { CustomerOrderLine } from "$lib/components/Tables/types";
+import { getCustomerBooks, getCustomerDetails } from "$lib/db/orders/customers";
+import type { CustomerOrderLine, Customer } from "$lib/db/orders/types";
 
-export const load: PageLoad = async ({
-	parent
-}): Promise<Partial<{ name: string; surname: string; id: number; email: string; orderLines: CustomerOrderLine[] }>> => {
+export const load: PageLoad = async ({ parent, params }) => {
 	const { db } = await parent();
 
 	// If db is not returned (we're not in the browser environment, no need for additional loading)
@@ -12,18 +12,11 @@ export const load: PageLoad = async ({
 		return {};
 	}
 
-	return new Promise<{ name: string; surname: string; id: number; email: string; orderLines: CustomerOrderLine[] }>((resolve) =>
-		resolve({
-			name: "Fadwa",
-			surname: "Mahmoud",
-			id: 1234,
-			email: "fadwa.mahmoud@gmail.com",
-			orderLines: [
-				{ isbn: "9786556356", quantity: 1, title: "Book 1", authors: "Author 1", publisher: "penguin", price: 198 },
-				{ isbn: "9786545357", quantity: 1, title: "Book 1", authors: "Author 2", publisher: "bloomsbury", price: 704 },
-				{ isbn: "9786556358", quantity: 1, title: "Book 1", authors: "Author 3", publisher: "nahdet misr", price: 42 },
-				{ isbn: "9786556859", quantity: 2, title: "Book 1", authors: "Author 5", publisher: "penguin ", price: 690 }
-			]
-		})
-	);
+	//in customer orders page, we need to get the latest/biggest customer id
+	// and increment it
+
+	const customerBooks = await getCustomerBooks(db, Number(params.id));
+	const customerDetails = await getCustomerDetails(db, Number(params.id));
+
+	return { customerBooks, customerDetails: customerDetails[0] || ({} as Customer) };
 };
