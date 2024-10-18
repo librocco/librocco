@@ -1,6 +1,6 @@
 import { type DB } from "./types";
 
-type Customer = {
+export type Customer = {
 	id?: number;
 	fullname?: string;
 	email?: string;
