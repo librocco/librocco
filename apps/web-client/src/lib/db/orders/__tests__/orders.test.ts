@@ -5,6 +5,7 @@ import { type DB } from "../types";
 import { getDB, initializeDB, getChanges, applyChanges, getSiteId, getPeerDBVersion } from "../db";
 
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
+import type { Customer } from "../customers";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
@@ -109,7 +110,7 @@ describe("Customer order tests", () => {
 	});
 	it("Should sync customer creation", async () => {
 		// We create one customer in db1 and a different one in db2
-		let db1Customers, db2Customers;
+		let db1Customers: Customer[], db2Customers: Customer[];
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 2 });
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
@@ -126,7 +127,7 @@ describe("Customer order tests", () => {
 		// We create one customer in db1 and a different one in db2
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 		await syncDBs(db1, db2);
-		db2.exec(`UPDATE customer SET fullname='Jane Doe', email='jane@example.com' WHERE id=1`);
+		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toEqual(db2Customers);
