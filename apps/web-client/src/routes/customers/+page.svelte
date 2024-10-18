@@ -10,8 +10,6 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { getDB } from "$lib/db";
-
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast, CustomerOrderTable } from "$lib/components";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -28,7 +26,11 @@
 	import { v4 } from "uuid";
 
 	import { createTable, createIntersectionObserver } from "$lib/actions";
-	const { db, status } = getDB();
+	import type { Customer } from "$lib/db/orders/types";
+	import type { PageData } from "./$types";
+	import { upsertCustomer } from "$lib/db/orders/customers";
+
+	export let data: PageData;
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -37,29 +39,14 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
-	//
-	//
-	const customersCtx = { name: "[CUSTOMERS_LIST]", debug: false };
-	const customerData = [
-		{ name: "Fadwa", surname: "Mahmoud", id: 1234, email: "fadwa.mahmoud@gmail.com" },
-		{ name: "Not Fadwa", surname: "Mahmoud", id: 112234, email: "not.fadwa.mahmoud@gmail.com" }
-	];
-	const customersPromise = new Promise<{ name: string; surname: string; id: number; email: string }[]>((resolve) =>
-		setTimeout(() => {
-			resolve(customerData);
-		}, 500)
-	);
-	const customerStream = from(customersPromise);
 
-	const customerOrdersList = readable(customerData);
-
-	const tableOptions = writable<{ data: CustomerOrderData[] }>({
-		data: customerData
+	const tableOptions = writable<{ data: Customer[] }>({
+		data: data.customers
 	});
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (customerData as CustomerOrderData[])?.slice(0, maxResults)
+		data: (data.customers as Customer[])?.slice(0, maxResults)
 	});
 	const dialog = createDialog({
 		forceVisible: true
@@ -89,7 +76,14 @@
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Customer Orders</h1>
 			<button
 				on:click={() => {
-					goto(appPath("customers", v4()));
+					// get latest/biggest id and increment by 1
+					const randomId = Math.floor(Math.random() * 1e10);
+					try {
+						upsertCustomer(data.db, { id: randomId });
+					} catch (e) {
+						console.log({ e });
+					}
+					goto(appPath("customers", randomId.toString()));
 				}}
 				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
 			>
@@ -153,7 +147,7 @@
 											onConfirm: () => {
 												goto(appPath("customers", `${row.id}`));
 											},
-											title: dialogTitle.delete(row.name),
+											title: dialogTitle.delete(row.fullname),
 											description: "Delete this order?",
 											type: "commit"
 										};
@@ -173,7 +167,7 @@
 				>
 			</div>
 			<ul class={testId("entity-list-container")} data-loaded={true}>
-				{#if !$customerOrdersList.length}
+				{#if !data?.customers.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 						<button on:click={() => {}} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
@@ -183,8 +177,8 @@
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
-					{#each $customerOrdersList as customerOrder}
-						{@const name = `${customerOrder.name} ${customerOrder.surname}` || "Name Surname"}
+					{#each data?.customers as customerOrder}
+						{@const name = `${customerOrder.fullname}`}
 						<!-- {@const updatedAt = generateUpdatedAtString(customerOrder.updatedAt)} -->
 						{@const id = customerOrder.id}
 						{@const email = customerOrder.email}

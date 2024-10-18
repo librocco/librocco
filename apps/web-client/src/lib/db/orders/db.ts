@@ -18,7 +18,7 @@ export async function getDB(dbname: string) {
 }
 
 export async function initializeDB(db: DB) {
-	await db.exec(`CREATE TABLE customer (
+	await db.exec(`CREATE TABLE IF NOT EXISTS customer (
 		id INTEGER,
 		fullname TEXT,
 		email TEXT,
