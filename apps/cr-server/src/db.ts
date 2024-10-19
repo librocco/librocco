@@ -5,13 +5,12 @@ import { extensionPath } from "@vlcn.io/crsqlite";
 
 /** Creates a bare minimum SQLite instance and adds CR-SQLite extension */
 export function newDB(fpath: string) {
-	const database = new SQLite(fpath);
+	const database = new SQLite(fpath, { verbose: console.log });
+	database.loadExtension(extensionPath);
 	return database;
 }
 
 export function initializeDB(db: Database) {
-	// Load the CR-SQLite extension
-	db.loadExtension(extensionPath);
 
 	db.exec(`CREATE TABLE IF NOT EXISTS customer (
 		id INTEGER NOT NULL,
