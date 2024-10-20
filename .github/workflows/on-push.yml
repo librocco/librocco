@@ -24,8 +24,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -61,8 +61,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -91,8 +91,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -116,8 +116,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -128,7 +128,7 @@ jobs:
       run: cd apps/web-client && rushx build:e2e
     - name: Run Playwright tests
       run: cd apps/e2e && rushx test:ci
-    - uses: actions/upload-artifact@v3
+    - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-test-results
@@ -153,8 +153,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -185,8 +185,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -212,8 +212,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
@@ -237,8 +237,8 @@ jobs:
           ~/.rush
           ~/.pnpm-store
           common/temp
-          **/node_modules
-        key: ${{ runner.os }}-modules-node16-v1-${{ hashFiles('**/pnpm-lock.yaml') }}
+          ./common/temp/node_modules/
+        key: ${{ runner.os }}-modules-node16-v2-${{ hashFiles('**/pnpm-lock.yaml') }}
     - name: Add local rush scripts to PATH
       run: echo "${PWD}"/common/scripts >> $GITHUB_PATH
     - name: Install packages
