@@ -399,6 +399,11 @@
 		{
 			"packageName": "@librocco/open-library-api-plugin",
 			"projectFolder": "plugins/open-library-api"
+		},
+		// TEMP
+		{
+			"packageName": "@vlcn.io/ws-server",
+			"projectFolder": "pkg/ws-server"
 		}
 	]
 }

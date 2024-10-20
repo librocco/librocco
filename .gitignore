@@ -22,6 +22,7 @@
 **/*.log
 **/build.output
 **/deploy.output
+**/tsconfig.tsbuildinfo
 
 # Runtime data
 **/*.pid

@@ -1,0 +1,39 @@
+{
+	"name": "@vlcn.io/ws-server",
+	"type": "module",
+	"version": "0.2.2",
+	"files": [
+		"dist",
+		"src"
+	],
+	"module": "dist/index.js",
+	"main": "dist/index.js",
+	"scripts": {
+		"build": "tsc --build",
+		"watch": "tsc --build --watch",
+		"test": "vitest run",
+		"rmtdata": "rm testDbs/*",
+		"deep-clean": "rm -rf ./dist || true && rm tsconfig.tsbuildinfo || true"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:vlcn-io/js.git",
+		"directory": "https://github.com/vlcn-io/js/tree/main/js/packages/ws-server"
+	},
+	"dependencies": {
+		"@types/better-sqlite3": "^7.6.8",
+		"@vlcn.io/crsqlite": "latest",
+		"@vlcn.io/logger-provider": "latest",
+		"@vlcn.io/ws-common": "latest",
+		"better-sqlite3": "^9.2.2",
+		"chokidar": "^3.5.3",
+		"throttle-debounce": "^5.0.0",
+		"winston": "^3.10.0",
+		"ws": "^8.13.0"
+	},
+	"devDependencies": {
+		"@types/throttle-debounce": "^5.0.0",
+		"@types/ws": "^8.5.5",
+		"vitest": "^0.30.1"
+	}
+}
