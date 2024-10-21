@@ -17,6 +17,7 @@
 		"story:dev": "storybook dev",
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
+		"test:sync": "vitest --ui orders/__tests__/sync.test.ts",
 		"test:ci": "vitest --",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
 		"typesafe-i18n": "typesafe-i18n",
