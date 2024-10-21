@@ -3,6 +3,8 @@ import path from "path";
 import SQLite, { Database } from "better-sqlite3";
 import { extensionPath } from "@vlcn.io/crsqlite";
 
+const dbCache = new Map<string, Database>()
+
 /** Creates a bare minimum SQLite instance and adds CR-SQLite extension */
 export function newDB(fpath: string) {
 	const database = new SQLite(fpath, { verbose: console.log });
@@ -11,7 +13,6 @@ export function newDB(fpath: string) {
 }
 
 export function initializeDB(db: Database) {
-
 	db.exec(`CREATE TABLE IF NOT EXISTS customer (
 		id INTEGER NOT NULL,
 		fullname TEXT,
@@ -37,6 +38,9 @@ export function initializeDB(db: Database) {
 }
 
 export const getInitializedDB = async (fpath: string) => {
+	// Check if db already cached
+	if (dbCache.has(fpath)) return dbCache.get(fpath)!
+
 	// Ensure the directory exists
 	const dir = path.dirname(fpath);
 	if (!fs.existsSync(dir)) {

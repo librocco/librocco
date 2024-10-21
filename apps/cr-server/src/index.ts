@@ -24,28 +24,26 @@ app.get("/", (_, res) => {
 	res.send("Ok");
 });
 
-// Initialize the database
-const db = await getInitializedDB("./test-dbs/dev");
-
 // NOTE: CRUD doesn't perform checks for required fields, but the CRUD part is temp and
 // probably won't be used with production DB
 
-// Customer orders CRUD
-//
-app.post("/customers", (req, res) => {
+app.post("/:dbname/customers", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { fullname, email, deposit } = req.body;
 	const stmt = db.prepare("INSERT INTO customer (fullname, email, deposit) VALUES (?, ?, ?)");
 	const info = stmt.run(fullname, email, deposit);
 	res.status(201).json({ id: info.lastInsertRowid });
 });
 
-app.get("/customers", (req, res) => {
+app.get("/:dbname/customers", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const stmt = db.prepare("SELECT * FROM customer");
 	const customers = stmt.all();
 	res.json(customers);
 });
 
-app.get("/customers/:id", (req, res) => {
+app.get("/:dbname/customers/:id", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const stmt = db.prepare("SELECT * FROM customer WHERE id = ?");
 	const customer = stmt.get(id);
@@ -56,7 +54,8 @@ app.get("/customers/:id", (req, res) => {
 	}
 });
 
-app.put("/customers/:id", (req, res) => {
+app.put("/:dbname/customers/:id", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const { fullname, email, deposit } = req.body;
 	const stmt = db.prepare("UPDATE customer SET fullname = ?, email = ?, deposit = ? WHERE id = ?");
@@ -68,7 +67,8 @@ app.put("/customers/:id", (req, res) => {
 	}
 });
 
-app.delete("/customers/:id", (req, res) => {
+app.delete("/:dbname/customers/:id", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const stmt = db.prepare("DELETE FROM customer WHERE id = ?");
 	const info = stmt.run(id);
@@ -79,15 +79,16 @@ app.delete("/customers/:id", (req, res) => {
 	}
 });
 
-// Customer order lines CRUD
-app.post("/customer-order-lines", (req, res) => {
+app.post("/:dbname/customer-order-lines", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { customer_id, isbn, quantity } = req.body;
 	const stmt = db.prepare("INSERT INTO customer_order_lines (customer_id, isbn, quantity) VALUES (?, ?, ?)");
 	const info = stmt.run(customer_id, isbn, quantity);
 	res.status(201).json({ id: info.lastInsertRowid });
 });
 
-app.get("/customer-order-lines/:customerId", (req, res) => {
+app.get("/:dbname/customer-order-lines/:customerId", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { customerId } = req.params;
 	const stmt = db.prepare("SELECT * FROM customer_order_lines WHERE customer_id = ?");
 	const orderLines = stmt.all(customerId);
@@ -98,7 +99,8 @@ app.get("/customer-order-lines/:customerId", (req, res) => {
 	}
 });
 
-app.put("/customer-order-lines/:id", (req, res) => {
+app.put("/:dbname/customer-order-lines/:id", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const { customer_id, isbn, quantity } = req.body;
 	const stmt = db.prepare("UPDATE customer_order_lines SET customer_id = ?, isbn = ?, quantity = ? WHERE id = ?");
@@ -110,7 +112,8 @@ app.put("/customer-order-lines/:id", (req, res) => {
 	}
 });
 
-app.delete("/customer-order-lines/:id", (req, res) => {
+app.delete("/:dbname/customer-order-lines/:id", async (req, res) => {
+	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const stmt = db.prepare("DELETE FROM customer_order_lines WHERE id = ?");
 	const info = stmt.run(id);
