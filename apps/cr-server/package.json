@@ -6,7 +6,8 @@
 		"@vlcn.io/ws-server": "^0.2.3",
 		"express": "^4.18.2",
 		"@vlcn.io/crsqlite": "~0.16.3",
-		"better-sqlite3": "~11.4.0"
+		"better-sqlite3": "~11.4.0",
+		"cors": "~2.8.5"
 	},
 	"scripts": {
 		"start": "echo \"WIP: no production ready\nexiting!\"",
@@ -17,7 +18,8 @@
 	"devDependencies": {
 		"@types/express": "~5.0.0",
 		"tsx": "~4.19.1",
-		"@types/better-sqlite3": "~7.6.11"
+		"@types/better-sqlite3": "~7.6.11",
+		"@types/cors": "~2.8.17"
 	},
 	"type": "module"
 }

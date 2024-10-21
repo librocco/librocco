@@ -1,6 +1,7 @@
 import * as http from "http";
 import { attachWebsocketServer } from "@vlcn.io/ws-server";
 import express from "express";
+import cors from "cors";
 
 import { getInitializedDB } from "./db";
 
@@ -18,6 +19,7 @@ const wsConfig = {
 attachWebsocketServer(server, wsConfig);
 
 
+app.use(cors());
 app.use(express.json());
 
 app.get("/", (_, res) => {
