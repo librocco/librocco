@@ -18,13 +18,14 @@ export async function getAllCustomers(dbName: string): Promise<Customer[]> {
 }
 
 export async function upsertCustomer(dbName: string, customer: Customer) {
-	const method = customer.id ? "PUT" : "POST";
-	const url = customer.id
-		? `${API_BASE_URL}/${dbName}/customers/${customer.id}`
-		: `${API_BASE_URL}/${dbName}/customers`;
+	if (!customer.id) {
+		throw new Error("Customer ID is required for upsert");
+	}
+
+	const url = `${API_BASE_URL}/${dbName}/customers/${customer.id}`;
 
 	const response = await fetch(url, {
-		method,
+		method: "PUT",
 		headers: { "Content-Type": "application/json" },
 		body: JSON.stringify(customer),
 	});

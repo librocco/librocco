@@ -58,12 +58,19 @@ app.put("/:dbname/customers/:id", async (req, res) => {
 	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
 	const { id } = req.params;
 	const { fullname, email, deposit } = req.body;
-	const stmt = db.prepare("UPDATE customer SET fullname = ?, email = ?, deposit = ? WHERE id = ?");
-	const info = stmt.run(fullname, email, deposit, id);
+	const stmt = db.prepare(`
+		INSERT INTO customer (id, fullname, email, deposit)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(id) DO UPDATE SET
+			fullname = excluded.fullname,
+			email = excluded.email,
+			deposit = excluded.deposit
+	`);
+	const info = stmt.run(id, fullname, email, deposit);
 	if (info.changes > 0) {
-		res.send("Customer updated successfully");
+		res.send("Customer upserted successfully");
 	} else {
-		res.status(404).send("Customer not found");
+		res.status(500).send("Failed to upsert customer");
 	}
 });
 
