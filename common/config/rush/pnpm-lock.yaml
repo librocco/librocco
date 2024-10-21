@@ -83,6 +83,12 @@ importers:
       '@vlcn.io/crsqlite-wasm':
         specifier: 0.16.0
         version: 0.16.0
+      '@vlcn.io/ws-browserdb':
+        specifier: ~0.2.0
+        version: 0.2.0
+      '@vlcn.io/ws-client':
+        specifier: ~0.2.0
+        version: 0.2.0
       crstore:
         specifier: ~0.23.1
         version: 0.23.1
@@ -4775,6 +4781,10 @@ packages:
       '@types/jest': 27.5.2
     dev: true
 
+  /@types/throttle-debounce@5.0.2:
+    resolution: {integrity: sha512-pDzSNulqooSKvSNcksnV72nk8p7gRqN8As71Sp28nov1IgmPKWbOEIwAWvBME5pPTtaXJAvG3O4oc76HlQ4kqQ==}
+    dev: false
+
   /@types/tough-cookie@4.0.5:
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
     dev: true
@@ -5314,8 +5324,32 @@ packages:
       winston: 3.15.0
     dev: false
 
+  /@vlcn.io/rx-tbl@0.15.0:
+    resolution: {integrity: sha512-6P5R8E5EJ6oASDyT7TbuV18Af4P/YobGEI3+uGUoquQi0GVl+NLdtbYA/sR4PkXsjQ1zBcs0oAi5TmYGe+Cd6A==}
+    dependencies:
+      '@vlcn.io/xplat-api': 0.15.0
+    dev: false
+
   /@vlcn.io/wa-sqlite@0.22.0:
     resolution: {integrity: sha512-OujKro0mAqP7/efUeCGB6zBiyMoSCFVe7jQKPF0n47U9ZhOaIW3kQUVCwF+CmzvzQfN1Vl4PrFQRNNxlSwTCNQ==}
+
+  /@vlcn.io/ws-browserdb@0.2.0:
+    resolution: {integrity: sha512-TKPygQomMPurQ8mwAwEefN5BROw30FagL21S3FzvUunyCybOByysAEoV/OrJ7xNCvYXN9yjg0qyf7iZZfeOsYg==}
+    dependencies:
+      '@types/throttle-debounce': 5.0.2
+      '@vlcn.io/crsqlite-wasm': 0.16.0
+      '@vlcn.io/rx-tbl': 0.15.0
+      '@vlcn.io/ws-client': 0.2.0
+      '@vlcn.io/ws-common': 0.2.0
+      '@vlcn.io/xplat-api': 0.15.0
+    dev: false
+
+  /@vlcn.io/ws-client@0.2.0:
+    resolution: {integrity: sha512-0Nwqh/vBrKZNmRvVS2/LHUm8ssgfXbAzS5J3h3b2l9FQWDDsF3f+DfFekR/ExNagFGHEk8ZEjTQtIzj+F9doJw==}
+    dependencies:
+      '@types/throttle-debounce': 5.0.2
+      '@vlcn.io/ws-common': 0.2.0
+    dev: false
 
   /@vlcn.io/ws-common@0.2.0:
     resolution: {integrity: sha512-c7a470fCAzKzsjn+dchp+zAHXXem2eG2W7RxjHowZuO9PUfLjMAKp0GpZ9rsKAyLiyYRMOFAFnpl0HmFxERjig==}
