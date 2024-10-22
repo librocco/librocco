@@ -7,7 +7,7 @@
 	import BodyHead from "./BodyHead.svelte";
 	import BodyLink from "./BodyLink.svelte";
 
-	import type { CustomerOrderData } from "../types";
+	import type { CustomerOrderData } from "$lib/forms/schemas";
 
 	import type { createTable } from "$lib/actions";
 	import type { Customer } from "$lib/db/orders/types";
@@ -37,6 +37,7 @@
 	<tbody>
 		{#each rows as row (row.key)}
 			{@const { fullname, email, id, rowIx, deposit } = row}
+
 			<tr>
 				<th scope="row" data-property="customer">
 					<BodyHead borderStyle={"gray"}>
