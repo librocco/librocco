@@ -44,6 +44,21 @@ export async function initializeDB(db: DB) {
 	// Activate the crsql extension
 	await db.exec("SELECT crsql_as_crr('customer');");
 	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
+
+	await db.exec(`CREATE TABLE supplier (
+		id INTEGER NOT NULL,
+		name TEXT,
+		email TEXT,
+		address TEXT,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier');");
+	await db.exec(`CREATE TABLE supplier_publisher (
+		supplier_id INTEGER,
+		publisher TEXT NOT NULL,
+		PRIMARY KEY (publisher)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_publisher');");
 }
 
 export const getInitializedDB = async (dbname: string) => {
