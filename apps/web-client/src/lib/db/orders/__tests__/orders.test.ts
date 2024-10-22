@@ -116,14 +116,14 @@ describe("Customer order tests", () => {
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
-		syncDBs(db1, db2);
+		await syncDBs(db1, db2);
 		expect((await getAllCustomers(db2)).length).toBe(2);
-		syncDBs(db2, db1);
+		await syncDBs(db2, db1);
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toEqual(db2Customers);
 	});
-	it.only("Should keep both updates done at the same time on different dbs", async () => {
+	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 		await syncDBs(db1, db2);
