@@ -2,21 +2,13 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { type DB } from "../types";
 
-import { getDB, initializeDB } from "../db";
+import { getRandomDb } from "./lib";
 
 import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
 
 describe("Suppliers CRUD tests", () => {
 	let db: DB;
-	// Each test run will use a different db
-	// birthday paradox chance of collision for 1k runs is 0.5%)
-	let randomTestRunId: number;
-
-	beforeEach(async () => {
-		randomTestRunId = Math.floor(Math.random() * 100000000);
-		db = await getDB("testdb" + randomTestRunId);
-		await initializeDB(db);
-	});
+	beforeEach(async () => (db = await getRandomDb()));
 
 	it("can create and update a supplier", async () => {
 		await expect(upsertSupplier(db, { name: "Science Books LTD" })).rejects.toThrow("Supplier must have an id");
@@ -34,17 +26,7 @@ describe("Suppliers CRUD tests", () => {
 
 describe("Suppliers/publisher association tests", () => {
 	let db: DB;
-	// Each test run will use a different db
-	// birthday paradox chance of collision for 1k runs is 0.5%)
-	let randomTestRunId: number;
-
-	beforeEach(async () => {
-		randomTestRunId = Math.floor(Math.random() * 100000000);
-		db = await getDB("testdb" + randomTestRunId);
-		await initializeDB(db);
-		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
-		await upsertSupplier(db, { id: 2, name: "Fiction Books LTD" });
-	});
+	beforeEach(async () => (db = await getRandomDb()));
 
 	it("can assign publishers to suppliers", async () => {
 		let sciencePublishers = await getPublishersFor(db, 1);
