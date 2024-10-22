@@ -404,6 +404,10 @@
 		{
 			"packageName": "@vlcn.io/ws-server",
 			"projectFolder": "pkg/ws-server"
+		},
+		{
+			"packageName": "@vlcn.io/ws-client",
+			"projectFolder": "pkg/ws-client"
 		}
 	]
 }

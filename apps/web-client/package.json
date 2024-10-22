@@ -38,7 +38,7 @@
 		"kysely": "~0.27.4",
 		"sqlocal": "~0.11.1",
 		"typesafe-i18n": "~5.26.2",
-		"@vlcn.io/ws-client": "~0.2.0",
+		"@vlcn.io/ws-client": "workspace:*",
 		"@vlcn.io/ws-browserdb": "~0.2.0"
 	},
 	"devDependencies": {
