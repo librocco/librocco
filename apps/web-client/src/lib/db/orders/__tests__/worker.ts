@@ -8,4 +8,6 @@ export const config: Config = {
 	transportProvider: defaultConfig.transportProvider
 };
 
+self.postMessage({ log: "Hello from the worker!" });
+
 start(config);

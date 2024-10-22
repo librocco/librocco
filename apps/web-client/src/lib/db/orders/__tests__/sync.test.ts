@@ -11,6 +11,10 @@ import { testUtils } from "@librocco/shared";
 const _worker = new SyncWorker();
 const worker = new WorkerInterface(_worker);
 
+_worker.onmessage = (event) => {
+	console.log(event.data)
+};
+
 const url = "ws://localhost:3000/sync";
 
 describe("Remote db setup", () => {
