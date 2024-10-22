@@ -1,9 +1,16 @@
 import { redirect } from "@sveltejs/kit";
+import { get } from "svelte/store";
 
+import { createDB, dbNamePersisted } from "$lib/db";
 import { navigatorDetector } from "typesafe-i18n/detectors";
-
+import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
+import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
+import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
+
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
+import { IS_E2E } from "$lib/constants";
 
 import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
@@ -11,19 +18,10 @@ import { detectLocale } from "$i18n/i18n-util";
 
 import { DEFAULT_LOCALE } from "$lib/constants";
 
-// import type { LayoutLoad } from "./$types";
-// import { settingsStore } from "$lib/stores";
-import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
-import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
-import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
-
-import { IS_E2E } from "$lib/constants";
-import { getDB, getInitializedDB, initializeDB } from "$lib/db/orders";
-
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
-export const load = async ({ url }) => {
+export const load: LayoutLoad = async ({ url }) => {
 	const { pathname } = url;
 
 	if (redirectPaths.includes(pathname)) {
@@ -51,22 +49,16 @@ export const load = async ({ url }) => {
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
 		// Init the db
-		// const name = get(dbNamePersisted);
-		// const { db, status } = await createDB(name);
-		// const db = await getDB("librocco-current-db");
-		// await initializeDB(db);
-		const db = await getInitializedDB("librocco-current-db");
+		const name = get(dbNamePersisted);
+		const { db, status } = await createDB(name);
 
-		console.log("db", db);
 		// Register plugins
-		//
 		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
-		/** @TODO un-comment when plugins are integrated with new db*/
-		// if (status && !IS_E2E) {
-		// 	db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
-		// 	db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
-		// 	db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
-		// }
+		if (status && !IS_E2E) {
+			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
+			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
+			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		}
 
 		return {
 			db,

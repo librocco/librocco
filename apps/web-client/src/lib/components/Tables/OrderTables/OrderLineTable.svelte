@@ -3,19 +3,18 @@
 
 	import { type NavEntry } from "@librocco/db";
 
-	import type { InventoryTableData, CustomerOrderLine } from "../types";
-
 	import type { createTable } from "$lib/actions";
 
 	import { HeadCol } from "../Cells";
 
-	import BookHeadCell from "../InventoryTables/BookHeadCell.svelte";
+	import BodyMultiRow from "../Cells/BodyMultiRow.svelte";
+
 	import BookPriceCell from "../InventoryTables/BookPriceCell.svelte";
 	import BookQuantityFormCell from "../InventoryTables/BookQuantityFormCell.svelte";
-
-	import WarehouseSelect from "$lib/components/WarehouseSelect/WarehouseSelect.svelte";
+	import type { CustomerOrderLine } from "$lib/db/orders/types";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "../InventoryTables/events";
+	import type { BookFormData } from "$lib/forms";
 
 	export let table: ReturnType<typeof createTable<CustomerOrderLine>>;
 
@@ -25,9 +24,7 @@
 	// table rows + one header row
 	$: rowCount = rows.length + 1;
 
-	export let editQuantity: (e: SubmitEvent, b: CustomerOrderLine) => Promise<void>;
-
-	const dispatch = createEventDispatcher<OutboundTableEvents>();
+	// export let editQuantity: (e: SubmitEvent, b: CustomerOrderLine) => Promise<void> = () => new Promise(() => {});
 </script>
 
 <table id="inventory-table" class="table table-auto" use:tableAction={{ rowCount }}>
@@ -50,29 +47,29 @@
 	</thead>
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { rowIx, isbn, authors = "N/A", quantity, price, year = "N/A", title = "N/A", publisher = "" } = row}
+			{@const { rowIx, isbn, quantity } = row}
+			{@const price = 0}
+
 			{@const coreRowData = {
 				rowIx,
 				isbn,
-				authors,
-				quantity,
-				price,
-				year,
-				title,
-				publisher
+
+				quantity
 			}}
 			<!-- Require action takes precedence over out of stock -->
 			<tr use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" data-property="book" class="table-cell-max">
-					<BookHeadCell data={{ isbn, title, authors, year }} />
+					<span data-property="isbn" class="text-gray-800">{isbn}</span>
+					<BodyMultiRow
+						dlClassName="flex flex-col gap-y-0.5 mt-1 font-light text-gray-500 lg:hidden"
+						rows={{
+							title: { data: "title" },
+							authors: { data: "authors" },
+							year: { data: "year" }
+						}}
+					/>
 				</th>
 
-				<td data-property="title" class="show-col-lg table-cell-max">
-					{title}
-				</td>
-				<td data-property="authors" class="show-col-lg table-cell-max">
-					{authors}
-				</td>
 				<td data-property="price" class="table-cell-fit">
 					<!-- Discounted price is shown only for book rows with discount other than 0 -->
 					<!-- We're rendering this branch only if both the price and discount are defined - no price is handled in the other branch -->
@@ -87,14 +84,14 @@
 						<span class="text-gray-400" data-property="applied-discount">-{0}%</span>
 					</div>
 				</td>
-				<td data-property="quantity" class="table-cell-fit">
-					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} />
-				</td>
+				<!-- <td data-property="quantity" class="table-cell-fit"> -->
+				<!-- <BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} /> -->
+				<!-- </td> -->
 				<td data-property="publisher" class="show-col-md table-cell-max">
-					{publisher}
+					{"publisher"}
 				</td>
 				<td data-property="year" class="show-col-lg table-cell-fit">
-					{year}
+					{"year"}
 				</td>
 
 				{#if $$slots["row-actions"]}

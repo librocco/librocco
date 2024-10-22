@@ -1,29 +1,23 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library, PersonStanding, MoreVertical, Trash2, FileEdit } from "lucide-svelte";
-	import { firstValueFrom, map } from "rxjs";
 
 	import { goto } from "$lib/utils/navigation";
 
-	import { entityListView, testId } from "@librocco/shared";
+	import { testId } from "@librocco/shared";
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast, CustomerOrderTable } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent, dialogTitle } from "$lib/dialogs";
 
-	import type { CustomerOrderData } from "$lib/components/Tables/types";
-	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
+	import type { CustomerOrderData } from "$lib/forms/schemas";
+
 	import { PopoverWrapper } from "$lib/components";
-	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { readable, writable } from "svelte/store";
-	import { Observable, from } from "rxjs";
-	import { v4 } from "uuid";
+	import { writable } from "svelte/store";
 
 	import { createTable, createIntersectionObserver } from "$lib/actions";
 	import type { Customer } from "$lib/db/orders/types";
@@ -58,9 +52,12 @@
 		states: { open }
 	} = dialog;
 
-	const deleteRow = async (rowIx: number) => {
+	const deleteRow = async (rowId: number) => {
 		/** @TODO delete customer order API endpoint */
-		console.log("customer order not deleted");
+		await upsertCustomer(data.ordersDb, { id: rowId });
+		tableOptions.update((prev) => ({ data: prev.data.filter((row) => row.id !== rowId) }));
+
+		open.set(false);
 	};
 	let initialized = true;
 </script>
@@ -76,10 +73,12 @@
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Customer Orders</h1>
 			<button
 				on:click={() => {
+					/**@TODO replace randomId with incremented id */
 					// get latest/biggest id and increment by 1
 					const randomId = Math.floor(Math.random() * 1e10);
 					try {
-						upsertCustomer(data.db, { id: randomId });
+						tableOptions.update((prev) => ({ data: [...prev.data, { id: randomId }] }));
+						upsertCustomer(data.ordersDb, { id: randomId });
 					} catch (e) {
 						console.log({ e });
 					}
@@ -142,11 +141,11 @@
 								</button>
 
 								<button
+									{...dialogTrigger}
 									on:m-click={() => {
 										dialogContent = {
-											onConfirm: () => {
-												goto(appPath("customers", `${row.id}`));
-											},
+											onConfirm: () => deleteRow(row.id),
+
 											title: dialogTitle.delete(row.fullname),
 											description: "Delete this order?",
 											type: "commit"

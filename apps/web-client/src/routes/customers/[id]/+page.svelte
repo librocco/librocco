@@ -29,8 +29,10 @@
 
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { addBooksToCustomer, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { addBooksToCustomer, getCustomerBooks, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -60,7 +62,7 @@
 		data: orderLines
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
-			.map((orderLine) => ({ __kind: "book", ...orderLine }))
+			.map((orderLine) => ({ ...orderLine }))
 	});
 	$: table = createTable(tableOptions);
 
@@ -69,6 +71,7 @@
 	});
 	// #endregion table
 
+	/** @TODO updateQuantity */
 	// const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
 	// 	const formData = new FormData(e.currentTarget as HTMLFormElement);
 	// 	// Number form control validation means this string->number conversion should yield a valid result
@@ -79,19 +82,23 @@
 	// 		return;
 	// 	}
 
-	// 	/** @TODO wire in when API is implemented */
-	// 	// await customerOrder.update(data.id, { quantity: nextQty, ...updatedCustomerOrder });
+	// 	await upsertCustomer(data.db,
+	//  { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) });
 	// };
 
 	const handleAddOrderLine = async (isbn: string) => {
-		await addBooksToCustomer(data.db, data.customerDetails.id, [{ isbn, quantity: 1 }]);
-		console.log({ isbn });
+		const newBook = { isbn, quantity: 1, id: data.customerDetails.id };
+		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
+		tableOptions.update((prev) => ({ data: [...prev.data, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		// bookId?
-		await removeBooksFromCustomer(data.db, data.customerDetails.id, [bookId]);
-		console.log({ bookId });
+		// bookId? => isbn
+		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
+
+		tableOptions.update((prev) => ({ data: [...prev.data.filter((book) => book.id !== bookId)] }));
+
+		open.set(false);
 	};
 
 	$: breadcrumbs = id ? createBreadcrumbs("customers", { id: id.toString(), displayName: name }) : [];
@@ -137,18 +144,14 @@
 		<input id="deposit" name="deposit" bind:value={deposit} />
 
 		<input id="email" name="email" bind:value={email} />
-		<button on:click={({}) => upsertCustomer(data.db, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
+		<button on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
 			>save</button
 		>
-		{#if !orderLines?.length}
-			<PlaceholderBox title="Enter ISBN" description="Enter ISBN to add books" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
-		{:else}
+		{#if orderLines?.length || $tableOptions.data.length}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable {table} editQuantity={() => {}}>
+					<OrderLineTable {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
@@ -187,7 +190,7 @@
 										use:melt={$dialogTrigger}
 										on:m-click={() => {
 											dialogContent = {
-												onConfirm: () => handleRemoveOrderLine(row.isbn),
+												onConfirm: () => handleRemoveOrderLine(row.id),
 												title: "Delete Book",
 												description: "Are you sure you want to delete this book?",
 												type: "commit"
@@ -212,6 +215,10 @@
 					<div use:scroll.trigger />
 				{/if}
 			</div>
+		{:else}
+			<PlaceholderBox title="Enter ISBN" description="Enter ISBN to add books" class="center-absolute">
+				<QrCode slot="icon" let:iconProps {...iconProps} />
+			</PlaceholderBox>
 		{/if}
 	</svelte:fragment>
 
