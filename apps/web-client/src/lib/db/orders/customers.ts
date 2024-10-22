@@ -9,7 +9,6 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
-
 	await db.exec(
 		`INSERT INTO customer (id, fullname, email, deposit)
          VALUES (?, ?, ?, ?)
@@ -32,7 +31,6 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
 	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email FROM customer WHERE id = $customerId;", [customerId]);
 
-	console.log({ result });
 	return result;
 };
 
