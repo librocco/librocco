@@ -4,6 +4,8 @@ export type Customer = {
 	id?: number;
 	fullname?: string;
 	email?: string;
+	phone?: string;
+	taxId?: string;
 	deposit?: number;
 };
 type CustomerOrderLine = { id: number; isbn: string; quantity: number };
