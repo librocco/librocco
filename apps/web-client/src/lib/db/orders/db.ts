@@ -18,6 +18,16 @@ export async function getDB(dbname: string) {
 }
 
 export async function initializeDB(db: DB) {
+	await db.exec(`CREATE TABLE book (
+		isbn TEXT NOT NULL,
+		title TEXT,
+		authors TEXT,
+		publisher TEXT,
+		price DECIMAL,
+		PRIMARY KEY (isbn)
+	)`);
+	await db.exec("SELECT crsql_as_crr('book');");
+
 	await db.exec(`CREATE TABLE customer (
 		id INTEGER NOT NULL,
 		fullname TEXT,
