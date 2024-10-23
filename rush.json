@@ -402,11 +402,11 @@
 		},
 		// TEMP
 		{
-			"packageName": "@vlcn.io/ws-server",
+			"packageName": "ws-server-fork",
 			"projectFolder": "pkg/ws-server"
 		},
 		{
-			"packageName": "@vlcn.io/ws-client",
+			"packageName": "ws-client-fork",
 			"projectFolder": "pkg/ws-client"
 		}
 	]

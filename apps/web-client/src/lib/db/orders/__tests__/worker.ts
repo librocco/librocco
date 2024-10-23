@@ -1,5 +1,5 @@
-import { type Config, defaultConfig } from "@vlcn.io/ws-client";
-import { start } from "@vlcn.io/ws-client/worker.js";
+import { type Config, defaultConfig } from "ws-client-fork";
+import { start } from "ws-client-fork/worker.js";
 // Interface to WASM sqlite
 import { createDbProvider } from "@vlcn.io/ws-browserdb";
 

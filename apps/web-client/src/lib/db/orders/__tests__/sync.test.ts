@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { WorkerInterface } from "@vlcn.io/ws-client";
+import { WorkerInterface } from "ws-client-fork";
 
 import { getInitializedDB } from "../db";
 

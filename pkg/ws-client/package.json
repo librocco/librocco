@@ -1,5 +1,5 @@
 {
-	"name": "@vlcn.io/ws-client",
+	"name": "ws-client-fork",
 	"type": "module",
 	"version": "0.2.0",
 	"files": [

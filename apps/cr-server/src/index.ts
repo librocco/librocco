@@ -1,5 +1,5 @@
 import * as http from "http";
-import { attachWebsocketServer } from "@vlcn.io/ws-server";
+import { attachWebsocketServer } from "ws-server-fork";
 import express from "express";
 import cors from "cors";
 

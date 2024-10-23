@@ -13,9 +13,6 @@ importers:
       '@vlcn.io/crsqlite':
         specifier: ~0.16.3
         version: 0.16.3
-      '@vlcn.io/ws-server':
-        specifier: workspace:*
-        version: link:../../pkg/ws-server
       better-sqlite3:
         specifier: ~11.4.0
         version: 11.4.0
@@ -25,6 +22,9 @@ importers:
       express:
         specifier: ^4.18.2
         version: 4.21.1
+      ws-server-fork:
+        specifier: workspace:*
+        version: link:../../pkg/ws-server
     devDependencies:
       '@types/better-sqlite3':
         specifier: ~7.6.11
@@ -86,9 +86,6 @@ importers:
       '@vlcn.io/ws-browserdb':
         specifier: ~0.2.0
         version: 0.2.0
-      '@vlcn.io/ws-client':
-        specifier: workspace:*
-        version: link:../../pkg/ws-client
       crstore:
         specifier: ~0.23.1
         version: 0.23.1
@@ -125,6 +122,9 @@ importers:
       uuid:
         specifier: ~9.0.0
         version: 9.0.1
+      ws-client-fork:
+        specifier: workspace:*
+        version: link:../../pkg/ws-client
     devDependencies:
       '@esbuild-plugins/node-globals-polyfill':
         specifier: ~0.1.1
@@ -15030,7 +15030,7 @@ packages:
       jsdom:
         optional: true
     dependencies:
-      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(playwright@1.47.2)(typescript@5.6.3)(vite@5.4.9)(vitest@2.1.3)(webdriverio@8.40.6)
+      '@vitest/browser': 2.1.3(@vitest/spy@2.1.3)(playwright@1.48.1)(typescript@5.6.3)(vite@5.4.9)(vitest@2.1.3)
       '@vitest/expect': 2.1.3
       '@vitest/mocker': 2.1.3(@vitest/spy@2.1.3)(msw@2.5.0)(vite@5.4.9)
       '@vitest/pretty-format': 2.1.3

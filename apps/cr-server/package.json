@@ -3,7 +3,7 @@
 	"version": "0.0.1",
 	"main": "index.js",
 	"dependencies": {
-		"@vlcn.io/ws-server": "workspace:*",
+		"ws-server-fork": "workspace:*",
 		"express": "^4.18.2",
 		"@vlcn.io/crsqlite": "~0.16.3",
 		"better-sqlite3": "~11.4.0",
