@@ -7,6 +7,7 @@
 
 	import { HeadCol } from "../Cells";
 
+	import BookHeadCell from "../InventoryTables/BookHeadCell.svelte";
 	import BodyMultiRow from "../Cells/BodyMultiRow.svelte";
 
 	import BookPriceCell from "../InventoryTables/BookPriceCell.svelte";
@@ -59,7 +60,7 @@
 			<!-- Require action takes precedence over out of stock -->
 			<tr use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" data-property="book" class="table-cell-max">
-					<span data-property="isbn" class="text-gray-800">{isbn}</span>
+					<BookHeadCell data={{ isbn, title: "title", authors: "authors", year: "year" }} />
 					<BodyMultiRow
 						dlClassName="flex flex-col gap-y-0.5 mt-1 font-light text-gray-500 lg:hidden"
 						rows={{
@@ -70,6 +71,12 @@
 					/>
 				</th>
 
+				<td data-property="title" class="show-col-lg table-cell-max">
+					{"title"}
+				</td>
+				<td data-property="authors" class="show-col-lg table-cell-max">
+					{"authors"}
+				</td>
 				<td data-property="price" class="table-cell-fit">
 					<!-- Discounted price is shown only for book rows with discount other than 0 -->
 					<!-- We're rendering this branch only if both the price and discount are defined - no price is handled in the other branch -->
@@ -84,9 +91,10 @@
 						<span class="text-gray-400" data-property="applied-discount">-{0}%</span>
 					</div>
 				</td>
-				<!-- <td data-property="quantity" class="table-cell-fit"> -->
-				<!-- <BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} /> -->
-				<!-- </td> -->
+				<td data-property="quantity" class="table-cell-fit">
+					quantity
+					<!-- <BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} /> -->
+				</td>
 				<td data-property="publisher" class="show-col-md table-cell-max">
 					{"publisher"}
 				</td>

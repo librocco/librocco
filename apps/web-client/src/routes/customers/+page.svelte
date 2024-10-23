@@ -52,6 +52,19 @@
 		states: { open }
 	} = dialog;
 
+	const createCustomer = () => {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+		const randomId = Math.floor(Math.random() * 1e10);
+		try {
+			tableOptions.update((prev) => ({ data: [...prev.data, { id: randomId }] }));
+			upsertCustomer(data.ordersDb, { id: randomId });
+		} catch (e) {
+			console.log({ e });
+		}
+		goto(appPath("customers", randomId.toString()));
+	};
+
 	const deleteRow = async (rowId: number) => {
 		/** @TODO delete customer order API endpoint */
 		await upsertCustomer(data.ordersDb, { id: rowId });
@@ -72,18 +85,7 @@
 		<div class="flex w-full items-center justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Customer Orders</h1>
 			<button
-				on:click={() => {
-					/**@TODO replace randomId with incremented id */
-					// get latest/biggest id and increment by 1
-					const randomId = Math.floor(Math.random() * 1e10);
-					try {
-						tableOptions.update((prev) => ({ data: [...prev.data, { id: randomId }] }));
-						upsertCustomer(data.ordersDb, { id: randomId });
-					} catch (e) {
-						console.log({ e });
-					}
-					goto(appPath("customers", randomId.toString()));
-				}}
+				on:click={createCustomer}
 				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
 			>
 				<span><Plus size={20} /></span>
@@ -140,7 +142,7 @@
 									</span>
 								</button>
 
-								<button
+								<!-- <button
 									{...dialogTrigger}
 									on:m-click={() => {
 										dialogContent = {
@@ -159,7 +161,7 @@
 									<span class="aria-hidden">
 										<Trash2 />
 									</span>
-								</button>
+								</button> -->
 							</div>
 						</PopoverWrapper>
 					</div></CustomerOrderTable
@@ -169,7 +171,7 @@
 				{#if !data?.customers.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-						<button on:click={() => {}} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 							><span class="text-green-50">New Customer Order</span></button
 						>
 					</PlaceholderBox>
