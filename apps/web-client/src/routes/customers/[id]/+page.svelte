@@ -139,14 +139,41 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<input id="fullname" name="fullname" bind:value={name} />
+		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
+		<div class="flex flex-col items-start">
+			<label class="my-auto text-base font-medium text-gray-800" for="fullname">Full Name</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="fullname"
+				name="fullname"
+				bind:value={name}
+				placeholder="Full Name"
+			/>
 
-		<input id="deposit" name="deposit" bind:value={deposit} />
+			<label class="my-auto text-base font-medium text-gray-800" for="deposit"> Deposit</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="deposit"
+				name="deposit"
+				bind:value={deposit}
+				placeholder="Deposit"
+			/>
 
-		<input id="email" name="email" bind:value={email} />
-		<button on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
-			>save</button
-		>
+			<label class="my-auto text-base font-medium text-gray-800" for="email">Email</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="email"
+				name="email"
+				bind:value={email}
+				placeholder="Email"
+			/>
+			<button
+				class="my-2 mx-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
+				>save</button
+			>
+		</div>
+		<!-- </div> -->
 		{#if orderLines?.length || $tableOptions.data.length}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
