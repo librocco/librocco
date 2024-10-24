@@ -56,7 +56,7 @@ describe("Customer order tests", () => {
 		const startTime = Date.now();
 		for (let i = 0; i < howMany; i++) {
 			await db.tx(async (db) => {
-				await addBooksToCustomer(db, 1, [
+				await addBooksToCustomer(db as DB, 1, [
 					{ isbn: "9780000000000", quantity: 1 },
 					{ isbn: "9780000000001", quantity: 3 },
 					{ isbn: "9780000000002", quantity: 1 },
