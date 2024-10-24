@@ -13,9 +13,9 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		`INSERT INTO customer (id, fullname, email, deposit)
          VALUES (?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
-           fullname = ?,
-           email = ?,
-           deposit = ?;`,
+           fullname = COALESCE(?, fullname),
+           email = COALESCE(?, email),
+           deposit = COALESCE(?, deposit);`,
 		[customer.id, customer.fullname, customer.email, customer.deposit, customer.fullname, customer.email, customer.deposit]
 	);
 }
