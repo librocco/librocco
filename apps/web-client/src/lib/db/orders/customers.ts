@@ -1,4 +1,4 @@
-import type { DB, Customer, CustomerOrderLine, BookLine } from "./types";
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -29,11 +29,21 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 }
 
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
-	const result = await db.execO<CustomerOrderLine>(
-		"SELECT id, isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
+	const result = await db.execO<DBCustomerOrderLine>(
+		"SELECT id, isbn, quantity, created, placed, received, collected FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
 		[customerId]
 	);
-	return result;
+	return result.map(marshallCustomerOrderLine);
+};
+
+export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
+	return {
+		...line,
+		created: new Date(line.created),
+		placed: line.placed ? new Date(line.placed) : undefined,
+		received: line.received ? new Date(line.received) : undefined,
+		collected: line.collected ? new Date(line.collected) : undefined
+	};
 };
 
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
