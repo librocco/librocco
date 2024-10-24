@@ -1,7 +1,5 @@
 import { type Config, defaultConfig } from "ws-client-fork";
 import { start } from "ws-client-fork/worker.js";
-// Interface to WASM sqlite
-import { createDbProvider } from "@vlcn.io/ws-browserdb";
 
 const formatLog = (...params: any[]) => params.map(String).join(" ")
 
@@ -10,11 +8,23 @@ const logger = {
 	error: (...params: any[]) => self.postMessage({ error: formatLog(...params) })
 }
 
-export const config: Config = {
-	dbProvider: createDbProvider(),
-	transportProvider: defaultConfig.transportProvider
-};
+try {
+	logger.log("[worker]", "importing browserdb...")
+	const bdb = await import("@vlcn.io/ws-browserdb")
+	const { createDbProvider } = bdb
+	logger.log("[worker]", "got browserdb")
 
-start(config, logger);
+	const config: Config = {
+		dbProvider: createDbProvider(),
+		transportProvider: defaultConfig.transportProvider
+	};
 
-logger.log("Worker started")
+	start(config, logger);
+
+	logger.log("[worker] started")
+
+	self.postMessage("ready")
+} catch (err) {
+	logger.error("[worker] error:", err)
+}
+
