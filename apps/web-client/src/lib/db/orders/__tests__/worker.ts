@@ -15,7 +15,7 @@ try {
 	logger.log("[worker]", "got browserdb")
 
 	const config: Config = {
-		dbProvider: createDbProvider(),
+		dbProvider: createDbProvider(undefined, logger),
 		transportProvider: defaultConfig.transportProvider
 	};
 

@@ -1,4 +1,4 @@
-import { DB } from "ws-client-fork";
+import { DB, type WLogger, defaultLogger } from "ws-client-fork";
 import initWasm, { DB as WasmDB } from "@vlcn.io/crsqlite-wasm";
 import { Change } from "@vlcn.io/ws-common";
 import { StmtAsync, firstPick } from "@vlcn.io/xplat-api";
@@ -138,12 +138,15 @@ class WrappedDB implements DB {
  * @returns
  */
 export function createDbProvider(
-	wasmUri?: string
+	wasmUri?: string, logger: WLogger = defaultLogger
 ): (dbname: string) => PromiseLike<DB> {
+	logger.log("creating db provider...")
 	return async (dbname: string): Promise<DB> => {
+		logger.log("creating db...")
 		const sqlite = await initWasm(wasmUri ? () => wasmUri : undefined);
 		const db = await sqlite.open(dbname);
 
+		logger.log("preparing statements...")
 		const [pullChangesetStmt, applyChangesetStmt, updatePeerTrackerStmt] =
 			await Promise.all([
 				db.prepare(
@@ -159,15 +162,20 @@ export function createDbProvider(
 				),
 			]);
 		pullChangesetStmt.raw(true);
+		logger.log("statements ready...")
 
+		logger.log("querying site id...")
 		let siteid = (await db.execA<[Uint8Array]>(`SELECT crsql_site_id()`))[0][0];
+		logger.log("got site id!")
 
+		logger.log("getting schema name...")
 		const schemaName = firstPick<string>(
 			await db.execA<[string]>(
 				`SELECT value FROM crsql_master WHERE key = 'schema_name'`
 			)
 		);
 		if (schemaName == null) {
+			logger.error("The database does not have a schema applied.")
 			throw new Error("The database does not have a schema applied.");
 		}
 		const schemaVersion = BigInt(
