@@ -1,4 +1,4 @@
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine } from "./types";
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierOrder } from "./types";
 
 export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
 	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
@@ -77,8 +77,67 @@ export async function getPossibleSupplerOrderInfos(db: DB): Promise<SupplierOrde
 	return result;
 }
 
-// export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]): Promise<SupplierOrder> {
-// 	/* Creates a new supplier order with the given order lines. Updates customer order lines to reflect the order.
-// 	  Returns the orderinfo as it would be returned by `getSupplierOrder`
-// 	 */
-// }
+export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]): Promise<SupplierOrder[]> {
+	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
+	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
+	const supplierOrderMapping = {};
+	// Collect all supplier ids involved in the order lines
+	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+	await db.tx(async (passedDb) => {
+		const db: DB = passedDb as DB;
+		for (const supplierId of supplierIds) {
+			// Create a new supplier order for each supplier
+			const newId = (
+				await db.execA(
+					`INSERT INTO supplier_order (supplier_id)
+			      VALUES (?) RETURNING id;`,
+					[supplierId]
+				)
+			)[0][0];
+			// Save the newly created supplier order id
+			supplierOrderMapping[supplierId] = newId;
+		}
+
+		for (const orderLine of orderLines) {
+			// Find the customer order lines corresponding to this supplier order line
+			const customerOrderLines = await db.execO<any>(
+				`SELECT id, isbn, quantity FROM customer_order_lines WHERE isbn = ? AND placed is NULL`,
+				[orderLine.isbn]
+			);
+			let copiesToGo = orderLine.quantity;
+			while (copiesToGo > 0) {
+				const line = customerOrderLines.shift();
+				if (line.quantity <= copiesToGo) {
+					// The whole line can be fulfilled
+					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [line.id]);
+					copiesToGo -= line.quantity;
+				} else {
+					// Only part of the line can be fulfilled: split the existing order line
+					throw new Error("Not implemented");
+				}
+			}
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+	      VALUES (?, ?, ?);`,
+				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
+			);
+		}
+	});
+	return Promise.all(supplierIds.map((supplierId) => getSupplierOrder(db, supplierOrderMapping[supplierId])));
+}
+
+export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise<SupplierOrder> {
+	const orderInfo = await db.execO<any>(
+		`SELECT supplier_order.id as supplier_order_id, created, supplier_id, supplier.name as supplier_name, isbn, quantity
+       FROM supplier_order
+         JOIN supplier ON supplier_order.supplier_id = supplier.id
+         JOIN supplier_order_line ON supplier_order.id = supplier_order_line.supplier_order_id
+       WHERE supplier_order.id = ?;`,
+		[supplierOrderId]
+	);
+	const result = { supplier_id: orderInfo[0].supplier_id, created: new Date(orderInfo[0].created) };
+	result.lines = orderInfo.map((line) => {
+		return { supplier_id: line.supplier_id, isbn: line.isbn, quantity: line.quantity };
+	});
+	return result;
+}

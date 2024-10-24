@@ -4,7 +4,13 @@ import { type DB } from "../types";
 
 import { getRandomDb } from "./lib";
 
-import { upsertSupplier, associatePublisher, getPossibleSupplerOrderLines, getPossibleSupplerOrderInfos } from "../suppliers";
+import {
+	upsertSupplier,
+	associatePublisher,
+	getPossibleSupplerOrderLines,
+	getPossibleSupplerOrderInfos,
+	createSupplierOrder
+} from "../suppliers";
 import { upsertCustomer, addBooksToCustomer } from "../customers";
 import { upsertBook } from "../books";
 
@@ -52,7 +58,7 @@ describe("Suppliers order creation", () => {
 		await associatePublisher(db, 2, "PhantasyPub");
 	});
 
-	it("creates a supplier order from a client order", async () => {
+	it("sees possible supplier orders from client orders", async () => {
 		expect(await getPossibleSupplerOrderLines(db)).toStrictEqual([
 			{ supplier_id: 1, isbn: "1", quantity: 1 },
 			{ supplier_id: 1, isbn: "2", quantity: 1 },
@@ -70,5 +76,12 @@ describe("Suppliers order creation", () => {
 			{ supplier_id: 2, isbn: "2", quantity: 1 }, // This is now from supplier 2
 			{ supplier_id: 2, isbn: "3", quantity: 2 }
 		]);
+	});
+	it.only("creates two new supplier orders", async () => {
+		const possibleOrderLines = await getPossibleSupplerOrderLines(db);
+		const newOrders = await createSupplierOrder(db, possibleOrderLines);
+		expect(newOrders.length).toStrictEqual(2);
+		const newPossibleOrderLines = await getPossibleSupplerOrderLines(db);
+		expect(newPossibleOrderLines.length).toStrictEqual(0);
 	});
 });

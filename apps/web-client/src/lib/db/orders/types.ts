@@ -47,6 +47,12 @@ export type Supplier = {
 	address?: string;
 };
 
+export type SupplierOrder = {
+	supplier_id: number;
+	created: Date;
+	lines: SupplierOrderLine[];
+};
+
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
 I was unabe to import it from there.
 */
