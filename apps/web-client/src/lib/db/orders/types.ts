@@ -3,6 +3,29 @@
  */
 export { type DB } from "@vlcn.io/crsqlite-wasm";
 
+/* Customer orders/books */
+export type Customer = {
+	id?: number;
+	fullname?: string;
+	email?: string;
+	phone?: string;
+	taxId?: string;
+	deposit?: number;
+};
+export type CustomerOrderLine = { id: number; isbn: string; quantity: number };
+export type BookLine = { isbn: string; quantity: number };
+
+/* Suppliers */
+export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
+export type SupplierOrderLine = { supplier_id: number; isbn: string; quantity: number };
+
+export type Supplier = {
+	id?: number;
+	name?: string;
+	email?: string;
+	address?: string;
+};
+
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
 I was unabe to import it from there.
 */

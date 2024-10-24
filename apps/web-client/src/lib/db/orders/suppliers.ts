@@ -1,11 +1,4 @@
-import { type DB } from "./types";
-
-export type Supplier = {
-	id?: number;
-	name?: string;
-	email?: string;
-	address?: string;
-};
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine } from "./types";
 
 export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
 	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
@@ -47,8 +40,6 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 	);
 }
 
-type SupplierOrderLine = { supplier_id: number; isbn: string; quantity: number };
-
 export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<{ supplier_id: number; isbn: string; quantity: number }>(
@@ -64,8 +55,6 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
 	return result;
 }
 
-type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
-
 export async function getPossibleSupplerOrderInfos(db: DB): Promise<SupplierOrderInfo[]> {
 	const result = await db.execO<SupplierOrderInfo>(
 		`SELECT supplier.name as supplier_name, supplier_id, SUM(quantity) as total_book_number, SUM(quantity * price) as total_book_price
@@ -79,3 +68,9 @@ export async function getPossibleSupplerOrderInfos(db: DB): Promise<SupplierOrde
 	);
 	return result;
 }
+
+// export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]): Promise<SupplierOrder> {
+// 	/* Creates a new supplier order with the given order lines. Updates customer order lines to reflect the order.
+// 	  Returns the orderinfo as it would be returned by `getSupplierOrder`
+// 	 */
+// }

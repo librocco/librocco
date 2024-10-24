@@ -1,15 +1,4 @@
-import { type DB } from "./types";
-
-export type Customer = {
-	id?: number;
-	fullname?: string;
-	email?: string;
-	phone?: string;
-	taxId?: string;
-	deposit?: number;
-};
-type CustomerOrderLine = { id: number; isbn: string; quantity: number };
-type Book = { isbn: string; quantity: number };
+import type { DB, Customer, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -27,7 +16,15 @@ export async function upsertCustomer(db: DB, customer: Customer) {
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
            deposit = COALESCE(?, deposit);`,
-		[customer.id, customer.fullname, customer.email, customer.deposit, customer.fullname, customer.email, customer.deposit]
+		[
+			customer.id,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null
+		]
 	);
 }
 
@@ -39,7 +36,7 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 	return result;
 };
 
-export const addBooksToCustomer = async (db: DB, customerId: number, books: Book[]) => {
+export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
 	// books is a list of { isbn, quantity }
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql =
