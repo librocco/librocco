@@ -408,6 +408,10 @@
 		{
 			"packageName": "ws-client-fork",
 			"projectFolder": "pkg/ws-client"
+		},
+		{
+			"packageName": "ws-browserdb-fork",
+			"projectFolder": "pkg/ws-browserdb"
 		}
 	]
 }

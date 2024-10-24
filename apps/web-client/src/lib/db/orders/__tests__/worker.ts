@@ -10,7 +10,7 @@ const logger = {
 
 try {
 	logger.log("[worker]", "importing browserdb...")
-	const bdb = await import("@vlcn.io/ws-browserdb")
+	const bdb = await import("ws-browserdb-fork")
 	const { createDbProvider } = bdb
 	logger.log("[worker]", "got browserdb")
 
