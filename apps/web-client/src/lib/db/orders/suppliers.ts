@@ -110,6 +110,10 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 				if (line.quantity <= copiesToGo) {
 					// The whole line can be fulfilled
 					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [line.id]);
+					await db.exec(`INSERT INTO customer_supplier_order (customer_order_line_id, supplier_order_id) VALUES (?, ?);`, [
+						line.id,
+						supplierOrderMapping[orderLine.supplier_id]
+					]);
 					copiesToGo -= line.quantity;
 				} else {
 					// Only part of the line can be fulfilled: split the existing order line

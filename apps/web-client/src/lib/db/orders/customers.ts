@@ -30,9 +30,15 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		"SELECT id, isbn, quantity, created, placed, received, collected FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
+		`SELECT customer_order_lines.id, isbn, quantity, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
+		FROM customer_order_lines
+		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
+		WHERE customer_id = $customerId
+		GROUP BY customer_order_lines.id, isbn, quantity, created, placed, received, collected
+		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
+	console.log(await db.execO("SELECT * FROM customer_supplier_order;"));
 	return result.map(marshallCustomerOrderLine);
 };
 
@@ -42,7 +48,8 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 		created: new Date(line.created),
 		placed: line.placed ? new Date(line.placed) : undefined,
 		received: line.received ? new Date(line.received) : undefined,
-		collected: line.collected ? new Date(line.collected) : undefined
+		collected: line.collected ? new Date(line.collected) : undefined,
+		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : []
 	};
 };
 
