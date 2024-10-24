@@ -7,18 +7,12 @@
 	import BodyHead from "./BodyHead.svelte";
 	import BodyLink from "./BodyLink.svelte";
 
-	import type { CustomerOrderData } from "../types";
+	import type { CustomerOrderData } from "$lib/forms/schemas";
 
 	import type { createTable } from "$lib/actions";
+	import type { Customer } from "$lib/db/orders/types";
 
-	interface CustomerOrderData {
-		name: string;
-		surname: string;
-		id: number;
-		email: string;
-	}
-
-	export let table: ReturnType<typeof createTable<CustomerOrderData>>;
+	export let table: ReturnType<typeof createTable<Customer>>;
 	$: ({ rows } = $table);
 </script>
 
@@ -42,14 +36,16 @@
 	</thead>
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { name, email, id, rowIx } = row}
+			{@const { fullname, email, id, rowIx, deposit } = row}
+
 			<tr>
 				<th scope="row" data-property="customer">
 					<BodyHead borderStyle={"gray"}>
 						<BodyMultiRow
 							rows={{
-								name: { data: name, className: "text-md font-medium" },
-								email: { data: email, className: "text-md font-light" }
+								fullname: { data: fullname, className: "text-md font-medium" },
+								email: { data: email, className: "text-md font-light" },
+								deposit: { data: `${deposit}`, className: "text-md font-light" }
 							}}
 						/>
 					</BodyHead>

@@ -14,20 +14,20 @@
 	import { writable } from "svelte/store";
 
 	import { createTable } from "$lib/actions";
-	import type { CustomerOrderData } from "../types";
+	import type { CustomerOrderData } from "$lib/forms/schemas";
 
 	const customerData: CustomerOrderData[] = [
 		{
-			name: "Billy Bob",
+			fullname: "Billy Bob",
 			email: "bill@bbob.com",
 			id: 1021921,
-			surname: "Bob"
+			deposit: 100
 		},
 		{
-			name: "Kim K",
+			fullname: "Kim K",
 			email: "kim@spills-it.com",
 			id: 119281023,
-			surname: "Kardashian"
+			deposit: 200
 		}
 	];
 

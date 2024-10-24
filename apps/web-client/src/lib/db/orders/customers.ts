@@ -1,13 +1,4 @@
-import { type DB } from "./types";
-
-export type Customer = {
-	id?: number;
-	fullname?: string;
-	email?: string;
-	deposit?: number;
-};
-type CustomerOrderLine = { id: number; isbn: string; quantity: number };
-type Book = { isbn: string; quantity: number };
+import type { Customer, DB, Book, CustomerOrderLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -34,6 +25,12 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 		"SELECT id, isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
 		[customerId]
 	);
+	return result;
+};
+
+export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
+	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email FROM customer WHERE id = $customerId;", [customerId]);
+
 	return result;
 };
 
