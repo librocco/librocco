@@ -11,7 +11,7 @@ import { testUtils } from "@librocco/shared";
 
 const url = "ws://localhost:3000/sync";
 
-let worker: WorkerInterface
+let worker: WorkerInterface;
 
 describe("Remote db setup", () => {
 	// Worker is set up in async manner
@@ -19,22 +19,21 @@ describe("Remote db setup", () => {
 		const _worker = new SyncWorker();
 
 		// Wait for worker setup
-		await new Promise<void>(r => {
+		await new Promise<void>((r) => {
 			_worker.onmessage = (event) => {
 				if (event.data === "ready") {
-					console.log("worker ready")
-					r()
+					console.log("worker ready");
+					r();
 				}
 			};
-		})
+		});
 
 		worker = new WorkerInterface(_worker);
 
 		_worker.onmessage = (event) => {
-			console.log(event.data)
+			console.log(event.data);
 		};
-
-	})
+	});
 
 	it.skip("upserts customer(s)", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
