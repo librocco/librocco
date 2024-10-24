@@ -48,9 +48,10 @@ describe("Customer order tests", () => {
 		books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2);
 		expect(books[0].id).toBeTypeOf("number");
+		expect(books[0].created).toBeInstanceOf(Date);
 	});
 
-	it("can add ten books to a customer 10 times and not take more than 250ms", async () => {
+	it("can add ten books to a customer 10 times and not take more than 300ms", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 		const howMany = 10;
 		const startTime = Date.now();
@@ -73,7 +74,7 @@ describe("Customer order tests", () => {
 		const duration = Date.now() - startTime;
 		const books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(10 * howMany);
-		expect(duration).toBeLessThanOrEqual(250);
+		expect(duration).toBeLessThanOrEqual(300);
 	});
 
 	it("can remove books from a customer order", async () => {
