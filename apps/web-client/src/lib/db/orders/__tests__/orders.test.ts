@@ -6,7 +6,7 @@ import { getDB, initializeDB } from "../db";
 
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
 import { getRandomDb, getRandomDbs, syncDBs } from "./lib";
-import type { Customer } from "../customers";
+import type { Customer } from "../types";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
