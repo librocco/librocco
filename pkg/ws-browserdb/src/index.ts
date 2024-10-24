@@ -140,60 +140,65 @@ class WrappedDB implements DB {
 export function createDbProvider(
 	wasmUri?: string, logger: WLogger = defaultLogger
 ): (dbname: string) => PromiseLike<DB> {
-	logger.log("creating db provider...")
+	logger.log("[create_db_provider]", "provider created")
 	return async (dbname: string): Promise<DB> => {
-		logger.log("creating db...")
-		const sqlite = await initWasm(wasmUri ? () => wasmUri : undefined);
-		const db = await sqlite.open(dbname);
+		try {
+			logger.log("[create_db_provider]", "creating db...")
+			const sqlite = await initWasm(wasmUri ? () => wasmUri : undefined);
+			const db = await sqlite.open(dbname);
 
-		logger.log("preparing statements...")
-		const [pullChangesetStmt, applyChangesetStmt, updatePeerTrackerStmt] =
-			await Promise.all([
-				db.prepare(
-					`SELECT "table", "pk", "cid", "val", "col_version", "db_version", NULL, "cl", seq FROM crsql_changes WHERE db_version > ? AND site_id IS NOT ?`
-				),
-				db.prepare(
-					`INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
-				),
-				db.prepare(
-					`INSERT INTO "crsql_tracked_peers" ("site_id", "event", "version", "seq", "tag") VALUES (?, ?, ?, ?, 0) ON CONFLICT DO UPDATE SET
+			logger.log("[create_db_provider]", "preparing statements...")
+			const [pullChangesetStmt, applyChangesetStmt, updatePeerTrackerStmt] =
+				await Promise.all([
+					db.prepare(
+						`SELECT "table", "pk", "cid", "val", "col_version", "db_version", NULL, "cl", seq FROM crsql_changes WHERE db_version > ? AND site_id IS NOT ?`
+					),
+					db.prepare(
+						`INSERT INTO crsql_changes ("table", "pk", "cid", "val", "col_version", "db_version", "site_id", "cl", "seq") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+					),
+					db.prepare(
+						`INSERT INTO "crsql_tracked_peers" ("site_id", "event", "version", "seq", "tag") VALUES (?, ?, ?, ?, 0) ON CONFLICT DO UPDATE SET
           "version" = MAX("version", excluded."version"),
           "seq" = CASE "version" > excluded."version" WHEN 1 THEN "seq" ELSE excluded."seq" END`
-				),
-			]);
-		pullChangesetStmt.raw(true);
-		logger.log("statements ready...")
+					),
+				]);
+			pullChangesetStmt.raw(true);
+			logger.log("[create_db_provider]", "statements ready...")
 
-		logger.log("querying site id...")
-		let siteid = (await db.execA<[Uint8Array]>(`SELECT crsql_site_id()`))[0][0];
-		logger.log("got site id!")
+			logger.log("[create_db_provider]", "querying site id...")
+			let siteid = (await db.execA<[Uint8Array]>(`SELECT crsql_site_id()`))[0][0];
+			logger.log("[create_db_provider]", "got site id!")
 
-		logger.log("getting schema name...")
-		const schemaName = firstPick<string>(
-			await db.execA<[string]>(
-				`SELECT value FROM crsql_master WHERE key = 'schema_name'`
-			)
-		);
-		if (schemaName == null) {
-			logger.error("The database does not have a schema applied.")
-			throw new Error("The database does not have a schema applied.");
-		}
-		const schemaVersion = BigInt(
-			firstPick<number | bigint>(
-				await db.execA<[number | bigint]>(
-					`SELECT value FROM crsql_master WHERE key = 'schema_version'`
+			logger.log("[create_db_provider]", "getting schema name...")
+			const schemaName = firstPick<string>(
+				await db.execA<[string]>(
+					`SELECT value FROM crsql_master WHERE key = 'schema_name'`
 				)
-			) || -1
-		);
+			);
+			if (schemaName == null) {
+				logger.error("The database does not have a schema applied.")
+				throw new Error("The database does not have a schema applied.");
+			}
+			const schemaVersion = BigInt(
+				firstPick<number | bigint>(
+					await db.execA<[number | bigint]>(
+						`SELECT value FROM crsql_master WHERE key = 'schema_version'`
+					)
+				) || -1
+			);
 
-		return new WrappedDB(
-			db,
-			siteid,
-			schemaName,
-			schemaVersion,
-			pullChangesetStmt,
-			applyChangesetStmt,
-			updatePeerTrackerStmt
-		);
+			return new WrappedDB(
+				db,
+				siteid,
+				schemaName,
+				schemaVersion,
+				pullChangesetStmt,
+				applyChangesetStmt,
+				updatePeerTrackerStmt
+			);
+		} catch (err) {
+			logger.error("[create_db_provider]", "error:", err)
+			throw err
+		}
 	};
 }
