@@ -11,7 +11,7 @@ import {
 	getPossibleSupplerOrderInfos,
 	createSupplierOrder
 } from "../suppliers";
-import { upsertCustomer, addBooksToCustomer } from "../customers";
+import { upsertCustomer, addBooksToCustomer, getCustomerBooks } from "../customers";
 import { upsertBook } from "../books";
 
 describe("Suppliers order creation", () => {
@@ -83,5 +83,7 @@ describe("Suppliers order creation", () => {
 		expect(newOrders.length).toStrictEqual(2);
 		const newPossibleOrderLines = await getPossibleSupplerOrderLines(db);
 		expect(newPossibleOrderLines.length).toStrictEqual(0);
+		const customer1Books = await getCustomerBooks(db, 1);
+		console.log(customer1Books);
 	});
 });
