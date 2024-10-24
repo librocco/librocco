@@ -5,9 +5,9 @@ import { defaultLogger, WLogger } from "./logger.js";
 
 
 export function start(config: Config, logger: WLogger = defaultLogger) {
-	logger.log("Hello from the worker!")
+	logger.log("[worker:start] Hello from the worker!")
 
-	const svc = new SyncService(config);
+	const svc = new SyncService(config, logger);
 	self.onmessage = (e: MessageEvent<Msg>) => {
 		const msg = e.data;
 

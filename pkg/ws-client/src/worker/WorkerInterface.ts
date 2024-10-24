@@ -14,17 +14,19 @@ export default class WorkerInterface {
 	}
 
 	startSync(dbid: DBID, transportOpts: TransporOptions) {
-		console.log("starting sync...")
+		console.log("WorkerInterface:", "starting sync:", "dbid:", dbid)
 		if (this.#syncs.has(dbid)) {
 			throw new Error(`Already syncing ${dbid}`);
 		}
 
+		console.log("WorkerInterface:", "starting sync:", "posting sync message")
 		this.#syncs.add(dbid);
 		this.#worker.postMessage({
 			_tag: "StartSync",
 			dbid,
 			transportOpts,
 		} satisfies StartSyncMsg);
+		console.log("WorkerInterface:", "starting sync:", "posted sync message")
 	}
 
 	stopSync(dbid: DBID) {
