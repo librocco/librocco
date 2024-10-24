@@ -135,9 +135,9 @@ export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise
        WHERE supplier_order.id = ?;`,
 		[supplierOrderId]
 	);
-	const result = { supplier_id: orderInfo[0].supplier_id, created: new Date(orderInfo[0].created) };
-	result.lines = orderInfo.map((line) => {
-		return { supplier_id: line.supplier_id, isbn: line.isbn, quantity: line.quantity };
-	});
-	return result;
+	return {
+		supplier_id: orderInfo[0].supplier_id,
+		created: new Date(orderInfo[0].created),
+		lines: orderInfo.map((line) => ({ supplier_id: line.supplier_id, isbn: line.isbn, quantity: line.quantity }))
+	};
 }
