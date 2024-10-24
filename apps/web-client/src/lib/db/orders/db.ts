@@ -40,10 +40,10 @@ export async function initializeDB(db: DB) {
 		customer_id TEXT,
 		isbn TEXT,
 		quantity INTEGER,
-		created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		placed TIMESTAMP,
-		received TIMESTAMP,
-		collected TIMESTAMP,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		placed INTEGER,
+		received INTEGER,
+		collected INTEGER,
 		PRIMARY KEY (id)
 	)`);
 	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
@@ -69,6 +69,21 @@ export async function initializeDB(db: DB) {
 		PRIMARY KEY (publisher)
 	)`);
 	await db.exec("SELECT crsql_as_crr('supplier_publisher');");
+
+	await db.exec(`CREATE TABLE supplier_order (
+	  id INTEGER NOT NULL,
+		supplier_id INTEGER,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order');");
+	await db.exec(`CREATE TABLE supplier_order_line (
+		supplier_order_id INTEGER NOT NULL,
+		isbn TEXT NOT NULL,
+		quantity INTEGER NOT NULL DEFAULT 1,
+		PRIMARY KEY (supplier_order_id, isbn)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order_line');");
 }
 
 export const getInitializedDB = async (dbname: string) => {
