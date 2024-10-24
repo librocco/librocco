@@ -16,7 +16,15 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
             name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address);`,
-		[supplier.id, supplier.name, supplier.email, supplier.address, supplier.name, supplier.email, supplier.address]
+		[
+			supplier.id,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null
+		]
 	);
 }
 
@@ -48,7 +56,7 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
         JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
         JOIN book ON supplier_publisher.publisher = book.publisher
         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-      WHERE quantity > 0
+      WHERE quantity > 0 AND placed is NULL
       GROUP BY supplier_id, book.isbn
       ORDER BY book.isbn ASC;`
 	);
@@ -62,7 +70,7 @@ export async function getPossibleSupplerOrderInfos(db: DB): Promise<SupplierOrde
          JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
          JOIN book ON supplier_publisher.publisher = book.publisher
          JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-       WHERE quantity > 0
+       WHERE quantity > 0 AND placed is NULL
        GROUP BY supplier.name, supplier_id
        ORDER BY book.isbn ASC;`
 	);
