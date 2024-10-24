@@ -49,7 +49,7 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 
 type SupplierOrderLine = { supplier_id: number; isbn: string; quantity: number };
 
-export async function getPossibleSupplerOrders(db: DB): Promise<SupplierOrderLine[]> {
+export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<{ supplier_id: number; isbn: string; quantity: number }>(
 		`SELECT supplier_id, book.isbn, SUM(quantity) as quantity
@@ -60,6 +60,22 @@ export async function getPossibleSupplerOrders(db: DB): Promise<SupplierOrderLin
       WHERE quantity > 0
       GROUP BY supplier_id, book.isbn
       ORDER BY book.isbn ASC;`
+	);
+	return result;
+}
+
+type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
+
+export async function getPossibleSupplerOrderInfos(db: DB): Promise<SupplierOrderInfo[]> {
+	const result = await db.execO<SupplierOrderInfo>(
+		`SELECT supplier.name as supplier_name, supplier_id, SUM(quantity) as total_book_number, SUM(quantity * price) as total_book_price
+       FROM supplier
+         JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+         JOIN book ON supplier_publisher.publisher = book.publisher
+         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
+       WHERE quantity > 0
+       GROUP BY supplier.name, supplier_id
+       ORDER BY book.isbn ASC;`
 	);
 	return result;
 }
