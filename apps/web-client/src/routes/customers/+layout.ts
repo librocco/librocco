@@ -11,3 +11,5 @@ export const load = async () => {
 		customers
 	};
 };
+
+export const ssr = false;
