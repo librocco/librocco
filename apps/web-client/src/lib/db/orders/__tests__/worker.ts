@@ -1,6 +1,8 @@
 import { type Config, defaultConfig } from "ws-client-fork";
 import { start } from "ws-client-fork/worker.js";
 
+import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
+
 const formatLog = (...params: any[]) => params.map(String).join(" ");
 
 const logger = {
@@ -15,7 +17,7 @@ try {
 	logger.log("[worker]", "got browserdb");
 
 	const config: Config = {
-		dbProvider: createDbProvider(undefined, logger),
+		dbProvider: createDbProvider(wasmUrl, logger),
 		transportProvider: defaultConfig.transportProvider
 	};
 
