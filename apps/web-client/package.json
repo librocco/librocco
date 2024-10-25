@@ -39,7 +39,8 @@
 		"sqlocal": "~0.11.1",
 		"typesafe-i18n": "~5.26.2",
 		"@vlcn.io/ws-client": "~0.2.0",
-		"@vlcn.io/ws-browserdb": "~0.2.0"
+		"@vlcn.io/ws-browserdb": "~0.2.0",
+		"@vlcn.io/ws-common": "~0.2.0"
 	},
 	"devDependencies": {
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",

@@ -13,6 +13,9 @@ importers:
       '@vlcn.io/crsqlite':
         specifier: ~0.16.3
         version: 0.16.3
+      '@vlcn.io/ws-common':
+        specifier: ~0.2.0
+        version: 0.2.0
       '@vlcn.io/ws-server':
         specifier: ^0.2.3
         version: 0.2.3
@@ -87,6 +90,9 @@ importers:
         specifier: ~0.2.0
         version: 0.2.0
       '@vlcn.io/ws-client':
+        specifier: ~0.2.0
+        version: 0.2.0
+      '@vlcn.io/ws-common':
         specifier: ~0.2.0
         version: 0.2.0
       crstore:
