@@ -38,7 +38,6 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
-	console.log(await db.execO("SELECT * FROM customer_supplier_order;"));
 	return result.map(marshallCustomerOrderLine);
 };
 
