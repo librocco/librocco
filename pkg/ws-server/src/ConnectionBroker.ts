@@ -28,6 +28,8 @@ export default class ConnectionBroker {
 		this.#room = room;
 
 		this.#ws.on("message", async (data) => {
+			console.log("[connection_broker]", "received a message:", "room:", this.#room)
+
 			// TODO: for litefs support we should just read the tag out
 			// then pass the message to the primary
 			try {
@@ -51,6 +53,7 @@ export default class ConnectionBroker {
 	}
 
 	async #handleMessage(msg: Msg) {
+		console.log("[connection_broker]", "msg:", msg)
 		const tag = msg._tag;
 		switch (tag) {
 			// Note: room could go in the `AnnouncePresence` message instead of the random headers.
