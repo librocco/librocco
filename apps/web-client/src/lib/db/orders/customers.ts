@@ -1,15 +1,4 @@
-import { type DB } from "./types";
-
-export type Customer = {
-	id?: number;
-	fullname?: string;
-	email?: string;
-	phone?: string;
-	taxId?: string;
-	deposit?: number;
-};
-type CustomerOrderLine = { id: number; isbn: string; quantity: number };
-type Book = { isbn: string; quantity: number };
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -27,19 +16,43 @@ export async function upsertCustomer(db: DB, customer: Customer) {
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
            deposit = COALESCE(?, deposit);`,
-		[customer.id, customer.fullname, customer.email, customer.deposit, customer.fullname, customer.email, customer.deposit]
+		[
+			customer.id,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null
+		]
 	);
 }
 
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
-	const result = await db.execO<CustomerOrderLine>(
-		"SELECT id, isbn, quantity FROM customer_order_lines WHERE customer_id = $customerId ORDER BY id ASC;",
+	const result = await db.execO<DBCustomerOrderLine>(
+		`SELECT customer_order_lines.id, isbn, quantity, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
+		FROM customer_order_lines
+		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
+		WHERE customer_id = $customerId
+		GROUP BY customer_order_lines.id, isbn, quantity, created, placed, received, collected
+		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
-	return result;
+	return result.map(marshallCustomerOrderLine);
 };
 
-export const addBooksToCustomer = async (db: DB, customerId: number, books: Book[]) => {
+export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
+	return {
+		...line,
+		created: new Date(line.created),
+		placed: line.placed ? new Date(line.placed) : undefined,
+		received: line.received ? new Date(line.received) : undefined,
+		collected: line.collected ? new Date(line.collected) : undefined,
+		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : []
+	};
+};
+
+export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
 	// books is a list of { isbn, quantity }
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql =
