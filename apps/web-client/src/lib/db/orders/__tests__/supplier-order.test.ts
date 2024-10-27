@@ -5,7 +5,6 @@ import { type DB } from "../types";
 import { getRandomDb, createCustomerOrders } from "./lib";
 
 import { associatePublisher, getPossibleSupplerOrderLines, getPossibleSupplerOrderInfos, createSupplierOrder } from "../suppliers";
-import { getCustomerBooks } from "../customers";
 
 describe("Suppliers order creation", () => {
 	let db: DB;
