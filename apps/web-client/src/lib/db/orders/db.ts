@@ -18,6 +18,16 @@ export async function getDB(dbname: string) {
 }
 
 export async function initializeDB(db: DB) {
+	await db.exec(`CREATE TABLE book (
+		isbn TEXT NOT NULL,
+		title TEXT,
+		authors TEXT,
+		publisher TEXT,
+		price DECIMAL,
+		PRIMARY KEY (isbn)
+	)`);
+	await db.exec("SELECT crsql_as_crr('book');");
+
 	await db.exec(`CREATE TABLE customer (
 		id INTEGER NOT NULL,
 		fullname TEXT,
@@ -30,10 +40,10 @@ export async function initializeDB(db: DB) {
 		customer_id TEXT,
 		isbn TEXT,
 		quantity INTEGER,
-		created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-		placed TIMESTAMP,
-		received TIMESTAMP,
-		collected TIMESTAMP,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		placed INTEGER,
+		received INTEGER,
+		collected INTEGER,
 		PRIMARY KEY (id)
 	)`);
 	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
@@ -59,6 +69,29 @@ export async function initializeDB(db: DB) {
 		PRIMARY KEY (publisher)
 	)`);
 	await db.exec("SELECT crsql_as_crr('supplier_publisher');");
+
+	await db.exec(`CREATE TABLE supplier_order (
+	  id INTEGER NOT NULL,
+		supplier_id INTEGER,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order');");
+	await db.exec(`CREATE TABLE supplier_order_line (
+		supplier_order_id INTEGER NOT NULL,
+		isbn TEXT NOT NULL,
+		quantity INTEGER NOT NULL DEFAULT 1,
+		PRIMARY KEY (supplier_order_id, isbn)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order_line');");
+
+	await db.exec(`CREATE TABLE customer_supplier_order (
+    id INTEGER NOT NULL,
+		supplier_order_id INTEGER,
+		customer_order_line_id INTEGER,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('customer_supplier_order');");
 }
 
 export const getInitializedDB = async (dbname: string) => {
