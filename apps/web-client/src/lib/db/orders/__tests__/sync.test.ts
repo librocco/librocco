@@ -35,7 +35,7 @@ describe("Remote db setup", () => {
 		};
 	});
 
-	it.skip("upserts customer(s)", async () => {
+	it("upserts customer(s)", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
 		const dbName = `test-${randomTestRunId}`;
 
@@ -50,21 +50,31 @@ describe("Remote db setup", () => {
 		]);
 	});
 
-	it("syncs with the remote db", async () => {
+	it("syncs with the remote db: server - client", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
-		const dbName = `test-${randomTestRunId}`;
 		const room = randomTestRunId.toString();
 
-		worker.startSync(dbName, { room, url });
+		console.log("[test]", "upserting customer");
+		await remote.upsertCustomer(room, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 
-		const localDB = await getInitializedDB(dbName);
-		await local.upsertCustomer(localDB, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		console.log("[test]", "waiting for a second before proceeding with the test");
+		await new Promise((r) => setTimeout(r, 1000));
 
+		console.log("[test]", "creating local db");
+		const localDB = await getInitializedDB(room);
+
+		console.log("[test]", "starting sync");
+		worker.startSync(room, { room, url });
+
+		console.log("[test]", "waiting for a second before proceeding with the test");
+		await new Promise((r) => setTimeout(r, 1000));
+
+		console.log("[test]", "waiting for assertion");
 		await testUtils.waitFor(async () =>
-			expect(await remote.getAllCustomers(dbName)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
+			expect(await local.getAllCustomers(localDB)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
 		);
 
 		// After test
-		worker.stopSync(dbName);
+		worker.stopSync(room);
 	});
 });
