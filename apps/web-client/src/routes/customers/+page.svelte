@@ -23,6 +23,7 @@
 	import type { Customer } from "$lib/db/orders/types";
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
+	import { customerOrders } from "$lib/stores/orders";
 
 	export let data: PageData;
 
@@ -35,12 +36,12 @@
 	// #endregion infinite-scroll
 
 	const tableOptions = writable<{ data: Customer[] }>({
-		data: data.customers
+		data: $customerOrders.customers
 	});
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (data.customers as Customer[])?.slice(0, maxResults)
+		data: $customerOrders.customers?.slice(0, maxResults)
 	});
 	const dialog = createDialog({
 		forceVisible: true
@@ -168,7 +169,7 @@
 				>
 			</div>
 			<ul class={testId("entity-list-container")} data-loaded={true}>
-				{#if !data?.customers.length}
+				{#if !$customerOrders.customers.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
@@ -178,7 +179,7 @@
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
-					{#each data?.customers as customerOrder}
+					{#each $customerOrders.customers as customerOrder}
 						{@const name = `${customerOrder.fullname}`}
 						<!-- {@const updatedAt = generateUpdatedAtString(customerOrder.updatedAt)} -->
 						{@const id = customerOrder.id}

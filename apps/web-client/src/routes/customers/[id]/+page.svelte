@@ -33,6 +33,8 @@
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
 
+	import { customer } from "$lib/stores/orders";
+
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
@@ -51,11 +53,11 @@
 	//
 	const id = $page.params.id;
 	$: loading = !data;
-	let name = data.customerDetails?.fullname || "";
-	let deposit = (data.customerDetails?.deposit || 0).toString() || "";
-	let email = data.customerDetails?.email || "";
+	let name = $customer.customerDetails?.fullname || "";
+	let deposit = ($customer.customerDetails?.deposit || 0).toString() || "";
+	let email = $customer.customerDetails?.email || "";
 
-	$: orderLines = data.customerBooks;
+	$: orderLines = $customer.customerBooks;
 
 	// #region table
 	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
