@@ -19,6 +19,7 @@
 	import { settingsStore } from "$lib/stores";
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
 
+	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
 
@@ -153,6 +154,7 @@
 
 	<svelte:fragment slot="heading">
 		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
+		<h4>Version {VERSION}</h4>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
