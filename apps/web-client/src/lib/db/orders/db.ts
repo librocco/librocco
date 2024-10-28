@@ -100,11 +100,6 @@ export const getInitializedDB = async (dbname: string) => {
 
 	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
 
-	/**[
-   "crsql_tracked_peers", "crsql_master", "crsql_site_id", "customer", "customer_order_lines", "customer__crsql_clock", "customer__crsql_pks", "customer_order_lines__crsql_clock",
-   "customer_order_lines__crsql_pks"
-
-] */
 	if (result.length === 0) {
 		await initializeDB(db);
 	}
