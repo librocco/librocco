@@ -10,3 +10,5 @@ export const load = async () => {
 	customerOrders.set({ customers });
 	return { ordersDb };
 };
+
+export const ssr = false;
