@@ -53,10 +53,9 @@ export async function initializeDB(db: DB) {
 	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 	// Activate the crsql extension
-	await db.exec("SELECT crsql_as_crr('customer');").then(() => console.log("done 1"));
-	await db.exec("SELECT crsql_as_crr('customer_order_lines');").then(() => console.log("done 2"));
+	await db.exec("SELECT crsql_as_crr('customer');");
+	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
 
-	console;
 	await db.exec(`CREATE TABLE supplier (
 		id INTEGER NOT NULL,
 		name TEXT,
