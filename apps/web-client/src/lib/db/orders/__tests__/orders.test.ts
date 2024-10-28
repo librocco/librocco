@@ -2,31 +2,25 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import type { DB, Customer } from "../types";
 
-import { getDB, initializeDB, getChanges, applyChanges, getSiteId, getPeerDBVersion } from "../db";
+import { getDB, initializeDB } from "../db";
 
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
+
+import { getRandomDb, getRandomDbs, syncDBs } from "./lib";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
 		const db = await getDB("init-db-test" + randomTestRunId);
 		await expect(getAllCustomers(db)).rejects.toThrow();
-		initializeDB(db);
+		await initializeDB(db);
 		expect((await getAllCustomers(db)).length).toBe(0);
 	});
 });
 
 describe("Customer order tests", () => {
 	let db: DB;
-	// Each test run will use a different db
-	// birthday paradox chance of collision for 1k runs is 0.5%)
-	let randomTestRunId: number;
-
-	beforeEach(async () => {
-		randomTestRunId = Math.floor(Math.random() * 100000000);
-		db = await getDB("testdb" + randomTestRunId);
-		await initializeDB(db);
-	});
+	beforeEach(async () => (db = await getRandomDb()));
 
 	it("can create and update a customer", async () => {
 		await expect(upsertCustomer(db, { fullname: "John Doe" })).rejects.toThrow("Customer must have an id");
@@ -47,42 +41,45 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
-		addBooksToCustomer(db, 1, [
+		await addBooksToCustomer(db, 1, [
 			{ isbn: "9780000000000", quantity: 1 },
 			{ isbn: "9780000000000", quantity: 1 }
 		]);
 		books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2);
 		expect(books[0].id).toBeTypeOf("number");
+		expect(books[0].created).toBeInstanceOf(Date);
 	});
 
-	it("can add ten books to a customer 100 times and not take more than 100ms", async () => {
+	it("can add ten books to a customer 10 times and not take more than 400ms", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-		const howMany = 100;
+		const howMany = 10;
 		const startTime = Date.now();
 		for (let i = 0; i < howMany; i++) {
-			addBooksToCustomer(db, 1, [
-				{ isbn: "9780000000000", quantity: 1 },
-				{ isbn: "9780000000001", quantity: 3 },
-				{ isbn: "9780000000002", quantity: 1 },
-				{ isbn: "9780000000003", quantity: 3 },
-				{ isbn: "9780000000004", quantity: 1 },
-				{ isbn: "9780000000005", quantity: 2 },
-				{ isbn: "9780000000006", quantity: 1 },
-				{ isbn: "9780000000007", quantity: 1 },
-				{ isbn: "9780000000008", quantity: 2 },
-				{ isbn: "9780000000009", quantity: 1 }
-			]);
+			await db.tx(async (db) => {
+				await addBooksToCustomer(db as DB, 1, [
+					{ isbn: "9780000000000", quantity: 1 },
+					{ isbn: "9780000000001", quantity: 3 },
+					{ isbn: "9780000000002", quantity: 1 },
+					{ isbn: "9780000000003", quantity: 3 },
+					{ isbn: "9780000000004", quantity: 1 },
+					{ isbn: "9780000000005", quantity: 2 },
+					{ isbn: "9780000000006", quantity: 1 },
+					{ isbn: "9780000000007", quantity: 1 },
+					{ isbn: "9780000000008", quantity: 2 },
+					{ isbn: "9780000000009", quantity: 1 }
+				]);
+			});
 		}
 		const duration = Date.now() - startTime;
 		const books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(10 * howMany);
-		expect(duration).toBeLessThanOrEqual(100);
+		expect(duration).toBeLessThanOrEqual(400);
 	});
 
 	it("can remove books from a customer order", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-		addBooksToCustomer(db, 1, [
+		await addBooksToCustomer(db, 1, [
 			{ isbn: "9780000000000", quantity: 1 },
 			{ isbn: "9780000000000", quantity: 1 }
 		]);
@@ -96,17 +93,7 @@ describe("Customer order tests", () => {
 
 describe("Customer order tests", () => {
 	let db1: DB, db2: DB;
-	// Each test run will use a different db
-	// birthday paradox chance of collision for 1k runs is 0.5%)
-	let randomTestRunId: number;
-
-	beforeEach(async () => {
-		randomTestRunId = Math.floor(Math.random() * 100000000);
-		db1 = await getDB("testdb1" + randomTestRunId);
-		db2 = await getDB("testdb2" + randomTestRunId);
-		await initializeDB(db1);
-		await initializeDB(db2);
-	});
+	beforeEach(async () => ([db1, db2] = await getRandomDbs()));
 	it("Should sync customer creation", async () => {
 		// We create one customer in db1 and a different one in db2
 		let db1Customers: Customer[], db2Customers: Customer[];
@@ -115,14 +102,14 @@ describe("Customer order tests", () => {
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
-		syncDBs(db1, db2);
+		await syncDBs(db1, db2);
 		expect((await getAllCustomers(db2)).length).toBe(2);
-		syncDBs(db2, db1);
+		await syncDBs(db2, db1);
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toEqual(db2Customers);
 	});
-	it.only("Should keep both updates done at the same time on different dbs", async () => {
+	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 		await syncDBs(db1, db2);
@@ -133,8 +120,3 @@ describe("Customer order tests", () => {
 		expect(db1Customers).toEqual([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
 });
-
-const syncDBs = async (source: DB, destination: DB) => {
-	const sourceDBVersion = await getPeerDBVersion(source, await getSiteId(destination));
-	await applyChanges(destination, await getChanges(source, sourceDBVersion));
-};

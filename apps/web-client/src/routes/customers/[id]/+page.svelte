@@ -87,13 +87,19 @@
 	// };
 
 	const handleAddOrderLine = async (isbn: string) => {
-		const newBook = { isbn, quantity: 1, id: data.customerDetails.id };
+		const newBook = {
+			isbn,
+			quantity: 1,
+			id: data.customerDetails.id,
+			created: new Date(),
+			/** @TODO provide supplierIds */
+			supplierOrderIds: []
+		};
 		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
 		tableOptions.update((prev) => ({ data: [...prev.data, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		// bookId? => isbn
 		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
 
 		tableOptions.update((prev) => ({ data: [...prev.data.filter((book) => book.id !== bookId)] }));

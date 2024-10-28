@@ -10,7 +10,7 @@
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast, CustomerOrderTable } from "$lib/components";
 
-	import { type DialogContent, dialogTitle } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/dialogs";
 
 	import type { CustomerOrderData } from "$lib/forms/schemas";
 
@@ -67,7 +67,7 @@
 
 	const deleteRow = async (rowId: number) => {
 		/** @TODO delete customer order API endpoint */
-		await upsertCustomer(data.ordersDb, { id: rowId });
+		// await upsertCustomer(data.ordersDb, { id: rowId });
 		tableOptions.update((prev) => ({ data: prev.data.filter((row) => row.id !== rowId) }));
 
 		open.set(false);
