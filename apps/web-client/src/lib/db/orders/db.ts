@@ -46,15 +46,17 @@ export async function initializeDB(db: DB) {
 		collected INTEGER,
 		PRIMARY KEY (id)
 	)`);
+
 	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
 	// Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
 	// but must not have checked foreign key constraints as they can be violated by row level security or replication.
 	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 	// Activate the crsql extension
-	await db.exec("SELECT crsql_as_crr('customer');");
-	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
+	await db.exec("SELECT crsql_as_crr('customer');").then(() => console.log("done 1"));
+	await db.exec("SELECT crsql_as_crr('customer_order_lines');").then(() => console.log("done 2"));
 
+	console;
 	await db.exec(`CREATE TABLE supplier (
 		id INTEGER NOT NULL,
 		name TEXT,
@@ -96,10 +98,14 @@ export async function initializeDB(db: DB) {
 
 export const getInitializedDB = async (dbname: string) => {
 	const db = await getDB(dbname);
-	// Check if it's already initialized
-	// TODO: check the return type
-	const result = await db.execO("SELECT name FROM sqlite_master WHERE type='table' AND name='customer';");
 
+	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
+
+	/**[
+   "crsql_tracked_peers", "crsql_master", "crsql_site_id", "customer", "customer_order_lines", "customer__crsql_clock", "customer__crsql_pks", "customer_order_lines__crsql_clock",
+   "customer_order_lines__crsql_pks"
+
+] */
 	if (result.length === 0) {
 		await initializeDB(db);
 	}
