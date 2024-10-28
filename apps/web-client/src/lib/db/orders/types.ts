@@ -13,6 +13,8 @@ export type Customer = {
 	deposit?: number;
 };
 
+export type Book = { isbn: string; quantity: number };
+
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
 	id: number;

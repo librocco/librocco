@@ -1,29 +1,14 @@
 <script lang="ts">
 	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync, numberProxy, stringProxy } from "sveltekit-superforms/client";
-	import { filter, map, scan, tap } from "rxjs";
 	import { fade, fly } from "svelte/transition";
 	import { writable, readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { goto } from "$lib/utils/navigation";
-
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
 
-	import {
-		OutOfStockError,
-		type BookEntry,
-		type NavEntry,
-		isCustomItemRow,
-		type OutOfStockTransaction,
-		NoWarehouseSelectedError
-	} from "@librocco/db";
-
 	import type { PageData } from "./$types";
-
-	import { getDB } from "$lib/db";
 
 	import {
 		Breadcrumbs,
@@ -38,34 +23,21 @@
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import type { CustomerOrderLine, InventoryTableData } from "$lib/components/Tables/types";
 	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
-	import { createNoteStores } from "$lib/stores/proto";
-
+	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-
-	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
-	import { mergeBookData } from "$lib/utils/misc";
-
-	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
-	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
-	import { printBookLabel, printReceipt } from "$lib/printer";
-	import { Input, Checkbox } from "$lib/components/FormControls";
-
-	import { appPath } from "$lib/paths";
-	import CustomerOrderTable from "$lib/components/Tables/OrderTables/CustomerOrderTable.svelte";
+	import { addBooksToCustomer, getCustomerBooks, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
 
 	export let data: PageData;
 
 	// Db will be undefined only on server side. If in browser,
 	// it will be defined immediately, but `db.init` is ran asynchronously.
 	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db } = getDB();
 
 	/**  @TODO: delete this if not needed (only a few books in table)
 	 */
@@ -77,89 +49,70 @@
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
 	//
+	const id = $page.params.id;
 	$: loading = !data;
-	$: name = `${data.name || ""} ${data.surname || ""}`;
-	$: email = data.email;
+	let name = data.customerDetails?.fullname || "";
+	let deposit = (data.customerDetails?.deposit || 0).toString() || "";
+	let email = data.customerDetails?.email || "";
 
-	$: orderLines = data.orderLines || [];
-	const customer = readable(data);
+	$: orderLines = data.customerBooks;
 
 	// #region table
 	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
 		data: orderLines
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
-			.map((orderLine) => ({ __kind: "book", ...orderLine }))
+			.map((orderLine) => ({ ...orderLine }))
 	});
-	const table = createTable(tableOptions);
+	$: table = createTable(tableOptions);
 
 	$: tableOptions.set({
 		data: (orderLines as CustomerOrderLine[])?.slice(0, maxResults)
 	});
 	// #endregion table
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
-		const formData = new FormData(e.currentTarget as HTMLFormElement);
-		// Number form control validation means this string->number conversion should yield a valid result
-		const nextQty = Number(formData.get("quantity"));
+	/** @TODO updateQuantity */
+	// const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
+	// 	const formData = new FormData(e.currentTarget as HTMLFormElement);
+	// 	// Number form control validation means this string->number conversion should yield a valid result
+	// 	const nextQty = Number(formData.get("quantity"));
 
-		const updatedCustomerOrder = { id: data.id, isbn };
-		if (currentQty == nextQty) {
-			return;
-		}
+	// 	const updatedCustomerOrder = { id, isbn };
+	// 	if (currentQty == nextQty) {
+	// 		return;
+	// 	}
 
-		/** @TODO wire in when API is implemented */
-		// await customerOrder.update(data.id, { quantity: nextQty, ...updatedCustomerOrder });
-	};
+	// 	await upsertCustomer(data.db,
+	//  { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) });
+	// };
 
 	const handleAddOrderLine = async (isbn: string) => {
-		/**  @TODO: wire in when API is implemented
-		 */
-		// await customerOrder.addOrderLine({}, { isbn, quantity: 1 });
-
-		// First check if there exists a book entry in the db, if not, fetch book data using external sources
-		//
-		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get({}, [isbn]);
-
-		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
-		// no need for further action
-		if (localBookData?.updatedAt) {
-			return;
-		}
-
-		// If local book data doesn't exist at all, create an isbn-only entry
-		if (!localBookData) {
-			await db.books().upsert({}, [{ isbn }]);
-		}
-
-		/** @TODO do we need to fetch book data?? */
-		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		db.plugin("book-fetcher")
-			.fetchBookData(isbn)
-			.stream()
-			.pipe(
-				filter((data) => Boolean(data)),
-				// Here we're prefering the latest result to be able to observe the updates as they come in
-				scan((acc, next) => ({ ...acc, ...next })),
-				tap((data) => {
-					const { isbn, title } = data;
-					// orderLines = [...orderLines, data];
-					console.log({ data });
-				})
-			)
-			.subscribe((b) => db.books().upsert({}, [b]));
-
-		console.log();
+		const newBook = {
+			isbn,
+			quantity: 1,
+			id: data.customerDetails.id,
+			created: new Date(),
+			/** @TODO provide supplierIds */
+			supplierOrderIds: []
+		};
+		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
+		tableOptions.update((prev) => ({ data: [...prev.data, newBook] }));
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	const handleRemoveOrderLine = async (bookId: number) => {
+		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
 
-	$: breadcrumbs = data?.id ? createBreadcrumbs("customers", { id: data.id.toString(), displayName: name }) : [];
+		tableOptions.update((prev) => ({ data: [...prev.data.filter((book) => book.id !== bookId)] }));
+
+		open.set(false);
+	};
+
+	$: breadcrumbs = id ? createBreadcrumbs("customers", { id: id.toString(), displayName: name }) : [];
 
 	const dialog = createDialog({
 		forceVisible: true
 	});
+
 	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	const {
@@ -192,15 +145,46 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		{#if !orderLines?.length}
-			<PlaceholderBox title="Enter ISBN" description="Enter ISBN to add books" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
-		{:else}
+		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
+		<div class="flex flex-col items-start">
+			<label class="my-auto text-base font-medium text-gray-800" for="fullname">Full Name</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="fullname"
+				name="fullname"
+				bind:value={name}
+				placeholder="Full Name"
+			/>
+
+			<label class="my-auto text-base font-medium text-gray-800" for="deposit"> Deposit</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="deposit"
+				name="deposit"
+				bind:value={deposit}
+				placeholder="Deposit"
+			/>
+
+			<label class="my-auto text-base font-medium text-gray-800" for="email">Email</label>
+			<input
+				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				id="email"
+				name="email"
+				bind:value={email}
+				placeholder="Email"
+			/>
+			<button
+				class="my-2 mx-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
+				>save</button
+			>
+		</div>
+		<!-- </div> -->
+		{#if orderLines?.length || $tableOptions.data.length}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable {table} editQuantity={updateRowQuantity}>
+					<OrderLineTable {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
@@ -236,7 +220,15 @@
 									</button>
 
 									<button
-										on:click={() => {}}
+										use:melt={$dialogTrigger}
+										on:m-click={() => {
+											dialogContent = {
+												onConfirm: () => handleRemoveOrderLine(row.id),
+												title: "Delete Book",
+												description: "Are you sure you want to delete this book?",
+												type: "commit"
+											};
+										}}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
@@ -256,6 +248,10 @@
 					<div use:scroll.trigger />
 				{/if}
 			</div>
+		{:else}
+			<PlaceholderBox title="Enter ISBN" description="Enter ISBN to add books" class="center-absolute">
+				<QrCode slot="icon" let:iconProps {...iconProps} />
+			</PlaceholderBox>
 		{/if}
 	</svelte:fragment>
 

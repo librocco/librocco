@@ -41,6 +41,12 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 	return result.map(marshallCustomerOrderLine);
 };
 
+export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
+	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email FROM customer WHERE id = $customerId;", [customerId]);
+
+	return result;
+};
+
 export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
 		...line,
