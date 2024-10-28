@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import { type DB } from "../types";
+import type { DB, Customer } from "../types";
 
 import { getDB, initializeDB } from "../db";
 
 import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
+
 import { getRandomDb, getRandomDbs, syncDBs } from "./lib";
-import type { Customer } from "../types";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {

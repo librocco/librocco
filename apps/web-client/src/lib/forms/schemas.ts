@@ -62,9 +62,10 @@ export const scannerSchema = z.object({
 	isbn: z.string()
 });
 
-export type customerOrderData = SuperValidated<typeof customerOrderSchema>["data"];
+export type CustomerOrderData = SuperValidated<typeof customerOrderSchema>["data"];
 export const customerOrderSchema = z.object({
 	id: z.number(),
 	fullname: z.string(),
-	deposit: z.number()
+	deposit: z.number(),
+	email: z.string().email()
 });
