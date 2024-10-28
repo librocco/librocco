@@ -1,27 +1,22 @@
+import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
-import { redirect } from "@sveltejs/kit";
-
+import { createDB, dbNamePersisted } from "$lib/db";
 import { navigatorDetector } from "typesafe-i18n/detectors";
-
+import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
+import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
+import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
+
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
+import { IS_E2E } from "$lib/constants";
 
 import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
 import { detectLocale } from "$i18n/i18n-util";
 
-import { createDB, dbNamePersisted } from "$lib/db";
-
 import { DEFAULT_LOCALE } from "$lib/constants";
-
-import type { LayoutLoad } from "./$types";
-// import { settingsStore } from "$lib/stores";
-import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
-import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
-import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
-
-import { IS_E2E } from "$lib/constants";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -58,7 +53,6 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { db, status } = await createDB(name);
 
 		// Register plugins
-		//
 		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
 		if (status && !IS_E2E) {
 			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
@@ -68,11 +62,11 @@ export const load: LayoutLoad = async ({ url }) => {
 
 		return {
 			db,
-			status
+			status: true
 		};
 	}
 
-	return { status: false };
+	return { status: false, db: null };
 };
 export const prerender = true;
 export const trailingSlash = "always";

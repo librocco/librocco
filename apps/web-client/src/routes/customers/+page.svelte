@@ -1,34 +1,30 @@
 <script lang="ts">
-	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library, PersonStanding, MoreVertical, Trash2, FileEdit } from "lucide-svelte";
-	import { firstValueFrom, map } from "rxjs";
 
 	import { goto } from "$lib/utils/navigation";
 
-	import { entityListView, testId } from "@librocco/shared";
-
-	import { getDB } from "$lib/db";
+	import { testId } from "@librocco/shared";
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast, CustomerOrderTable } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/dialogs";
 
-	import type { CustomerOrderData } from "$lib/components/Tables/types";
-	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
+	import type { CustomerOrderData } from "$lib/forms/schemas";
+
 	import { PopoverWrapper } from "$lib/components";
-	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { readable, writable } from "svelte/store";
-	import { Observable, from } from "rxjs";
-	import { v4 } from "uuid";
+	import { writable } from "svelte/store";
 
 	import { createTable, createIntersectionObserver } from "$lib/actions";
-	const { db, status } = getDB();
+	import type { Customer } from "$lib/db/orders/types";
+	import type { PageData } from "./$types";
+	import { upsertCustomer } from "$lib/db/orders/customers";
+
+	export let data: PageData;
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -37,29 +33,14 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
-	//
-	//
-	const customersCtx = { name: "[CUSTOMERS_LIST]", debug: false };
-	const customerData = [
-		{ name: "Fadwa", surname: "Mahmoud", id: 1234, email: "fadwa.mahmoud@gmail.com" },
-		{ name: "Not Fadwa", surname: "Mahmoud", id: 112234, email: "not.fadwa.mahmoud@gmail.com" }
-	];
-	const customersPromise = new Promise<{ name: string; surname: string; id: number; email: string }[]>((resolve) =>
-		setTimeout(() => {
-			resolve(customerData);
-		}, 500)
-	);
-	const customerStream = from(customersPromise);
 
-	const customerOrdersList = readable(customerData);
-
-	const tableOptions = writable<{ data: CustomerOrderData[] }>({
-		data: customerData
+	const tableOptions = writable<{ data: Customer[] }>({
+		data: data.customers
 	});
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (customerData as CustomerOrderData[])?.slice(0, maxResults)
+		data: (data.customers as Customer[])?.slice(0, maxResults)
 	});
 	const dialog = createDialog({
 		forceVisible: true
@@ -71,9 +52,25 @@
 		states: { open }
 	} = dialog;
 
-	const deleteRow = async (rowIx: number) => {
+	const createCustomer = () => {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+		const randomId = Math.floor(Math.random() * 1e10);
+		try {
+			tableOptions.update((prev) => ({ data: [...prev.data, { id: randomId }] }));
+			upsertCustomer(data.ordersDb, { id: randomId });
+		} catch (e) {
+			console.log({ e });
+		}
+		goto(appPath("customers", randomId.toString()));
+	};
+
+	const deleteRow = async (rowId: number) => {
 		/** @TODO delete customer order API endpoint */
-		console.log("customer order not deleted");
+		// await upsertCustomer(data.ordersDb, { id: rowId });
+		tableOptions.update((prev) => ({ data: prev.data.filter((row) => row.id !== rowId) }));
+
+		open.set(false);
 	};
 	let initialized = true;
 </script>
@@ -88,9 +85,7 @@
 		<div class="flex w-full items-center justify-between">
 			<h1 class="text-2xl font-bold leading-7 text-gray-900">Customer Orders</h1>
 			<button
-				on:click={() => {
-					goto(appPath("customers", v4()));
-				}}
+				on:click={createCustomer}
 				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
 			>
 				<span><Plus size={20} /></span>
@@ -147,13 +142,13 @@
 									</span>
 								</button>
 
-								<button
+								<!-- <button
+									{...dialogTrigger}
 									on:m-click={() => {
 										dialogContent = {
-											onConfirm: () => {
-												goto(appPath("customers", `${row.id}`));
-											},
-											title: dialogTitle.delete(row.name),
+											onConfirm: () => deleteRow(row.id),
+
+											title: dialogTitle.delete(row.fullname),
 											description: "Delete this order?",
 											type: "commit"
 										};
@@ -166,25 +161,25 @@
 									<span class="aria-hidden">
 										<Trash2 />
 									</span>
-								</button>
+								</button> -->
 							</div>
 						</PopoverWrapper>
 					</div></CustomerOrderTable
 				>
 			</div>
 			<ul class={testId("entity-list-container")} data-loaded={true}>
-				{#if !$customerOrdersList.length}
+				{#if !data?.customers.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-						<button on:click={() => {}} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
 							><span class="text-green-50">New Customer Order</span></button
 						>
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
-					{#each $customerOrdersList as customerOrder}
-						{@const name = `${customerOrder.name} ${customerOrder.surname}` || "Name Surname"}
+					{#each data?.customers as customerOrder}
+						{@const name = `${customerOrder.fullname}`}
 						<!-- {@const updatedAt = generateUpdatedAtString(customerOrder.updatedAt)} -->
 						{@const id = customerOrder.id}
 						{@const email = customerOrder.email}
