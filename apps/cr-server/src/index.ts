@@ -134,7 +134,16 @@ app.delete("/:dbname/customer-order-lines/:id", async (req, res) => {
 });
 
 
-server.listen(PORT, () =>
-	console.log("info", `listening on http://localhost:${PORT}!`)
-);
+server.listen(PORT, () => {
+	console.log("info", `listening on http://localhost:${PORT}!`);
+});
+
+// Gracefully shut down the server on process termination
+process.on("SIGINT", () => {
+	console.log("info", "Shutting down server...");
+	server.close(() => {
+		console.log("info", "Server closed");
+		process.exit(0);
+	});
+});
 
