@@ -9,3 +9,6 @@ export const config: Config = {
 };
 
 start(config);
+
+self.postMessage("ready")
+
