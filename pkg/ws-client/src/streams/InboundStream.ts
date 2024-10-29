@@ -41,7 +41,7 @@ export default class InboundStream {
 		const senderHex = bytesToHex(msg.sender);
 		const lastSeen = this.#lastSeens.get(senderHex) || [0n, 0];
 
-		this.logger.log("[inbound_stream]", "received changes")
+		this.logger.log("[inbound_stream]", "received changes", msg.changes)
 
 		if (!greaterThanOrEqual(lastSeen, msg.since)) {
 			this.logger.log("[inbound_stream]", "changes stale")

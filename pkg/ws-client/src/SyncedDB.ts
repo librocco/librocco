@@ -21,7 +21,7 @@ class SyncedDB implements ISyncedDB {
 	constructor(db: DB, transport: Transport, private logger: WLogger = defaultLogger) {
 		this.#db = db;
 		this.#transport = transport;
-		this.#inboundStream = new InboundStream(db, transport);
+		this.#inboundStream = new InboundStream(db, transport, logger);
 		this.#outboundStream = new OutboundStream(db, transport);
 		this.#transport.onChangesReceived = this.#inboundStream.receiveChanges;
 		this.#transport.onStartStreaming = this.#outboundStream.startStreaming;

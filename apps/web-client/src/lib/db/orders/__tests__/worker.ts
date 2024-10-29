@@ -1,4 +1,4 @@
-import { type Config, defaultConfig } from "ws-client-fork";
+import { type Config,  WebSocketTransport } from "ws-client-fork";
 import { start } from "ws-client-fork/worker.js";
 
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
@@ -16,9 +16,11 @@ try {
 	const { createDbProvider } = bdb;
 	logger.log("[worker]", "got browserdb");
 
+	const transportProvider: Config["transportProvider"] = (opts) => new WebSocketTransport(opts, logger)
+
 	const config: Config = {
 		dbProvider: createDbProvider(wasmUrl, logger),
-		transportProvider: defaultConfig.transportProvider
+		transportProvider
 	};
 
 	start(config, logger);

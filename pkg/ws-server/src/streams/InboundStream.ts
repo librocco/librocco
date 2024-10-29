@@ -1,6 +1,7 @@
 import { Changes, greaterThanOrEqual, tags } from "@vlcn.io/ws-common";
 import DB, { IDB } from "../DB.js";
 import Transport from "../Trasnport.js";
+import { logger } from "@vlcn.io/logger-provider";
 
 /**
  * Processes a stream of changes from the given sender.
@@ -10,59 +11,60 @@ import Transport from "../Trasnport.js";
  * Well.. except that on the server our db interface is synchronous.
  */
 export default class InboundStream {
-  readonly #transport;
-  readonly #db;
-  readonly #from;
-  #lastSeen: readonly [bigint, number] | null = null;
+	readonly #transport;
+	readonly #db;
+	readonly #from;
+	#lastSeen: readonly [bigint, number] | null = null;
 
-  constructor(transport: Transport, db: IDB, from: Uint8Array) {
-    this.#transport = transport;
-    this.#db = db;
-    this.#from = from;
-  }
+	constructor(transport: Transport, db: IDB, from: Uint8Array) {
+		this.#transport = transport;
+		this.#db = db;
+		this.#from = from;
+	}
 
-  start() {
-    // figure out our last seen from `from`
-    // send the request for the client to start streaming
-    this.#lastSeen = this.#db.getLastSeen(this.#from);
+	start() {
+		// figure out our last seen from `from`
+		// send the request for the client to start streaming
+		this.#lastSeen = this.#db.getLastSeen(this.#from);
 
-    // Tell the connected client to start streaming
-    this.#transport.startStreaming({
-      _tag: tags.StartStreaming,
-      excludeSites: [this.#db.siteId],
-      localOnly: false,
-      since: this.#lastSeen,
-    });
-  }
+		// Tell the connected client to start streaming
+		logger.info("starting inbound stream")
+		this.#transport.startStreaming({
+			_tag: tags.StartStreaming,
+			excludeSites: [this.#db.siteId],
+			localOnly: false,
+			since: this.#lastSeen,
+		});
+	}
 
-  async receiveChanges(msg: Changes) {
-    // check for contiguity
-    // apply
-    if (this.#lastSeen == null) {
-      throw new Error(
-        `Illegal state -- last seen should not be null when receiving changes`
-      );
-    }
+	async receiveChanges(msg: Changes) {
+		// check for contiguity
+		// apply
+		if (this.#lastSeen == null) {
+			throw new Error(
+				`Illegal state -- last seen should not be null when receiving changes`
+			);
+		}
 
-    if (!greaterThanOrEqual(this.#lastSeen, msg.since)) {
-      this.#transport.rejectChanges({
-        _tag: tags.RejectChanges,
-        whose: msg.sender,
-        since: this.#lastSeen,
-      });
-    }
+		if (!greaterThanOrEqual(this.#lastSeen, msg.since)) {
+			this.#transport.rejectChanges({
+				_tag: tags.RejectChanges,
+				whose: msg.sender,
+				since: this.#lastSeen,
+			});
+		}
 
-    if (msg.changes.length == 0) {
-      return;
-    }
-    const lastChange = msg.changes[msg.changes.length - 1];
-    const newLastSeen = [lastChange[5], 0] as const;
-    await this.#db.applyChangesetAndSetLastSeen(
-      msg.changes,
-      msg.sender,
-      newLastSeen
-    );
+		if (msg.changes.length == 0) {
+			return;
+		}
+		const lastChange = msg.changes[msg.changes.length - 1];
+		const newLastSeen = [lastChange[5], 0] as const;
+		await this.#db.applyChangesetAndSetLastSeen(
+			msg.changes,
+			msg.sender,
+			newLastSeen
+		);
 
-    this.#lastSeen = newLastSeen;
-  }
+		this.#lastSeen = newLastSeen;
+	}
 }
