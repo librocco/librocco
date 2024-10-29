@@ -11,5 +11,4 @@ export const config: Config = {
 
 start(config);
 
-self.postMessage("ready")
-
+self.postMessage("ready");
