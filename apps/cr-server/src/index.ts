@@ -76,62 +76,6 @@ app.put("/:dbname/customers/:id", async (req, res) => {
 	}
 });
 
-app.delete("/:dbname/customers/:id", async (req, res) => {
-	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
-	const { id } = req.params;
-	const stmt = db.prepare("DELETE FROM customer WHERE id = ?");
-	const info = stmt.run(id);
-	if (info.changes > 0) {
-		res.send("Customer deleted successfully");
-	} else {
-		res.status(404).send("Customer not found");
-	}
-});
-
-app.post("/:dbname/customer-order-lines", async (req, res) => {
-	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
-	const { customer_id, isbn, quantity } = req.body;
-	const stmt = db.prepare("INSERT INTO customer_order_lines (customer_id, isbn, quantity) VALUES (?, ?, ?)");
-	const info = stmt.run(customer_id, isbn, quantity);
-	res.status(201).json({ id: info.lastInsertRowid });
-});
-
-app.get("/:dbname/customer-order-lines/:customerId", async (req, res) => {
-	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
-	const { customerId } = req.params;
-	const stmt = db.prepare("SELECT * FROM customer_order_lines WHERE customer_id = ?");
-	const orderLines = stmt.all(customerId);
-	if (orderLines.length > 0) {
-		res.json(orderLines);
-	} else {
-		res.status(404).send("No order lines found for this customer");
-	}
-});
-
-app.put("/:dbname/customer-order-lines/:id", async (req, res) => {
-	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
-	const { id } = req.params;
-	const { customer_id, isbn, quantity } = req.body;
-	const stmt = db.prepare("UPDATE customer_order_lines SET customer_id = ?, isbn = ?, quantity = ? WHERE id = ?");
-	const info = stmt.run(customer_id, isbn, quantity, id);
-	if (info.changes > 0) {
-		res.send("Order line updated successfully");
-	} else {
-		res.status(404).send("Order line not found");
-	}
-});
-
-app.delete("/:dbname/customer-order-lines/:id", async (req, res) => {
-	const db = await getInitializedDB(`./test-dbs/${req.params.dbname}`);
-	const { id } = req.params;
-	const stmt = db.prepare("DELETE FROM customer_order_lines WHERE id = ?");
-	const info = stmt.run(id);
-	if (info.changes > 0) {
-		res.send("Order line deleted successfully");
-	} else {
-		res.status(404).send("Order line not found");
-	}
-});
 
 
 server.listen(PORT, () => {
