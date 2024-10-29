@@ -63,6 +63,9 @@ describe("Remote db setup", () => {
 		await testUtils.waitFor(async () =>
 			expect(await local.getAllCustomers(localDB)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
 		);
+		await local.upsertCustomer(localDB, { fullname: "Jane Doe", id: 2, email: "jane@example.com" });
+
+		await testUtils.waitFor(async () => expect(await local.getAllCustomers(localDB)).toEqual(await remote.getAllCustomers(dbid)));
 
 		// After test
 		worker.stopSync(dbid);
