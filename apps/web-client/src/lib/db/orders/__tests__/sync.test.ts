@@ -52,29 +52,19 @@ describe("Remote db setup", () => {
 
 	it("syncs with the remote db: server - client", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
-		const room = randomTestRunId.toString();
+		const dbid = randomTestRunId.toString();
 
-		console.log("[test]", "upserting customer");
-		await remote.upsertCustomer(room, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		await remote.upsertCustomer(dbid, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 
-		console.log("[test]", "waiting for a second before proceeding with the test");
-		await new Promise((r) => setTimeout(r, 1000));
+		const localDB = await getInitializedDB(dbid);
 
-		console.log("[test]", "creating local db");
-		const localDB = await getInitializedDB(room);
+		worker.startSync(dbid, { room: dbid, url });
 
-		console.log("[test]", "starting sync");
-		worker.startSync(room, { room, url });
-
-		console.log("[test]", "waiting for a second before proceeding with the test");
-		await new Promise((r) => setTimeout(r, 1000));
-
-		console.log("[test]", "waiting for assertion");
 		await testUtils.waitFor(async () =>
 			expect(await local.getAllCustomers(localDB)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
 		);
 
 		// After test
-		worker.stopSync(room);
+		worker.stopSync(dbid);
 	});
 });
