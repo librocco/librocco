@@ -67,4 +67,40 @@ describe("Remote db setup", () => {
 		// After test
 		worker.stopSync(dbid);
 	});
+
+	it("keeps live sync while the nodes (client and server) are connected", async () => {
+		const randomTestRunId = Math.floor(Math.random() * 100000000);
+		const dbid = randomTestRunId.toString();
+
+		const localDB = await getInitializedDB(dbid);
+
+		worker.startSync(dbid, { room: dbid, url });
+
+		await remote.upsertCustomer(dbid, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+
+		await testUtils.waitFor(async () =>
+			expect(await local.getAllCustomers(localDB)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
+		);
+
+		// After test
+		worker.stopSync(dbid);
+	});
+
+	it.only("syncs with the remote db: client - server", async () => {
+		const randomTestRunId = Math.floor(Math.random() * 100000000);
+		const dbid = randomTestRunId.toString();
+
+		worker.startSync(dbid, { room: dbid, url });
+
+		const localDB = await getInitializedDB(dbid);
+
+		await local.upsertCustomer(localDB, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+
+		await testUtils.waitFor(async () =>
+			expect(await remote.getAllCustomers(dbid)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
+		);
+
+		// After test
+		worker.stopSync(dbid);
+	});
 });
