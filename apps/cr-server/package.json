@@ -10,6 +10,7 @@
 	},
 	"scripts": {
 		"start": "echo \"WIP: no production ready\nexiting!\"",
+		"build": "echo noop",
 		"dev": "npx tsx src/index.ts",
 		"typecheck": "tsc --noEmit"
 	},
