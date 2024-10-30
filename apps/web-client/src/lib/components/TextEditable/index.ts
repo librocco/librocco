@@ -1,1 +1,4 @@
-export { default as TextEditable } from "./TextEditable.svelte";
+import TextEditable from "./TextEditable.svelte";
+import NumberEditable from "./NumberEditable.svelte";
+
+export { NumberEditable, TextEditable };
