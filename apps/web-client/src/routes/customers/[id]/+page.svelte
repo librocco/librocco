@@ -20,6 +20,7 @@
 		Dialog,
 		OrderLineTable,
 		TextEditable,
+		NumberEditable,
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
@@ -33,7 +34,7 @@
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
 
-	import { customer } from "$lib/stores/orders";
+	import { currentCustomer } from "$lib/stores/orders";
 
 	export let data: PageData;
 
@@ -53,11 +54,11 @@
 	//
 	const id = $page.params.id;
 	$: loading = !data;
-	let name = $customer.customerDetails?.fullname || "";
-	let deposit = ($customer.customerDetails?.deposit || 0).toString() || "";
-	let email = $customer.customerDetails?.email || "";
+	$: name = $currentCustomer.customerDetails.fullname;
+	$: deposit = $currentCustomer.customerDetails.deposit;
+	$: email = $currentCustomer.customerDetails.email;
 
-	$: orderLines = $customer.customerBooks;
+	$: orderLines = $currentCustomer.customerBooks;
 
 	// #region table
 	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
@@ -98,13 +99,13 @@
 			supplierOrderIds: []
 		};
 		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
-		tableOptions.update((prev) => ({ data: [...prev.data, newBook] }));
+		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
 		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
 
-		tableOptions.update((prev) => ({ data: [...prev.data.filter((book) => book.id !== bookId)] }));
+		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks.filter((book) => book.id !== bookId)] }));
 
 		open.set(false);
 	};
@@ -148,40 +149,33 @@
 
 	<svelte:fragment slot="main">
 		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
-		<div class="flex flex-col items-start">
-			<label class="my-auto text-base font-medium text-gray-800" for="fullname">Full Name</label>
-			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="fullname"
-				name="fullname"
-				bind:value={name}
-				placeholder="Full Name"
-			/>
 
-			<label class="my-auto text-base font-medium text-gray-800" for="deposit"> Deposit</label>
-			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="deposit"
-				name="deposit"
-				bind:value={deposit}
-				placeholder="Deposit"
-			/>
-
-			<label class="my-auto text-base font-medium text-gray-800" for="email">Email</label>
-			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="email"
-				name="email"
-				bind:value={email}
-				placeholder="Email"
-			/>
-			<button
-				class="my-2 mx-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
-				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
-				>save</button
-			>
+		<div class="flex w-full flex-wrap items-center justify-between gap-2">
+			<div class="flex max-w-md flex-col">
+				<TextEditable
+					name="fullname"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="FullName"
+					bind:value={$currentCustomer.customerDetails.fullname}
+				/>
+				<NumberEditable
+					name="deposit"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Deposit"
+					bind:value={$currentCustomer.customerDetails.deposit}
+				/>
+				<TextEditable
+					name="email"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Email"
+					bind:value={$currentCustomer.customerDetails.email}
+				/>
+			</div>
 		</div>
-		<!-- </div> -->
+
 		{#if orderLines?.length || $tableOptions.data.length}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->

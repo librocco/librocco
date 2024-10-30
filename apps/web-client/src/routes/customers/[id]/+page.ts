@@ -1,5 +1,5 @@
 import type { PageLoad } from "./$types";
-import { customer } from "$lib/stores/orders";
+import { currentCustomer } from "$lib/stores/orders";
 import { getCustomerBooks, getCustomerDetails } from "$lib/db/orders/customers";
 import type { Customer } from "$lib/db/orders/types";
 
@@ -16,6 +16,9 @@ export const load: PageLoad = async ({ parent, params }) => {
 	const customerBooks = await getCustomerBooks(ordersDb, Number(params.id));
 	const customerDetails = await getCustomerDetails(ordersDb, Number(params.id));
 
-	customer.set({ customerBooks, customerDetails: customerDetails[0] });
+	currentCustomer.update((prev) =>
+		prev && prev.customerDetails.id === customerDetails[0].id ? prev : { customerBooks, customerDetails: customerDetails[0] }
+	);
+
 	return { customerBooks, customerDetails: customerDetails[0] || ({} as Customer) };
 };
