@@ -1,4 +1,4 @@
-import { writable, derived, type Writable, type Readable } from "svelte/store";
+import { writable, derived } from "svelte/store";
 import type { Customer, CustomerOrderLine } from "$lib/db/orders/types";
 
 export const currentCustomer = writable<{ customerDetails: Customer; customerBooks: CustomerOrderLine[] }>();
