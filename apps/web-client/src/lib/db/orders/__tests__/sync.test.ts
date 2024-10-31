@@ -85,4 +85,39 @@ describe("Remote db setup", () => {
 			expect(await remote.getAllCustomers(dbid)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
 		);
 	});
+
+	it("keeps sync between client and server", async () => {
+		// Local insert
+		await local.upsertCustomer(localDB, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		await testUtils.waitFor(async () =>
+			expect(await remote.getAllCustomers(dbid)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
+		);
+
+		// Remote insert
+		await remote.upsertCustomer(dbid, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
+		await testUtils.waitFor(async () =>
+			expect(await local.getAllCustomers(localDB)).toEqual([
+				{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
+				{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+			])
+		);
+
+		// Local update
+		await local.upsertCustomer(localDB, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
+		await testUtils.waitFor(async () =>
+			expect(await remote.getAllCustomers(dbid)).toEqual([
+				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+				{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+			])
+		);
+
+		// Remote insert
+		await remote.upsertCustomer(dbid, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
+		await testUtils.waitFor(async () =>
+			expect(await local.getAllCustomers(localDB)).toEqual([
+				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+				{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
+			])
+		);
+	});
 });
