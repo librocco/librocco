@@ -69,6 +69,10 @@ app.put("/:dbname/customers/:id", async (req, res) => {
 			deposit = excluded.deposit
 	`);
 	const info = stmt.run(id, fullname, email, deposit);
+
+	// TEMP
+	console.log("info:", "updated customers", JSON.stringify(await db.prepare("SELECT * FROM customer").all(), null, 2))
+
 	if (info.changes > 0) {
 		res.send("Customer upserted successfully");
 	} else {

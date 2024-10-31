@@ -52,8 +52,12 @@ export async function initializeDB(db: Database) {
 }
 
 export const getInitializedDB = async (fpath: string) => {
+	console.log("get db:", fpath)
 	// Check if db already cached
-	if (dbCache.has(fpath)) return dbCache.get(fpath)!
+	if (dbCache.has(fpath)) {
+		console.log("db read from cache:", fpath)
+		return dbCache.get(fpath)!
+	}
 
 	// Ensure the directory exists
 	const dir = path.dirname(fpath);
@@ -67,6 +71,7 @@ export const getInitializedDB = async (fpath: string) => {
 	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
 		await initializeDB(db);
+		dbCache.set(fpath, db)
 		return db;
 	}
 
@@ -82,5 +87,6 @@ export const getInitializedDB = async (fpath: string) => {
 		throw new Error(msg);
 	}
 
+	dbCache.set(fpath, db)
 	return db;
 };
