@@ -9,6 +9,7 @@
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
+	import type { BookEntry } from "@librocco/db";
 
 	import {
 		Breadcrumbs,
@@ -30,9 +31,14 @@
 
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { addBooksToCustomer, getCustomerBooks, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import {
+		addBooksToCustomer,
+		getCustomerBooks,
+		removeBooksFromCustomer,
+		updateOrderLineQuantity,
+		upsertCustomer
+	} from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
-	import { invalidate } from "$app/navigation";
 
 	import { currentCustomer } from "$lib/stores/orders";
 
@@ -52,16 +58,16 @@
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
 	//
-	const id = $page.params.id;
+	const id = parseInt($page.params.id);
 	$: loading = !data;
-	$: name = $currentCustomer.customerDetails.fullname;
-	$: deposit = $currentCustomer.customerDetails.deposit;
-	$: email = $currentCustomer.customerDetails.email;
+	$: name = $currentCustomer.customerDetails.fullname ?? "";
+	$: deposit = $currentCustomer.customerDetails.deposit ?? 0;
+	$: email = $currentCustomer.customerDetails.email ?? "";
 
 	$: orderLines = $currentCustomer.customerBooks;
 
 	// #region table
-	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
+	const tableOptions = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
@@ -70,40 +76,44 @@
 	$: table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (orderLines as CustomerOrderLine[])?.slice(0, maxResults)
+		data: orderLines?.slice(0, maxResults)
 	});
 	// #endregion table
 
 	/** @TODO updateQuantity */
-	// const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
-	// 	const formData = new FormData(e.currentTarget as HTMLFormElement);
-	// 	// Number form control validation means this string->number conversion should yield a valid result
-	// 	const nextQty = Number(formData.get("quantity"));
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty, id: bookId }: CustomerOrderLine) => {
+		const formData = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(formData.get("quantity"));
 
-	// 	const updatedCustomerOrder = { id, isbn };
-	// 	if (currentQty == nextQty) {
-	// 		return;
-	// 	}
-
-	// 	await upsertCustomer(data.db,
-	//  { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) });
-	// };
+		if (currentQty == nextQty) {
+			return;
+		}
+		console.log({ nextQty });
+		currentCustomer.update((prev) => ({
+			...prev,
+			customerBooks: prev.customerBooks.map((book) => (book.id === bookId ? { ...book, quantity: nextQty } : book))
+		}));
+		await updateOrderLineQuantity(data.ordersDb, bookId, nextQty);
+	};
 
 	const handleAddOrderLine = async (isbn: string) => {
 		const newBook = {
 			isbn,
 			quantity: 1,
-			id: data.customerDetails.id,
+			id: parseInt($page.params.id),
 			created: new Date(),
 			/** @TODO provide supplierIds */
-			supplierOrderIds: []
+			supplierOrderIds: [],
+			title: "",
+			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
+		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
 		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
+		await removeBooksFromCustomer(data.ordersDb, parseInt($page.params.id), [bookId]);
 
 		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks.filter((book) => book.id !== bookId)] }));
 
@@ -157,21 +167,21 @@
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="FullName"
-					bind:value={$currentCustomer.customerDetails.fullname}
+					bind:value={name}
 				/>
 				<NumberEditable
 					name="deposit"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Deposit"
-					bind:value={$currentCustomer.customerDetails.deposit}
+					bind:value={deposit}
 				/>
 				<TextEditable
 					name="email"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Email"
-					bind:value={$currentCustomer.customerDetails.email}
+					bind:value={email}
 				/>
 			</div>
 		</div>
@@ -180,7 +190,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable {table}>
+					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)} {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
