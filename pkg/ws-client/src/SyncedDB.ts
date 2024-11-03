@@ -73,6 +73,7 @@ export async function createSyncedDB(
 	const db = await config.dbProvider(dbname)
 	logger.log("[create_start_synceddb_excl:start_sync:create_synced_db]", "dbname:", dbname, "got db!")
 	logger.log("[create_start_synceddb_excl:start_sync:create_synced_db]", "dbname:", dbname, "waiting for transport provider...")
+	db.onChange((...params) => console.log("db change::", dbname, ...params))
 	const transport = config.transportProvider(transportOptions);
 	logger.log("[create_start_synceddb_excl:start_sync:create_synced_db]", "dbname:", dbname, "got transport!")
 	logger.log("[create_start_synceddb_excl:start_sync:create_synced_db]", "dbname:", dbname, "creating SyncedDB instance...")
