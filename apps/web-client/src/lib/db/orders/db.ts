@@ -1,6 +1,7 @@
 import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
+import tblrx from "@vlcn.io/rx-tbl"
 
 import schema from "@librocco/shared/db-schemas/orders.sql?raw";
 
@@ -44,6 +45,11 @@ export async function initializeDB(db: DB) {
 	// Store schema info in crsql_master
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
+
+	// Make the db reactive:
+	// IMPORTANT: I don't, for the life of me, know how this works, but it's crucial for the sync worker to know
+	// that the change to the local db happened and push state to remote.
+	tblrx(db)
 }
 
 export const getInitializedDB = async (dbname: string) => {

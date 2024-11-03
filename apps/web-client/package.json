@@ -40,7 +40,8 @@
 		"typesafe-i18n": "~5.26.2",
 		"ws-client-fork": "workspace:*",
 		"ws-browserdb-fork": "workspace:*",
-		"@vlcn.io/ws-common": "~0.2.0"
+		"@vlcn.io/ws-common": "~0.2.0",
+		"@vlcn.io/rx-tbl": "~0.15.0"
 	},
 	"devDependencies": {
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",

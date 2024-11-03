@@ -86,6 +86,9 @@ importers:
       '@vlcn.io/crsqlite-wasm':
         specifier: 0.16.0
         version: 0.16.0
+      '@vlcn.io/rx-tbl':
+        specifier: ~0.15.0
+        version: 0.15.0
       '@vlcn.io/ws-common':
         specifier: ~0.2.0
         version: 0.2.0

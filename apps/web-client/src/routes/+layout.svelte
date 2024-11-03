@@ -11,6 +11,14 @@
 	import { appPath } from "$lib/paths";
 	import { browser } from "$app/environment";
 
+	// #region temp
+	import SyncWorker from "$lib/db/orders/__tests__/worker.js?worker";
+	import { getInitializedDB } from "$lib/db/orders/db";
+	import * as local from "$lib/db/orders/customers";
+	import * as remote from "$lib/db/orders/customers-remote";
+	import { WorkerInterface } from "ws-client-fork";
+	import tblrx from "@vlcn.io/rx-tbl";
+
 	export let data: LayoutData & { status: boolean };
 
 	const { db, status } = data;
@@ -55,6 +63,14 @@
 				}
 			});
 		}
+
+		const sw = new SyncWorker();
+
+		window["tblrx"] = tblrx;
+		window["wkr"] = new WorkerInterface(sw);
+		window["getInitializedDB"] = getInitializedDB;
+		window["local"] = local;
+		window["remote"] = remote;
 	});
 
 	export function onDestroy() {
