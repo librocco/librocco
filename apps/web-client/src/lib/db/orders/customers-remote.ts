@@ -27,7 +27,7 @@ export async function upsertCustomer(dbName: string, customer: Customer) {
 	const response = await fetch(url, {
 		method: "PUT",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify(customer),
+		body: JSON.stringify(customer)
 	});
 
 	if (!response.ok) {
@@ -47,7 +47,7 @@ export const addBooksToCustomer = async (dbName: string, customerId: number, boo
 	const response = await fetch(`${API_BASE_URL}/${dbName}/customer-order-lines`, {
 		method: "POST",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ customer_id: customerId, books }),
+		body: JSON.stringify({ customer_id: customerId, books })
 	});
 
 	if (!response.ok) {
@@ -59,7 +59,7 @@ export const removeBooksFromCustomer = async (dbName: string, customerId: number
 	const response = await fetch(`${API_BASE_URL}/${dbName}/customer-order-lines/${customerId}`, {
 		method: "DELETE",
 		headers: { "Content-Type": "application/json" },
-		body: JSON.stringify({ bookIds }),
+		body: JSON.stringify({ bookIds })
 	});
 
 	if (!response.ok) {
