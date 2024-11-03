@@ -75,3 +75,9 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 	const params = [customerId, ...bookIds];
 	await db.exec(sql, params);
 };
+
+export const updateOrderLineQuantity = async (db: DB, bookId: number, quantity: number) => {
+	const sql = `UPDATE customer_order_lines SET quantity = ? WHERE id = ?`;
+	const params = [quantity, bookId];
+	await db.exec(sql, params);
+};

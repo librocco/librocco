@@ -1,7 +1,8 @@
 import { writable, derived } from "svelte/store";
 import type { Customer, CustomerOrderLine } from "$lib/db/orders/types";
+import type { BookEntry } from "@librocco/db";
 
-export const currentCustomer = writable<{ customerDetails: Customer; customerBooks: CustomerOrderLine[] }>();
+export const currentCustomer = writable<{ customerDetails: Customer; customerBooks: (CustomerOrderLine & BookEntry)[] }>();
 
 export const customers = writable<Customer[]>();
 export const customerOrders = derived([currentCustomer, customers], ([$currentCustomer, $customers]) => {
