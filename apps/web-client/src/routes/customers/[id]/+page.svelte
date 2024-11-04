@@ -64,6 +64,7 @@
 	$: deposit = $currentCustomer.customerDetails.deposit ?? 0;
 	$: email = $currentCustomer.customerDetails.email ?? "";
 
+	// let inputEl; // Variable to hold reference to the input element
 	$: orderLines = $currentCustomer.customerBooks;
 
 	// #region table
@@ -167,21 +168,27 @@
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="FullName"
-					bind:value={name}
+					bind:value={$currentCustomer.customerDetails.fullname}
 				/>
 				<NumberEditable
 					name="deposit"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Deposit"
-					bind:value={deposit}
-				/>
+					bind:value={$currentCustomer.customerDetails.deposit}
+				>
+					<!-- <input
+						class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0"
+						slot="input"
+						bind:this={inputEl}
+					/> -->
+				</NumberEditable>
 				<TextEditable
 					name="email"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Email"
-					bind:value={email}
+					bind:value={$currentCustomer.customerDetails.email}
 				/>
 			</div>
 		</div>
