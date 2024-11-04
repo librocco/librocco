@@ -1,7 +1,5 @@
-import { describe, it, expect, beforeAll, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
 import { WorkerInterface } from "ws-client-fork";
-
-import type { DB } from "../types";
 
 import { getInitializedDB } from "../db";
 
