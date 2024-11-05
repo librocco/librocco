@@ -3,6 +3,7 @@ import type { EventDispatcher } from "svelte";
 import type { InventoryTableData } from "../types";
 
 import type { WarehouseChangeDetail } from "$lib/components";
+import type { CustomerOrderLine } from "$lib/db/orders/types";
 
 export const createInboundTableEvents = (dispatch: EventDispatcher<InboundTableEvents>) => {
 	return {
@@ -19,15 +20,17 @@ export const createOutboundTableEvents = (dispatch: EventDispatcher<OutboundTabl
 	};
 };
 
-const createEditQuantityEvent = (dispatch: EventDispatcher<EditQuantityEvent>) => (event: SubmitEvent, row: InventoryTableData<"book">) => {
-	dispatch("edit-row-quantity", { event, row });
-};
+export const createEditQuantityEvent =
+	(dispatch: EventDispatcher<EditQuantityEvent>) => (event: SubmitEvent, row: InventoryTableData<"book">) => {
+		dispatch("edit-row-quantity", { event, row });
+	};
 
 export type InboundTableEvents = EditQuantityEvent;
 export type OutboundTableEvents = EditQuantityEvent & EditWarehouseEvent;
 
-type EditQuantityEvent = {
+export type EditQuantityEvent = {
 	"edit-row-quantity": { event: SubmitEvent; row: InventoryTableData<"book"> };
+	"edit-order-line-quantity": { event: SubmitEvent; row: CustomerOrderLine };
 };
 
 type EditWarehouseEvent = {
