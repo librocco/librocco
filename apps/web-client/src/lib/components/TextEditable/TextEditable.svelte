@@ -14,15 +14,14 @@
 	 * - the user edits the input - no change is propagated to the parent component
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
-	export let value = "";
-	export let placeholder = "Untitled";
+
+	export let value: string | number = "";
+	export let placeholder = "Enter text or number here...";
 	export let isEditing = false;
 	export let disabled = false;
 	export let input: HTMLElement | null = null;
-
 	export let textEl: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" = "p";
 	export let textClassName: string = "text-base font-normal";
-
 	/** This is the internal value, used to store the current state of the input */
 	$: text = value;
 
@@ -59,17 +58,21 @@
 			class="absolute z-10 flex w-full flex-row items-center justify-between gap-x-2 transition-opacity duration-75
 			{isEditing ? 'visible opacity-100' : 'invisible opacity-0'}"
 		>
-			<input
-				type="text"
-				class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
-				{placeholder}
-				{name}
-				{id}
-				bind:this={input}
-				bind:value={text}
-				on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
-				on:change
-			/>
+			{#if $$slots.input}
+				<slot name="input" />
+			{:else}
+				<input
+					type="text"
+					class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
+					{placeholder}
+					{name}
+					{id}
+					bind:this={input}
+					bind:value={text}
+					on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
+					on:change
+				/>
+			{/if}
 		</div>
 	{/if}
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
