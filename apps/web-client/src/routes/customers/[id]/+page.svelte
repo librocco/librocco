@@ -60,11 +60,19 @@
 	//
 	const id = parseInt($page.params.id);
 	$: loading = !data;
-	$: name = $currentCustomer.customerDetails.fullname ?? "";
-	$: deposit = $currentCustomer.customerDetails.deposit ?? 0;
-	$: email = $currentCustomer.customerDetails.email ?? "";
+	let name = $currentCustomer.customerDetails.fullname ?? "";
+	let deposit = $currentCustomer.customerDetails.deposit ?? 0;
+	let email = $currentCustomer.customerDetails.email ?? "";
 
-	// let inputEl; // Variable to hold reference to the input element
+	$: if (
+		$currentCustomer.customerDetails.fullname !== name ||
+		$currentCustomer.customerDetails.deposit !== deposit ||
+		$currentCustomer.customerDetails.email !== email
+	) {
+		currentCustomer.update((prev) => ({ ...prev, customerDetails: { ...prev.customerDetails, fullname: name, deposit, email } }));
+		upsertCustomer(data.ordersDb, { ...$currentCustomer.customerDetails, fullname: name, deposit, email });
+	}
+	let inputEl: HTMLInputElement;
 	$: orderLines = $currentCustomer.customerBooks;
 
 	// #region table
@@ -79,6 +87,8 @@
 	$: tableOptions.set({
 		data: orderLines?.slice(0, maxResults)
 	});
+
+	let isEditing = false;
 	// #endregion table
 
 	/** @TODO updateQuantity */
@@ -90,7 +100,6 @@
 		if (currentQty == nextQty) {
 			return;
 		}
-		console.log({ nextQty });
 		currentCustomer.update((prev) => ({
 			...prev,
 			customerBooks: prev.customerBooks.map((book) => (book.id === bookId ? { ...book, quantity: nextQty } : book))
@@ -168,27 +177,41 @@
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="FullName"
-					bind:value={$currentCustomer.customerDetails.fullname}
+					bind:value={name}
 				/>
-				<NumberEditable
+				<TextEditable
+					input={inputEl}
 					name="deposit"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Deposit"
-					bind:value={$currentCustomer.customerDetails.deposit}
+					{isEditing}
+					value={deposit}
 				>
-					<!-- <input
+					<input
 						class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0"
 						slot="input"
+						bind:value={deposit}
 						bind:this={inputEl}
-					/> -->
-				</NumberEditable>
+						on:keydown={(e) =>
+							e.key === "Enter"
+								? (isEditing = false)
+								: e.key === "Escape"
+								? () => {
+										isEditing = false;
+										deposit = $currentCustomer.customerDetails.deposit;
+								  }
+								: null}
+						on:click={() => (isEditing = true)}
+						on:focus={() => (isEditing = true)}
+					/>
+				</TextEditable>
 				<TextEditable
 					name="email"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Email"
-					bind:value={$currentCustomer.customerDetails.email}
+					bind:value={email}
 				/>
 			</div>
 		</div>
