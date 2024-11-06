@@ -4,6 +4,8 @@
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { debug, testId } from "@librocco/shared";
@@ -287,12 +289,12 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated
 						}}

@@ -8,27 +8,24 @@ import type { FieldContext, LabelAttrs } from "./types";
 export function createFormField(fieldCtx: FieldContext) {
 	return {
 		description: createDescription(fieldCtx),
-		errors: createErrors(fieldCtx),
+		errors: createErrors(fieldCtx)
 	};
 }
 
 export function createFormControl(id: string, fieldCtx: FieldContext) {
 	return {
 		labelAttrs: createLabel(id),
-		controlAttrs: createControl(id, fieldCtx),
+		controlAttrs: createControl(id, fieldCtx)
 	};
 }
 
 const createLabel = (id: string): LabelAttrs => {
 	return {
-		for: id,
+		for: id
 	};
 };
 
-const createControl = (
-	id: string,
-	{ name, fieldErrorsId, descriptionId, errors, constraints }: FieldContext,
-) => {
+const createControl = (id: string, { name, fieldErrorsId, descriptionId, errors, constraints }: FieldContext) => {
 	return derived(
 		[name, fieldErrorsId, descriptionId, errors, constraints],
 		([$name, $fieldErrorsId, $descriptionId, $errors, $constraints]) => {
@@ -38,12 +35,12 @@ const createControl = (
 				"aria-describedby": getAriaDescribedBy({
 					fieldErrorsId: $fieldErrorsId,
 					descriptionId: $descriptionId,
-					errors: $errors,
+					errors: $errors
 				}),
 				"aria-invalid": getAriaInvalid($errors),
-				"aria-required": getAriaRequired($constraints),
+				"aria-required": getAriaRequired($constraints)
 			};
-		},
+		}
 	);
 };
 
@@ -58,7 +55,7 @@ const createDescription = ({ descriptionId }: FieldContext) => {
 
 	return {
 		store,
-		action,
+		action
 	};
 };
 
@@ -73,6 +70,6 @@ const createErrors = ({ fieldErrorsId }: FieldContext) => {
 
 	return {
 		store,
-		action,
+		action
 	};
 };

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
 	import { fade, fly } from "svelte/transition";
 	import { writable, readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
@@ -31,7 +32,6 @@
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { addBooksToCustomer, getCustomerBooks, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
-	import { invalidate } from "$app/navigation";
 
 	export let data: PageData;
 
@@ -129,11 +129,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {

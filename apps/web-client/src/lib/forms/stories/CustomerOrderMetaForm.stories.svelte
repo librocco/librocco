@@ -25,9 +25,9 @@
 
 	import { zod } from "sveltekit-superforms/adapters";
 
-	import { customerOrderMetaSchema } from "../CustomerOrderMetaForm.svelte";
+	import { customerOrderSchema } from "../schemas";
 
-	const form = defaults(zod(customerOrderMetaSchema));
+	const form = defaults(zod(customerOrderSchema));
 </script>
 
 <Story name="Customer Order Meta">

@@ -2,7 +2,8 @@ import { LOCAL_STORAGE_SETTINGS } from "$lib/constants";
 import { settingsSchema } from "$lib/forms";
 import { readableFromStream } from "$lib/utils/streams";
 import type { DatabaseInterface } from "@librocco/db";
-import { superValidateSync } from "sveltekit-superforms/client";
+import { defaults } from "sveltekit-superforms/client";
+import { zod } from "sveltekit-superforms/adapters";
 import { persisted } from "svelte-local-storage-store";
 import { checkUrlConnection } from "$lib/db";
 import { get } from "svelte/store";
@@ -38,5 +39,5 @@ export const createDBConnectivityStore = () => {
 	return readableFromStream({}, createDBConnectivityStream(), false);
 };
 
-const { data: defaultSettings } = superValidateSync(settingsSchema);
+const { data: defaultSettings } = defaults(zod(settingsSchema));
 export const settingsStore = persisted(LOCAL_STORAGE_SETTINGS, defaultSettings);
