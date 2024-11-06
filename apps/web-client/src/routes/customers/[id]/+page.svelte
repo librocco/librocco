@@ -10,6 +10,7 @@
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
+	import type { BookEntry } from "@librocco/db";
 
 	import {
 		Breadcrumbs,
@@ -21,6 +22,7 @@
 		Dialog,
 		OrderLineTable,
 		TextEditable,
+		NumberEditable,
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
@@ -30,8 +32,15 @@
 
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { addBooksToCustomer, getCustomerBooks, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import {
+		addBooksToCustomer,
+		getCustomerBooks,
+		removeBooksFromCustomer,
+		updateOrderLineQuantity,
+		upsertCustomer
+	} from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
+	import { currentCustomer } from "$lib/stores/orders";
 
 	export let data: PageData;
 
@@ -49,16 +58,25 @@
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
 	//
-	const id = $page.params.id;
+	const id = parseInt($page.params.id);
 	$: loading = !data;
-	let name = data.customerDetails?.fullname || "";
-	let deposit = (data.customerDetails?.deposit || 0).toString() || "";
-	let email = data.customerDetails?.email || "";
+	let name = $currentCustomer.customerDetails.fullname ?? "";
+	let deposit = $currentCustomer.customerDetails.deposit ?? 0;
+	let email = $currentCustomer.customerDetails.email ?? "";
 
-	$: orderLines = data.customerBooks;
+	$: if (
+		$currentCustomer.customerDetails.fullname !== name ||
+		$currentCustomer.customerDetails.deposit !== deposit ||
+		$currentCustomer.customerDetails.email !== email
+	) {
+		currentCustomer.update((prev) => ({ ...prev, customerDetails: { ...prev.customerDetails, fullname: name, deposit, email } }));
+		upsertCustomer(data.ordersDb, { ...$currentCustomer.customerDetails, fullname: name, deposit, email });
+	}
+	let inputEl: HTMLInputElement;
+	$: orderLines = $currentCustomer.customerBooks;
 
 	// #region table
-	const tableOptions = writable<{ data: CustomerOrderLine[] }>({
+	const tableOptions = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines
 			?.slice(0, maxResults)
 			// TEMP: remove this when the db is updated
@@ -67,42 +85,47 @@
 	$: table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: (orderLines as CustomerOrderLine[])?.slice(0, maxResults)
+		data: orderLines?.slice(0, maxResults)
 	});
+
+	let isEditing = false;
 	// #endregion table
 
 	/** @TODO updateQuantity */
-	// const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty }: CustomerOrderLine) => {
-	// 	const formData = new FormData(e.currentTarget as HTMLFormElement);
-	// 	// Number form control validation means this string->number conversion should yield a valid result
-	// 	const nextQty = Number(formData.get("quantity"));
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty, id: bookId }: CustomerOrderLine) => {
+		const formData = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(formData.get("quantity"));
 
-	// 	const updatedCustomerOrder = { id, isbn };
-	// 	if (currentQty == nextQty) {
-	// 		return;
-	// 	}
-
-	// 	await upsertCustomer(data.db,
-	//  { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) });
-	// };
+		if (currentQty == nextQty) {
+			return;
+		}
+		currentCustomer.update((prev) => ({
+			...prev,
+			customerBooks: prev.customerBooks.map((book) => (book.id === bookId ? { ...book, quantity: nextQty } : book))
+		}));
+		await updateOrderLineQuantity(data.ordersDb, bookId, nextQty);
+	};
 
 	const handleAddOrderLine = async (isbn: string) => {
 		const newBook = {
 			isbn,
 			quantity: 1,
-			id: data.customerDetails.id,
+			id: parseInt($page.params.id),
 			created: new Date(),
 			/** @TODO provide supplierIds */
-			supplierOrderIds: []
+			supplierOrderIds: [],
+			title: "",
+			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, data.customerDetails.id, [newBook]);
-		tableOptions.update((prev) => ({ data: [...prev.data, newBook] }));
+		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		await removeBooksFromCustomer(data.ordersDb, data.customerDetails.id, [bookId]);
+		await removeBooksFromCustomer(data.ordersDb, parseInt($page.params.id), [bookId]);
 
-		tableOptions.update((prev) => ({ data: [...prev.data.filter((book) => book.id !== bookId)] }));
+		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks.filter((book) => book.id !== bookId)] }));
 
 		open.set(false);
 	};
@@ -145,46 +168,68 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
-		<div class="flex flex-col items-start">
-			<label class="my-auto text-base font-medium text-gray-800" for="fullname">Full Name</label>
-			<input
-				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="fullname"
-				name="fullname"
-				bind:value={name}
-				placeholder="Full Name"
-			/>
+		<div class="flex w-full flex-wrap items-start gap-2">
+			<div class="flex max-w-md flex-col">
+				<TextEditable
+					name="fullname"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Full Name"
+					bind:value={name}
+				/>
+				<TextEditable
+					input={inputEl}
+					name="deposit"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Deposit"
+					{isEditing}
+					value={deposit}
+				>
+					<input
+						class="min-w-0 grow border-2 border-gray-500 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:ring-0"
+						slot="input"
+						bind:value={deposit}
+						bind:this={inputEl}
+						on:keydown={(e) =>
+							e.key === "Enter"
+								? (isEditing = false)
+								: e.key === "Escape"
+									? () => {
+											isEditing = false;
+											deposit = $currentCustomer.customerDetails.deposit;
+										}
+									: null}
+						on:click={() => (isEditing = true)}
+						on:focus={() => (isEditing = true)}
+					/>
+				</TextEditable>
+				<TextEditable
+					name="email"
+					textEl="h1"
+					textClassName="text-2xl font-bold leading-7 text-gray-900"
+					placeholder="Email"
+					bind:value={email}
+				/>
+			</div>
 
-			<label class="my-auto text-base font-medium text-gray-800" for="deposit"> Deposit</label>
-			<input
-				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="deposit"
-				name="deposit"
-				bind:value={deposit}
-				placeholder="Deposit"
-			/>
-
-			<label class="my-auto text-base font-medium text-gray-800" for="email">Email</label>
-			<input
-				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
-				id="email"
-				name="email"
-				bind:value={email}
-				placeholder="Email"
-			/>
 			<button
 				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
-				>save</button
+				on:click={() =>
+					upsertCustomer(data.ordersDb, {
+						...data.customerDetails,
+						fullname: name,
+						email,
+						deposit: parseInt(deposit)
+					})}>Save</button
 			>
 		</div>
-		<!-- </div> -->
+
 		{#if orderLines?.length || $tableOptions.data.length}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable {table}>
+					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)} {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{

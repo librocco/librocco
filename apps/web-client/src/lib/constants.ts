@@ -21,3 +21,7 @@ export const IS_E2E = PUBLIC_IS_E2E === "true";
 export const LOG_LEVEL = PUBLIC_LOG_LEVEL;
 
 export const DEFAULT_LOCALE: Locales = "en";
+
+import pkg from "../../package.json";
+export const GIT_SHA = import.meta.env.VITE_VERSION || "dev";
+export const VERSION = import.meta.env.VITE_VERSION ? `${pkg.version}-${import.meta.env.VITE_VERSION}` : pkg.version;

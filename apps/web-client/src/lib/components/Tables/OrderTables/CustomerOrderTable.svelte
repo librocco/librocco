@@ -41,9 +41,9 @@
 					<BodyHead borderStyle={"gray"}>
 						<BodyMultiRow
 							rows={{
-								fullname: { data: fullname, className: "text-md font-medium" },
-								email: { data: email, className: "text-md font-light" },
-								deposit: { data: `${deposit}`, className: "text-md font-light" }
+								fullname: { data: fullname ?? "", className: "text-md font-medium" },
+								email: { data: email ?? "", className: "text-md font-light" },
+								deposit: { data: `${deposit ?? 0}`, className: "text-md font-light" }
 							}}
 						/>
 					</BodyHead>
