@@ -4,7 +4,7 @@
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults } from "sveltekit-superforms";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
@@ -23,7 +23,7 @@
 		PopoverWrapper,
 		StockBookRow
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { goto } from "$lib/utils/navigation";
@@ -106,7 +106,7 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *

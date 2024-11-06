@@ -3,7 +3,7 @@
 	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults } from "sveltekit-superforms";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
@@ -27,7 +27,7 @@
 		InboundTable,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
+	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
 	import { printBookLabel, printReceipt } from "$lib/printer";
@@ -163,7 +163,7 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
