@@ -104,7 +104,7 @@ const config = {
 		environment: "jsdom",
 		// deps: { inline: true },
 		// Add @testing-library/jest-dom matchers and mock modules
-		setupFiles: ["./vitest.setup.ts"]
+		setupFiles: ["./src/vitest.setup.ts"]
 	}
 	// TODO: Uncomment this when we figure out how to make it work
 	// preview: {
