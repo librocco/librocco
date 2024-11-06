@@ -4,5 +4,5 @@ export const defaultDialogConfig: CreateDialogProps = {
 	forceVisible: false,
 	preventScroll: true,
 	closeOnOutsideClick: true,
-	closeOnEscape: true,
+	closeOnEscape: true
 };

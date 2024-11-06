@@ -1,12 +1,12 @@
 import { expect, vi } from "vitest";
-import * as matchers from '@testing-library/jest-dom/matchers';
+import * as matchers from "@testing-library/jest-dom/matchers";
 import { loadLocale } from "./i18n/i18n-util.sync";
 import { setLocale } from "./i18n/i18n-svelte";
 
 import { readable } from "svelte/store";
-import * as environment from '$app/environment';
-import * as navigation from '$app/navigation';
-import * as stores from '$app/stores';
+import * as environment from "$app/environment";
+import * as navigation from "$app/navigation";
+import * as stores from "$app/stores";
 
 import type { Navigation, Page } from "@sveltejs/kit";
 
@@ -18,15 +18,15 @@ loadLocale("en");
 setLocale("en");
 
 // Mock SvelteKit runtime module $app/environment
-vi.mock('$app/environment', (): typeof environment => ({
+vi.mock("$app/environment", (): typeof environment => ({
 	browser: false,
 	dev: true,
 	building: false,
-	version: 'any',
-  }));
-  
-  // Mock SvelteKit runtime module $app/navigation
-  vi.mock('$app/navigation', (): typeof navigation => ({
+	version: "any"
+}));
+
+// Mock SvelteKit runtime module $app/navigation
+vi.mock("$app/navigation", (): typeof navigation => ({
 	afterNavigate: () => {},
 	beforeNavigate: () => {},
 	disableScrollHandling: () => {},
@@ -38,8 +38,7 @@ vi.mock('$app/environment', (): typeof environment => ({
 	onNavigate: () => Promise.resolve(),
 	pushState: () => Promise.resolve(),
 	replaceState: () => Promise.resolve()
-  }));
-  
+}));
 
 vi.mock("$app/stores", (): typeof stores => {
 	const getStores: typeof stores.getStores = () => {
@@ -48,13 +47,13 @@ vi.mock("$app/stores", (): typeof stores => {
 			url: new URL("http://localhost"),
 			params: {},
 			route: {
-				id: null,
+				id: null
 			},
 			status: 200,
 			error: null,
 			data: {},
 			form: undefined,
-			state: {},
+			state: {}
 		});
 		const updated = { subscribe: readable(false).subscribe, check: async () => false };
 
@@ -64,24 +63,24 @@ vi.mock("$app/stores", (): typeof stores => {
 	const page: typeof stores.page = {
 		subscribe(fn) {
 			return getStores().page.subscribe(fn);
-		},
+		}
 	};
 	const navigating: typeof stores.navigating = {
 		subscribe(fn) {
 			return getStores().navigating.subscribe(fn);
-		},
+		}
 	};
 	const updated: typeof stores.updated = {
 		subscribe(fn) {
 			return getStores().updated.subscribe(fn);
 		},
-		check: async () => false,
+		check: async () => false
 	};
 
 	return {
 		getStores,
 		navigating,
 		page,
-		updated,
+		updated
 	};
 });

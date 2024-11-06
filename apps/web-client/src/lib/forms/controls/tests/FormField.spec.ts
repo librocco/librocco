@@ -1,7 +1,7 @@
 import { render, screen, cleanup } from "@testing-library/svelte";
 import { it, describe, expect, afterEach } from "vitest";
 // TODO: this should be done globally but its not working for some reason :(
-import '@testing-library/jest-dom';
+import "@testing-library/jest-dom";
 
 import { defaults, superValidate, type FormOptions, type Infer } from "sveltekit-superforms";
 import { zod } from "sveltekit-superforms/adapters";
@@ -15,7 +15,7 @@ afterEach(() => {
 const options: FormOptions<Infer<typeof testSchema>> = {
 	SPA: true,
 	validators: zod(testSchema),
-	validationMethod: "submit-only",
+	validationMethod: "submit-only"
 };
 
 describe("The FormFieldProxy controller and Text|CheckControl combo should", () => {
