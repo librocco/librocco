@@ -8,12 +8,24 @@
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 
-	const { customers, customerOrderLines } = data;
+	const { customers, customerOrderLines, books } = data;
 
 	const customerMetaDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
+
+	const [customer] = customers;
+	const orderLines = customerOrderLines
+		.filter((line) => line.customer_id === customer.id)
+		.map((line) => {
+			return {
+				...books[line.isbn],
+				...line
+			};
+		});
+
+	const totalAmount = orderLines.reduce((acc, cur) => acc + cur.price, 0);
 </script>
 
 <main class="h-screen">
@@ -29,7 +41,7 @@
 						<h1 class="card-title prose">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#278123</h2>
+							<h2 class="prose">#{customer.id}</h2>
 
 							<span class="badge badge-accent badge-outline badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
@@ -40,8 +52,8 @@
 					</div>
 					<dl class="flex flex-col">
 						<div class="border-b py-4 font-bold">
-							<dt class="max-md:sr-only">Amount</dt>
-							<dd class="mt-1">$10,560.00</dd>
+							<dt class="max-md:sr-only">Total amount</dt>
+							<dd class="mt-1">€{totalAmount}</dd>
 						</div>
 
 						<div class="flex w-full flex-col gap-y-4 py-6">
@@ -52,14 +64,14 @@
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">Chris De Sousa</dd>
+										<dd class="truncate">{customer.fullname}</dd>
 									</div>
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer email</span>
 											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">cdelasoul@gmail.com</dd>
+										<dd class="truncate">{customer.email}</dd>
 									</div>
 								</div>
 								<div class="flex gap-x-3">
@@ -67,7 +79,7 @@
 										<span class="sr-only">Deposit</span>
 										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 									</dt>
-									<dd>€30 deposit</dd>
+									<dd>€{customer.deposit} deposit</dd>
 								</div>
 							</div>
 							<div class="w-full pr-2">
@@ -92,7 +104,7 @@
 			</div>
 		</div>
 
-		<div class="flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
+		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
 				<h3 class="max-md:divider max-md:divider-start">Books</h3>
 				<label class="input input-bordered flex items-center gap-2">
@@ -101,20 +113,44 @@
 				</label>
 			</div>
 
-			<div class="h-full">
-				<div class="h-fit">
+			<div class="h-full overflow-x-auto">
+				<div class="h-full">
 					<table class="table-pin-rows table">
 						<thead>
 							<tr>
 								<th>ISBN</th>
+								<th>Title</th>
+								<th>Authors</th>
+								<th>Price</th>
 								<th>Quantity</th>
+								<th>Status</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { isbn, quantity }}
+							{#each orderLines as { isbn, quantity, title, authors, price }}
 								<tr>
 									<th>{isbn}</th>
-									<td>{quantity}</td>
+									<td>{title}</td>
+									<td>{authors}</td>
+									<td>{price}</td>
+									<td>
+										<input
+											name="quantity"
+											id="quantity"
+											value={quantity}
+											class="input input-bordered input-primary input-sm max-w-[4rem]"
+											type="number"
+											min="1"
+											required
+										/>
+									</td>
+									<td>
+										<select class="select select-primary select-sm w-full min-w-fit max-w-xs rounded-none">
+											<option disabled selected>Ordered</option>
+											<option>Received</option>
+											<option>Collected</option>
+										</select>
+									</td>
 								</tr>
 							{/each}
 						</tbody>
