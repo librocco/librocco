@@ -14,9 +14,9 @@
 	import { writable } from "svelte/store";
 
 	import { createTable } from "$lib/actions";
-	import type { CustomerOrderData } from "$lib/forms/schemas";
+	import type { CustomerOrderSchema } from "$lib/forms/schemas";
 
-	const customerData: CustomerOrderData[] = [
+	const customerData: CustomerOrderSchema[] = [
 		{
 			fullname: "Billy Bob",
 			email: "bill@bbob.com",
