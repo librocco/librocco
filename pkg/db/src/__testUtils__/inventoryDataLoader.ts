@@ -39,18 +39,21 @@ const getSnaps = async () => {
 };
 
 const mapWarehouses = (books: VolumeStock<"book">[]): RawSnap[] => {
-	const warehousesObject = books.reduce((acc, b) => {
-		const { warehouseId } = b;
-		const warehouse = acc[warehouseId] || ({ id: warehouseId, books: [] } as RawSnap);
+	const warehousesObject = books.reduce(
+		(acc, b) => {
+			const { warehouseId } = b;
+			const warehouse = acc[warehouseId] || ({ id: warehouseId, books: [] } as RawSnap);
 
-		return {
-			...acc,
-			[warehouseId]: {
-				...warehouse,
-				books: [...warehouse.books, b].sort(sortBooks)
-			}
-		};
-	}, {} as Record<string, RawSnap>);
+			return {
+				...acc,
+				[warehouseId]: {
+					...warehouse,
+					books: [...warehouse.books, b].sort(sortBooks)
+				}
+			};
+		},
+		{} as Record<string, RawSnap>
+	);
 
 	return Object.values(warehousesObject);
 };
