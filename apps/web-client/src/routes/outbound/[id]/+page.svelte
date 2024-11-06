@@ -43,11 +43,11 @@
 	import {
 		BookForm,
 		bookSchema,
-		type BookFormOptions,
 		ScannerForm,
 		scannerSchema,
 		customItemSchema,
-		type CustomItemFormSchema
+		type CustomItemFormSchema,
+		type BookFormSchema
 	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -268,7 +268,7 @@
 		};
 	};
 
-	const onBookFormUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onBookFormUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -593,7 +593,7 @@
 				<Dialog {dialog} type="delete" onConfirm={() => {}}>
 					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please select a warehouse for each of the following transactions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">Please select a warehouse for each of the following transactions:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn }}
 							<li>{isbn}</li>
@@ -612,7 +612,7 @@
 				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf}>
 					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please review the following tranasctions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">Please review the following tranasctions:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
 							<li class="mb-2">

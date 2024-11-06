@@ -65,7 +65,7 @@ export const scannerSchema = z.object({
 
 export type CustomerOrderSchema = Infer<typeof customerOrderSchema>;
 export const customerOrderSchema = z.object({
-	id: z.string().default(nanoid()),
+	id: z.number(),
 	fullname: z.string().default(""),
 	email: z.string().email(""),
 	deposit: z.number().default(0)

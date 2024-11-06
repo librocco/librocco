@@ -15,7 +15,6 @@
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 
 	import { createOutboundTableEvents, type OutboundTableEvents } from "../InventoryTables/events";
-	import type { BookFormData } from "$lib/forms";
 
 	export let table: ReturnType<typeof createTable<CustomerOrderLine>>;
 
