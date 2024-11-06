@@ -1,9 +1,19 @@
 <script lang="ts">
 	import { QrCode, Mail, ReceiptEuro, UserCircle, ArrowRight, ClockArrowUp, PencilLine } from "lucide-svelte";
+	import { createDialog } from "@melt-ui/svelte";
 
 	import { data } from "./data";
+	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
+	import CustomerOrderMetaForm, { customerOrderMetaSchema } from "$lib/forms/CustomerOrderMetaForm.svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 
 	const { customers, customerOrderLines } = data;
+
+	const customerMetaDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: customerMetaDialogOpen }
+	} = customerMetaDialog;
 </script>
 
 <main class="h-screen">
@@ -65,6 +75,7 @@
 									class="btn btn-secondary btn-outline btn-xs w-full"
 									type="button"
 									aria-label="Edit customer order name, email or deposit"
+									on:click={() => customerMetaDialogOpen.set(true)}
 								>
 									<PencilLine aria-hidden size={16} />
 								</button>
@@ -113,6 +124,29 @@
 		</div>
 	</div>
 </main>
+
+<PageCenterDialog dialog={customerMetaDialog} title="" description="">
+	<CustomerOrderMetaForm
+		heading="Update customer details"
+		saveLabel="Update"
+		data={defaults(zod(customerOrderMetaSchema))}
+		options={{
+			SPA: true,
+			validators: zod(customerOrderMetaSchema),
+			onUpdate: ({ form }) => {
+				if (form.valid) {
+					// TODO: update data
+				}
+			},
+			onUpdated: async ({ form }) => {
+				if (form.valid) {
+					customerMetaDialogOpen.set(false);
+				}
+			}
+		}}
+		onCancel={() => customerMetaDialogOpen.set(false)}
+	/>
+</PageCenterDialog>
 
 <style global>
 	:global(html) {
