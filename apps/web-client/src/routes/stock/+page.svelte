@@ -4,6 +4,8 @@
 	import { fade, fly } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import type { SearchIndex, BookEntry } from "@librocco/db";
@@ -251,12 +253,12 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated
 						}}

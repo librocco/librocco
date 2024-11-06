@@ -82,6 +82,6 @@ module.exports = {
 	theme,
 	plugins,
 	daisyui: {
-		themes: ["lofi", "forest"],
-	},
+		themes: ["lofi", "forest"]
+	}
 };

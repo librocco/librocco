@@ -3,6 +3,8 @@
 	import { fade } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { firstValueFrom, map } from "rxjs";
 	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
 
@@ -24,7 +26,7 @@
 
 	import WarehouseForm from "$lib/forms/WarehouseForm.svelte";
 	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
-	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
+	import { warehouseSchema, type WarehouseFormSchema } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	const { db, status } = getDB();
@@ -75,7 +77,7 @@
 		states: { open }
 	} = dialog;
 
-	let editWarehouse: WarehouseFormData = null;
+	let editWarehouse: WarehouseFormSchema | null = null;
 	let deleteWarehouse: { id: string; displayName: string } = null;
 	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 </script>
@@ -230,11 +232,11 @@
 						{dialogDescription}
 					</p>
 					<WarehouseForm
-						data={editWarehouse}
+						data={defaults(editWarehouse, zod(warehouseSchema))}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: warehouseSchema,
+							validators: zod(warehouseSchema),
 							validationMethod: "submit-only",
 							onUpdated: async ({ form }) => {
 								const { id, name, discount } = form?.data;

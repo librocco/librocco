@@ -4,6 +4,8 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
@@ -38,7 +40,15 @@
 		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import {
+		BookForm,
+		bookSchema,
+		type BookFormOptions,
+		ScannerForm,
+		scannerSchema,
+		customItemSchema,
+		type CustomItemFormSchema
+	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -51,7 +61,6 @@
 	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
@@ -283,7 +292,7 @@
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 
-	const onCustomItemUpdated: CustomItemOptions["onUpdated"] = async ({ form }) => {
+	const onCustomItemUpdated: SuperForm<CustomItemFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -342,11 +351,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -645,12 +654,12 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated: onBookFormUpdated
 						}}
@@ -700,11 +709,11 @@
 				</div>
 				<div class="px-6">
 					<CustomItemForm
-						data={customItemFormData}
+						data={defaults(customItemFormData, zod(customItemSchema))}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: customItemSchema,
+							validators: zod(customItemSchema),
 							validationMethod: "submit-only",
 							onUpdated: onCustomItemUpdated
 						}}

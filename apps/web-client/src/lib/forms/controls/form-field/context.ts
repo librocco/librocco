@@ -47,7 +47,5 @@ export function getFormControlCtx(): FormControlContext {
 }
 
 function ctxError(ctx: string) {
-	throw new Error(
-		`Unable to find \`${ctx}\` context. Did you forget to wrap the component in a \`${ctx}\`?`,
-	);
+	throw new Error(`Unable to find \`${ctx}\` context. Did you forget to wrap the component in a \`${ctx}\`?`);
 }

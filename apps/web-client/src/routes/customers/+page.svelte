@@ -12,8 +12,6 @@
 
 	import { type DialogContent } from "$lib/dialogs";
 
-	import type { CustomerOrderData } from "$lib/forms/schemas";
-
 	import { PopoverWrapper } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
