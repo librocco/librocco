@@ -28,7 +28,7 @@
 	const { editQuantity } = createInboundTableEvents(dispatch);
 </script>
 
-<table id="inventory-table" class="table" use:tableAction={{ rowCount }}>
+<table id="inventory-table" class="stock-table" use:tableAction={{ rowCount }}>
 	<thead>
 		<tr>
 			<th scope="col">
