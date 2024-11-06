@@ -1,6 +1,5 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
-import { nanoid } from "nanoid";
 
 export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
