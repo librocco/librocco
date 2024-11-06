@@ -61,7 +61,7 @@
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
-				<div class="relative block w-full p-2 ">
+				<div class="relative block w-full p-2">
 					<div class="flex flex-row items-center gap-x-2 text-gray-400">
 						<h1 class="text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
 					</div>

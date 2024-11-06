@@ -20,7 +20,7 @@ export type InventoryTableData<K extends VolumeStockKind = VolumeStockKind> = K 
 			editedBy?: string;
 			outOfPrint?: boolean;
 			category?: string;
-	  } & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
+		} & { availableWarehouses?: Map<string, { displayName: string; quantity: number }> }
 	: VolumeStockClient<K>;
 
 export type BookCoreRowData = {

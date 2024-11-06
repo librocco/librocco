@@ -174,7 +174,7 @@
 				placeholder="Email"
 			/>
 			<button
-				class="my-2 mx-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+				class="my-2 mx-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
 				>save</button
 			>

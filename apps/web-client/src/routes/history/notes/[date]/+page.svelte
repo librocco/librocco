@@ -124,7 +124,7 @@
 	}
 
 	[data-melt-calendar-cell] {
-		@apply flex h-6 w-6 cursor-pointer select-none items-center justify-center rounded-lg  p-4;
+		@apply flex h-6 w-6 cursor-pointer select-none items-center justify-center rounded-lg p-4;
 	}
 
 	[data-melt-calendar-cell][data-disabled] {
