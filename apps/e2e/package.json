@@ -25,7 +25,9 @@
 		"prettier": "^3.3.3",
 		"typescript": "^5.3.3",
 		"@types/node": "~20.4.1",
-		"@internationalized/date": "~3.5.2"
+		"@internationalized/date": "~3.5.2",
+		"prettier-plugin-svelte": "^3.2.6",
+		"prettier-plugin-tailwindcss": "~0.6.8"
 	},
 	"type": "module"
 }
