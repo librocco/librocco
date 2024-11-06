@@ -16,7 +16,7 @@
 	$: ({ rows } = $table);
 </script>
 
-<table id="customer-orders">
+<table id="customer-orders" class="order-table">
 	<thead>
 		<tr>
 			<th scope="col">
