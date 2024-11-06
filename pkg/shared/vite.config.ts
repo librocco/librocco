@@ -5,12 +5,12 @@ import path from "path";
 const config =
 	process.env.NODE_ENV === "test"
 		? // We're using a special config for tests, to enable
-		  // inlining tests to source files
-		  defineVitestConfig({
+			// inlining tests to source files
+			defineVitestConfig({
 				test: {
 					includeSource: ["src/**/*.ts"]
 				}
-		  })
+			})
 		: defineConfig({
 				build: {
 					sourcemap: true,
@@ -27,6 +27,6 @@ const config =
 					},
 					outDir: "dist"
 				}
-		  });
+			});
 
 export default config;
