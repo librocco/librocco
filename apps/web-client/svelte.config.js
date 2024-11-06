@@ -46,7 +46,8 @@ const config = {
 				"/history/warehouse/1/1",
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
-				"/settings/"
+				"/settings/",
+				"/orders/c/1"
 			]
 		},
 		paths: {
