@@ -14,16 +14,17 @@
 	 * - the user edits the input - no change is propagated to the parent component
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
-
-	export let value: string | number = "";
-	export let placeholder = "Enter text or number here...";
+	export let value = 0;
+	export let placeholder = "Untitled";
 	export let isEditing = false;
 	export let disabled = false;
 	export let input: HTMLElement | null = null;
+
 	export let textEl: "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "p" = "p";
 	export let textClassName: string = "text-base font-normal";
+
 	/** This is the internal value, used to store the current state of the input */
-	$: text = value;
+	$: number = value;
 
 	/** Enter edit mode */
 	function edit() {
@@ -36,13 +37,13 @@
 	}
 	/** Reset the input to the original value */
 	function reset() {
-		text = value;
+		number = value;
 		isEditing = false;
 	}
 	/** Save the input and propagate the new value to the parent component */
 	function save() {
-		if (value != text) {
-			value = text;
+		if (value != number) {
+			value = number;
 		}
 		isEditing = false;
 	}
@@ -58,28 +59,24 @@
 			class="absolute z-10 flex w-full flex-row items-center justify-between gap-x-2 transition-opacity duration-75
 			{isEditing ? 'visible opacity-100' : 'invisible opacity-0'}"
 		>
-			{#if $$slots.input}
-				<slot name="input" />
-			{:else}
-				<input
-					type="text"
-					class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
-					{placeholder}
-					{name}
-					{id}
-					bind:this={input}
-					bind:value={text}
-					on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
-					on:change
-				/>
-			{/if}
+			<input
+				type="number"
+				class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0 {textClassName}"
+				{placeholder}
+				{name}
+				{id}
+				bind:this={input}
+				bind:value={number}
+				on:keydown={(e) => (e.key === "Enter" ? save() : e.key === "Escape" ? reset() : null)}
+				on:change
+			/>
 		</div>
 	{/if}
 	<!-- svelte-ignore a11y-no-static-element-interactions -->
 	<div
 		class="flex flex-row items-center gap-x-2
 		{isEditing ? 'invisible' : 'visible'}
-		{text === '' || disabled ? 'text-gray-400' : 'text-gray-800'}"
+		{number === 0 || disabled ? 'text-gray-400' : 'text-gray-800'}"
 		class:cursor-pointer={!disabled}
 		role="textbox"
 		aria-label="Edit {name}"
@@ -88,8 +85,8 @@
 		on:click={edit}
 		on:focus={edit}
 	>
-		<svelte:element this={textEl} class="{placeholder === '' && !text ? 'hidden' : 'truncate'} {textClassName}">
-			{text === "" ? placeholder : text}
+		<svelte:element this={textEl} class="{placeholder === '' && !number ? 'hidden' : 'truncate'} {textClassName}">
+			{number === 0 ? placeholder : number}
 		</svelte:element>
 		{#if !disabled}
 			<span class="text-gray-500" aria-hidden>

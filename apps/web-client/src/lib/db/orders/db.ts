@@ -46,6 +46,7 @@ export async function initializeDB(db: DB) {
 		collected INTEGER,
 		PRIMARY KEY (id)
 	)`);
+
 	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
 	// Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
 	// but must not have checked foreign key constraints as they can be violated by row level security or replication.
@@ -96,9 +97,8 @@ export async function initializeDB(db: DB) {
 
 export const getInitializedDB = async (dbname: string) => {
 	const db = await getDB(dbname);
-	// Check if it's already initialized
-	// TODO: check the return type
-	const result = await db.execO("SELECT name FROM sqlite_master WHERE type='table' AND name='customer';");
+
+	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
 
 	if (result.length === 0) {
 		await initializeDB(db);
