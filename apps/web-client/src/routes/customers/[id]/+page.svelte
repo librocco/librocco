@@ -220,7 +220,7 @@
 						...data.customerDetails,
 						fullname: name,
 						email,
-						deposit: parseInt(deposit)
+						deposit: deposit
 					})}>Save</button
 			>
 		</div>
