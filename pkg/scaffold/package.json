@@ -16,13 +16,16 @@
 		"eslint-plugin-unused-imports": "^2.0.0",
 		"prettier-plugin-tailwindcss": "~0.1.13",
 		"prettier": "~2.7.1",
-		"svelte-eslint-parser": "~0.33.0"
+		"svelte-eslint-parser": "~0.33.0",
+		"daisyui": "~4.12.13",
+		"@tailwindcss/typography": "~0.5.15"
 	},
 	"devDependencies": {
-		"@tailwindcss/forms": "~0.5.3",
 		"prettier": "~2.7.1",
 		"prettier-plugin-tailwindcss": "~0.1.13",
 		"tailwindcss": "~3.2.4",
-		"typescript": "^5.3.3"
+		"typescript": "^5.3.3",
+		"daisyui": "~4.12.13",
+		"@tailwindcss/typography": "~0.5.15"
 	}
 }

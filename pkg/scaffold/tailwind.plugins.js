@@ -6,7 +6,9 @@
 const rem = (px) => `${px / 16}rem`;
 
 module.exports = [
-	require("@tailwindcss/forms"),
+	require("@tailwindcss/typography"),
+	require("daisyui"),
+	// require("@tailwindcss/forms"),
 	function ({ addUtilities, addComponents }) {
 		addUtilities({
 			".scrollbar-hide": {
