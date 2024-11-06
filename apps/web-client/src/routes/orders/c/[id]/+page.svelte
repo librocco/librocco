@@ -61,7 +61,7 @@
 						<div class="flex w-full flex-col gap-y-4 py-6">
 							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
 								<div class="max-w-96 flex flex-col gap-y-4">
-									<div class="flex  gap-x-3">
+									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />

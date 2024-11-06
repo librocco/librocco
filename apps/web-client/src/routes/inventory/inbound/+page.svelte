@@ -90,7 +90,7 @@
 				>
 					<a
 						href={appPath("warehouses")}
-						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 						><span class="text-green-50">Back to warehouses</span></a
 					>
 				</PlaceholderBox>

@@ -87,7 +87,7 @@ export const createWarehouseStores: CreateWarehouseStores = (ctx, warehouse, sea
 			? {
 					searchString,
 					isbns: new Set<string>(searchIndex.search(searchString).map(({ isbn }) => isbn))
-			  }
+				}
 			: { searchString: "", isbns: new Set<string>() }
 	);
 

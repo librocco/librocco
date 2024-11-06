@@ -166,7 +166,7 @@
 									<span class="text-gray-700">Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="h-[1px] bg-gray-200 " />
+								<div {...separator} use:separator.action class="h-[1px] bg-gray-200" />
 
 								<a
 									{href}
