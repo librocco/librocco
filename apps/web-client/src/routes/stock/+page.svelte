@@ -19,7 +19,7 @@
 	import { goto } from "$lib/utils/navigation";
 
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -73,7 +73,7 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *

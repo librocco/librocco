@@ -3,7 +3,7 @@
 	import { writable, readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults } from "sveltekit-superforms";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
@@ -24,7 +24,7 @@
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import { BookForm, bookSchema, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
@@ -149,7 +149,7 @@
 		<div class="flex flex-col items-start">
 			<label class="my-auto text-base font-medium text-gray-800" for="fullname">Full Name</label>
 			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
 				id="fullname"
 				name="fullname"
 				bind:value={name}
@@ -158,7 +158,7 @@
 
 			<label class="my-auto text-base font-medium text-gray-800" for="deposit"> Deposit</label>
 			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
 				id="deposit"
 				name="deposit"
 				bind:value={deposit}
@@ -167,14 +167,14 @@
 
 			<label class="my-auto text-base font-medium text-gray-800" for="email">Email</label>
 			<input
-				class="my-2 mx-1 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
+				class="mx-1 my-2 rounded border-2 border-gray-500 px-2 py-1.5 focus:border-teal-500 focus:ring-0"
 				id="email"
 				name="email"
 				bind:value={email}
 				placeholder="Email"
 			/>
 			<button
-				class="my-2 mx-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
+				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 				on:click={() => upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname: name, email, deposit: parseInt(deposit) })}
 				>save</button
 			>
