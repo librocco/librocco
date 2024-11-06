@@ -16,12 +16,7 @@
 
 	export let name: FormPath<T>;
 
-	$: ({
-		errors: formErrors,
-		constraints: formConstraints,
-		tainted: formTainted,
-		form: formData,
-	} = form);
+	$: ({ errors: formErrors, constraints: formConstraints, tainted: formTainted, form: formData } = form);
 
 	const _field = {
 		name: writable(name),
@@ -29,7 +24,7 @@
 		constraints: writable({}),
 		tainted: writable(false),
 		fieldErrorsId: writable<string>(),
-		descriptionId: writable<string>(),
+		descriptionId: writable<string>()
 	};
 
 	$: _field.errors.set(extractErrorArray(getValueAtPath(name, $formErrors)));
@@ -38,7 +33,7 @@
 
 	const {
 		description: { store: descAttrs, action: descAction },
-		errors: { store: errAttrs, action: errAction },
+		errors: { store: errAttrs, action: errAction }
 	} = createFormField(_field);
 
 	const { errors: _errors, constraints: _constraints } = _field;

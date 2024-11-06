@@ -19,7 +19,7 @@ const createDBConnectivityStream = () => {
 				map((response: Response) => response.ok),
 				catchError(() => of(false)),
 				share({ connector: () => shareSuject, resetOnComplete: false, resetOnError: false, resetOnRefCountZero: false })
-		  )
+			)
 		: of(false);
 };
 
