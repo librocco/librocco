@@ -9,7 +9,7 @@
 		"build:prod": "VITE_VERSION=$(git rev-parse --short HEAD) vite build",
 		"build:e2e": "VITE_VERSION=$(git rev-parse --short HEAD) PUBLIC_IS_E2E=true vite build",
 		"format": "prettier --write --plugin-search-dir=. .",
-		"postinstall": "svelte-kit sync",
+		"postinstall": "svelte-kit sync && npx playwright install",
 		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
 		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
 		"preview": "vite preview",
