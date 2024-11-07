@@ -11,7 +11,7 @@ function getSchema(): [name: string, version: bigint, content: string] {
 
 	const name = "orders"
 
-	const fpath = path.resolve(process.cwd(), "src", "schemas", "orders.sql")
+	const fpath = path.resolve(process.cwd(), "src", "schemas", name)
 	const content = fs.readFileSync(fpath, "utf8")
 
 	const version = cryb64(content)

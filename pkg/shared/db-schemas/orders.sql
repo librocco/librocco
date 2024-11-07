@@ -43,7 +43,7 @@ CREATE TABLE supplier (
 	address TEXT,
 	PRIMARY KEY (id)
 );
-SELECT crsql_as_crr('supplier')
+SELECT crsql_as_crr('supplier');
 
 CREATE TABLE supplier_publisher (
 	supplier_id INTEGER,
