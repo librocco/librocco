@@ -38,7 +38,7 @@ export function newDB(fpath: string) {
 	return database;
 }
 
-export async function initializeDB(db: Database) {
+export function initializeDB(db: Database) {
 	const [schemaName, schemaVersion, schema] = getSchema()
 
 	// TODO: This could probably be wrapped into a txn
@@ -66,7 +66,7 @@ export const getInitializedDB = async (fpath: string) => {
 
 	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
-		await initializeDB(db);
+		initializeDB(db);
 		return db;
 	}
 
