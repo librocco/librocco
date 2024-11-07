@@ -5,16 +5,15 @@ CREATE TABLE customer (
 	deposit DECIMAL,
 	PRIMARY KEY (id)
 );
-
 CREATE TABLE customer_order_lines (
 	id INTEGER NOT NULL,
 	customer_id TEXT,
 	isbn TEXT,
 	quantity INTEGER,
-	created TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-	placed TIMESTAMP,
-	received TIMESTAMP,
-	collected TIMESTAMP,
+	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	placed INTEGER,
+	received INTEGER,
+	collected INTEGER,
 	PRIMARY KEY (id)
 );
 
@@ -27,16 +26,6 @@ CREATE TABLE customer_order_lines (
 SELECT crsql_as_crr('customer');
 SELECT crsql_as_crr('customer_order_lines');
 
-CREATE TABLE book (
-	isbn TEXT NOT NULL,
-	title TEXT,
-	authors TEXT,
-	publisher TEXT,
-	price DECIMAL,
-	PRIMARY KEY (isbn)
-);
-SELECT crsql_as_crr('book');
-
 CREATE TABLE supplier (
 	id INTEGER NOT NULL,
 	name TEXT,
@@ -44,7 +33,7 @@ CREATE TABLE supplier (
 	address TEXT,
 	PRIMARY KEY (id)
 );
-SELECT crsql_as_crr('supplier');
+SELECT crsql_as_crr('supplier')
 
 CREATE TABLE supplier_publisher (
 	supplier_id INTEGER,
@@ -70,10 +59,9 @@ CREATE TABLE supplier_order_line (
 SELECT crsql_as_crr('supplier_order_line');
 
 CREATE TABLE customer_supplier_order (
-	id INTEGER NOT NULL,
+   id INTEGER NOT NULL,
 	supplier_order_id INTEGER,
 	customer_order_line_id INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('customer_supplier_order');
-
