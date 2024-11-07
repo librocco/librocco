@@ -18,6 +18,8 @@ jobs:
 
   db-test: #@ test_job("DB Tests", "pkg/db")
 
+  web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
+
   e2e-test:
     timeout-minutes: 60
     runs-on: ubuntu-latest
