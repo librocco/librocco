@@ -36,18 +36,87 @@ export async function getDB(dbname: string) {
 }
 
 export async function initializeDB(db: DB) {
-	// TODO: This could probably be wrapped into a txn
-	//
+	// Thought: This could probably be wrapped into a txn
+	// not really: transactions are for DML, not for DDL
 	// Apply the schema (initialise the db)
 	await db.exec(schema);
+
 
 	// Store schema info in crsql_master
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
+
+	await db.exec(`CREATE TABLE customer (
+		id INTEGER NOT NULL,
+		fullname TEXT,
+		email TEXT,
+		deposit DECIMAL,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec(`CREATE TABLE customer_order_lines (
+		id INTEGER NOT NULL,
+		customer_id TEXT,
+		isbn TEXT,
+		quantity INTEGER,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		placed INTEGER,
+		received INTEGER,
+		collected INTEGER,
+		PRIMARY KEY (id)
+	)`);
+
+	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
+	// Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
+	// but must not have checked foreign key constraints as they can be violated by row level security or replication.
+	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
+
+	// Activate the crsql extension
+	await db.exec("SELECT crsql_as_crr('customer');");
+	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
+
+	await db.exec(`CREATE TABLE supplier (
+		id INTEGER NOT NULL,
+		name TEXT,
+		email TEXT,
+		address TEXT,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier');");
+	await db.exec(`CREATE TABLE supplier_publisher (
+		supplier_id INTEGER,
+		publisher TEXT NOT NULL,
+		PRIMARY KEY (publisher)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_publisher');");
+
+	await db.exec(`CREATE TABLE supplier_order (
+	  id INTEGER NOT NULL,
+		supplier_id INTEGER,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order');");
+	await db.exec(`CREATE TABLE supplier_order_line (
+		supplier_order_id INTEGER NOT NULL,
+		isbn TEXT NOT NULL,
+		quantity INTEGER NOT NULL DEFAULT 1,
+		PRIMARY KEY (supplier_order_id, isbn)
+	)`);
+	await db.exec("SELECT crsql_as_crr('supplier_order_line');");
+
+	await db.exec(`CREATE TABLE customer_supplier_order (
+    id INTEGER NOT NULL,
+		supplier_order_id INTEGER,
+		customer_order_line_id INTEGER,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('customer_supplier_order');");
 }
 
 export const getInitializedDB = async (dbname: string) => {
 	const db = await getDB(dbname);
+
+	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
 
 	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
