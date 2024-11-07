@@ -26,6 +26,16 @@ CREATE TABLE customer_order_lines (
 SELECT crsql_as_crr('customer');
 SELECT crsql_as_crr('customer_order_lines');
 
+CREATE TABLE book (
+       isbn TEXT NOT NULL,
+       title TEXT,
+       authors TEXT,
+       publisher TEXT,
+       price DECIMAL,
+       PRIMARY KEY (isbn)
+);
+SELECT crsql_as_crr('book');
+
 CREATE TABLE supplier (
 	id INTEGER NOT NULL,
 	name TEXT,
