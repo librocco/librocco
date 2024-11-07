@@ -18,7 +18,7 @@
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
 		"test:sync": "vitest --ui orders/__tests__/sync.test.ts",
-		"test:ci": "vitest --",
+		"test:ci": "bash -c '(trap \"kill 0\" SIGINT; cd ../cr-server && rushx dev & cd ../web-client && rushx test)'",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold warning",
 		"typesafe-i18n": "typesafe-i18n",
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
