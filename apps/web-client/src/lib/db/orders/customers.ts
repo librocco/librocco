@@ -1,4 +1,4 @@
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -80,4 +80,24 @@ export const updateOrderLineQuantity = async (db: DB, bookId: number, quantity: 
 	const sql = `UPDATE customer_order_lines SET quantity = ? WHERE id = ?`;
 	const params = [quantity, bookId];
 	await db.exec(sql, params);
+};
+
+export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
+	//query customer order lines with isbn and order them by placed
+	for (const line of supplierOrderLines) {
+		await db.execO<DBCustomerOrderLine>(
+			`
+		UPDATE customer_order_lines
+SET received = (strftime('%s', 'now') * 1000)
+WHERE rowid = (
+    SELECT rowid
+    FROM customer_order_lines
+    WHERE isbn = ?
+      AND placed IS NOT NULL
+    ORDER BY placed ASC
+    LIMIT 1
+);`,
+			[line.isbn]
+		);
+	}
 };
