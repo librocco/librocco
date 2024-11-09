@@ -3,7 +3,10 @@ import { getCustomerBooks, getCustomerDetails } from "$lib/db/orders/customers";
 import type { Customer } from "$lib/db/orders/types";
 import type { BookEntry } from "@librocco/db";
 
-export const load: PageLoad = async ({ parent, params }) => {
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	depends("customer:data");
+	depends("customer:books");
+
 	const { ordersDb } = await parent();
 
 	// If db is not returned (we're not in the browser environment, no need for additional loading)

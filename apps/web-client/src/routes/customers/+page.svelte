@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Loader2 as Loader, MoreVertical, FileEdit } from "lucide-svelte";
@@ -21,8 +22,20 @@
 	import type { Customer } from "$lib/db/orders/types";
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
+	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
+
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// Reload add customer data dependants when the data changes
+		disposer = data.ordersDb.rx.onRange(["customer"], () => invalidate("customer:data"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
 
 	const tableOptions = writable<{ data: Customer[] }>({
 		data: data.allCustomers

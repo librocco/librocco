@@ -1,7 +1,10 @@
 import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
+import rxtbl from "@vlcn.io/rx-tbl";
 
-import { type DB, type Change } from "./types";
+import { type DB as _DB, type Change } from "./types";
+
+export type DB = _DB & { rx: ReturnType<typeof rxtbl> };
 
 const dbCache: Record<string, DB> = {};
 
@@ -13,11 +16,10 @@ export async function getDB(dbname: string) {
 	const sqlite = await initWasm(() => wasmUrl);
 	const db = await sqlite.open(dbname);
 
-	dbCache[dbname] = db;
 	return db;
 }
 
-export async function initializeDB(db: DB) {
+export async function initializeDB(db: _DB) {
 	await db.exec(`CREATE TABLE book (
 		isbn TEXT NOT NULL,
 		title TEXT,
@@ -96,14 +98,22 @@ export async function initializeDB(db: DB) {
 }
 
 export const getInitializedDB = async (dbname: string) => {
-	const db = await getDB(dbname);
+	if (dbCache[dbname]) {
+		return dbCache[dbname];
+	}
 
-	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
+	const _db = await getDB(dbname);
+
+	const result = await _db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
 
 	if (result.length === 0) {
-		await initializeDB(db);
+		await initializeDB(_db);
 	}
-	return db;
+
+	const rx = rxtbl(_db);
+	dbCache[dbname] = Object.assign(_db, { rx });
+
+	return dbCache[dbname];
 };
 
 export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Change[]> => {
