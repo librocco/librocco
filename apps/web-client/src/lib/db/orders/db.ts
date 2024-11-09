@@ -2,11 +2,11 @@ import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import rxtbl from "@vlcn.io/rx-tbl";
 
-import { type DB as _DB, type Change } from "./types";
+import { type DB, type Change } from "./types";
 
-export type DB = _DB & { rx: ReturnType<typeof rxtbl> };
+export type ReactiveDB = DB & { rx: ReturnType<typeof rxtbl> };
 
-const dbCache: Record<string, DB> = {};
+const dbCache: Record<string, ReactiveDB> = {};
 
 export async function getDB(dbname: string) {
 	if (dbCache[dbname]) {
@@ -19,7 +19,7 @@ export async function getDB(dbname: string) {
 	return db;
 }
 
-export async function initializeDB(db: _DB) {
+export async function initializeDB(db: DB) {
 	await db.exec(`CREATE TABLE book (
 		isbn TEXT NOT NULL,
 		title TEXT,
