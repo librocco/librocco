@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { type Writable, writable, get } from "svelte/store";
+	import { onMount, onDestroy } from "svelte";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { QrCode, Trash2, FileEdit, MoreVertical } from "lucide-svelte";
@@ -29,8 +30,26 @@
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { addBooksToCustomer, removeBooksFromCustomer, updateOrderLineQuantity, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
+	import { invalidate, invalidateAll } from "$app/navigation";
 
 	export let data: PageData;
+
+	const id = parseInt($page.params.id);
+
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// Reload add customer data dependants when the data changes
+		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		// Reload all customer order line/book data dependants when the data changes
+		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -40,14 +59,13 @@
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
 
-	const id = parseInt($page.params.id);
 	$: loading = !data;
 
 	// I see the error of my ways: This is a terrible way to update a persisted value but is necessary for the time being bcs of the way TextEditable operates
 	// TODO: replace with form sumission or, at least, an imperative update
 	const createFieldStore = <T extends string | number>(init: T, onUpdate: (x: T) => Promise<any> | any): Writable<T> => {
 		const internal = writable<T>(init);
-		const set = (x: T) => onUpdate(x);
+		const set = (x: T) => x !== get(internal) && onUpdate(x);
 		const update = (cb: (x: T) => T) => onUpdate(cb(get(internal)));
 		const subscribe = internal.subscribe.bind(internal);
 		return { set, update, subscribe };
