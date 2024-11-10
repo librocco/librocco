@@ -83,21 +83,23 @@ export const updateOrderLineQuantity = async (db: DB, bookId: number, quantity: 
 };
 
 export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
-	//query customer order lines with isbn and order them by placed
-	for (const line of supplierOrderLines) {
-		await db.execO<DBCustomerOrderLine>(
+	if (!supplierOrderLines.length) return;
+	return db.tx(async (txDb) => {
+		const isbns = supplierOrderLines.map((line) => line.isbn);
+		const placeholders = multiplyString("?", supplierOrderLines.length);
+		await txDb.exec(
 			`
-		UPDATE customer_order_lines
-SET received = (strftime('%s', 'now') * 1000)
-WHERE rowid = (
-    SELECT rowid
-    FROM customer_order_lines
-    WHERE isbn = ?
-      AND placed IS NOT NULL
-    ORDER BY placed ASC
-    LIMIT 1
+		 UPDATE customer_order_lines
+            SET received = (strftime('%s', 'now') * 1000)
+            WHERE rowid IN (
+                SELECT MIN(rowid)
+                FROM customer_order_lines
+                WHERE isbn IN (${placeholders})
+                    AND placed IS NOT NULL
+                    AND received IS NULL
+                GROUP BY isbn
 );`,
-			[line.isbn]
+			isbns
 		);
-	}
+	});
 };
