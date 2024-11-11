@@ -5,6 +5,8 @@ import { SvelteKitPWA } from "@vite-pwa/sveltekit";
 
 import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
+import pkg from "./package.json";
+
 const rushDir = path.join(__dirname, "..", "..", "common");
 
 export const DEFAULT_BASE_PATH = "/preview";
@@ -24,6 +26,9 @@ if (typeof BASE_PATH === "undefined") {
 
 /** @type {import('vite').UserConfig} */
 const config = {
+	define: {
+		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
+	},
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
