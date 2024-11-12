@@ -68,7 +68,7 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 };
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
-const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
 export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]) => {
 	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;

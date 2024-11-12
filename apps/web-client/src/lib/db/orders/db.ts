@@ -93,6 +93,15 @@ export async function initializeDB(db: DB) {
 		PRIMARY KEY (id)
 	)`);
 	await db.exec("SELECT crsql_as_crr('customer_supplier_order');");
+
+	await db.exec(`CREATE TABLE reconciliation_order (
+    id INTEGER NOT NULL,
+		supplier_order_ids TEXT,
+		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+		customer_order_line_ids TEXT,
+		PRIMARY KEY (id)
+	)`);
+	await db.exec("SELECT crsql_as_crr('reconciliation_order');");
 }
 
 export const getInitializedDB = async (dbname: string) => {

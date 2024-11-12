@@ -55,6 +55,17 @@ export type SupplierOrder = {
 	supplier_id: number;
 	created: Date;
 	lines: SupplierOrderLine[];
+	id?: number;
+	// how do we mark the order as finalized
+	// or do we just remove the record since
+	// there is a customer order marked
+	// as received
+};
+
+export type reconciliationOrder = {
+	SupplierOrderIds: string[];
+	created: Date;
+	orderLines: CustomerOrderLine[];
 };
 
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
