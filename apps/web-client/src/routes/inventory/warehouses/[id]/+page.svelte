@@ -225,7 +225,10 @@
 											<button
 												use:melt={$trigger}
 												data-testid={testId("edit-row")}
-												on:m-click={() => (bookFormData = row)}
+												on:m-click={() => {
+													const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+													bookFormData = bookData;
+												}}
 												class="rounded p-3 text-gray-500 hover:text-gray-900"
 											>
 												<span class="sr-only">Edit row {rowIx}</span>

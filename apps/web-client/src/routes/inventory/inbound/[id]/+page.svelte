@@ -45,7 +45,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { autoPrintLabels } from "$lib/stores/app";
-	import { filter, onErrorResumeNextWith, scan } from "rxjs";
+	import { filter, scan } from "rxjs";
 
 	export let data: PageData;
 
@@ -100,13 +100,16 @@
 	// #endregion infinite-scroll
 
 	// #region table
+	// * NOTE: removing __kind from entries helps align data & types in table interfaces.
+	// This is convulted.
+	// It was causing errors when passing a row to the edit form
 	const tableOptions = writable({
-		data: $entries?.slice(0, maxResults)
+		data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData) });
 	// #endregion table
 
 	// #region transaction-actions
@@ -391,7 +394,10 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("edit-row")}
 										on:m-click={() => {
-											bookFormData = row;
+											const { warehouseId, quantity, ...bookData } = row;
+
+											bookFormData = bookData;
+
 											dialogContent = {
 												onConfirm: () => {},
 												title: dialogTitle.editBook(),
@@ -400,7 +406,9 @@
 											};
 										}}
 										on:m-keydown={() => {
-											bookFormData = row;
+											const { warehouseId, quantity, ...bookData } = row;
+											bookFormData = bookData;
+
 											dialogContent = {
 												onConfirm: () => {},
 												title: dialogTitle.editBook(),
