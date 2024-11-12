@@ -264,8 +264,11 @@
 		};
 	};
 	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
-		const { key, rowIx, __kind, ...bookData } = row;
-		customItemFormData = bookData;
+		if (row) {
+			const { key, rowIx, __kind, ...bookData } = row;
+			customItemFormData = bookData;
+		}
+
 		dialogContent = {
 			onConfirm: () => {},
 			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
@@ -405,7 +408,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -440,7 +443,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
