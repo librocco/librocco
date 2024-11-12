@@ -8,7 +8,7 @@
 		"build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
 		"build:prod": "VITE_GIT_SHA=$(git rev-parse --short HEAD) vite build",
 		"build:e2e": "VITE_GIT_SHA=$(git rev-parse --short HEAD) PUBLIC_IS_E2E=true vite build",
-		"format": "prettier --write --plugin-search-dir=. .",
+		"format": "prettier --write .",
 		"postinstall": "svelte-kit sync",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
