@@ -1,8 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import type { VolumeStock } from "@librocco/shared";
-
 	import type { createTable } from "$lib/actions";
 
 	import { HeadCol } from "../Cells";
@@ -16,7 +14,7 @@
 	import type { InventoryTableData } from "../types";
 
 	// The inbound table accepts only book variant rows
-	export let table: ReturnType<typeof createTable<Extract<InventoryTableData, VolumeStock<"book">>>>;
+	export let table: ReturnType<typeof createTable<InventoryTableData<"book">>>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -50,21 +48,19 @@
 		</tr>
 	</thead>
 	<tbody>
-		{#each rows as row (row.key)}
+		{#each rows as { rowIx, key, ...row } (key)}
+			{@const { warehouseName, warehouseDiscount, availableWarehouses, ...rowData } = row}
 			{@const {
-				rowIx,
 				isbn,
 				authors = "N/A",
 				quantity,
-				price,
 				year = "N/A",
 				title = "N/A",
 				publisher = "",
 				editedBy = "",
 				category = "",
-				outOfPrint = false,
-				warehouseDiscount
-			} = row}
+				outOfPrint = false
+			} = rowData}
 			<tr use:table.tableRow={{ position: rowIx }}>
 				<th scope="row" class="table-cell-max">
 					<BookHeadCell data={{ isbn, title, authors, year }} />
@@ -99,7 +95,7 @@
 				</td>
 				{#if $$slots["row-actions"]}
 					<td class="table-cell-fit">
-						<slot name="row-actions" {row} {rowIx} />
+						<slot name="row-actions" row={rowData} {rowIx} />
 					</td>
 				{/if}
 			</tr>
