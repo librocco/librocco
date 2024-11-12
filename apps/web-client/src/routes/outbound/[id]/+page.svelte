@@ -264,7 +264,8 @@
 		};
 	};
 	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
-		customItemFormData = row;
+		const { key, rowIx, __kind, ...bookData } = row;
+		customItemFormData = bookData;
 		dialogContent = {
 			onConfirm: () => {},
 			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
