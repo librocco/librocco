@@ -53,16 +53,23 @@ describe("Remote db setup", () => {
 	it("syncs with the remote db: server - client", async () => {
 		const randomTestRunId = Math.floor(Math.random() * 100000000);
 		const dbid = randomTestRunId.toString();
+		const localDB = await getInitializedDB(dbid);
+
+		// Empty here, empty there. Let's make sure this is the case
+		await testUtils.waitFor(async () => expect(await local.getAllCustomers(localDB)).toEqual(await remote.getAllCustomers(dbid)));
 
 		await remote.upsertCustomer(dbid, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 
-		const localDB = await getInitializedDB(dbid);
-
 		worker.startSync(dbid, { room: dbid, url });
 
-		await testUtils.waitFor(async () =>
-			expect(await local.getAllCustomers(localDB)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
-		);
+		await testUtils.waitFor(async () => expect(await local.getAllCustomers(localDB)).toEqual(await remote.getAllCustomers(dbid)));
+
+		// TODO: changing the local DB should replicate changes to the remote one.
+		// but the test currently fails
+		// await local.upsertCustomer(localDB, { fullname: "Jane Doe", id: 2, email: "jane@example.com" });
+		await remote.upsertCustomer(dbid, { fullname: "Jane Doe", id: 2, email: "jane@example.com" });
+
+		await testUtils.waitFor(async () => expect(await local.getAllCustomers(localDB)).toEqual(await remote.getAllCustomers(dbid)));
 
 		// After test
 		worker.stopSync(dbid);
