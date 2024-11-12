@@ -250,7 +250,12 @@
 		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
 
 	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
-		bookFormData = row;
+		// eslint-disable-next-line
+		// @ts-ignore `__kind` does still exist on the row data here. Types are convulted & misaligned with data
+		// this was causing errors when passing the data to the book form.
+		const { key, rowIx, __kind, availableWarehouses, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+		bookFormData = bookData;
+
 		dialogContent = {
 			onConfirm: () => {},
 			title: dialogTitle.editBook(),
