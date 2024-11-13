@@ -86,7 +86,7 @@
 								</dl>
 							</td>
 							<td>
-								<span class="italic">{id}</span>
+								<span class="font-medium">{id}</span>
 							</td>
 							<td>
 								<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
