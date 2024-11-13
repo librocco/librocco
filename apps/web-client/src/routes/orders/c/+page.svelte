@@ -1,12 +1,10 @@
 <script lang="ts">
-	import { Plus, UserCircle, Mail } from "lucide-svelte";
+	import { Plus } from "lucide-svelte";
 	import { data } from "./data";
+	import { getOrderStatus } from "$lib/utils/order-status";
+	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 
 	const { customers, customerOrderLines } = data;
-
-	let selectedStatus: "in_progress" | "completed" = "in_progress";
-
-	import { getOrderStatus } from "$lib/utils/order-status";
 
 	$: filteredOrders = customers
 		.map((customer) => {
@@ -17,7 +15,11 @@
 				status
 			};
 		})
-		.filter((order) => order.status === selectedStatus);
+		.filter((order) => order.status === $orderFilterStatus);
+
+	function setFilter(status: OrderFilterStatus) {
+		orderFilterStatus.set(status);
+	}
 </script>
 
 <main class="h-screen">
@@ -34,17 +36,19 @@
 			</a>
 		</div>
 
-		<div class="flex flex-col gap-y-6 overflow-x-auto">
-			<div class="flex gap-2">
+		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<button
-					class="btn-outline btn-sm btn {selectedStatus === 'in_progress' ? 'btn-primary' : ''}"
-					on:click={() => (selectedStatus = "in_progress")}
+					class="btn-sm btn {$orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => setFilter("in_progress")}
+					aria-pressed={$orderFilterStatus === "in_progress"}
 				>
 					In Progress
 				</button>
 				<button
-					class="btn-outline btn-sm btn {selectedStatus === 'completed' ? 'btn-primary' : ''}"
-					on:click={() => (selectedStatus = "completed")}
+					class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => setFilter("completed")}
+					aria-pressed={$orderFilterStatus === "completed"}
 				>
 					Completed
 				</button>
