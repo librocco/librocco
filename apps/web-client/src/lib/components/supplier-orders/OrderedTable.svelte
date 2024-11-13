@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { ListTodo } from "lucide-svelte";
 	import { createEventDispatcher } from "svelte";
 
 	export let orders: Array<{
@@ -55,10 +56,12 @@
 				<td role="cell" />
 				<td role="cell">
 					<button
-						class="btn-primary btn-sm btn"
+						class="btn-primary btn-sm btn gap-x-2"
 						on:click={handleBulkReconcile}
 						aria-label="Reconcile {selectedOrders.size} selected orders"
 					>
+						<ListTodo aria-hidden focusable="false" size={20} />
+
 						Reconcile Selected
 					</button>
 				</td>
@@ -77,13 +80,16 @@
 				<td>{supplier_name}</td>
 				<td>{total_book_number}</td>
 				<td>
-					<span class="badge badge-ghost">
+					<span class="badge badge-primary badge-outline">
 						{created.toLocaleDateString()}
 					</span>
 				</td>
 				<td>
 					{#if !hasSelectedOrders}
-						<button class="btn-primary btn-sm btn" on:click={() => handleReconcile(supplier_id)}> Reconcile </button>
+						<button class="btn-primary btn-sm btn gap-x-2.5" on:click={() => handleReconcile(supplier_id)}>
+							<ListTodo aria-hidden focusable="false" size={20} />
+							Reconcile
+						</button>
 					{/if}
 				</td>
 			</tr>
