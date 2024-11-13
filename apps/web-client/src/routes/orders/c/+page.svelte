@@ -1,24 +1,25 @@
 <script lang="ts">
 	import { Plus, UserCircle, Mail } from "lucide-svelte";
-	import { data } from "./data";
-	import { CustomerOrderState } from "$lib/db/orders/types";
+	import { data } from "./[id]/data";
 
 	const { customers, customerOrderLines } = data;
 
 	let selectedStatus: "in_progress" | "completed" = "in_progress";
 
-	$: filteredOrders = customers.map(customer => {
-		const orders = customerOrderLines.filter(line => line.customer_id === customer.id);
-		const status = orders.every(order => order.collected) ? "completed" : "in_progress";
-		return {
-			...customer,
-			status
-		};
-	}).filter(order => order.status === selectedStatus);
+	$: filteredOrders = customers
+		.map((customer) => {
+			const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
+			const status = orders.every((order) => order.collected) ? "completed" : "in_progress";
+			return {
+				...customer,
+				status
+			};
+		})
+		.filter((order) => order.status === selectedStatus);
 </script>
 
 <main class="h-screen">
-	<header class="navbar mb-4 bg-neutral">
+	<header class="navbar bg-neutral mb-4">
 		<input type="checkbox" value="forest" class="theme-controller toggle" />
 	</header>
 
@@ -68,11 +69,7 @@
 								{order.email}
 							</td>
 							<td>
-								<div
-									class="badge {order.status === 'completed'
-										? 'badge-success'
-										: 'badge-warning'} gap-2"
-								>
+								<div class="badge {order.status === 'completed' ? 'badge-success' : 'badge-warning'} gap-2">
 									{order.status === "completed" ? "Completed" : "In Progress"}
 								</div>
 							</td>
