@@ -51,23 +51,34 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-				<button
-					class="btn-sm btn {$orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("in_progress")}
-					aria-pressed={$orderFilterStatus === "in_progress"}
-				>
-					In Progress
-				</button>
-				<button
-					class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("completed")}
-					aria-pressed={$orderFilterStatus === "completed"}
-				>
-					Completed
-				</button>
-			</div>
-			<table class="table-lg table">
+			{#if customers.length === 0}
+				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+					<p class="text-center text-base-content/70">
+						No customer orders yet. Create your first order to get started.
+					</p>
+					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+						<Plus size={20} />
+						New Order
+					</button>
+				</div>
+			{:else}
+				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+					<button
+						class="btn-sm btn {$orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("in_progress")}
+						aria-pressed={$orderFilterStatus === "in_progress"}
+					>
+						In Progress
+					</button>
+					<button
+						class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("completed")}
+						aria-pressed={$orderFilterStatus === "completed"}
+					>
+						Completed
+					</button>
+				</div>
+				<table class="table-lg table">
 				<thead>
 					<tr>
 						<th scope="col">Customer</th>
@@ -95,6 +106,7 @@
 					{/each}
 				</tbody>
 			</table>
+			{/if}
 		</div>
 	</div>
 </main>
