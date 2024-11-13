@@ -11,8 +11,7 @@
 		"typecheck": "tsc",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
-		"format": "prettier --write .",
-		"postinstall": "playwright install"
+		"format": "prettier --write ."
 	},
 	"devDependencies": {
 		"@librocco/db": "workspace:*",
