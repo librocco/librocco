@@ -9,6 +9,7 @@
 	import { customerOrderSchema } from "$lib/forms";
 
 	import { data } from "./data";
+	import { getOrderLineStatus } from "$lib/utils/order-status";
 
 	const { customers, customerOrderLines, books } = data;
 
@@ -147,11 +148,15 @@
 										/>
 									</td>
 									<td>
-										<select class="select-primary select select-sm w-full min-w-fit max-w-xs rounded-none">
-											<option disabled selected>Ordered</option>
-											<option>Received</option>
-											<option>Collected</option>
-										</select>
+										{#if getOrderLineStatus({ placed: line.placed, received: line.received, collected: line.collected }) === 'collected'}
+											<span class="badge badge-success">Collected</span>
+										{:else if getOrderLineStatus({ placed: line.placed, received: line.received, collected: line.collected }) === 'received'}
+											<span class="badge badge-info">Received</span>
+										{:else if getOrderLineStatus({ placed: line.placed, received: line.received, collected: line.collected }) === 'placed'}
+											<span class="badge badge-warning">Placed</span>
+										{:else}
+											<span class="badge">Draft</span>
+										{/if}
 									</td>
 								</tr>
 							{/each}
