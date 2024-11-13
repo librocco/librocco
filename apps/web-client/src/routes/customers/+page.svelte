@@ -1,8 +1,9 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Plus, Search, Trash, Loader2 as Loader, Library, PersonStanding, MoreVertical, Trash2, FileEdit } from "lucide-svelte";
+	import { Plus, Search, Loader2 as Loader, MoreVertical, FileEdit } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 
@@ -17,29 +18,32 @@
 	import { appPath } from "$lib/paths";
 	import { writable } from "svelte/store";
 
-	import { createTable, createIntersectionObserver } from "$lib/actions";
+	import { createTable } from "$lib/actions";
 	import type { Customer } from "$lib/db/orders/types";
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
-	import { customerOrders, customers } from "$lib/stores/orders";
+	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
 
-	// #region infinite-scroll
-	let maxResults = 20;
-	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
-	const seeMore = () => (maxResults += 20);
-	// We're using in intersection observer to create an infinite scroll effect
-	const scroll = createIntersectionObserver(seeMore);
-	// #endregion infinite-scroll
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// Reload add customer data dependants when the data changes
+		disposer = data.ordersDb.rx.onRange(["customer"], () => invalidate("customer:data"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
 
 	const tableOptions = writable<{ data: Customer[] }>({
-		data: $customerOrders
+		data: data.allCustomers
 	});
 	const table = createTable(tableOptions);
 
 	$: tableOptions.set({
-		data: $customerOrders?.slice(0, maxResults)
+		data: data.allCustomers || []
 	});
 	const dialog = createDialog({
 		forceVisible: true
@@ -47,31 +51,18 @@
 	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	const {
-		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
+		elements: { overlay, portalled },
 		states: { open }
 	} = dialog;
 
-	const createCustomer = () => {
+	const createCustomer = async () => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const randomId = Math.floor(Math.random() * 1e10);
-		try {
-			tableOptions.update((prev) => ({ data: [...prev.data, { id: randomId }] }));
-			upsertCustomer(data.ordersDb, { id: randomId });
-			customers.set([...$customers, { id: randomId, deposit: 0, email: "", phone: "", fullname: "", taxId: "" }]);
-		} catch (e) {
-			console.log({ e });
-		}
+		await upsertCustomer(data.ordersDb, { id: randomId });
 		goto(appPath("customers", randomId.toString()));
 	};
 
-	const deleteRow = async (rowId: number) => {
-		/** @TODO delete customer order API endpoint */
-		// await upsertCustomer(data.ordersDb, { id: rowId });
-		tableOptions.update((prev) => ({ data: prev.data.filter((row) => row.id !== rowId) }));
-
-		open.set(false);
-	};
 	let initialized = true;
 </script>
 
@@ -168,7 +159,7 @@
 				>
 			</div>
 			<ul class={testId("entity-list-container")} data-loaded={true}>
-				{#if !$customerOrders.length}
+				{#if !data.allCustomers.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
@@ -178,7 +169,7 @@
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
-					{#each $customerOrders as customerOrder}
+					{#each data.allCustomers as customerOrder}
 						{@const name = `${customerOrder.fullname}`}
 						<!-- {@const updatedAt = generateUpdatedAtString(customerOrder.updatedAt)} -->
 						{@const id = customerOrder.id}
