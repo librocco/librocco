@@ -3,6 +3,7 @@
 	import { data } from "./data";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
+	import { base } from "$app/paths";
 
 	const { customers, customerOrderLines } = data;
 
@@ -75,7 +76,7 @@
 								<span class="italic">{id}</span>
 							</td>
 							<td>
-								<a href="/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
+								<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
 							</td>
 						</tr>
 					{/each}
