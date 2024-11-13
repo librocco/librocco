@@ -76,7 +76,11 @@
 				</td>
 				<td>{supplier_name}</td>
 				<td>{total_book_number}</td>
-				<td>{created.toLocaleDateString()}</td>
+				<td>
+					<span class="badge badge-ghost">
+						{created.toLocaleDateString()}
+					</span>
+				</td>
 				<td>
 					{#if !hasSelectedOrders}
 						<button class="btn-primary btn-sm btn" on:click={() => handleReconcile(supplier_id)}> Reconcile </button>
