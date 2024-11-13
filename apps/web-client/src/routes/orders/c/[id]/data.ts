@@ -16,6 +16,7 @@ type CustomerOrderLine = {
 	placed: number;
 	received: number;
 	collected: number;
+	status?: "in_progress" | "completed";
 };
 
 type Book = {
