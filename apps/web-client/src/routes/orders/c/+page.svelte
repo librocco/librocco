@@ -3,7 +3,7 @@
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { goto } from "$app/navigation";
+	import { goto } from "$lib/utils/navigation";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
@@ -39,7 +39,7 @@
 </script>
 
 <main class="h-screen">
-	<header class="navbar bg-neutral mb-4">
+	<header class="navbar mb-4 bg-neutral">
 		<input type="checkbox" value="forest" class="theme-controller toggle" />
 	</header>
 
@@ -54,8 +54,8 @@
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			{#if customers.length === 0}
-				<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
-					<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
+				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
 						New Order
