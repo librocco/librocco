@@ -45,7 +45,7 @@
 		supplierOrderFilterStatus.set(status);
 	}
 
-	function handleReconcile(event: CustomEvent<{supplierIds: number[]}>) {
+	function handleReconcile(event: CustomEvent<{ supplierIds: number[] }>) {
 		console.log("Reconciling orders:", event.detail.supplierIds);
 		// TODO: Implement reconciliation logic
 	}
@@ -93,12 +93,9 @@
 					<button class="btn-sm btn btn-outline" disabled> Completed </button>
 				</div>
 				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable {orders}={filteredOrders} />
+					<UnorderedTable orders={filteredOrders} />
 				{:else}
-					<OrderedTable 
-						{orders}={filteredOrders} 
-						on:reconcile={handleReconcile}
-					/>
+					<OrderedTable orders={filteredOrders} on:reconcile={handleReconcile} />
 				{/if}
 			{/if}
 		</div>
@@ -129,10 +126,3 @@
 		onCancel={() => newOrderDialogOpen.set(false)}
 	/>
 </PageCenterDialog>
-
-<style>
-	.table-lg td {
-		padding-top: 1rem;
-		padding-bottom: 1rem;
-	}
-</style>
