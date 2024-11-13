@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { Plus, UserCircle, Mail } from "lucide-svelte";
-	import { data } from "./[id]/data";
+	import { data } from "./data";
 
 	const { customers, customerOrderLines } = data;
 
