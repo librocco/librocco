@@ -2,9 +2,9 @@
 
 type Customer = {
 	id: number;
-	fullname: string;
-	email: string;
-	deposit: number;
+	fullname?: string;
+	email?: string;
+	deposit?: number;
 };
 
 type CustomerOrderLine = {
