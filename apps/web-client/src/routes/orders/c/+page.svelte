@@ -1,9 +1,22 @@
 <script lang="ts">
 	import { Plus } from "lucide-svelte";
+	import { createDialog } from "@melt-ui/svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
+	import { goto } from "$app/navigation";
+
+	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
+	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
+	import { customerOrderSchema } from "$lib/forms";
 	import { data } from "./data";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
+
+	const newOrderDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: newOrderDialogOpen }
+	} = newOrderDialog;
 
 	const { customers, customerOrderLines } = data;
 
@@ -31,10 +44,10 @@
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
 			<h1 class="prose text-2xl font-bold">Customer Orders</h1>
-			<a href="/orders/c/new" class="btn-primary btn gap-2">
+			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 				<Plus size={20} />
 				New Order
-			</a>
+			</button>
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
@@ -85,6 +98,32 @@
 		</div>
 	</div>
 </main>
+
+<PageCenterDialog dialog={newOrderDialog} title="" description="">
+	<CustomerOrderMetaForm
+		heading="Create new order"
+		saveLabel="Create"
+		data={defaults(zod(customerOrderSchema))}
+		options={{
+			SPA: true,
+			validators: zod(customerOrderSchema),
+			onUpdate: ({ form }) => {
+				if (form.valid) {
+					// TODO: update data
+				}
+			},
+			onUpdated: async ({ form }) => {
+				if (form.valid) {
+					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
+					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
+					newOrderDialogOpen.set(false);
+					await goto(`${base}/orders/c/${newCustomerId}`);
+				}
+			}
+		}}
+		onCancel={() => newOrderDialogOpen.set(false)}
+	/>
+</PageCenterDialog>
 
 <style>
 	.table-lg td {
