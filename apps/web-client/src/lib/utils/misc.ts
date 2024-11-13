@@ -94,7 +94,7 @@ export const mergeBookData = (sources: BookFetchResultEntry[], kind: "prefer_fir
 	!sources.some(Boolean)
 		? undefined
 		: kind === "prefer_first"
-		? sources.reduceRight((acc = {}, curr = {}) => ({ ...acc, ...curr }), {})
-		: sources.reduce((acc = {}, curr = {}) => ({ ...acc, ...curr }), {});
+			? sources.reduceRight((acc = {}, curr = {}) => ({ ...acc, ...curr }), {})
+			: sources.reduce((acc = {}, curr = {}) => ({ ...acc, ...curr }), {});
 
 // #endregion book data fetching

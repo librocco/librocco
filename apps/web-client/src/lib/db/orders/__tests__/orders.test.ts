@@ -4,9 +4,16 @@ import type { DB, Customer } from "../types";
 
 import { getDB, initializeDB } from "../db";
 
-import { getAllCustomers, upsertCustomer, getCustomerBooks, addBooksToCustomer, removeBooksFromCustomer } from "../customers";
-
-import { getRandomDb, getRandomDbs, syncDBs } from "./lib";
+import {
+	getAllCustomers,
+	upsertCustomer,
+	getCustomerBooks,
+	markCustomerOrderAsReceived,
+	addBooksToCustomer,
+	removeBooksFromCustomer
+} from "../customers";
+import { createSupplierOrder, getPossibleSupplerOrderLines } from "../suppliers";
+import { createCustomerOrders, getRandomDb, getRandomDbs, syncDBs } from "./lib";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
@@ -118,5 +125,21 @@ describe("Customer order tests", () => {
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toEqual(db2Customers);
 		expect(db1Customers).toEqual([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
+	});
+});
+
+describe("Customer order status", () => {
+	let db: DB;
+	beforeEach(async () => {
+		db = await getRandomDb();
+
+		await createCustomerOrders(db);
+	});
+	it("can update the timestamp of when a customer order is placed (to supplier)", async () => {
+		const newOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+		await markCustomerOrderAsReceived(db, [...newOrders[0].lines, ...newOrders[1].lines]);
+		const books = await getCustomerBooks(db, 1);
+		expect(books[1].received).toBeInstanceOf(Date);
+		expect(books[2].received).toBeInstanceOf(Date);
 	});
 });

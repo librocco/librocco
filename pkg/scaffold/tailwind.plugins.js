@@ -6,33 +6,43 @@
 const rem = (px) => `${px / 16}rem`;
 
 module.exports = [
-	require("@tailwindcss/forms"),
+	require("@tailwindcss/typography"),
+	require("daisyui"),
+	// require("@tailwindcss/forms"),
 	function ({ addUtilities, addComponents }) {
-		addUtilities({
-			".scrollbar-hide": {
-				"&::--webkit-scrollbar": {
-					display: "none"
-				},
-				"-ms-overflow-style": "none",
-				"scrollbar-width": "none"
+		addComponents({
+			".form": {
+				"@apply flex h-auto flex-col divide-y": {}
 			},
-
-			".center-absolute-x": {
-				position: "absolute",
-				left: "50%",
-				transform: "translateX(-50%)"
-			},
-			".center-absolute-y": {
-				position: "absolute",
-				top: "50%",
-				transform: "translateY(-50%)"
-			},
-			".center-absolute": {
-				position: "absolute",
-				left: "50%",
-				top: "50%",
-				transform: "translate(-50%, -50%)"
+			".form-fields": {
+				"@apply flex w-full flex-col justify-between gap-y-6": {}
 			}
-		});
+		}),
+			addUtilities({
+				".scrollbar-hide": {
+					"&::--webkit-scrollbar": {
+						display: "none"
+					},
+					"-ms-overflow-style": "none",
+					"scrollbar-width": "none"
+				},
+
+				".center-absolute-x": {
+					position: "absolute",
+					left: "50%",
+					transform: "translateX(-50%)"
+				},
+				".center-absolute-y": {
+					position: "absolute",
+					top: "50%",
+					transform: "translateY(-50%)"
+				},
+				".center-absolute": {
+					position: "absolute",
+					left: "50%",
+					top: "50%",
+					transform: "translate(-50%, -50%)"
+				}
+			});
 	}
 ];

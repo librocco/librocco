@@ -4,6 +4,8 @@
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { debug, testId } from "@librocco/shared";
@@ -21,7 +23,7 @@
 		PopoverWrapper,
 		StockBookRow
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions } from "$lib/forms";
+	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
 
 	import { goto } from "$lib/utils/navigation";
@@ -104,7 +106,7 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -223,7 +225,10 @@
 											<button
 												use:melt={$trigger}
 												data-testid={testId("edit-row")}
-												on:m-click={() => (bookFormData = row)}
+												on:m-click={() => {
+													const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+													bookFormData = bookData;
+												}}
 												class="rounded p-3 text-gray-500 hover:text-gray-900"
 											>
 												<span class="sr-only">Edit row {rowIx}</span>
@@ -287,12 +292,12 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated
 						}}

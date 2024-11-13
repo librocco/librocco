@@ -1,27 +1,24 @@
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
-	import type { SuperForm } from "sveltekit-superforms/client";
-	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
-
-	import { warehouseSchema, type WarehouseFormData } from "$lib/forms/schemas";
+	import { Percent } from "lucide-svelte";
+	import { superForm, numberProxy } from "sveltekit-superforms/client";
 
 	import { Input } from "$lib/components/FormControls";
-	import { Percent } from "lucide-svelte";
+	import type { WarehouseFormSchema } from "$lib/forms/schemas";
 
-	type Form = SuperForm<ZodValidation<typeof warehouseSchema>, unknown>;
+	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 
-	export let data: WarehouseFormData;
-	export let options: Form["options"];
+	export let data: SuperValidated<WarehouseFormSchema>;
+	export let options: FormOptions<WarehouseFormSchema>;
 	/**
 	 * Handle click of "X" icon button
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	const form = superForm(superValidateSync(data, warehouseSchema), options);
+	const form = superForm(data, options);
 
 	const { form: formStore, constraints, enhance } = form;
 
-	const discountProxy = numberProxy(formStore, "discount", { emptyIfZero: false, empty: "undefined" });
+	const discountProxy = numberProxy(formStore, "discount", { empty: "undefined" });
 </script>
 
 <form class="flex max-w-lg flex-col gap-y-6" aria-label="Edit warehouse details" use:enhance method="POST" id="warehouse-form">

@@ -1,21 +1,19 @@
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
-	import type { SuperForm } from "sveltekit-superforms/client";
-	import { superForm, superValidateSync } from "sveltekit-superforms/client";
+	import { superForm, defaults } from "sveltekit-superforms/client";
+	import { zod } from "sveltekit-superforms/adapters";
 
-	import { databaseCreateSchema } from "$lib/forms/schemas";
-
+	import { databaseCreateSchema, type DatabaseCreateFormSchema } from "$lib/forms/schemas";
 	import { Input } from "$lib/components/FormControls";
 
-	type Form = SuperForm<ZodValidation<typeof databaseCreateSchema>, unknown>;
+	import type { FormOptions } from "sveltekit-superforms/client";
 
-	export let options: Form["options"];
+	export let options: FormOptions<DatabaseCreateFormSchema>;
 	/**
 	 * Handle click of "X" icon button
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	const form = superForm(superValidateSync({ name: "" }, databaseCreateSchema), options);
+	const form = superForm(defaults(zod(databaseCreateSchema)), options);
 
 	const { form: formStore, constraints, enhance } = form;
 </script>
