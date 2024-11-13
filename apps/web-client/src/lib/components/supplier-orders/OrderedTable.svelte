@@ -45,12 +45,28 @@
 	</thead>
 	<tbody>
 		{#if hasSelectedOrders}
-			<tr>
-				<td />
-				<th>{selectedOrders.size} orders selected</th>
-				<td />
-				<td />
-				<button class="btn-primary btn-sm btn" on:click={handleBulkReconcile}> Reconcile Selected </button>
+			<tr 
+				role="row"
+				aria-live="polite"
+				aria-atomic="true"
+				class="bg-base-200"
+			>
+				<td role="cell" />
+				<th role="columnheader" scope="row">
+					<span class="sr-only">Selected orders summary: </span>
+					{selectedOrders.size} orders selected
+				</th>
+				<td role="cell" />
+				<td role="cell" />
+				<td role="cell">
+					<button 
+						class="btn-primary btn-sm btn" 
+						on:click={handleBulkReconcile}
+						aria-label="Reconcile {selectedOrders.size} selected orders"
+					>
+						Reconcile Selected
+					</button>
+				</td>
 			</tr>
 		{/if}
 		{#each orders as { supplier_name, supplier_id, total_book_number, created }}
