@@ -52,10 +52,8 @@
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			{#if customers.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
-						No customer orders yet. Create your first order to get started.
-					</p>
+				<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+					<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
 						New Order
@@ -79,33 +77,33 @@
 					</button>
 				</div>
 				<table class="table-lg table">
-				<thead>
-					<tr>
-						<th scope="col">Customer</th>
-						<th scope="col">Order Id</th>
-						<th scope="col"> <span class="sr-only"> Link to update </span></th>
-					</tr>
-				</thead>
-				<tbody>
-					{#each filteredOrders as { fullname, email, id }}
-						<tr class="hover focus-within:bg-base-200">
-							<td>
-								<dl class="flex flex-col gap-y-1">
-									<dt class="sr-only">Customer details</dt>
-									<dd>{fullname}</dd>
-									<dd class="text-sm">{email}</dd>
-								</dl>
-							</td>
-							<td>
-								<span class="font-medium">{id}</span>
-							</td>
-							<td>
-								<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
-							</td>
+					<thead>
+						<tr>
+							<th scope="col">Customer</th>
+							<th scope="col">Order Id</th>
+							<th scope="col"> <span class="sr-only"> Link to update </span></th>
 						</tr>
-					{/each}
-				</tbody>
-			</table>
+					</thead>
+					<tbody>
+						{#each filteredOrders as { fullname, email, id }}
+							<tr class="hover focus-within:bg-base-200">
+								<td>
+									<dl class="flex flex-col gap-y-1">
+										<dt class="sr-only">Customer details</dt>
+										<dd>{fullname}</dd>
+										<dd class="text-sm">{email}</dd>
+									</dl>
+								</td>
+								<td>
+									<span class="font-medium">{id}</span>
+								</td>
+								<td>
+									<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			{/if}
 		</div>
 	</div>
