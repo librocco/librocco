@@ -58,6 +58,9 @@ importers:
       '@vlcn.io/crsqlite-wasm':
         specifier: 0.16.0
         version: 0.16.0
+      '@vlcn.io/rx-tbl':
+        specifier: ~0.15.0
+        version: 0.15.0
       crstore:
         specifier: ~0.23.1
         version: 0.23.1
@@ -5316,6 +5319,12 @@ packages:
   /@vlcn.io/crsqlite@0.16.3:
     resolution: {integrity: sha512-1rKylRr2LyW5kwh/a6ZFmvt7kFK+aKLGkz9+O1w9EFVdH11SMUg6MfvxTfoczKCyb3/E5qvdOk2NDW/Zin6OjQ==}
     requiresBuild: true
+
+  /@vlcn.io/rx-tbl@0.15.0:
+    resolution: {integrity: sha512-6P5R8E5EJ6oASDyT7TbuV18Af4P/YobGEI3+uGUoquQi0GVl+NLdtbYA/sR4PkXsjQ1zBcs0oAi5TmYGe+Cd6A==}
+    dependencies:
+      '@vlcn.io/xplat-api': 0.15.0
+    dev: false
 
   /@vlcn.io/wa-sqlite@0.22.0:
     resolution: {integrity: sha512-OujKro0mAqP7/efUeCGB6zBiyMoSCFVe7jQKPF0n47U9ZhOaIW3kQUVCwF+CmzvzQfN1Vl4PrFQRNNxlSwTCNQ==}
