@@ -54,7 +54,7 @@
 				</th>
 				<td role="cell" />
 				<td role="cell" />
-				<td role="cell">
+				<td role="cell" class="text-right">
 					<button
 						class="btn-primary btn-sm btn gap-x-2"
 						on:click={handleBulkReconcile}
@@ -84,7 +84,7 @@
 						{created.toLocaleDateString()}
 					</span>
 				</td>
-				<td>
+				<td class="text-right">
 					{#if !hasSelectedOrders}
 						<button class="btn-primary btn-sm btn gap-x-2.5" on:click={() => handleReconcile(supplier_id)}>
 							<ListTodo aria-hidden focusable="false" size={20} />
