@@ -9,9 +9,9 @@
 		"test:codegen": "playwright codegen",
 		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; exit $RESULT",
 		"typecheck": "tsc",
-		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
-		"lint:strict": "prettier --check --plugin-search-dir=. . && eslint . --max-warnings=0",
-		"format": "prettier --write --plugin-search-dir=. .",
+		"lint": "prettier --check . && eslint .",
+		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
+		"format": "prettier --write .",
 		"postinstall": "playwright install"
 	},
 	"devDependencies": {
@@ -20,12 +20,14 @@
 		"@playwright/test": "~1.47.1",
 		"@typescript-eslint/eslint-plugin": "~6.19.1",
 		"@typescript-eslint/parser": "~6.19.1",
-		"eslint": "~8.16.0",
-		"eslint-config-prettier": "^8.3.0",
-		"prettier": "~2.7.1",
+		"eslint": "^8.13.0",
+		"eslint-config-prettier": "^8.6.0",
+		"prettier": "^3.3.3",
 		"typescript": "^5.3.3",
 		"@types/node": "~20.4.1",
-		"@internationalized/date": "~3.5.2"
+		"@internationalized/date": "~3.5.2",
+		"prettier-plugin-svelte": "^3.2.6",
+		"prettier-plugin-tailwindcss": "~0.6.8"
 	},
 	"type": "module"
 }

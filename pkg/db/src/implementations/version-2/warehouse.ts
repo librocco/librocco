@@ -55,7 +55,7 @@ class Warehouse implements WarehouseInterface {
 
 	private _streamEntries(): Observable<EntriesStreamResult> {
 		return observableFromStore(this.#db._db.replicated((db) => createStockQuery(db, this.id))).pipe(
-			map((rows) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
+			map((rows) => rows.map((r) => ({ __kind: "book", ...r }) as VolumeStockClient<"book">)),
 			map((rows) =>
 				rows.sort(
 					composeCompare(

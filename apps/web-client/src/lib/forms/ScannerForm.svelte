@@ -1,25 +1,17 @@
-<script lang="ts" context="module">
-	import type { SuperForm } from "sveltekit-superforms/client";
-
-	type ScannerForm = SuperForm<ZodValidation<typeof scannerSchema>, unknown>;
-	export type ScannerFormOptions = ScannerForm["options"];
-</script>
-
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync } from "sveltekit-superforms/client";
+	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
+	import { superForm } from "sveltekit-superforms/client";
 
 	import { testId } from "@librocco/shared";
 
-	import { scannerSchema, type ScannerData } from "$lib/forms/schemas";
+	import type { ScannerSchema } from "$lib/forms/schemas";
 
-	export let data: ScannerData | null;
-	export let options: ScannerFormOptions;
+	export let data: SuperValidated<ScannerSchema>;
+	export let options: FormOptions<ScannerSchema>;
 
 	let input: HTMLElement | undefined = undefined;
 
-	const _form = superValidateSync(data, scannerSchema);
-	const form = superForm(_form, {
+	const form = superForm(data, {
 		...options,
 		onUpdated: (payload) => {
 			// Run the 'onUpdated' function from props first (submitting the scan action)

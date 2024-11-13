@@ -295,8 +295,8 @@ class Note implements NoteInterface {
 				update.warehouseId = update.warehouseId
 					? update.warehouseId
 					: this.noteType === "inbound"
-					? this.#w.id
-					: this.defaultWarehouseId || "";
+						? this.#w.id
+						: this.defaultWarehouseId || "";
 
 				const matchIndex = this.entries
 					.filter(isBookRow)

@@ -4,6 +4,8 @@
 	import { writable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
@@ -38,7 +40,15 @@
 		ExtensionAvailabilityToast
 	} from "$lib/components";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import {
+		BookForm,
+		bookSchema,
+		ScannerForm,
+		scannerSchema,
+		customItemSchema,
+		type CustomItemFormSchema,
+		type BookFormSchema
+	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
@@ -51,7 +61,6 @@
 	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import type { CustomItemOptions } from "$lib/forms/CustomItemForm.svelte";
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
@@ -241,7 +250,12 @@
 		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
 
 	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
-		bookFormData = row;
+		// eslint-disable-next-line
+		// @ts-ignore `__kind` does still exist on the row data here. Types are convulted & misaligned with data
+		// this was causing errors when passing the data to the book form.
+		const { key, rowIx, __kind, availableWarehouses, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
+		bookFormData = bookData;
+
 		dialogContent = {
 			onConfirm: () => {},
 			title: dialogTitle.editBook(),
@@ -250,7 +264,11 @@
 		};
 	};
 	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
-		customItemFormData = row;
+		if (row) {
+			const { key, rowIx, __kind, ...bookData } = row;
+			customItemFormData = bookData;
+		}
+
 		dialogContent = {
 			onConfirm: () => {},
 			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
@@ -259,7 +277,7 @@
 		};
 	};
 
-	const onBookFormUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onBookFormUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -283,7 +301,7 @@
 
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 
-	const onCustomItemUpdated: CustomItemOptions["onUpdated"] = async ({ form }) => {
+	const onCustomItemUpdated: SuperForm<CustomItemFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -342,11 +360,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -584,7 +602,7 @@
 				<Dialog {dialog} type="delete" onConfirm={() => {}}>
 					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please select a warehouse for each of the following transactions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">Please select a warehouse for each of the following transactions:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn }}
 							<li>{isbn}</li>
@@ -603,7 +621,7 @@
 				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf}>
 					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
-					<h3 class="mt-4 mb-2 font-semibold">Please review the following tranasctions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">Please review the following tranasctions:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
 							<li class="mb-2">
@@ -645,12 +663,12 @@
 				</div>
 				<div class="px-6">
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated: onBookFormUpdated
 						}}
@@ -700,11 +718,11 @@
 				</div>
 				<div class="px-6">
 					<CustomItemForm
-						data={customItemFormData}
+						data={defaults(customItemFormData, zod(customItemSchema))}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: customItemSchema,
+							validators: zod(customItemSchema),
 							validationMethod: "submit-only",
 							onUpdated: onCustomItemUpdated
 						}}

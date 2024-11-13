@@ -28,6 +28,8 @@
 	}
 
 	.animate-unknown {
-		animation: loader 0.9s alternate infinite ease-in-out, pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+		animation:
+			loader 0.9s alternate infinite ease-in-out,
+			pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 	}
 </style>

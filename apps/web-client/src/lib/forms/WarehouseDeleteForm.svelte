@@ -1,15 +1,16 @@
 <script lang="ts">
-	import { type createDialog } from "@melt-ui/svelte";
-	import { superForm, superValidateSync, type SuperForm, setError } from "sveltekit-superforms/client";
+	import { superForm, defaults } from "sveltekit-superforms/client";
+	import { zod } from "sveltekit-superforms/adapters";
 
 	import { Dialog, Input } from "$lib/components";
-	import { warehouseDeleteSchema } from "$lib/forms/schemas";
+	import { warehouseDeleteSchema, type WarehouseDeleteFormSchema } from "$lib/forms/schemas";
+
+	import type { FormOptions } from "sveltekit-superforms";
+	import { type createDialog } from "@melt-ui/svelte";
 
 	export let dialog: ReturnType<typeof createDialog>;
 	export let dialogTitle: string;
 	export let dialogDescription: string;
-
-	type Form = SuperForm<ReturnType<typeof warehouseDeleteSchema>, unknown>;
 
 	export let displayName: string;
 	const matchConfirmation = displayName
@@ -22,9 +23,9 @@
 		.replace(/^_+|_+$/g, "");
 	const schema = warehouseDeleteSchema(matchConfirmation);
 
-	export let options: Form["options"];
+	export let options: FormOptions<WarehouseDeleteFormSchema>;
 
-	const form = superForm(superValidateSync({}, schema), options);
+	const form = superForm(defaults(zod(schema)), options);
 
 	const { form: formStore, constraints, enhance } = form;
 </script>
