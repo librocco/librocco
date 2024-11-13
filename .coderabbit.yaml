@@ -1,0 +1,16 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "en-GB"
+early_access: true
+enable_free_tier: true
+reviews:
+  profile: "chill"  # Don't be nitpicky (that would be "assertive")
+  request_changes_workflow: false  # we're not interested in coderabbit approving PRs
+  high_level_summary: true
+  poem: false  # I like this, but we need to reduce coderabbit verbosity
+  review_status: false  # Docs say: Post review details on each review. Additionally, post a review status when a review is skipped in certain cases
+  collapse_walkthrough: true
+  auto_review:
+    enabled: false  # Do not perform review by default. Only do it when invoked
+    drafts: false
+chat:
+  auto_reply: true

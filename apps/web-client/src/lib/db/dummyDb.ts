@@ -44,17 +44,20 @@ export const db = (overrideStores: Partial<Stores> = {}): DbInterface => {
 				// Filter out outbound and deleted notes
 				const filteredNotes = Object.values($noteLookup).filter(({ state, type }) => state !== NoteState.Deleted && type === "inbound");
 				// Group notes by warehouse adding each note to 'all' warehouse
-				const groupedNotes = filteredNotes.reduce((acc, note) => {
-					const { warehouse, id, displayName } = note;
-					const warehouseIds = ["all", warehouse];
+				const groupedNotes = filteredNotes.reduce(
+					(acc, note) => {
+						const { warehouse, id, displayName } = note;
+						const warehouseIds = ["all", warehouse];
 
-					warehouseIds.forEach((warehouse) => {
-						if (!acc[warehouse]) acc[warehouse] = [];
-						acc[warehouse].push({ id, displayName });
-					});
+						warehouseIds.forEach((warehouse) => {
+							if (!acc[warehouse]) acc[warehouse] = [];
+							acc[warehouse].push({ id, displayName });
+						});
 
-					return acc;
-				}, {} as Record<string, NavListEntry[]>);
+						return acc;
+					},
+					{} as Record<string, NavListEntry[]>
+				);
 				// Transform grouped notes into in note list
 				// adding each warehouse's display name from warehouseStore
 				return Object.entries(groupedNotes).map(([warehouse, notes]) => {

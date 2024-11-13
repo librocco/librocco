@@ -14,7 +14,7 @@
 </script>
 
 <div
-	class="flex max-w-fit flex-col gap-y-8 rounded-md py-6 px-4 
+	class="flex max-w-fit flex-col gap-y-8 rounded-md py-6 px-4
 	{type === 'commit' ? 'bg-white' : 'bg-rose-100'}"
 	use:melt={$content}
 >

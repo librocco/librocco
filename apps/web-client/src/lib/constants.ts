@@ -22,6 +22,6 @@ export const LOG_LEVEL = PUBLIC_LOG_LEVEL;
 
 export const DEFAULT_LOCALE: Locales = "en";
 
-import pkg from "../../package.json";
-export const GIT_SHA = import.meta.env.VITE_VERSION || "dev";
-export const VERSION = import.meta.env.VITE_VERSION ? `${pkg.version}-${import.meta.env.VITE_VERSION}` : pkg.version;
+const PKG_VERSION = import.meta.env.VITE_PKG_VERSION;
+export const GIT_SHA = import.meta.env.VITE_GIT_SHA || "dev";
+export const VERSION = import.meta.env.VITE_GIT_SHA ? `${PKG_VERSION}-${import.meta.env.VITE_GIT_SHA}` : PKG_VERSION;

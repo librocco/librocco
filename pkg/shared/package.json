@@ -26,24 +26,26 @@
 	"scripts": {
 		"dev": "vite dev",
 		"build": "vite build && tsc --project tsconfig.build.json",
-		"lint": "prettier --check --plugin-search-dir=. . && eslint .",
-		"lint:strict": "eslint . --max-warnings=0",
-		"format": "prettier --write --plugin-search-dir=. .",
+		"lint": "prettier --check . && eslint .",
+		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
+		"format": "prettier --write .",
 		"test": "vitest --ui",
 		"test:ci": "CI=true vitest run",
 		"typecheck": "tsc --noEmit"
 	},
 	"devDependencies": {
-		"@typescript-eslint/eslint-plugin": "~6.19.1",
-		"@typescript-eslint/parser": "~6.19.1",
-		"eslint": "~8.16.0",
-		"eslint-config-prettier": "^8.3.0",
-		"prettier": "~2.7.1",
+		"@typescript-eslint/eslint-plugin": "^7.17.1",
+		"@typescript-eslint/parser": "^7.17.1",
+		"eslint": "^8.13.0",
+		"eslint-config-prettier": "^8.6.0",
+		"prettier": "^3.3.3",
 		"typescript": "^5.3.3",
 		"vite": "~4.0.0",
 		"vitest": "~1.1.0",
 		"rxjs": "~7.8.0",
-		"@vitest/ui": "~1.1.0"
+		"@vitest/ui": "~1.1.0",
+		"prettier-plugin-svelte": "^3.2.6",
+		"prettier-plugin-tailwindcss": "~0.6.8"
 	},
 	"type": "module"
 }

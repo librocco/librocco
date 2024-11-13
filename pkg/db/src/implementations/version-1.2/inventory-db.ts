@@ -87,7 +87,7 @@ class Database implements InventoryDatabaseInterface {
 											warehouses,
 											([id, warehouse]) => [id, { ...warehouse, totalBooks: (s as StockMap).warehouse(id).size }] as const
 										)
-								  )
+									)
 						),
 						// Multi-cast the potentially long-running mergeMap to prevent redundant execution fo each subscriber
 						share()

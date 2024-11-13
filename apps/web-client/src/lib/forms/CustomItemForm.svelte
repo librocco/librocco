@@ -1,34 +1,27 @@
-<script lang="ts" context="module">
-	import type { SuperForm } from "sveltekit-superforms/client";
-
-	type CustomItem = SuperForm<ZodValidation<typeof customItemSchema>, unknown>;
-	export type CustomItemOptions = CustomItem["options"];
-</script>
-
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync, numberProxy } from "sveltekit-superforms/client";
+	import { superForm, numberProxy } from "sveltekit-superforms/client";
 
 	import { testId } from "@librocco/shared";
 
-	import { customItemSchema, type CustomItemFormData } from "$lib/forms/schemas";
+	import type { CustomItemFormSchema } from "$lib/forms/schemas";
 
 	import { Input } from "$lib/components/FormControls";
 
-	export let data: CustomItemFormData;
-	export let options: CustomItemOptions;
+	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
+
+	export let data: SuperValidated<CustomItemFormSchema>;
+	export let options: FormOptions<CustomItemFormSchema>;
 
 	/**
 	 * Handle click of "X" icon button
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	const _form = superValidateSync(data, customItemSchema);
-	const form = superForm(_form, options);
+	const form = superForm(data, options);
 
 	const { form: formStore, constraints, enhance } = form;
 
-	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
+	const priceProxy = numberProxy(formStore, "price", { empty: "undefined" });
 </script>
 
 <form

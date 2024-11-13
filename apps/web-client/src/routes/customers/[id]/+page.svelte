@@ -1,19 +1,20 @@
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
-	import { fade, fly } from "svelte/transition";
-	import { writable, readable } from "svelte/store";
+	import { fade } from "svelte/transition";
+	import { type Writable, get, writable, readable } from "svelte/store";
+	import { onMount, onDestroy } from "svelte";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
+	import { testId } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 	import type { BookEntry } from "@librocco/db";
 
 	import {
 		Breadcrumbs,
-		DropdownWrapper,
 		PopoverWrapper,
 		Page,
 		PlaceholderBox,
@@ -21,35 +22,37 @@
 		Dialog,
 		OrderLineTable,
 		TextEditable,
-		NumberEditable,
-		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import { ScannerForm, scannerSchema } from "$lib/forms";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/dialogs";
 
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import {
-		addBooksToCustomer,
-		getCustomerBooks,
-		removeBooksFromCustomer,
-		updateOrderLineQuantity,
-		upsertCustomer
-	} from "$lib/db/orders/customers";
+	import { addBooksToCustomer, removeBooksFromCustomer, updateOrderLineQuantity, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
-
-	import { currentCustomer } from "$lib/stores/orders";
+	import { invalidate, invalidateAll } from "$app/navigation";
 
 	export let data: PageData;
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
+	const id = parseInt($page.params.id);
 
-	/**  @TODO: delete this if not needed (only a few books in table)
-	 */
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// Reload add customer data dependants when the data changes
+		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		// Reload all customer order line/book data dependants when the data changes
+		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
@@ -57,53 +60,48 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
-	//
-	const id = parseInt($page.params.id);
-	$: loading = !data;
-	let name = $currentCustomer.customerDetails.fullname ?? "";
-	let deposit = $currentCustomer.customerDetails.deposit ?? 0;
-	let email = $currentCustomer.customerDetails.email ?? "";
 
-	$: if (
-		$currentCustomer.customerDetails.fullname !== name ||
-		$currentCustomer.customerDetails.deposit !== deposit ||
-		$currentCustomer.customerDetails.email !== email
-	) {
-		currentCustomer.update((prev) => ({ ...prev, customerDetails: { ...prev.customerDetails, fullname: name, deposit, email } }));
-		upsertCustomer(data.ordersDb, { ...$currentCustomer.customerDetails, fullname: name, deposit, email });
-	}
-	let inputEl: HTMLInputElement;
-	$: orderLines = $currentCustomer.customerBooks;
+	$: loading = !data;
+
+	// I see the error of my ways: This is a terrible way to update a persisted value but is necessary for the time being bcs of the way TextEditable operates
+	// TODO: replace with form sumission or, at least, an imperative update
+	const createFieldStore = <T extends string | number>(init: T, onUpdate: (x: T) => Promise<any> | any): Writable<T> => {
+		const internal = writable<T>(init);
+		const set = (x: T) => x !== get(internal) && onUpdate(x);
+		const update = (cb: (x: T) => T) => onUpdate(cb(get(internal)));
+		const subscribe = internal.subscribe.bind(internal);
+		return { set, update, subscribe };
+	};
+	$: name = createFieldStore(data.customerDetails.fullname || "", (fullname) =>
+		upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname })
+	);
+	$: deposit = createFieldStore(data.customerDetails.deposit || 0, (deposit) =>
+		upsertCustomer(data.ordersDb, { ...data.customerDetails, deposit: Number(deposit) })
+	);
+	$: email = createFieldStore(data.customerDetails.email || "", (email) =>
+		upsertCustomer(data.ordersDb, { ...data.customerDetails, email })
+	);
+
+	$: orderLines = data?.customerBooks;
 
 	// #region table
 	const tableOptions = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
-		data: orderLines
-			?.slice(0, maxResults)
-			// TEMP: remove this when the db is updated
-			.map((orderLine) => ({ ...orderLine }))
+		data: orderLines?.slice(0, maxResults) || []
 	});
-	$: table = createTable(tableOptions);
-
-	$: tableOptions.set({
-		data: orderLines?.slice(0, maxResults)
-	});
-
-	let isEditing = false;
+	const table = createTable(tableOptions);
+	$: tableOptions.set({ data: orderLines?.slice(0, maxResults) || [] });
 	// #endregion table
 
 	/** @TODO updateQuantity */
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty, id: bookId }: CustomerOrderLine) => {
 		const formData = new FormData(e.currentTarget as HTMLFormElement);
+
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(formData.get("quantity"));
-
 		if (currentQty == nextQty) {
 			return;
 		}
-		currentCustomer.update((prev) => ({
-			...prev,
-			customerBooks: prev.customerBooks.map((book) => (book.id === bookId ? { ...book, quantity: nextQty } : book))
-		}));
+
 		await updateOrderLineQuantity(data.ordersDb, bookId, nextQty);
 	};
 
@@ -119,27 +117,21 @@
 			price: 0
 		};
 		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
-		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks, newBook] }));
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
 		await removeBooksFromCustomer(data.ordersDb, parseInt($page.params.id), [bookId]);
-
-		currentCustomer.update((prev) => ({ ...prev, customerBooks: [...prev.customerBooks.filter((book) => book.id !== bookId)] }));
-
 		open.set(false);
 	};
 
-	$: breadcrumbs = id ? createBreadcrumbs("customers", { id: id.toString(), displayName: name }) : [];
+	$: breadcrumbs = id ? createBreadcrumbs("customers", { id: id.toString(), displayName: $name }) : [];
 
 	const dialog = createDialog({
 		forceVisible: true
 	});
-
 	let dialogContent: DialogContent & { type: "commit" | "delete" };
-
 	const {
-		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
+		elements: { trigger: dialogTrigger, overlay, portalled },
 		states: { open }
 	} = dialog;
 </script>
@@ -152,11 +144,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -168,52 +160,41 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
-
-		<div class="flex w-full flex-wrap items-center justify-between gap-2">
+		<div class="flex w-full flex-wrap items-start gap-2">
 			<div class="flex max-w-md flex-col">
 				<TextEditable
 					name="fullname"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="FullName"
-					bind:value={name}
+					placeholder="Full Name"
+					bind:value={$name}
 				/>
 				<TextEditable
-					input={inputEl}
 					name="deposit"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Deposit"
-					{isEditing}
-					value={deposit}
-				>
-					<input
-						class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0"
-						slot="input"
-						bind:value={deposit}
-						bind:this={inputEl}
-						on:keydown={(e) =>
-							e.key === "Enter"
-								? (isEditing = false)
-								: e.key === "Escape"
-								? () => {
-										isEditing = false;
-										deposit = $currentCustomer.customerDetails.deposit;
-								  }
-								: null}
-						on:click={() => (isEditing = true)}
-						on:focus={() => (isEditing = true)}
-					/>
-				</TextEditable>
+					bind:value={$deposit}
+				/>
 				<TextEditable
 					name="email"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Email"
-					bind:value={email}
+					bind:value={$email}
 				/>
 			</div>
+
+			<button
+				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
+				on:click={() =>
+					upsertCustomer(data.ordersDb, {
+						...data.customerDetails,
+						fullname: $name,
+						email: $email,
+						deposit: $deposit
+					})}>Save</button
+			>
 		</div>
 
 		{#if orderLines?.length || $tableOptions.data.length}

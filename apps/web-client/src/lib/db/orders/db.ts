@@ -1,15 +1,23 @@
+
+🌼   daisyUI 4.12.14
+├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
+╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
+
 import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
+import rxtbl from "@vlcn.io/rx-tbl";
 
 import schema from "@librocco/shared/db-schemas/orders.sql?raw";
 
 import { type DB, type Change } from "./types";
 
+export type ReactiveDB = DB & { rx: ReturnType<typeof rxtbl> };
+
+const dbCache: Record<string, ReactiveDB> = {};
+
 const schemaName = "orders";
 const schemaVersion = cryb64(schema);
-
-const dbCache: Record<string, DB> = {};
 
 async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null> {
 	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
@@ -31,7 +39,6 @@ export async function getDB(dbname: string) {
 	const sqlite = await initWasm(() => wasmUrl);
 	const db = await sqlite.open(dbname);
 
-	dbCache[dbname] = db;
 	return db;
 }
 
@@ -47,27 +54,33 @@ export async function initializeDB(db: DB) {
 }
 
 export const getInitializedDB = async (dbname: string) => {
-	const db = await getDB(dbname);
+	if (dbCache[dbname]) {
+		return dbCache[dbname];
+	}
 
-	const schemaRes = await getSchemaNameAndVersion(db);
+	const _db = await getDB(dbname);
+
+	const schemaRes = await getSchemaNameAndVersion(_db);
 	if (!schemaRes) {
-		await initializeDB(db);
-		return db;
+		await initializeDB(_db);
+	} else {
+		// Check if schema name/version match
+		const [name, version] = schemaRes;
+		if (name !== schemaName || version !== schemaVersion) {
+			// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
+			const msg = [
+				"DB name/schema mismatch:",
+				`  req name: ${schemaName}, got name: ${name}`,
+				`  req version: ${schemaVersion}, got version: ${version}`
+			].join("\n");
+			throw new Error(msg);
+		}
 	}
 
-	// Check if schema name/version match
-	const [name, version] = schemaRes;
-	if (name !== schemaName || version !== schemaVersion) {
-		// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
-		const msg = [
-			"DB name/schema mismatch:",
-			`  req name: ${schemaName}, got name: ${name}`,
-			`  req version: ${schemaVersion}, got version: ${version}`
-		].join("\n");
-		throw new Error(msg);
-	}
+	const rx = rxtbl(_db);
+	dbCache[dbname] = Object.assign(_db, { rx });
 
-	return db;
+	return dbCache[dbname];
 };
 
 export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Change[]> => {

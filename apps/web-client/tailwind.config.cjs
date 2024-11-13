@@ -80,5 +80,8 @@ module.exports = {
 		"node_modules/@librocco/**/*.{html,js,svelte,ts}"
 	],
 	theme,
-	plugins
+	plugins,
+	daisyui: {
+		themes: ["lofi", "forest"]
+	}
 };

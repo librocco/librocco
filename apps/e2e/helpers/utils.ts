@@ -72,5 +72,5 @@ export const stringFieldConstructor =
 					timeout: assertionTimeout,
 					...opts
 				})
-		} as L[K]);
+		}) as L[K];
 // #endregion assertions
