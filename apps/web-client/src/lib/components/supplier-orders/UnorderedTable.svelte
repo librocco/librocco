@@ -26,7 +26,7 @@
 			<tr class="hover focus-within:bg-base-200">
 				<td>{supplier_name}</td>
 				<td>{total_book_number}</td>
-				<td>
+				<td class="text-right">
 					<button class="btn-primary btn-sm btn gap-x-2.5" on:click={() => handlePlaceOrder(supplier_id)}>
 						<Truck aria-hidden focusable="false" size={20} />
 						Place Order
