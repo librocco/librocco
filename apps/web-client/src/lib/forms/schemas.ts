@@ -1,14 +1,14 @@
 import { z } from "zod";
-import type { SuperValidated } from "sveltekit-superforms";
+import type { Infer } from "sveltekit-superforms";
 
-export type WarehouseFormData = SuperValidated<typeof warehouseSchema>["data"];
+export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	discount: z.number()
 });
 
-export type WarehouseDeleteFormData = SuperValidated<ReturnType<typeof warehouseDeleteSchema>>["data"];
+export type WarehouseDeleteFormSchema = Infer<ReturnType<typeof warehouseDeleteSchema>>;
 export const warehouseDeleteSchema = (matchConfirmation: string) => {
 	const reg = new RegExp("^" + matchConfirmation + "$");
 	return z.object({
@@ -16,13 +16,13 @@ export const warehouseDeleteSchema = (matchConfirmation: string) => {
 	});
 };
 
-export type DatabaseCreateFormData = SuperValidated<typeof databaseCreateSchema>["data"];
+export type DatabaseCreateFormSchema = Infer<typeof databaseCreateSchema>;
 const dbNameRegex = /^[a-zA-Z0-9._]+$/;
 export const databaseCreateSchema = z.object({
 	name: z.string().regex(dbNameRegex, "Invalid name, please use the combination of alphanumeric characters or '_', '/', '.'")
 });
 
-export type DatabaseDeleteFormData = SuperValidated<ReturnType<typeof databaseDeleteSchema>>["data"];
+export type DatabaseDeleteFormSchema = Infer<ReturnType<typeof databaseDeleteSchema>>;
 export const databaseDeleteSchema = (matchConfirmation: string) => {
 	const reg = new RegExp("^" + matchConfirmation + "$");
 	return z.object({
@@ -30,7 +30,7 @@ export const databaseDeleteSchema = (matchConfirmation: string) => {
 	});
 };
 
-export type BookFormData = SuperValidated<typeof bookSchema>["data"];
+export type BookFormSchema = Infer<typeof bookSchema>;
 export const bookSchema = z.object({
 	isbn: z.string(),
 	title: z.string(),
@@ -43,29 +43,29 @@ export const bookSchema = z.object({
 	category: z.string().optional()
 });
 
-export type SettingsData = SuperValidated<typeof settingsSchema>["data"];
+export type SettingsSchema = Infer<typeof settingsSchema>;
 export const settingsSchema = z.object({
 	couchUrl: z.string(),
 	labelPrinterUrl: z.string(),
 	receiptPrinterUrl: z.string()
 });
 
-export type CustomItemFormData = SuperValidated<typeof customItemSchema>["data"];
+export type CustomItemFormSchema = Infer<typeof customItemSchema>;
 export const customItemSchema = z.object({
 	id: z.string().optional(),
 	title: z.string(),
 	price: z.number()
 });
 
-export type ScannerData = SuperValidated<typeof scannerSchema>["data"];
+export type ScannerSchema = Infer<typeof scannerSchema>;
 export const scannerSchema = z.object({
 	isbn: z.string()
 });
 
-export type CustomerOrderData = SuperValidated<typeof customerOrderSchema>["data"];
+export type CustomerOrderSchema = Infer<typeof customerOrderSchema>;
 export const customerOrderSchema = z.object({
 	id: z.number(),
-	fullname: z.string(),
-	deposit: z.number(),
-	email: z.string().email()
+	fullname: z.string().default(""),
+	email: z.string().email(""),
+	deposit: z.number().default(0)
 });

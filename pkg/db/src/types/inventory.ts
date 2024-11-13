@@ -15,7 +15,7 @@ export type VolumeStockClient<K extends VolumeStockKind = VolumeStockKind> = K e
 			warehouseDiscount: number;
 			warehouseName: string;
 			availableWarehouses?: NavMap<{ quantity: number }>;
-	  };
+		};
 
 export interface EntriesStreamResult<K extends VolumeStockKind = VolumeStockKind> {
 	rows: VolumeStockClient<K>[];

@@ -29,11 +29,11 @@ export function combineTransactionsWarehouses(opts?: { includeAvailableWarehouse
 		? ([{ rows, total }, warehouses, stock]: ParamsWithAvailableWarehouses): EntriesStreamResult => ({
 				total,
 				rows: [...addAvailableWarehouses(addWarehouseData(rows, warehouses), warehouses, stock)]
-		  })
+			})
 		: ([{ rows, total }, warehouses]: Params): EntriesStreamResult => ({
 				total,
 				rows: [...addWarehouseData(rows, warehouses)]
-		  });
+			});
 }
 
 /**

@@ -1,9 +1,10 @@
 <script lang="ts">
-	import type { ZodValidation } from "sveltekit-superforms";
 	import { fade, fly } from "svelte/transition";
 	import { writable, readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
@@ -25,7 +26,7 @@
 		type WarehouseChangeDetail,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
+	import { BookForm, bookSchema, ScannerForm, scannerSchema, customItemSchema } from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
@@ -39,7 +40,6 @@
 		upsertCustomer
 	} from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
-
 	import { currentCustomer } from "$lib/stores/orders";
 
 	export let data: PageData;
@@ -152,11 +152,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -168,15 +168,13 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
-
-		<div class="flex w-full flex-wrap items-center justify-between gap-2">
+		<div class="flex w-full flex-wrap items-start gap-2">
 			<div class="flex max-w-md flex-col">
 				<TextEditable
 					name="fullname"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="FullName"
+					placeholder="Full Name"
 					bind:value={name}
 				/>
 				<TextEditable
@@ -189,7 +187,7 @@
 					value={deposit}
 				>
 					<input
-						class="min-w-0 grow border-0 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-transparent focus:ring-0"
+						class="min-w-0 grow border-2 border-gray-500 bg-transparent p-0 text-gray-800 placeholder-gray-400 focus:border-teal-500 focus:ring-0"
 						slot="input"
 						bind:value={deposit}
 						bind:this={inputEl}
@@ -197,11 +195,11 @@
 							e.key === "Enter"
 								? (isEditing = false)
 								: e.key === "Escape"
-								? () => {
-										isEditing = false;
-										deposit = $currentCustomer.customerDetails.deposit;
-								  }
-								: null}
+									? () => {
+											isEditing = false;
+											deposit = $currentCustomer.customerDetails.deposit;
+										}
+									: null}
 						on:click={() => (isEditing = true)}
 						on:focus={() => (isEditing = true)}
 					/>
@@ -214,6 +212,17 @@
 					bind:value={email}
 				/>
 			</div>
+
+			<button
+				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
+				on:click={() =>
+					upsertCustomer(data.ordersDb, {
+						...data.customerDetails,
+						fullname: name,
+						email,
+						deposit: deposit
+					})}>Save</button
+			>
 		</div>
 
 		{#if orderLines?.length || $tableOptions.data.length}

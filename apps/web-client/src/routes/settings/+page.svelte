@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { Search, Download, Trash } from "lucide-svelte";
 	import { onMount } from "svelte";
-	import { get } from "svelte/store";
-	import { createDialog, melt } from "@melt-ui/svelte";
 	import { fade } from "svelte/transition";
+	import { get } from "svelte/store";
+	import { Search, Download, Trash } from "lucide-svelte";
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { zod } from "sveltekit-superforms/adapters";
 
 	import { testId, addSQLite3Suffix } from "@librocco/shared";
 
@@ -268,11 +269,11 @@
 				</div>
 				<div class="w-full basis-2/3">
 					<SettingsForm
-						form={data.form}
+						data={data.form}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: settingsSchema,
+							validators: zod(settingsSchema),
 							validationMethod: "submit-only",
 							onUpdated: ({ form }) => {
 								if (form.valid) {
@@ -313,7 +314,7 @@
 					options={{
 						SPA: true,
 						dataType: "json",
-						validators: databaseCreateSchema,
+						validators: zod(databaseCreateSchema),
 						validationMethod: "submit-only",
 						onUpdated: ({ form }) => handleCreateDatabase(form?.data?.name)
 					}}
