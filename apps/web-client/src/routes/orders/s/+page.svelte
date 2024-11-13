@@ -8,33 +8,41 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
-	import { data } from "./data";
-	import { getOrderStatus } from "$lib/utils/order-status";
-	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
+	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
+	import { getPossibleSupplerOrderInfos } from "$lib/db/orders/suppliers";
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	const { customers, customerOrderLines } = data;
+	// TODO: Replace with actual DB call
+	let supplierOrders = [
+		{
+			supplier_name: "Science Books LTD",
+			supplier_id: 1,
+			total_book_number: 5,
+			status: "unordered"
+		},
+		{
+			supplier_name: "Phantasy Books LTD",
+			supplier_id: 2,
+			total_book_number: 3,
+			status: "ordered"
+		}
+	];
 
-	$: ordersWithStatus = customers.map((customer) => {
-		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
-		const status = getOrderStatus(orders);
-		return {
-			...customer,
-			status
-		};
-	});
+	$: hasOrderedOrders = supplierOrders.some((order) => order.status === "ordered");
+	$: filteredOrders = supplierOrders.filter((order) => order.status === $supplierOrderFilterStatus);
 
-	$: hasCompletedOrders = ordersWithStatus.some((order) => order.status === "completed");
+	function setFilter(status: SupplierOrderFilterStatus) {
+		supplierOrderFilterStatus.set(status);
+	}
 
-	$: filteredOrders = ordersWithStatus.filter((order) => order.status === $orderFilterStatus);
-
-	function setFilter(status: OrderFilterStatus) {
-		orderFilterStatus.set(status);
+	function handlePlaceOrder(supplierId: number) {
+		// TODO: Implement order placement
+		console.log("Placing order for supplier:", supplierId);
 	}
 </script>
 
@@ -45,63 +53,59 @@
 
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">Customer Orders</h1>
-			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-				<Plus size={20} />
-				New Order
-			</button>
+			<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if customers.length === 0}
+			{#if supplierOrders.length === 0}
 				<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
-					<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
+					<p class="text-base-content/70 text-center">
+						No supplier orders available. Create a customer order first to generate supplier orders.
+					</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
-						New Order
+						New Customer Order
 					</button>
 				</div>
 			{:else}
 				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 					<button
-						class="btn-sm btn {$orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("in_progress")}
-						aria-pressed={$orderFilterStatus === "in_progress"}
+						class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("unordered")}
+						aria-pressed={$supplierOrderFilterStatus === "unordered"}
 					>
-						In Progress
+						Unordered
 					</button>
 					<button
-						class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("completed")}
-						aria-pressed={$orderFilterStatus === "completed"}
-						disabled={!hasCompletedOrders}
+						class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("ordered")}
+						aria-pressed={$supplierOrderFilterStatus === "ordered"}
+						disabled={!hasOrderedOrders}
 					>
-						Completed
+						Ordered
 					</button>
+					<button class="btn-sm btn btn-outline" disabled> Received </button>
+					<button class="btn-sm btn btn-outline" disabled> Completed </button>
 				</div>
 				<table class="table-lg table">
 					<thead>
 						<tr>
-							<th scope="col">Customer</th>
-							<th scope="col">Order Id</th>
-							<th scope="col"> <span class="sr-only"> Update order </span></th>
+							<th scope="col">Supplier</th>
+							<th scope="col">Books</th>
+							<th scope="col"> <span class="sr-only"> Place order </span></th>
 						</tr>
 					</thead>
 					<tbody>
-						{#each filteredOrders as { fullname, email, id }}
+						{#each filteredOrders as { supplier_name, supplier_id, total_book_number }}
 							<tr class="hover focus-within:bg-base-200">
+								<td>{supplier_name}</td>
+								<td>{total_book_number}</td>
 								<td>
-									<dl class="flex flex-col gap-y-1">
-										<dt class="sr-only">Customer details</dt>
-										<dd>{fullname}</dd>
-										<dd class="text-sm">{email}</dd>
-									</dl>
-								</td>
-								<td>
-									<span class="font-medium">{id}</span>
-								</td>
-								<td>
-									<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
+									{#if $supplierOrderFilterStatus === "unordered"}
+										<button class="btn-primary btn-sm btn" on:click={() => handlePlaceOrder(supplier_id)}> Place Order </button>
+									{:else}
+										<span class="badge badge-success">Order Placed</span>
+									{/if}
 								</td>
 							</tr>
 						{/each}
@@ -128,7 +132,6 @@
 			onUpdated: async ({ form }) => {
 				if (form.valid) {
 					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
-					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
 					newOrderDialogOpen.set(false);
 					await goto(`${base}/orders/c/${newCustomerId}`);
 				}
