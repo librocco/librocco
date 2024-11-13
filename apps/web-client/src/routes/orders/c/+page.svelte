@@ -6,10 +6,12 @@
 
 	let selectedStatus: "in_progress" | "completed" = "in_progress";
 
+	import { getOrderStatus } from "$lib/utils/order-status";
+
 	$: filteredOrders = customers
 		.map((customer) => {
 			const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
-			const status = orders.every((order) => order.collected) ? "completed" : "in_progress";
+			const status = getOrderStatus(orders);
 			return {
 				...customer,
 				status

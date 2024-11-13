@@ -13,10 +13,9 @@ type CustomerOrderLine = {
 	isbn: string;
 	quantity: number;
 	created: number;
-	placed: number;
-	received: number;
-	collected: number;
-	status?: "in_progress" | "completed";
+	placed?: number;
+	received?: number;
+	collected?: number;
 };
 
 type Book = {
