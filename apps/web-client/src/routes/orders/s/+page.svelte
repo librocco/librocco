@@ -35,6 +35,13 @@
 			total_book_number: 3,
 			status: "ordered",
 			created: new Date()
+		},
+		{
+			supplier_name: "Penguin Random House",
+			supplier_id: 3,
+			total_book_number: 8,
+			status: "ordered",
+			created: new Date()
 		}
 	];
 

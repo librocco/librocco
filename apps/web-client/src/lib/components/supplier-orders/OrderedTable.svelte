@@ -11,15 +11,15 @@
 
 	const dispatch = createEventDispatcher();
 
-	let selectedOrders: Set<number>;
-	$: selectedOrders = new Set();
-	$: hasSelectedOrders = selectedOrders.size > 0;
+	let selectedOrders: Array<number>;
+	$: selectedOrders = [];
+	$: hasSelectedOrders = selectedOrders.length > 0;
 
 	function toggleOrderSelection(supplierId: number) {
-		if (selectedOrders.has(supplierId)) {
-			selectedOrders.delete(supplierId);
+		if (selectedOrders.includes(supplierId)) {
+			selectedOrders = selectedOrders.filter((id) => id !== supplierId);
 		} else {
-			selectedOrders.add(supplierId);
+			selectedOrders = [...selectedOrders, supplierId];
 		}
 	}
 
@@ -50,7 +50,7 @@
 				<td role="cell" />
 				<th role="columnheader" scope="row">
 					<span class="sr-only">Selected orders summary: </span>
-					{selectedOrders.size} orders selected
+					{selectedOrders.length} orders selected
 				</th>
 				<td role="cell" />
 				<td role="cell" />
@@ -58,7 +58,7 @@
 					<button
 						class="btn-primary btn-sm btn gap-x-2"
 						on:click={handleBulkReconcile}
-						aria-label="Reconcile {selectedOrders.size} selected orders"
+						aria-label="Reconcile {selectedOrders.length} selected orders"
 					>
 						<ListTodo aria-hidden focusable="false" size={20} />
 
@@ -73,7 +73,7 @@
 					<input
 						type="checkbox"
 						class="checkbox"
-						checked={selectedOrders.has(supplier_id)}
+						checked={selectedOrders.includes(supplier_id)}
 						on:change={() => toggleOrderSelection(supplier_id)}
 					/>
 				</td>
