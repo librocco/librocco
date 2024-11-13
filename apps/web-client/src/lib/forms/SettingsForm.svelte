@@ -1,26 +1,19 @@
-<script lang="ts" context="module">
-	import type { SuperForm } from "sveltekit-superforms/client";
-
-	type SettingsForm = SuperForm<ZodValidation<typeof settingsSchema>, unknown>;
-	export type SettingsFormOptions = SettingsForm["options"];
-</script>
-
 <script lang="ts">
-	import type { SuperValidated, ZodValidation } from "sveltekit-superforms";
+	import type { FormOptions, SuperValidated } from "sveltekit-superforms";
 	import { superForm } from "sveltekit-superforms/client";
 	import compare from "just-compare";
 
 	import { Input } from "$lib/components";
-	import { settingsSchema } from "$lib/forms/schemas";
+	import type { SettingsSchema } from "$lib/forms/schemas";
 
-	export let form: SuperValidated<typeof settingsSchema>;
-	export let options: SettingsFormOptions;
+	export let data: SuperValidated<SettingsSchema>;
+	export let options: FormOptions<SettingsSchema>;
 
-	const _form = superForm(form, options);
+	const _form = superForm(data, options);
 
 	const { form: formStore, enhance, tainted } = _form;
 
-	$: hasChanges = $tainted && !compare($formStore, form.data);
+	$: hasChanges = $tainted && !compare($formStore, data.data);
 </script>
 
 <form class="flex h-auto flex-col gap-y-6" use:enhance method="POST" aria-label="Edit remote database connection config">

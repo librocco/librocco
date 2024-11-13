@@ -31,7 +31,10 @@ export const createDailySummaryStore: CreateDailySummaryStore = (ctx, db, date) 
 			const entries = [...(txnMap.get(date) || [])].sort(compareTxns);
 			const isbns = entries.map(({ isbn }) => isbn);
 
-			return db.books().stream(ctx, isbns).pipe(mapMergeBookWarehouseData(ctx, entries, warehouseMapStream));
+			return db
+				.books()
+				.stream(ctx, isbns)
+				.pipe(mapMergeBookWarehouseData(ctx, entries, warehouseMapStream));
 		})
 	);
 

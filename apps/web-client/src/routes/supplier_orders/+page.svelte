@@ -70,9 +70,7 @@
 				{#if !$orders.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No supplier orders" description="Get started by adding a new order" class="center-absolute">
-						<button
-							on:click={handleCreateOrder}
-							class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						<button on:click={handleCreateOrder} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 							><span class="text-green-50">New order</span></button
 						>
 					</PlaceholderBox>

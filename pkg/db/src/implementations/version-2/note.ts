@@ -193,11 +193,11 @@ class Note implements NoteInterface {
 		const conn = await this.#db._db.connection;
 		const books = await createBooksQuery(conn, this.id)
 			.execute()
-			.then((res) => res.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient)));
+			.then((res) => res.map((b) => ({ __kind: "book", ...b }) as TimestampedVolumeStockClient));
 
 		const customItems = await createCustomItemsQuery(conn, this.id)
 			.execute()
-			.then((res) => res.map((ci) => ({ __kind: "custom", ...ci } as TimestampedVolumeStockClient)));
+			.then((res) => res.map((ci) => ({ __kind: "custom", ...ci }) as TimestampedVolumeStockClient));
 
 		return (
 			[...books, ...customItems]
@@ -235,18 +235,18 @@ class Note implements NoteInterface {
 							const isbns = books.map((b) => b.isbn);
 							return this._streamExistingStock(isbns).pipe(
 								map((availability) =>
-									books.map((b) => ({ ...b, availableWarehouses: availability.get(b.isbn) || new Map() } as TimestampedVolumeStockClient))
+									books.map((b) => ({ ...b, availableWarehouses: availability.get(b.isbn) || new Map() }) as TimestampedVolumeStockClient)
 								)
 							);
 						})
-				  );
+					);
 
 		const books = observableFromStore(this.#db._db.replicated((db) => createBooksQuery(db, this.id))).pipe(
-			map((b) => b.map((b) => ({ __kind: "book", ...b } as TimestampedVolumeStockClient<"book">))),
+			map((b) => b.map((b) => ({ __kind: "book", ...b }) as TimestampedVolumeStockClient<"book">)),
 			mergeWarehouseAvailability
 		);
 		const customItems = observableFromStore(this.#db._db.replicated((db) => createCustomItemsQuery(db, this.id))).pipe(
-			map((ci) => ci.map((ci) => ({ __kind: "custom", ...ci } as VolumeStockClient & { updatedAt: string })))
+			map((ci) => ci.map((ci) => ({ __kind: "custom", ...ci }) as VolumeStockClient & { updatedAt: string }))
 		);
 
 		return combineLatest([books, customItems]).pipe(
@@ -318,7 +318,7 @@ class Note implements NoteInterface {
 								}))
 							)
 							.execute()
-				  ),
+					),
 			!customItems.length
 				? Promise.resolve()
 				: this.#db._db.update((db) =>
@@ -327,7 +327,7 @@ class Note implements NoteInterface {
 							.values(customItems)
 							.onConflict((oc) => oc.doNothing())
 							.execute()
-				  )
+					)
 		]);
 
 		return this.get();
@@ -413,7 +413,7 @@ class Note implements NoteInterface {
 				? Promise.resolve()
 				: this.#db._db.update((db) =>
 						db.deleteFrom("customItemTransactions").where("noteId", "==", this.id).where("id", "in", customItems).execute()
-				  )
+					)
 		]);
 
 		return this;

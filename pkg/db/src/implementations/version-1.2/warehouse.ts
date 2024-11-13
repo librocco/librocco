@@ -59,12 +59,12 @@ class Warehouse implements WarehouseInterface {
 
 		this._id = !id
 			? // If id not provided, we're accessing the default warehouse
-			  versionId("0-all")
+				versionId("0-all")
 			: // If NEW_WAREHOUSE sentinel provided, generate a new id
-			id === NEW_WAREHOUSE
-			? versionId(uniqueTimestamp())
-			: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
-			  versionId(id);
+				id === NEW_WAREHOUSE
+				? versionId(uniqueTimestamp())
+				: // Run 'versionId' to ensure the id is versioned (if it already is versioned, it will be a no-op)
+					versionId(id);
 		this.id = this._id.split("/").pop() as string;
 
 		const updateSubject = new Subject<WarehouseData>();

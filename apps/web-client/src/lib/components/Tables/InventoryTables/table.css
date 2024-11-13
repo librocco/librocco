@@ -1,53 +1,52 @@
-.table {
+.stock-table {
 	@apply relative w-full divide-y divide-gray-200 bg-white;
 }
 
-thead tr {
+.stock-table thead tr {
 	@apply text-sm font-semibold leading-5 text-gray-900;
 }
 
-tbody tr {
+.stock-table tbody tr {
 	@apply text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50;
 }
 
-tbody tr.out-of-stock {
+.stock-table tbody tr.out-of-stock {
 	@apply !border border-red-300 bg-red-200/80;
 }
 
-tbody tr.requires-action {
+.stock-table tbody tr.requires-action {
 	@apply bg-yellow-200/80;
 }
 
-th,
-td {
+.stock-table th,
+.stock-table td {
 	@apply py-4 px-3;
 }
 
-th {
+.stock-table th {
 	@apply text-left;
 }
 
-td {
+.stock-table td {
 	@apply truncate;
 }
 
-.show-col-xl {
+.stock-table .show-col-xl {
 	@apply hidden xl:table-cell;
 }
 
-.show-col-lg {
+.stock-table .show-col-lg {
 	@apply hidden lg:table-cell;
 }
 
-.show-col-md {
+.stock-table .show-col-md {
 	@apply hidden md:table-cell;
 }
 
-/* Source: https://stackoverflow.com/questions/11267154/fit-cell-width-to-content */
-.table-cell-fit {
+.stock-table .table-cell-fit {
 	@apply w-[1%] whitespace-nowrap;
 }
 
-.table-cell-max {
+.stock-table .table-cell-max {
 	@apply max-w-[15rem];
 }
