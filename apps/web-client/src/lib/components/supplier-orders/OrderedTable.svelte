@@ -45,12 +45,7 @@
 	</thead>
 	<tbody>
 		{#if hasSelectedOrders}
-			<tr 
-				role="row"
-				aria-live="polite"
-				aria-atomic="true"
-				class="bg-base-200"
-			>
+			<tr aria-live="polite" aria-atomic="true" class="bg-base-200">
 				<td role="cell" />
 				<th role="columnheader" scope="row">
 					<span class="sr-only">Selected orders summary: </span>
@@ -59,8 +54,8 @@
 				<td role="cell" />
 				<td role="cell" />
 				<td role="cell">
-					<button 
-						class="btn-primary btn-sm btn" 
+					<button
+						class="btn-primary btn-sm btn"
 						on:click={handleBulkReconcile}
 						aria-label="Reconcile {selectedOrders.size} selected orders"
 					>
