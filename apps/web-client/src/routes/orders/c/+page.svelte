@@ -100,7 +100,7 @@
 								<td>
 									<span class="font-medium">{id}</span>
 								</td>
-								<td>
+								<td class="text-right">
 									<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
 								</td>
 							</tr>
