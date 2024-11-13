@@ -44,7 +44,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 2,
@@ -54,7 +54,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 3,
@@ -64,7 +64,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 4,
@@ -74,7 +74,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 5,
@@ -84,7 +84,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 6,
@@ -94,7 +94,7 @@ const customerOrderLines: CustomerOrderLine[] = [
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
 		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		collected: 0
 	},
 	{
 		id: 7,
@@ -103,8 +103,8 @@ const customerOrderLines: CustomerOrderLine[] = [
 		quantity: 3,
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
-		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		received: 0,
+		collected: 0
 	},
 	{
 		id: 8,
@@ -113,8 +113,8 @@ const customerOrderLines: CustomerOrderLine[] = [
 		quantity: 2,
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
-		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		received: 0,
+		collected: 0
 	},
 	{
 		id: 9,
@@ -123,8 +123,8 @@ const customerOrderLines: CustomerOrderLine[] = [
 		quantity: 5,
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
-		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		received: 0,
+		collected: 0
 	},
 	{
 		id: 10,
@@ -133,8 +133,8 @@ const customerOrderLines: CustomerOrderLine[] = [
 		quantity: 1,
 		created: baseTimestamp,
 		placed: baseTimestamp + 3600 * 1000,
-		received: baseTimestamp + 86400 * 1000,
-		collected: baseTimestamp + 172800 * 1000
+		received: 0,
+		collected: 0
 	}
 ];
 
