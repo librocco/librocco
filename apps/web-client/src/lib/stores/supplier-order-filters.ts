@@ -1,5 +1,5 @@
-import { writable } from 'svelte/store';
+import { writable } from "svelte/store";
 
-export type SupplierOrderFilterStatus = 'unordered' | 'ordered';
+export type SupplierOrderFilterStatus = "unordered" | "ordered";
 
-export const supplierOrderFilterStatus = writable<SupplierOrderFilterStatus>('unordered');
+export const supplierOrderFilterStatus = writable<SupplierOrderFilterStatus>("unordered");

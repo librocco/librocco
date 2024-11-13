@@ -32,7 +32,7 @@
 </script>
 
 <main class="h-screen">
-	<header class="navbar bg-neutral mb-4">
+	<header class="navbar mb-4 bg-neutral">
 		<input type="checkbox" value="forest" class="theme-controller toggle" />
 	</header>
 
@@ -40,7 +40,7 @@
 		<div class="min-w-fit basis-full md:basis-96 md:overflow-y-auto">
 			<div class="card h-full">
 				<div class="card-body gap-y-2 p-0">
-					<div class="bg-base-100 sticky top-0 flex flex-col gap-y-2 pb-3">
+					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
 						<h1 class="prose card-title">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
@@ -61,7 +61,7 @@
 
 						<div class="flex w-full flex-col gap-y-4 py-6">
 							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-								<div class="flex max-w-96 flex-col gap-y-4">
+								<div class="max-w-96 flex flex-col gap-y-4">
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer name</span>
@@ -149,11 +149,11 @@
 									</td>
 									<td>
 										{#if getOrderLineStatus({ placed, received, collected }) === "collected"}
-											<span class="badge badge-success">Collected</span>
+											<span class="badge-success badge">Collected</span>
 										{:else if getOrderLineStatus({ placed, received, collected }) === "received"}
-											<span class="badge badge-info">Received</span>
+											<span class="badge-info badge">Received</span>
 										{:else if getOrderLineStatus({ placed, received, collected }) === "placed"}
-											<span class="badge badge-warning">Placed</span>
+											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
 										{/if}

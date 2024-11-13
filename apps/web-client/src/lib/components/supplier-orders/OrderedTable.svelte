@@ -11,7 +11,8 @@
 
 	const dispatch = createEventDispatcher();
 
-	let selectedOrders: Set<number> = new Set();
+	let selectedOrders: Set<number>;
+	$: selectedOrders = new Set();
 	$: hasSelectedOrders = selectedOrders.size > 0;
 
 	function toggleOrderSelection(supplierId: number) {
@@ -20,7 +21,6 @@
 		} else {
 			selectedOrders.add(supplierId);
 		}
-		selectedOrders = selectedOrders; // trigger reactivity
 	}
 
 	function handleReconcile(supplierId: number) {
@@ -32,7 +32,7 @@
 	}
 </script>
 
-<table class="table-lg table-pin-rows table">
+<table class="table-pin-rows table-lg table">
 	<thead>
 		<tr>
 			<th scope="col" class="w-16">
@@ -80,7 +80,7 @@
 				<td>{supplier_name}</td>
 				<td>{total_book_number}</td>
 				<td>
-					<span class="badge badge-primary badge-outline">
+					<span class="badge-primary badge-outline badge">
 						{created.toLocaleDateString()}
 					</span>
 				</td>
