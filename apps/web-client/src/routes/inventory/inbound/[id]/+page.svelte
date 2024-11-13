@@ -3,6 +3,8 @@
 	import { writable, type Readable } from "svelte/store";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { goto } from "$lib/utils/navigation";
@@ -25,7 +27,7 @@
 		InboundTable,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
-	import { BookForm, bookSchema, type BookFormOptions, ScannerForm, scannerSchema } from "$lib/forms";
+	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
 	import { getDB } from "$lib/db";
 	import { printBookLabel, printReceipt } from "$lib/printer";
@@ -43,7 +45,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { autoPrintLabels } from "$lib/stores/app";
-	import { filter, onErrorResumeNextWith, scan } from "rxjs";
+	import { filter, scan } from "rxjs";
 
 	export let data: PageData;
 
@@ -98,13 +100,16 @@
 	// #endregion infinite-scroll
 
 	// #region table
+	// * NOTE: removing __kind from entries helps align data & types in table interfaces.
+	// This is convulted.
+	// It was causing errors when passing a row to the edit form
 	const tableOptions = writable({
-		data: $entries?.slice(0, maxResults)
+		data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData)
 	});
 
 	const table = createTable(tableOptions);
 
-	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
+	$: tableOptions.set({ data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData) });
 	// #endregion table
 
 	// #region transaction-actions
@@ -161,7 +166,7 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const onUpdated: BookFormOptions["onUpdated"] = async ({ form }) => {
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
 		 *
@@ -214,11 +219,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -389,7 +394,10 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("edit-row")}
 										on:m-click={() => {
-											bookFormData = row;
+											const { warehouseId, quantity, ...bookData } = row;
+
+											bookFormData = bookData;
+
 											dialogContent = {
 												onConfirm: () => {},
 												title: dialogTitle.editBook(),
@@ -398,7 +406,9 @@
 											};
 										}}
 										on:m-keydown={() => {
-											bookFormData = row;
+											const { warehouseId, quantity, ...bookData } = row;
+											bookFormData = bookData;
+
 											dialogContent = {
 												onConfirm: () => {},
 												title: dialogTitle.editBook(),
@@ -485,12 +495,12 @@
 				<div class="px-6">
 					<!-- {$connectivity} -->
 					<BookForm
-						data={bookFormData}
+						data={defaults(bookFormData, zod(bookSchema))}
 						publisherList={$publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: bookSchema,
+							validators: zod(bookSchema),
 							validationMethod: "submit-only",
 							onUpdated
 						}}

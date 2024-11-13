@@ -79,7 +79,7 @@ class Warehouse implements WarehouseInterface {
 		return this.#db
 			._stream(ctx, (db) => createStockQuery(db, this.id), `wh_${this.id}_entries`)
 			.pipe(
-				map((rows = []) => rows.map((r) => ({ __kind: "book", ...r } as VolumeStockClient<"book">))),
+				map((rows = []) => rows.map((r) => ({ __kind: "book", ...r }) as VolumeStockClient<"book">)),
 				map((rows) =>
 					rows.sort(
 						composeCompare(

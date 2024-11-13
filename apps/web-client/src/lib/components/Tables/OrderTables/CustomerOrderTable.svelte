@@ -7,8 +7,6 @@
 	import BodyHead from "./BodyHead.svelte";
 	import BodyLink from "./BodyLink.svelte";
 
-	import type { CustomerOrderData } from "$lib/forms/schemas";
-
 	import type { createTable } from "$lib/actions";
 	import type { Customer } from "$lib/db/orders/types";
 
@@ -16,7 +14,7 @@
 	$: ({ rows } = $table);
 </script>
 
-<table id="customer-orders">
+<table id="customer-orders" class="order-table">
 	<thead>
 		<tr>
 			<th scope="col">

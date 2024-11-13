@@ -1,10 +1,12 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import { type Writable, writable, get } from "svelte/store";
+	import { type Writable, get, writable, readable } from "svelte/store";
 	import { onMount, onDestroy } from "svelte";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { QrCode, Trash2, FileEdit, MoreVertical } from "lucide-svelte";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
@@ -142,11 +144,11 @@
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
-			data={null}
+			data={defaults(zod(scannerSchema))}
 			options={{
 				SPA: true,
 				dataType: "json",
-				validators: scannerSchema,
+				validators: zod(scannerSchema),
 				validationMethod: "submit-only",
 				resetForm: true,
 				onUpdated: async ({ form }) => {
@@ -158,15 +160,13 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
-		<!-- <div class="relative flex max-w-max items-start gap-x-2 p-1"> -->
-
-		<div class="flex w-full flex-wrap items-center justify-between gap-2">
+		<div class="flex w-full flex-wrap items-start gap-2">
 			<div class="flex max-w-md flex-col">
 				<TextEditable
 					name="fullname"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="FullName"
+					placeholder="Full Name"
 					bind:value={$name}
 				/>
 				<TextEditable
@@ -184,6 +184,17 @@
 					bind:value={$email}
 				/>
 			</div>
+
+			<button
+				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
+				on:click={() =>
+					upsertCustomer(data.ordersDb, {
+						...data.customerDetails,
+						fullname: $name,
+						email: $email,
+						deposit: $deposit
+					})}>Save</button
+			>
 		</div>
 
 		{#if orderLines?.length || $tableOptions.data.length}

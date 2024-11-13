@@ -5,26 +5,26 @@ import type { VolumeStock } from "@librocco/shared";
 const compareCustomItems = (a: VolumeStock, b: VolumeStock) =>
 	!(isCustomItemRow(a) && isCustomItemRow(b))
 		? // This comparison is applicable only if both items are custom items,
-		  // If not, the comparison is inconclusive
-		  0
+			// If not, the comparison is inconclusive
+			0
 		: a.id < b.id
-		? -1
-		: a.id > b.id
-		? 1
-		: 0;
+			? -1
+			: a.id > b.id
+				? 1
+				: 0;
 
 const compareBookRows = (a: VolumeStock, b: VolumeStock) =>
 	!(isBookRow(a) && isBookRow(b))
 		? // This comparison is applicable only if both items are book items,
-		  // If not, the comparison is inconclusive
-		  0
+			// If not, the comparison is inconclusive
+			0
 		: a.isbn < b.isbn
-		? -1
-		: a.isbn > b.isbn
-		? 1
-		: a.warehouseId < b.warehouseId || a.warehouseId === ""
-		? -1
-		: 1;
+			? -1
+			: a.isbn > b.isbn
+				? 1
+				: a.warehouseId < b.warehouseId || a.warehouseId === ""
+					? -1
+					: 1;
 
 export const sortBooks = (a: VolumeStock, b: VolumeStock) =>
 	compareCustomItems(a, b) || compareBookRows(a, b) || (isCustomItemRow(a) ? 1 : -1);
