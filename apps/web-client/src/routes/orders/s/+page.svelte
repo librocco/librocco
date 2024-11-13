@@ -17,19 +17,24 @@
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
+	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
+	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+
 	// TODO: Replace with actual DB call
 	let supplierOrders = [
 		{
 			supplier_name: "Science Books LTD",
 			supplier_id: 1,
 			total_book_number: 5,
-			status: "unordered"
+			status: "unordered",
+			created: new Date()
 		},
 		{
 			supplier_name: "Phantasy Books LTD",
 			supplier_id: 2,
 			total_book_number: 3,
-			status: "ordered"
+			status: "ordered",
+			created: new Date()
 		}
 	];
 
@@ -40,9 +45,9 @@
 		supplierOrderFilterStatus.set(status);
 	}
 
-	function handlePlaceOrder(supplierId: number) {
-		// TODO: Implement order placement
-		console.log("Placing order for supplier:", supplierId);
+	function handleReconcile(event: CustomEvent<{supplierIds: number[]}>) {
+		console.log("Reconciling orders:", event.detail.supplierIds);
+		// TODO: Implement reconciliation logic
 	}
 </script>
 
@@ -87,30 +92,14 @@
 					<button class="btn-sm btn btn-outline" disabled> Received </button>
 					<button class="btn-sm btn btn-outline" disabled> Completed </button>
 				</div>
-				<table class="table-lg table">
-					<thead>
-						<tr>
-							<th scope="col">Supplier</th>
-							<th scope="col">Books</th>
-							<th scope="col"> <span class="sr-only"> Place order </span></th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each filteredOrders as { supplier_name, supplier_id, total_book_number }}
-							<tr class="hover focus-within:bg-base-200">
-								<td>{supplier_name}</td>
-								<td>{total_book_number}</td>
-								<td>
-									{#if $supplierOrderFilterStatus === "unordered"}
-										<button class="btn-primary btn-sm btn" on:click={() => handlePlaceOrder(supplier_id)}> Place Order </button>
-									{:else}
-										<span class="badge badge-success">Order Placed</span>
-									{/if}
-								</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
+				{#if $supplierOrderFilterStatus === "unordered"}
+					<UnorderedTable {orders}={filteredOrders} />
+				{:else}
+					<OrderedTable 
+						{orders}={filteredOrders} 
+						on:reconcile={handleReconcile}
+					/>
+				{/if}
 			{/if}
 		</div>
 	</div>
