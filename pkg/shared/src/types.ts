@@ -11,10 +11,10 @@ export type VolumeStock<K extends VolumeStockKind = VolumeStockKind> = K extends
 			isbn: string;
 			quantity: number;
 			warehouseId: string;
-	  }
+		}
 	: {
 			__kind: "custom";
 			id: string;
 			title: string;
 			price: number;
-	  };
+		};

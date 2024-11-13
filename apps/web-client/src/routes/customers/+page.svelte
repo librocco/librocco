@@ -12,8 +12,6 @@
 
 	import { type DialogContent } from "$lib/dialogs";
 
-	import type { CustomerOrderData } from "$lib/forms/schemas";
-
 	import { PopoverWrapper } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
@@ -173,7 +171,7 @@
 				{#if !$customerOrders.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
-						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500  py-[9px] pl-[15px] pr-[17px]"
+						<button on:click={createCustomer} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 							><span class="text-green-50">New Customer Order</span></button
 						>
 					</PlaceholderBox>

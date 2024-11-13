@@ -1,28 +1,20 @@
-<script lang="ts" context="module">
-	import type { SuperForm } from "sveltekit-superforms/client";
-
-	type BookForm = SuperForm<ZodValidation<typeof bookSchema>, unknown>;
-	export type BookFormOptions = BookForm["options"];
-</script>
-
 <script lang="ts">
 	import { fly } from "svelte/transition";
-	import { readable, type Readable } from "svelte/store";
 
-	import type { ZodValidation } from "sveltekit-superforms";
-	import { superForm, superValidateSync, numberProxy, stringProxy } from "sveltekit-superforms/client";
+	import type { FormOptions, SuperValidated, SuperForm } from "sveltekit-superforms";
+	import { superForm, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
 	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
-	import { bookSchema, type BookFormData } from "$lib/forms/schemas";
+	import type { BookFormSchema } from "$lib/forms/schemas";
 
 	import { Input, Checkbox } from "$lib/components/FormControls";
 
-	export let data: BookFormData | null;
-	export let options: BookFormOptions;
+	export let data: SuperValidated<BookFormSchema>;
+	export let options: FormOptions<BookFormSchema>;
 	export let publisherList: string[] = [];
 
 	export let isExtensionAvailable: boolean;
@@ -32,14 +24,13 @@
 	 */
 	export let onCancel: (e: Event) => void = () => {};
 
-	export let onFetch: (isbn: string, form: BookForm["form"]) => void = () => {};
+	export let onFetch: (isbn: string, form: SuperForm<BookFormSchema>["form"]) => void = () => {};
 
-	const _form = superValidateSync(data, bookSchema);
-	const form = superForm(_form, options);
+	const form = superForm(data, options);
 
 	const { form: formStore, constraints, enhance } = form;
 
-	const priceProxy = numberProxy(formStore, "price", { emptyIfZero: false, empty: "undefined" });
+	const priceProxy = numberProxy(formStore, "price", { empty: "undefined" });
 	const publisherProxy = stringProxy(formStore, "publisher", { empty: "undefined" });
 
 	/**

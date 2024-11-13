@@ -119,7 +119,7 @@ const bookRowToBookEntry = (row: DatabaseSchema["books"]): BookEntry | undefined
 					["category", row.category],
 					["updatedAt", row.updatedAt]
 				].filter(([, val]) => !!val)
-		  );
+			);
 
 const createSearchIndex = (books: BookEntry[]) => {
 	const index = new Search("isbn");

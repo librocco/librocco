@@ -231,7 +231,7 @@ const quantityFieldCostructor: FieldConstructor<InventoryFieldLookup & HistoryFi
 			: expect(row.locator('[data-property="quantity"]').locator(`input`)).toHaveValue(want.toString(), {
 					timeout: assertionTimeout,
 					...opts
-			  }),
+				}),
 	set: async (value) => {
 		const quantityInput = row.locator("[data-property='quantity']").locator("input");
 		await quantityInput.fill(value.toString());

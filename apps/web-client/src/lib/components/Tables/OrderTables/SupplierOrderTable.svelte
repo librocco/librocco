@@ -26,7 +26,7 @@
 	export let isDraft = (x: SupplierOrderData) => !x.placedAt;
 </script>
 
-<table id="supplier-orders">
+<table id="supplier-orders" class="order-table">
 	<thead>
 		<tr>
 			<th scope="col">
