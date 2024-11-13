@@ -20,16 +20,18 @@
 
 	const { customers, customerOrderLines } = data;
 
-	$: filteredOrders = customers
-		.map((customer) => {
-			const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
-			const status = getOrderStatus(orders);
-			return {
-				...customer,
-				status
-			};
-		})
-		.filter((order) => order.status === $orderFilterStatus);
+	$: ordersWithStatus = customers.map((customer) => {
+		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
+		const status = getOrderStatus(orders);
+		return {
+			...customer,
+			status
+		};
+	});
+
+	$: hasCompletedOrders = ordersWithStatus.some((order) => order.status === 'completed');
+	
+	$: filteredOrders = ordersWithStatus.filter((order) => order.status === $orderFilterStatus);
 
 	function setFilter(status: OrderFilterStatus) {
 		orderFilterStatus.set(status);
@@ -72,6 +74,7 @@
 						class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
 						on:click={() => setFilter("completed")}
 						aria-pressed={$orderFilterStatus === "completed"}
+						disabled={!hasCompletedOrders}
 					>
 						Completed
 					</button>
