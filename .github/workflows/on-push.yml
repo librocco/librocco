@@ -156,6 +156,8 @@ jobs:
       run: rush build
     - name: Build the app
       run: cd apps/web-client && rushx build:e2e
+    - name: Download playwright browsers
+      run: cd apps/e2e && npx playwright install
     - name: Run Playwright tests
       run: cd apps/e2e && rushx test:ci
     - uses: actions/upload-artifact@v4
