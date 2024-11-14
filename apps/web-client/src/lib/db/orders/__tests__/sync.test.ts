@@ -63,7 +63,7 @@ describe("Remote db setup", () => {
 		// and they take a long time (e.g. in CI), the rest of the sync stops working.
 		// My hunch is it has something to do with thread sleeping for too long and (maybe being shut down) or something:
 		// these tests are ran in multitude of simulated environments (node, headless browser) so it's hard to know for sure
-		local.upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		await local.upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 		// Wait for remote to get updated first (this lets us know the sync is working)
 		// NOTE: This shouldn't be necessary, but it seems the tests work only if we first wait for sync to show signs of life before continuing with updates.
 		// As is apparent from the rest of the test, this is necessary only once.
@@ -73,21 +73,21 @@ describe("Remote db setup", () => {
 		await waitFor(() => local.getAllCustomers(db2)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
 
 		// Insert + sync db2 -> db1
-		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
+		await local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
 		await waitFor(() => local.getAllCustomers(db1)).toEqual([
 			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
 		]);
 
 		// Update + sync db1 -> db2
-		local.upsertCustomer(db1, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
+		await local.upsertCustomer(db1, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
 		await waitFor(() => local.getAllCustomers(db2)).toEqual([
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
 		]);
 
 		// Update + sync db2 -> db1
-		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
+		await local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
 		await waitFor(() => local.getAllCustomers(db1)).toEqual([
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
