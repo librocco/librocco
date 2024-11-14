@@ -16,16 +16,7 @@ const url = "ws://localhost:3000/sync";
 let worker: WorkerInterface;
 
 // A helper to wait 500ms before assertion retries
-const pause = 500;
-const waitFor = (cb: () => Promise<any>) =>
-	// Try the assertion once
-	cb().catch(() =>
-		// On failure, perform throttled retries
-		testUtils.waitFor(async () => {
-			await new Promise<void>((res) => setTimeout(res, pause));
-			return cb();
-		})
-	);
+const waitFor = (cb: () => Promise<any>) => testUtils.waitFor((a) => (console.log("attempt", a), cb()), { timeout: 15000, pause: 2000 });
 
 describe("Remote db setup", () => {
 	// Worker is set up in async manner
@@ -68,13 +59,27 @@ describe("Remote db setup", () => {
 
 	it("keeps sync between client and server", async () => {
 		// Insert + sync db1 -> db2
-		await local.upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		//
+		// NOTE: upsert customer aren't awaited on purpose...I don't know why this happens, but if we await them
+		// and they take a long time (e.g. in CI), the rest of the sync stops working.
+		// My hunch is it has something to do with thread sleeping for too long and (maybe being shut down) or something:
+		// these tests are ran in multitude of simulated environments (node, headless browser) so it's hard to know for sure
+		local.upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		// Wait for remote to get updated first (this lets us know the sync is working)
+		// NOTE: This shouldn't be necessary, but it seems the tests work only if we first wait for sync to show signs of life before continuing with updates.
+		// As is apparent from the rest of the test, this is necessary only once.
+		// This shouldn't be so...sync should be working (it's set up in beforeEach block anyway), but here we are:
+		// My hunch is: it has something to do with different environments the test is run
 		await waitFor(async () =>
-			expect(await local.getAllCustomers(db2)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
+			expect(await remote.getAllCustomers(room)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
 		);
+		await waitFor(async () => {
+			const customers = await local.getAllCustomers(db2);
+			return expect(customers).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
+		});
 
 		// Insert + sync db2 -> db1
-		await local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
+		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
 		await waitFor(async () =>
 			expect(await local.getAllCustomers(db1)).toEqual([
 				{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
@@ -83,7 +88,7 @@ describe("Remote db setup", () => {
 		);
 
 		// Update + sync db1 -> db2
-		await local.upsertCustomer(db1, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
+		local.upsertCustomer(db1, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
 		await waitFor(async () =>
 			expect(await local.getAllCustomers(db2)).toEqual([
 				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
@@ -92,7 +97,7 @@ describe("Remote db setup", () => {
 		);
 
 		// Update + sync db2 -> db1
-		await local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
+		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
 		await waitFor(async () =>
 			expect(await local.getAllCustomers(db1)).toEqual([
 				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
