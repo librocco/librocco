@@ -17,12 +17,16 @@ let worker: WorkerInterface;
 
 // A helper to wait 50ms before assertion retries
 // NOTE: Also waits 50ms before the first try, but we can live with that
-const pause = 50;
+const pause = 200;
 const waitFor = (cb: () => Promise<any>) =>
-	testUtils.waitFor(async () => {
-		await new Promise<void>((res) => setTimeout(res, pause));
-		return cb();
-	});
+	// Try the assertion once
+	cb().catch(() =>
+		// On failure, perform throttled retries
+		testUtils.waitFor(async () => {
+			await new Promise<void>((res) => setTimeout(res, pause));
+			return cb();
+		})
+	);
 
 describe("Remote db setup", () => {
 	// Worker is set up in async manner
