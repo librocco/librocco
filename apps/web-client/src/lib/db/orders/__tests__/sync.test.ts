@@ -15,9 +15,8 @@ const url = "ws://localhost:3000/sync";
 
 let worker: WorkerInterface;
 
-// A helper to wait 50ms before assertion retries
-// NOTE: Also waits 50ms before the first try, but we can live with that
-const pause = 200;
+// A helper to wait 500ms before assertion retries
+const pause = 500;
 const waitFor = (cb: () => Promise<any>) =>
 	// Try the assertion once
 	cb().catch(() =>
