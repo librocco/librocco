@@ -9,14 +9,13 @@ import * as local from "../customers";
 import * as remote from "../customers-remote";
 
 import SyncWorker from "./worker.js?worker";
-import { testUtils } from "@librocco/shared";
 
 const url = "ws://localhost:3000/sync";
 
 let worker: WorkerInterface;
 
-// A helper to wait 500ms before assertion retries
-const waitFor = (cb: () => Promise<any>) => testUtils.waitFor((a) => (console.log("attempt", a), cb()), { timeout: 15000, pause: 2000 });
+/** A helper used to wrap the 'expect.poll', providing handsome time buffers for each assertion */
+const waitFor = (cb: () => any | Promise<any>) => expect.poll(cb, { timeout: 15000, interval: 2000 });
 
 describe("Remote db setup", () => {
 	// Worker is set up in async manner
@@ -70,50 +69,37 @@ describe("Remote db setup", () => {
 		// As is apparent from the rest of the test, this is necessary only once.
 		// This shouldn't be so...sync should be working (it's set up in beforeEach block anyway), but here we are:
 		// My hunch is: it has something to do with different environments the test is run
-		await waitFor(async () =>
-			expect(await remote.getAllCustomers(room)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }])
-		);
-		await waitFor(async () => {
-			const customers = await local.getAllCustomers(db2);
-			return expect(customers).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
-		});
+		await waitFor(() => remote.getAllCustomers(room)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
+		await waitFor(() => local.getAllCustomers(db2)).toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
 
 		// Insert + sync db2 -> db1
 		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
-		await waitFor(async () =>
-			expect(await local.getAllCustomers(db1)).toEqual([
-				{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
-				{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
-			])
-		);
+		await waitFor(() => local.getAllCustomers(db1)).toEqual([
+			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
+			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+		]);
 
 		// Update + sync db1 -> db2
 		local.upsertCustomer(db1, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
-		await waitFor(async () =>
-			expect(await local.getAllCustomers(db2)).toEqual([
-				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
-				{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
-			])
-		);
+		await waitFor(() => local.getAllCustomers(db2)).toEqual([
+			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+		]);
 
 		// Update + sync db2 -> db1
 		local.upsertCustomer(db2, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
-		await waitFor(async () =>
-			expect(await local.getAllCustomers(db1)).toEqual([
-				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
-				{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
-			])
-		);
+		await waitFor(() => local.getAllCustomers(db1)).toEqual([
+			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
+		]);
 
 		// Test reading from the remote db directly (remember, the remote db is identified by room id).
 		//
 		// NOTE: Writing to remote db directly is not reactive: I don't understand the intricacies, but the writes (sync) through
 		// web socket are communicated back to all subscribers, but not direct writes (I would assume it has something to do with FS locks or similar constructs)
-		await waitFor(async () =>
-			expect(await remote.getAllCustomers(room)).toEqual([
-				{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
-				{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
-			])
-		);
+		await waitFor(() => remote.getAllCustomers(room)).toEqual([
+			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
+		]);
 	});
 });
