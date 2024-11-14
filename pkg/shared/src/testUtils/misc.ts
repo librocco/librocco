@@ -1,3 +1,7 @@
+type TimeoutConfig = {
+	timeout?: number;
+	pause?: number;
+};
 /**
  * @TODO This is a duplicate
  * A test helper, runs the callback with 50 ms interval until the assertion is fulfilled or it times out.
@@ -5,29 +9,30 @@
  * @param {Function} cb The callback to run (this would normally hold assertions)
  * @param {number} [timeout] The timeout in ms
  */
-export const waitFor = (cb: () => void | Promise<void>, timeout = 2000) => {
+export const waitFor = (cb: (attempt: number) => void | Promise<void>, { timeout = 2000, pause = 50 }: TimeoutConfig = {}) => {
 	return new Promise<void>((resolve, reject) => {
 		let error: any = null;
+		let attempt = 1;
 
-		// Retry the assertion every 50ms
-		const interval = setInterval(() => {
-			// Run callback as a promise (this way we're able to .then/.catch regardless of the 'cb' being sync or async)
-			(async () => cb())()
+		let current: NodeJS.Timeout;
+
+		const attemptCallback = () => {
+			Promise.resolve(cb(attempt++))
 				.then(() => {
-					if (interval) {
-						clearInterval(interval);
-					}
+					if (current) clearTimeout(current);
 					resolve();
 				})
 				.catch((err) => {
-					// Store the error to reject with later (if timed out)
 					error = err;
+					current = setTimeout(attemptCallback, pause);
 				});
-		}, 50);
+		};
+
+		attemptCallback();
 
 		// When timed out, reject with the latest error
 		setTimeout(() => {
-			clearInterval(interval);
+			clearTimeout(current);
 			reject(error);
 		}, timeout);
 	});
