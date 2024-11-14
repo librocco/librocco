@@ -56,7 +56,7 @@ describe("Remote db setup", () => {
 
 		await remote.upsertCustomer(dbid, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 
-		const localDB = await getInitializedDB(dbid);
+		const localDB = await getInitializedDB(dbid).then(({ db }) => db);
 
 		worker.startSync(dbid, { room: dbid, url });
 

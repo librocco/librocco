@@ -1,8 +1,3 @@
-
-🌼   daisyUI 4.12.14
-├─ ✔︎ 2 themes added		https://daisyui.com/docs/themes
-╰─ ★ Star daisyUI on GitHub	https://github.com/saadeghi/daisyui
-
 import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
@@ -12,9 +7,9 @@ import schema from "@librocco/shared/db-schemas/orders.sql?raw";
 
 import { type DB, type Change } from "./types";
 
-export type ReactiveDB = DB & { rx: ReturnType<typeof rxtbl> };
+export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
-const dbCache: Record<string, ReactiveDB> = {};
+const dbCache: Record<string, DbCtx> = {};
 
 const schemaName = "orders";
 const schemaVersion = cryb64(schema);
@@ -32,14 +27,8 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 }
 
 export async function getDB(dbname: string) {
-	if (dbCache[dbname]) {
-		return dbCache[dbname];
-	}
-
 	const sqlite = await initWasm(() => wasmUrl);
-	const db = await sqlite.open(dbname);
-
-	return db;
+	return sqlite.open(dbname);
 }
 
 export async function initializeDB(db: DB) {
@@ -53,16 +42,16 @@ export async function initializeDB(db: DB) {
 	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
 
-export const getInitializedDB = async (dbname: string) => {
+export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	if (dbCache[dbname]) {
 		return dbCache[dbname];
 	}
 
-	const _db = await getDB(dbname);
+	const db = await getDB(dbname);
 
-	const schemaRes = await getSchemaNameAndVersion(_db);
+	const schemaRes = await getSchemaNameAndVersion(db);
 	if (!schemaRes) {
-		await initializeDB(_db);
+		await initializeDB(db);
 	} else {
 		// Check if schema name/version match
 		const [name, version] = schemaRes;
@@ -77,8 +66,8 @@ export const getInitializedDB = async (dbname: string) => {
 		}
 	}
 
-	const rx = rxtbl(_db);
-	dbCache[dbname] = Object.assign(_db, { rx });
+	const rx = rxtbl(db);
+	dbCache[dbname] = { db, rx };
 
 	return dbCache[dbname];
 };

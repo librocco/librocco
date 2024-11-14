@@ -35,6 +35,7 @@
 	import { invalidate, invalidateAll } from "$app/navigation";
 
 	export let data: PageData;
+	$: dbCtx = data?.dbCtx;
 
 	const id = parseInt($page.params.id);
 
@@ -42,9 +43,9 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload add customer data dependants when the data changes
-		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		const disposer1 = dbCtx.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+		const disposer2 = dbCtx.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
 
 		disposer = () => (disposer1(), disposer2());
 	});
@@ -73,14 +74,12 @@
 		return { set, update, subscribe };
 	};
 	$: name = createFieldStore(data.customerDetails.fullname || "", (fullname) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname })
+		upsertCustomer(dbCtx.db, { ...data.customerDetails, fullname })
 	);
 	$: deposit = createFieldStore(data.customerDetails.deposit || 0, (deposit) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, deposit: Number(deposit) })
+		upsertCustomer(dbCtx.db, { ...data.customerDetails, deposit: Number(deposit) })
 	);
-	$: email = createFieldStore(data.customerDetails.email || "", (email) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, email })
-	);
+	$: email = createFieldStore(data.customerDetails.email || "", (email) => upsertCustomer(dbCtx.db, { ...data.customerDetails, email }));
 
 	$: orderLines = data?.customerBooks;
 
@@ -102,7 +101,7 @@
 			return;
 		}
 
-		await updateOrderLineQuantity(data.ordersDb, bookId, nextQty);
+		await updateOrderLineQuantity(dbCtx.db, bookId, nextQty);
 	};
 
 	const handleAddOrderLine = async (isbn: string) => {
@@ -116,11 +115,11 @@
 			title: "",
 			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		await addBooksToCustomer(dbCtx.db, parseInt($page.params.id), [newBook]);
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		await removeBooksFromCustomer(data.ordersDb, parseInt($page.params.id), [bookId]);
+		await removeBooksFromCustomer(dbCtx.db, parseInt($page.params.id), [bookId]);
 		open.set(false);
 	};
 
@@ -188,7 +187,7 @@
 			<button
 				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 				on:click={() =>
-					upsertCustomer(data.ordersDb, {
+					upsertCustomer(dbCtx.db, {
 						...data.customerDetails,
 						fullname: $name,
 						email: $email,

@@ -25,12 +25,13 @@
 	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
+	$: dbCtx = data?.dbCtx;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// Reload add customer data dependants when the data changes
-		disposer = data.ordersDb.rx.onRange(["customer"], () => invalidate("customer:data"));
+		disposer = dbCtx.rx.onRange(["customer"], () => invalidate("customer:data"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -59,7 +60,7 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const randomId = Math.floor(Math.random() * 1e10);
-		await upsertCustomer(data.ordersDb, { id: randomId });
+		await upsertCustomer(dbCtx.db, { id: randomId });
 		goto(appPath("customers", randomId.toString()));
 	};
 
