@@ -82,6 +82,11 @@ module.exports = {
 	theme,
 	plugins,
 	daisyui: {
-		themes: ["lofi", "forest"]
+		themes: ["lofi", "forest"],
+		// We're silencing the output here as it produces problems during formatting (for some editors)
+		// see: https://github.com/tailwindlabs/tailwindcss/discussions/8380
+		//
+		// If necessary for debugging, simply remove during the session
+		logs: false
 	}
 };
