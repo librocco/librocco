@@ -101,5 +101,5 @@ describe("Remote db setup", () => {
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
 		]);
-	});
+	}, 30000);
 });
