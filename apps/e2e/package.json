@@ -26,7 +26,8 @@
 		"@types/node": "~20.4.1",
 		"@internationalized/date": "~3.5.2",
 		"prettier-plugin-svelte": "^3.2.6",
-		"prettier-plugin-tailwindcss": "~0.6.8"
+		"prettier-plugin-tailwindcss": "~0.6.8",
+		"@vlcn.io/ws-client": "~0.2.0"
 	},
 	"type": "module"
 }

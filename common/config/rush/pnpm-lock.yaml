@@ -65,6 +65,9 @@ importers:
       '@typescript-eslint/parser':
         specifier: ~6.19.1
         version: 6.19.1(eslint@8.57.1)(typescript@5.6.3)
+      '@vlcn.io/ws-client':
+        specifier: ~0.2.0
+        version: 0.2.0
       eslint:
         specifier: ^8.13.0
         version: 8.57.1
@@ -4957,7 +4960,6 @@ packages:
 
   /@types/throttle-debounce@5.0.2:
     resolution: {integrity: sha512-pDzSNulqooSKvSNcksnV72nk8p7gRqN8As71Sp28nov1IgmPKWbOEIwAWvBME5pPTtaXJAvG3O4oc76HlQ4kqQ==}
-    dev: false
 
   /@types/tough-cookie@4.0.5:
     resolution: {integrity: sha512-/Ad8+nIOV7Rl++6f1BdKxFSMgmoqEoYbHRpPcx3JEfv8VRsQe9Z4mCXeJBzxs7mbHY/XOZZuXlRNfhpVPbs6ZA==}
@@ -5659,13 +5661,11 @@ packages:
     dependencies:
       '@types/throttle-debounce': 5.0.2
       '@vlcn.io/ws-common': 0.2.0
-    dev: false
 
   /@vlcn.io/ws-common@0.2.0:
     resolution: {integrity: sha512-c7a470fCAzKzsjn+dchp+zAHXXem2eG2W7RxjHowZuO9PUfLjMAKp0GpZ9rsKAyLiyYRMOFAFnpl0HmFxERjig==}
     dependencies:
       lib0: 0.2.98
-    dev: false
 
   /@vlcn.io/ws-server@0.2.3:
     resolution: {integrity: sha512-jJkZN32hq4k1Tk1W/BmgzCJ91bIs2GLZsvIQdpA7QNbO5aJxF5qQfxiy8PMWYe4UJUYiHb5mQcF+bx1iPP7Yrw==}
@@ -9989,7 +9989,6 @@ packages:
 
   /isomorphic.js@0.2.5:
     resolution: {integrity: sha512-PIeMbHqMt4DnUP3MA/Flc0HElYjMXArsw1qwJZcm9sqR8mq3l8NYizFMty0pWwE/tzIGH3EKK5+jes5mAr85yw==}
-    dev: false
 
   /istanbul-lib-coverage@3.2.2:
     resolution: {integrity: sha512-O8dpsF+r0WV/8MNRKfnmrtCWhuKjxrq2w+jpzBL5UZKTi2LeVWnWOmWRxFlesJONmc+wLAGvKQZEOanko0LFTg==}
@@ -10966,7 +10965,6 @@ packages:
     hasBin: true
     dependencies:
       isomorphic.js: 0.2.5
-    dev: false
 
   /lie@3.3.0:
     resolution: {integrity: sha512-UaiMJzeWRlEujzAuw5LokY1L5ecNQYZKfmyZ9L7wDHb/p5etKaxXhohBcrw0EYby+G/NA52vRSN4N39dxHAIwQ==}
