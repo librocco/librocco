@@ -43,12 +43,12 @@ describe("Remote db setup", () => {
 		db1 = await getInitializedDB(dbid1).then(({ db }) => db);
 		db2 = await getInitializedDB(dbid2).then(({ db }) => db);
 
+		// Ping the backend to initialise the DB before tests are run
+		await remote.getAllCustomers(room);
+
 		// Start the sync
 		worker.startSync(dbid1, { room, url });
 		worker.startSync(dbid2, { room, url });
-
-		// Ping the backend to initialise the DB before tests are run
-		await remote.getAllCustomers(room);
 	});
 
 	afterEach(() => {
