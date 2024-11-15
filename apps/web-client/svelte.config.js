@@ -5,6 +5,7 @@ import { preprocessMeltUI } from "@melt-ui/pp";
 import sequence from "svelte-sequential-preprocessor";
 
 const BASE_PATH = process.env.BASE_PATH ?? "";
+const IS_E2E = process.env.PUBLIC_IS_E2E === "true";
 
 /** @type {import('@sveltejs/kit').Config} */
 const config = {
@@ -47,7 +48,9 @@ const config = {
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
 				"/settings/",
-				"/orders/c/1"
+				"/orders/c/1",
+				// NOTE: This is here as this branch is an experiment, the following path shouldn't make it into prod.
+				"/tests/orders_sync"
 			]
 		},
 		paths: {
