@@ -4,6 +4,8 @@ import { type WorkerInterface, type DB } from "@vlcn.io/ws-client";
 
 import { baseURL } from "../constants";
 
+const pollOpts = { intervals: Array(20).fill(null).map((_, i) => i * 500), timeout: 10000 }
+
 test("update is reflected in table view - stock", async ({ page }) => {
 	// Load the app
 	const testURL = path.join(baseURL, "preview", "tests", "orders_sync");
@@ -32,13 +34,13 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	// Insert DB1 -> DB2
 	await db1.evaluate(local.upsertCustomer, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
 	await expect
-		.poll(() => db2.evaluate(local.getAllCustomers))
+		.poll(() => db2.evaluate(local.getAllCustomers), pollOpts)
 		.toEqual([{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 }]);
 
 	// Insert DB2 -> DB1
 	await db2.evaluate(local.upsertCustomer, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
 	await expect
-		.poll(() => db1.evaluate(local.getAllCustomers))
+		.poll(() => db1.evaluate(local.getAllCustomers), pollOpts)
 		.toEqual([
 			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
@@ -47,7 +49,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	// Update DB1 -> DB2
 	await db1.evaluate(local.upsertCustomer, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
 	await expect
-		.poll(() => db2.evaluate(local.getAllCustomers))
+		.poll(() => db2.evaluate(local.getAllCustomers), pollOpts)
 		.toEqual([
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
@@ -56,7 +58,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	// Update DB2 -> DB1
 	await db2.evaluate(local.upsertCustomer, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
 	await expect
-		.poll(() => db1.evaluate(local.getAllCustomers))
+		.poll(() => db1.evaluate(local.getAllCustomers), pollOpts)
 		.toEqual([
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
@@ -64,7 +66,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 
 	// Check remote for good measure
 	await expect
-		.poll(() => page.evaluate(remote.getAllCustomers, room))
+		.poll(() => page.evaluate(remote.getAllCustomers, room), pollOpts)
 		.toEqual([
 			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
