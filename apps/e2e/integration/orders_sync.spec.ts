@@ -8,7 +8,7 @@ const pollOpts = { intervals: Array(20).fill(null).map((_, i) => i * 500), timeo
 
 test("update is reflected in table view - stock", async ({ page }) => {
 	// Load the app
-	const testURL = path.join(baseURL, "preview", "tests", "orders_sync");
+	const testURL = [baseURL, "preview", "tests", "orders_sync"].join("/")
 	await page.goto(testURL);
 
 	const url = "ws://localhost:3000/sync";
