@@ -48,9 +48,9 @@ const config = {
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
 				"/settings/",
-				"/orders/c/1",
+				"/orders/c/1/",
 				// NOTE: This is here as this branch is an experiment, the following path shouldn't make it into prod.
-				"/tests/orders_sync"
+				"/tests/orders_sync/"
 			]
 		},
 		paths: {
