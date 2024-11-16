@@ -1,14 +1,18 @@
 import { test, expect } from "@playwright/test";
-import path from "path";
 import { type WorkerInterface, type DB } from "@vlcn.io/ws-client";
 
 import { baseURL } from "../constants";
 
-const pollOpts = { intervals: Array(20).fill(null).map((_, i) => i * 500), timeout: 10000 }
+const pollOpts = {
+	intervals: Array(20)
+		.fill(null)
+		.map((_, i) => i * 500),
+	timeout: 10000
+};
 
 test("update is reflected in table view - stock", async ({ page }) => {
 	// Load the app
-	const testURL = [baseURL, "preview", "tests", "orders_sync/"].join("/")
+	const testURL = [baseURL, "preview", "tests", "orders_sync/"].join("/");
 	await page.goto(testURL);
 
 	const url = "ws://localhost:3000/sync";
