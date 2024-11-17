@@ -32,7 +32,8 @@ describe("Suppliers order creation", () => {
 			{ supplier_id: 2, isbn: "3", quantity: 2 }
 		]);
 	});
-	it.only("creates two new supplier orders", async () => {
+
+	it("creates two new supplier orders", async () => {
 		const possibleOrderLines = await getPossibleSupplerOrderLines(db);
 		const newOrders = await createSupplierOrder(db, possibleOrderLines);
 		expect(newOrders.length).toStrictEqual(2);

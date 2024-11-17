@@ -6,11 +6,11 @@ import { getAllCustomers } from "$lib/db/orders/customers";
 export const load: LayoutLoad = async ({ depends }) => {
 	depends("customer:data");
 
-	const ordersDb = await getInitializedDB("librocco-current-db");
+	const dbCtx = await getInitializedDB("librocco-current-db");
 
-	const allCustomers = await getAllCustomers(ordersDb);
+	const allCustomers = await getAllCustomers(dbCtx.db);
 
-	return { ordersDb, allCustomers };
+	return { dbCtx, allCustomers };
 };
 
 export const ssr = false;
