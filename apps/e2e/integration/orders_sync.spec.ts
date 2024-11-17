@@ -4,9 +4,8 @@ import { type WorkerInterface, type DB } from "@vlcn.io/ws-client";
 import { baseURL } from "../constants";
 
 const pollOpts = {
-	intervals: Array(20)
-		.fill(null)
-		.map((_, i) => i * 500),
+	// probe...wait 500ms, probe...wait 500ms, probe...wait 1s, probe...wait 1s ...
+	intervals: [500, 500, 1_000],
 	timeout: 10000
 };
 
@@ -51,6 +50,12 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	await db2.evaluate(local.upsertCustomer, { fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 });
 
 	// Check that the changes are exchanged
+	await expect
+		.poll(() => page.evaluate(remote.getAllCustomers, room), pollOpts)
+		.toEqual([
+			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
+			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+		]);
 	await expect
 		.poll(() => db1.evaluate(local.getAllCustomers), pollOpts)
 		.toEqual([
