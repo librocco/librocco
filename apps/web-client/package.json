@@ -42,7 +42,13 @@
 		"@vlcn.io/ws-client": "~0.2.0",
 		"@vlcn.io/ws-browserdb": "~0.2.0",
 		"@vlcn.io/ws-common": "~0.2.0",
-		"@vlcn.io/rx-tbl": "~0.15.0"
+		"@vlcn.io/rx-tbl": "~0.15.0",
+		"ws-server-fork": "workspace:*",
+		"@sveltejs/adapter-node": "~5.2.9",
+		"ws": "~8.18.0",
+		"http-proxy-middleware": "~3.0.3",
+		"express": "~4.21.1",
+		"cors": "~2.8.5"
 	},
 	"devDependencies": {
 		"@esbuild-plugins/node-globals-polyfill": "~0.1.1",

@@ -2,6 +2,7 @@ import path from "path";
 import { searchForWorkspaceRoot } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { SvelteKitPWA } from "@vite-pwa/sveltekit";
+import WsServerPlugin from "./server/vitePlugin";
 
 import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
@@ -31,6 +32,12 @@ const config = {
 	},
 	plugins: [
 		sveltekit(),
+		WsServerPlugin({
+			dbFolder: "./static/test-dbs",
+			schemaFolder: "./static/schemas",
+			pathPattern: /\/sync/,
+			port: 3001
+		}),
 		SvelteKitPWA({
 			buildBase: `${BASE_PATH}/`,
 			kit: {
