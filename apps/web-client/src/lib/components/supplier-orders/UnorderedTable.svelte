@@ -14,29 +14,29 @@
 </script>
 
 <div class="overflow-x-auto">
-<table class="table-lg table whitespace-nowrap">
-	<thead>
-		<tr>
-			<th scope="col">Supplier</th>
-			<th scope="col">Books</th>
-			<th scope="col"><span class="sr-only">Place order</span></th>
-		</tr>
-	</thead>
-	<tbody>
-		{#each orders as { supplier_name, supplier_id, total_book_number }}
-			<tr class="hover focus-within:bg-base-200">
-				<td>{supplier_name}</td>
-				<td>{total_book_number}</td>
-				<td class="text-right">
-					<button class="btn-primary btn-sm btn gap-x-2.5" on:click={() => handlePlaceOrder(supplier_id)}>
-						<Truck aria-hidden focusable="false" size={20} />
-						Place Order
-					</button>
-				</td>
+	<table class="table-lg table whitespace-nowrap">
+		<thead>
+			<tr>
+				<th scope="col">Supplier</th>
+				<th scope="col">Books</th>
+				<th scope="col"><span class="sr-only">Place order</span></th>
 			</tr>
-		{/each}
-	</tbody>
-</table>
+		</thead>
+		<tbody>
+			{#each orders as { supplier_name, supplier_id, total_book_number }}
+				<tr class="hover focus-within:bg-base-200">
+					<td>{supplier_name}</td>
+					<td>{total_book_number}</td>
+					<td class="text-right">
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handlePlaceOrder(supplier_id)}>
+							<Truck aria-hidden focusable="false" size={20} />
+							Place Order
+						</button>
+					</td>
+				</tr>
+			{/each}
+		</tbody>
+	</table>
 </div>
 
 <style>
