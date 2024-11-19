@@ -23,12 +23,16 @@
 		}
 	}
 
+	import { goto } from "$lib/utils/navigation";
+	import { base } from "$app/paths";
+
 	function handleReconcile(supplierId: number) {
-		dispatch("reconcile", { supplierIds: [supplierId] });
+		goto(`${base}/orders/s/reconcile?ids=${supplierId}`);
 	}
 
 	function handleBulkReconcile() {
-		dispatch("reconcile", { supplierIds: Array.from(selectedOrders) });
+		const ids = Array.from(selectedOrders).join(",");
+		goto(`${base}/orders/s/reconcile?ids=${ids}`);
 	}
 </script>
 
