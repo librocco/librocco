@@ -44,8 +44,12 @@
 
 	async function checkForUpdates() {
 		if (serviceWorkerRegistration) {
-			// Trigger the browser to check for an updated service worker
-			await serviceWorkerRegistration.update();
+			try {
+				// Trigger the browser to check for an updated service worker
+				await serviceWorkerRegistration.update();
+			} catch (error) {
+				console.error('Error checking for updates:', error);
+			}
 		}
 	}
 
