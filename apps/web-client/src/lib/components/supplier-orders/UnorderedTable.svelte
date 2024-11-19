@@ -13,7 +13,8 @@
 	}
 </script>
 
-<table class="table-lg table">
+<div class="overflow-x-auto">
+<table class="table-lg table whitespace-nowrap">
 	<thead>
 		<tr>
 			<th scope="col">Supplier</th>
@@ -36,6 +37,7 @@
 		{/each}
 	</tbody>
 </table>
+</div>
 
 <style>
 	.table-lg td {

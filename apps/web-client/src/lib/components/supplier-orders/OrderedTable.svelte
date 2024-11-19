@@ -32,7 +32,8 @@
 	}
 </script>
 
-<table class="table-pin-rows table-lg table">
+<div class="overflow-x-auto">
+<table class="table-pin-rows table-lg table whitespace-nowrap">
 	<thead>
 		<tr>
 			<th scope="col" class="w-16">
@@ -96,6 +97,7 @@
 		{/each}
 	</tbody>
 </table>
+</div>
 
 <style>
 	.table-lg td {
