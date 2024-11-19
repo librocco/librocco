@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
-	import { browser } from '$app/environment';
+	import { browser } from "$app/environment";
 	import { get } from "svelte/store";
 	import { Search, Download, Trash } from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -28,14 +28,14 @@
 	let updateAvailable = false;
 	let serviceWorkerRegistration;
 
-	if (browser && 'serviceWorker' in navigator) {
+	if (browser && "serviceWorker" in navigator) {
 		onMount(async () => {
 			// Wait for the service worker to be ready
 			serviceWorkerRegistration = await navigator.serviceWorker.ready;
 
 			// Listen for messages from the service worker
-			navigator.serviceWorker.addEventListener('message', (event) => {
-				if (event.data?.type === 'NEW_VERSION_AVAILABLE') {
+			navigator.serviceWorker.addEventListener("message", (event) => {
+				if (event.data?.type === "NEW_VERSION_AVAILABLE") {
 					updateAvailable = true;
 				}
 			});
@@ -43,16 +43,16 @@
 	}
 
 	async function checkForUpdates() {
-		if (serviceWorkerRegistration?.active) {
-			// Send a message to check for updates
-			serviceWorkerRegistration.active.postMessage({ type: 'CHECK_FOR_UPDATE' });
+		if (serviceWorkerRegistration) {
+			// Trigger the browser to check for an updated service worker
+			await serviceWorkerRegistration.update();
 		}
 	}
 
 	function updateApp() {
 		if (serviceWorkerRegistration?.waiting) {
 			// Tell the service worker to skip waiting and activate the new version
-			serviceWorkerRegistration.waiting.postMessage({ type: 'SKIP_WAITING' });
+			serviceWorkerRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
 			// Reload the page to load the new version
 			window.location.reload();
 		}
@@ -190,7 +190,7 @@
 	<svelte:fragment slot="heading">
 		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
 		<h4>Version {VERSION}</h4>
-		{#if browser && 'serviceWorker' in navigator}
+		{#if browser && "serviceWorker" in navigator}
 			<div class="mt-4">
 				<button class="button button-white" on:click={checkForUpdates}>Check for Updates</button>
 				{#if updateAvailable}
