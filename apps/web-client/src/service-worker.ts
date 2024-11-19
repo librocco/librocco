@@ -15,6 +15,8 @@ self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(ASSETS))
   );
+  // Activate the new service worker immediately
+  self.skipWaiting();
 });
 
 // Activate event: clean up old caches
