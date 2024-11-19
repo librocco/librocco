@@ -1,8 +1,8 @@
 {
-  "extends": "./tsconfig.json",
-  "include": ["src/service-worker.ts"],
-  "compilerOptions": {
-    "lib": ["webworker", "es2020"],
-    "types": ["vite/client"]
-  }
+	"extends": "./tsconfig.json",
+	"include": ["src/service-worker.ts"],
+	"compilerOptions": {
+		"lib": ["webworker", "es2020"],
+		"types": ["vite/client"]
+	}
 }
