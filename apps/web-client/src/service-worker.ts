@@ -30,6 +30,13 @@ self.addEventListener('activate', (event: ExtendableEvent) => {
         })
       );
       await self.clients.claim();
+
+      // Notify all clients that a new version is available
+      self.clients.matchAll({ type: 'window' }).then((clients) => {
+        for (const client of clients) {
+          client.postMessage({ type: 'NEW_VERSION_AVAILABLE' });
+        }
+      });
     })()
   );
 });
