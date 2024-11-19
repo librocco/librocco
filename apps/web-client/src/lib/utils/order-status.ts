@@ -2,23 +2,26 @@ export type OrderLineStatus = "draft" | "placed" | "received" | "collected";
 export type OrderStatus = "in_progress" | "completed";
 
 export function getOrderLineStatus(line: { placed?: number; received?: number; collected?: number }): OrderLineStatus {
-	if (line.collected && line.received && line.placed) {
-		// Verify chronological order
-		if (line.placed <= line.received && line.received <= line.collected) {
-			return "collected";
-		}
+	const { placed, received, collected } = line;
+
+	// TODO: should we validate timestamp values?
+
+	// Check for collected status - requires all timestamps in correct order
+	if (placed && received && collected && placed <= received && received <= collected) {
+		return "collected";
 	}
 
-	if (line.received && line.placed) {
-		if (line.placed <= line.received) {
-			return "received";
-		}
+	// Check for received status - requires placed and received timestamps in order
+	if (placed && received && placed <= received) {
+		return "received";
 	}
 
-	if (line.placed) {
+	// Check for placed status - only requires placed timestamp
+	if (placed) {
 		return "placed";
 	}
 
+	// Default status when no timestamps are present
 	return "draft";
 }
 
