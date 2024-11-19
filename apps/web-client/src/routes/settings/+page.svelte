@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { onMount } from "svelte";
+	import { updateAvailable, checkForUpdates, updateApp, initializeServiceWorker } from "$stores/serviceWorkerStore";
 	import { fade } from "svelte/transition";
 	import { browser } from "$app/environment";
 	import { get } from "svelte/store";
@@ -25,40 +26,8 @@
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
 
-	let updateAvailable = false;
-	let serviceWorkerRegistration;
-
-	if (browser && "serviceWorker" in navigator) {
-		onMount(async () => {
-			// Wait for the service worker to be ready
-			serviceWorkerRegistration = await navigator.serviceWorker.ready;
-
-			// Listen for messages from the service worker
-			navigator.serviceWorker.addEventListener("message", (event) => {
-				if (event.data?.type === "NEW_VERSION_AVAILABLE") {
-					updateAvailable = true;
-				}
-			});
-		});
-	}
-
-	async function checkForUpdates() {
-		if (serviceWorkerRegistration) {
-			try {
-				// Trigger the browser to check for an updated service worker
-				await serviceWorkerRegistration.update();
-			} catch (error) {
-				console.error('Error checking for updates:', error);
-			}
-		}
-	}
-
-	function updateApp() {
-		serviceWorkerRegistration?.waiting?.postMessage({ type: "SKIP_WAITING" });
-	}
-
-	navigator.serviceWorker.addEventListener("controllerchange", () => {
-		window.location.reload();
+	onMount(() => {
+		initializeServiceWorker();
 	});
 
 	export let data: PageData;
