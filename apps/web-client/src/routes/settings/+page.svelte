@@ -54,13 +54,12 @@
 	}
 
 	function updateApp() {
-		if (serviceWorkerRegistration?.waiting) {
-			// Tell the service worker to skip waiting and activate the new version
-			serviceWorkerRegistration.waiting.postMessage({ type: "SKIP_WAITING" });
-			// Reload the page to load the new version
-			window.location.reload();
-		}
+		serviceWorkerRegistration?.waiting?.postMessage({ type: "SKIP_WAITING" });
 	}
+
+	navigator.serviceWorker.addEventListener("controllerchange", () => {
+		window.location.reload();
+	});
 
 	export let data: PageData;
 
