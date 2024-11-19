@@ -7,9 +7,11 @@
 		total_book_number: number;
 	}>;
 
+	import { base } from "$app/paths";
+	import { goto } from "$lib/utils/navigation";
+
 	function handlePlaceOrder(supplierId: number) {
-		// TODO: Implement order placement
-		console.log("Placing order for supplier:", supplierId);
+		goto(`${base}/orders/s/${supplierId}`);
 	}
 </script>
 
