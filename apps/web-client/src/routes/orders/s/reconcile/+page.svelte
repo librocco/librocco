@@ -1,5 +1,54 @@
 <script lang="ts">
 	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
+	import ComparisonTable from "$lib/components/reconciliation/ComparisonTable.svelte";
+
+	// Mock data for the comparison view
+	const mockSupplierBooks = [
+		{
+			supplier_name: "Academic Books Ltd",
+			supplier_id: 1,
+			books: [
+				{
+					isbn: "9781234567897",
+					title: "The Art of Learning",
+					authors: "Josh Waitzkin",
+					price: 15.99,
+					delivered: true,
+					ordered: 2
+				},
+				{
+					isbn: "9781234567880",
+					title: "Deep Work",
+					authors: "Cal Newport",
+					price: 18.0,
+					delivered: false,
+					ordered: 1
+				}
+			]
+		},
+		{
+			supplier_name: "Penguin Random House",
+			supplier_id: 2,
+			books: [
+				{
+					isbn: "9780987654321",
+					title: "Becoming",
+					authors: "Michelle Obama",
+					price: 19.5,
+					delivered: true,
+					ordered: 3
+				},
+				{
+					isbn: "9780987654314",
+					title: "Thinking, Fast and Slow",
+					authors: "Daniel Kahneman",
+					price: 12.99,
+					delivered: false,
+					ordered: 4
+				}
+			]
+		}
+	];
 
 	const reconciliation = {
 		id: 123,
