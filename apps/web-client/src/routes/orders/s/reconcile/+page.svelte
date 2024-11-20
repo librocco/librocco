@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, Check, ClockArrowUp, QrCode } from "lucide-svelte";
+	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
 
 	const reconciliation = {
 		id: 123,
@@ -38,7 +38,7 @@
 		isbn = "";
 	}
 
-	let step = 1;
+	let currentStep = 1;
 	$: canReconcile = books.length > 0;
 </script>
 
@@ -85,41 +85,36 @@
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
 				<nav aria-label="Progress">
 					<ol role="list" class="flex list-none items-center justify-between divide-x border pl-0">
-						<li class="flex-grow">
-							<button class="flex w-full items-center gap-x-2 px-4 py-2 text-sm">
-								<span class="bg-primary flex shrink-0 items-center justify-center rounded-full p-1">
-									<Check aria-hidden="true" class="text-white" size={22} />
-								</span>
-								<span class="inline-flex flex-col items-start">
-									<span class="font-medium">Populate</span>
-									<span class="font-light max-md:sr-only">Delivered books</span>
-								</span>
-							</button>
-						</li>
+						{#each [{ title: "Populate", description: "Delivered books" }, { title: "Compare", description: "To ordered" }, { title: "Commit", description: "Notify customers" }] as { title, description }, index}
+							{@const step = index + 1}
+							{@const isCompleted = step < currentStep}
+							{@const isCurrent = step === currentStep}
 
-						<li class="flex-grow">
-							<button aria-current="step" class="text-primary flex items-center gap-x-2 px-4 py-2 text-sm" disabled>
-								<span class="border-primary flex shrink-0 items-center justify-center rounded-full border-2 px-2.5 py-1">
-									<span>2</span>
-								</span>
-								<span class="inline-flex flex-col items-start text-start">
-									<span class="font-medium">Compare</span>
-									<span class="font-light max-md:sr-only">To ordered</span>
-								</span>
-							</button>
-						</li>
-
-						<li class="flex-grow">
-							<button class="text-primary/50 flex items-center gap-x-2 px-4 py-2 text-sm">
-								<span class="border-primary/50 flex shrink-0 items-center justify-center rounded-full border-2 px-2.5 py-1">
-									<span>3</span>
-								</span>
-								<span class="flex flex-col items-start text-start">
-									<span class="font-medium">Commit</span>
-									<span class="font-light max-md:sr-only">Notify customers</span>
-								</span>
-							</button>
-						</li>
+							<li class="flex-grow">
+								<button
+									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
+									disabled={isCurrent}
+								>
+									{#if isCompleted}
+										<span class="bg-primary flex shrink-0 items-center justify-center rounded-full p-1">
+											<Check aria-hidden="true" class="text-white" size={22} />
+										</span>
+									{:else}
+										<span
+											class="flex shrink-0 items-center justify-center rounded-full border-2 px-2.5 py-1 {!isCurrent
+												? 'border-base-content/50'
+												: 'border-base-content'}"
+										>
+											<span>{step}</span>
+										</span>
+									{/if}
+									<span class="inline-flex flex-col items-start text-start">
+										<span class="font-medium">{title}</span>
+										<span class="font-light max-lg:text-xs max-md:sr-only">{description}</span>
+									</span>
+								</button>
+							</li>
+						{/each}
 					</ol>
 				</nav>
 
