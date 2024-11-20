@@ -1,6 +1,9 @@
 <script lang="ts">
 	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
+	import { createDialog } from "@melt-ui/svelte";
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
+	import CommitDialog from "$lib/components/reconciliation/CommitDialog.svelte";
+	import { defaultDialogConfig } from "$lib/components/Melt";
 
 	// Mock data for the comparison view
 	const mockSupplierBooks = [
@@ -91,7 +94,17 @@
 	$: totalOrdered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
 
 	let currentStep = 1;
+	const commitDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: commitDialogOpen }
+	} = commitDialog;
+
 	$: canCompare = books.length > 0;
+
+	function handleCommit() {
+		// TODO: Implement actual commit logic
+		commitDialogOpen.set(false);
+	}
 </script>
 
 <main class="h-screen">
@@ -227,7 +240,16 @@
 									</div>
 								</dl>
 							{/if}
-							<button class="btn-primary btn ml-auto" on:click={() => (currentStep = 2)}>
+							<button 
+								class="btn-primary btn ml-auto" 
+								on:click={() => {
+									if (currentStep === 1) {
+										currentStep = 2;
+									} else {
+										commitDialogOpen.set(true);
+									}
+								}}
+							>
 								{currentStep === 1 ? "Compare" : "Commit"}
 								<ArrowRight aria-hidden size={20} class="hidden md:block" />
 							</button>
@@ -238,3 +260,10 @@
 		</div>
 	</div>
 </main>
+
+<CommitDialog 
+	dialog={commitDialog} 
+	bookCount={totalDelivered}
+	on:cancel={() => commitDialogOpen.set(false)}
+	on:confirm={handleCommit}
+/>
