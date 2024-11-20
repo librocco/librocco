@@ -145,7 +145,8 @@
 							<li class="flex-grow">
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
-									disabled={isCurrent}
+									disabled={isCurrent || (currentStep === 1 && step === 3)}
+									on:click={() => (currentStep = step)}
 								>
 									{#if isCompleted}
 										<span class="bg-primary flex shrink-0 items-center justify-center rounded-full p-1">
@@ -209,14 +210,14 @@
 							</table>
 						</div>
 					{/if}
-				{:else if currentStep === 2}
+				{:else if currentStep > 1}
 					<ComparisonTable supplierBooks={mockSupplierBooks} />
 				{/if}
 
-				{#if canCompare || currentStep === 2}
+				{#if canCompare || currentStep > 1}
 					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
 						<div class="bg-base-300 mx-2 flex w-full flex-row justify-between px-4 py-2 shadow-lg">
-							{#if currentStep === 2}
+							{#if currentStep > 1}
 								<dl class="stats flex">
 									<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
 										<dt class="stat-title">Total delivered:</dt>
