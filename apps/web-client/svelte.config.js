@@ -49,7 +49,9 @@ const config = {
 				"/settings/",
 				"/orders/c/1/",
 				"/orders/c/",
-				"/orders/s/"
+				"/orders/s/",
+				"/orders/s/1/",
+				"/orders/s/reconcile"
 			]
 		},
 		paths: {
