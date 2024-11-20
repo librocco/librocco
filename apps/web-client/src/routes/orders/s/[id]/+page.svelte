@@ -186,14 +186,14 @@
 					<div class="bg-base-300 mx-2 flex w-full flex-row justify-between px-4 py-2 shadow-lg">
 						<dl class="stats flex">
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<dt class="stat-title">Selected books:</dt>
-								<dd class="stat-value text-lg">
+								<div class="stat-title">Selected books:</div>
+								<div class="stat-value text-lg">
 									{selectedBooks.size}
-								</dd>
+								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<dt class="stat-title sr-only">Total</dt>
-								<dd class="stat-value text-lg">€{totalAmount.toFixed(2)}</dd>
+								<div class="stat-title sr-only">Total</div>
+								<div class="stat-value text-lg">€{totalAmount.toFixed(2)}</div>
 							</div>
 						</dl>
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
