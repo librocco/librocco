@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode } from "lucide-svelte";
+	import { ArrowRight, Check, ClockArrowUp, QrCode } from "lucide-svelte";
 
 	const reconciliation = {
 		id: 123,
@@ -69,9 +69,9 @@
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
 								{#each selectedOrders as order}
-									<dd class="my-0.5 pl-2">
+									<dd class="badge badge-accent badge-outline badge-md gap-x-2">
 										#{order.id}
-										<span class="text-sm">({order.supplier})</span>
+										<span class="text-sm font-light">({order.supplier})</span>
 									</dd>
 								{/each}
 							</div>
@@ -83,24 +83,45 @@
 
 		<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
-				<div class="flex items-center justify-between">
-					<h3 class="max-md:divider-start max-md:divider m-0">
-						<span class="opacity-50">Step {step}:</span>
-						{#if step === 1}
-							Add delivered books
-						{:else}
-							Compare
-						{/if}
-					</h3>
-					<button class="btn-primary btn-md btn" disabled={!canReconcile} on:click={() => (step = 2)}>
-						{#if step === 1}
-							Compare
-						{:else}
-							Finalise
-						{/if}
-						<ArrowRight aria-hidden size={20} />
-					</button>
-				</div>
+				<nav aria-label="Progress">
+					<ol role="list" class="flex list-none items-center justify-between divide-x border pl-0">
+						<li class="flex-grow">
+							<button class="flex w-full items-center gap-x-2 px-4 py-2 text-sm">
+								<span class="bg-primary flex shrink-0 items-center justify-center rounded-full p-1">
+									<Check aria-hidden="true" class="text-white" size={22} />
+								</span>
+								<span class="inline-flex flex-col items-start">
+									<span class="font-medium">Populate</span>
+									<span class="font-light max-md:sr-only">Delivered books</span>
+								</span>
+							</button>
+						</li>
+
+						<li class="flex-grow">
+							<button aria-current="step" class="text-primary flex items-center gap-x-2 px-4 py-2 text-sm" disabled>
+								<span class="border-primary flex shrink-0 items-center justify-center rounded-full border-2 px-2.5 py-1">
+									<span>2</span>
+								</span>
+								<span class="inline-flex flex-col items-start text-start">
+									<span class="font-medium">Compare</span>
+									<span class="font-light max-md:sr-only">To ordered</span>
+								</span>
+							</button>
+						</li>
+
+						<li class="flex-grow">
+							<button class="text-primary/50 flex items-center gap-x-2 px-4 py-2 text-sm">
+								<span class="border-primary/50 flex shrink-0 items-center justify-center rounded-full border-2 px-2.5 py-1">
+									<span>3</span>
+								</span>
+								<span class="flex flex-col items-start text-start">
+									<span class="font-medium">Commit</span>
+									<span class="font-light max-md:sr-only">Notify customers</span>
+								</span>
+							</button>
+						</li>
+					</ol>
+				</nav>
 
 				<form class="flex w-full gap-2" on:submit|preventDefault={handleIsbnSubmit}>
 					<label class="input-bordered input flex flex-1 items-center gap-2">
@@ -116,26 +137,38 @@
 						<p class="text-base-content/70 text-center">Scan or enter the ISBNs of the delivered books to begin reconciliation.</p>
 					</div>
 				{:else}
-					<table class="table-pin-rows table pb-20">
-						<thead>
-							<tr>
-								<th>ISBN</th>
-								<th>Title</th>
-								<th>Authors</th>
-								<th>Price</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each books as { isbn, title, authors, price, quantity }}
+					<div class="relative h-full overflow-x-auto">
+						<table class="table-pin-rows table pb-20">
+							<thead>
 								<tr>
-									<th>{isbn}</th>
-									<td>{title}</td>
-									<td>{authors}</td>
-									<td>€{price}</td>
+									<th>ISBN</th>
+									<th>Title</th>
+									<th>Authors</th>
+									<th>Price</th>
 								</tr>
-							{/each}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{#each books as { isbn, title, authors, price }}
+									<tr>
+										<th>{isbn}</th>
+										<td>{title}</td>
+										<td>{authors}</td>
+										<td>€{price}</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+						{#if true}
+							<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+								<div class="bg-base-300 mx-2 flex w-full flex-row justify-end px-4 py-2 shadow-lg">
+									<button class="btn-primary btn self-end" on:click={() => {}}>
+										Next step
+										<ArrowRight aria-hidden size={20} class="hidden md:block" />
+									</button>
+								</div>
+							</div>
+						{/if}
+					</div>
 				{/if}
 			</div>
 		</div>
