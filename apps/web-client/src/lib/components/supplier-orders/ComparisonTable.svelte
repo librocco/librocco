@@ -14,65 +14,15 @@
 		books: Book[];
 	};
 
+	$: totalDelivered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalOrdered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+
 	export let supplierBooks: SupplierBooks[];
 
 	$: getSupplierSummary = (books: Book[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
-		return `${delivered}/${books.length} delivered`;
+		return `${delivered} / ${books.length}`;
 	};
-</script>
-
-<div class="relative h-full overflow-x-auto">
-	<table class="table-pin-rows table pb-20">
-		<thead>
-			<tr>
-				<th class="w-16">Status</th>
-				<th>ISBN</th>
-				<th>Title</th>
-				<th>Authors</th>
-				<th>Price</th>
-				<th>Ordered</th>
-			</tr>
-		</thead>
-		<tbody>
-			{#each supplierBooks as { supplier_name, books }}
-				<tr class="bg-base-200">
-					<th colspan="6" class="font-medium">
-						{supplier_name} ({getSupplierSummary(books)})
-					</th>
-				</tr>
-				{#each books as { isbn, title, authors, price, delivered, ordered }}
-					<tr class={delivered ? "bg-success/10" : ""}>
-						<td>
-							<input type="checkbox" class="checkbox" checked={delivered} disabled />
-						</td>
-						<th>{isbn}</th>
-						<td>{title}</td>
-						<td>{authors}</td>
-						<td>€{price}</td>
-						<td>{ordered}</td>
-					</tr>
-				{/each}
-			{/each}
-		</tbody>
-	</table>
-</div>
-<script lang="ts">
-	export let supplierBooks: Array<{
-		supplier_name: string;
-		supplier_id: number;
-		books: Array<{
-			isbn: string;
-			title: string;
-			authors: string;
-			price: number;
-			delivered: boolean;
-			ordered: number;
-		}>;
-	}>;
-
-	$: totalDelivered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
 </script>
 
 <div class="overflow-x-auto">
@@ -88,34 +38,32 @@
 				</th>
 			</tr>
 		</thead>
-		<tbody>
-			{#each supplierBooks as { supplier_name, books }}
+		{#each supplierBooks as { supplier_name, books }}
+			<thead>
 				<tr class="bg-base-200/50">
-					<th colspan="5" class="text-right">
-						<span class="badge badge-lg gap-2">
-							{supplier_name} {books.filter((b) => b.delivered).length} / {books.length}
+					<th colspan="4" class="text-left">
+						{supplier_name}
+					</th>
+					<th colspan="1" class="text-center">
+						<span class="badge badge-accent badge-outline badge-lg">
+							{getSupplierSummary(books)}
 						</span>
 					</th>
 				</tr>
+			</thead>
+			<tbody>
 				{#each books as { isbn, title, authors, price, delivered }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
 						<td>{authors}</td>
 						<td>€{price}</td>
-						<td>
+						<td class="text-center">
 							<input type="checkbox" checked={delivered} disabled class="checkbox" />
 						</td>
 					</tr>
 				{/each}
-			{/each}
-			<tr class="bg-base-300">
-				<th colspan="5" class="text-right">
-					<span class="badge badge-lg gap-2">
-						Total {totalDelivered} / {totalOrdered}
-					</span>
-				</th>
-			</tr>
-		</tbody>
+			</tbody>
+		{/each}
 	</table>
 </div>
