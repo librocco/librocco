@@ -126,46 +126,55 @@
 				</form>
 			</div>
 
-			<div class="relative h-full overflow-x-auto">
-				{#if books.length === 0}
-					<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
-						<p class="text-base-content/70 text-center">Scan or enter the ISBNs of the delivered books to begin reconciliation.</p>
-					</div>
-				{:else}
-					<div class="relative h-full overflow-x-auto">
-						<table class="table-pin-rows table pb-20">
-							<thead>
-								<tr>
-									<th>ISBN</th>
-									<th>Title</th>
-									<th>Authors</th>
-									<th>Price</th>
-								</tr>
-							</thead>
-							<tbody>
-								{#each books as { isbn, title, authors, price }}
+			{#if step === 1}
+				<div class="relative h-full overflow-x-auto">
+					{#if books.length === 0}
+						<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+							<p class="text-base-content/70 text-center">Scan or enter the ISBNs of the delivered books to begin reconciliation.</p>
+						</div>
+					{:else}
+						<div class="relative h-full overflow-x-auto">
+							<table class="table-pin-rows table pb-20">
+								<thead>
 									<tr>
-										<th>{isbn}</th>
-										<td>{title}</td>
-										<td>{authors}</td>
-										<td>€{price}</td>
+										<th>ISBN</th>
+										<th>Title</th>
+										<th>Authors</th>
+										<th>Price</th>
 									</tr>
-								{/each}
-							</tbody>
-						</table>
-						{#if true}
+								</thead>
+								<tbody>
+									{#each books as { isbn, title, authors, price }}
+										<tr>
+											<th>{isbn}</th>
+											<td>{title}</td>
+											<td>{authors}</td>
+											<td>€{price}</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 							<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
 								<div class="bg-base-300 mx-2 flex w-full flex-row justify-end px-4 py-2 shadow-lg">
-									<button class="btn-primary btn self-end" on:click={() => {}}>
+									<button class="btn-primary btn self-end" on:click={() => step = 2}>
 										Next step
 										<ArrowRight aria-hidden size={20} class="hidden md:block" />
 									</button>
 								</div>
 							</div>
-						{/if}
-					</div>
-				{/if}
-			</div>
+						</div>
+					{/if}
+				</div>
+			{:else if step === 2}
+				<ComparisonTable supplierBooks={mockSupplierBooks} />
+			{:else}
+				<div class="flex h-96 flex-col items-center justify-center gap-6">
+					<p class="text-center text-base-content/70">Ready to commit changes and notify customers.</p>
+					<button class="btn-primary btn" on:click={() => {}}>
+						Commit Changes
+					</button>
+				</div>
+			{/if}
 		</div>
 	</div>
 </main>
