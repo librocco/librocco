@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
-	import ComparisonTable from "$lib/components/reconciliation/ComparisonTable.svelte";
+	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 
 	// Mock data for the comparison view
 	const mockSupplierBooks = [
@@ -87,8 +87,11 @@
 		isbn = "";
 	}
 
+	$: totalDelivered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalOrdered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+
 	let currentStep = 1;
-	$: canReconcile = books.length > 0;
+	$: canCompare = books.length > 0;
 </script>
 
 <main class="h-screen">
@@ -167,16 +170,17 @@
 					</ol>
 				</nav>
 
-				<form class="flex w-full gap-2" on:submit|preventDefault={handleIsbnSubmit}>
-					<label class="input-bordered input flex flex-1 items-center gap-2">
-						<QrCode />
-						<input type="text" class="grow" placeholder="Enter ISBN of delivered books" bind:value={isbn} />
-					</label>
-				</form>
+				{#if currentStep === 1}
+					<form class="flex w-full gap-2" on:submit|preventDefault={handleIsbnSubmit}>
+						<label class="input-bordered input flex flex-1 items-center gap-2">
+							<QrCode />
+							<input type="text" class="grow" placeholder="Enter ISBN of delivered books" bind:value={isbn} />
+						</label>
+					</form>
+				{/if}
 			</div>
-
-			{#if step === 1}
-				<div class="relative h-full overflow-x-auto">
+			<div class="relative h-full overflow-x-auto">
+				{#if currentStep === 1}
 					{#if books.length === 0}
 						<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
 							<p class="text-base-content/70 text-center">Scan or enter the ISBNs of the delivered books to begin reconciliation.</p>
@@ -203,27 +207,33 @@
 									{/each}
 								</tbody>
 							</table>
-							<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-								<div class="bg-base-300 mx-2 flex w-full flex-row justify-end px-4 py-2 shadow-lg">
-									<button class="btn-primary btn self-end" on:click={() => step = 2}>
-										Next step
-										<ArrowRight aria-hidden size={20} class="hidden md:block" />
-									</button>
-								</div>
-							</div>
 						</div>
 					{/if}
-				</div>
-			{:else if step === 2}
-				<ComparisonTable supplierBooks={mockSupplierBooks} />
-			{:else}
-				<div class="flex h-96 flex-col items-center justify-center gap-6">
-					<p class="text-center text-base-content/70">Ready to commit changes and notify customers.</p>
-					<button class="btn-primary btn" on:click={() => {}}>
-						Commit Changes
-					</button>
-				</div>
-			{/if}
+				{:else if currentStep === 2}
+					<ComparisonTable supplierBooks={mockSupplierBooks} />
+				{/if}
+
+				{#if canCompare || currentStep === 2}
+					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+						<div class="bg-base-300 mx-2 flex w-full flex-row justify-between px-4 py-2 shadow-lg">
+							{#if currentStep === 2}
+								<dl class="stats flex">
+									<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
+										<dt class="stat-title">Total delivered:</dt>
+										<dd class="stat-value text-lg">
+											{totalDelivered} / {totalOrdered}
+										</dd>
+									</div>
+								</dl>
+							{/if}
+							<button class="btn-primary btn ml-auto" on:click={() => (currentStep = 2)}>
+								{currentStep === 1 ? "Compare" : "Commit"}
+								<ArrowRight aria-hidden size={20} class="hidden md:block" />
+							</button>
+						</div>
+					</div>
+				{/if}
+			</div>
 		</div>
 	</div>
 </main>
