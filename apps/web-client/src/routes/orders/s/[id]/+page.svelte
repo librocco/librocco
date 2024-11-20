@@ -68,13 +68,13 @@
 		lastUpdated: new Date()
 	};
 
-	let selectedBooks = new Set<string>();
-	$: totalAmount = Array.from(selectedBooks).reduce((acc, isbn) => {
+	let selectedBooks: string[] = [];
+	$: totalAmount = selectedBooks.reduce((acc, isbn) => {
 		const book = books.find((b) => b.isbn === isbn);
 		return acc + (book?.price || 0);
 	}, 0);
 
-	$: canPlaceOrder = selectedBooks.size > 0;
+	$: canPlaceOrder = selectedBooks.length > 0;
 
 	function handlePlaceOrder() {
 		if (!canPlaceOrder) return;
@@ -87,7 +87,7 @@
 
 	function selectPortion(portion: number) {
 		const numToSelect = Math.floor(books.length * portion);
-		selectedBooks = new Set(books.slice(0, numToSelect).map((b) => b.isbn));
+		selectedBooks = books.slice(0, numToSelect).map((b) => b.isbn);
 	}
 </script>
 
@@ -161,14 +161,13 @@
 									<input
 										type="checkbox"
 										class="checkbox"
-										checked={selectedBooks.has(isbn)}
+										checked={selectedBooks.includes(isbn)}
 										on:change={() => {
-											if (selectedBooks.has(isbn)) {
-												selectedBooks.delete(isbn);
+											if (selectedBooks.includes(isbn)) {
+												selectedBooks = selectedBooks.filter(id => id !== isbn);
 											} else {
-												selectedBooks.add(isbn);
+												selectedBooks = [...selectedBooks, isbn];
 											}
-											selectedBooks = selectedBooks;
 										}}
 									/>
 								</td>
