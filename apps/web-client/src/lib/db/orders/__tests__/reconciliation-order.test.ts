@@ -28,7 +28,7 @@ describe("Suppliers order creation", () => {
 		// get supplier orders
 		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
 
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id.toString());
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		// use supplier order ids to create a recon
 		await createReconciliationOrder(db, ids);
@@ -38,14 +38,14 @@ describe("Suppliers order creation", () => {
 			{
 				customer_order_line_ids: null,
 				id: 1,
-				supplier_order_ids: "1, 2"
+				supplier_order_ids: "[1,2]"
 			}
 		]);
 	});
 	it("can create a reconciliation order", async () => {
 		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
 
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id.toString());
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		const reconOrderId = await createReconciliationOrder(db, ids);
 		expect(reconOrderId).toStrictEqual(1);
@@ -54,13 +54,13 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "1, 2"
+			supplier_order_ids: "[1,2]"
 		});
 	});
 	it("can update a currently reconciliating order", async () => {
 		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
 
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id.toString());
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		const reconOrderId = await createReconciliationOrder(db, ids);
 		expect(reconOrderId).toStrictEqual(1);
@@ -69,7 +69,7 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "1, 2"
+			supplier_order_ids: "[1,2]"
 		});
 
 		await addOrderLinesToReconciliationOrder(db, 1, ["123", "435", "324"]);
@@ -79,7 +79,7 @@ describe("Suppliers order creation", () => {
 		expect(res3).toMatchObject({
 			customer_order_line_ids: "123, 435, 324",
 			id: 1,
-			supplier_order_ids: "1, 2"
+			supplier_order_ids: "[1,2]"
 		});
 	});
 

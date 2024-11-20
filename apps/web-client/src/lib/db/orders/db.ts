@@ -96,7 +96,7 @@ export async function initializeDB(db: DB) {
 
 	await db.exec(`CREATE TABLE reconciliation_order (
     id INTEGER NOT NULL,
-		supplier_order_ids TEXT,
+		supplier_order_ids TEXT CHECK (json_array_length(supplier_order_ids) >= 1),
 		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 		customer_order_line_ids TEXT,
 		PRIMARY KEY (id)
