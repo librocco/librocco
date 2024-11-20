@@ -45,7 +45,7 @@
 						{supplier_name}
 					</th>
 					<th colspan="1" class="text-center">
-						<span class="badge badge-accent badge-outline badge-lg">
+						<span class="badge-accent badge-outline badge-lg badge">
 							{getSupplierSummary(books)}
 						</span>
 					</th>
