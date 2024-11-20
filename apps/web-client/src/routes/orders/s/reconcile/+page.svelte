@@ -1,9 +1,10 @@
 <script lang="ts">
 	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
+
+	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
-	import CommitDialog from "$lib/components/reconciliation/CommitDialog.svelte";
-	import { defaultDialogConfig } from "$lib/components/Melt";
+	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
 	// Mock data for the comparison view
 	const mockSupplierBooks = [
@@ -158,7 +159,7 @@
 							<li class="flex-grow">
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
-									disabled={isCurrent || (currentStep === 1 && step === 3)}
+									disabled={isCurrent || step === 3}
 									on:click={() => (currentStep = step)}
 								>
 									{#if isCompleted}
@@ -240,8 +241,8 @@
 									</div>
 								</dl>
 							{/if}
-							<button 
-								class="btn-primary btn ml-auto" 
+							<button
+								class="btn-primary btn ml-auto"
 								on:click={() => {
 									if (currentStep === 1) {
 										currentStep = 2;
@@ -261,9 +262,6 @@
 	</div>
 </main>
 
-<CommitDialog 
-	dialog={commitDialog} 
-	bookCount={totalDelivered}
-	on:cancel={() => commitDialogOpen.set(false)}
-	on:confirm={handleCommit}
-/>
+<PageCenterDialog dialog={commitDialog} title="" description="">
+	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+</PageCenterDialog>
