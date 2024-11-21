@@ -12,6 +12,7 @@ import {
 	finalizeReconciliationOrder
 } from "../reconciliation";
 import { createSupplierOrder, getPossibleSupplerOrderLines } from "../suppliers";
+import { getCustomerBooks } from "../customers";
 
 //getAllReconciliationOrders
 
@@ -38,7 +39,8 @@ describe("Suppliers order creation", () => {
 			{
 				customer_order_line_ids: null,
 				id: 1,
-				supplier_order_ids: "[1,2]"
+				supplier_order_ids: "[1,2]",
+				finalized: 0
 			}
 		]);
 	});
@@ -54,7 +56,8 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1,2]"
+			supplier_order_ids: "[1,2]",
+			finalized: 0
 		});
 	});
 	it("can update a currently reconciliating order", async () => {
@@ -69,7 +72,8 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1,2]"
+			supplier_order_ids: "[1,2]",
+			finalized: 0
 		});
 
 		await addOrderLinesToReconciliationOrder(db, 1, ["123", "435", "324"]);
@@ -77,9 +81,33 @@ describe("Suppliers order creation", () => {
 		const res3 = await getReconciliationOrder(db, reconOrderId);
 
 		expect(res3).toMatchObject({
-			customer_order_line_ids: "123, 435, 324",
+			customer_order_line_ids: `["123","435","324"]`,
 			id: 1,
-			supplier_order_ids: "[1,2]"
+			supplier_order_ids: "[1,2]",
+			finalized: 0
+		});
+	});
+
+	it("can finalize a currently reconciliating order", async () => {
+		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		const reconOrderId = await createReconciliationOrder(db, ids);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1", "3"]);
+
+		await finalizeReconciliationOrder(db, reconOrderId);
+		const res3 = await getReconciliationOrder(db, reconOrderId);
+
+		const books = await getCustomerBooks(db, 1);
+		expect(books[0].received).toBeInstanceOf(Date);
+		expect(books[2].received).toBeInstanceOf(Date);
+		expect(res3).toMatchObject({
+			customer_order_line_ids: `["1","3"]`,
+			id: 1,
+			supplier_order_ids: "[1,2]",
+			finalized: 1
 		});
 	});
 
@@ -108,6 +136,31 @@ describe("Suppliers order creation", () => {
 
 		it("throws error when trying to finalize with no id", async () => {
 			await expect(finalizeReconciliationOrder(db, 0)).rejects.toThrow("Reconciliation order must have an id");
+		});
+
+		it("throws error when trying to finalize an already finalized order", async () => {
+			const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+			const reconOrderId = await createReconciliationOrder(db, ids);
+
+			await finalizeReconciliationOrder(db, reconOrderId);
+
+			await expect(finalizeReconciliationOrder(db, reconOrderId)).rejects.toThrow(
+				`Reconciliation order ${reconOrderId} is already finalized`
+			);
+		});
+
+		it("throws error when customer order lines are in invalid JSON format", async () => {
+			const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+			const reconOrderId = await createReconciliationOrder(db, ids);
+
+			// Directly insert malformed JSON
+			await db.exec("UPDATE reconciliation_order SET customer_order_line_ids = ? WHERE id = ?", ["{invalid-json", reconOrderId]);
+
+			await expect(finalizeReconciliationOrder(db, reconOrderId)).rejects.toThrow(
+				`Invalid customer order lines format in reconciliation order ${reconOrderId}`
+			);
 		});
 	});
 });
