@@ -8,7 +8,8 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
 
-	import { data } from "./data";
+	import { data } from "../data";
+	import { getOrderLineStatus } from "$lib/utils/order-status";
 
 	const { customers, customerOrderLines, books } = data;
 
@@ -35,8 +36,8 @@
 		<input type="checkbox" value="forest" class="theme-controller toggle" />
 	</header>
 
-	<div class="flex h-full flex-col gap-y-6 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-		<div class="min-w-fit basis-full md:basis-96 md:overflow-y-auto">
+	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card h-full">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
@@ -129,7 +130,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each orderLines as { isbn, quantity, title, authors, price }}
+							{#each orderLines as { isbn, quantity, title, authors, price, placed, received, collected }}
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
@@ -147,11 +148,15 @@
 										/>
 									</td>
 									<td>
-										<select class="select-primary select select-sm w-full min-w-fit max-w-xs rounded-none">
-											<option disabled selected>Ordered</option>
-											<option>Received</option>
-											<option>Collected</option>
-										</select>
+										{#if getOrderLineStatus({ placed, received, collected }) === "collected"}
+											<span class="badge-success badge">Collected</span>
+										{:else if getOrderLineStatus({ placed, received, collected }) === "received"}
+											<span class="badge-info badge">Received</span>
+										{:else if getOrderLineStatus({ placed, received, collected }) === "placed"}
+											<span class="badge-warning badge">Placed</span>
+										{:else}
+											<span class="badge">Draft</span>
+										{/if}
 									</td>
 								</tr>
 							{/each}
