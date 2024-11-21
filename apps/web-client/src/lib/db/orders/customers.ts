@@ -1,4 +1,4 @@
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
@@ -82,11 +82,10 @@ export const updateOrderLineQuantity = async (db: DB, bookId: number, quantity: 
 	await db.exec(sql, params);
 };
 
-export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
-	if (!supplierOrderLines.length) return;
+export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]) => {
+	if (!isbns.length) return;
 	return db.tx(async (txDb) => {
-		const isbns = supplierOrderLines.map((line) => line.isbn);
-		const placeholders = multiplyString("?", supplierOrderLines.length);
+		const placeholders = multiplyString("?", isbns.length);
 		await txDb.exec(
 			`
 		 UPDATE customer_order_lines
