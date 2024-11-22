@@ -12,8 +12,10 @@
 
 	onMount(async () => {
 		// Start the sync worker - we'll be needing it for the tests
+		console.time("worker-init");
 		const _wkr = new SyncWorker();
 		const wkr = new WorkerInterface(_wkr);
+		console.timeEnd("worker-init");
 
 		// Attach relevand object/handles to the window object so that we
 		// can access them within Playwright test (using page.evaluate(...) context)
@@ -22,9 +24,12 @@
 		window["local"] = local;
 		window["remote"] = remote;
 
+		console.time("ready-rerender");
 		// Signal ready (for the test code to await before beginning with interactions)
 		ready = true;
 	});
+
+	$: if (ready) console.timeEnd("ready-rerender");
 </script>
 
 <div class="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2">
