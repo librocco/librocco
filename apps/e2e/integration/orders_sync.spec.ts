@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Locator } from "@playwright/test";
 import { type WorkerInterface, type DB } from "@vlcn.io/ws-client";
 
 import { baseURL } from "../constants";
@@ -10,29 +10,34 @@ const pollOpts = {
 };
 
 test("update is reflected in table view - stock", async ({ page }) => {
-	// Load the app
-	const testURL = [baseURL, "preview", "tests", "orders_sync/"].join("/");
-	await page.goto(testURL);
-
-	const url = "ws://localhost:3000/sync";
-
 	const randomTestRunId = Math.floor(Math.random() * 100000000);
 	const room = randomTestRunId.toString();
 
-	const dbid1 = `${room}-1`;
-	const dbid2 = `${room}-2`;
+	const url = "ws://localhost:3000/sync";
 
+	// Load the app
+	const testURL = [baseURL, "preview", "tests", "orders_sync/"].join("/").concat(["?room", room].join("="));
+	await page.goto(testURL);
 	await page.getByText("Ready: true").waitFor();
 
 	// Check that the remote is available (also initialise the server sync DB)
 	await page.evaluate(remote.getAllCustomers, room);
-	// Initialise two local dbs
-	const db1 = await page.evaluateHandle(getInitializedDB, dbid1);
-	const db2 = await page.evaluateHandle(getInitializedDB, dbid2);
+
+	const dbid1 = await page.evaluate(() => window["dbid1"]);
+	const dbid2 = await page.evaluate(() => window["dbid2"]);
+
+	const db1 = await page.evaluateHandle(() => window["db1"]);
+	const db2 = await page.evaluateHandle(() => window["db2"]);
 
 	// Start the sync
 	await page.evaluate(wkr.startSync, [dbid1, { room, url }] as const);
 	await page.evaluate(wkr.startSync, [dbid2, { room, url }] as const);
+
+	const db1Container = page.getByTestId("db1-customers");
+	const db2Container = page.getByTestId("db2-customers");
+
+	await db1Container.waitFor();
+	await db2Container.waitFor();
 
 	// NOTE: Something weird is happening:
 	// - we initialise both DBs
@@ -56,36 +61,29 @@ test("update is reflected in table view - stock", async ({ page }) => {
 			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
 			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
 		]);
-	await expect
-		.poll(() => db1.evaluate(local.getAllCustomers), pollOpts)
-		.toEqual([
-			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
-			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
-		]);
-	await expect
-		.poll(() => db2.evaluate(local.getAllCustomers), pollOpts)
-		.toEqual([
-			{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
-			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
-		]);
+
+	await assertCustomers(db1Container, [
+		{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
+		{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+	]);
+	await assertCustomers(db2Container, [
+		{ fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 },
+		{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+	]);
 
 	// Update DB1 -> DB2
 	await db1.evaluate(local.upsertCustomer, { fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 });
-	await expect
-		.poll(() => db2.evaluate(local.getAllCustomers), pollOpts)
-		.toEqual([
-			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
-			{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
-		]);
+	await assertCustomers(db2Container, [
+		{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+		{ fullname: "Jane Doe", id: 2, email: "jane@example.com", deposit: 13.2 }
+	]);
 
 	// Update DB2 -> DB1
 	await db2.evaluate(local.upsertCustomer, { fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 });
-	await expect
-		.poll(() => db1.evaluate(local.getAllCustomers), pollOpts)
-		.toEqual([
-			{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
-			{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
-		]);
+	await assertCustomers(db1Container, [
+		{ fullname: "John Doe the II", id: 1, email: "john@example.com", deposit: 13.2 },
+		{ fullname: "Jane Doe", id: 2, email: "jane@gmail.com", deposit: 13.2 }
+	]);
 
 	// Check remote for good measure
 	await expect
@@ -110,8 +108,11 @@ type Customer = {
 // to interact with the DBs are attached to the window object within /tests/orders_sync page
 declare global {
 	interface Window {
+		dbid1: string;
+		dbid2: string;
+		db1: DB;
+		db2: DB;
 		wkr: WorkerInterface;
-		getInitializedDB: (dbid: string) => Promise<{ db: DB }>;
 		local: {
 			upsertCustomer: (db: DB, customer: Customer) => Promise<void>;
 			getAllCustomers: (db: DB) => Promise<Customer[]>;
@@ -121,18 +122,6 @@ declare global {
 		};
 	}
 }
-
-/**
- * Akin to `getInitializedDB` on the client side.
- *
- * IMPORTANT: should be used only within page context
- *
- * @example
- * ```ts
- * const db = await page.evaluateHandle(getInitializedDB, dbid)
- * ````
- */
-const getInitializedDB = (dbid: string): Promise<DB> => window["getInitializedDB"](dbid).then(({ db }) => db);
 
 const wkr = {
 	/**
@@ -199,4 +188,19 @@ const remote = {
 	 * ````
 	 */
 	getAllCustomers: (dbid: string) => window["remote"].getAllCustomers(dbid)
+};
+
+const assertCustomers = async (container: Locator, customers: Customer[]) => {
+	await Promise.all(
+		customers.map(async (c, i) => {
+			const card = container.getByTestId("customer-card").nth(i);
+			await card.getByText(`id: ${c.id}`).waitFor();
+			await card.getByText(`fullname: ${c.fullname}`).waitFor();
+			await card.getByText(`email: ${c.email}`).waitFor();
+			await card.getByText(`deposit: ${c.deposit}`).waitFor();
+		})
+	);
+
+	// Check that there are exactly as many customers as have been passed in for assertion
+	await container.getByTestId("customer-card").nth(customers.length).waitFor({ state: "detached" });
 };
