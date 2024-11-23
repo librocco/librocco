@@ -27,12 +27,12 @@
 	import { base } from "$app/paths";
 
 	function handleReconcile(supplierId: number) {
-		goto(`${base}/orders/s/reconcile?ids=${supplierId}`);
+		goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
 
 	function handleBulkReconcile() {
 		const ids = Array.from(selectedOrders).join(",");
-		goto(`${base}/orders/s/reconcile?ids=${ids}`);
+		goto(`${base}/orders/suppliers/reconcile?ids=${ids}`);
 	}
 </script>
 

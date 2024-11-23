@@ -10,7 +10,7 @@ const PATHS = {
 	inbound: `${basepath}/inventory/inbound/`,
 	outbound: `${basepath}/outbound/`,
 	settings: `${basepath}/settings/`,
-	customers: `${basepath}/customers/`,
+	customers: `${basepath}/orders/customers/`,
 	"history/date": `${basepath}/history/date/`,
 	"history/isbn": `${basepath}/history/isbn/`,
 	"history/notes/date": `${basepath}/history/notes/`,
@@ -18,7 +18,8 @@ const PATHS = {
 	"history/warehouse": `${basepath}/history/warehouse/`,
 
 	// Order mgmt
-	supplier_orders: `${basepath}/supplier_orders/`
+	supplier_orders: `${basepath}/orders/suppliers/`,
+	reconcile: `${basepath}/orders/suppliers/reconcile/`
 };
 
 /**
