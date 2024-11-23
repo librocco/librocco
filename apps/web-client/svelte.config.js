@@ -33,7 +33,7 @@ const config = {
 				"/stock/",
 				"/outbound/",
 				"/outbound/1/",
-				"orders/customers/",
+				"/orders/customers/",
 				"/orders/customers/1/",
 				"/orders/suppliers/",
 				"/orders/suppliers/reconcile/",
