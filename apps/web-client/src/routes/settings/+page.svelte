@@ -172,8 +172,8 @@
 								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
 								{#if selectionOn}
 									<li
-										data-active={active}
 										on:click={handleSelect(file)}
+										data-active={active}
 										class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
 											? 'bg-green-300'
 											: 'hover:bg-gray-50'}"
@@ -226,6 +226,8 @@
 							<div
 								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
 								on:drop={handleDrop}
+								role="region"
+								aria-label="Drop zone"
 								on:dragover={handleDragOver}
 							>
 								<p>Drag and drop your .sqlite3 file here to import</p>
