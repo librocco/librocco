@@ -14,9 +14,18 @@
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
+	import { onMount } from "svelte";
 
 	const { db } = getDB();
 
+	let inputElement: HTMLInputElement;
+
+	onMount(() => {
+		// Only focus if it's really necessary
+		// if (shouldFocus) {
+		inputElement.focus();
+		// }
+	});
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
@@ -43,7 +52,7 @@
 <HistoryPage view="history/isbn">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
+		<input data-testid={testId("search-input")} bind:this={inputElement} use:input placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
@@ -74,14 +83,12 @@
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
 			{#each $entries as { isbn, title, authors, year, publisher }}
-				<li
-					data-testid={testId("search-completion")}
-					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
-					class="w-full cursor-pointer px-4 py-3"
-				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-					<p data-property="title" class="text-xl font-medium">{title}</p>
-					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+				<li data-testid={testId("search-completion")}>
+					<button class="cursor-pointer items-start px-4 py-3" on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}>
+						<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+						<p data-property="title" class="text-xl font-medium">{title}</p>
+						<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
+					</button>
 				</li>
 			{/each}
 		</ul>
