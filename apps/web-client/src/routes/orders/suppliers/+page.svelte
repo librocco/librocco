@@ -12,6 +12,9 @@
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
 	import { getPossibleSupplerOrderInfos } from "$lib/db/orders/suppliers";
 
+	import Page from "$lib/components/Page.svelte";
+
+	import { view } from "@librocco/shared";
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: newOrderDialogOpen }
@@ -56,59 +59,66 @@
 		console.log("Reconciling orders:", event.detail.supplierIds);
 		// TODO: Implement reconciliation logic
 	}
+
+	let initialized = true;
 </script>
 
-<main class="h-screen">
-	<header class="navbar mb-4 bg-neutral">
-		<input type="checkbox" value="forest" class="theme-controller toggle" />
-	</header>
+<Page view={view("orders/suppliers")} loaded={initialized}>
+	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
+		<header class="navbar mb-4 bg-neutral">
+			<input type="checkbox" value="forest" class="theme-controller toggle" />
+		</header>
+	</svelte:fragment>
 
-	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
-		</div>
-
-		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if supplierOrders.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
-						No supplier orders available. Create a customer order first to generate supplier orders.
-					</p>
-					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-						<Plus size={20} />
-						New Customer Order
-					</button>
+	<svelte:fragment slot="main">
+		<main class="h-screen">
+			<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+				<div class="flex items-center justify-between">
+					<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
 				</div>
-			{:else}
-				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("unordered")}
-						aria-pressed={$supplierOrderFilterStatus === "unordered"}
-					>
-						Unordered
-					</button>
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("ordered")}
-						aria-pressed={$supplierOrderFilterStatus === "ordered"}
-						disabled={!hasOrderedOrders}
-					>
-						Ordered
-					</button>
-					<button class="btn-outline btn-sm btn" disabled> Received </button>
-					<button class="btn-outline btn-sm btn" disabled> Completed </button>
-				</div>
-				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable orders={filteredOrders} />
-				{:else}
-					<OrderedTable orders={filteredOrders} on:reconcile={handleReconcile} />
-				{/if}
-			{/if}
-		</div>
-	</div>
-</main>
 
+				<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+					{#if supplierOrders.length === 0}
+						<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+							<p class="text-center text-base-content/70">
+								No supplier orders available. Create a customer order first to generate supplier orders.
+							</p>
+							<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+								<Plus size={20} />
+								New Customer Order
+							</button>
+						</div>
+					{:else}
+						<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+							<button
+								class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+								on:click={() => setFilter("unordered")}
+								aria-pressed={$supplierOrderFilterStatus === "unordered"}
+							>
+								Unordered
+							</button>
+							<button
+								class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+								on:click={() => setFilter("ordered")}
+								aria-pressed={$supplierOrderFilterStatus === "ordered"}
+								disabled={!hasOrderedOrders}
+							>
+								Ordered
+							</button>
+							<button class="btn-outline btn-sm btn" disabled> Received </button>
+							<button class="btn-outline btn-sm btn" disabled> Completed </button>
+						</div>
+						{#if $supplierOrderFilterStatus === "unordered"}
+							<UnorderedTable orders={filteredOrders} />
+						{:else}
+							<OrderedTable orders={filteredOrders} on:reconcile={handleReconcile} />
+						{/if}
+					{/if}
+				</div>
+			</div>
+		</main>
+	</svelte:fragment>
+</Page>
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
 	<CustomerOrderMetaForm
 		heading="Create new order"
@@ -126,7 +136,7 @@
 				if (form.valid) {
 					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 					newOrderDialogOpen.set(false);
-					await goto(`${base}/orders/c/${newCustomerId}`);
+					await goto(`${base}/orders/customers/${newCustomerId}`);
 				}
 			}
 		}}
