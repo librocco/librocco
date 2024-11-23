@@ -172,13 +172,20 @@
 								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
 								{#if selectionOn}
 									<li
-										on:click={handleSelect(file)}
 										data-active={active}
 										class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
 											? 'bg-green-300'
 											: 'hover:bg-gray-50'}"
 									>
-										<span>{file}</span>
+										<button
+											on:click={handleSelect(file)}
+											data-active={active}
+											class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
+												? 'bg-green-300'
+												: 'hover:bg-gray-50'}"
+										>
+											<span>{file}</span>
+										</button>
 									</li>
 								{:else}
 									<li

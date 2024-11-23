@@ -10,7 +10,7 @@
 	let initialized = true;
 </script>
 
-<Page view="orders/supplier_orders" loaded={initialized}>
+<Page view="orders/suppliers" loaded={initialized}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search orders" {...inputProps} />
