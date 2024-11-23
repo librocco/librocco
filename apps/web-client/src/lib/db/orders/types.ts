@@ -36,6 +36,9 @@ export type CustomerOrderLine = {
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
+	/**
+	 * This will come out from the customer_supplier_order table
+	 */
 	supplierOrderIds: number[]; // List of supplier order ids that this book order is part of
 };
 export type BookLine = { isbn: string; quantity: number };
@@ -55,6 +58,19 @@ export type SupplierOrder = {
 	supplier_id: number;
 	created: Date;
 	lines: SupplierOrderLine[];
+	id: number;
+};
+
+/**
+ * Represents a reconciliation order that groups multiple supplier orders
+ * and their associated customer order lines for processing.
+ */
+export type ReconciliationOrder = {
+	SupplierOrderIds: number[];
+	created: Date;
+	customer_order_line_ids: string[]; // isbns
+	id?: number;
+	finalized: boolean;
 };
 
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
