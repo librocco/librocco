@@ -16,8 +16,14 @@ export type WebClientView =
 	| "history/warehouse"
 	| "debug"
 	| "error"
+	| "c"
+	| "s"
 	| "orders/customers"
-	| "orders/supplier_orders";
+	| "orders/customers/id"
+	| "orders/suppliers"
+	| "orders/suppliers/id"
+	| "orders/suppliers/reconcile";
+
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list" | "history/notes";
 /** Union of names for all views regarding history (summaries, past notes/transactions) */
