@@ -102,7 +102,7 @@
 	};
 </script>
 
-<div id={testId("page-container")} data-view={view} data-loaded={loaded} class="flex h-screen w-screen overflow-hidden">
+<div data-view={view} data-loaded={loaded} class="flex h-screen w-screen overflow-hidden">
 	<!-- Sidenav -->
 	<div class="flex">
 		<div class="hidden h-screen bg-gray-800 sm:inline-block">
