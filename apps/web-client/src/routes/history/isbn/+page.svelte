@@ -14,18 +14,9 @@
 	import { createSearchDropdown } from "./[isbn]/actions";
 	import { goto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
-	import { onMount } from "svelte";
 
 	const { db } = getDB();
 
-	let inputElement: HTMLInputElement;
-
-	onMount(() => {
-		// Only focus if it's really necessary
-		// if (shouldFocus) {
-		inputElement.focus();
-		// }
-	});
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
@@ -52,7 +43,8 @@
 <HistoryPage view="history/isbn">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
-		<input data-testid={testId("search-input")} bind:this={inputElement} use:input placeholder="Search" {...inputProps} />
+		<!-- svelte-ignore a11y_autofocus -->
+		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">

@@ -171,21 +171,15 @@
 							{#each files as file (file)}
 								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
 								{#if selectionOn}
+									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<li
+										on:click={handleSelect(file)}
 										data-active={active}
 										class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
 											? 'bg-green-300'
 											: 'hover:bg-gray-50'}"
 									>
-										<button
-											on:click={handleSelect(file)}
-											data-active={active}
-											class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
-												? 'bg-green-300'
-												: 'hover:bg-gray-50'}"
-										>
-											<span>{file}</span>
-										</button>
+										<span>{file}</span>
 									</li>
 								{:else}
 									<li
