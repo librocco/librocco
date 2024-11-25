@@ -75,12 +75,14 @@
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
 			{#each $entries as { isbn, title, authors, year, publisher }}
-				<li data-testid={testId("search-completion")}>
-					<button class="cursor-pointer items-start px-4 py-3" on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}>
-						<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-						<p data-property="title" class="text-xl font-medium">{title}</p>
-						<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
-					</button>
+				<li
+					class="cursor-pointer items-start px-4 py-3"
+					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
+					data-testid={testId("search-completion")}
+				>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+					<p data-property="title" class="text-xl font-medium">{title}</p>
+					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>
 			{/each}
 		</ul>
