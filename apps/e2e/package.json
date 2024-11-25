@@ -7,7 +7,7 @@
 		"test:debug": "playwright test $1 --debug",
 		"test:run": "playwright test",
 		"test:codegen": "playwright codegen",
-		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; (cd ../cr-server && rushx dev) & SYNC_SERVER_PID=$!; CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; kill $SYNC_SERVER_PID; exit $RESULT",
+		"test:ci": "(cd ../web-client && rushx preview) & PREVIEW_PID=$!; (cd ../cr-server && rushx dev) & SYNC_SERVER_PID=$!; sleep 5 && CI=true playwright test; RESULT=$?; kill $PREVIEW_PID; kill $SYNC_SERVER_PID; exit $RESULT",
 		"typecheck": "tsc",
 		"lint": "prettier --check . && eslint .",
 		"lint:strict": "prettier --check . && eslint . --max-warnings=0",
