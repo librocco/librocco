@@ -8,23 +8,30 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
 
-	import { data } from "../data";
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 
 	import Page from "$lib/components/Page.svelte";
 	import { view } from "@librocco/shared";
+	import type { PageData } from "./$types";
 
-	const { customers, customerOrderLines, books } = data;
+	export let data: PageData;
+	const { customer, customerOrderLines, books } = data;
 
 	const customerMetaDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
 
-	const [customer] = customers;
 	const orderLines = customerOrderLines
-		.filter((line) => line.customer_id === customer.id)
+		.map((mm) => {
+			console.log({ mm });
+			console.log({ customer });
+
+			return mm;
+		})
+		.filter((line) => line.customer_id === customer.id.toString())
 		.map((line) => {
+			console.log({ line });
 			return {
 				...books[line.isbn],
 				...line
