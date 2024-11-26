@@ -13,6 +13,9 @@
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
+	import Page from "$lib/components/Page.svelte";
+	import { view } from "@librocco/shared";
+
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: newOrderDialogOpen }
@@ -38,11 +41,11 @@
 	}
 </script>
 
-<main class="h-screen">
-	<header class="navbar mb-4 bg-neutral">
-		<input type="checkbox" value="forest" class="theme-controller toggle" />
-	</header>
+<header class="navbar mb-4 bg-neutral">
+	<input type="checkbox" value="forest" class="theme-controller toggle" />
+</header>
 
+<main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
 			<h1 class="prose text-2xl font-bold">Customer Orders</h1>
@@ -101,7 +104,7 @@
 									<span class="font-medium">{id}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/orders/c/{id}" class="btn-outline btn-sm btn">Update</a>
+									<a href="{base}/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>
 								</td>
 							</tr>
 						{/each}
@@ -130,7 +133,7 @@
 					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
 					newOrderDialogOpen.set(false);
-					await goto(`${base}/orders/c/${newCustomerId}`);
+					await goto(`${base}/orders/customers/${newCustomerId}`);
 				}
 			}
 		}}

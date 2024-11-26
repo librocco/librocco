@@ -33,10 +33,11 @@ const config = {
 				"/stock/",
 				"/outbound/",
 				"/outbound/1/",
-				"/customers/",
-				"/customers/1/",
-				"/supplier_orders/",
-				"/supplier_orders/1/",
+				"/orders/customers/",
+				"/orders/customers/1/",
+				"/orders/suppliers/",
+				"/orders/suppliers/reconcile/",
+				"/orders/suppliers/1/",
 				"/history/date/1/",
 				"/history/isbn/",
 				"/history/isbn/1/",
@@ -47,11 +48,11 @@ const config = {
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
 				"/settings/",
-				"/orders/c/1/",
-				"/orders/c/",
-				"/orders/s/",
-				"/orders/s/1/",
-				"/orders/s/reconcile"
+				"/c/1/",
+				"/c/",
+				"/s/",
+				"/s/1/",
+				"/s/reconcile"
 			]
 		},
 		paths: {

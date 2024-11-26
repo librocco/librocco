@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { Truck } from "lucide-svelte";
-
+	import Page from "$lib/components/Page.svelte";
+	import { view } from "@librocco/shared";
 	// TODO: Replace with actual DB call
 	let books = [
 		{
@@ -91,11 +92,11 @@
 	}
 </script>
 
-<main class="h-screen">
-	<header class="navbar mb-4 bg-neutral">
-		<input type="checkbox" value="forest" class="theme-controller toggle" />
-	</header>
+<header class="navbar mb-4 bg-neutral">
+	<input type="checkbox" value="forest" class="theme-controller toggle" />
+</header>
 
+<main class="h-screen">
 	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card">
