@@ -37,7 +37,7 @@
 	}
 </script>
 
-<Page view="orders/supplier_orders" loaded={initialized}>
+<Page view="s" loaded={initialized}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<!-- This is a global thing (link to stock) and should not be changed atm -->
