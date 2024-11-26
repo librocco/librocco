@@ -24,14 +24,6 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	bookData.forEach((book) => {
 		bookDataMap.set(book.isbn, book);
 	});
-	const mergedBooks = customerOrderLines.map((customerBook) => {
-		const additionalData = bookDataMap.get(customerBook.isbn) || ({} as BookEntry);
-		return {
-			...customerBook,
-			...additionalData
-		};
-	});
 
-	// why is pagedata not the correct type and why is customerOrderLines only getting picked up
 	return { books: bookData, customer: customerDetails[0] || ({} as Customer), customerOrderLines };
 };
