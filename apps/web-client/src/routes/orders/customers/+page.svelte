@@ -31,7 +31,7 @@
 	const { customers, customerOrderLines } = data;
 
 	$: ordersWithStatus = customers.map((customer) => {
-		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
+		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id.toString());
 		const status = getOrderStatus(orders);
 		return {
 			...customer,
