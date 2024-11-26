@@ -8,13 +8,20 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
-	import { data } from "./data";
+	// import { data } from "./data";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
 	import Page from "$lib/components/Page.svelte";
 	import { view } from "@librocco/shared";
+	import type { PageData } from "./$types";
+	import { upsertCustomer } from "$lib/db/orders/customers";
+	import { appPath } from "$lib/paths";
+
+	// import type { Layout } from "./$types";
+
+	export let data: PageData;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -39,6 +46,14 @@
 	function setFilter(status: OrderFilterStatus) {
 		orderFilterStatus.set(status);
 	}
+
+	const createCustomer = async () => {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+		const randomId = Math.floor(Math.random() * 1e10);
+		await upsertCustomer(data.ordersDb, { id: randomId });
+		goto(appPath("customers", randomId.toString()));
+	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -126,6 +141,7 @@
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					// TODO: update data
+					createCustomer();
 				}
 			},
 			onUpdated: async ({ form }) => {

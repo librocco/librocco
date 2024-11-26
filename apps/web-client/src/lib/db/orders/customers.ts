@@ -27,10 +27,17 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		]
 	);
 }
+export const getAllCustomerOrderLines = async (db: DB) => {
+	const result = await db.execO<DBCustomerOrderLine>(
+		`SELECT customer_order_lines.id, customer_id, isbn, quantity, created, placed, received, collected
+		FROM customer_order_lines`
+	);
 
+	return result;
+};
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, isbn, quantity, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
+		`SELECT customer_order_lines.id, isbn, quantity, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
 		FROM customer_order_lines
 		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
 		WHERE customer_id = $customerId
