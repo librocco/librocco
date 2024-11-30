@@ -35,6 +35,7 @@
 	import { invalidate, invalidateAll } from "$app/navigation";
 
 	export let data: PageData;
+	$: db = data.ordersDb?.db;
 
 	const id = parseInt($page.params.id);
 
@@ -72,15 +73,11 @@
 		const subscribe = internal.subscribe.bind(internal);
 		return { set, update, subscribe };
 	};
-	$: name = createFieldStore(data.customerDetails.fullname || "", (fullname) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, fullname })
-	);
+	$: name = createFieldStore(data.customerDetails.fullname || "", (fullname) => upsertCustomer(db, { ...data.customerDetails, fullname }));
 	$: deposit = createFieldStore(data.customerDetails.deposit || 0, (deposit) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, deposit: Number(deposit) })
+		upsertCustomer(db, { ...data.customerDetails, deposit: Number(deposit) })
 	);
-	$: email = createFieldStore(data.customerDetails.email || "", (email) =>
-		upsertCustomer(data.ordersDb, { ...data.customerDetails, email })
-	);
+	$: email = createFieldStore(data.customerDetails.email || "", (email) => upsertCustomer(db, { ...data.customerDetails, email }));
 
 	$: orderLines = data?.customerBooks;
 
@@ -103,11 +100,11 @@
 			title: "",
 			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		await addBooksToCustomer(db, parseInt($page.params.id), [newBook]);
 	};
 
 	const handleRemoveOrderLine = async (bookId: number) => {
-		await removeBooksFromCustomer(data.ordersDb, parseInt($page.params.id), [bookId]);
+		await removeBooksFromCustomer(db, parseInt($page.params.id), [bookId]);
 		open.set(false);
 	};
 
@@ -175,7 +172,7 @@
 			<button
 				class="mx-2 my-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
 				on:click={() =>
-					upsertCustomer(data.ordersDb, {
+					upsertCustomer(db, {
 						...data.customerDetails,
 						fullname: $name,
 						email: $email,
