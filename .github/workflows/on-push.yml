@@ -270,3 +270,17 @@ jobs:
         BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
     - name: Output link to deployed app
       run: echo You can view the app on https://test.libroc.co/${{ github.head_ref || github.ref_name }}/index.html | tee -a $GITHUB_STEP_SUMMARY
+  check-conflicts:
+    name: Check conflicts
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check for conflicting PRs
+      uses: eps1lon/actions-label-merge-conflict@v3
+      with:
+        dirtyLabel: has conflicts
+        removeOnDirtyLabel: PRREADY
+        repoToken: ${{ secrets.GITHUB_TOKEN }}
+        commentOnDirty: This pull request has conflicts, please resolve those.
+        commentOnClean: Conflicts have been resolved.
+      env:
+        LABELING_TOKEN: ${{secrets.GITHUB_TOKEN }}
