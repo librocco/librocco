@@ -1,7 +1,7 @@
 import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
-	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
+	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
 	return result;
 }
 
@@ -15,6 +15,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
+           updatedAt = (strftime('%s', 'now') * 1000),
            deposit = COALESCE(?, deposit);`,
 		[
 			customer.id,
@@ -57,9 +58,18 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 	);
 	return result.map(marshallCustomerOrderLine);
 };
-
+/**
+ * Retrieves customer details from the database for a specific customer ID.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {number} customerId - The unique identifier of the customer
+ * @returns {Promise<Customer[]>} A promise that resolves to an array of customer details
+ *                               containing id, fullname, deposit, and email information
+ */
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email FROM customer WHERE id = $customerId;", [customerId]);
+	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updatedAt FROM customer WHERE id = $customerId;", [
+		customerId
+	]);
 
 	return result;
 };
@@ -78,10 +88,15 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
 	// books is a list of { isbn }
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
-	const sql =
-		`INSERT INTO customer_order_lines (customer_id, isbn, quantity)
-    VALUES ` + multiplyString("(?,?,?)", books.length);
-	await db.exec(sql, params);
+	const sql = `
+     INSERT INTO customer_order_lines (customer_id, isbn, quantity)
+     VALUES ${multiplyString("(?,?,?)", books.length)};`;
+	const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};
+ `;
+	return db.tx(async (txDb) => {
+		await txDb.exec(sql, params);
+		await txDb.exec(updateSql);
+	});
 };
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
