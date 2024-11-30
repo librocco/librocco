@@ -11,6 +11,7 @@ export type Customer = {
 	phone?: string;
 	taxId?: string;
 	deposit?: number;
+	updatedAt?: number;
 };
 
 export type Book = { isbn: string; quantity: number };
