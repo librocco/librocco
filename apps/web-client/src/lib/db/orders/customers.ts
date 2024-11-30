@@ -27,7 +27,17 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		]
 	);
 }
-export const getAllCustomerOrderLines = async (db: DB) => {
+
+/**
+ * Retrieves all customer order lines from the database.
+ *
+ * @param {DB} db - The database connection instance
+ * @returns {Promise<DBCustomerOrderLine[]>} A promise that resolves to an arr of customer order lines
+ * as they are stored in the database
+ * A customer order line represents a single book in a customer order
+ * the book meta data & timestamps to indicate when/if it has been placed, ordered with the supplier or received
+ */
+export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT customer_order_lines.id, customer_id, isbn, quantity, created, placed, received, collected
 		FROM customer_order_lines`
@@ -66,7 +76,7 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 };
 
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
-	// books is a list of { isbn, quantity }
+	// books is a list of { isbn }
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql =
 		`INSERT INTO customer_order_lines (customer_id, isbn, quantity)
@@ -80,12 +90,6 @@ const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ")
 export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]) => {
 	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;
 	const params = [customerId, ...bookIds];
-	await db.exec(sql, params);
-};
-
-export const updateOrderLineQuantity = async (db: DB, bookId: number, quantity: number) => {
-	const sql = `UPDATE customer_order_lines SET quantity = ? WHERE id = ?`;
-	const params = [quantity, bookId];
 	await db.exec(sql, params);
 };
 

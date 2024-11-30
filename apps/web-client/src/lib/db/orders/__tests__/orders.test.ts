@@ -132,8 +132,9 @@ describe("Customer order status", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
-
+		console.log("Setting up test data...");
 		await createCustomerOrders(db);
+		console.log("Test data setup complete");
 	});
 	it("can update the timestamp of when a customer order is placed (to supplier)", async () => {
 		const newOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
