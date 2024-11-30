@@ -49,21 +49,6 @@
 		disposer();
 	});
 
-	// I see the error of my ways: This is a terrible way to update a persisted value but is necessary for the time being bcs of the way TextEditable operates
-	// TODO: replace with form sumission or, at least, an imperative update
-	const createFieldStore = <T extends string | number>(init: T, onUpdate: (x: T) => Promise<any> | any): Writable<T> => {
-		const internal = writable<T>(init);
-		const set = (x: T) => x !== get(internal) && onUpdate(x);
-		const update = (cb: (x: T) => T) => onUpdate(cb(get(internal)));
-		const subscribe = internal.subscribe.bind(internal);
-		return { set, update, subscribe };
-	};
-	$: name = createFieldStore(data.customer.fullname || "", (fullname) => upsertCustomer(data.ordersDb, { ...data.customer, fullname }));
-	$: deposit = createFieldStore(data.customer.deposit || 0, (deposit) =>
-		upsertCustomer(data.ordersDb, { ...data.customer, deposit: Number(deposit) })
-	);
-	$: email = createFieldStore(data.customer.email || "", (email) => upsertCustomer(data.ordersDb, { ...data.customer, email }));
-
 	$: orderLines = data?.customerOrderLines
 		.filter((line) => line.customer_id === customer.id.toString())
 		.map((line) => ({
@@ -91,6 +76,7 @@
 	const handleAddOrderLine = async (isbn: string) => {
 		const newBook = {
 			isbn,
+			/** @TODO remove quantity from bookLine */
 			quantity: 1,
 			id: parseInt($page.params.id),
 			created: new Date(),
@@ -122,7 +108,7 @@
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime="2023-01-31">January 31, 2023</time>
+								<time dateTime="2023-01-31">{data?.customer.updatedAt}</time>
 							</span>
 						</div>
 					</div>
@@ -140,14 +126,14 @@
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{$name}</dd>
+										<dd class="truncate">{data?.customer.fullname || ""}</dd>
 									</div>
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer email</span>
 											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{$email}</dd>
+										<dd class="truncate">{data?.customer.email || ""}</dd>
 									</div>
 								</div>
 								<div class="flex gap-x-3">
@@ -155,7 +141,7 @@
 										<span class="sr-only">Deposit</span>
 										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 									</dt>
-									<dd>€{$deposit} deposit</dd>
+									<dd>€{data?.customer.deposit || 0} deposit</dd>
 								</div>
 							</div>
 							<div class="w-full pr-2">
@@ -219,9 +205,7 @@
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
-									<td>
-										{quantity}
-									</td>
+									<td>{quantity}</td>
 									<td>
 										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>
@@ -247,7 +231,7 @@
 	<CustomerOrderMetaForm
 		heading="Update customer details"
 		saveLabel="Update"
-		data={defaults({ ...customer, email: $email, fullname: $name, deposit: $deposit }, zod(customerOrderSchema))}
+		data={defaults({ ...customer }, zod(customerOrderSchema))}
 		options={{
 			SPA: true,
 			validators: zod(customerOrderSchema),

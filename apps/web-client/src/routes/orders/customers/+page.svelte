@@ -8,7 +8,6 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
-	// import { data } from "./data";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
@@ -18,8 +17,6 @@
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
 	import { appPath } from "$lib/paths";
-
-	// import type { Layout } from "./$types";
 
 	export let data: PageData;
 
