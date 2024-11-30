@@ -7,8 +7,9 @@ export const load: LayoutLoad = async ({ depends }) => {
 	depends("customer:data");
 
 	const ordersDb = await getInitializedDB("librocco-current-db");
+	const { db } = ordersDb;
 
-	const allCustomers = await getAllCustomers(ordersDb);
+	const allCustomers = await getAllCustomers(db);
 
 	return { ordersDb, allCustomers };
 };
