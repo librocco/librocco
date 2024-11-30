@@ -4,19 +4,13 @@ import rxtbl from "@vlcn.io/rx-tbl";
 
 import { type DB, type Change } from "./types";
 
-export type ReactiveDB = DB & { rx: ReturnType<typeof rxtbl> };
+export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
-const dbCache: Record<string, ReactiveDB> = {};
+const dbCache: Record<string, DbCtx> = {};
 
 export async function getDB(dbname: string) {
-	if (dbCache[dbname]) {
-		return dbCache[dbname];
-	}
-
 	const sqlite = await initWasm(() => wasmUrl);
-	const db = await sqlite.open(dbname);
-
-	return db;
+	return sqlite.open(dbname);
 }
 
 export async function initializeDB(db: DB) {
@@ -143,16 +137,16 @@ export const getInitializedDB = async (dbname: string) => {
 		return dbCache[dbname];
 	}
 
-	const _db = await getDB(dbname);
+	const db = await getDB(dbname);
 
-	const result = await _db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
+	const result = await db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
 
 	if (result.length === 0) {
-		await initializeDB(_db);
+		await initializeDB(db);
 	}
 
-	const rx = rxtbl(_db);
-	dbCache[dbname] = Object.assign(_db, { rx });
+	const rx = rxtbl(db);
+	dbCache[dbname] = { db, rx };
 
 	return dbCache[dbname];
 };
