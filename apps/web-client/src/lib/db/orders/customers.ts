@@ -87,14 +87,14 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 
 /**
  * Adds multiple books to a customer's order and updates the customer's last modified timestamp.
- * 
+ *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
  * @param {BookLine[]} books - Array of books to add, each containing ISBN and quantity
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */
-export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
+export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]): Promise<void> => {
 	// books is a list of { isbn }
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql = `
@@ -111,10 +111,24 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
 const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
-export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]) => {
+/**
+ * Removes specified books from a customer's order.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {number} customerId - The unique identifier of the customer
+ * @param {number[]} bookIds - Array of book order line IDs to remove
+ * @returns {Promise<void>} A promise that resolves when the deletion is complete
+ * @throws {Error} If the database operation fails
+ */
+export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]): Promise<void> => {
 	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;
 	const params = [customerId, ...bookIds];
-	await db.exec(sql, params);
+
+	const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};`;
+	return db.tx(async (txDb) => {
+		await txDb.exec(sql, params);
+		await txDb.exec(updateSql);
+	});
 };
 
 export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
