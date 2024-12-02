@@ -1,7 +1,7 @@
 import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
-	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit FROM customer ORDER BY id ASC;");
+	const result = await db.execO<Customer>("SELECT id, fullname, email, deposit, updatedAt FROM customer ORDER BY id ASC;");
 	return result;
 }
 
@@ -9,6 +9,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
+	console.log({ customer });
 	await db.exec(
 		`INSERT INTO customer (id, fullname, email, deposit)
          VALUES (?, ?, ?, ?)
@@ -55,11 +56,14 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
 		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
+	console.log({ result });
 	return result.map(marshallCustomerOrderLine);
 };
 
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email FROM customer WHERE id = $customerId;", [customerId]);
+	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updatedAt FROM customer WHERE id = $customerId;", [
+		customerId
+	]);
 
 	return result;
 };
@@ -77,10 +81,18 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]) => {
 	// books is a list of { isbn }
+	/**
+	 * @TODO the customerId is persisted with a decimal point,
+	 * converting it to a string here resulted in the book not getting persisted
+	 */
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
+
+	console.log({ params });
 	const sql =
 		`INSERT INTO customer_order_lines (customer_id, isbn, quantity)
     VALUES ` + multiplyString("(?,?,?)", books.length);
+
+	console.log({ books });
 	await db.exec(sql, params);
 };
 
