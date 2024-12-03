@@ -30,7 +30,7 @@
 
 	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
-		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id.toString());
+		const orders = customerOrderLines.filter((line) => line.customer_id.toString() === customer.id.toString());
 		const status = getOrderStatus(orders);
 		return {
 			...customer,
