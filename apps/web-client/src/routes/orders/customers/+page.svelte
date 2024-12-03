@@ -28,6 +28,7 @@
 
 	const { customers, customerOrderLines } = data;
 
+	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
 		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id.toString());
 		const status = getOrderStatus(orders);
@@ -48,9 +49,7 @@
 	const createCustomer = async (customer: Customer) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-		// const randomId = Math.floor(Math.random() * 1e10);
-		await upsertCustomer(data.ordersDb, { ...customer });
-		goto(appPath("customers", customer.id.toString()));
+		await upsertCustomer(data.ordersDb, { ...customer, id: newCustomerId });
 	};
 </script>
 
@@ -138,13 +137,11 @@
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					// TODO: update data
 					createCustomer(form.data);
 				}
 			},
 			onUpdated: async ({ form }) => {
 				if (form.valid) {
-					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
 					newOrderDialogOpen.set(false);
 					await goto(`${base}/orders/customers/${newCustomerId}`);
