@@ -92,7 +92,6 @@
 	$: tableOptions.set({ data: orderLines?.slice(0, maxResults) || [] });
 	// #endregion table
 
-
 	const handleAddOrderLine = async (isbn: string) => {
 		const newBook = {
 			isbn,
@@ -189,7 +188,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)} {table}>
+					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => {}} {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{
