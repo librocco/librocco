@@ -33,7 +33,6 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 	// #endregion infinite-scroll
-
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
@@ -41,30 +40,25 @@
 		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
 		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
-
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
 		disposer();
 	});
-
 	$: orderLines = data?.customerOrderLines
-		.filter((line) => line.customer_id === customer.id.toString())
+		.filter((line) => parseInt(line.customer_id) === id)
 		.map((line) => ({
 			price: 0,
 			...books[line.isbn],
 			...line
 		}));
-
 	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines?.slice(0, maxResults) || []
 	});
-
 	$: lines.set({ data: orderLines?.slice(0, maxResults) || [] });
 	$: totalAmount = orderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 	// #endregion reactivity
-
 	// #region dialog
 
 	const customerMetaDialog = createDialog(defaultDialogConfig);
@@ -108,7 +102,7 @@
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime="2023-01-31">{data?.customer.updatedAt}</time>
+								<time dateTime="2023-01-31">{new Date(data?.customer.updatedAt).toLocaleString()}</time>
 							</span>
 						</div>
 					</div>
@@ -237,7 +231,7 @@
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					upsertCustomer(ordersDb, { ...customer, ...form.data, id: customer.id });
+					upsertCustomer(ordersDb, { ...customer, ...form.data, id });
 				}
 			},
 			onUpdated: async ({ form }) => {

@@ -31,12 +31,14 @@ export async function initializeDB(db: DB) {
 	await db.exec("SELECT crsql_as_crr('book');");
 
 	await db.exec(`CREATE TABLE customer (
-		id INTEGER NOT NULL,
-		fullname TEXT,
-		email TEXT,
-		deposit DECIMAL,
-		PRIMARY KEY (id)
-	)`);
+         id INTEGER NOT NULL,
+         fullname TEXT,
+         email TEXT,
+         deposit DECIMAL,
+         updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+         PRIMARY KEY (id)
+     )`);
+
 	await db.exec(`CREATE TABLE customer_order_lines (
 		id INTEGER NOT NULL,
 		customer_id TEXT,
@@ -55,8 +57,37 @@ export async function initializeDB(db: DB) {
 	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
 
 	// Activate the crsql extension
+
 	await db.exec("SELECT crsql_as_crr('customer');");
 	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
+
+	await db.exec(`
+ CREATE TRIGGER update_customer_timestamp_upsert_customer
+ AFTER UPDATE ON customer
+ FOR EACH ROW
+ BEGIN
+     UPDATE customer
+     SET updatedAt = (strftime('%s', 'now') * 1000)
+     WHERE id = NEW.id;
+ END;
+       `);
+	await db.exec(`CREATE TRIGGER update_customer_timestamp_insert
+     AFTER INSERT ON customer_order_lines
+     FOR EACH ROW
+     BEGIN
+         UPDATE customer
+         SET updatedAt = (strftime('%s', 'now') * 1000)
+         WHERE id = NEW.customer_id;
+     END;`);
+
+	await db.exec(`CREATE TRIGGER update_customer_timestamp_delete
+     AFTER DELETE ON customer_order_lines
+     FOR EACH ROW
+     BEGIN
+         UPDATE customer
+         SET updatedAt = (strftime('%s', 'now') * 1000)
+         WHERE id = OLD.customer_id;
+     END;`);
 
 	await db.exec(`CREATE TABLE supplier (
 		id INTEGER NOT NULL,
