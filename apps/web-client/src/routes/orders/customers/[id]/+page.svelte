@@ -47,12 +47,8 @@
 		disposer();
 	});
 	$: orderLines = data?.customerOrderLines
-		.filter((line) => parseInt(line.customer_id) === id)
-		.map((line) => ({
-			price: 0,
-			...books[line.isbn],
-			...line
-		}));
+		.filter((line) => parseInt(line.customer_id).toFixed(0) === $page.params.id)
+		.map((line) => ({ price: 0, ...books[line.isbn], ...line }));
 	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines?.slice(0, maxResults) || []
 	});
