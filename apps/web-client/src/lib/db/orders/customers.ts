@@ -106,6 +106,23 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 	return result;
 };
 
+/**
+ * Converts a database customer order line to an application customer order line.
+ * This transformation primarily involves converting timestamp numbers to Date objects
+ * and parsing the supplier order IDs string into an array of numbers.
+ *
+ * @param {DBCustomerOrderLine} line - The database representation of a customer order line
+ * @returns {CustomerOrderLine} The application representation of a customer order line with proper date objects
+ * 
+ * @example
+ * const dbLine = {
+ *   created: 1638316800000,
+ *   placed: 1638403200000,
+ *   supplierOrderIds: "1,2,3"
+ * };
+ * const appLine = marshallCustomerOrderLine(dbLine);
+ * // Returns: { created: Date(...), placed: Date(...), supplierOrderIds: [1,2,3] }
+ */
 export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
 		...line,
@@ -171,6 +188,27 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 	});
 };
 
+/**
+ * Marks customer order lines as received when supplier order lines are fulfilled.
+ * For each supplied ISBN, it updates the earliest unfulfilled customer order line
+ * (that has been placed but not received) with the current timestamp as received date.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {SupplierOrderLine[]} supplierOrderLines - Array of supplier order lines that have been received
+ * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
+ * 
+ * @remarks
+ * - Only updates the earliest unfulfilled order line for each ISBN
+ * - Only updates order lines that have been placed but not yet received
+ * - Updates are performed in a single transaction
+ * - If supplierOrderLines is empty, the function returns immediately
+ * 
+ * @example
+ * await markCustomerOrderAsReceived(db, [
+ *   { isbn: "123456789", quantity: 2 },
+ *   { isbn: "987654321", quantity: 1 }
+ * ]);
+ */
 export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
 	if (!supplierOrderLines.length) return;
 	return db.tx(async (txDb) => {
