@@ -15,7 +15,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	}
 
 	const customerDetails = await getCustomerDetails(ordersDb, Number(params.id));
-
+	console.log(params.id);
+	console.log({ customerDetails });
 	// TODO: make this a single query
 	const customerOrderLines = await getCustomerBooks(ordersDb, Number(params.id));
 	const isbns = customerOrderLines.map((book) => book.isbn);
