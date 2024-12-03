@@ -153,11 +153,11 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 	const sql = `
      INSERT INTO customer_order_lines (customer_id, isbn, quantity)
      VALUES ${multiplyString("(?,?,?)", books.length)};`;
-	const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};
- `;
+	// const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};
+	// `;
 	return db.tx(async (txDb) => {
 		await txDb.exec(sql, params);
-		await txDb.exec(updateSql);
+		// await txDb.exec(updateSql);
 	});
 };
 
@@ -181,10 +181,10 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;
 	const params = [customerId, ...bookIds];
 
-	const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};`;
+	// const updateSql = ` UPDATE customer SET updatedAt = (strftime('%s', 'now') * 1000) WHERE id = ${customerId};`;
 	return db.tx(async (txDb) => {
 		await txDb.exec(sql, params);
-		await txDb.exec(updateSql);
+		// await txDb.exec(updateSql);
 	});
 };
 
