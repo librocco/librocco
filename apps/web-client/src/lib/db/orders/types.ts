@@ -20,7 +20,7 @@ export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
 	id: number;
 	isbn: string;
-	customer_id: string;
+	customer_id: number;
 	quantity: number;
 	created: number; // as milliseconds since epoch
 	placed?: number; // as milliseconds since epoch
@@ -33,7 +33,7 @@ export type CustomerOrderLine = {
 	// A customer order line to be passed around in the application
 	id: number;
 	isbn: string;
-	customer_id: string;
+	customer_id: number;
 	quantity: number;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
