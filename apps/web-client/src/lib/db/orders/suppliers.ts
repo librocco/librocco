@@ -154,6 +154,8 @@ export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise
 	);
 	return {
 		supplier_id: orderInfo[0].supplier_id,
+		id: orderInfo[0].supplier_order_id,
+
 		created: new Date(orderInfo[0].created),
 		lines: orderInfo.map((line) => ({ supplier_id: line.supplier_id, isbn: line.isbn, quantity: line.quantity }))
 	};
