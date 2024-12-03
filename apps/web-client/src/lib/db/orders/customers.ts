@@ -29,7 +29,7 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
@@ -113,7 +113,7 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
  *
  * @param {DBCustomerOrderLine} line - The database representation of a customer order line
  * @returns {CustomerOrderLine} The application representation of a customer order line with proper date objects
- * 
+ *
  * @example
  * const dbLine = {
  *   created: 1638316800000,
@@ -162,7 +162,7 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 };
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
-const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
 /**
  * Removes books associated with a specific customer's order
@@ -196,24 +196,24 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  * @param {DB} db - The database connection instance
  * @param {SupplierOrderLine[]} supplierOrderLines - Array of supplier order lines that have been received
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
- * 
+ *
  * @remarks
  * - Only updates the earliest unfulfilled order line for each ISBN
  * - Only updates order lines that have been placed but not yet received
  * - Updates are performed in a single transaction
  * - If supplierOrderLines is empty, the function returns immediately
- * 
+ *
  * @example
  * await markCustomerOrderAsReceived(db, [
  *   { isbn: "123456789", quantity: 2 },
  *   { isbn: "987654321", quantity: 1 }
  * ]);
  */
-export const markCustomerOrderAsReceived = async (db: DB, supplierOrderLines: SupplierOrderLine[]) => {
-	if (!supplierOrderLines.length) return;
+
+export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]) => {
+	if (!isbns.length) return;
 	return db.tx(async (txDb) => {
-		const isbns = supplierOrderLines.map((line) => line.isbn);
-		const placeholders = multiplyString("?", supplierOrderLines.length);
+		const placeholders = multiplyString("?", isbns.length);
 		await txDb.exec(
 			`
 		 UPDATE customer_order_lines
