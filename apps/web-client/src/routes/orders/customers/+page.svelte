@@ -17,6 +17,7 @@
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
 	import { appPath } from "$lib/paths";
+	import type { Customer } from "$lib/db/orders/types";
 
 	export let data: PageData;
 
@@ -44,12 +45,12 @@
 		orderFilterStatus.set(status);
 	}
 
-	const createCustomer = async () => {
+	const createCustomer = async (customer: Customer) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-		const randomId = Math.floor(Math.random() * 1e10);
-		await upsertCustomer(data.ordersDb, { id: randomId });
-		goto(appPath("customers", randomId.toString()));
+		// const randomId = Math.floor(Math.random() * 1e10);
+		await upsertCustomer(data.ordersDb, { ...customer });
+		goto(appPath("customers", customer.id.toString()));
 	};
 </script>
 
@@ -138,7 +139,7 @@
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					// TODO: update data
-					createCustomer();
+					createCustomer(form.data);
 				}
 			},
 			onUpdated: async ({ form }) => {

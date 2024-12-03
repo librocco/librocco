@@ -96,6 +96,10 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]): Promise<void> => {
 	// books is a list of { isbn }
+	/**
+	 * @TODO the customerId is persisted with a decimal point,
+	 * converting it to a string here resulted in the book not getting persisted
+	 */
 	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
 	const sql = `
      INSERT INTO customer_order_lines (customer_id, isbn, quantity)
