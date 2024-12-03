@@ -1,3 +1,34 @@
+/**
+ * @fileoverview Customer order management system
+ *
+ * Customer Orders Overview:
+ * - A customer order in the DB is some customer information (email, id, deposit)
+ * - Conceptually, customer orders are implicit groupings of order lines, associated with the customer information
+ * - Order lines are created in "draft" state and transition through states based on timestamps
+ *
+ * Order Line States:
+ * - Draft: Has created timestamp (inital state)
+ * - Placed: Has placed timestamp (order sent to supplier)
+ * - Received: Has received timestamp (books arrived from supplier)
+ * - Collected: Has collected timestamp (customer picked up books)
+ *
+ * Data Sources:
+ * - customer_order_lines table:
+ *   - id: Primary key
+ *   - customer_id: References customer
+ *   - isbn: Book identifier
+ *   - quantity: Number of copies (currently non-editable after creation and will be removed)
+ *   - created: Timestamp when line created
+ *   - placed: Timestamp when sent to supplier
+ *   - received: Timestamp when books arrived
+ *   - collected: Timestamp when customer collected
+ *
+ * Key Implementation Notes:
+ * - No explicit "order" concept - just collections of order lines
+ * - Book details (title, price etc) come from separate book data source
+ * - Status is derived from presence/absence of timestamps
+ */
+
 import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine, SupplierOrderLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
@@ -46,6 +77,7 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 
 	return result;
 };
+
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT customer_order_lines.id, isbn, quantity, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
@@ -86,7 +118,8 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 };
 
 /**
- * Adds multiple books to a customer's order and updates the customer's last modified timestamp.
+ * Adds multiple books that associate with a specific customer's order a
+ * updates the customer's last modified timestamp.
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
@@ -95,7 +128,6 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
  * @throws {Error} If the database transaction fails
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]): Promise<void> => {
-	// books is a list of { isbn }
 	/**
 	 * @TODO the customerId is persisted with a decimal point,
 	 * converting it to a string here resulted in the book not getting persisted
@@ -116,12 +148,13 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
 /**
- * Removes specified books from a customer's order and updates the customer's last modified timestamp.
+ * Removes books associated with a specific customer's order
+ * updates the customer's last modified timestamp.
  * The function executes both operations in a single transaction to ensure data consistency.
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
- * @param {number[]} bookIds - Array of book order line IDs to remove from the customer's order
+ * @param {number[]} bookIds - Array of book order line IDs to remove
  * @returns {Promise<void>} A promise that resolves when both the deletion and timestamp update are complete
  * @throws {Error} If either the deletion or timestamp update fails, the entire transaction is rolled back
  * @example
