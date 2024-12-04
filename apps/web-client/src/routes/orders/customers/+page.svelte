@@ -8,13 +8,18 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
-	import { data } from "./data";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
 	import Page from "$lib/components/Page.svelte";
 	import { view } from "@librocco/shared";
+	import type { PageData } from "./$types";
+	import { upsertCustomer } from "$lib/db/orders/customers";
+	import { appPath } from "$lib/paths";
+	import type { Customer } from "$lib/db/orders/types";
+
+	export let data: PageData;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -23,8 +28,9 @@
 
 	const { customers, customerOrderLines } = data;
 
+	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
-		const orders = customerOrderLines.filter((line) => line.customer_id === customer.id);
+		const orders = customerOrderLines.filter((line) => line.customer_id.toString() === customer.id.toString());
 		const status = getOrderStatus(orders);
 		return {
 			...customer,
@@ -39,6 +45,12 @@
 	function setFilter(status: OrderFilterStatus) {
 		orderFilterStatus.set(status);
 	}
+
+	const createCustomer = async (customer: Customer) => {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+		await upsertCustomer(data.ordersDb, { ...customer, id: newCustomerId });
+	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -125,12 +137,11 @@
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					// TODO: update data
+					createCustomer(form.data);
 				}
 			},
 			onUpdated: async ({ form }) => {
 				if (form.valid) {
-					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
 					newOrderDialogOpen.set(false);
 					await goto(`${base}/orders/customers/${newCustomerId}`);
