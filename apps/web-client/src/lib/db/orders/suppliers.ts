@@ -105,6 +105,7 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 				`SELECT id, isbn, quantity FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
 				[orderLine.isbn]
 			);
+
 			let copiesToGo = orderLine.quantity;
 			while (copiesToGo > 0) {
 				const line = customerOrderLines.shift();
