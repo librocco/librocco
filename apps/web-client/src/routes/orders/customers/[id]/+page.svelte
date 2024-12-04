@@ -98,7 +98,9 @@
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime="2023-01-31">{new Date(data?.customer.updatedAt).toLocaleString()}</time>
+								<time dateTime={data?.customer.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}
+									>{new Date(data?.customer.updatedAt).toLocaleString()}</time
+								>
 							</span>
 						</div>
 					</div>
