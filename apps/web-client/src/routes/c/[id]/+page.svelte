@@ -30,7 +30,7 @@
 
 	import type { CustomerOrderLine } from "$lib/db/orders/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { addBooksToCustomer, removeBooksFromCustomer, updateOrderLineQuantity, upsertCustomer } from "$lib/db/orders/customers";
+	import { addBooksToCustomer, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
 	import { invalidate, invalidateAll } from "$app/navigation";
 
@@ -91,19 +91,6 @@
 	const table = createTable(tableOptions);
 	$: tableOptions.set({ data: orderLines?.slice(0, maxResults) || [] });
 	// #endregion table
-
-	/** @TODO updateQuantity */
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, quantity: currentQty, id: bookId }: CustomerOrderLine) => {
-		const formData = new FormData(e.currentTarget as HTMLFormElement);
-
-		// Number form control validation means this string->number conversion should yield a valid result
-		const nextQty = Number(formData.get("quantity"));
-		if (currentQty == nextQty) {
-			return;
-		}
-
-		await updateOrderLineQuantity(data.ordersDb, bookId, nextQty);
-	};
 
 	const handleAddOrderLine = async (isbn: string) => {
 		const newBook = {
@@ -201,7 +188,7 @@
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
 				<div>
-					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)} {table}>
+					<OrderLineTable on:edit-order-line-quantity={({ detail: { event, row } }) => {}} {table}>
 						<div slot="row-actions" let:row let:rowIx>
 							<PopoverWrapper
 								options={{

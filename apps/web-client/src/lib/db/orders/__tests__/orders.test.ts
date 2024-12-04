@@ -48,11 +48,13 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
+
 		await addBooksToCustomer(db, 1, [
 			{ isbn: "9780000000000", quantity: 1 },
 			{ isbn: "9780000000000", quantity: 1 }
 		]);
 		books = await getCustomerBooks(db, 1);
+
 		expect(books.length).toBe(2);
 		expect(books[0].id).toBeTypeOf("number");
 		expect(books[0].created).toBeInstanceOf(Date);
@@ -86,6 +88,7 @@ describe("Customer order tests", () => {
 
 	it("can remove books from a customer order", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+
 		await addBooksToCustomer(db, 1, [
 			{ isbn: "9780000000000", quantity: 1 },
 			{ isbn: "9780000000000", quantity: 1 }
@@ -114,7 +117,8 @@ describe("Customer order tests", () => {
 		await syncDBs(db2, db1);
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers).toEqual(db2Customers);
+		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
+		expect(db1Customers[1]).toMatchObject(db2Customers[1]);
 	});
 	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
@@ -123,8 +127,8 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers).toEqual(db2Customers);
-		expect(db1Customers).toEqual([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
+		expect(db1Customers).toMatchObject(db2Customers);
+		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
 });
 
@@ -132,16 +136,13 @@ describe("Customer order status", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
-
 		await createCustomerOrders(db);
 	});
 	it("can update the timestamp of when a customer order is placed (to supplier)", async () => {
 		const newOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
 		const isbns = [...newOrders[0].lines, ...newOrders[1].lines].map((line) => line.isbn);
 		await markCustomerOrderAsReceived(db, isbns);
-		console.log({ newOrders });
 		const books = await getCustomerBooks(db, 1);
-		// expect(books[0].received).toBeInstanceOf(Date);
 		expect(books[1].received).toBeInstanceOf(Date);
 	});
 });

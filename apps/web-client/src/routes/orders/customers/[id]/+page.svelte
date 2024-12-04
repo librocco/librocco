@@ -8,30 +8,76 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { customerOrderSchema } from "$lib/forms";
 
-	import { data } from "../data";
 	import { getOrderLineStatus } from "$lib/utils/order-status";
+	import type { PageData } from "./$types";
+	import { page } from "$app/stores";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { onDestroy, onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
+	import { writable, get, type Writable } from "svelte/store";
+	import type { CustomerOrderLine } from "$lib/db/orders/types";
+	import type { BookEntry } from "@librocco/db";
+	import { createIntersectionObserver } from "$lib/actions";
 
-	import Page from "$lib/components/Page.svelte";
-	import { view } from "@librocco/shared";
+	export let data: PageData;
 
-	const { customers, customerOrderLines, books } = data;
+	const { customer, customerOrderLines, books, ordersDb } = data;
+
+	const id = parseInt($page.params.id);
+	let currentBookISBN = "";
+
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// Reload add customer data dependants when the data changes
+		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		// Reload all customer order line/book data dependants when the data changes
+		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+	$: orderLines = data?.customerOrderLines
+		.filter((line) => line.customer_id.toString() === $page.params.id)
+		.map((line) => ({ price: 0, ...books[line.isbn], ...line }));
+	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
+		data: orderLines?.slice(0, maxResults) || []
+	});
+	$: lines.set({ data: orderLines?.slice(0, maxResults) || [] });
+	$: totalAmount = orderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
+	// #endregion reactivity
+	// #region dialog
 
 	const customerMetaDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
 
-	const [customer] = customers;
-	const orderLines = customerOrderLines
-		.filter((line) => line.customer_id === customer.id)
-		.map((line) => {
-			return {
-				...books[line.isbn],
-				...line
-			};
-		});
-
-	const totalAmount = orderLines.reduce((acc, cur) => acc + cur.price, 0);
+	// #endregion dialog
+	const handleAddOrderLine = async (isbn: string) => {
+		const newBook = {
+			isbn,
+			/** @TODO remove quantity from bookLine */
+			quantity: 1,
+			id: parseInt($page.params.id),
+			created: new Date(),
+			/** @TODO provide supplierIds */
+			supplierOrderIds: [],
+			title: "",
+			price: 0
+		};
+		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		currentBookISBN = "";
+	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -52,7 +98,9 @@
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime="2023-01-31">January 31, 2023</time>
+								<time dateTime={data?.customer.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}
+									>{new Date(data?.customer.updatedAt).toLocaleString()}</time
+								>
 							</span>
 						</div>
 					</div>
@@ -70,14 +118,14 @@
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{customer.fullname}</dd>
+										<dd class="truncate">{data?.customer.fullname || ""}</dd>
 									</div>
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer email</span>
 											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{customer.email}</dd>
+										<dd class="truncate">{data?.customer.email || ""}</dd>
 									</div>
 								</div>
 								<div class="flex gap-x-3">
@@ -85,7 +133,7 @@
 										<span class="sr-only">Deposit</span>
 										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 									</dt>
-									<dd>€{customer.deposit} deposit</dd>
+									<dd>€{data?.customer.deposit || 0} deposit</dd>
 								</div>
 							</div>
 							<div class="w-full pr-2">
@@ -115,7 +163,13 @@
 				<h3 class="max-md:divider-start max-md:divider">Books</h3>
 				<label class="input-bordered input flex items-center gap-2">
 					<QrCode />
-					<input type="text" class="grow" placeholder="Enter ISBN to add books" />
+					<input
+						type="text"
+						class="grow"
+						bind:value={currentBookISBN}
+						on:keydown={(e) => (e.key === "Enter" ? handleAddOrderLine(currentBookISBN) : null)}
+						placeholder="Enter ISBN to add books"
+					/>
 				</label>
 			</div>
 
@@ -133,29 +187,23 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each orderLines as { isbn, quantity, title, authors, price, placed, received, collected }}
+							{#each $lines.data as { isbn, quantity, title, authors, price, placed, received, collected }}
+								{@const placedTime = placed?.getTime()}
+								{@const receivedTime = received?.getTime()}
+								{@const collectedTime = collected?.getTime()}
+
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
+									<td>{quantity}</td>
 									<td>
-										<input
-											name="quantity"
-											id="quantity"
-											value={quantity}
-											class="input-bordered input-primary input input-sm max-w-[4rem]"
-											type="number"
-											min="1"
-											required
-										/>
-									</td>
-									<td>
-										{#if getOrderLineStatus({ placed, received, collected }) === "collected"}
+										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>
-										{:else if getOrderLineStatus({ placed, received, collected }) === "received"}
+										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "received"}
 											<span class="badge-info badge">Received</span>
-										{:else if getOrderLineStatus({ placed, received, collected }) === "placed"}
+										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
@@ -175,13 +223,13 @@
 	<CustomerOrderMetaForm
 		heading="Update customer details"
 		saveLabel="Update"
-		data={defaults(zod(customerOrderSchema))}
+		data={defaults({ ...customer }, zod(customerOrderSchema))}
 		options={{
 			SPA: true,
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					// TODO: update data
+					upsertCustomer(ordersDb, { ...customer, ...form.data, id });
 				}
 			},
 			onUpdated: async ({ form }) => {
