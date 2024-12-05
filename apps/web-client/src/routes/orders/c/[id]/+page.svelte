@@ -30,8 +30,6 @@
 	const totalAmount = orderLines.reduce((acc, cur) => acc + cur.price, 0);
 </script>
 
-Just an edit to make the PR conflict
-
 <main class="h-screen">
 	<header class="navbar mb-4 bg-neutral">
 		<input type="checkbox" value="forest" class="theme-controller toggle" />
