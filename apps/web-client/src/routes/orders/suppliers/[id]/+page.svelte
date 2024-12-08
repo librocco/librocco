@@ -2,6 +2,11 @@
 	import { Truck } from "lucide-svelte";
 	import Page from "$lib/components/Page.svelte";
 	import { view } from "@librocco/shared";
+	import { createSupplierOrder, getSupplierOrder, upsertSupplier } from "$lib/db/orders/suppliers";
+	import type { LayoutData } from "../$types";
+	import type { SupplierOrderLine } from "$lib/db/orders/types";
+
+	export let data: LayoutData;
 	// TODO: Replace with actual DB call
 	let books = [
 		{
@@ -9,63 +14,79 @@
 			title: "The Art of Learning",
 			authors: "Josh Waitzkin",
 			price: 15.99,
-			quantity: 2
+			quantity: 2,
+			supplier_id: 1,
+			publisher: "2"
 		},
 		{
 			isbn: "9781234567880",
 			title: "Deep Work",
 			authors: "Cal Newport",
 			price: 18.0,
-			quantity: 1
+			quantity: 1,
+			supplier_id: 1,
+			publisher: "2"
 		},
 		{
 			isbn: "9780987654321",
 			title: "Becoming",
 			authors: "Michelle Obama",
 			price: 19.5,
-			quantity: 3
+			quantity: 3,
+			supplier_id: 1,
+			publisher: "3"
 		},
 		{
 			isbn: "9780987654314",
 			title: "Thinking, Fast and Slow",
 			authors: "Daniel Kahneman",
 			price: 12.99,
-			quantity: 4
+			quantity: 4,
+			supplier_id: 1,
+			publisher: "2"
 		},
 		{
 			isbn: "9780987654307",
 			title: "The Power of Habit",
 			authors: "Charles Duhigg",
 			price: 13.5,
-			quantity: 2
+			quantity: 2,
+			supplier_id: 1,
+			publisher: "4"
 		},
 		{
 			isbn: "9781234567873",
 			title: "Atomic Habits",
 			authors: "James Clear",
 			price: 16.99,
-			quantity: 5
+			quantity: 5,
+			supplier_id: 1,
+			publisher: "2"
 		},
 		{
 			isbn: "9781234567866",
 			title: "Educated",
 			authors: "Tara Westover",
 			price: 14.99,
-			quantity: 1
+			quantity: 1,
+			supplier_id: 1,
+			publisher: "2"
 		},
 		{
 			isbn: "9781234567859",
 			title: "Sapiens",
 			authors: "Yuval Noah Harari",
 			price: 22.5,
-			quantity: 3
+			quantity: 3,
+			supplier_id: 1,
+			publisher: "1"
 		}
 	];
 
 	// Mock supplier data
 	const supplier = {
 		name: "Academic Books Ltd",
-		id: 123,
+		id: 1,
 		lastUpdated: new Date()
 	};
 
@@ -77,10 +98,12 @@
 
 	$: canPlaceOrder = selectedBooks.length > 0;
 
-	function handlePlaceOrder() {
+	async function handlePlaceOrder() {
 		if (!canPlaceOrder) return;
 		console.log("Placing order for books:", Array.from(selectedBooks));
 		// TODO: Implement order placement
+
+		await createSupplierOrder(data.ordersDb, books);
 	}
 
 	$: totalBooks = books.length;
