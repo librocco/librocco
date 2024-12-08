@@ -22,7 +22,9 @@
 
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import type { LayoutData } from "./$types";
 
+	export let data: LayoutData;
 	// TODO: Replace with actual DB call
 	let supplierOrders = [
 		{
@@ -48,8 +50,7 @@
 		}
 	];
 
-	$: hasOrderedOrders = supplierOrders.some((order) => order.status === "ordered");
-	$: filteredOrders = supplierOrders.filter((order) => order.status === $supplierOrderFilterStatus);
+	$: hasOrderedOrders = data.placedOrders.length;
 
 	function setFilter(status: SupplierOrderFilterStatus) {
 		supplierOrderFilterStatus.set(status);
@@ -103,9 +104,9 @@
 					<button class="btn-outline btn-sm btn" disabled> Completed </button>
 				</div>
 				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable orders={filteredOrders} />
+					<UnorderedTable orders={data.possibleOrders} />
 				{:else}
-					<OrderedTable orders={filteredOrders} on:reconcile={handleReconcile} />
+					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
 				{/if}
 			{/if}
 		</div>

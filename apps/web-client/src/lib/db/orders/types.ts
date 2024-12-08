@@ -50,6 +50,12 @@ export type BookLine = { isbn: string; quantity: number };
 export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
 export type SupplierOrderLine = { supplier_id: number; isbn: string; quantity: number };
 
+export type SupplierPlacedOrder = {
+	supplier_name: string;
+	supplier_id: number;
+	total_book_number: number;
+	created: Date;
+};
 export type Supplier = {
 	id?: number;
 	name?: string;

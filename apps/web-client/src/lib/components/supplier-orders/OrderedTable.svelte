@@ -1,13 +1,9 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
 	import { createEventDispatcher } from "svelte";
+	import type { SupplierPlacedOrder } from "$lib/db/orders/types";
 
-	export let orders: Array<{
-		supplier_name: string;
-		supplier_id: number;
-		total_book_number: number;
-		created: Date;
-	}>;
+	export let orders: Array<SupplierPlacedOrder>;
 
 	const dispatch = createEventDispatcher();
 
@@ -86,7 +82,7 @@
 					<td>{total_book_number}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							{created.toLocaleDateString()}
+							{new Date(created).toLocaleString()}
 						</span>
 					</td>
 					<td class="text-right">
