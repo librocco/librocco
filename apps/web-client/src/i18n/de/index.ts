@@ -9,7 +9,8 @@ const nav = {
 	settings: "Einstellungen",
 	history: "Verlauf",
 
-	supplier_orders: "Lieferantenbestellungen"
+	supplier_orders: "Lieferantenbestellungen",
+	debug: "Debug"
 };
 
 const search = {
