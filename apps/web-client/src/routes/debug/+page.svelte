@@ -9,10 +9,11 @@
 	import { redirect, type Load } from "@sveltejs/kit";
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/orders";
-	import { Book, upsertBook } from "$lib/db/orders/books";
-	import { Supplier } from "$lib/db/orders/types";
-	import { upsertSupplier } from "$lib/db/orders/supplier";
+	import { upsertBook } from "$lib/db/orders/books";
+	import { upsertSupplier } from "$lib/db/orders/suppliers";
 
+	import type { Book as BookType} from "$lib/db/orders/books";
+	import type { Supplier } from "$lib/db/orders/types";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -106,10 +107,39 @@
 	const populateDatabase = async function populateDatabase() {
 		const ordersDb = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
-		exampleData.books.forEach((book)=> {
-			console.log(`Creating book ${book}`);
-			upsertBook(ordersDb, new Book(book));
-		})
+		for (const rawBook of exampleData.books) {
+			try {
+				const book: BookType = {
+					isbn: rawBook.isbn,
+					title: rawBook.title,
+					authors: rawBook.authors,
+					publisher: rawBook.publisher,
+					price: rawBook.price
+				};
+
+				await upsertBook(ordersDb, book);
+				console.log(`Upserted book: ${book.isbn}`);
+			} catch (error) {
+				console.error(`Error upserting book with ISBN ${rawBook.isbn}:`, error);
+			}
+		}
+
+		for (const rawSupplier of exampleData.suppliers) {
+			try {
+				const supplier: Supplier = {
+					id: rawSupplier.id,
+					name: rawSupplier.name,
+					email: rawSupplier.email,
+					address: rawSupplier.address,
+				};
+
+				await upsertSupplier(ordersDb, supplier);
+				console.log(`Upserted supplier: ${supplier.name}`);
+			} catch (error) {
+				console.error(`Error upserting supplier with name ${rawSupplier.name}:`, error);
+			}
+		}
+		console.log("Finished populating database.");
 		loadData();
 	};
 
@@ -145,6 +175,10 @@
     ];
 
 	const loadData = async function() {
+		console.log("Loading database");
+
+		isLoading = true;
+
 		const ordersDb = await getInitializedDB("librocco-current-db");
 		books = await ordersDb.exec("SELECT COUNT(*) from book;");
 		publishers = await ordersDb.exec("SELECT COUNT(*) from supplier_publisher;");
@@ -156,7 +190,6 @@
 	}
 
 	onMount(() => {
-		console.log("Loading database");
 		loadData();
 	});
 </script>
