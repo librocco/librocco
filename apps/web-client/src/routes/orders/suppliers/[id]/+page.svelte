@@ -3,85 +3,12 @@
 	import Page from "$lib/components/Page.svelte";
 	import { view } from "@librocco/shared";
 	import { createSupplierOrder, getSupplierOrder, upsertSupplier } from "$lib/db/orders/suppliers";
-	import type { LayoutData } from "../$types";
+	import type { PageData } from "./$types";
 	import type { SupplierOrderLine } from "$lib/db/orders/types";
+	import { onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
 
-	export let data: LayoutData;
-	// TODO: Replace with actual DB call
-	let books = [
-		{
-			isbn: "9781234567897",
-			title: "The Art of Learning",
-			authors: "Josh Waitzkin",
-			price: 15.99,
-			quantity: 2,
-			supplier_id: 1,
-			publisher: "2"
-		},
-		{
-			isbn: "9781234567880",
-			title: "Deep Work",
-			authors: "Cal Newport",
-			price: 18.0,
-			quantity: 1,
-			supplier_id: 1,
-			publisher: "2"
-		},
-		{
-			isbn: "9780987654321",
-			title: "Becoming",
-			authors: "Michelle Obama",
-			price: 19.5,
-			quantity: 3,
-			supplier_id: 1,
-			publisher: "3"
-		},
-		{
-			isbn: "9780987654314",
-			title: "Thinking, Fast and Slow",
-			authors: "Daniel Kahneman",
-			price: 12.99,
-			quantity: 4,
-			supplier_id: 1,
-			publisher: "2"
-		},
-		{
-			isbn: "9780987654307",
-			title: "The Power of Habit",
-			authors: "Charles Duhigg",
-			price: 13.5,
-			quantity: 2,
-			supplier_id: 1,
-			publisher: "4"
-		},
-		{
-			isbn: "9781234567873",
-			title: "Atomic Habits",
-			authors: "James Clear",
-			price: 16.99,
-			quantity: 5,
-			supplier_id: 1,
-			publisher: "2"
-		},
-		{
-			isbn: "9781234567866",
-			title: "Educated",
-			authors: "Tara Westover",
-			price: 14.99,
-			quantity: 1,
-			supplier_id: 1,
-			publisher: "2"
-		},
-		{
-			isbn: "9781234567859",
-			title: "Sapiens",
-			authors: "Yuval Noah Harari",
-			price: 22.5,
-			quantity: 3,
-			supplier_id: 1,
-			publisher: "1"
-		}
-	];
+	export let data: PageData;
 
 	// Mock supplier data
 	const supplier = {
@@ -90,9 +17,10 @@
 		lastUpdated: new Date()
 	};
 
-	let selectedBooks: string[] = [];
+	let selectedBooks: string[] = data?.books.map((book) => book.isbn) ?? [];
+
 	$: totalAmount = selectedBooks.reduce((acc, isbn) => {
-		const book = books.find((b) => b.isbn === isbn);
+		const book = data?.books[isbn];
 		return acc + (book?.price || 0);
 	}, 0);
 
@@ -100,18 +28,21 @@
 
 	async function handlePlaceOrder() {
 		if (!canPlaceOrder) return;
-		console.log("Placing order for books:", Array.from(selectedBooks));
-		// TODO: Implement order placement
-
-		await createSupplierOrder(data.ordersDb, books);
+		const selection = data?.books.filter((book) => selectedBooks.includes(book.isbn));
+		await createSupplierOrder(data.ordersDb, selection);
+		await invalidate("suppliers:data");
 	}
 
-	$: totalBooks = books.length;
-	$: totalValue = books.reduce((sum, book) => sum + book.price, 0).toFixed(2);
+	$: totalBooks = data?.books.length;
+	$: totalValue = data?.books.reduce((sum, book) => sum + book.price, 0).toFixed(2);
 
 	function selectPortion(portion: number) {
-		const numToSelect = Math.floor(books.length * portion);
-		selectedBooks = books.slice(0, numToSelect).map((b) => b.isbn);
+		const numToSelect = Math.floor(data?.books.length * portion);
+		if (portion === 1 && selectedBooks.length === data?.books.length) {
+			selectedBooks = [];
+		} else {
+			selectedBooks = data?.books.slice(0, numToSelect).map((b) => b.isbn);
+		}
 	}
 </script>
 
@@ -161,6 +92,7 @@
 						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>Select 1/4</button>
 						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>Select 1/2</button>
 						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>Select 3/4</button>
+						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>Select All</button>
 					</div>
 				</div>
 			</div>
@@ -179,7 +111,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each books as { isbn, title, authors, price }}
+						{#each data?.books as { isbn, title, authors, price }}
 							<tr>
 								<td>
 									<input
@@ -219,6 +151,7 @@
 								<div class="stat-value text-lg">€{totalAmount.toFixed(2)}</div>
 							</div>
 						</dl>
+
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
 							Place Order
 							<Truck aria-hidden size={20} class="hidden md:block" />
