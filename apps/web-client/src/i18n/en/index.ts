@@ -1,4 +1,4 @@
-import type { BaseTranslation } from '../i18n-types.js';
+import type { BaseTranslation } from "../i18n-types.js";
 
 const nav = {
 	// Inventory mgmt
