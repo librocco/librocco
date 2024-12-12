@@ -11,7 +11,8 @@ const nav = {
 	history: "History",
 
 	// Orders mgmt
-	supplier_orders: "Suppliers orders"
+	supplier_orders: "Suppliers orders",
+	debug: "Debug"
 };
 
 const search = {
