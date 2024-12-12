@@ -62,6 +62,22 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
 	);
 	return result;
 }
+
+export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
+	// We need to build a query that will yield all books we can order, grouped by supplier
+	const result = await db.execO<SupplierOrderLine>(
+		`SELECT supplier_id, supplier.name as supplier_name, book.isbn, SUM(quantity) as quantity
+      FROM supplier
+        JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+        JOIN book ON supplier_publisher.publisher = book.publisher
+        JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
+      WHERE quantity > 0 AND placed is NULL AND supplier_id = ?
+      GROUP BY supplier_id, book.isbn
+      ORDER BY book.isbn ASC;`,
+		[supplierId]
+	);
+	return result;
+}
 export async function getPossibleSupplerOrderInfos(db: DB): Promise<(SupplierOrderInfo & { supplier_name: string })[]> {
 	const result = await db.execO<SupplierOrderInfo & { supplier_name: string }>(
 		`SELECT supplier.name as supplier_name, supplier_id, SUM(quantity) as total_book_number, SUM(quantity * price) as total_book_price

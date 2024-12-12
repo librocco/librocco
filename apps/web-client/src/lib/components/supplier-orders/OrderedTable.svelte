@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
-	import { createEventDispatcher } from "svelte";
 	import type { SupplierPlacedOrder } from "$lib/db/orders/types";
+	import { goto } from "$lib/utils/navigation";
+	import { base } from "$app/paths";
 
 	export let orders: Array<SupplierPlacedOrder>;
-
-	const dispatch = createEventDispatcher();
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
@@ -18,9 +17,6 @@
 			selectedOrders = [...selectedOrders, supplierId];
 		}
 	}
-
-	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
 
 	function handleReconcile(supplierId: number) {
 		goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
