@@ -44,7 +44,7 @@ type RootTranslation = {
 		 */
 		supplier_orders: string
 		/**
-		 * Debug
+		 * D​e​b​u​g
 		 */
 		debug: string
 	}

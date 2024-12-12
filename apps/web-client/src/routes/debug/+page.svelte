@@ -1,18 +1,30 @@
 <script lang="ts">
-	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, ArrowLeftToLine, QrCode, Book, Truck, Bug } from "lucide-svelte";
+	import {
+		BookCopy,
+		Library,
+		PackageMinus,
+		Search,
+		Settings,
+		PersonStanding,
+		ArrowLeftToLine,
+		QrCode,
+		Book,
+		Truck,
+		Bug
+	} from "lucide-svelte";
 	import { Plus, RotateCcw } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
 	import { appPath } from "$lib/paths";
 	import { TooltipWrapper } from "$lib/components";
 	import { browser } from "$app/environment";
-	import { onMount } from 'svelte';
+	import { onMount } from "svelte";
 	import { redirect, type Load } from "@sveltejs/kit";
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/orders";
 	import { upsertBook } from "$lib/db/orders/books";
 	import { upsertSupplier } from "$lib/db/orders/suppliers";
 
-	import type { Book as BookType} from "$lib/db/orders/books";
+	import type { Book as BookType } from "$lib/db/orders/books";
 	import type { Supplier } from "$lib/db/orders/types";
 
 	$: ({ nav: tNav } = $LL);
@@ -81,7 +93,7 @@
 				title: "Lord of the Flies",
 				authors: "William Golding",
 				publisher: "Mondadori",
-				price: 18.00
+				price: 18.0
 			}
 		],
 		suppliers: [
@@ -101,8 +113,8 @@
 				supplier_id: 1,
 				publisher: "Mondadori"
 			}
-		],
-	}
+		]
+	};
 
 	const populateDatabase = async function populateDatabase() {
 		const ordersDb = await getInitializedDB("librocco-current-db");
@@ -130,7 +142,7 @@
 					id: rawSupplier.id,
 					name: rawSupplier.name,
 					email: rawSupplier.email,
-					address: rawSupplier.address,
+					address: rawSupplier.address
 				};
 
 				await upsertSupplier(ordersDb, supplier);
@@ -150,10 +162,10 @@
 		console.log("Resetting database");
 
 		tables.forEach((table) => {
-			(async function() {
-				console.log(`Clearing ${table}`)
-				await ordersDb.exec(`DELETE FROM ${table}`)
-			})()
+			(async function () {
+				console.log(`Clearing ${table}`);
+				await ordersDb.exec(`DELETE FROM ${table}`);
+			})();
 		});
 		loadData();
 	};
@@ -167,14 +179,14 @@
 	let isLoading = true;
 
 	const tableData = [
-        { label: "Books", value: () => books },
-        { label: "Publishers", value: () => publishers },
-        { label: "Suppliers", value: () => suppliers },
-        { label: "Orders", value: () => orders },
-        { label: "Customers", value: () => customers }
-    ];
+		{ label: "Books", value: () => books },
+		{ label: "Publishers", value: () => publishers },
+		{ label: "Suppliers", value: () => suppliers },
+		{ label: "Orders", value: () => orders },
+		{ label: "Customers", value: () => customers }
+	];
 
-	const loadData = async function() {
+	const loadData = async function () {
 		console.log("Loading database");
 
 		isLoading = true;
@@ -187,7 +199,7 @@
 		suppliers = await ordersDb.exec("SELECT COUNT(*) from supplier;");
 
 		isLoading = false;
-	}
+	};
 
 	onMount(() => {
 		loadData();
@@ -266,16 +278,16 @@
 						</thead>
 						<tbody>
 							{#each tableData as row}
-							<tr class="hover focus-within:bg-base-200">
-								<td>{row.label}</td>
-								<td>
-									{#if isLoading}
-										<div class="spinner"></div>
-									{:else}
-										{row.value()}
-									{/if}
-								</td>
-							</tr>
+								<tr class="hover focus-within:bg-base-200">
+									<td>{row.label}</td>
+									<td>
+										{#if isLoading}
+											<div class="spinner"></div>
+										{:else}
+											{row.value()}
+										{/if}
+									</td>
+								</tr>
 							{/each}
 						</tbody>
 					</table>
@@ -291,22 +303,22 @@
 </div>
 
 <style>
-    .spinner {
-        width: 10px;
-        height: 10px;
-        border: 5px solid rgba(0, 0, 0, 0.1);
-        border-top-color: #333;
-        border-radius: 50%;
-        animation: spin 1s linear infinite;
-        margin: auto;
-    }
+	.spinner {
+		width: 10px;
+		height: 10px;
+		border: 5px solid rgba(0, 0, 0, 0.1);
+		border-top-color: #333;
+		border-radius: 50%;
+		animation: spin 1s linear infinite;
+		margin: auto;
+	}
 
-    @keyframes spin {
-        from {
-            transform: rotate(0deg);
-        }
-        to {
-            transform: rotate(360deg);
-        }
-    }
+	@keyframes spin {
+		from {
+			transform: rotate(0deg);
+		}
+		to {
+			transform: rotate(360deg);
+		}
+	}
 </style>
