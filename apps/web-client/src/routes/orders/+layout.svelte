@@ -75,6 +75,11 @@
 			label: tNav.supplier_orders(),
 			href: appPath("supplier_orders"),
 			icon: Truck
+		},
+		{
+			label: tNav.debug(),
+			href: appPath("debug"),
+			icon: Bug
 		}
 	];
 
