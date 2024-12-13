@@ -1,8 +1,10 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { Plus } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
+	import { invalidate } from "$app/navigation";
 	import { goto } from "$lib/utils/navigation";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -18,12 +20,31 @@
 
 	export let data: PageData;
 
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.ordersDbCtx;
+
+		// Reload add customer data dependants when the data changes
+		const disposer1 = rx.onRange(["customer"], () => (console.log("customer data changed"), invalidate("customer:data")));
+		// Reload all customer order line/book data dependants when the data changes
+		const disposer2 = rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	const { customers, customerOrderLines } = data;
+	$: customers = data.customers;
+	$: customerOrderLines = data.customerOrderLines;
 
 	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
