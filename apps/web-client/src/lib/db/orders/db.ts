@@ -26,7 +26,7 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string) {
+export async function getDB(dbname: string): Promise<DB> {
 	const sqlite = await initWasm(() => wasmUrl);
 	return sqlite.open(dbname);
 }
