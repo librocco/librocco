@@ -6,13 +6,15 @@ import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/orders/custom
 export const load: LayoutLoad = async ({ depends }) => {
 	depends("customer:data");
 
-	const ordersDb = (await getInitializedDB("librocco-current-db")).db;
+	const dbCtx = await getInitializedDB("librocco-current-db");
+	const { db } = dbCtx;
 
-	const customers = await getAllCustomers(ordersDb);
+	const customers = await getAllCustomers(db);
 
-	const customerOrderLines = await getAllCustomerOrderLines(ordersDb);
+	const customerOrderLines = await getAllCustomerOrderLines(db);
 
-	return { ordersDb, customers, customerOrderLines };
+	// TODO: we could rename this to 'dbCtx' once the same approach is used in inventory db
+	return { ordersDbCtx: dbCtx, customers, customerOrderLines };
 };
 
 export const ssr = false;
