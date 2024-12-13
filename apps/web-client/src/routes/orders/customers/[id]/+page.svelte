@@ -12,6 +12,8 @@
 	import type { PageData } from "./$types";
 	import { page } from "$app/stores";
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { type DbCtx } from "$lib/db/orders/db";
+	import rxtbl from "@vlcn.io/rx-tbl";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
 	import { writable, get, type Writable } from "svelte/store";
@@ -21,7 +23,9 @@
 
 	export let data: PageData;
 
-	const { customer, customerOrderLines, books, ordersDb } = data;
+	const { customer, customerOrderLines, books } = data;
+	// TODO: remove `as any` - I was not able to make typescript happy without this
+	const ordersDb = data.ordersDb as any as DbCtx;
 
 	const id = parseInt($page.params.id);
 	let currentBookISBN = "";
@@ -37,9 +41,9 @@
 	let disposer: () => void;
 	onMount(() => {
 		// Reload add customer data dependants when the data changes
-		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		const disposer1 = ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+		const disposer2 = ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
@@ -75,7 +79,7 @@
 			title: "",
 			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		await addBooksToCustomer(ordersDb.db, parseInt($page.params.id), [newBook]);
 		currentBookISBN = "";
 	};
 </script>
@@ -229,7 +233,7 @@
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					upsertCustomer(ordersDb, { ...customer, ...form.data, id });
+					upsertCustomer(ordersDb.db, { ...customer, ...form.data, id });
 				}
 			},
 			onUpdated: async ({ form }) => {

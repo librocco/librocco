@@ -25,6 +25,7 @@
 	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
+	$: db = data.ordersDb?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -59,7 +60,7 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const randomId = Math.floor(Math.random() * 1e10);
-		await upsertCustomer(data.ordersDb, { id: randomId });
+		await upsertCustomer(db, { id: randomId });
 		goto(appPath("customers", randomId.toString()));
 	};
 
