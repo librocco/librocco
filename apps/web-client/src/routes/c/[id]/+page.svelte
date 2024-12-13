@@ -32,20 +32,23 @@
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { addBooksToCustomer, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
 	import { page } from "$app/stores";
-	import { invalidate, invalidateAll } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
 
 	export let data: PageData;
-	$: db = data.ordersDb?.db;
+	$: db = data.ordersDbCtx?.db;
 
 	const id = parseInt($page.params.id);
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.ordersDbCtx;
+
 		// Reload add customer data dependants when the data changes
-		const disposer1 = data.ordersDb.rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
+		const disposer1 = rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = data.ordersDb.rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
+		const disposer2 = rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
 
 		disposer = () => (disposer1(), disposer2());
 	});
