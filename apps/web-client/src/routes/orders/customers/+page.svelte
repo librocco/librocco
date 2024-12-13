@@ -49,7 +49,7 @@
 	const createCustomer = async (customer: Customer) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-		await upsertCustomer(data.ordersDb, { ...customer, id: newCustomerId });
+		await upsertCustomer(data.ordersDb.db, { ...customer, id: newCustomerId });
 	};
 </script>
 
