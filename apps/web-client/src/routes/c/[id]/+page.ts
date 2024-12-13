@@ -7,14 +7,14 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("customer:data");
 	depends("customer:books");
 
-	const { ordersDb } = await parent();
+	const data = await parent();
 
 	// If db is not returned (we're not in the browser environment, no need for additional loading)
-	if (!ordersDb) {
+	if (!data.ordersDbCtx?.db) {
 		return {};
 	}
 
-	const { db } = ordersDb;
+	const { db } = data.ordersDbCtx;
 
 	const customerDetails = await getCustomerDetails(db, Number(params.id));
 
