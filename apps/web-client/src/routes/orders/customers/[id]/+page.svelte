@@ -75,7 +75,7 @@
 			title: "",
 			price: 0
 		};
-		await addBooksToCustomer(data.ordersDb, parseInt($page.params.id), [newBook]);
+		await addBooksToCustomer(data.ordersDb.db, parseInt($page.params.id), [newBook]);
 		currentBookISBN = "";
 	};
 </script>
@@ -229,7 +229,7 @@
 			validators: zod(customerOrderSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					upsertCustomer(ordersDb, { ...customer, ...form.data, id });
+					upsertCustomer(ordersDb.db, { ...customer, ...form.data, id });
 				}
 			},
 			onUpdated: async ({ form }) => {

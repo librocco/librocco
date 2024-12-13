@@ -6,7 +6,7 @@ import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/orders/custom
 export const load: LayoutLoad = async ({ depends }) => {
 	depends("customer:data");
 
-	const ordersDb = await getInitializedDB("librocco-current-db");
+	const ordersDb = (await getInitializedDB("librocco-current-db")).db;
 
 	const customers = await getAllCustomers(ordersDb);
 
