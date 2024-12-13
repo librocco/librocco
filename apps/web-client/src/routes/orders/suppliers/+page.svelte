@@ -10,7 +10,7 @@
 	import { customerOrderSchema } from "$lib/forms";
 	import { base } from "$app/paths";
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
-	import { getPossibleSupplerOrderInfos } from "$lib/db/orders/suppliers";
+	import { getPossibleSupplierOrderInfos } from "$lib/db/orders/suppliers";
 
 	import Page from "$lib/components/Page.svelte";
 
