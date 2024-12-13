@@ -28,7 +28,7 @@
 
 	onDestroy(() => {
 		// Stop wkr sync
-		wkr.stopSync(dbid);
+		wkr?.stopSync(dbid);
 	});
 
 	interface Link {
