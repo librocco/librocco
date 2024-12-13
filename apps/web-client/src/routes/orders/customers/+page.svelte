@@ -12,13 +12,9 @@
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
-	import Page from "$lib/components/Page.svelte";
-	import { view } from "@librocco/shared";
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
-	import { appPath } from "$lib/paths";
 	import type { Customer } from "$lib/db/orders/types";
-	import { type DbCtx } from "$lib/db/orders/db";
 
 	export let data: PageData;
 
@@ -28,8 +24,6 @@
 	} = newOrderDialog;
 
 	const { customers, customerOrderLines } = data;
-	// TODO: remove `as any` - I was not able to make typescript happy without this
-	const ordersDb = data.ordersDb as any as DbCtx;
 
 	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
@@ -52,7 +46,10 @@
 	const createCustomer = async (customer: Customer) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-		await upsertCustomer(ordersDb.db, { ...customer, id: newCustomerId });
+
+		// NOTE: ordersDbCtx should always be defined on client
+		const { db } = data.ordersDbCtx;
+		await upsertCustomer(db, { ...customer, id: newCustomerId });
 	};
 </script>
 
