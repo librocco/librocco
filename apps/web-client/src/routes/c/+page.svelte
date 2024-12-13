@@ -25,13 +25,16 @@
 	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
-	$: db = data.ordersDb?.db;
+	$: db = data.ordersDbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.ordersDbCtx;
+
 		// Reload add customer data dependants when the data changes
-		disposer = data.ordersDb.rx.onRange(["customer"], () => invalidate("customer:data"));
+		disposer = rx.onRange(["customer"], () => invalidate("customer:data"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
