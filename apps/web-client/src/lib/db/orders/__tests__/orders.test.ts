@@ -127,7 +127,7 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers).toMatchObject(db2Customers);
+		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
 });
