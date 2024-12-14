@@ -78,7 +78,8 @@ export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: numbe
 	);
 	return result;
 }
-export async function getPossibleSupplerOrderInfos(db: DB): Promise<(SupplierOrderInfo & { supplier_name: string })[]> {
+
+export async function getPossibleSupplierOrderInfos(db: DB): Promise<(SupplierOrderInfo & { supplier_name: string })[]> {
 	const result = await db.execO<SupplierOrderInfo & { supplier_name: string }>(
 		`SELECT supplier.name as supplier_name, supplier_id, SUM(quantity) as total_book_number, SUM(quantity * price) as total_book_price
        FROM supplier
