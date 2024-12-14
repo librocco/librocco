@@ -12,6 +12,14 @@
 				"default": "./dist/index.js",
 				"types": "./dist/index.d.ts"
 			}
+		},
+		"./db-schemas/*": {
+			"import": {
+				"default": "./db-schemas/*"
+			},
+			"require": {
+				"default": "./db-schemas/*"
+			}
 		}
 	},
 	"types": "dist/index.d.ts",

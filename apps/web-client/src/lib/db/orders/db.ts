@@ -1,158 +1,73 @@
 import initWasm from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
+import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
+
+import schema from "@librocco/shared/db-schemas/orders.sql?raw";
 
 import { type DB, type Change } from "./types";
 
-export type ReactiveDB = DB & { rx: ReturnType<typeof rxtbl> };
+export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
-const dbCache: Record<string, ReactiveDB> = {};
+const dbCache: Record<string, DbCtx> = {};
 
-export async function getDB(dbname: string) {
-	if (dbCache[dbname]) {
-		return dbCache[dbname];
-	}
+const schemaName = "orders";
+const schemaVersion = cryb64(schema);
 
+async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null> {
+	const nameRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_name'");
+	if (!nameRes?.length) return null;
+	const [[name]] = nameRes;
+
+	const versionRes = await db.execA<[string]>("SELECT value FROM crsql_master WHERE key = 'schema_version'");
+	if (!versionRes?.length) throw new Error(`db has a schema name: ${name}, but no version`);
+	const [[version]] = versionRes;
+
+	return [name, BigInt(version)];
+}
+
+export async function getDB(dbname: string): Promise<DB> {
 	const sqlite = await initWasm(() => wasmUrl);
-	const db = await sqlite.open(dbname);
-
-	return db;
+	return sqlite.open(dbname);
 }
 
 export async function initializeDB(db: DB) {
-	await db.exec(`CREATE TABLE book (
-		isbn TEXT NOT NULL,
-		title TEXT,
-		authors TEXT,
-		publisher TEXT,
-		price DECIMAL,
-		PRIMARY KEY (isbn)
-	)`);
-	await db.exec("SELECT crsql_as_crr('book');");
+	// Thought: This could probably be wrapped into a txn
+	// not really: transactions are for DML, not for DDL
+	// Apply the schema (initialise the db)
+	await db.exec(schema);
 
-	await db.exec(`CREATE TABLE customer (
-         id INTEGER NOT NULL,
-         fullname TEXT,
-         email TEXT,
-         deposit DECIMAL,
-         updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-         PRIMARY KEY (id)
-     )`);
-
-	await db.exec(`CREATE TABLE customer_order_lines (
-		id INTEGER NOT NULL,
-		customer_id INTEGER,
-		isbn TEXT,
-		quantity INTEGER,
-		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-		placed INTEGER,
-		received INTEGER,
-		collected INTEGER,
-		PRIMARY KEY (id)
-	)`);
-
-	// We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
-	// Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
-	// but must not have checked foreign key constraints as they can be violated by row level security or replication.
-	// FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
-
-	// Activate the crsql extension
-
-	await db.exec("SELECT crsql_as_crr('customer');");
-	await db.exec("SELECT crsql_as_crr('customer_order_lines');");
-
-	await db.exec(`
- CREATE TRIGGER update_customer_timestamp_upsert_customer
- AFTER UPDATE ON customer
- FOR EACH ROW
- BEGIN
-     UPDATE customer
-     SET updatedAt = (strftime('%s', 'now') * 1000)
-     WHERE id = NEW.id;
- END;
-       `);
-	await db.exec(`CREATE TRIGGER update_customer_timestamp_insert
-     AFTER INSERT ON customer_order_lines
-     FOR EACH ROW
-     BEGIN
-         UPDATE customer
-         SET updatedAt = (strftime('%s', 'now') * 1000)
-         WHERE id = NEW.customer_id;
-     END;`);
-
-	await db.exec(`CREATE TRIGGER update_customer_timestamp_delete
-     AFTER DELETE ON customer_order_lines
-     FOR EACH ROW
-     BEGIN
-         UPDATE customer
-         SET updatedAt = (strftime('%s', 'now') * 1000)
-         WHERE id = OLD.customer_id;
-     END;`);
-
-	await db.exec(`CREATE TABLE supplier (
-		id INTEGER NOT NULL,
-		name TEXT,
-		email TEXT,
-		address TEXT,
-		PRIMARY KEY (id)
-	)`);
-	await db.exec("SELECT crsql_as_crr('supplier');");
-	await db.exec(`CREATE TABLE supplier_publisher (
-		supplier_id INTEGER,
-		publisher TEXT NOT NULL,
-		PRIMARY KEY (publisher)
-	)`);
-	await db.exec("SELECT crsql_as_crr('supplier_publisher');");
-
-	await db.exec(`CREATE TABLE supplier_order (
-	  id INTEGER NOT NULL,
-		supplier_id INTEGER,
-		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-		PRIMARY KEY (id)
-	)`);
-	await db.exec("SELECT crsql_as_crr('supplier_order');");
-	await db.exec(`CREATE TABLE supplier_order_line (
-		supplier_order_id INTEGER NOT NULL,
-		isbn TEXT NOT NULL,
-		quantity INTEGER NOT NULL DEFAULT 1,
-		PRIMARY KEY (supplier_order_id, isbn)
-	)`);
-	await db.exec("SELECT crsql_as_crr('supplier_order_line');");
-
-	await db.exec(`CREATE TABLE customer_supplier_order (
-    id INTEGER NOT NULL,
-		supplier_order_id INTEGER,
-		customer_order_line_id INTEGER,
-		PRIMARY KEY (id)
-	)`);
-	await db.exec("SELECT crsql_as_crr('customer_supplier_order');");
-
-	await db.exec(`CREATE TABLE reconciliation_order (
-    id INTEGER NOT NULL,
-		supplier_order_ids TEXT CHECK (json_valid(supplier_order_ids) AND json_array_length(supplier_order_ids) >= 1),
-		created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-		customer_order_line_ids TEXT CHECK (json_valid(supplier_order_ids)),
-		finalized INTEGER DEFAULT 0,
-		PRIMARY KEY (id)
-	)`);
-	await db.exec("SELECT crsql_as_crr('reconciliation_order');");
+	// Store schema info in crsql_master
+	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
+	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
 
-export const getInitializedDB = async (dbname: string) => {
+export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	if (dbCache[dbname]) {
 		return dbCache[dbname];
 	}
 
-	const _db = await getDB(dbname);
+	const db = await getDB(dbname);
 
-	const result = await _db.execO(`SELECT name FROM sqlite_master WHERE type='table' AND name='customer';`);
-
-	if (result.length === 0) {
-		await initializeDB(_db);
+	const schemaRes = await getSchemaNameAndVersion(db);
+	if (!schemaRes) {
+		await initializeDB(db);
+	} else {
+		// Check if schema name/version match
+		const [name, version] = schemaRes;
+		if (name !== schemaName || version !== schemaVersion) {
+			// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
+			const msg = [
+				"DB name/schema mismatch:",
+				`  req name: ${schemaName}, got name: ${name}`,
+				`  req version: ${schemaVersion}, got version: ${version}`
+			].join("\n");
+			throw new Error(msg);
+		}
 	}
 
-	const rx = rxtbl(_db);
-	dbCache[dbname] = Object.assign(_db, { rx });
+	const rx = rxtbl(db);
+	dbCache[dbname] = { db, rx };
 
 	return dbCache[dbname];
 };
