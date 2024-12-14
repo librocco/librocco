@@ -12,11 +12,8 @@
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
-	import Page from "$lib/components/Page.svelte";
-	import { view } from "@librocco/shared";
 	import type { PageData } from "./$types";
 	import { upsertCustomer } from "$lib/db/orders/customers";
-	import { appPath } from "$lib/paths";
 	import type { Customer } from "$lib/db/orders/types";
 
 	export let data: PageData;
@@ -49,7 +46,10 @@
 	const createCustomer = async (customer: Customer) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-		await upsertCustomer(data.ordersDb, { ...customer, id: newCustomerId });
+
+		// NOTE: ordersDbCtx should always be defined on client
+		const { db } = data.ordersDbCtx;
+		await upsertCustomer(db, { ...customer, id: newCustomerId });
 	};
 </script>
 

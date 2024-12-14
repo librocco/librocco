@@ -38,6 +38,7 @@ describe("Suppliers order creation", () => {
 			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
 		]);
 	});
+
 	it("creates two new supplier orders", async () => {
 		const possibleOrderLines = await getPossibleSupplerOrderLines(db);
 		const newOrders = await createSupplierOrder(db, possibleOrderLines);
