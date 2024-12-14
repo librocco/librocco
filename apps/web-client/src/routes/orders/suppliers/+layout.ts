@@ -6,11 +6,11 @@ import type { LayoutLoad } from "./$types";
 export const load: LayoutLoad = async ({ depends }) => {
 	depends("suppliers:data");
 
-	const ordersDb = await getInitializedDB("librocco-current-db");
-	const possibleOrdersInfo = await getPossibleSupplierOrders(ordersDb);
-	const placedOrders = await getPlacedSupplierOrders(ordersDb);
+	const { db } = await getInitializedDB("librocco-current-db");
+	const possibleOrdersInfo = await getPossibleSupplierOrders(db);
+	const placedOrders = await getPlacedSupplierOrders(db);
 
-	return { placedOrders, possibleOrders: possibleOrdersInfo, ordersDb };
+	return { placedOrders, possibleOrders: possibleOrdersInfo, ordersDb: db };
 };
 
 export const ssr = false;
