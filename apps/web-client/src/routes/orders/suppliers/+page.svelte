@@ -10,46 +10,18 @@
 	import { customerOrderSchema } from "$lib/forms";
 	import { base } from "$app/paths";
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
-	import { getPossibleSupplerOrderInfos } from "$lib/db/orders/suppliers";
+	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
+	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import type { LayoutData } from "./$types";
 
-	import Page from "$lib/components/Page.svelte";
+	export let data: LayoutData;
 
-	import { view } from "@librocco/shared";
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
-	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
-
-	// TODO: Replace with actual DB call
-	let supplierOrders = [
-		{
-			supplier_name: "Science Books LTD",
-			supplier_id: 1,
-			total_book_number: 5,
-			status: "unordered",
-			created: new Date()
-		},
-		{
-			supplier_name: "Phantasy Books LTD",
-			supplier_id: 2,
-			total_book_number: 3,
-			status: "ordered",
-			created: new Date()
-		},
-		{
-			supplier_name: "Penguin Random House",
-			supplier_id: 3,
-			total_book_number: 8,
-			status: "ordered",
-			created: new Date()
-		}
-	];
-
-	$: hasOrderedOrders = supplierOrders.some((order) => order.status === "ordered");
-	$: filteredOrders = supplierOrders.filter((order) => order.status === $supplierOrderFilterStatus);
+	$: hasOrderedOrders = data.placedOrders.length;
 
 	function setFilter(status: SupplierOrderFilterStatus) {
 		supplierOrderFilterStatus.set(status);
@@ -72,7 +44,7 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if supplierOrders.length === 0}
+			{#if data?.possibleOrders.length === 0}
 				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 					<p class="text-center text-base-content/70">
 						No supplier orders available. Create a customer order first to generate supplier orders.
@@ -103,9 +75,9 @@
 					<button class="btn-outline btn-sm btn" disabled> Completed </button>
 				</div>
 				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable orders={filteredOrders} />
+					<UnorderedTable orders={data.possibleOrders} />
 				{:else}
-					<OrderedTable orders={filteredOrders} on:reconcile={handleReconcile} />
+					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
 				{/if}
 			{/if}
 		</div>

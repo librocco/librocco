@@ -1,15 +1,10 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
-	import { createEventDispatcher } from "svelte";
+	import type { SupplierPlacedOrder } from "$lib/db/orders/types";
+	import { goto } from "$lib/utils/navigation";
+	import { base } from "$app/paths";
 
-	export let orders: Array<{
-		supplier_name: string;
-		supplier_id: number;
-		total_book_number: number;
-		created: Date;
-	}>;
-
-	const dispatch = createEventDispatcher();
+	export let orders: Array<SupplierPlacedOrder>;
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
@@ -22,9 +17,6 @@
 			selectedOrders = [...selectedOrders, supplierId];
 		}
 	}
-
-	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
 
 	function handleReconcile(supplierId: number) {
 		goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
@@ -86,7 +78,7 @@
 					<td>{total_book_number}</td>
 					<td>
 						<span class="badge-primary badge-outline badge">
-							{created.toLocaleDateString()}
+							{new Date(created).toLocaleString()}
 						</span>
 					</td>
 					<td class="text-right">
