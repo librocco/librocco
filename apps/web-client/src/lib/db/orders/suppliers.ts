@@ -1,10 +1,22 @@
 import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierOrder, SupplierPlacedOrder } from "./types";
 
+/**
+ * Retrieves all suppliers from the database.
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of suppliers with their basic info
+ */
 export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
 	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
 	return result;
 }
-
+/**
+ * Updates an existing supplier or inserts a new one if it doesn't exist.
+ *
+ * @param db - The database instance to query
+ * @param supplier - The supplier data to upsert
+ * @throws {Error} If supplier.id is not provided
+ */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
@@ -27,7 +39,13 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 		]
 	);
 }
-
+/**
+ * Retrieves all publishers associated with a specific supplier.
+ *
+ * @param db - The database instance to query
+ * @param supplierId - The id of the supplier
+ * @returns Promise resolving to an array of publisher ids
+ */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
 	const result = await db.execA("SELECT publisher FROM supplier_publisher WHERE supplier_id = ?;", [supplierId]);
 	if (result.length > 0) {
@@ -35,7 +53,14 @@ export async function getPublishersFor(db: DB, supplierId: number): Promise<stri
 	}
 	return [];
 }
-
+/**
+ * Associates a publisher with a supplier, updating any existing association.
+ * If the publisher was associated with a different supplier, that association is replaced.
+ *
+ * @param db - The database instance to query
+ * @param supplierId - The id of the supplier to associate to
+ * @param publisherId - The id of the publisher to associate
+ */
 export async function associatePublisher(db: DB, supplierId: number, publisherId: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
@@ -47,7 +72,14 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 		[supplierId, publisherId, supplierId]
 	);
 }
-
+/**
+  * Retrieves all unplaced customer orders which are equivalent to possible order lines that can be created.
+  * Groups books by supplier based on publisher associations.
+  *
+  * @param db - The database instance to query
+  * @returns Promise resolving to an array of possible order lines with supplie
+ and book information
+  */
 export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
@@ -62,7 +94,13 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
 	);
 	return result;
 }
-
+/**
+ * Retrieves possible order lines for a specific supplier based on unplaced customer orders.
+ *
+ * @param db - The database instance to query
+ * @param supplierId - The ID of the supplier to get order lines for
+ * @returns Promise resolving to an array of possible order lines for the specified supplier
+ */
 export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
@@ -79,22 +117,45 @@ export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: numbe
 	return result;
 }
 
-export async function getPossibleSupplierOrderInfos(db: DB): Promise<(SupplierOrderInfo & { supplier_name: string })[]> {
+/**
+ * Retrieves summaries of possible supplier orders based on unplaced customer order lines.
+ * Each row represents a potential order for a supplier with aggregated quantities and prices.
+ * Ordered by supplier name.
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of supplier order summaries with supplier information
+ */
+export async function getPossibleSupplierOrders(db: DB): Promise<(SupplierOrderInfo & { supplier_name: string })[]> {
 	const result = await db.execO<SupplierOrderInfo & { supplier_name: string }>(
-		`SELECT supplier.name as supplier_name, supplier_id, SUM(quantity) as total_book_number, SUM(quantity * price) as total_book_price
-       FROM supplier
-         JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
-         JOIN book ON supplier_publisher.publisher = book.publisher
-         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-       WHERE quantity > 0 AND placed is NULL
-       GROUP BY supplier.name, supplier_id
-       ORDER BY book.isbn ASC;`
+		`SELECT
+             supplier.name as supplier_name,
+             supplier_id,
+             SUM(customer_order_lines.quantity) as total_book_number,
+             SUM(customer_order_lines.quantity * book.price) as total_book_price
+         FROM supplier
+             JOIN supplier_publisher ON supplier.id =
+ supplier_publisher.supplier_id
+             JOIN book ON supplier_publisher.publisher = book.publisher
+             JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
+         WHERE customer_order_lines.quantity > 0
+             AND customer_order_lines.placed IS NULL
+         GROUP BY supplier.id, supplier.name
+         ORDER BY supplier.name ASC;`
 	);
 	return result;
 }
 
-/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
+/**
+ * Creates supplier orders based on provided order lines and updates related customer orders.
+ *
+ * @param db - The database instance to query
+ * @param orderLines - The order lines to create supplier orders from
+ * @returns Promise resolving to the created supplier orders
+ * @todo Rewrite this function to accommodate for removing quantity in
+customerOrderLine
+ */
 export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]) {
+	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
 	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
 
@@ -158,7 +219,14 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 	});
 	return Promise.all(supplierIds.map((supplierId) => getSupplierOrder(db, supplierOrderMapping[supplierId])));
 }
-
+/**
+ * Retrieves a specific supplier order with all its details.
+ *
+ * @param db - The database instance to query
+ * @param supplierOrderId - The id of the supplier order to retrieve
+ * @returns Promise resolving to the supplier order details
+ * @throws {Error} If no order is found with the given id
+ */
 export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise<SupplierOrder> {
 	const orderInfo = await db.execO<SupplierOrderInfo & SupplierOrderLine & { supplier_order_id: number; created: string }>(
 		`SELECT supplier_order.id as supplier_order_id, created, supplier_id, supplier.name as supplier_name, isbn, quantity
@@ -183,29 +251,15 @@ export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise
 		}))
 	};
 }
-/**
- * Retrieves all supplier orders with their associated supplier information an
-book totals.
- * Orders are returned sorted by creation date (newest first).
- *
- * @param {DB} db - The database connection instance
- * @returns {Promise<SupplierOrder[]>} Array of supplier orders with supplier
-details and book counts
- *
- * @example
- * const orders = await getAllSupplierOrders(db);
- * // Returns: [
- * //   {
- * //     id: 1,
- * //     supplier_id: 1,
- * //     supplier_name: "Science Books LTD",
- * //     created: 1678901234567,
- * //     total_book_number: 3
- * //   },
- * //   ...
- * // ]
- */
 
+/**
+  * Retrieves all placed supplier orders with their associated supplier information and book totals.
+  * Orders are returned sorted by creation date (newest first).
+  *
+  * @param db - The database instance to query
+  * @returns Promise resolving to an array of placed supplier orders with
+ supplier details and book counts
+  */
 export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrder[]> {
 	const result = await db.execO<SupplierPlacedOrder>(
 		`SELECT

@@ -8,7 +8,7 @@ import {
 	associatePublisher,
 	getPlacedSupplierOrders,
 	getPossibleSupplerOrderLines,
-	getPossibleSupplierOrderInfos,
+	getPossibleSupplierOrders,
 	createSupplierOrder
 } from "../suppliers";
 
@@ -25,9 +25,9 @@ describe("Suppliers order creation", () => {
 			{ supplier_id: 1, isbn: "2", quantity: 1, supplier_name: "Science Books LTD" },
 			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
 		]);
-		expect(await getPossibleSupplierOrderInfos(db)).toStrictEqual([
-			{ supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 },
-			{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 }
+		expect(await getPossibleSupplierOrders(db)).toStrictEqual([
+			{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
+			{ supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 }
 		]);
 		// If we change the supplier for ChemPub to Phantasy Books LTD
 		// the supplier order will reflect that
