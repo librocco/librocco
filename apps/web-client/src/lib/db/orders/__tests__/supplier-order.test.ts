@@ -30,9 +30,6 @@ describe("Supplier order handlers should", () => {
 
 	// TODO: export and match to test data instead of all of this duplication
 	it("Retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
-		const test = await getPossibleSupplierOrderLines(db, 1);
-		const test2 = await getPossibleSupplierOrderLines(db, 2);
-
 		// Supplier 1 should have the following lines
 		expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([
 			{
