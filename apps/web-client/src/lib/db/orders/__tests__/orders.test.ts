@@ -132,21 +132,21 @@ describe("Customer order tests", () => {
 	});
 });
 
-describe("Customer order status", () => {
-	let db: DB;
-	beforeEach(async () => {
-		db = await getRandomDb();
-		await createCustomerOrders(db);
-	});
-	// TODO: update this when we have a handler to getPlacedOrderLines
-	// it("can update the timestamp of when a customer order is placed (to supplier)", async () => {
-	// 	const newOrderLines = await getPossibleSupplierOrderLines(db, 1);
+// TODO: update this when we have a handler to getPlacedOrderLines
+// describe("Customer order status", () => {
+// 	let db: DB;
+// 	beforeEach(async () => {
+// 		db = await getRandomDb();
+// 		await createCustomerOrders(db);
+// 	});
+// 	it("can update the timestamp of when a customer order is placed (to supplier)", async () => {
+// 		const newOrderLines = await getPossibleSupplierOrderLines(db, 1);
 
-	// 	await createSupplierOrder(db, newOrderLines);
+// 		await createSupplierOrder(db, newOrderLines);
 
-	// const isbns = [...newOrders[0].lines, ...newOrders[1].lines].map((line) => line.isbn);
-	// await markCustomerOrderAsReceived(db, isbns);
-	// const books = await getCustomerBooks(db, 1);
-	// expect(books[1].received).toBeInstanceOf(Date);
-	// });
-});
+// 	const isbns = [...newOrders[0].lines, ...newOrders[1].lines].map((line) => line.isbn);
+// 	await markCustomerOrderAsReceived(db, isbns);
+// 	const books = await getCustomerBooks(db, 1);
+// 	expect(books[1].received).toBeInstanceOf(Date);
+// 	});
+// });
