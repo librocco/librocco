@@ -183,6 +183,9 @@ export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrd
 // export async function getPlacedSupplierOrderLines(db: DB, supplier_id: number): Promise<SupplierPlacedOrder[]> {}
 
 /**
+ * TODO: I removed the getSupplierOrder query at the end of this because it seemed unnecessary, and it feels like it should be re-written inline with above structure
+ * this currently returns nothing. We can rethink this
+ * 
  * Creates supplier orders based on provided order lines and updates related customer orders.
  *
  * @param db - The database instance to query
@@ -254,37 +257,4 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 			);
 		}
 	});
-	return Promise.all(supplierIds.map((supplierId) => getSupplierOrder(db, supplierOrderMapping[supplierId])));
-}
-/**
- * Retrieves a specific supplier order with all its details.
- *
- * @param db - The database instance to query
- * @param supplierOrderId - The id of the supplier order to retrieve
- * @returns Promise resolving to the supplier order details
- * @throws {Error} If no order is found with the given id
- */
-export async function getSupplierOrder(db: DB, supplierOrderId: number): Promise<SupplierOrder> {
-	const orderInfo = await db.execO<SupplierOrderInfo & SupplierOrderLine & { supplier_order_id: number; created: string }>(
-		`SELECT supplier_order.id as supplier_order_id, created, supplier_id, supplier.name as supplier_name, isbn, quantity
-       FROM supplier_order
-         JOIN supplier ON supplier_order.supplier_id = supplier.id
-         JOIN supplier_order_line ON supplier_order.id = supplier_order_line.supplier_order_id
-       WHERE supplier_order_id = ?;`,
-		[supplierOrderId]
-	);
-	if (!orderInfo.length) {
-		throw Error("No orders found with this Id");
-	}
-	return {
-		supplier_id: orderInfo[0].supplier_id,
-		id: orderInfo[0].supplier_order_id,
-
-		created: new Date(orderInfo[0].created),
-		lines: orderInfo.map((line) => ({
-			supplier_id: line.supplier_id,
-			isbn: line.isbn,
-			quantity: line.quantity
-		}))
-	};
 }

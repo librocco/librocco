@@ -1,11 +1,12 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
 
 	import { Truck } from "lucide-svelte";
 
 	import { createSupplierOrder } from "$lib/db/orders/suppliers";
 
 	import type { PageData } from "./$types";
+	import { base } from "$app/paths";
 
 	export let data: PageData;
 
@@ -36,6 +37,9 @@
 
 		await createSupplierOrder(data.ordersDb, selection);
 		await invalidate("suppliers:data");
+		// TODO: We could either go to the new supplier order "placed" view when it's created
+		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
+		await goto(`${base}/orders/suppliers`);
 	}
 
 	function selectPortion(portion: number) {
