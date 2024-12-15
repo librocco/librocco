@@ -11,11 +11,10 @@ import {
 	addOrderLinesToReconciliationOrder,
 	finalizeReconciliationOrder
 } from "../reconciliation";
-import { createSupplierOrder, getPossibleSupplerOrderLines } from "../suppliers";
+import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerBooks } from "../customers";
 
-//getAllReconciliationOrders
-
+// TODO: this needs some work... leaving till reconcilation wiring in effort/updates
 describe("Suppliers order creation", () => {
 	let db: DB;
 	beforeEach(async () => {
@@ -25,9 +24,14 @@ describe("Suppliers order creation", () => {
 
 	it("can get all currently reconciliating orders", async () => {
 		const res = await getAllReconciliationOrders(db);
-		expect(res).toStrictEqual([]);
-		// get supplier orders
-		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+		expect(res).toEqual([]);
+
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
@@ -39,13 +43,18 @@ describe("Suppliers order creation", () => {
 			{
 				customer_order_line_ids: null,
 				id: 1,
-				supplier_order_ids: "[1,2]",
+				supplier_order_ids: "[1]",
 				finalized: 0
 			}
 		]);
 	});
 	it("can create a reconciliation order", async () => {
-		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
@@ -56,12 +65,17 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1,2]",
+			supplier_order_ids: "[1]",
 			finalized: 0
 		});
 	});
 	it("can update a currently reconciliating order", async () => {
-		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
@@ -72,7 +86,7 @@ describe("Suppliers order creation", () => {
 		expect(res2).toMatchObject({
 			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1,2]",
+			supplier_order_ids: "[1]",
 			finalized: 0
 		});
 
@@ -83,30 +97,34 @@ describe("Suppliers order creation", () => {
 		expect(res3).toMatchObject({
 			customer_order_line_ids: `["123","435","324"]`,
 			id: 1,
-			supplier_order_ids: "[1,2]",
+			supplier_order_ids: "[1]",
 			finalized: 0
 		});
 	});
 
 	it("can finalize a currently reconciliating order", async () => {
-		const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		const reconOrderId = await createReconciliationOrder(db, ids);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1", "3"]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1"]);
 
 		await finalizeReconciliationOrder(db, reconOrderId);
 		const res3 = await getReconciliationOrder(db, reconOrderId);
 
 		const books = await getCustomerBooks(db, 1);
 		expect(books[0].received).toBeInstanceOf(Date);
-		expect(books[2].received).toBeInstanceOf(Date);
 		expect(res3).toMatchObject({
-			customer_order_line_ids: `["1","3"]`,
+			customer_order_line_ids: `["1"]`,
 			id: 1,
-			supplier_order_ids: "[1,2]",
+			supplier_order_ids: "[1]",
 			finalized: 1
 		});
 	});
@@ -139,8 +157,15 @@ describe("Suppliers order creation", () => {
 		});
 
 		it("throws error when trying to finalize an already finalized order", async () => {
-			const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+			await createSupplierOrder(db, newSupplierOrderLines);
+
+			// TODO: might be useful to have a way to filter for a few particular ids?
+			// It's only going to be one here...
+			const supplierOrders = await getPlacedSupplierOrders(db);
+
 			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
 			const reconOrderId = await createReconciliationOrder(db, ids);
 
 			await finalizeReconciliationOrder(db, reconOrderId);
@@ -151,8 +176,15 @@ describe("Suppliers order creation", () => {
 		});
 
 		it("throws error when customer order lines are in invalid JSON format", async () => {
-			const supplierOrders = await createSupplierOrder(db, await getPossibleSupplerOrderLines(db));
+			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+			await createSupplierOrder(db, newSupplierOrderLines);
+
+			// TODO: might be useful to have a way to filter for a few particular ids?
+			// It's only going to be one here...
+			const supplierOrders = await getPlacedSupplierOrders(db);
+
 			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
 			const reconOrderId = await createReconciliationOrder(db, ids);
 
 			// Directly insert malformed JSON

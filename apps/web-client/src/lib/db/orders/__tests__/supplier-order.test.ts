@@ -29,7 +29,7 @@ describe("Supplier order handlers should", () => {
 	});
 
 	// TODO: export and match to test data instead of all of this duplication
-	it("Retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
+	it("retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
 		// Supplier 1 should have the following lines
 		expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([
 			{
@@ -95,66 +95,78 @@ describe("Supplier order handlers should", () => {
 		]);
 	});
 
-	it("creates two new supplier orders", async () => {
+	it("creates new supplier orders", async () => {
 		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 
-		const newOrders = await createSupplierOrder(db, possibleOrderLines);
+		await createSupplierOrder(db, possibleOrderLines);
+
+		const newOrders = await getPlacedSupplierOrders(db);
+
 		expect(newOrders.length).toBe(1);
 
 		const newPossibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		expect(newPossibleOrderLines.length).toBe(0);
 	});
 
-	it("gets all supplier orders with correct totals", async () => {
-		// Create two supplier orders using the existing test data
-		await db.exec(`INSERT INTO supplier_order (id, supplier_id, created)
-VALUES
-(1, 1, strftime('%s', 'now') * 1000),
-(2, 2, strftime('%s', 'now') * 1000)`);
+	describe("placed supplier orders:", () => {
+		it("retrieves a list of placed supplier orders", async () => {
+			// Create two supplier orders using the existing test data
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES
+				(1, 1, strftime('%s', 'now') * 1000),
+				(2, 2, strftime('%s', 'now') * 1000)
+			`);
 
-		await db.exec(`INSERT INTO supplier_order_line (supplier_order_id, isbn,
-quantity) VALUES
-(1, '1', 2),
-(1, '2', 1),
-(2, '3', 3)`);
+			await db.exec(`
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) 
+				VALUES
+				(1, '1', 2),
+				(1, '2', 1),
+				(2, '3', 3)
+			`);
 
-		const orders = await getPlacedSupplierOrders(db);
+			const orders = await getPlacedSupplierOrders(db);
 
-		expect(orders).toHaveLength(2);
-		expect(orders).toEqual([
-			expect.objectContaining({
-				id: 1,
-				supplier_id: 1,
-				supplier_name: "Science Books LTD",
-				total_book_number: 3, // 2 Physics + 1 Chemistry
-				created: expect.any(Number)
-			}),
-			expect.objectContaining({
-				id: 2,
-				supplier_id: 2,
-				supplier_name: "Phantasy Books LTD",
-				total_book_number: 3, // 3 copies of The Hobbit
-				created: expect.any(Number)
-			})
-		]);
-	});
+			expect(orders).toHaveLength(2);
+			expect(orders).toEqual([
+				expect.objectContaining({
+					id: 1,
+					supplier_id: 1,
+					supplier_name: "Science Books LTD",
+					total_book_number: 3, // 2 Physics + 1 Chemistry
+					created: expect.any(Number)
+				}),
+				expect.objectContaining({
+					id: 2,
+					supplier_id: 2,
+					supplier_name: "Phantasy Books LTD",
+					total_book_number: 3, // 3 copies of The Hobbit
+					created: expect.any(Number)
+				})
+			]);
+		});
 
-	it("returns empty array when no orders exist", async () => {
-		const orders = await getPlacedSupplierOrders(db);
-		expect(orders).toEqual([]);
-	});
+		it("returns empty array when no orders exist", async () => {
+			const orders = await getPlacedSupplierOrders(db);
+			expect(orders).toEqual([]);
+		});
 
-	it("handles orders with no order lines", async () => {
-		// Create orders but no order lines
-		await db.exec(`INSERT INTO supplier_order (id, supplier_id, created)
-VALUES
-(1, 1, strftime('%s', 'now') * 1000),
-(2, 2, strftime('%s', 'now') * 1000)`);
+		// TODO: should this be possible?
+		it("handles orders with no order lines", async () => {
+			// Create orders but no order lines
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES
+				(1, 1, strftime('%s', 'now') * 1000),
+				(2, 2, strftime('%s', 'now') * 1000)
+			`);
 
-		const orders = await getPlacedSupplierOrders(db);
-		expect(orders).toHaveLength(2);
-		orders.forEach((order) => {
-			expect(order.total_book_number).toBe(0);
+			const orders = await getPlacedSupplierOrders(db);
+			expect(orders).toHaveLength(2);
+			orders.forEach((order) => {
+				expect(order.total_book_number).toBe(0);
+			});
 		});
 	});
 });
