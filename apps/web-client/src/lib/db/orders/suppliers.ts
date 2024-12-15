@@ -72,28 +72,7 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 		[supplierId, publisherId, supplierId]
 	);
 }
-/**
-  * Retrieves all unplaced customer orders which are equivalent to possible order lines that can be created.
-  * Groups books by supplier based on publisher associations.
-  *
-  * @param db - The database instance to query
-  * @returns Promise resolving to an array of possible order lines with supplie
- and book information
-  */
-export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrderLine[]> {
-	// We need to build a query that will yield all books we can order, grouped by supplier
-	const result = await db.execO<SupplierOrderLine>(
-		`SELECT supplier_id, supplier.name as supplier_name, book.isbn, SUM(quantity) as quantity
-      FROM supplier
-        JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
-        JOIN book ON supplier_publisher.publisher = book.publisher
-        JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-      WHERE quantity > 0 AND placed is NULL
-      GROUP BY supplier_id, book.isbn
-      ORDER BY book.isbn ASC;`
-	);
-	return result;
-}
+
 /**
  * Retrieves possible order lines for a specific supplier based on unplaced customer orders.
  *
@@ -101,7 +80,7 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
  * @param supplierId - The ID of the supplier to get order lines for
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
-export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
+export async function getPossibleSupplierOrderLines(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
 		`SELECT supplier_id, supplier.name as supplier_name, book.isbn, SUM(quantity) as quantity
@@ -110,7 +89,7 @@ export async function getPossibleOrderLinesForSupplier(db: DB, supplierId: numbe
         JOIN book ON supplier_publisher.publisher = book.publisher
         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
       WHERE quantity > 0 AND placed is NULL AND supplier_id = ?
-      GROUP BY supplier_id, book.isbn
+      GROUP BY book.isbn
       ORDER BY book.isbn ASC;`,
 		[supplierId]
 	);
