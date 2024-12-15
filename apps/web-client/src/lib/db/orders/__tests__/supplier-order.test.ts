@@ -28,23 +28,73 @@ describe("Supplier order handlers should", () => {
 		]);
 	});
 
+	// TODO: export and match to test data instead of all of this duplication
 	it("Retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
+		const test = await getPossibleSupplierOrderLines(db, 1);
+		const test2 = await getPossibleSupplierOrderLines(db, 2);
+
 		// Supplier 1 should have the following lines
-		expect(await getPossibleSupplierOrderLines(db, 1)).toStrictEqual([
-			{ supplier_id: 1, isbn: "1", quantity: 1, supplier_name: "Science Books LTD" },
-			{ supplier_id: 1, isbn: "2", quantity: 1, supplier_name: "Science Books LTD" }
+		expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([
+			{
+				supplier_id: 1,
+				supplier_name: "Science Books LTD",
+				isbn: "1",
+				publisher: "MathsAndPhysicsPub",
+				authors: null,
+				title: "Physics",
+				quantity: 1,
+				line_price: 7
+			},
+			{
+				supplier_id: 1,
+				supplier_name: "Science Books LTD",
+				isbn: "2",
+				publisher: "ChemPub",
+				authors: null,
+				title: "Chemistry",
+				quantity: 1,
+				line_price: 13
+			}
 		]);
 		// Supplier 2 lines should have the following lines
-		expect(await getPossibleSupplierOrderLines(db, 2)).toStrictEqual([
-			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
+		expect(await getPossibleSupplierOrderLines(db, 2)).toEqual([
+			{
+				supplier_id: 2,
+				supplier_name: "Phantasy Books LTD",
+				isbn: "3",
+				publisher: "PhantasyPub",
+				authors: null,
+				title: "The Hobbit",
+				quantity: 2,
+				line_price: 10
+			}
 		]);
 
 		// If we change the supplier for ChemPub to Phantasy Books LTD
 		// the supplier order will reflect that
 		await associatePublisher(db, 2, "ChemPub");
-		expect(await getPossibleSupplierOrderLines(db, 2)).toStrictEqual([
-			{ supplier_id: 2, isbn: "2", quantity: 1, supplier_name: "Phantasy Books LTD" }, // This is now from supplier 2
-			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
+		expect(await getPossibleSupplierOrderLines(db, 2)).toEqual([
+			// This is now from supplier 2
+			{
+				supplier_id: 2,
+				supplier_name: "Phantasy Books LTD",
+				isbn: "2",
+				publisher: "ChemPub",
+				authors: null,
+				title: "Chemistry",
+				quantity: 1,
+				line_price: 13
+			},
+			{
+				supplier_id: 2,
+				supplier_name: "Phantasy Books LTD",
+				isbn: "3",
+				publisher: "PhantasyPub",
+				authors: null,
+				title: "The Hobbit",
+				quantity: 2,
+				line_price: 10
+			}
 		]);
 	});
 
@@ -52,10 +102,10 @@ describe("Supplier order handlers should", () => {
 		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 
 		const newOrders = await createSupplierOrder(db, possibleOrderLines);
-		expect(newOrders.length).toStrictEqual(1);
+		expect(newOrders.length).toBe(1);
 
 		const newPossibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		expect(newPossibleOrderLines.length).toStrictEqual(0);
+		expect(newPossibleOrderLines.length).toBe(0);
 	});
 
 	it("gets all supplier orders with correct totals", async () => {

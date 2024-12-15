@@ -83,12 +83,15 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
-		`SELECT supplier_id, supplier.name as supplier_name, book.isbn, SUM(quantity) as quantity
+		`SELECT 
+			supplier_id, supplier.name as supplier_name, 
+			book.isbn, book.title, book.authors, book.publisher,
+			SUM(customer_order_lines.quantity) as quantity, SUM(quantity * book.price) as line_price
       FROM supplier
         JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
         JOIN book ON supplier_publisher.publisher = book.publisher
         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-      WHERE quantity > 0 AND placed is NULL AND supplier_id = ?
+      WHERE customer_order_lines.placed is NULL AND supplier_id = ?
       GROUP BY book.isbn
       ORDER BY book.isbn ASC;`,
 		[supplierId]
