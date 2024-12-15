@@ -13,7 +13,12 @@ import {
 	removeBooksFromCustomer
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
-import { createCustomerOrders, getRandomDb, getRandomDbs, syncDBs } from "./lib";
+import {
+	// createCustomerOrders,
+	getRandomDb,
+	getRandomDbs,
+	syncDBs
+} from "./lib";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
