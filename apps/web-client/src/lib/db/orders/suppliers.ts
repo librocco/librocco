@@ -1,4 +1,4 @@
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierOrder, SupplierPlacedOrder } from "./types";
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
 
 /**
  * @fileoverview Supplier order management system
