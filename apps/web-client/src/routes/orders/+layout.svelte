@@ -1,7 +1,10 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, ArrowLeftToLine, QrCode, Book, Truck } from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
+	import { WorkerInterface } from "@vlcn.io/ws-client";
+	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 
 	import { LL } from "$i18n/i18n-svelte";
 
@@ -9,8 +12,24 @@
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";
 	import { getDB } from "$lib/db";
+	import { WS_URL } from "$lib/constants";
 
 	import { page } from "$app/stores";
+
+	// #region reactivity
+	const dbid = "librocco-current-db";
+	let wkr: WorkerInterface;
+
+	onMount(() => {
+		// Start the sync worker
+		wkr = new WorkerInterface(new SyncWorker());
+		wkr.startSync(dbid, { url: WS_URL, room: dbid });
+	});
+
+	onDestroy(() => {
+		// Stop wkr sync
+		wkr?.stopSync(dbid);
+	});
 
 	interface Link {
 		label: string;
