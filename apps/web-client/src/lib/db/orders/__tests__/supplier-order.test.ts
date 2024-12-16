@@ -21,9 +21,9 @@ describe("Suppliers order creation", () => {
 
 	it("sees possible supplier orders from client orders", async () => {
 		expect(await getPossibleSupplerOrderLines(db)).toStrictEqual([
-			{ supplier_id: 1, isbn: "1", quantity: 1, supplier_name: "Science Books LTD" },
-			{ supplier_id: 1, isbn: "2", quantity: 1, supplier_name: "Science Books LTD" },
-			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
+			{ supplier_id: 1, isbn: "1", supplier_name: "Science Books LTD" },
+			{ supplier_id: 1, isbn: "2", supplier_name: "Science Books LTD" },
+			{ supplier_id: 2, isbn: "3", supplier_name: "Phantasy Books LTD" }
 		]);
 		expect(await getPossibleSupplierOrders(db)).toStrictEqual([
 			{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
@@ -33,9 +33,9 @@ describe("Suppliers order creation", () => {
 		// the supplier order will reflect that
 		await associatePublisher(db, 2, "ChemPub");
 		expect(await getPossibleSupplerOrderLines(db)).toStrictEqual([
-			{ supplier_id: 1, isbn: "1", quantity: 1, supplier_name: "Science Books LTD" },
-			{ supplier_id: 2, isbn: "2", quantity: 1, supplier_name: "Phantasy Books LTD" }, // This is now from supplier 2
-			{ supplier_id: 2, isbn: "3", quantity: 2, supplier_name: "Phantasy Books LTD" }
+			{ supplier_id: 1, isbn: "1", supplier_name: "Science Books LTD" },
+			{ supplier_id: 2, isbn: "2", supplier_name: "Phantasy Books LTD" }, // This is now from supplier 2
+			{ supplier_id: 2, isbn: "3", supplier_name: "Phantasy Books LTD" }
 		]);
 	});
 
