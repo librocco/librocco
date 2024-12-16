@@ -113,3 +113,12 @@ CREATE TABLE reconciliation_order (
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('reconciliation_order');
+
+CREATE TABLE warehouse (
+    id INTEGER NOT NULL,
+    display_name TEXT,
+    discount DECIMAL DEFAULT 0,
+    PRIMARY KEY (id)
+);
+SELECT crsql_as_crr('warehouse');
+
