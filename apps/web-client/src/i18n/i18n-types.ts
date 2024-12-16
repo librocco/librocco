@@ -43,6 +43,10 @@ type RootTranslation = {
 		 * S​u​p​p​l​i​e​r​s​ ​o​r​d​e​r​s
 		 */
 		supplier_orders: string
+		/**
+		 * D​e​b​u​g
+		 */
+		debug: string
 	}
 	search: {
 		/**
@@ -92,6 +96,10 @@ export type TranslationFunctions = {
 		 * Suppliers orders
 		 */
 		supplier_orders: () => LocalizedString
+		/**
+		 * Debug
+		 */
+		debug: () => LocalizedString
 	}
 	search: {
 		/**

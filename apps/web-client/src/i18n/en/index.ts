@@ -1,5 +1,4 @@
-// TODO: it'd be nice to typecheck the dict e.g `const en = {} satisfies BaseTranslation` but it's not working right now
-// import type { BaseTranslation } from '../i18n-types.js'
+import type { BaseTranslation } from "../i18n-types.js";
 
 const nav = {
 	// Inventory mgmt
@@ -11,7 +10,8 @@ const nav = {
 	history: "History",
 
 	// Orders mgmt
-	supplier_orders: "Suppliers orders"
+	supplier_orders: "Suppliers orders",
+	debug: "Debug"
 };
 
 const search = {
@@ -25,6 +25,6 @@ const search = {
 const en = {
 	nav,
 	search
-};
+} satisfies BaseTranslation;
 
 export default en;

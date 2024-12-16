@@ -1,5 +1,17 @@
 <script lang="ts">
-	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, ArrowLeftToLine, QrCode, Book, Truck } from "lucide-svelte";
+	import {
+		BookCopy,
+		Library,
+		PackageMinus,
+		Search,
+		Settings,
+		PersonStanding,
+		ArrowLeftToLine,
+		QrCode,
+		Book,
+		Truck,
+		Bug
+	} from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
 
@@ -56,6 +68,11 @@
 			label: tNav.supplier_orders(),
 			href: appPath("supplier_orders"),
 			icon: Truck
+		},
+		{
+			label: tNav.debug(),
+			href: appPath("debug"),
+			icon: Bug
 		}
 	];
 
