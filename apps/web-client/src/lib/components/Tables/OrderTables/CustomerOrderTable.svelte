@@ -1,14 +1,12 @@
 <script lang="ts">
 	import { UserRound, Hash, CalendarClock } from "lucide-svelte";
-	import type { Writable, Readable } from "svelte/store";
 
 	import { HeadCol, BodyMultiRow } from "../Cells";
 
 	import BodyHead from "./BodyHead.svelte";
-	import BodyLink from "./BodyLink.svelte";
 
 	import type { createTable } from "$lib/actions";
-	import type { Customer } from "$lib/db/orders/types";
+	import type { Customer } from "$lib/db/cr-sqlite/types";
 
 	export let table: ReturnType<typeof createTable<Customer>>;
 	$: ({ rows } = $table);

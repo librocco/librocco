@@ -10,7 +10,7 @@ import {
 	getReconciliationOrder,
 	addOrderLinesToReconciliationOrder,
 	finalizeReconciliationOrder
-} from "../reconciliation";
+} from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerBooks } from "../customers";
 
