@@ -35,11 +35,9 @@ export const createCustomerOrders = async (db: DB) => {
 
 	// There is an old order that has been completely fullfilled
 	await upsertCustomer(db, { fullname: "An older order", id: 100 });
-	const sql =
-		"INSERT INTO customer_order_lines (customer_id, isbn, quantity, created, placed, received, collected) VALUES (?, ?, ?, ?, ?, ?, ?);";
+	const sql = "INSERT INTO customer_order_lines (customer_id, isbn, created, placed, received, collected) VALUES (?, ?, ?, ?, ?, ?);";
 	const params = [
 		100,
-		"1",
 		"1",
 		new Date("2024-10-20").getTime(),
 		new Date("2024-10-21").getTime(),
@@ -50,14 +48,10 @@ export const createCustomerOrders = async (db: DB) => {
 
 	// Two customers order some books
 	await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-	addBooksToCustomer(db, 1, [
-		{ isbn: "1", quantity: 1 },
-		{ isbn: "2", quantity: 1 },
-		{ isbn: "3", quantity: 1 }
-	]);
+	addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
 
 	await upsertCustomer(db, { fullname: "Jane Doe", id: 2 });
-	addBooksToCustomer(db, 2, [{ isbn: "3", quantity: 1 }]);
+	addBooksToCustomer(db, 2, [{ isbn: "3" }]);
 
 	// We have two different suppliers
 	await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
