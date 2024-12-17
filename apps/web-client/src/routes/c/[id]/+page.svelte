@@ -28,9 +28,9 @@
 
 	import { type DialogContent } from "$lib/dialogs";
 
-	import type { CustomerOrderLine } from "$lib/db/orders/types";
+	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { addBooksToCustomer, removeBooksFromCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { addBooksToCustomer, removeBooksFromCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
 
