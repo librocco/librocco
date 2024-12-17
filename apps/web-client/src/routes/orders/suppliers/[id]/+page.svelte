@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { Truck } from "lucide-svelte";
-	import Page from "$lib/components/Page.svelte";
-	import { view } from "@librocco/shared";
-	import { createSupplierOrder, getSupplierOrder, upsertSupplier } from "$lib/db/orders/suppliers";
-	import type { PageData } from "./$types";
-	import type { SupplierOrderLine } from "$lib/db/orders/types";
-	import { onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
 
+	import { Truck } from "lucide-svelte";
+
+	import { createSupplierOrder } from "$lib/db/orders/suppliers";
+	import { goto } from "$lib/utils/navigation";
+
+	import type { PageData } from "./$types";
+	import { base } from "$app/paths";
+
 	export let data: PageData;
+
+	$: ({ orderLines } = data);
 
 	// Mock supplier data
 	const supplier = {
@@ -17,31 +20,36 @@
 		lastUpdated: new Date()
 	};
 
-	let selectedBooks: string[] = data?.books.map((book) => book.isbn) ?? [];
+	let selectedBooks = orderLines ?? [];
+	$: selectedIsbns = selectedBooks.map(({ isbn }) => isbn);
+	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
 
-	$: totalAmount = selectedBooks.reduce((acc, isbn) => {
-		const book = data?.books[isbn];
-		return acc + (book?.price || 0);
-	}, 0);
+	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
+	$: totalBooks = data?.orderLines.length;
 
 	$: canPlaceOrder = selectedBooks.length > 0;
 
 	async function handlePlaceOrder() {
-		if (!canPlaceOrder) return;
-		const selection = data?.books.filter((book) => selectedBooks.includes(book.isbn));
+		if (!canPlaceOrder) {
+			return;
+		}
+
+		const selection = orderLines.filter(({ isbn }) => selectedIsbns.includes(isbn));
+
 		await createSupplierOrder(data.ordersDb, selection);
 		await invalidate("suppliers:data");
+		// TODO: We could either go to the new supplier order "placed" view when it's created
+		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
+		await goto(`${base}/orders/suppliers`);
 	}
 
-	$: totalBooks = data?.books.length;
-	$: totalValue = data?.books.reduce((sum, book) => sum + book.price, 0).toFixed(2);
-
 	function selectPortion(portion: number) {
-		const numToSelect = Math.floor(data?.books.length * portion);
-		if (portion === 1 && selectedBooks.length === data?.books.length) {
+		const numToSelect = Math.floor(orderLines.length * portion);
+
+		if (portion === 1 && selectedBooks.length === orderLines.length) {
 			selectedBooks = [];
 		} else {
-			selectedBooks = data?.books.slice(0, numToSelect).map((b) => b.isbn);
+			selectedBooks = orderLines.slice(0, numToSelect);
 		}
 	}
 </script>
@@ -70,7 +78,7 @@
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total value</dt>
-								<dd class="stat-value text-2xl">€{totalValue}</dd>
+								<dd class="stat-value text-2xl">€{totalAmount}</dd>
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Last updated</dt>
@@ -111,18 +119,19 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each data?.books as { isbn, title, authors, price }}
+						{#each orderLines as orderLine}
+							{@const { isbn, title, authors, line_price } = orderLine}
 							<tr>
 								<td>
 									<input
 										type="checkbox"
 										class="checkbox"
-										checked={selectedBooks.includes(isbn)}
+										checked={selectedIsbns.includes(isbn)}
 										on:change={() => {
-											if (selectedBooks.includes(isbn)) {
-												selectedBooks = selectedBooks.filter((id) => id !== isbn);
+											if (selectedIsbns.includes(isbn)) {
+												selectedBooks = selectedBooks.filter((book) => book.isbn !== isbn);
 											} else {
-												selectedBooks = [...selectedBooks, isbn];
+												selectedBooks = [...selectedBooks, orderLine];
 											}
 										}}
 									/>
@@ -130,7 +139,7 @@
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
-								<td>€{price}</td>
+								<td>€{line_price}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -148,7 +157,7 @@
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
 								<div class="stat-title sr-only">Total</div>
-								<div class="stat-value text-lg">€{totalAmount.toFixed(2)}</div>
+								<div class="stat-value text-lg">€{selectedAmout.toFixed(2)}</div>
 							</div>
 						</dl>
 
