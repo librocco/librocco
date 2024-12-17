@@ -3,7 +3,7 @@ import type { EventDispatcher } from "svelte";
 import type { InventoryTableData } from "../types";
 
 import type { WarehouseChangeDetail } from "$lib/components";
-import type { CustomerOrderLine } from "$lib/db/orders/types";
+import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
 export const createInboundTableEvents = (dispatch: EventDispatcher<InboundTableEvents>) => {
 	return {

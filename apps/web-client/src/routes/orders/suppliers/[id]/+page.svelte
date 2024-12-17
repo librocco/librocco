@@ -1,9 +1,9 @@
 <script lang="ts">
+	import { Truck } from "lucide-svelte";
 	import { invalidate } from "$app/navigation";
 
-	import { Truck } from "lucide-svelte";
+	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 
-	import { createSupplierOrder } from "$lib/db/orders/suppliers";
 	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
