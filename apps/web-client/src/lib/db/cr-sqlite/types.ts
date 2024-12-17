@@ -99,6 +99,15 @@ export type Warehouse = {
 	discount: number | null;
 };
 
+/* Note */
+export type InboundNoteListItem = {
+	id: number;
+	displayName: string;
+	warehouseName: string;
+	updatedAt: Date;
+	totalBooks: number;
+};
+
 /* Misc */
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
