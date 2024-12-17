@@ -1,7 +1,7 @@
 import type { LayoutLoad } from "./$types";
 
-import { getInitializedDB } from "$lib/db/orders";
-import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/orders/customers";
+import { getInitializedDB } from "$lib/db/cr-sqlite";
+import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
 
 export const load: LayoutLoad = async ({ depends }) => {
 	depends("customer:data");
