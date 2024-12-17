@@ -122,3 +122,17 @@ CREATE TABLE warehouse (
 );
 SELECT crsql_as_crr('warehouse');
 
+-- if warehouse_id is not null, the note is inbound
+-- if is_reconciliation_note is true (1) - it's a reconciliation note (obvious)
+-- if the note is not inbound, nor reconciliation, it is outbound
+CREATE TABLE note (
+	id INTEGER NOT NULL,
+	display_name TEXT,
+	warehouse_id INTEGER,
+	is_reconciliation_note INTEGER DEFAULT 0,
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	committed INTEGER DEFAULT 0,
+	PRIMARY KEY (id)
+);
+SELECT crsql_as_crr('note');
+
