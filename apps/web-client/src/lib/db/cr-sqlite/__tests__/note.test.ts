@@ -1,8 +1,21 @@
 import { describe, it, expect } from "vitest";
 
+import type { DB } from "../types";
+
 import { getRandomDb } from "./lib";
 
-import { createInboundNote, updateNote, deleteNote, getAllInboundNotes, getNoteById, commitNote } from "../note";
+import {
+	createInboundNote,
+	updateNote,
+	deleteNote,
+	getAllInboundNotes,
+	getNoteById,
+	commitNote,
+	addVolumesToNote,
+	getNoteEntries,
+	updateNoteTxn,
+	removeNoteTxn
+} from "../note";
 import { upsertWarehouse } from "../warehouse";
 
 describe("Inbound note tests", () => {
@@ -14,7 +27,7 @@ describe("Inbound note tests", () => {
 		const res = await db.execO("SELECT * FROM note");
 
 		expect(res).toEqual([
-			{
+			expect.objectContaining({
 				id: 1,
 				display_name: "New Note",
 				warehouse_id: 1,
@@ -22,7 +35,7 @@ describe("Inbound note tests", () => {
 				updated_at: expect.any(Number),
 				committed: 0,
 				committed_at: null
-			}
+			})
 		]);
 	});
 
@@ -35,16 +48,18 @@ describe("Inbound note tests", () => {
 
 		const note = await getNoteById(db, 1);
 
-		expect(note).toEqual({
-			id: 1,
-			displayName: "New Note",
-			warehouseId: 1,
-			warehouseName: "Warehouse 1",
-			noteType: "inbound",
-			updatedAt: expect.any(Date),
-			committed: false,
-			committedAt: undefined
-		});
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "New Note",
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				noteType: "inbound",
+				updatedAt: expect.any(Date),
+				committed: false,
+				committedAt: undefined
+			})
+		);
 	});
 
 	it("commits a note", async () => {
@@ -91,6 +106,9 @@ describe("Inbound note tests", () => {
 		const firstCommitTime = note.committedAt;
 
 		// Attempt to commit the note again
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
 		await new Promise((res) => setTimeout(res, 1000));
 		await commitNote(db, 1);
 		note = await getNoteById(db, 1);
@@ -119,6 +137,8 @@ describe("Inbound note tests", () => {
 		);
 		const { updatedAt } = note;
 
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
 		await new Promise((res) => setTimeout(res, 1000));
 		await updateNote(db, 1, { displayName: "Updated Note" });
 
@@ -295,5 +315,370 @@ describe("Inbound note tests", () => {
 				committed: true
 			})
 		);
+	});
+});
+
+describe("Note transactions", async () => {
+	it("adds volumes to a note", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		let entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
+				warehouseId: 1
+			})
+		]);
+
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+
+		entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
+				warehouseId: 1
+			}),
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("aggregates quantity for the same (isbn, noteId, warehouseId) entry", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		let entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
+				warehouseId: 1
+			})
+		]);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
+
+		entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 15, // Aggregated quantity
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("doesn't allow adding of volumes to a committed note (noop)", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		// Add initial volumes
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to add more volumes to the committed note
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
+
+		// Verify that the quantity has not changed
+		const entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10, // Should remain unchanged
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("updates note's updated_at field when an entry is added/updated", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		let note = await getNoteById(db, 1);
+		let updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note?.updatedAt;
+
+		// Add some more volumes
+		//
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note?.updatedAt;
+
+		// Should also work with txn update
+		//
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { quantity: 7, warehouseId: 1 });
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note?.updatedAt;
+
+		// Should also work when removing a txn
+		//
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note?.updatedAt;
+	});
+
+	it("retrieves note entries so that the latest updated appears first", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		// Add multiple entries with different updated_at times
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
+		await addVolumesToNote(db, 1, { isbn: "1122334455", quantity: 8, warehouseId: 1 });
+
+		const entries = await getNoteEntries(db, 1);
+
+		expect(entries).toEqual([
+			expect.objectContaining({ isbn: "1122334455" }),
+			expect.objectContaining({ isbn: "1234567890" }),
+			expect.objectContaining({ isbn: "0987654321" })
+		]);
+	});
+
+	it("updates a transaction", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { warehouseId: 1, quantity: 15 });
+
+		const entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 15,
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("merges transactions when updating to an existing (isbn, warehouseId) pair", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
+
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 2 }, { warehouseId: 1, quantity: 5 });
+
+		const entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 15, // Merged quantity
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("doesn't update transactions of a committed note (noop)", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to update the transaction
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { warehouseId: 1, quantity: 15 });
+
+		// Verify that the quantity has not changed
+		const entries = await getNoteEntries(db, 1);
+		expect(entries).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10, // Should remain unchanged
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("order of transactions stays the same when updating the txn", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		// Add initial transactions
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+
+		// Check before updating
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({ isbn: "0987654321" }),
+			expect.objectContaining({ isbn: "1234567890" })
+		]);
+
+		// Update a transaction
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { warehouseId: 1, quantity: 15 });
+
+		// Verify the order remains the same
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({ isbn: "0987654321" }),
+			expect.objectContaining({ isbn: "1234567890" })
+		]);
+	});
+
+	it("when two transactions are merged, they pop to the top of the list", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		// Add initial transactions
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
+		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({ isbn: "0987654321" }),
+			expect.objectContaining({ isbn: "1234567890" }),
+			expect.objectContaining({ isbn: "1234567890" })
+		]);
+
+		// Merge transactions
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 2 }, { warehouseId: 1, quantity: 5 });
+
+		// Verify the merged transaction pops to the top
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({ isbn: "1234567890" }),
+			expect.objectContaining({ isbn: "0987654321" })
+		]);
+	});
+
+	it("removes a transaction", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+
+		// Remove a transaction
+		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
+
+		// Verify the transaction is removed
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("doesn't allow removing a transaction from a committed note", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to remove a transaction
+		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
+
+		// Verify the transaction is not removed
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
+				warehouseId: 1
+			})
+		]);
+	});
+
+	it("allows for adding a transacion after the same one (isbn, warehouseId) had been deleted", async () => {
+		/* This should be trivial, but I had some weird behaviour around this so here's a test testing that cr-sqlite extension doesn't block that. */
+
+		// A helper to avoid flakiness due to temporal sorting - sorts by warehouseId
+		const _getNoteEntries = (db: DB, noteId: number) =>
+			getNoteEntries(db, noteId).then((r) => r.sort((a, b) => a.warehouseId - b.warehouseId));
+
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
+
+		// Remove a transaction and add a new one with the same (isbn, warehouseId) pair
+		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 7, warehouseId: 1 });
+
+		expect(await _getNoteEntries(db, 1)).toMatchObject([
+			expect.objectContaining({ isbn: "1234567890", warehouseId: 1, quantity: 7 }),
+			expect.objectContaining({ isbn: "1234567890", warehouseId: 2, quantity: 5 })
+		]);
+
+		// Check again, after a txn being removed implicitly - by merging into another one
+		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { warehouseId: 2, quantity: 7 });
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 6, warehouseId: 1 });
+
+		expect(await _getNoteEntries(db, 1)).toMatchObject([
+			expect.objectContaining({ isbn: "1234567890", warehouseId: 1, quantity: 6 }),
+			expect.objectContaining({ isbn: "1234567890", warehouseId: 2, quantity: 12 })
+		]);
 	});
 });
