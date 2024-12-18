@@ -1,4 +1,4 @@
-import type { DB, TXAsync, InboundNoteListItem } from "./types";
+import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem } from "./types";
 
 const getSeqName = async (db: DB | TXAsync) => {
 	const sequenceQuery = `
@@ -176,4 +176,106 @@ export async function deleteNote(db: DB, id: number): Promise<void> {
 		return;
 	}
 	return db.exec("DELETE FROM note WHERE id = ?", [id]);
+}
+
+export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot add volumes to a committed note.");
+		return;
+	}
+
+	const { isbn, warehouseId, quantity } = volume;
+
+	const insertOrUpdateTxnQuery = `
+		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id)
+		VALUES (?, ?, ?, ?)
+		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
+			quantity = book_transaction.quantity + excluded.quantity,
+			updated_at = (strftime('%s', 'now') * 1000)
+	`;
+
+	await db.exec(insertOrUpdateTxnQuery, [isbn, quantity, warehouseId, noteId]);
+}
+
+export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
+	const query = `
+		SELECT
+			bt.isbn,
+			bt.quantity,
+			bt.warehouse_id AS warehouseId,
+			b.title,
+			b.price,
+			b.authors,
+			b.publisher
+		FROM book_transaction bt
+		LEFT JOIN book b ON bt.isbn = b.isbn
+		WHERE bt.note_id = ?
+		ORDER BY bt.updated_at DESC
+	`;
+
+	const result = await db.execO<{
+		isbn: string | null;
+		quantity: number;
+		warehouseId: number;
+		title?: string;
+		price?: number;
+		authors?: string;
+		publisher?: string;
+	}>(query, [id]);
+
+	return result;
+}
+
+export async function updateNoteTxn(
+	db: DB,
+	noteId: number,
+	curr: { isbn: string; warehouseId: number },
+	next: { warehouseId: number; quantity: number }
+): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot update transactions of a committed note.");
+		return;
+	}
+
+	const { isbn, warehouseId: currWarehouseId } = curr;
+	const { warehouseId: nextWarehouseId, quantity: nextQuantity } = next;
+
+	// Check if the transaction exists
+	const [existingTxn] = await db.execO<{ updated_at: number }>(
+		`SELECT updated_at FROM book_transaction WHERE note_id = ? AND isbn = ? AND warehouse_id = ?`,
+		[noteId, isbn, currWarehouseId]
+	);
+
+	if (!existingTxn) {
+		console.warn("Transaction not found.");
+		return;
+	}
+
+	const { updated_at } = existingTxn;
+
+	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, currWarehouseId, noteId]);
+	await db.exec(
+		`
+		INSERT INTO book_transaction (isbn, note_id, warehouse_id, quantity, updated_at)
+		VALUES (?, ?, ?, ?, ?)
+		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
+			quantity = book_transaction.quantity + excluded.quantity,
+			updated_at = (strftime('%s', 'now') * 1000)
+	`,
+		[isbn, noteId, nextWarehouseId, nextQuantity, updated_at]
+	);
+}
+
+export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: string; warehouseId: number }): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot delete transactions of a committed note.");
+		return;
+	}
+
+	const { isbn, warehouseId } = match;
+
+	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, warehouseId, noteId]);
 }
