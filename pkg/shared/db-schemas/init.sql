@@ -132,6 +132,7 @@ CREATE TABLE note (
 	is_reconciliation_note INTEGER DEFAULT 0,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	committed INTEGER DEFAULT 0,
+	committed_at INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('note');
