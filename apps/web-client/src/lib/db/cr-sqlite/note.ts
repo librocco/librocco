@@ -309,3 +309,43 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
 
 	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, warehouseId, noteId]);
 }
+
+export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id: number; title: string; price: number }): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot upsert custom items to a committed note.");
+		return;
+	}
+
+	const { id, title, price } = payload;
+
+	const query = `
+		INSERT INTO custom_item(id, note_id, title, price)
+		VALUES(?, ?, ?, ?)
+		ON CONFLICT(id, note_id) DO UPDATE SET
+			title = excluded.title,
+			price = excluded.price
+	`;
+
+	await db.exec(query, [id, noteId, title, price]);
+}
+
+export async function getNoteCustomItems(db: DB, noteId: number): Promise<{ id: number; title: string; price: number }[]> {
+	const query = `
+		SELECT id, title, price
+		FROM custom_item
+		WHERE note_id = ?
+	`;
+
+	return db.execO(query, [noteId]);
+}
+
+export async function removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot remove custom items from a committed note.");
+		return;
+	}
+
+	await db.exec("DELETE FROM custom_item WHERE id = ? AND note_id = ?", [itemId, noteId]);
+}
