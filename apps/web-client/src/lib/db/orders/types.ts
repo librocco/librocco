@@ -66,6 +66,7 @@ export type SupplierPlacedOrder = {
 	supplier_id: number;
 	total_book_number: number;
 	created: Date;
+	line_items: string;
 };
 export type Supplier = {
 	id?: number;
