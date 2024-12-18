@@ -49,6 +49,7 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, isb
 		[...isbns, id]
 	);
 }
+
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	if (!id) {
 		throw new Error("Reconciliation order must have an id");
@@ -80,16 +81,16 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 		if (customerOrderLines.length > 0) {
 			await txDb.exec(
 				`
-			 UPDATE customer_order_lines
-            SET received = (strftime('%s', 'now') * 1000)
-            WHERE rowid IN (
-                SELECT MIN(rowid)
-                FROM customer_order_lines
-                WHERE isbn IN (${placeholders})
-                    AND placed IS NOT NULL
-                    AND received IS NULL
-                GROUP BY isbn
-);`,
+				UPDATE customer_order_lines
+            	SET received = (strftime('%s', 'now') * 1000)
+            	WHERE rowid IN (
+            	    SELECT MIN(rowid)
+            	    FROM customer_order_lines
+            	    WHERE isbn IN (${placeholders})
+            	        AND placed IS NOT NULL
+            	        AND received IS NULL
+            	    GROUP BY isbn
+				);`,
 				customerOrderLines
 			);
 		}
