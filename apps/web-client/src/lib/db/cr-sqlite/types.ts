@@ -46,9 +46,20 @@ export type BookLine = { isbn: string };
 
 /* Suppliers */
 export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
-export type SupplierOrderLine = { supplier_id: number; isbn: string; quantity: number };
+export type SupplierOrderLine = {
+	supplier_id: number;
+	supplier_name: string;
+	// TODO: extend from Book type (which properties are optional?)
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	quantity: number;
+	line_price: number;
+};
 
 export type SupplierPlacedOrder = {
+	id: number;
 	supplier_name: string;
 	supplier_id: number;
 	total_book_number: number;

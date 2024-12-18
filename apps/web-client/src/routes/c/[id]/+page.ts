@@ -1,6 +1,6 @@
 import type { PageLoad } from "./$types";
-import { getCustomerBooks, getCustomerDetails } from "$lib/db/orders/customers";
-import type { Customer } from "$lib/db/orders/types";
+import { getCustomerBooks, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
+import type { Customer } from "$lib/db/cr-sqlite/types";
 import type { BookEntry } from "@librocco/db";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {

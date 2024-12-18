@@ -3,7 +3,7 @@ import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
 
-import schema from "@librocco/shared/db-schemas/orders.sql?raw";
+import schema from "@librocco/shared/db-schemas/init.sql?raw";
 
 import { type DB, type Change } from "./types";
 
@@ -11,7 +11,7 @@ export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
 const dbCache: Record<string, DbCtx> = {};
 
-const schemaName = "orders";
+const schemaName = "init";
 const schemaVersion = cryb64(schema);
 
 async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null> {
