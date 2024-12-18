@@ -133,8 +133,8 @@ export async function getPossibleSupplierOrders(db: DB): Promise<(SupplierOrderI
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number): Promise<SupplierOrderLine[]> {
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
-		`SELECT 
-			supplier_id, supplier.name as supplier_name, 
+		`SELECT
+			supplier_id, supplier.name as supplier_name,
 			book.isbn, book.title, book.authors, book.publisher,
 			SUM(customer_order_lines.quantity) as quantity, SUM(quantity * book.price) as line_price
       FROM supplier
@@ -154,7 +154,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
   * - order id & created timestamp
   * - supplier id & name
   * - a total book count
-  * 
+  *
   * Orders are returned sorted by creation date (newest first).
   *
   * @param db - The database instance to query
@@ -163,18 +163,26 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
   */
 export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrder[]> {
 	const result = await db.execO<SupplierPlacedOrder>(
-		`SELECT
-             so.id,
-             so.supplier_id,
-             s.name as supplier_name,
-             so.created,
-             COALESCE(SUM(sol.quantity), 0) as total_book_number
-         FROM supplier_order so
-         JOIN supplier s ON s.id = so.supplier_id
-         LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
-         WHERE so.created IS NOT NULL
-         GROUP BY so.id, so.supplier_id, s.name, so.created
-         ORDER BY so.created DESC;`
+		`
+		SELECT
+     so.id,
+     so.supplier_id,
+     s.name as supplier_name,
+     so.created,
+     COALESCE(SUM(sol.quantity), 0) as total_book_number,
+     json_group_array(
+         json_object(
+             'quantity', sol.quantity,
+             'isbn', sol.isbn,
+             'supplier_order_id', sol.supplier_order_id
+         )
+     ) as line_items
+ FROM supplier_order so
+ JOIN supplier s ON s.id = so.supplier_id
+ LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
+ WHERE so.created IS NOT NULL
+ GROUP BY so.id, so.supplier_id, s.name, so.created
+ ORDER BY so.created DESC; `
 	);
 	return result;
 }
@@ -185,7 +193,7 @@ export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrd
 /**
  * TODO: I removed the getSupplierOrder query at the end of this because it seemed unnecessary, and it feels like it should be re-written inline with above structure
  * this currently returns nothing. We can rethink this
- * 
+ *
  * Creates supplier orders based on provided order lines and updates related customer orders.
  *
  * @param db - The database instance to query
