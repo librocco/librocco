@@ -174,3 +174,38 @@ BEGIN
     WHERE id = OLD.note_id;
 END;
 
+CREATE TABLE custom_item (
+	id INTEGER NOT NULL,
+	title TEXT,
+	price DECIMAL,
+	note_id INTEGER,
+	PRIMARY KEY (id, note_id)
+);
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_insert
+AFTER INSERT ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_update
+AFTER UPDATE ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_delete
+AFTER DELETE ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = OLD.note_id;
+END;
+
