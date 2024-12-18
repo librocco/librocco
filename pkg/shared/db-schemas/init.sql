@@ -11,7 +11,6 @@ CREATE TABLE customer_order_lines (
 	id INTEGER NOT NULL,
 	customer_id INTEGER,
 	isbn TEXT,
-	quantity INTEGER,
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	placed INTEGER,
 	received INTEGER,
@@ -114,4 +113,3 @@ CREATE TABLE reconciliation_order (
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('reconciliation_order');
-

@@ -195,7 +195,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each $lines.data as { isbn, quantity, title, authors, price, placed, received, collected }}
+							{#each $lines.data as { isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -205,7 +205,6 @@
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
-									<td>{quantity}</td>
 									<td>
 										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>

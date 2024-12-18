@@ -54,10 +54,7 @@ describe("Customer order tests", () => {
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
 
-		await addBooksToCustomer(db, 1, [
-			{ isbn: "9780000000000", quantity: 1 },
-			{ isbn: "9780000000000", quantity: 1 }
-		]);
+		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
 		books = await getCustomerBooks(db, 1);
 
 		expect(books.length).toBe(2);
@@ -72,16 +69,16 @@ describe("Customer order tests", () => {
 		for (let i = 0; i < howMany; i++) {
 			await db.tx(async (db) => {
 				await addBooksToCustomer(db as DB, 1, [
-					{ isbn: "9780000000000", quantity: 1 },
-					{ isbn: "9780000000001", quantity: 3 },
-					{ isbn: "9780000000002", quantity: 1 },
-					{ isbn: "9780000000003", quantity: 3 },
-					{ isbn: "9780000000004", quantity: 1 },
-					{ isbn: "9780000000005", quantity: 2 },
-					{ isbn: "9780000000006", quantity: 1 },
-					{ isbn: "9780000000007", quantity: 1 },
-					{ isbn: "9780000000008", quantity: 2 },
-					{ isbn: "9780000000009", quantity: 1 }
+					{ isbn: "9780000000000" },
+					{ isbn: "9780000000001" },
+					{ isbn: "9780000000002" },
+					{ isbn: "9780000000003" },
+					{ isbn: "9780000000004" },
+					{ isbn: "9780000000005" },
+					{ isbn: "9780000000006" },
+					{ isbn: "9780000000007" },
+					{ isbn: "9780000000008" },
+					{ isbn: "9780000000009" }
 				]);
 			});
 		}
@@ -94,10 +91,7 @@ describe("Customer order tests", () => {
 	it("can remove books from a customer order", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 
-		await addBooksToCustomer(db, 1, [
-			{ isbn: "9780000000000", quantity: 1 },
-			{ isbn: "9780000000000", quantity: 1 }
-		]);
+		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2);
 		removeBooksFromCustomer(db, 1, [books[0].id]);
