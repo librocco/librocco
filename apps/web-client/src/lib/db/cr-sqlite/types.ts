@@ -108,6 +108,26 @@ export type InboundNoteListItem = {
 	totalBooks: number;
 };
 
+export type VolumeStock = {
+	isbn: string;
+	quantity: number;
+	warehouseId: number;
+};
+
+export type NoteEntriesItem = {
+	isbn: string | null;
+	quantity: number;
+	warehouseId: number;
+	title?: string;
+	price?: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	category?: string;
+};
+
 /* Misc */
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
