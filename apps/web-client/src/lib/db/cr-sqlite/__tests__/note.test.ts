@@ -16,7 +16,10 @@ import {
 	addVolumesToNote,
 	getNoteEntries,
 	updateNoteTxn,
-	removeNoteTxn
+	removeNoteTxn,
+	upsertNoteCustomItem,
+	getNoteCustomItems,
+	removeNoteCustomItem
 } from "../note";
 import { upsertWarehouse } from "../warehouse";
 
@@ -1062,5 +1065,141 @@ describe("Note transactions", async () => {
 			expect.objectContaining({ isbn: "1234567890", warehouseId: 1, quantity: 6 }),
 			expect.objectContaining({ isbn: "1234567890", warehouseId: 2, quantity: 12 })
 		]);
+	});
+});
+
+describe("Note custom items", async () => {
+	it("adds a custom item to an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Custom Item 1",
+				price: 100
+			})
+		]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("updates a custom item in an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Updated Custom Item 1", price: 150 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Updated Custom Item 1",
+				price: 150
+			})
+		]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("removes a custom item from an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await removeNoteCustomItem(db, 1, 1);
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("doesn't allow upserting custom items to a committed note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await commitNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt).toEqual(updatedAt);
+	});
+
+	it("doesn't allow removing custom items from a committed note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+		await commitNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await removeNoteCustomItem(db, 1, 1);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt).toEqual(updatedAt);
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Custom Item 1",
+				price: 100
+			})
+		]);
+	});
+
+	it("doesn't take into account custom items added to different note(s)", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+		await createOutboundNote(db, 2);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Item 1", price: 10 });
+		await upsertNoteCustomItem(db, 2, { id: 1, title: "Item 2", price: 12 });
+
+		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 10 }]);
+		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12 }]);
 	});
 });
