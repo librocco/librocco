@@ -21,7 +21,6 @@ export type DBCustomerOrderLine = {
 	id: number;
 	isbn: string;
 	customer_id: number;
-	quantity: number;
 	created: number; // as milliseconds since epoch
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
@@ -34,7 +33,6 @@ export type CustomerOrderLine = {
 	id: number;
 	isbn: string;
 	customer_id: number;
-	quantity: number;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
@@ -44,7 +42,7 @@ export type CustomerOrderLine = {
 	 */
 	supplierOrderIds: number[]; // List of supplier order ids that this book order is part of
 };
-export type BookLine = { isbn: string; quantity: number };
+export type BookLine = { isbn: string };
 
 /* Suppliers */
 export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
