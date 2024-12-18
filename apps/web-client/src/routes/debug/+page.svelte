@@ -6,8 +6,6 @@
 		Search,
 		Settings,
 		PersonStanding,
-		ArrowLeftToLine,
-		QrCode,
 		Book,
 		Truck,
 		Bug
@@ -16,9 +14,7 @@
 	import { LL } from "$i18n/i18n-svelte";
 	import { appPath } from "$lib/paths";
 	import { TooltipWrapper } from "$lib/components";
-	import { browser } from "$app/environment";
 	import { onMount } from "svelte";
-	import { redirect, type Load } from "@sveltejs/kit";
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/orders";
 	import { upsertBook } from "$lib/db/orders/books";
@@ -27,6 +23,8 @@
 	import type { Book as BookType } from "$lib/db/orders/books";
 	import type { Supplier } from "$lib/db/orders/types";
 
+	import debugData from "./debug_data.json";
+
 	$: ({ nav: tNav } = $LL);
 
 	interface Link {
@@ -34,6 +32,22 @@
 		href: string;
 		icon: any;
 	}
+
+	let books;
+	let publishers;
+	let customers;
+	let orders;
+	let suppliers;
+	let isLoading = true;
+
+	const tables: string[] = ["book", "supplier_publisher", "supplier", "customer"];
+	const tableData = [
+		{ label: "Books", value: () => books },
+		{ label: "Publishers", value: () => publishers },
+		{ label: "Suppliers", value: () => suppliers },
+		{ label: "Orders", value: () => orders },
+		{ label: "Customers", value: () => customers }
+	];
 
 	let links: Link[];
 	$: links = [
@@ -79,130 +93,85 @@
 		}
 	];
 
-	const exampleData = {
-		books: [
-			{
-				isbn: "9781234567897",
-				title: "The Art of Learning",
-				authors: "Josh Waitzkin",
-				publisher: "Free Press",
-				price: 15.99
-			},
-			{
-				isbn: "9788804797142",
-				title: "Lord of the Flies",
-				authors: "William Golding",
-				publisher: "Mondadori",
-				price: 18.0
-			}
-		],
-		suppliers: [
-			{
-				id: 1,
-				name: "Il Libraio Cuneo",
-				email: "libraio@example.com",
-				address: "Via XX Settembre, 5 - 12100 Cuneo"
-			}
-		],
-		publishers: [
-			{
-				supplier_id: 1,
-				publisher: "Free Press"
-			},
-			{
-				supplier_id: 1,
-				publisher: "Mondadori"
-			}
-		]
-	};
+	const populateBooks = async function (db) {
+		console.log("Populating books");
+		for (const book of debugData.books) {
+			await db.exec(
+				`INSERT INTO book (isbn, title, authors, publisher, price)
+				VALUES (?, ?, ?, ?, ?)
+				ON CONFLICT(isbn) DO UPDATE SET
+					title = COALESCE(?, title),
+					authors = COALESCE(?, authors),
+					publisher = COALESCE(?, publisher),
+					price = COALESCE(?, price);`,
+				[book.isbn, book.title, book.authors, book.publisher, book.price, book.title, book.authors, book.publisher, book.price]
+			);
+			console.log(`Upserted book: ${book.isbn}`);
+		}
+	}
 
-	const populateDatabase = async function populateDatabase() {
-		const ordersDb = await getInitializedDB("librocco-current-db");
+	const populateSuppliers = async function (db) {
+		console.log("Populating suppliers");
+		for (const supplier of debugData.suppliers) {
+			await db.exec(
+				`INSERT INTO supplier (id, name, email, address)
+				VALUES (?, ?, ?, ?)
+				ON CONFLICT(id) DO UPDATE SET
+					name = COALESCE(?, name),
+					email = COALESCE(?, email),
+					address = COALESCE(?, address);`,
+				[
+					supplier.id,
+					supplier.name ?? null,
+					supplier.email ?? null,
+					supplier.address ?? null,
+					supplier.name ?? null,
+					supplier.email ?? null,
+					supplier.address ?? null,
+				]
+			);
+			console.log(`Upserted supplier: ${supplier.name}`);
+		}
+	}
+
+	const populateDatabase = async function () {
+		const db = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
-		for (const rawBook of exampleData.books) {
-			try {
-				const book: BookType = {
-					isbn: rawBook.isbn,
-					title: rawBook.title,
-					authors: rawBook.authors,
-					publisher: rawBook.publisher,
-					price: rawBook.price
-				};
-
-				await upsertBook(ordersDb, book);
-				console.log(`Upserted book: ${book.isbn}`);
-			} catch (error) {
-				console.error(`Error upserting book with ISBN ${rawBook.isbn}:`, error);
-			}
-		}
-
-		for (const rawSupplier of exampleData.suppliers) {
-			try {
-				const supplier: Supplier = {
-					id: rawSupplier.id,
-					name: rawSupplier.name,
-					email: rawSupplier.email,
-					address: rawSupplier.address
-				};
-
-				await upsertSupplier(ordersDb, supplier);
-				console.log(`Upserted supplier: ${supplier.name}`);
-			} catch (error) {
-				console.error(`Error upserting supplier with name ${rawSupplier.name}:`, error);
-			}
-		}
+		await populateBooks(db);
+		await populateSuppliers(db);
 		console.log("Finished populating database.");
-		loadData();
-	};
 
-	const tables: string[] = ["book", "supplier_publisher", "supplier", "customer"];
+		await loadData();
+	};
 
 	const resetDatabase = async function resetDatabase() {
-		const ordersDb = await getInitializedDB("librocco-current-db");
+		const db = await getInitializedDB("librocco-current-db");
 		console.log("Resetting database");
 
-		tables.forEach((table) => {
-			(async function () {
-				console.log(`Clearing ${table}`);
-				await ordersDb.exec(`DELETE FROM ${table}`);
-			})();
-		});
-		loadData();
+		await Promise.all(tables.map(async (table) => {
+			console.log(`Clearing ${table}`);
+			await db.exec(`DELETE FROM ${table}`);
+		}));
+		await loadData();
 	};
-
-	let books;
-	let publishers;
-	let customers;
-	let orders;
-	let suppliers;
-
-	let isLoading = true;
-
-	const tableData = [
-		{ label: "Books", value: () => books },
-		{ label: "Publishers", value: () => publishers },
-		{ label: "Suppliers", value: () => suppliers },
-		{ label: "Orders", value: () => orders },
-		{ label: "Customers", value: () => customers }
-	];
 
 	const loadData = async function () {
 		console.log("Loading database");
 
 		isLoading = true;
 
-		const ordersDb = await getInitializedDB("librocco-current-db");
-		books = await ordersDb.exec("SELECT COUNT(*) from book;");
-		publishers = await ordersDb.exec("SELECT COUNT(*) from supplier_publisher;");
-		customers = await ordersDb.exec("SELECT COUNT(*) from customer;");
-		orders = await ordersDb.exec("SELECT COUNT(*) from customer_supplier_order;");
-		suppliers = await ordersDb.exec("SELECT COUNT(*) from supplier;");
+		const db = await getInitializedDB("librocco-current-db");
+		books = await db.exec("SELECT COUNT(*) from book;");
+		publishers = await db.exec("SELECT COUNT(*) from supplier_publisher;");
+		customers = await db.exec("SELECT COUNT(*) from customer;");
+		orders = await db.exec("SELECT COUNT(*) from customer_supplier_order;");
+		suppliers = await db.exec("SELECT COUNT(*) from supplier;");
 
 		isLoading = false;
 	};
 
-	onMount(() => {
-		loadData();
+	onMount(async function () {
+		await loadData();
 	});
 </script>
 
