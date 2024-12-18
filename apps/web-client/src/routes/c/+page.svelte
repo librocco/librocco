@@ -19,9 +19,9 @@
 	import { writable } from "svelte/store";
 
 	import { createTable } from "$lib/actions";
-	import type { Customer } from "$lib/db/orders/types";
+	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
-	import { upsertCustomer } from "$lib/db/orders/customers";
+	import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
