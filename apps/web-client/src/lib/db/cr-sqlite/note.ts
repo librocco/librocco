@@ -1,12 +1,13 @@
-import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem } from "./types";
+import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem, OutboundNoteListItem } from "./types";
 
-const getSeqName = async (db: DB | TXAsync) => {
+const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
 			WHERE displayName LIKE 'New Note%'
+			AND warehouse_id ${kind === "outbound" ? "IS NULL" : "IS NOT NULL"}
 			ORDER BY displayName DESC
 			LIMIT 1;
-		`;
+`;
 	const result = await db.execO<{ displayName?: string }>(sequenceQuery);
 	const displayName = result[0]?.displayName;
 
@@ -27,8 +28,17 @@ export function createInboundNote(db: DB, warehouseId: number, noteId: number): 
 	const stmt = "INSERT INTO note (id, display_name, warehouse_id) VALUES (?, ?, ?)";
 
 	return db.tx(async (txDb) => {
-		const displayName = await getSeqName(txDb);
+		const displayName = await getSeqName(txDb, "inbound");
 		await txDb.exec(stmt, [noteId, displayName, warehouseId]);
+	});
+}
+
+export function createOutboundNote(db: DB, noteId: number): Promise<void> {
+	const stmt = "INSERT INTO note (id, display_name) VALUES (?, ?)";
+
+	return db.tx(async (txDb) => {
+		const displayName = await getSeqName(txDb, "outbound");
+		await txDb.exec(stmt, [noteId, displayName]);
 	});
 }
 
@@ -46,6 +56,24 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
 	`;
 
 	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number }>(query);
+
+	// TODO: update total books when we add note volume stock functionality
+	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
+}
+
+export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
+	const query = `
+		SELECT
+			id,
+			display_name AS displayName,
+			updated_at
+		FROM note
+		WHERE warehouse_id IS NULL
+		AND committed = 0
+
+	`;
+
+	const res = await db.execO<{ id: number; displayName: string; updated_at: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
 	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
@@ -76,6 +104,7 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
 			note.display_name AS displayName,
 			note.warehouse_id AS warehouseId,
 			warehouse.display_name AS warehouseName,
+			note.default_warehouse AS defaultWarehouse,
 			note.updated_at,
 			note.committed,
 			note.committed_at,
@@ -90,6 +119,7 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
 		displayName: string;
 		warehouseId?: number;
 		warehouseName?: string;
+		defaultWarehouse?: number;
 		is_reconciliation_note: number;
 		updated_at: number;
 		committed: number;
@@ -263,7 +293,7 @@ export async function updateNoteTxn(
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
 			updated_at = (strftime('%s', 'now') * 1000)
-	`,
+		`,
 		[isbn, noteId, nextWarehouseId, nextQuantity, updated_at]
 	);
 }
