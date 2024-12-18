@@ -116,8 +116,7 @@ describe("Customer order tests", () => {
 		await syncDBs(db2, db1);
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
-		expect(db1Customers[1]).toMatchObject(db2Customers[1]);
+		expect(db1Customers).toMatchObject(db2Customers);
 	});
 	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
@@ -126,7 +125,7 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
+		expect(db1Customers).toMatchObject(db2Customers);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
 });
