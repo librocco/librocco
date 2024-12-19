@@ -1,7 +1,8 @@
 /**
  * This is a placeholder as we're not using the generic DB, this might change as we add schema, but trying to keep this as a single source of truth
  */
-export { type DB } from "@vlcn.io/crsqlite-wasm";
+import type { DB } from "@vlcn.io/crsqlite-wasm";
+export type { DB };
 
 /* Customer orders/books */
 export type Customer = {
@@ -90,6 +91,18 @@ export type ReconciliationOrder = {
 	id?: number;
 	finalized: boolean;
 };
+
+/* Warehouse */
+export type Warehouse = {
+	id: number;
+	displayName: string | null;
+	discount: number | null;
+};
+
+/* Misc */
+
+/** The type of the DB object passed to sqlite DB.tx transaction callback */
+export type TXAsync = Parameters<Parameters<DB["tx"]>[0]>[0];
 
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
 I was unabe to import it from there.
