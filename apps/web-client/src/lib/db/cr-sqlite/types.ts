@@ -118,7 +118,7 @@ export type OutboundNoteListItem = {
 export type VolumeStock = {
 	isbn: string;
 	quantity: number;
-	warehouseId: number;
+	warehouseId?: number;
 };
 
 export type NoteEntriesItem = {
@@ -139,6 +139,12 @@ export type NoteEntriesItem = {
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
 export type TXAsync = Parameters<Parameters<DB["tx"]>[0]>[0];
+
+/** The transaction returned (thrown) by outbound note commit check - if certin txn will result in negative stock */
+export interface OutOfStockTransaction extends VolumeStock {
+	warehouseName: string;
+	available: number;
+}
 
 /* These have been lifted from https://github.com/vlcn-io/js/blob/main/packages/direct-connect-common/src/types.ts
 I was unabe to import it from there.
