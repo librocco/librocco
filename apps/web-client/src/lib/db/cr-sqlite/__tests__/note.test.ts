@@ -1337,3 +1337,52 @@ describe("Note custom items", async () => {
 		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12 }]);
 	});
 });
+
+import { createAndCommitReconciliationNote } from "../note";
+
+describe("Reconciliation note", () => {
+	it("creates and commits the reconciliation note (along with respective transactions)", async () => {
+		const db = await getRandomDb();
+		const volumes = [
+			{ isbn: "1234567890", quantity: 5, warehouseId: 1 },
+			{ isbn: "0987654321", quantity: 10, warehouseId: 2 }
+		];
+
+		await createAndCommitReconciliationNote(db, 1, volumes);
+
+		const note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: expect.stringContaining("Reconciliation note:"),
+				isReconciliationNote: true,
+				committed: true,
+				committedAt: expect.any(Date),
+				updatedAt: expect.any(Date)
+			})
+		);
+		expect(note.committedAt).toEqual(note.updatedAt);
+		expect(note.displayName).toEqual(`Reconciliation note: ${note.committedAt.toISOString()}`);
+
+		const { committedAt } = note;
+
+		// TODO: this is tested somewhat explicitly for now, when we add stock functionality, test (implicitly) for stock state
+		const transactionsQuery = "SELECT isbn, quantity, warehouse_id, committed_at, updated_at FROM book_transaction WHERE note_id = 1";
+		const transactions = await db
+			.execO<{ isbn: string; quantity: number; warehouseId: number; updated_at: number; committed_at: number }>(transactionsQuery)
+			.then((x) =>
+				x.map(({ committed_at, updated_at, ...item }) => ({
+					...item,
+					committedAt: new Date(committed_at),
+					updatedAt: new Date(updated_at)
+				}))
+			);
+		expect(transactions).toEqual([
+			{ isbn: "1234567890", quantity: 5, warehouse_id: 1, committedAt, updatedAt: committedAt },
+			{ isbn: "0987654321", quantity: 10, warehouse_id: 2, committedAt, updatedAt: committedAt }
+		]);
+
+		// Check for updated_at consistency
+		expect(note.updatedAt).toEqual(note.committedAt);
+	});
+});

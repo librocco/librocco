@@ -144,6 +144,7 @@ CREATE TABLE book_transaction (
 	note_id INTEGER NOT NULL,
 	warehouse_id INTEGER,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	committed_at INTEGER,
 	PRIMARY KEY (isbn, note_id, warehouse_id)
 );
 
@@ -153,7 +154,7 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id;
+    WHERE id = NEW.note_id AND committed = 0;
 END;
 
 CREATE TRIGGER update_note_timestamp_after_update
@@ -162,7 +163,7 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id;
+    WHERE id = NEW.note_id AND committed = 0;
 END;
 
 CREATE TRIGGER update_note_timestamp_after_delete
@@ -171,7 +172,7 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = OLD.note_id;
+    WHERE id = OLD.note_id AND committed = 0;
 END;
 
 CREATE TABLE custom_item (
@@ -188,7 +189,7 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id;
+    WHERE id = NEW.note_id AND committed = 0;
 END;
 
 CREATE TRIGGER update_note_timestamp_after_custom_item_update
@@ -197,7 +198,7 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id;
+    WHERE id = NEW.note_id AND committed = 0;
 END;
 
 CREATE TRIGGER update_note_timestamp_after_custom_item_delete
@@ -206,6 +207,6 @@ FOR EACH ROW
 BEGIN
     UPDATE note
     SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = OLD.note_id;
+    WHERE id = OLD.note_id AND committed = 0;
 END;
 
