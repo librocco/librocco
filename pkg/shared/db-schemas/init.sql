@@ -142,7 +142,7 @@ CREATE TABLE book_transaction (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 0,
 	note_id INTEGER NOT NULL,
-	warehouse_id INTEGER NOT NULL,
+	warehouse_id INTEGER,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (isbn, note_id, warehouse_id)
 );
