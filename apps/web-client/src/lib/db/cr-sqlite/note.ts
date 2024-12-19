@@ -1,4 +1,6 @@
-import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem, OutboundNoteListItem } from "./types";
+import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem, OutboundNoteListItem, OutOfStockTransaction } from "./types";
+
+import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
@@ -183,11 +185,45 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 	await db.exec(updateQuery, updateValues);
 }
 
+// TODO: this should be implemented when we implement stock functionality
+async function getOutOfStockEntries(_db: DB, _noteId: number): Promise<OutOfStockTransaction[]>;
+async function getOutOfStockEntries(): Promise<OutOfStockTransaction[]> {
+	return [];
+}
+
+export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
+	const query = `
+		SELECT
+			isbn,
+			quantity,
+			warehouse_id AS warehouseId
+		FROM book_transaction
+		WHERE note_id = ?
+		AND warehouse_id IS NULL
+	`;
+
+	return db.execO<{
+		isbn: string;
+		quantity: number;
+		warehouse_id: number;
+	}>(query, [id]);
+}
+
 export async function commitNote(db: DB, id: number): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to commit a note that is already committed: this is a noop, but probably indicates a bug in the calling code.");
 		return;
+	}
+
+	const noWarehouseTxns = await getNoWarehouseEntries(db, id);
+	if (noWarehouseTxns.length) {
+		throw new NoWarehouseSelectedError(noWarehouseTxns);
+	}
+
+	const outOfStockEntries = await getOutOfStockEntries(db, id);
+	if (outOfStockEntries.length) {
+		throw new OutOfStockError(outOfStockEntries);
 	}
 
 	const query = `
@@ -254,7 +290,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		publisher?: string;
 	}>(query, [id]);
 
-	return result;
+	return result.map(({ warehouseId, ...res }) => ({ ...res, warehouseId: warehouseId ?? undefined }));
 }
 
 export async function updateNoteTxn(

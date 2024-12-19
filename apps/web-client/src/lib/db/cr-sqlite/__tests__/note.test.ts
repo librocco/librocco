@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import type { DB } from "../types";
 
 import { getRandomDb } from "./lib";
+import { NoWarehouseSelectedError, OutOfStockError } from "../errors";
 
 import {
 	createInboundNote,
@@ -448,6 +449,56 @@ describe("Outbound note tests", () => {
 		);
 	});
 
+	it("doesn't allow for committing of a note if not all warehouse ids are assigned", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "3333333333", quantity: 2, warehouseId: 1 }); // Has a warehouse assigned to it - OK
+
+		expect(commitNote(db, 1)).rejects.toThrow(
+			new NoWarehouseSelectedError([
+				{ isbn: "1111111111", quantity: 2 },
+				{ isbn: "2222222222", quantity: 2 }
+			])
+		);
+	});
+
+	// TODO: this needs stock calculating logic in order to work, unskip when the logic is implemented
+	it.skip("doesn't allow for committing of a note if some transactions would result in negative stock", async () => {
+		const db = await getRandomDb();
+
+		// Set up state
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 2 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 2, 2);
+		await addVolumesToNote(db, 2, { isbn: "2222222222", quantity: 2 });
+		await commitNote(db, 2);
+
+		await createOutboundNote(db, 3);
+
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 1 }); // avlbl: 2, res = -1
+		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 2, warehouseId: 1 }); // avlbl: 2, res = 0 -- OK
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 2 }); // avlbl: 0, res = -3
+		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 4, warehouseId: 2 }); // avlbl: 2, res = -2
+
+		expect(await commitNote(db, 1)).toThrow(
+			new OutOfStockError([
+				{ isbn: "1111111111", quantity: 3, warehouseId: 1, available: 2, warehouseName: "Warehouse 1" },
+				{ isbn: "1111111111", quantity: 3, warehouseId: 2, available: 0, warehouseName: "Warehouse 2" },
+				{ isbn: "2222222222", quantity: 4, warehouseId: 2, available: 2, warehouseName: "Warehouse 2" }
+			])
+		);
+	});
+
 	it("doesn't allow committing of a note more than once (keeping the committed_at consistent)", async () => {
 		const db = await getRandomDb();
 
@@ -703,17 +754,15 @@ describe("Outbound note tests", () => {
 	});
 });
 
-describe("Note transactions", async () => {
+describe("Book transactions", async () => {
 	it("adds volumes to a note", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
-		let entries = await getNoteEntries(db, 1);
-		expect(entries).toEqual([
+		expect(await getNoteEntries(db, 1)).toEqual([
 			expect.objectContaining({
 				isbn: "1234567890",
 				quantity: 10,
@@ -721,18 +770,44 @@ describe("Note transactions", async () => {
 			})
 		]);
 
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
 
-		entries = await getNoteEntries(db, 1);
-		expect(entries).toEqual([
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: 1
+			}),
 			expect.objectContaining({
 				isbn: "1234567890",
 				quantity: 10,
 				warehouseId: 1
+			})
+		]);
+
+		// Adding a volume without warehouseId should be possible
+		//
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5 });
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: undefined
 			}),
 			expect.objectContaining({
 				isbn: "0987654321",
 				quantity: 5,
+				warehouseId: 1
+			}),
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
 				warehouseId: 1
 			})
 		]);
