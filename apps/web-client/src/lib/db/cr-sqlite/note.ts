@@ -107,6 +107,7 @@ type GetNoteResponse = {
 	updatedAt: Date;
 	committed: boolean;
 	committedAt?: Date;
+	isReconciliationNote: boolean;
 };
 
 export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
@@ -151,7 +152,8 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
 		noteType,
 		updatedAt: new Date(updated_at),
 		committed: Boolean(committed),
-		committedAt: committed_at ? new Date(committed_at) : undefined
+		committedAt: committed_at ? new Date(committed_at) : undefined,
+		isReconciliationNote: Boolean(is_reconciliation_note)
 	};
 }
 
@@ -444,4 +446,28 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 		items: bookEntries.concat(customItems),
 		timestamp: new Date().toISOString()
 	};
+}
+
+export async function createAndCommitReconciliationNote(db: DB, id: number, volumes: VolumeStock[]): Promise<void> {
+	const timestamp = Date.now();
+	const displayName = `Reconciliation note: ${new Date(timestamp).toISOString()}`;
+
+	await db.tx(async (txDb) => {
+		// Insert book transactions
+		for (const volume of volumes) {
+			// TODO: This isn't terribly efficient and should probably be run as a prepared statement, but having done so (with the exact same statement and args)
+			// made the tests fail. Should investigate further
+			await txDb.exec(
+				"INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at, committed_at) VALUES (?, ?, ?, ?, ?, ?)",
+				[volume.isbn, volume.quantity, volume.warehouseId, id, timestamp, timestamp]
+			);
+		}
+
+		// Insert the reconciliation note
+		await txDb.exec(
+			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, committed, committed_at)
+			VALUES (?, ?, 1, ?, 1, ?)`,
+			[id, displayName, timestamp, timestamp]
+		);
+	});
 }
