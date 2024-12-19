@@ -135,6 +135,19 @@ export type NoteEntriesItem = {
 	category?: string;
 };
 
+export type ReceiptItem = {
+	isbn?: string; // undefined for custom_item
+	title?: string; // undefined for book_transction
+	quantity: number; // For books read from book_transaction entry, for custom item it is 1
+	price: number; // For books - read from books table, for custom items read directly from custom_item entry
+	discount: number; // Discount for a respective warehouse (matched by book transaction't warehouse_id), 0 for custom_item
+};
+
+export type ReceiptData = {
+	items: ReceiptItem[];
+	timestamp: string;
+};
+
 /* Misc */
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */

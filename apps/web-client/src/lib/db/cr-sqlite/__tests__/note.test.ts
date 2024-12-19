@@ -20,9 +20,11 @@ import {
 	removeNoteTxn,
 	upsertNoteCustomItem,
 	getNoteCustomItems,
-	removeNoteCustomItem
+	removeNoteCustomItem,
+	getReceiptForNote
 } from "../note";
 import { upsertWarehouse } from "../warehouse";
+import { upsertBook } from "../books";
 
 describe("Inbound note tests", () => {
 	it("creates a new inbound note, using id and warehouseId, with default fields", async () => {
@@ -751,6 +753,63 @@ describe("Outbound note tests", () => {
 				committed: true
 			})
 		);
+	});
+
+	it("retrieves the receipt using getReceiptForNote", async () => {
+		const db = await getRandomDb();
+
+		// Create warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1", discount: 10 });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2", discount: 0 });
+
+		// Add book data
+		await upsertBook(db, { isbn: "1111111111", title: "Book 1" });
+		await upsertBook(db, { isbn: "2222222222", title: "Book 2" });
+
+		// Create an outbound note
+		await createOutboundNote(db, 1);
+
+		// Add book transactions
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 2 });
+
+		// Add custom items
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 50 });
+		await upsertNoteCustomItem(db, 1, { id: 2, title: "Custom Item 2", price: 75 });
+
+		// Get the receipt
+		const receipt = await getReceiptForNote(db, 1);
+
+		// Assert the receipt data
+		expect(receipt.items).toEqual([
+			{
+				isbn: "1111111111",
+				title: "Book 1",
+				quantity: 2,
+				price: expect.any(Number),
+				discount: 10
+			},
+			{
+				isbn: "2222222222",
+				title: "Book 2",
+				quantity: 3,
+				price: expect.any(Number),
+				discount: 0
+			},
+			{
+				title: "Custom Item 1",
+				quantity: 1,
+				price: 50,
+				discount: 0
+			},
+			{
+				title: "Custom Item 2",
+				quantity: 1,
+				price: 75,
+				discount: 0
+			}
+		]);
+		expect(receipt.timestamp).toEqual(expect.any(String));
 	});
 });
 

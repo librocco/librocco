@@ -1,4 +1,14 @@
-import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem, OutboundNoteListItem, OutOfStockTransaction } from "./types";
+import type {
+	DB,
+	TXAsync,
+	InboundNoteListItem,
+	VolumeStock,
+	NoteEntriesItem,
+	OutboundNoteListItem,
+	OutOfStockTransaction,
+	ReceiptData,
+	ReceiptItem
+} from "./types";
 
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
@@ -384,4 +394,54 @@ export async function removeNoteCustomItem(db: DB, noteId: number, itemId: numbe
 	}
 
 	await db.exec("DELETE FROM custom_item WHERE id = ? AND note_id = ?", [itemId, noteId]);
+}
+
+export async function getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
+	const note = await getNoteById(db, noteId);
+	if (!note) {
+		throw new Error("Note not found");
+	}
+
+	const bookQuery = `
+		SELECT
+			bt.isbn,
+			bt.quantity,
+			b.title,
+			b.price,
+			w.discount
+		FROM book_transaction bt
+		LEFT JOIN book b ON bt.isbn = b.isbn
+		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
+		WHERE bt.note_id = ?
+	`;
+
+	const customItemQuery = `
+		SELECT title, price
+		FROM custom_item
+		WHERE note_id = ?
+	`;
+
+	const bookEntries: ReceiptItem[] = await db.execO<ReceiptItem>(bookQuery, [noteId]).then((x) =>
+		x.map((entry) => ({
+			isbn: entry.isbn,
+			title: entry.title,
+			quantity: entry.quantity,
+			price: entry.price || 0,
+			discount: entry.discount || 0
+		}))
+	);
+
+	const customItems: ReceiptItem[] = await db.execO<{ title: string; price: number }>(customItemQuery, [noteId]).then((x) =>
+		x.map((item) => ({
+			title: item.title,
+			quantity: 1,
+			price: item.price,
+			discount: 0
+		}))
+	);
+
+	return {
+		items: bookEntries.concat(customItems),
+		timestamp: new Date().toISOString()
+	};
 }
