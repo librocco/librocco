@@ -56,39 +56,46 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
+
 		SELECT
 			note.id,
 			note.display_name AS displayName,
 			warehouse.display_name AS warehouseName,
-			note.updated_at
+			note.updated_at,
+			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
-		INNER JOIN warehouse
-		WHERE note.warehouse_id = warehouse.id
-		AND note.committed = 0
+		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
+		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
+		WHERE note.committed = 0
+		GROUP BY note.id
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
+	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
 export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
+
 		SELECT
-			id,
-			display_name AS displayName,
-			updated_at
+			note.id,
+			note.display_name AS displayName,
+			note.updated_at,
+			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
-		WHERE warehouse_id IS NULL
-		AND committed = 0
+		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
+		WHERE note.warehouse_id IS NULL
+		AND note.committed = 0
+		GROUP BY note.id
 
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; updated_at: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; updated_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
+	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
 type GetNoteResponse = {
