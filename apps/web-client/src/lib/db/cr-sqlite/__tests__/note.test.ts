@@ -319,7 +319,6 @@ describe("Inbound note tests", () => {
 		await createInboundNote(db, 1, 1);
 		await createInboundNote(db, 1, 2);
 
-		// TODO: update this when we implement the 'totalBooks' functionality
 		expect(await getAllInboundNotes(db)).toEqual([
 			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
@@ -353,6 +352,19 @@ describe("Inbound note tests", () => {
 				committed: true
 			})
 		);
+	});
+
+	it("reflects total books in a note", async () => {
+		const db = await getRandomDb();
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+
+		expect(await getAllInboundNotes(db)).toEqual([
+			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 5 }
+		]);
 	});
 });
 
@@ -810,6 +822,20 @@ describe("Outbound note tests", () => {
 			}
 		]);
 		expect(receipt.timestamp).toEqual(expect.any(String));
+	});
+
+	it("reflects total books in a note", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createOutboundNote(db, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 2 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+
+		expect(await getAllOutboundNotes(db)).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 10 }]);
 	});
 });
 
