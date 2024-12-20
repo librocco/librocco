@@ -136,7 +136,7 @@ CREATE TABLE note (
 	is_reconciliation_note INTEGER DEFAULT 0,
 	default_warehouse INTEGER,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-	committed INTEGER DEFAULT 0,
+	committed INTEGER NOT NULL DEFAULT 0,
 	committed_at INTEGER,
 	PRIMARY KEY (id)
 );
