@@ -132,7 +132,44 @@ CREATE TABLE note (
 	is_reconciliation_note INTEGER DEFAULT 0,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	committed INTEGER DEFAULT 0,
+	committed_at INTEGER,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('note');
+
+CREATE TABLE book_transaction (
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 0,
+	note_id INTEGER NOT NULL,
+	warehouse_id INTEGER NOT NULL,
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	PRIMARY KEY (isbn, note_id, warehouse_id)
+);
+
+CREATE TRIGGER update_note_timestamp_after_insert
+AFTER INSERT ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_update
+AFTER UPDATE ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_delete
+AFTER DELETE ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = OLD.note_id;
+END;
 
