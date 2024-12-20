@@ -1,0 +1,56 @@
+{
+    "book": [
+      { "isbn": "9788804797142", "title": "Lord of the Flies", "authors": "William Golding", "publisher": "Mondadori", "price": 18.0 },
+      { "isbn": "9781234567897", "title": "The Art of Learning", "authors": "Josh Waitzkin", "publisher": "Scholastic", "price": 15.99 },
+      { "isbn": "9780385504201", "title": "The Da Vinci Code", "authors": "Dan Brown", "publisher": "Doubleday", "price": 19.95 },
+      { "isbn": "9780553296983", "title": "Dune", "authors": "Frank Herbert", "publisher": "Ace", "price": 24.50 }
+    ],
+    "supplier": [
+      { "id": 1, "name": "BooksRUs", "email": "contact@example.com", "address": "123 Book St, New York, NY" },
+      { "id": 2, "name": "NovelSupply Co.", "email": "support@example.com", "address": "456 Fiction Ave, Los Angeles, CA" }
+    ],
+    "supplier_publisher": [
+      { "supplier_id": 1, "publisher": "Mondadori" },
+      { "supplier_id": 1, "publisher": "Doubleday" },
+      { "supplier_id": 2, "publisher": "Scholastic" },
+      { "supplier_id": 2, "publisher": "Ace" }
+    ],
+    "customer": [
+      { "id": 1, "fullname": "Alice Smith", "email": "alice.smith@example.com", "deposit": 50.00 },
+      { "id": 2, "fullname": "Bob Johnson", "email": "bob.johnson@example.com", "deposit": 30.00 }
+    ],
+    "customer_order_lines": [
+      { "id": 1, "customer_id": 1, "isbn": "978-0590353427", "quantity": 1, "placed": 1, "received": 0, "collected": 0 },
+      { "id": 2, "customer_id": 1, "isbn": "978-0439064873", "quantity": 1, "placed": 1, "received": 1, "collected": 0 },
+      { "id": 3, "customer_id": 2, "isbn": "978-0385504201", "quantity": 2, "placed": 1, "received": 1, "collected": 1 },
+      { "id": 4, "customer_id": 2, "isbn": "978-0553296983", "quantity": 1, "placed": 1, "received": 0, "collected": 0 }
+    ],
+    "supplier_order": [
+      { "id": 1, "supplier_id": 1, "created": 1700000000000 },
+      { "id": 2, "supplier_id": 2, "created": 1700005000000 }
+    ],
+    "supplier_order_line": [
+      { "supplier_order_id": 1, "isbn": "978-0590353427", "quantity": 5 },
+      { "supplier_order_id": 2, "isbn": "978-0439064873", "quantity": 3 }
+    ],
+    "customer_supplier_order": [
+      { "id": 1, "supplier_order_id": 1, "customer_order_line_id": 1 },
+      { "id": 2, "supplier_order_id": 2, "customer_order_line_id": 2 }
+    ],
+    "reconciliation_order": [
+      {
+        "id": 1,
+        "supplier_order_ids": "[1]",
+        "created": 1700010000000,
+        "customer_order_line_ids": "[1,2]",
+        "finalized": 0
+      },
+      {
+        "id": 2,
+        "supplier_order_ids": "[2]",
+        "created": 1700020000000,
+        "customer_order_line_ids": "[3]",
+        "finalized": 1
+      }
+    ]
+  }
