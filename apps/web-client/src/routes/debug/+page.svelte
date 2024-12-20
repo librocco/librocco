@@ -17,13 +17,8 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/orders";
-	import { upsertBook } from "$lib/db/orders/books";
-	import { upsertSupplier } from "$lib/db/orders/suppliers";
 
-	import type { Book as BookType } from "$lib/db/orders/books";
-	import type { Supplier } from "$lib/db/orders/types";
-
-	import debugData from "./debug_data.json";
+	import exampleData from "./example_data.json";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -33,20 +28,30 @@
 		icon: any;
 	}
 
-	let books;
-	let publishers;
-	let customers;
-	let orders;
-	let suppliers;
+	const dataStore = {};
+
+	let book;
+	let supplier;
+	let supplier_publisher;
+	let customer;
+	let customer_order_line;
+	let supplier_order;
+	let supplier_order_line;
+	let customer_supplier_order;
+	let reconciliation_order;
+
 	let isLoading = true;
 
-	const tables: string[] = ["book", "supplier_publisher", "supplier", "customer"];
 	const tableData = [
-		{ label: "Books", value: () => books },
-		{ label: "Publishers", value: () => publishers },
-		{ label: "Suppliers", value: () => suppliers },
-		{ label: "Orders", value: () => orders },
-		{ label: "Customers", value: () => customers }
+		{ label: "Books", value: () => book },
+		{ label: "Suppliers", value: () => supplier },
+		{ label: "Supplier Publishers", value: () => supplier_publisher },
+		{ label: "Customers", value: () => customer },
+		{ label: "Customer Order Lines", value: () => customer_order_line },
+		{ label: "Supplier Orders", value: () => supplier_order },
+		{ label: "Supplier Order Lines", value: () => supplier_order_line },
+		{ label: "Customer Supplier Orders", value: () => customer_supplier_order },
+		{ label: "Reconciliation Orders", value: () => reconciliation_order },
 	];
 
 	let links: Link[];
@@ -95,7 +100,7 @@
 
 	const populateBooks = async function (db) {
 		console.log("Populating books");
-		for (const book of debugData.books) {
+		for (const book of exampleData.book) {
 			await db.exec(
 				`INSERT INTO book (isbn, title, authors, publisher, price)
 				VALUES (?, ?, ?, ?, ?)
@@ -112,7 +117,7 @@
 
 	const populateSuppliers = async function (db) {
 		console.log("Populating suppliers");
-		for (const supplier of debugData.suppliers) {
+		for (const supplier of exampleData.supplier) {
 			await db.exec(
 				`INSERT INTO supplier (id, name, email, address)
 				VALUES (?, ?, ?, ?)
@@ -134,11 +139,37 @@
 		}
 	}
 
+	const populateCustomers = async function (db) {
+		console.log("Populating customers");
+		for (const customer of exampleData.customer) {
+			await db.exec(
+				`INSERT INTO customer (id, fullname, email, deposit)
+				VALUES (?, ?, ?, ?)
+				ON CONFLICT(id) DO UPDATE SET
+				fullname = COALESCE(?, fullname),
+				email = COALESCE(?, email),
+				updatedAt = (strftime('%s', 'now') * 1000),
+				deposit = COALESCE(?, deposit);`,
+				[
+					customer.id,
+					customer.fullname ?? null,
+					customer.email ?? null,
+					customer.deposit ?? null,
+					customer.fullname ?? null,
+					customer.email ?? null,
+					customer.deposit ?? null
+				]
+			);
+			console.log(`Upserted supplier: ${customer.fullname}`);
+		}
+	}
+
 	const populateDatabase = async function () {
 		const db = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
 		await populateBooks(db);
 		await populateSuppliers(db);
+		await populateCustomers(db);
 		console.log("Finished populating database.");
 
 		await loadData();
@@ -148,7 +179,7 @@
 		const db = await getInitializedDB("librocco-current-db");
 		console.log("Resetting database");
 
-		await Promise.all(tables.map(async (table) => {
+		await Promise.all(Object.keys(exampleData).map(async (table) => {
 			console.log(`Clearing ${table}`);
 			await db.exec(`DELETE FROM ${table}`);
 		}));
@@ -161,11 +192,12 @@
 		isLoading = true;
 
 		const db = await getInitializedDB("librocco-current-db");
-		books = await db.exec("SELECT COUNT(*) from book;");
-		publishers = await db.exec("SELECT COUNT(*) from supplier_publisher;");
-		customers = await db.exec("SELECT COUNT(*) from customer;");
-		orders = await db.exec("SELECT COUNT(*) from customer_supplier_order;");
-		suppliers = await db.exec("SELECT COUNT(*) from supplier;");
+
+		book = await db.exec("SELECT COUNT(*) from book;");
+		supplier_publisher = await db.exec("SELECT COUNT(*) from supplier_publisher;");
+		customer = await db.exec("SELECT COUNT(*) from customer;");
+		customer_supplier_order = await db.exec("SELECT COUNT(*) from customer_supplier_order;");
+		supplier = await db.exec("SELECT COUNT(*) from supplier;");
 
 		isLoading = false;
 	};
