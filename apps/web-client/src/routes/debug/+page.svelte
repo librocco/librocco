@@ -7,8 +7,7 @@
 		Settings,
 		PersonStanding,
 		Book,
-		Truck,
-		Bug
+		Truck
 	} from "lucide-svelte";
 	import { Plus, RotateCcw } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
@@ -18,7 +17,7 @@
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/orders";
 
-	import exampleData from "./example_data.json";
+	import exampleData from "./example_data";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -34,7 +33,7 @@
 	let supplier;
 	let supplier_publisher;
 	let customer;
-	let customer_order_line;
+	let customer_order_lines;
 	let supplier_order;
 	let supplier_order_line;
 	let customer_supplier_order;
@@ -47,7 +46,7 @@
 		{ label: "Suppliers", value: () => supplier },
 		{ label: "Supplier Publishers", value: () => supplier_publisher },
 		{ label: "Customers", value: () => customer },
-		{ label: "Customer Order Lines", value: () => customer_order_line },
+		{ label: "Customer Order Lines", value: () => customer_order_lines },
 		{ label: "Supplier Orders", value: () => supplier_order },
 		{ label: "Supplier Order Lines", value: () => supplier_order_line },
 		{ label: "Customer Supplier Orders", value: () => customer_supplier_order },
@@ -90,11 +89,6 @@
 			label: tNav.supplier_orders(),
 			href: appPath("supplier_orders"),
 			icon: Truck
-		},
-		{
-			label: tNav.debug(),
-			href: appPath("debug"),
-			icon: Bug
 		}
 	];
 
@@ -167,19 +161,27 @@
 	const populateDatabase = async function () {
 		const db = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
-		await populateBooks(db);
-		await populateSuppliers(db);
-		await populateCustomers(db);
+		await db.exec(exampleData);
 		console.log("Finished populating database.");
-
 		await loadData();
 	};
 
 	const resetDatabase = async function resetDatabase() {
 		const db = await getInitializedDB("librocco-current-db");
+		const tables = [
+			"book",
+			"supplier",
+			"supplier_publisher",
+			"customer",
+			"customer_order_lines",
+			"supplier_order",
+			"supplier_order_line",
+			"customer_supplier_order",
+			"reconciliation_order"
+		]
 		console.log("Resetting database");
 
-		await Promise.all(Object.keys(exampleData).map(async (table) => {
+		await Promise.all(tables.map(async (table) => {
 			console.log(`Clearing ${table}`);
 			await db.exec(`DELETE FROM ${table}`);
 		}));
@@ -194,10 +196,14 @@
 		const db = await getInitializedDB("librocco-current-db");
 
 		book = await db.exec("SELECT COUNT(*) from book;");
+		supplier = await db.exec("SELECT COUNT(*) from supplier;");
 		supplier_publisher = await db.exec("SELECT COUNT(*) from supplier_publisher;");
 		customer = await db.exec("SELECT COUNT(*) from customer;");
+		customer_order_lines = await db.exec("SELECT COUNT(*) from customer_order_lines;");
+		supplier_order = await db.exec("SELECT COUNT(*) from supplier_order;");
+		supplier_order_line = await db.exec("SELECT COUNT(*) from supplier_order_line;");
 		customer_supplier_order = await db.exec("SELECT COUNT(*) from customer_supplier_order;");
-		supplier = await db.exec("SELECT COUNT(*) from supplier;");
+		reconciliation_order = await db.exec("SELECT COUNT(*) from reconciliation_order;");
 
 		isLoading = false;
 	};
@@ -254,9 +260,9 @@
 		</header>
 
 		<main class="h-screen">
-			<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+			<div class="mx-auto relative flex h-full flex-col gap-y-10 px-4">
 				<div class="flex items-center justify-between">
-					<h1 class="prose text-2xl font-bold">Debug</h1>
+					<h1 class="prose font-bold">Debug</h1>
 					<div class="gap-2">
 						<button class="btn-primary btn" on:click={() => populateDatabase()}>
 							<Plus size={20} />
@@ -269,8 +275,8 @@
 					</div>
 				</div>
 
-				<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-					<table class="table-lg table">
+				<div class="flex flex-col gap-y-10 overflow-x-auto py-2">
+					<table class="table">
 						<thead>
 							<tr>
 								<th scope="col">Table</th>

@@ -8,8 +8,7 @@ const nav = {
 	settings: "Einstellungen",
 	history: "Verlauf",
 
-	supplier_orders: "Lieferantenbestellungen",
-	debug: "Debug"
+	supplier_orders: "Lieferantenbestellungen"
 };
 
 const search = {

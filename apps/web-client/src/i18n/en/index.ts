@@ -10,8 +10,7 @@ const nav = {
 	history: "History",
 
 	// Orders mgmt
-	supplier_orders: "Suppliers orders",
-	debug: "Debug"
+	supplier_orders: "Suppliers orders"
 };
 
 const search = {
