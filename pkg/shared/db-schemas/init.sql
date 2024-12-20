@@ -58,8 +58,12 @@ CREATE TABLE book (
 	isbn TEXT NOT NULL,
 	title TEXT,
     authors TEXT,
-    publisher TEXT,
     price DECIMAL,
+	year INTEGER,
+	publisher TEXT,
+	edited_by TEXT,
+	out_of_print INTEGER,
+	category TEXT,
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
