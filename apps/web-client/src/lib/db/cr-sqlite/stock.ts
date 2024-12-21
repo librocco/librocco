@@ -2,13 +2,15 @@ import type { DB } from "./types";
 
 type GetStockParams = {
 	searchString?: string;
+	// If provided the results are filtered by provided (isbn, warehouseId) pairs
+	entries?: { isbn: string; warehouseId: number }[];
 };
 
 type GetStockResponseItem = {
 	isbn: string;
 	quantity: number;
 	warehouseId?: number;
-	warehouseName?: number;
+	warehouseName?: string;
 	title?: string;
 	price?: number;
 	year?: string;
@@ -19,7 +21,7 @@ type GetStockResponseItem = {
 	category?: string;
 };
 
-export async function getStock(db: DB, { searchString = "" }: GetStockParams = {}): Promise<GetStockResponseItem[]> {
+export async function getStock(db: DB, { searchString = "", entries = [] }: GetStockParams = {}): Promise<GetStockResponseItem[]> {
 	const query = `
 		SELECT
 			bt.isbn,
@@ -40,11 +42,15 @@ export async function getStock(db: DB, { searchString = "" }: GetStockParams = {
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
 		WHERE n.committed = 1
 		${searchString ? `AND (bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)` : ""}
+		${entries.length ? `AND (bt.isbn, bt.warehouse_id) IN (${entries.map(() => "(?, ?)").join(", ")})` : ""}
 		GROUP BY bt.isbn, bt.warehouse_id
 		HAVING SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) != 0
 		ORDER BY bt.isbn, bt.warehouse_id
 	`;
 
-	const params = searchString ? [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`] : [];
+	const params = [
+		...(searchString ? [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`] : []),
+		...(entries ? entries.flatMap(({ isbn, warehouseId }) => [isbn, warehouseId]) : [])
+	];
 	return db.execO<GetStockResponseItem>(query, params);
 }
