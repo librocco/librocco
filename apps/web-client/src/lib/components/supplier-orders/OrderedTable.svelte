@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
-	import type { SupplierPlacedOrder } from "$lib/db/orders/types";
+	import type { SupplierPlacedOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";
 
@@ -20,6 +20,9 @@
 
 	function handleReconcile(supplierId: number) {
 		goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
+	}
+	function handleView(supplierOrderId: number) {
+		goto(`${base}/orders/suppliers/order/${supplierOrderId}`);
 	}
 
 	function handleBulkReconcile() {
@@ -64,7 +67,7 @@
 					</td>
 				</tr>
 			{/if}
-			{#each orders as { supplier_name, supplier_id, total_book_number, created }}
+			{#each orders as { supplier_name, supplier_id, total_book_number, created, id }}
 				<tr class="hover focus-within:bg-base-200">
 					<td>
 						<input
@@ -81,7 +84,8 @@
 							{new Date(created).toLocaleString()}
 						</span>
 					</td>
-					<td class="text-right">
+					<td class="flex items-center justify-evenly text-right">
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
 						{#if !hasSelectedOrders}
 							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile(supplier_id)}>
 								<ListTodo aria-hidden focusable="false" size={20} />

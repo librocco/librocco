@@ -1,6 +1,6 @@
-import { getInitializedDB } from "$lib/db/orders";
+import { getInitializedDB } from "$lib/db/cr-sqlite";
 
-import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/orders/suppliers";
+import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 import type { LayoutLoad } from "./$types";
 
 export const load: LayoutLoad = async ({ depends }) => {
