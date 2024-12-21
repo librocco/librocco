@@ -12,6 +12,8 @@ import type {
 
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
+import { getStock } from "./stock";
+
 const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
@@ -204,10 +206,26 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 	await db.exec(updateQuery, updateValues);
 }
 
-// TODO: this should be implemented when we implement stock functionality
-async function getOutOfStockEntries(_db: DB, _noteId: number): Promise<OutOfStockTransaction[]>;
-async function getOutOfStockEntries(): Promise<OutOfStockTransaction[]> {
-	return [];
+async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
+	const entries = await getNoteEntries(db, noteId);
+	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
+
+	const res: OutOfStockTransaction[] = [];
+
+	for (const { isbn, warehouseId, warehouseName, quantity } of entries) {
+		const existingStock = stock.get([isbn, warehouseId].join("-"));
+		if (!existingStock) {
+			res.push({ isbn, warehouseId, quantity, available: 0, warehouseName });
+			continue;
+		}
+
+		const { quantity: available } = existingStock;
+		if (quantity > available) {
+			res.push({ isbn, warehouseId, quantity, available, warehouseName });
+		}
+	}
+
+	return res;
 }
 
 export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
@@ -240,9 +258,11 @@ export async function commitNote(db: DB, id: number): Promise<void> {
 		throw new NoWarehouseSelectedError(noWarehouseTxns);
 	}
 
-	const outOfStockEntries = await getOutOfStockEntries(db, id);
-	if (outOfStockEntries.length) {
-		throw new OutOfStockError(outOfStockEntries);
+	if (note.noteType === "outbound") {
+		const outOfStockEntries = await getOutOfStockEntries(db, id);
+		if (outOfStockEntries.length) {
+			throw new OutOfStockError(outOfStockEntries);
+		}
 	}
 
 	const query = `
@@ -289,12 +309,14 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
+			w.display_name AS warehouseName,
 			b.title,
 			b.price,
 			b.authors,
 			b.publisher
 		FROM book_transaction bt
 		LEFT JOIN book b ON bt.isbn = b.isbn
+		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
 		WHERE bt.note_id = ?
 		ORDER BY bt.updated_at DESC
 	`;
@@ -303,6 +325,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		isbn: string | null;
 		quantity: number;
 		warehouseId: number;
+		warehouseName: string;
 		title?: string;
 		price?: number;
 		authors?: string;
