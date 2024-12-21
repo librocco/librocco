@@ -135,6 +135,7 @@ export type NoteEntriesItem = {
 	isbn: string | null;
 	quantity: number;
 	warehouseId: number;
+	warehouseName: string;
 	title?: string;
 	price?: number;
 	year?: string;
