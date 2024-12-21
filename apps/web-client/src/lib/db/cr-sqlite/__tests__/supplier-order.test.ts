@@ -9,7 +9,8 @@ import {
 	getPlacedSupplierOrders,
 	getPossibleSupplierOrderLines,
 	getPossibleSupplierOrders,
-	createSupplierOrder
+	createSupplierOrder,
+	getPlacedSupplierOrderLines
 } from "../suppliers";
 
 describe("Supplier order handlers should", () => {
@@ -119,7 +120,7 @@ describe("Supplier order handlers should", () => {
 			`);
 
 			await db.exec(`
-				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) 
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
 				VALUES
 				(1, '1', 2),
 				(1, '2', 1),
@@ -168,5 +169,140 @@ describe("Supplier order handlers should", () => {
 				expect(order.total_book_number).toBe(0);
 			});
 		});
+	});
+});
+
+describe("getPlacedSupplierOrderLines", () => {
+	let db: DB;
+	beforeEach(async () => {
+		db = await getRandomDb();
+		// Set up test data
+		await createCustomerOrders(db);
+		// Create two supplier orders using the existing test data
+		await db.exec(`
+			INSERT INTO supplier_order (id, supplier_id, created)
+			VALUES
+			(1, 1, strftime('%s', 'now') * 1000),
+			(2, 2, strftime('%s', 'now') * 1000)
+		`);
+
+		await db.exec(`
+			INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+			VALUES
+			(1, '3', 2),
+			(1, '1', 2),
+			(1, '2', 1),
+			(2, '3', 3)
+		`);
+	});
+
+	it("should retrieve a single supplier order with its line items", async () => {
+		const order = await getPlacedSupplierOrderLines(db, 1);
+
+		expect(order).toEqual([
+			{
+				supplier_id: 1,
+				authors: null,
+				isbn: "1",
+				price: 7,
+				publisher: "MathsAndPhysicsPub",
+				quantity: 2,
+				supplier_order_id: 1,
+				title: "Physics",
+				total_book_number: 5,
+				total_price: 37,
+				supplier_name: "Science Books LTD",
+				created: expect.any(Number)
+			},
+			{
+				authors: null,
+				isbn: "2",
+				price: 13,
+				publisher: "ChemPub",
+				quantity: 1,
+				supplier_id: 1,
+				supplier_order_id: 1,
+				title: "Chemistry",
+				total_book_number: 5,
+				total_price: 37,
+				supplier_name: "Science Books LTD",
+				created: expect.any(Number)
+			},
+			{
+				authors: null,
+				isbn: "3",
+				price: 5,
+				publisher: "PhantasyPub",
+				quantity: 2,
+				supplier_id: 1,
+				supplier_order_id: 1,
+				title: "The Hobbit",
+				total_book_number: 5,
+				total_price: 37,
+				supplier_name: "Science Books LTD",
+				created: expect.any(Number)
+			}
+		]);
+	});
+
+	it("should return empty array for non-existent order", async () => {
+		const order = await getPlacedSupplierOrderLines(db, 999);
+		expect(order).toHaveLength(0);
+	});
+
+	it("should calculate correct totals for multiple line items", async () => {
+		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+
+		orderLines.forEach((line) => {
+			expect(line.total_book_number).toBe(5);
+			expect(line.total_price).toBe(37);
+		});
+
+		expect(orderLines).toHaveLength(3);
+	});
+
+	it("should handle books with null prices", async () => {
+		// Add a book with null price
+		await db.exec(`
+         UPDATE book SET price = NULL WHERE isbn = '1';
+     `);
+
+		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		expect(orderLines).toHaveLength(3);
+		expect(orderLines[0].total_price).toBe(23);
+	});
+
+	it("should handle large quantities and prices", async () => {
+		// Update to large numbers
+		await db.exec(`
+         UPDATE book SET price = 999999.99 WHERE isbn = '1';
+         UPDATE supplier_order_line SET quantity = 999999 WHERE isbn = '1';
+     `);
+
+		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		expect(orderLines).toHaveLength(3);
+		expect(orderLines[0].total_price).toBeGreaterThan(900000000);
+	});
+
+	it("should order results consistently", async () => {
+		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		expect(orderLines[0].isbn).toBe("1");
+		expect(orderLines[1].isbn).toBe("2");
+
+		// Test reverse order insertion
+		await db.exec(`
+         INSERT INTO supplier_order (id, supplier_id, created)
+         VALUES (3, 1, strftime('%s', 'now') * 1000);
+     `);
+		await db.exec(`
+         INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+         VALUES
+         (3, '2', 1),
+         (3, '1', 1);
+     `);
+
+		const newOrderLines = await getPlacedSupplierOrderLines(db, 3);
+		expect(newOrderLines[0].isbn).toBe("1");
+		expect(newOrderLines[1].isbn).toBe("2");
 	});
 });

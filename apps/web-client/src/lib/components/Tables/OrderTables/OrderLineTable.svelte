@@ -10,24 +10,15 @@
 	import BookHeadCell from "../InventoryTables/BookHeadCell.svelte";
 	import BodyMultiRow from "../Cells/BodyMultiRow.svelte";
 
-	import type { CustomerOrderLine } from "$lib/db/orders/types";
+	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
 	export let table: ReturnType<typeof createTable<CustomerOrderLine & BookEntry>>;
-	import { BookQuantityFormCell } from "$lib/components/Tables";
-	import { createEditQuantityEvent, type EditQuantityEvent } from "../InventoryTables/events";
-	import type { EventDispatcher } from "svelte";
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
 
 	// table rows + one header row
 	$: rowCount = rows.length + 1;
-
-	const dispatch = createEventDispatcher<EditQuantityEvent>();
-
-	let editQuantity = (event: SubmitEvent, row: CustomerOrderLine) => {
-		dispatch("edit-order-line-quantity", { event, row });
-	};
 </script>
 
 <table id="inventory-table" class="table table-auto" use:tableAction={{ rowCount }}>
@@ -39,10 +30,8 @@
 			</th>
 			<th scope="col" class="show-col-lg"> Title </th>
 			<th scope="col" class="show-col-lg"> Status </th>
-
 			<th scope="col" class="show-col-lg"> Authors </th>
 			<th scope="col" class="table-cell-fit"> Price </th>
-			<th scope="col" class="table-cell-fit"> Quantity </th>
 			<th scope="col" class="show-col-md"> Publisher </th>
 			<th scope="col" class="show-col-lg table-cell-fit"> Year </th>
 			{#if $$slots["row-actions"]}
@@ -52,13 +41,11 @@
 	</thead>
 	<tbody>
 		{#each rows as row (row.key)}
-			{@const { rowIx, isbn, quantity, title, publisher, year, authors, price, collected, placed, received, created } = row}
+			{@const { rowIx, isbn, title, publisher, year, authors, price, collected, placed, received, created } = row}
 
 			{@const coreRowData = {
 				rowIx,
-				isbn,
-
-				quantity
+				isbn
 			}}
 			<!-- Require action takes precedence over out of stock -->
 			<tr use:table.tableRow={{ position: rowIx }}>
@@ -97,9 +84,7 @@
 						<span class="text-gray-400" data-property="applied-discount">-{0}%</span>
 					</div>
 				</td>
-				<td data-property="quantity" class="table-cell-fit">
-					<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />
-				</td>
+
 				<td data-property="publisher" class="show-col-md table-cell-max">
 					{publisher}
 				</td>

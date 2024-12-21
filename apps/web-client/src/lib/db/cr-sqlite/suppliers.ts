@@ -1,4 +1,5 @@
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
+import type { BookEntry } from "@librocco/db";
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrderLine } from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -34,7 +35,7 @@ export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
  * Updates an existing supplier or inserts a new one if it doesn't exist.
  *
  * @param db - The database instance to query
- * @param supplier - The supplier data to upsert
+ * @param supplier - The supplier data1 to upsert
  * @throws {Error} If supplier.id is not provided
  */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
@@ -84,12 +85,36 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 		[supplierId, publisherId, supplierId]
 	);
 }
+/**
+  * Retrieves all unplaced customer orders which are equivalent to possible order lines that can be created.
+  * Groups books by supplier based on publisher associations.
+  *
+  * @param db - The database instance to query
+  * @returns Promise resolving to an array of possible order lines with supplie
+ and book information
+  */
+export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrderLine[]> {
+	// We need to build a query that will yield all books we can order, grouped by supplier
+	const result = await db.execO<SupplierOrderLine>(
+		`SELECT
+			supplier_id, supplier.name as supplier_name,
+			book.isbn,
+			COUNT(*) as quantity
+       FROM supplier
+        JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+        JOIN book ON supplier_publisher.publisher = book.publisher
+        JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
+      WHERE placed is NULL
+      GROUP BY supplier_id, book.isbn
+      ORDER BY book.isbn ASC;`
+	);
+	return result;
+}
 
 /**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.
  * Each row represents a potential order for a supplier with an aggregated `total_book_number` and `total_book_price`.
  * The result is rdered by supplier name.
- *
  * e.g
  * ```
  * [{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
@@ -103,15 +128,14 @@ export async function getPossibleSupplierOrders(db: DB): Promise<(SupplierOrderI
 		`SELECT
              supplier.name as supplier_name,
              supplier_id,
-             SUM(customer_order_lines.quantity) as total_book_number,
-             SUM(customer_order_lines.quantity * book.price) as total_book_price
+             COUNT(*) as total_book_number,
+             SUM(book.price) as total_book_price
          FROM supplier
              JOIN supplier_publisher ON supplier.id =
  supplier_publisher.supplier_id
              JOIN book ON supplier_publisher.publisher = book.publisher
              JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
-         WHERE customer_order_lines.quantity > 0
-             AND customer_order_lines.placed IS NULL
+         WHERE customer_order_lines.placed IS NULL
          GROUP BY supplier.id, supplier.name
          ORDER BY supplier.name ASC;`
 	);
@@ -134,10 +158,10 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
 	// We need to build a query that will yield all books we can order, grouped by supplier
 	const result = await db.execO<SupplierOrderLine>(
 		`SELECT
-			supplier_id, supplier.name as supplier_name,
-			book.isbn, book.title, book.authors, book.publisher,
-			SUM(customer_order_lines.quantity) as quantity, SUM(quantity * book.price) as line_price
-      FROM supplier
+					supplier_id, supplier.name as supplier_name,
+					book.isbn, book.title, book.authors, book.publisher,
+					COUNT(*) as quantity, SUM(book.price) as line_price
+       FROM supplier
         JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
         JOIN book ON supplier_publisher.publisher = book.publisher
         JOIN customer_order_lines ON book.isbn = customer_order_lines.isbn
@@ -161,34 +185,43 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrder[]> {
-	const result = await db.execO<SupplierPlacedOrder>(
-		`
-		SELECT
-     so.id,
-     so.supplier_id,
-     s.name as supplier_name,
-     so.created,
-     COALESCE(SUM(sol.quantity), 0) as total_book_number,
-     json_group_array(
-         json_object(
-             'quantity', sol.quantity,
-             'isbn', sol.isbn,
-             'supplier_order_id', sol.supplier_order_id
-         )
-     ) as line_items
- FROM supplier_order so
- JOIN supplier s ON s.id = so.supplier_id
- LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
- WHERE so.created IS NOT NULL
- GROUP BY so.id, so.supplier_id, s.name, so.created
- ORDER BY so.created DESC; `
+export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrderLine[]> {
+	const result = await db.execO<SupplierPlacedOrderLine>(
+		`SELECT
+             so.id,
+             so.supplier_id,
+             s.name as supplier_name,
+             so.created,
+             COALESCE(SUM(sol.quantity), 0) as total_book_number
+         FROM supplier_order so
+         JOIN supplier s ON s.id = so.supplier_id
+         LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
+         WHERE so.created IS NOT NULL
+         GROUP BY so.id, so.supplier_id, s.name, so.created
+         ORDER BY so.created DESC;`
 	);
 	return result;
 }
 
-// TODO: this will be needed in the missing "placed" supplier order view
-// export async function getPlacedSupplierOrderLines(db: DB, supplier_id: number): Promise<SupplierPlacedOrder[]> {}
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_id: number): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
+	const res = await db.execO<SupplierPlacedOrderLine & BookEntry>(
+		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
+	book.isbn, book.title, book.authors, book.publisher, book.price,
+	so.supplier_id, so.created, s.name as supplier_name,
+	SUM(sol.quantity) OVER () as total_book_number,
+	SUM(book.price * sol.quantity) OVER () as total_price
+	FROM supplier_order_line as sol
+	LEFT JOIN book ON sol.isbn = book.isbn
+	LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+	LEFT JOIN supplier s ON s.id = so.supplier_id
+
+		WHERE sol.supplier_order_id = ?
+		`,
+		[supplier_order_id]
+	);
+
+	return res;
+}
 
 /**
  * TODO: I removed the getSupplierOrder query at the end of this because it seemed unnecessary, and it feels like it should be re-written inline with above structure
@@ -230,7 +263,7 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 			// Find the customer order lines corresponding to this supplier order line
 			const customerOrderLines = await db.execO<any>(
 				// TODO: write tests to check the sorting by order creation
-				`SELECT id, isbn, quantity FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
+				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
 				[orderLine.isbn]
 			);
 

@@ -54,10 +54,7 @@ describe("Customer order tests", () => {
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
 
-		await addBooksToCustomer(db, 1, [
-			{ isbn: "9780000000000", quantity: 1 },
-			{ isbn: "9780000000000", quantity: 1 }
-		]);
+		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
 		books = await getCustomerBooks(db, 1);
 
 		expect(books.length).toBe(2);
@@ -72,16 +69,16 @@ describe("Customer order tests", () => {
 		for (let i = 0; i < howMany; i++) {
 			await db.tx(async (db) => {
 				await addBooksToCustomer(db as DB, 1, [
-					{ isbn: "9780000000000", quantity: 1 },
-					{ isbn: "9780000000001", quantity: 3 },
-					{ isbn: "9780000000002", quantity: 1 },
-					{ isbn: "9780000000003", quantity: 3 },
-					{ isbn: "9780000000004", quantity: 1 },
-					{ isbn: "9780000000005", quantity: 2 },
-					{ isbn: "9780000000006", quantity: 1 },
-					{ isbn: "9780000000007", quantity: 1 },
-					{ isbn: "9780000000008", quantity: 2 },
-					{ isbn: "9780000000009", quantity: 1 }
+					{ isbn: "9780000000000" },
+					{ isbn: "9780000000001" },
+					{ isbn: "9780000000002" },
+					{ isbn: "9780000000003" },
+					{ isbn: "9780000000004" },
+					{ isbn: "9780000000005" },
+					{ isbn: "9780000000006" },
+					{ isbn: "9780000000007" },
+					{ isbn: "9780000000008" },
+					{ isbn: "9780000000009" }
 				]);
 			});
 		}
@@ -94,10 +91,7 @@ describe("Customer order tests", () => {
 	it("can remove books from a customer order", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 
-		await addBooksToCustomer(db, 1, [
-			{ isbn: "9780000000000", quantity: 1 },
-			{ isbn: "9780000000000", quantity: 1 }
-		]);
+		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(2);
 		removeBooksFromCustomer(db, 1, [books[0].id]);
@@ -122,8 +116,7 @@ describe("Customer order tests", () => {
 		await syncDBs(db2, db1);
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
-		expect(db1Customers[1]).toMatchObject(db2Customers[1]);
+		expect(db1Customers).toMatchObject(db2Customers);
 	});
 	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
@@ -132,7 +125,7 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
-		expect(db1Customers[0]).toMatchObject(db2Customers[0]);
+		expect(db1Customers).toMatchObject(db2Customers);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
 });

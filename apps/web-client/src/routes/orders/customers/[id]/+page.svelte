@@ -11,11 +11,11 @@
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 	import type { PageData } from "./$types";
 	import { page } from "$app/stores";
-	import { addBooksToCustomer, upsertCustomer } from "$lib/db/orders/customers";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
 	import { writable } from "svelte/store";
-	import type { CustomerOrderLine } from "$lib/db/orders/types";
+	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 	import type { BookEntry } from "@librocco/db";
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -195,7 +195,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each $lines.data as { isbn, quantity, title, authors, price, placed, received, collected }}
+							{#each $lines.data as { isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -205,7 +205,6 @@
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
-									<td>{quantity}</td>
 									<td>
 										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>
