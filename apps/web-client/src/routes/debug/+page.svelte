@@ -1,14 +1,5 @@
 <script lang="ts">
-	import {
-		BookCopy,
-		Library,
-		PackageMinus,
-		Search,
-		Settings,
-		PersonStanding,
-		Book,
-		Truck
-	} from "lucide-svelte";
+	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
 	import { Plus, RotateCcw } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
 	import { appPath } from "$lib/paths";
@@ -26,8 +17,6 @@
 		href: string;
 		icon: any;
 	}
-
-	const dataStore = {};
 
 	let book;
 	let supplier;
@@ -50,7 +39,7 @@
 		{ label: "Supplier Orders", value: () => supplier_order },
 		{ label: "Supplier Order Lines", value: () => supplier_order_line },
 		{ label: "Customer Supplier Orders", value: () => customer_supplier_order },
-		{ label: "Reconciliation Orders", value: () => reconciliation_order },
+		{ label: "Reconciliation Orders", value: () => reconciliation_order }
 	];
 
 	let links: Link[];
@@ -92,72 +81,6 @@
 		}
 	];
 
-	const populateBooks = async function (db) {
-		console.log("Populating books");
-		for (const book of exampleData.book) {
-			await db.exec(
-				`INSERT INTO book (isbn, title, authors, publisher, price)
-				VALUES (?, ?, ?, ?, ?)
-				ON CONFLICT(isbn) DO UPDATE SET
-					title = COALESCE(?, title),
-					authors = COALESCE(?, authors),
-					publisher = COALESCE(?, publisher),
-					price = COALESCE(?, price);`,
-				[book.isbn, book.title, book.authors, book.publisher, book.price, book.title, book.authors, book.publisher, book.price]
-			);
-			console.log(`Upserted book: ${book.isbn}`);
-		}
-	}
-
-	const populateSuppliers = async function (db) {
-		console.log("Populating suppliers");
-		for (const supplier of exampleData.supplier) {
-			await db.exec(
-				`INSERT INTO supplier (id, name, email, address)
-				VALUES (?, ?, ?, ?)
-				ON CONFLICT(id) DO UPDATE SET
-					name = COALESCE(?, name),
-					email = COALESCE(?, email),
-					address = COALESCE(?, address);`,
-				[
-					supplier.id,
-					supplier.name ?? null,
-					supplier.email ?? null,
-					supplier.address ?? null,
-					supplier.name ?? null,
-					supplier.email ?? null,
-					supplier.address ?? null,
-				]
-			);
-			console.log(`Upserted supplier: ${supplier.name}`);
-		}
-	}
-
-	const populateCustomers = async function (db) {
-		console.log("Populating customers");
-		for (const customer of exampleData.customer) {
-			await db.exec(
-				`INSERT INTO customer (id, fullname, email, deposit)
-				VALUES (?, ?, ?, ?)
-				ON CONFLICT(id) DO UPDATE SET
-				fullname = COALESCE(?, fullname),
-				email = COALESCE(?, email),
-				updatedAt = (strftime('%s', 'now') * 1000),
-				deposit = COALESCE(?, deposit);`,
-				[
-					customer.id,
-					customer.fullname ?? null,
-					customer.email ?? null,
-					customer.deposit ?? null,
-					customer.fullname ?? null,
-					customer.email ?? null,
-					customer.deposit ?? null
-				]
-			);
-			console.log(`Upserted supplier: ${customer.fullname}`);
-		}
-	}
-
 	const populateDatabase = async function () {
 		const db = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
@@ -178,13 +101,15 @@
 			"supplier_order_line",
 			"customer_supplier_order",
 			"reconciliation_order"
-		]
+		];
 		console.log("Resetting database");
 
-		await Promise.all(tables.map(async (table) => {
-			console.log(`Clearing ${table}`);
-			await db.exec(`DELETE FROM ${table}`);
-		}));
+		await Promise.all(
+			tables.map(async (table) => {
+				console.log(`Clearing ${table}`);
+				await db.exec(`DELETE FROM ${table}`);
+			})
+		);
 		await loadData();
 	};
 
@@ -260,7 +185,7 @@
 		</header>
 
 		<main class="h-screen">
-			<div class="mx-auto relative flex h-full flex-col gap-y-10 px-4">
+			<div class="relative mx-auto flex h-full flex-col gap-y-10 px-4">
 				<div class="flex items-center justify-between">
 					<h1 class="prose font-bold">Debug</h1>
 					<div class="gap-2">
@@ -317,7 +242,6 @@
 		border-top-color: #333;
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
-		margin: auto;
 	}
 
 	@keyframes spin {
