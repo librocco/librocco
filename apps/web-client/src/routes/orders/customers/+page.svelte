@@ -15,8 +15,8 @@
 	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
-	import { upsertCustomer } from "$lib/db/orders/customers";
-	import type { Customer } from "$lib/db/orders/types";
+	import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import type { Customer } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
 

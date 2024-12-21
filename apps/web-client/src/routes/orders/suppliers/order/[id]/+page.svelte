@@ -3,7 +3,7 @@
 
 	import { Truck } from "lucide-svelte";
 
-	import { createSupplierOrder } from "$lib/db/orders/suppliers";
+	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
@@ -11,7 +11,7 @@
 
 	export let data: PageData;
 
-	$: ({ placedOrder, lines } = data);
+	$: ({ placedOrder } = data);
 
 	async function handlePrintOrder() {
 		/**@TODO implement print functionality */
@@ -28,26 +28,26 @@
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
-						<h1 class="prose card-title">{placedOrder.id}</h1>
+						<h1 class="prose card-title">{placedOrder[0]?.supplier_order_id}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{placedOrder.supplier_name}</h2>
+							<h2 class="prose">#{placedOrder[0]?.supplier_name}</h2>
 						</div>
 					</div>
 					<dl class="flex flex-col">
 						<div class="stats md:stats-vertical">
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total books</dt>
-								<dd class="stat-value text-2xl">{placedOrder.total_book_number}</dd>
+								<dd class="stat-value text-2xl">{placedOrder[0]?.total_book_number}</dd>
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total value</dt>
-								<dd class="stat-value text-2xl">€{"TBD"}</dd>
+								<dd class="stat-value text-2xl">€{placedOrder[0]?.total_price.toFixed(2)}</dd>
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Last updated</dt>
 								<dd class="stat-value text-2xl">
-									<!-- <time dateTime={placedOrder.created.toISOString()}>{placedOrder.created.toLocaleDateString()}</time> -->
+									<time dateTime={placedOrder[0]?.created.toString()}>{new Date(placedOrder[0]?.created).toLocaleDateString()}</time>
 								</dd>
 							</div>
 						</div>
@@ -72,13 +72,13 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each lines as orderLine}
-							{@const { isbn, title, authors, line_price } = orderLine}
+						{#each placedOrder as orderLine}
+							{@const { isbn, title, authors, price } = orderLine}
 							<tr>
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
-								<td>€{line_price}</td>
+								<td>€{price}</td>
 							</tr>
 						{/each}
 					</tbody>
@@ -88,14 +88,14 @@
 				<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 					<dl class="stats flex">
 						<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-							<div class="stat-title">Selected books:</div>
+							<div class="stat-title">Total books:</div>
 							<div class="stat-value text-lg">
-								{placedOrder.total_book_number}
+								{placedOrder[0]?.total_book_number}
 							</div>
 						</div>
 						<div class="stat flex place-items-center py-2 max-md:px-4">
 							<div class="stat-title sr-only">Total</div>
-							<div class="stat-value text-lg">€ TBD</div>
+							<div class="stat-value text-lg">€ {placedOrder[0]?.total_price.toFixed(2)}</div>
 						</div>
 					</dl>
 

@@ -1,14 +1,17 @@
-import type { SupplierOrderLine } from "$lib/db/orders/types";
 import type { PageLoad } from "./$types";
+import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 
 export const load: PageLoad = async ({ parent, params }) => {
-	const { placedOrders } = await parent();
-	const placedOrder = placedOrders?.find((order) => order.id === parseInt(params.id));
+	const { ordersDb } = await parent();
+	// console.log({ placedOrders });
+	// const placedOrder = placedOrders?.find((order) => order.id === parseInt(params.id));
 
 	/** @TODO if id is not found */
 
-	const lines: SupplierOrderLine[] = JSON.parse(placedOrder.line_items);
-	return { placedOrder, lines };
+	const placedOrder = await getPlacedSupplierOrderLines(ordersDb, parseInt(params.id));
+	console.log({ placedOrder });
+	//
+	return { placedOrder };
 };
 
 export const ssr = false;

@@ -17,7 +17,6 @@
  *   - id: Primary key
  *   - customer_id: References customer
  *   - isbn: Book identifier
- *   - quantity: Number of copies (currently non-editable after creation and will be removed)
  *   - created: Timestamp when line created
  *   - placed: Timestamp when sent to supplier
  *   - received: Timestamp when books arrived
@@ -71,7 +70,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
  */
 export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, customer_id, isbn, quantity, created, placed, received, collected
+		`SELECT customer_order_lines.id, customer_id, isbn, created, placed, received, collected
 		FROM customer_order_lines`
 	);
 
@@ -80,11 +79,11 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, isbn, quantity, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
+		`SELECT customer_order_lines.id, isbn, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
 		FROM customer_order_lines
 		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
 		WHERE customer_id = $customerId
-		GROUP BY customer_order_lines.id, isbn, quantity, created, placed, received, collected
+		GROUP BY customer_order_lines.id, isbn, created, placed, received, collected
 		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
@@ -140,7 +139,7 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
- * @param {BookLine[]} books - Array of books to add, each containing ISBN and quantity
+ * @param {BookLine[]} books - Array of books to add, each containing ISBN
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */
@@ -149,10 +148,10 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 	 * @TODO the customerId is persisted with a decimal point,
 	 * converting it to a string here resulted in the book not getting persisted
 	 */
-	const params = books.map((book) => [customerId, book.isbn, book.quantity]).flat();
+	const params = books.map((book) => [customerId, book.isbn]).flat();
 	const sql = `
-     INSERT INTO customer_order_lines (customer_id, isbn, quantity)
-     VALUES ${multiplyString("(?,?,?)", books.length)};`;
+     INSERT INTO customer_order_lines (customer_id, isbn)
+     VALUES ${multiplyString("(?,?)", books.length)};`;
 
 	await db.exec(sql, params);
 };
@@ -186,7 +185,7 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  * (that has been placed but not received) with the current timestamp as received date.
  *
  * @param {DB} db - The database connection instance
- * @param {SupplierOrderLine[]} supplierOrderLines - Array of supplier order lines that have been received
+ * @param {isbns[]} isbns - Array of supplier order line isbns that have been received
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
  *
  * @remarks
@@ -197,12 +196,12 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  *
  * @example
  * await markCustomerOrderAsReceived(db, [
- *   { isbn: "123456789", quantity: 2 },
- *   { isbn: "987654321", quantity: 1 }
+ *   { isbn: "123456789" },
+ *   { isbn: "987654321" }
  * ]);
  */
 
-export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]) => {
+export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]): Promise<void> => {
 	if (!isbns.length) return;
 	return db.tx(async (txDb) => {
 		const placeholders = multiplyString("?", isbns.length);
