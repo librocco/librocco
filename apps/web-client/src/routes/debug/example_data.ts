@@ -24,11 +24,11 @@ INSERT INTO customer (id, fullname, email, deposit) VALUES
 (2, 'Bob Johnson', 'bob.johnson@example.com', 30.00);
 
 -- Customer Order Lines
-INSERT INTO customer_order_lines (id, customer_id, isbn, quantity, placed, received, collected) VALUES
-(1, 1, '9780590353427', 1, 1, 0, 0),
-(2, 1, '9780439064873', 1, 1, 1, 0),
-(3, 2, '9780385504201', 2, 1, 1, 1),
-(4, 2, '9780553296983', 1, 1, 0, 0);
+INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
+(1, 1, '9780590353427', 1, 0, 0),
+(2, 1, '9780439064873', 1, 1, 0),
+(3, 2, '9780385504201', 1, 1, 1),
+(4, 2, '9780553296983', 1, 0, 0);
 
 -- Supplier Orders
 INSERT INTO supplier_order (id, supplier_id, created) VALUES

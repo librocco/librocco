@@ -6,7 +6,7 @@
 	import { TooltipWrapper } from "$lib/components";
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
-	import { getInitializedDB } from "$lib/db/orders";
+	import { getInitializedDB } from "$lib/db/cr-sqlite";
 
 	import exampleData from "./example_data";
 
@@ -84,7 +84,7 @@
 	const populateDatabase = async function () {
 		const db = await getInitializedDB("librocco-current-db");
 		console.log("Populating database");
-		await db.exec(exampleData);
+		await db.db.exec(exampleData);
 		console.log("Finished populating database.");
 		await loadData();
 	};
@@ -107,7 +107,7 @@
 		await Promise.all(
 			tables.map(async (table) => {
 				console.log(`Clearing ${table}`);
-				await db.exec(`DELETE FROM ${table}`);
+				await db.db.exec(`DELETE FROM ${table}`);
 			})
 		);
 		await loadData();
@@ -120,15 +120,15 @@
 
 		const db = await getInitializedDB("librocco-current-db");
 
-		book = await db.exec("SELECT COUNT(*) from book;");
-		supplier = await db.exec("SELECT COUNT(*) from supplier;");
-		supplier_publisher = await db.exec("SELECT COUNT(*) from supplier_publisher;");
-		customer = await db.exec("SELECT COUNT(*) from customer;");
-		customer_order_lines = await db.exec("SELECT COUNT(*) from customer_order_lines;");
-		supplier_order = await db.exec("SELECT COUNT(*) from supplier_order;");
-		supplier_order_line = await db.exec("SELECT COUNT(*) from supplier_order_line;");
-		customer_supplier_order = await db.exec("SELECT COUNT(*) from customer_supplier_order;");
-		reconciliation_order = await db.exec("SELECT COUNT(*) from reconciliation_order;");
+		book = await db.db.exec("SELECT COUNT(*) from book;");
+		supplier = await db.db.exec("SELECT COUNT(*) from supplier;");
+		supplier_publisher = await db.db.exec("SELECT COUNT(*) from supplier_publisher;");
+		customer = await db.db.exec("SELECT COUNT(*) from customer;");
+		customer_order_lines = await db.db.exec("SELECT COUNT(*) from customer_order_lines;");
+		supplier_order = await db.db.exec("SELECT COUNT(*) from supplier_order;");
+		supplier_order_line = await db.db.exec("SELECT COUNT(*) from supplier_order_line;");
+		customer_supplier_order = await db.db.exec("SELECT COUNT(*) from customer_supplier_order;");
+		reconciliation_order = await db.db.exec("SELECT COUNT(*) from reconciliation_order;");
 
 		isLoading = false;
 	};
