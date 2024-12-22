@@ -50,23 +50,23 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// Init the db
 		const name = get(dbNamePersisted);
-		const { db, status } = await createDB(name);
 
-		// Register plugins
-		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
-		if (status && !IS_E2E) {
-			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
-			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
-			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
-		}
+		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
+		const dbCtx = await getInitializedDB(name);
 
-		return {
-			db,
-			status: true
-		};
+		// TODO: revisit this later - PLUGINS
+		// // Register plugins
+		// // Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
+		// if (status && !IS_E2E) {
+		// 	db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
+		// 	db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
+		// 	db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		// }
+
+		return { dbCtx, status: true };
 	}
 
-	return { status: false, db: null };
+	return { dbCtx: null, status: false };
 };
 export const prerender = true;
 export const trailingSlash = "always";
