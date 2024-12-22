@@ -1,6 +1,6 @@
 import type { Page } from "@playwright/test";
 
-import type { InventoryDatabaseInterface } from "@librocco/db";
+import { DB } from "@vlcn.io/crsqlite-wasm";
 
 /**
  * Returns the database handle from the db interface registered in the window object
@@ -32,6 +32,6 @@ export function getDbHandle(page: Page) {
 			}
 		});
 
-		return w["_db"] as InventoryDatabaseInterface;
+		return w["_db"] as DB;
 	});
 }
