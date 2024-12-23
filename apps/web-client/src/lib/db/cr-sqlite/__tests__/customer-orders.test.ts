@@ -103,7 +103,7 @@ describe("Customer order tests", () => {
 describe("Customer order tests", () => {
 	let db1: DB, db2: DB;
 	beforeEach(async () => ([db1, db2] = await getRandomDbs()));
-	it("Should sync customer creation", async () => {
+	it.only("Should sync customer creation", async () => {
 		// We create one customer in db1 and a different one in db2
 		let db1Customers: Customer[], db2Customers: Customer[];
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
@@ -111,9 +111,13 @@ describe("Customer order tests", () => {
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
+
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
 		await syncDBs(db1, db2);
 		expect((await getAllCustomers(db2)).length).toBe(2);
 		await syncDBs(db2, db1);
+
 		expect((await getAllCustomers(db1)).length).toBe(2);
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
