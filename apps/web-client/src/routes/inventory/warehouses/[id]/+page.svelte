@@ -1,17 +1,17 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { readable, writable } from "svelte/store";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
-	import { debug, testId } from "@librocco/shared";
+	import { testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
-
-	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	import {
 		Page,
@@ -24,50 +24,57 @@
 		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores";
 
 	import { goto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
-	import { getDB } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
-
-	import { createWarehouseStores } from "$lib/stores/proto";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
-	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
-	if (!status) goto(appPath("settings"));
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
-	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+		// Reload when warehouse data changes
+		const disposer1 = rx.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
+		// Reload when some stock changes (note being committed)
+		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: db = data.dbCtx?.db;
+
+	// TODO: revisit when implemented
+	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readable([]);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: warehouse = data.warehouse!;
-
-	const warehouseCtx = new debug.DebugCtxWithTimer(`[WAREHOUSE_ENTRIES::${warehouse?.id}]`, { debug: false, logTimes: false });
-	$: warehouesStores = createWarehouseStores(warehouseCtx, warehouse);
-
-	$: displayName = warehouesStores.displayName;
-	$: entries = warehouesStores.entries;
-	$: csvEntries = warehouesStores.csvEntries;
+	$: id = data.id;
+	$: displayName = data.displayName;
+	$: entries = data.entries;
 
 	// #region csv
-	type CsvEntries = Omit<InventoryTableData, "warehouseId">;
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
@@ -82,24 +89,25 @@
 				{ displayLabel: "Edited by", key: "edited_by" },
 				{ displayLabel: "Out of print", key: "out_of_print" }
 			],
-			filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
+			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
 
-		const gen = generateCsv(csvConfig)<CsvEntries>($csvEntries);
+		const gen = generateCsv(csvConfig)(entries);
 		download(csvConfig)(gen);
 	};
+	const csvEntries = readable([] as any[]);
 
 	// #endregion csv
 
 	// #region warehouse-actions
 	/**
-	 * Handle create warehouse is an `no:click` handler used to create the new warehouse
-	 * _(and navigate to the newly created warehouse page)_.
+	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
+	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateNote = async () => {
-		loading = true;
-		const note = await warehouse.note().create();
-		await goto(appPath("inbound", note.id));
+	const handleCreateNote = () => async () => {
+		const noteId = await getNoteIdSeq(db);
+		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
+		await goto(appPath("inbound", noteId));
 	};
 	// #endregion warehouse-actions
 
@@ -119,8 +127,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
-
+			await upsertBook(db, data);
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -128,9 +135,12 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	// TODO: revisit
+	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	const bookDataExtensionAvailable = readable(false);
 	// #endregion book-form
 
+	// TODO: intersectin observer is currently broken - loads all data at the same time
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
@@ -141,15 +151,13 @@
 
 	// #region table
 	const tableOptions = writable({
-		data: $entries?.slice(0, maxResults)
+		data: entries?.slice(0, maxResults)
 	});
-
 	const table = createTable(tableOptions);
-
-	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
+	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
-	$: breadcrumbs = createBreadcrumbs("warehouse", { id: warehouse?.id, displayName: warehouse?.displayName });
+	$: breadcrumbs = createBreadcrumbs("warehouse", { id, displayName });
 
 	const {
 		elements: { trigger, overlay, content, title, description, close, portalled },
@@ -174,8 +182,8 @@
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex justify-between">
-			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
-			{#if $csvEntries.length}
+			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
+			{#if $csvEntries?.length}
 				<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
 					<span class="aria-hidden"> Export to CSV </span>
 				</button>
@@ -188,7 +196,7 @@
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
-		{:else if !$entries.length}
+		{:else if !entries?.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
 				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
@@ -256,7 +264,7 @@
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $entries?.length > maxResults}
+				{#if entries?.length > maxResults}
 					<div use:scroll.trigger />
 				{/if}
 			</div>
@@ -302,8 +310,9 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+						onFetch={async (_isbn, form) => {
+							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = [];
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 
