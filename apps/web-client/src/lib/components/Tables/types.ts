@@ -28,7 +28,7 @@ export type BookCoreRowData = {
 	title: string;
 	price: number;
 	quantity: number;
-	warehouseId: string;
+	warehouseId: number;
 	warehouseName: string;
 	warehouseDiscount: number;
 	authors?: string;
