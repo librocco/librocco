@@ -2,6 +2,12 @@ import type { PickPartial } from "@librocco/db";
 
 import type { DB, TXAsync, Warehouse } from "./types";
 
+export async function getWarehouseIdSeq(db: DB) {
+	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM warehouse;`;
+	const [result] = await db.execO<{ nextId: number }>(query);
+	return result.nextId;
+}
+
 const getSeqName = async (db: DB | TXAsync) => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM warehouse
@@ -67,4 +73,21 @@ export async function getAllWarehouses(db: DB): Promise<(Warehouse & { totalBook
 		GROUP BY w.id
 	`;
 	return db.execO<Warehouse & { totalBooks: number }>(query);
+}
+
+export async function getWarehouseById(db: DB, id: number) {
+	const query = `
+		SELECT
+			id,
+			display_name AS displayName,
+			discount
+		FROM warehouse
+		WHERE id = ?
+	`;
+	const [result] = await db.execO<Warehouse>(query, [id]);
+	return result;
+}
+
+export function deleteWarehouse(db: DB, id: number) {
+	return db.exec("DELETE FROM warehouse WHERE id = ?", [id]);
 }
