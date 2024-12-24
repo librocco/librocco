@@ -3,7 +3,7 @@ import type { Breadcrumb } from "./types";
 import { appPath } from "$lib/paths";
 
 interface BreadcrumbSegment {
-	id: string;
+	id: string | number;
 	displayName?: string;
 }
 
@@ -24,14 +24,14 @@ export function createBreadcrumbs(
 	switch (type) {
 		case "warehouse": {
 			const [{ id, displayName }] = segments as WarehouseSegments;
-			const label = displayName || id;
+			const label = displayName || `Warehouse - ${id}`;
 			return [{ label: "Warehouses", href: appPath("warehouses") }, { label }];
 		}
 
 		case "inbound": {
 			const [warehouse, note] = segments as InboundSegments;
-			const warehouseLabel = warehouse.displayName || warehouse.id;
-			const noteLabel = note.displayName || note.id;
+			const warehouseLabel = warehouse.displayName || `Warehouse - ${warehouse.id}`;
+			const noteLabel = note.displayName || `Note - ${note.id}`;
 			return [
 				{ label: "Inbound", href: appPath("inbound") },
 				{ label: warehouseLabel, href: appPath("warehouses", warehouse.id) },
@@ -41,13 +41,13 @@ export function createBreadcrumbs(
 
 		case "outbound": {
 			const [{ id, displayName }] = segments as OutboundSegments;
-			const label = displayName || id;
+			const label = displayName || `Note - ${id};`;
 			return [{ label: "Outbound", href: appPath("outbound") }, { label }];
 		}
 
 		case "customers": {
 			const [{ id, displayName }] = segments as OutboundSegments;
-			const label = displayName || id;
+			const label = displayName || `Custoer Order - ${id};`;
 			return [{ label: "Customers", href: appPath("customers") }, { label }];
 		}
 	}

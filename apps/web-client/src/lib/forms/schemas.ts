@@ -3,7 +3,7 @@ import type { Infer } from "sveltekit-superforms";
 
 export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
-	id: z.string(),
+	id: z.number(),
 	name: z.string(),
 	discount: z.number()
 });
