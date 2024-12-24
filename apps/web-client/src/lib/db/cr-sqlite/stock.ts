@@ -10,10 +10,11 @@ type GetStockParams = {
 type GetStockResponseItem = {
 	isbn: string;
 	quantity: number;
-	warehouseId?: number;
-	warehouseName?: string;
-	title?: string;
-	price?: number;
+	warehouseId: number;
+	warehouseName: string;
+	warehouseDiscount: number;
+	title: string;
+	price: number;
 	year?: string;
 	authors?: string;
 	publisher?: string;
@@ -31,9 +32,10 @@ export async function getStock(
 			bt.isbn,
 			SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) AS quantity,
 			bt.warehouse_id AS warehouseId,
-			w.display_name AS warehouseName,
-			b.title,
-			b.price,
+			COALESCE(w.display_name, w.id) AS warehouseName,
+			COALESCE(w.discount, 0) AS warehouseDiscount,
+			COALESCE(b.title, 'N/A'),
+			COALESCE(b.price, 0),
 			b.year,
 			b.authors,
 			b.publisher,
