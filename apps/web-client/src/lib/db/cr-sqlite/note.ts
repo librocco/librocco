@@ -14,6 +14,12 @@ import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 import { getStock } from "./stock";
 
+export async function getNoteIdSeq(db: DB) {
+	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM note;`;
+	const [result] = await db.execO<{ nextId: number }>(query);
+	return result.nextId;
+}
+
 const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note

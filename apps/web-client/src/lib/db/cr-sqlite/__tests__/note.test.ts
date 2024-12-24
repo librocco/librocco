@@ -22,7 +22,8 @@ import {
 	getNoteCustomItems,
 	removeNoteCustomItem,
 	createAndCommitReconciliationNote,
-	getReceiptForNote
+	getReceiptForNote,
+	getNoteIdSeq
 } from "../note";
 import { upsertWarehouse } from "../warehouse";
 import { upsertBook } from "../books";
@@ -1458,5 +1459,24 @@ describe("Reconciliation note", () => {
 
 		// Check the final state
 		expect(await getStock(db)).toEqual([expect.objectContaining({ isbn: "3333333333", quantity: 2, warehouseId: 2 })]);
+	});
+});
+
+describe("Misc note tests", () => {
+	it("returns a note id seq", async () => {
+		const db = await getRandomDb();
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createInboundNote(db, 1, await getNoteIdSeq(db));
+		await createInboundNote(db, 2, await getNoteIdSeq(db));
+		await createOutboundNote(db, await getNoteIdSeq(db));
+
+		expect(await getAllInboundNotes(db)).toEqual([
+			expect.objectContaining({ id: 1, warehouseName: "Warehouse 1" }),
+			expect.objectContaining({ id: 2, warehouseName: "Warehouse 2" })
+		]);
+
+		expect(await getAllOutboundNotes(db)).toEqual([expect.objectContaining({ id: 3 })]);
 	});
 });
