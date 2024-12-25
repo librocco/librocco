@@ -161,6 +161,24 @@ describe("Warehouse tests", () => {
 		]);
 	});
 
+	it("regression: shows warehouse with single open note", async () => {
+		// I've caught a bug where, in case of warehouse having one non-committed note with some transactions,
+		// the warehouse is not shown on the list. This is due to clause:
+		// 'warehouse LEFT JOIN book_transaction (...) LEFT JOIN note (...) WHERE note.committed = 1 OR note.committed IS NULL'
+		// and since all resulting rows were joined with transactions, there was no NULL committed value, yet no committed note/txn would omit the
+		// warehouse from the list.
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1 });
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 })]);
+
+		// Add some non-committed txns (this is where the bug happened)
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 1, warehouseId: 1 });
+
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 })]);
+	});
+
 	it("retrieves a warehouse id seq", async () => {
 		const db = await getRandomDb();
 
