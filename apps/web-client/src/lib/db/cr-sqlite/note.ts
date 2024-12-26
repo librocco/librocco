@@ -515,7 +515,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 
 	return {
 		items: bookEntries.concat(customItems),
-		timestamp: new Date().toISOString()
+		timestamp: Date.now()
 	};
 }
 
