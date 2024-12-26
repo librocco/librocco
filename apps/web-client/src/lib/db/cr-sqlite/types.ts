@@ -131,20 +131,7 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = {
-	isbn: string | null;
-	quantity: number;
-	warehouseId: number;
-	warehouseName: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
+export type NoteEntriesItem = VolumeStock & { warehouseName?: string } & Required<BookData>;
 
 export type ReceiptItem = {
 	isbn?: string; // undefined for custom_item
