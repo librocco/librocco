@@ -444,7 +444,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 		SELECT
 			bt.isbn,
 			bt.quantity,
-			b.title,
+			COALESCE(b.title, ''),
 			b.price,
 			w.discount
 		FROM book_transaction bt
@@ -480,7 +480,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 
 	return {
 		items: bookEntries.concat(customItems),
-		timestamp: new Date().toISOString()
+		timestamp: Date.now()
 	};
 }
 

@@ -140,7 +140,6 @@
 	const bookDataExtensionAvailable = readable(false);
 	// #endregion book-form
 
-	// TODO: intersectin observer is currently broken - loads all data at the same time
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
