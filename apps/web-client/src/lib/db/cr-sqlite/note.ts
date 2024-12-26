@@ -217,7 +217,7 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 }
 
 async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
-	const entries = await getNoteEntries(db, noteId);
+	const entries = (await getNoteEntries(db, noteId)) as Required<NoteEntriesItem>[];
 	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
 
 	const res: OutOfStockTransaction[] = [];
@@ -324,11 +324,15 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
-			w.display_name AS warehouseName,
-			b.title,
-			b.price,
-			b.authors,
-			b.publisher
+			COALESCE(w.display_name, 'N/A') AS warehouseName,
+			COALESCE(b.title, 'N/A') AS title,
+			COALESCE(b.price, 0) AS price,
+			COALESCE(b.year, 'N/A') AS year,
+			COALESCE(b.authors, 'N/A') AS authors,
+			COALESCE(b.publisher, '') AS publisher,
+			COALESCE(b.edited_by, '') AS editedBy,
+			b.out_of_print,
+			COALESCE(b.category, '') AS category
 		FROM book_transaction bt
 		LEFT JOIN book b ON bt.isbn = b.isbn
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
@@ -337,17 +341,27 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 	`;
 
 	const result = await db.execO<{
-		isbn: string | null;
+		isbn: string;
 		quantity: number;
-		warehouseId: number;
-		warehouseName: string;
-		title?: string;
-		price?: number;
-		authors?: string;
-		publisher?: string;
+		warehouseId?: number;
+
+		warehouseName?: string;
+
+		title: string;
+		price: number;
+		year: string;
+		authors: string;
+		publisher: string;
+		editedBy: string;
+		out_of_print: number;
+		category: string;
 	}>(query, [id]);
 
-	return result.map(({ warehouseId, ...res }) => ({ ...res, warehouseId: warehouseId ?? undefined }));
+	return result.map(({ warehouseId, out_of_print, ...res }) => ({
+		...res,
+		warehouseId: warehouseId ?? undefined,
+		outOfPrint: Boolean(out_of_print)
+	}));
 }
 
 export async function updateNoteTxn(
