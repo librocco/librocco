@@ -810,7 +810,7 @@ describe("Outbound note tests", () => {
 				discount: 0
 			}
 		]);
-		expect(receipt.timestamp).toEqual(expect.any(String));
+		expect(receipt.timestamp).toEqual(expect.any(Number));
 	});
 
 	it("reflects total books in a note", async () => {
