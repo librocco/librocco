@@ -64,6 +64,7 @@ CREATE TABLE book (
 	edited_by TEXT,
 	out_of_print INTEGER,
 	category TEXT,
+	updated_at INTEGER,
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
