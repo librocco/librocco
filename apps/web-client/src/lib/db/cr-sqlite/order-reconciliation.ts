@@ -10,7 +10,8 @@ export async function getAllReconciliationOrders(db: DB): Promise<Reconciliation
 
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder> {
 	const result = await db.execO<ReconciliationOrder>(
-		"SELECT id, supplier_order_ids, finalized, customer_order_line_ids, created FROM reconciliation_order WHERE id = ?;",
+		`SELECT id, supplier_order_ids, finalized, customer_order_line_ids, created
+		FROM reconciliation_order WHERE id = ?;`,
 		[id]
 	);
 	if (!result.length) {
@@ -19,12 +20,12 @@ export async function getReconciliationOrder(db: DB, id: number): Promise<Reconc
 	return result[0];
 }
 
-export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]) {
+export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
 	if (!supplierOrderIds.length) {
 		throw new Error("Reconciliation order must be based on at least one supplier order");
 	}
 
-	const recondOrder = await db.execA(
+	const recondOrder = await db.execA<number[]>(
 		`INSERT INTO reconciliation_order (supplier_order_ids) VALUES (json_array(${multiplyString(
 			"?",
 			supplierOrderIds.length
