@@ -9,6 +9,14 @@
 	import Page from "$lib/components/Page.svelte";
 
 	import { view } from "@librocco/shared";
+	import type { PageData } from "./$types";
+	import { addOrderLinesToReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { page } from "$app/stores";
+	import { onDestroy, onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
+
+	// implement order reactivity/sync
+	export let data: PageData;
 	// Mock data for the comparison view
 	const mockSupplierBooks = [
 		{
@@ -57,11 +65,27 @@
 		}
 	];
 
-	const reconciliation = {
-		id: 123,
-		lastUpdated: new Date()
-	};
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
+		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliationOrder:data"));
+		disposer = () => (disposer1(), disposer2());
+	});
+
+	//#endregion reactivity
+
+	onDestroy(async () => {
+		// Unsubscribe on unmount
+		disposer();
+		if (timeout) {
+			clearTimeout(timeout);
+			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+		}
+	});
 	let isbn = "";
 	let books: Array<{
 		isbn: string;
@@ -69,8 +93,10 @@
 		authors: string;
 		price: number;
 		quantity: number;
-	}> = [];
+	}> = data?.mergedBookData || [];
 
+	let timeout = null;
+	let isbns = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
 	// Mock supplier orders data
 	const selectedOrders = [
 		{ id: 1, supplier: "Academic Books Ltd", books: 5 },
@@ -79,18 +105,26 @@
 
 	function handleIsbnSubmit() {
 		if (!isbn) return;
-
-		// Mock adding a book
+		isbns = [...isbns, isbn];
 		books = [
 			{
 				isbn,
-				title: "Sample Book",
-				authors: "Sample Author",
-				price: 19.99,
+				title: "",
+				authors: "",
+				price: 0,
 				quantity: 1
 			},
 			...books
 		];
+
+		//invocation is debounced to 10 seconds from first call
+		if (!timeout) {
+			timeout = setTimeout(async () => {
+				await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+				timeout = null;
+			}, 10000);
+		}
+
 		isbn = "";
 	}
 
@@ -124,12 +158,14 @@
 						<h1 class="prose card-title">Reconcile Deliveries</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{reconciliation.id}</h2>
+							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={reconciliation.lastUpdated.toISOString()}>{reconciliation.lastUpdated.toLocaleDateString()}</time>
+								<!-- <time dateTime={data?.reconciliationOrder.created.toISOString()}
+									>{data?.reconciliationOrder.created.toLocaleDateString()}</time
+								> -->
 							</span>
 						</div>
 					</div>
