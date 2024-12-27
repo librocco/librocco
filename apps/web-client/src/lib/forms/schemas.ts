@@ -52,7 +52,7 @@ export const settingsSchema = z.object({
 
 export type CustomItemFormSchema = Infer<typeof customItemSchema>;
 export const customItemSchema = z.object({
-	id: z.string().optional(),
+	id: z.number().optional(),
 	title: z.string(),
 	price: z.number()
 });

@@ -151,7 +151,9 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = VolumeStock & { warehouseName?: string } & Required<BookData>;
+export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number } & Required<BookData>;
+
+export type NoteCustomItem = { id: number; title: string; price: number };
 
 export type ReceiptItem = {
 	isbn?: string; // undefined for custom_item

@@ -1,30 +1,21 @@
 <script lang="ts">
-	import { filter, map, scan } from "rxjs";
+	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { writable } from "svelte/store";
+	import { writable, readable } from "svelte/store";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { goto } from "$lib/utils/navigation";
-
-	import { NoteState, testId, wrapIter, type VolumeStock } from "@librocco/shared";
-
-	import {
-		OutOfStockError,
-		type BookEntry,
-		type NavEntry,
-		isCustomItemRow,
-		type OutOfStockTransaction,
-		NoWarehouseSelectedError,
-		isBookRow
-	} from "@librocco/db";
+	import { testId } from "@librocco/shared";
+	import { type BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
+	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
 
-	import { getDB } from "$lib/db";
+	import { OutOfStockError, NoWarehouseSelectedError } from "$lib/db/cr-sqlite/errors";
 
 	import {
 		Breadcrumbs,
@@ -51,60 +42,86 @@
 	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
-
-	import { createNoteStores } from "$lib/stores/proto";
+	import { settingsStore } from "$lib/stores";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import CustomItemForm from "$lib/forms/CustomItemForm.svelte";
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
-	import { appPath } from "$lib/paths";
+	import {
+		addVolumesToNote,
+		commitNote,
+		createAndCommitReconciliationNote,
+		deleteNote,
+		getReceiptForNote,
+		removeNoteCustomItem,
+		removeNoteTxn,
+		updateNoteTxn,
+		upsertNoteCustomItem
+	} from "$lib/db/cr-sqlite/note";
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db } = getDB();
-	// if (!status) goto(appPath("settings"));
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
-		?.stream()
-		.warehouseMap(warehouseListCtx)
-		.pipe(map((m) => new Map<string, NavEntry>(wrapIter(m).filter(([warehouseId]) => !warehouseId.includes("0-all")))));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, new Map<string, NavEntry>([]));
+		// Reload when note
+		const disposer1 = rx.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		// Reload when entries (book/custom item) change
+		const disposer2 = rx.onRange(["book_transaction", "custom_item", "warehouse"], () => invalidate("note:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
 
-	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	$: db = data.dbCtx?.db;
 
+	// TODO: revisit when implemented
+	// const publisherListCtx = { name: "[PUBLISHER_LIST::OUTBOUND]", debug: false };
+	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readable([]);
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
-	$: note = data.note;
 
-	$: noteStores = createNoteStores(note);
+	$: noteId = data.id;
+	$: displayName = data.displayName;
+	$: defaultWarehouse = data.defaultWarehouse;
 
-	$: displayName = noteStores.displayName;
-	$: defaultWarehouse = noteStores.defaultWarehouse;
-	$: state = noteStores.state;
-	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
+	$: warehouses = data.warehouses;
+
+	$: updatedAt = data.updatedAt;
+	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
+	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
+	$: entries = bookEntries.concat(customItemEntries);
+
+	// #region infinite-scroll
+	let maxResults = 20;
+	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	const seeMore = () => (maxResults += 20);
+	// We're using in intersection observer to create an infinite scroll effect
+	const scroll = createIntersectionObserver(seeMore);
+	// #endregion infinite-scroll
+
+	// #region table
+	const tableOptions = writable({ data: entries?.slice(0, maxResults) });
+	const table = createTable(tableOptions);
+	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
+	// #endregion table
 
 	// #region note-actions
-	//
-	// When the note is committed or deleted, automatically redirect to 'outbound' page.
-	$: {
-		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(appPath("outbound"));
-		}
-	}
-
-	const openNoWarehouseSelectedDialog = (invalidTransactions: VolumeStock<"book">[]) => {
+	const openNoWarehouseSelectedDialog = (invalidTransactions: VolumeStock[]) => {
 		dialogContent = {
 			type: "no-warehouse-selected",
 			invalidTransactions
@@ -122,7 +139,7 @@
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		try {
-			await note.commit({});
+			await commitNote(db, noteId);
 			closeDialog();
 		} catch (err) {
 			if (err instanceof NoWarehouseSelectedError) {
@@ -135,48 +152,30 @@
 		}
 	};
 
-	const handleReconcileAndCommitSelf = async (closeDialog: () => void) => {
-		await note.reconcile({});
-		await note.commit({});
+	const handleReconcileAndCommitSelf = (invalidTransactions: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
+		await createAndCommitReconciliationNote(db, noteId, invalidTransactions);
+		await commitNote(db, noteId);
 		closeDialog();
 	};
 
-	const handleDeleteSelf = async () => {
-		await note.delete({});
+	const handleDeleteSelf = async (closeDialog: () => void) => {
+		await deleteNote(db, noteId);
+		closeDialog();
 	};
 	// #region note-actions
 
-	// #region infinite-scroll
-	let maxResults = 20;
-	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
-	const seeMore = () => (maxResults += 20);
-	// We're using in intersection observer to create an infinite scroll effect
-	const scroll = createIntersectionObserver(seeMore);
-	// #endregion infinite-scroll
-
-	// #region table
-	const tableOptions = writable<{ data: InventoryTableData[] }>({
-		data: $entries
-			?.slice(0, maxResults)
-			// TEMP: remove this when the db is updated
-			.map((entry) => ({ __kind: "book", ...entry }))
-	});
-
-	const table = createTable(tableOptions);
-
-	$: tableOptions.set({
-		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
-	});
-	// #endregion table
-
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		await note.addVolumes({}, { isbn, quantity: 1 });
+		if (defaultWarehouse) {
+			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
+		} else {
+			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
+		}
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get({}, [isbn]);
+		const localBookData = await getBookData(db, isbn);
 
 		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
 		// no need for further action
@@ -186,19 +185,34 @@
 
 		// If local book data doesn't exist at all, create an isbn-only entry
 		if (!localBookData) {
-			await db.books().upsert({}, [{ isbn }]);
+			await upsertBook(db, { isbn });
 		}
 
-		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		db.plugin("book-fetcher")
-			.fetchBookData(isbn)
-			.stream()
-			.pipe(
-				filter((data) => Boolean(data)),
-				// Here we're prefering the latest result to be able to observe the updates as they come in
-				scan((acc, next) => ({ ...acc, ...next }))
-			)
-			.subscribe((b) => db.books().upsert({}, [b]));
+		// TODO revisit this when we implement book fetching plugin functionality
+		// // At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		// db.plugin("book-fetcher")
+		// 	.fetchBookData(isbn)
+		// 	.stream()
+		// 	.pipe(
+		// 		filter((data) => Boolean(data)),
+		// 		// Here we're prefering the latest result to be able to observe the updates as they come in
+		// 		scan((acc, next) => ({ ...acc, ...next }))
+		// 	)
+		// 	.subscribe((b) => db.books().upsert({}, [b]));
+	};
+
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
+		const data = new FormData(e.currentTarget as HTMLFormElement);
+		// Number form control validation means this string->number conversion should yield a valid result
+		const nextQty = Number(data.get("quantity"));
+
+		const transaction = { isbn, warehouseId };
+
+		if (currentQty == nextQty) {
+			return;
+		}
+
+		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
 	};
 
 	const updateRowWarehouse = async (e: CustomEvent<WarehouseChangeDetail>, data: InventoryTableData<"book">) => {
@@ -212,28 +226,17 @@
 			return;
 		}
 
-		// TODO: error handling
-		await note.updateTransaction({}, transaction, { ...transaction, warehouseId: nextWarehouseId });
+		await updateNoteTxn(db, noteId, { isbn, warehouseId: currentWarehouseId }, { quantity, warehouseId: nextWarehouseId });
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
-		const data = new FormData(e.currentTarget as HTMLFormElement);
-		// Number form control validation means this string->number conversion should yield a valid result
-		const nextQty = Number(data.get("quantity"));
-
-		const transaction = { isbn, warehouseId };
-
-		if (currentQty == nextQty) {
-			return;
+	const deleteRow = (rowIx: number) => async () => {
+		const row = entries[rowIx];
+		if (isBookRow(row)) {
+			const { isbn, warehouseId } = row;
+			await removeNoteTxn(db, noteId, { isbn, warehouseId });
+		} else {
+			await removeNoteCustomItem(db, noteId, row.id);
 		}
-
-		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
-	};
-
-	const deleteRow = async (rowIx: number) => {
-		const row = $table.rows[rowIx];
-		const match = isCustomItemRow(row) ? row.id : row;
-		await note.removeTransactions({}, match);
 	};
 	// #region transaction-actions
 
@@ -241,6 +244,7 @@
 	let bookFormData = null;
 	let customItemFormData = null;
 
+	// TODO
 	/**
 	 * A HOF takes in the row and decides on the appropriate handler to return (for appropriate form):
 	 * - book form
@@ -263,6 +267,7 @@
 			type: "edit-row"
 		};
 	};
+
 	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
 		if (row) {
 			const { key, rowIx, __kind, ...bookData } = row;
@@ -290,8 +295,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
-
+			await upsertBook(db, data);
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -299,7 +303,9 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	// TODO: revisit
+	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	const bookDataExtensionAvailable = readable(false);
 
 	const onCustomItemUpdated: SuperForm<CustomItemFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
@@ -311,18 +317,11 @@
 		 *
 		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
 		 */
-		const data = form?.data as VolumeStock<"custom">;
+		const data = form?.data as NoteCustomItem;
 
 		try {
-			// Check if create or update and dispatch appropriate action
-			//
-			// Presence of id indicates the existing custom item (update action)
-			if (data.id) {
-				await note.updateTransaction({ name: "UPDATE_TXN", debug: false }, data.id, data);
-			} else {
-				await note.addVolumes({}, { __kind: "custom", ...data });
-			}
-
+			const newId = () => Math.trunc(Math.random() * 100_000);
+			await upsertNoteCustomItem(db, noteId, { ...data, id: data.id ?? newId() });
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -331,16 +330,15 @@
 	};
 	// #endregion book-form
 
-	$: breadcrumbs = note?.id ? createBreadcrumbs("outbound", { id: note.id, displayName: $displayName }) : [];
+	$: breadcrumbs = noteId ? createBreadcrumbs("outbound", { id: noteId, displayName }) : [];
 
-	// #region temp
+	// #region printing
 	$: handlePrintReceipt = async () => {
-		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = (book: BookEntry) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
-	// #endregion temp
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -352,8 +350,11 @@
 
 	let dialogContent:
 		| ({ type: "commit" | "delete" | "edit-row" | "custom-item-form" } & DialogContent)
-		| { type: "no-warehouse-selected"; invalidTransactions: VolumeStock<"book">[] }
+		| { type: "no-warehouse-selected"; invalidTransactions: VolumeStock[] }
 		| { type: "reconcile"; invalidTransactions: OutOfStockTransaction[] };
+
+	// TODO: this is a duplicate
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind === "book";
 </script>
 
 <Page view="outbound-note" loaded={!loading}>
@@ -384,12 +385,13 @@
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Note"
-					bind:value={$displayName}
+					value={displayName}
+					on:change={(e) => console.log(e)}
 				/>
 
 				<div class="w-fit">
-					{#if $updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+					{#if updatedAt}
+						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -400,10 +402,11 @@
 						id="defaultWarehouse"
 						name="defaultWarehouse"
 						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
-						bind:value={$defaultWarehouse}
+						value={defaultWarehouse}
+						on:change={(e) => console.log(e)}
 					>
-						{#each $warehouseList as warehouse}
-							<option value={warehouse[0]}>{warehouse[1].displayName}</option>
+						{#each warehouses as warehouse}
+							<option value={warehouse.id}>{warehouse.displayName}</option>
 						{/each}
 					</select>
 				</div>
@@ -413,16 +416,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(note.displayName),
-							description: dialogDescription.commitOutbound($entries.length),
+							title: dialogTitle.commitOutbound(displayName),
+							description: dialogDescription.commitOutbound(entries.length),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(note.displayName),
-							description: dialogDescription.commitOutbound($entries.length),
+							title: dialogTitle.commitOutbound(displayName),
+							description: dialogDescription.commitOutbound(entries.length),
 							type: "commit"
 						};
 					}}
@@ -438,8 +441,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(note.displayName),
-								description: dialogDescription.commitOutbound($entries.length),
+								title: dialogTitle.commitOutbound(displayName),
+								description: dialogDescription.commitOutbound(entries.length),
 								type: "commit"
 							};
 						}}
@@ -463,7 +466,7 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(note.displayName),
+								title: dialogTitle.delete(displayName),
 								description: dialogDescription.deleteNote(),
 								type: "delete"
 							};
@@ -471,7 +474,7 @@
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(note.displayName),
+								title: dialogTitle.delete(displayName),
 								description: dialogDescription.deleteNote(),
 								type: "delete"
 							};
@@ -489,7 +492,7 @@
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
-		{:else if !$entries.length}
+		{:else if !entries.length}
 			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
@@ -499,7 +502,7 @@
 				<div>
 					<OutboundTable
 						{table}
-						warehouseList={$warehouseList}
+						warehouseList={warehouses}
 						on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}
 						on:edit-row-warehouse={({ detail: { event, row } }) => updateRowWarehouse(event, row)}
 					>
@@ -579,7 +582,7 @@
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $entries?.length > maxResults}
+				{#if entries?.length > maxResults}
 					<div use:scroll.trigger />
 				{/if}
 			</div>
@@ -618,7 +621,7 @@
 			{@const { invalidTransactions } = dialogContent}
 
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf}>
+				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf(invalidTransactions)}>
 					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
 					<h3 class="mb-2 mt-4 font-semibold">Please review the following tranasctions:</h3>
@@ -673,8 +676,9 @@
 							onUpdated: onBookFormUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+						onFetch={async (_isbn, form) => {
+							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = [];
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 

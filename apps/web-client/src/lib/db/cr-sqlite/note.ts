@@ -7,7 +7,8 @@ import type {
 	OutboundNoteListItem,
 	OutOfStockTransaction,
 	ReceiptData,
-	ReceiptItem
+	ReceiptItem,
+	NoteCustomItem
 } from "./types";
 
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
@@ -324,7 +325,8 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
-			COALESCE(w.display_name, 'N/A') AS warehouseName,
+			COALESCE(w.display_name, 'not-found') AS warehouseName,
+			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
 			COALESCE(b.price, 0) AS price,
 			COALESCE(b.year, 'N/A') AS year,
@@ -346,6 +348,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		warehouseId?: number;
 
 		warehouseName?: string;
+		warehouseDiscount: number;
 
 		title: string;
 		price: number;
@@ -428,7 +431,7 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
 	});
 }
 
-export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id: number; title: string; price: number }): Promise<void> {
+export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot upsert custom items to a committed note.");
@@ -457,7 +460,7 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id
 	});
 }
 
-export async function getNoteCustomItems(db: DB, noteId: number): Promise<{ id: number; title: string; price: number }[]> {
+export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
 		SELECT id, title, price, updated_at
 		FROM custom_item
