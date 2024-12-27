@@ -1,8 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import { type NavEntry, isBookRow } from "@librocco/db";
-
+	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "../types";
 
 	import type { createTable } from "$lib/actions";
@@ -19,7 +18,7 @@
 	import { createOutboundTableEvents, type OutboundTableEvents } from "./events";
 
 	export let table: ReturnType<typeof createTable<InventoryTableData>>;
-	export let warehouseList: Iterable<[string, NavEntry]>;
+	export let warehouseList: Warehouse[];
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
@@ -29,6 +28,9 @@
 
 	const dispatch = createEventDispatcher<OutboundTableEvents>();
 	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
+
+	// TODO: this is a duplicate
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind === "book";
 </script>
 
 <table id="inventory-table" class="stock-table table-auto" use:tableAction={{ rowCount }}>
@@ -73,21 +75,6 @@
 				<!-- If a book is out of stock in curren warehouse - paint the row red - this also catches books with no warehouse selected, but no stock in any warehouse -->
 				{@const outOfStock = quantityInWarehouse < quantity}
 				<!-- This back and forth is necessary for TS + Svelte to recognise the object as book variant (not custom item) -->
-				{@const coreRowData = {
-					rowIx,
-					isbn,
-					authors,
-					quantity,
-					price,
-					year,
-					title,
-					publisher,
-					warehouseDiscount,
-					warehouseId,
-					warehouseName,
-					availableWarehouses,
-					category
-				}}
 				<!-- Require action takes precedence over out of stock -->
 				<tr
 					class={requiresAction ? "requires-action" : outOfStock ? "out-of-stock" : ""}
@@ -108,7 +95,7 @@
 						<BookPriceCell data={row} />
 					</td>
 					<td data-property="quantity" class="table-cell-fit">
-						<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, coreRowData)} />
+						<BookQuantityFormCell {rowIx} {quantity} on:submit={(event) => editQuantity(event, row)} />
 					</td>
 					<td data-property="publisher" class="show-col-md table-cell-max">
 						{publisher}
@@ -117,7 +104,7 @@
 						{year}
 					</td>
 					<td data-property="warehouseName" class="table-cell-max">
-						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, coreRowData)} data={row} {rowIx} />
+						<WarehouseSelect {warehouseList} on:change={(event) => editWarehouse(event, row)} data={row} {rowIx} />
 					</td>
 					<td data-property="category" class="show-col-md table-cell-max">
 						{category}

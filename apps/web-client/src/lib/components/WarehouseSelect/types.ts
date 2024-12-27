@@ -1,3 +1,3 @@
 export type WarehouseChangeDetail = {
-	warehouseId: string;
+	warehouseId: number;
 };
