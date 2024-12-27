@@ -1,26 +1,43 @@
 import { redirect } from "@sveltejs/kit";
 
-import type { NoteLookupResult, NoteInterface, WarehouseInterface } from "@librocco/db";
-
 import type { PageLoad } from "./$types";
+import type { Warehouse } from "$lib/db/cr-sqlite/types";
+
+import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
+import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
+import type { NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 import { appPath } from "$lib/paths";
 
-export const load: PageLoad = async ({ params, parent }): Promise<Partial<NoteLookupResult<NoteInterface, WarehouseInterface>>> => {
-	// await db init in ../layout.ts
-	const { db } = await parent();
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	const id = Number(params.id);
 
-	// This should re-run on change to path, as far as I understand: https://kit.svelte.dev/docs/load#invalidation
-	const docId = params?.id;
+	depends("note:data");
+	depends("note:books");
+	depends("warehouse:list");
 
-	// If db is not returned (we're not in the browser environment, no need for additional loading)
-	if (!db) {
-		return {};
+	const { dbCtx } = await parent();
+
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
+		return {
+			dbCtx,
+			id,
+			displayName: "N/A",
+			warehouses: [] as Warehouse[],
+			entries: [] as NoteEntriesItem[],
+			customItems: [] as NoteCustomItem[]
+		};
 	}
 
-	const findNoteRes = await db.findNote(docId);
-	if (!findNoteRes) {
-		redirect(307, appPath("outbound"));
+	const note = await getNoteById(dbCtx.db, id);
+	if (!note) {
+		throw redirect(307, appPath("outbound"));
 	}
-	return findNoteRes;
+
+	const warehouses = await getAllWarehouses(dbCtx.db);
+	const entries = await getNoteEntries(dbCtx.db, id);
+	const customItems = await getNoteCustomItems(dbCtx.db, id);
+
+	return { dbCtx, ...note, warehouses, entries, customItems };
 };

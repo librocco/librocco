@@ -1,49 +1,49 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { fade } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
-	import { firstValueFrom, map } from "rxjs";
 
 	import { goto } from "$lib/utils/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { getDB } from "$lib/db";
+	import type { PageData } from "./$types";
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
-	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
+	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
-	const { db, status } = getDB();
+	export let data: PageData;
 
-	const outNoteListCtx = { name: "[OUT_NOTE_LIST]", debug: false };
-	const outNoteListStream = db
-		?.stream()
-		.outNoteList(outNoteListCtx)
-		.pipe(map((m) => [...m].sort(([, a], [, b]) => compareNotes(a, b))));
-	const outNoteList = readableFromStream(outNoteListCtx, outNoteListStream, []);
-
-	let initialized = false;
+	// #region reactivity
+	let disposer: () => void;
 	onMount(() => {
-		if (status) {
-			firstValueFrom(outNoteListStream).then(() => (initialized = true));
-		} else {
-			goto(appPath("settings"));
-		}
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+		// Note (names/list) and book_transaction (note's totalBooks) all affect the list
+		disposer = rx.onRange(["note", "book_transaction"], () => invalidate("outbound:list"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
 	});
 
-	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
-	const handleDeleteNote = (noteId: string) => async (closeDialog: () => void) => {
-		const { note } = await db?.findNote(noteId);
-		await note?.delete({});
+	$: db = data.dbCtx?.db;
+
+	$: notes = data.notes;
+
+	const initialized = true;
+
+	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
+		await deleteNote(db, id);
 		closeDialog();
 	};
 
@@ -52,8 +52,9 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
-		const note = await db.warehouse().note().create();
-		await goto(appPath("outbound", note.id));
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
 	};
 
 	const dialog = createDialog({ forceVisible: true });
@@ -94,7 +95,7 @@
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-				{#if !$outNoteList.length}
+				{#if !notes.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 						<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
@@ -104,11 +105,11 @@
 					<!-- End entity list placeholder -->
 				{:else}
 					<!-- Start entity list -->
-					{#each $outNoteList as [noteId, note]}
-						{@const displayName = note.displayName || noteId}
+					{#each notes as note}
+						{@const displayName = note.displayName || `Note - ${note.id}`}
 						{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
 						{@const totalBooks = note.totalBooks}
-						{@const href = appPath("outbound", noteId)}
+						{@const href = appPath("outbound", note.id)}
 
 						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
@@ -136,7 +137,7 @@
 									aria-label="Delete note: {note.displayName}"
 									on:m-click={() => {
 										dialogContent = {
-											onConfirm: handleDeleteNote(noteId),
+											onConfirm: handleDeleteNote(note.id),
 											title: dialogTitle.delete(note.displayName),
 											description: dialogDescription.deleteNote()
 										};

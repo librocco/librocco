@@ -8,20 +8,21 @@
 	import type { NavEntry } from "@librocco/db";
 
 	import type { WarehouseChangeDetail } from "./types";
+	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	export let data: InventoryTableData<"book">;
 	export let rowIx: number;
-	export let warehouseList: Iterable<[string, NavEntry]> = new Map<string, { displayName: string }>();
+	export let warehouseList: Warehouse[];
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
-	const dispatchChange = (warehouseId: string) => dispatch("change", { warehouseId });
+	const dispatchChange = (warehouseId: number) => dispatch("change", { warehouseId });
 
 	const {
 		elements: { trigger, menu, option, label },
 		states: { selectedLabel, open, selected },
 		helpers: { isSelected }
-	} = createSelect<string>({
+	} = createSelect<number>({
 		forceVisible: true,
 		positioning: {
 			placement: "bottom",
@@ -36,10 +37,10 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string; quantity: number }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
 
-	const mapWarehousesToOptions = (warehouseList: Iterable<[string, NavEntry]>) =>
-		[...warehouseList].map(([value, { displayName }]) => ({ value, label: displayName }));
+	const mapWarehousesToOptions = (warehouseList: Warehouse[]) =>
+		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
