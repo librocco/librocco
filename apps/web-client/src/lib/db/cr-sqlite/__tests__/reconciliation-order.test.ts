@@ -197,9 +197,7 @@ describe("Suppliers order creation", () => {
 	});
 
 	describe("Reconciliation order finalization", () => {
-		let db: DB;
 		beforeEach(async () => {
-			db = await getRandomDb();
 			await createCustomerOrders(db);
 			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 			await createSupplierOrder(db, newSupplierOrderLines);
