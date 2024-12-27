@@ -195,4 +195,33 @@ describe("Suppliers order creation", () => {
 			);
 		});
 	});
+
+	describe("Reconciliation order finalization", () => {
+		let db: DB;
+		beforeEach(async () => {
+			db = await getRandomDb();
+			await createCustomerOrders(db);
+			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+			await createSupplierOrder(db, newSupplierOrderLines);
+
+			// TODO: might be useful to have a way to filter for a few particular ids?
+			// It's only going to be one here...
+		});
+
+		it("fetches reconciliation order", async () => {
+			const supplierOrders = await getPlacedSupplierOrders(db);
+
+			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+			const reconOrderId = await createReconciliationOrder(db, ids);
+
+			await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1"]);
+			expect(await getReconciliationOrder(db, reconOrderId)).toMatchObject({
+				customer_order_line_ids: `["1"]`,
+				finalized: 0,
+				id: 1,
+				supplier_order_ids: "[1]"
+			});
+		});
+	});
 });
