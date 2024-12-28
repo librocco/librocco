@@ -131,22 +131,48 @@ export async function updateNote(db: DB, payload: { id: number; displayName?: st
 type VolumeStock = {
 	isbn: string;
 	quantity: number;
-	warehouseId: number;
+	warehouseId?: number;
 };
 
 export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
 	const [noteId, volume] = params;
-	const { isbn, warehouseId, quantity } = volume;
+
+	const { isbn, quantity, warehouseId } = volume;
+
+	const keys = ["note_id", "isbn", "quantity"];
+	const values = [noteId, isbn, quantity];
+
+	if (warehouseId) {
+		keys.push("warehouse_id");
+		values.push(warehouseId);
+	}
 
 	const insertOrUpdateTxnQuery = `
-		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO book_transaction (${keys.join(", ")})
+		VALUES (${keys.map(() => "?").join(", ")})
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
 			updated_at = (strftime('%s', 'now') * 1000)
 	`;
 
-	await db.exec(insertOrUpdateTxnQuery, [isbn, quantity, warehouseId, noteId]);
+	await db.exec(insertOrUpdateTxnQuery, values);
+}
+
+export type NoteCustomItem = { id: number; title: string; price: number };
+
+export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: number, item: NoteCustomItem]): Promise<void> {
+	const [noteId, item] = params;
+	const { id, title, price } = item;
+
+	const query = `
+		INSERT INTO custom_item(id, note_id, title, price)
+		VALUES(?, ?, ?, ?)
+		ON CONFLICT(id, note_id) DO UPDATE SET
+			title = excluded.title,
+			price = excluded.price
+	`;
+
+	await db.exec(query, [id, noteId, title, price]);
 }
 
 export async function commitNote(db: DB, id: number): Promise<void> {
