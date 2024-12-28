@@ -134,7 +134,7 @@ export async function updateNote(db: DB, payload: { id: number; displayName?: st
 type VolumeStock = {
 	isbn: string;
 	quantity: number;
-	warehouseId: number;
+	warehouseId?: number;
 };
 
 export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
@@ -153,8 +153,8 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 	}
 
 	const insertOrUpdateTxnQuery = `
-		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id)
-		VALUES (?, ?, ?, ?)
+		INSERT INTO book_transaction (${keys.join(", ")})
+		VALUES (${keys.map(() => "?").join(", ")})
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
 			updated_at = excluded.updated_at
