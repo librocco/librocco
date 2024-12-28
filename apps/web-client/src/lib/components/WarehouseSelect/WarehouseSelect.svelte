@@ -47,17 +47,6 @@
 	 */
 	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
 
-	// If there's only one warehouse the book is available in, and the selected warehouse is not that one, change the selected warehouse
-	onMount(() => {
-		if (availableWarehouses.size !== 1) return;
-
-		const availableWarehouse = availableWarehouses.keys().next().value;
-		if (!warehouseId) {
-			// Tick isn't necessary here, but it's much easier when testing
-			tick().then(() => dispatchChange(availableWarehouse));
-		}
-	});
-
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
 	// when committing the note (prompting for reconciliation)

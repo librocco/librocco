@@ -57,6 +57,7 @@
 		commitNote,
 		createAndCommitReconciliationNote,
 		deleteNote,
+		getNoteIdSeq,
 		getReceiptForNote,
 		removeNoteCustomItem,
 		removeNoteTxn,
@@ -153,8 +154,11 @@
 	};
 
 	const handleReconcileAndCommitSelf = (invalidTransactions: OutOfStockTransaction[]) => async (closeDialog: () => void) => {
-		await createAndCommitReconciliationNote(db, noteId, invalidTransactions);
-		await commitNote(db, noteId);
+		await db.tx(async (txDb) => {
+			const id = await getNoteIdSeq(txDb);
+			await createAndCommitReconciliationNote(txDb, id, invalidTransactions);
+			await commitNote(db, noteId);
+		});
 		closeDialog();
 	};
 
