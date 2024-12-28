@@ -1,6 +1,5 @@
 import type {
 	DB,
-	TXAsync,
 	InboundNoteListItem,
 	VolumeStock,
 	NoteEntriesItem,
@@ -21,7 +20,7 @@ export async function getNoteIdSeq(db: DB) {
 	return result.nextId;
 }
 
-const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
+const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
 			WHERE displayName LIKE 'New Note%'
