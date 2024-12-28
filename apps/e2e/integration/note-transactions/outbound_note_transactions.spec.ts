@@ -440,8 +440,8 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2 });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "11111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "22222222", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "11111111", quantity: 2, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "22222222", quantity: 2, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 3);
 
 	// Txn Ok
@@ -501,20 +501,20 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	await dialog.getByText("Stock mismatch").waitFor();
 
 	// Invalid transactions:
-	// "11111111" (Warehouse 2) - required: 3, available: 2
-	await invalidTransctionList.locator("li").nth(0).getByText("11111111 in Warehouse 2").waitFor();
-	await invalidTransctionList.locator("li").nth(0).getByText("requested quantity: 3").waitFor();
-	await invalidTransctionList.locator("li").nth(0).getByText("available: 2").waitFor();
+	// "44444444" (Warehouse 2) - required: 1, available: 0
+	await invalidTransctionList.locator("li").nth(0).getByText("44444444 in Warehouse 2").waitFor();
+	await invalidTransctionList.locator("li").nth(0).getByText("requested quantity: 1").waitFor();
+	await invalidTransctionList.locator("li").nth(0).getByText("available: 0").waitFor();
 	await invalidTransctionList.locator("li").nth(0).getByText("quantity for reconciliation: 1").waitFor();
 	// "33333333" (Warehouse 1) - required: 2, available: 0
 	await invalidTransctionList.locator("li").nth(1).getByText("33333333 in Warehouse 1").waitFor();
 	await invalidTransctionList.locator("li").nth(1).getByText("requested quantity: 2").waitFor();
 	await invalidTransctionList.locator("li").nth(1).getByText("available: 0").waitFor();
 	await invalidTransctionList.locator("li").nth(1).getByText("quantity for reconciliation: 2").waitFor();
-	// "44444444" (Warehouse 2) - required: 1, available: 0
-	await invalidTransctionList.locator("li").nth(2).getByText("44444444 in Warehouse 2").waitFor();
-	await invalidTransctionList.locator("li").nth(2).getByText("requested quantity: 1").waitFor();
-	await invalidTransctionList.locator("li").nth(2).getByText("available: 0").waitFor();
+	// "11111111" (Warehouse 2) - required: 3, available: 2
+	await invalidTransctionList.locator("li").nth(2).getByText("11111111 in Warehouse 2").waitFor();
+	await invalidTransctionList.locator("li").nth(2).getByText("requested quantity: 3").waitFor();
+	await invalidTransctionList.locator("li").nth(2).getByText("available: 2").waitFor();
 	await invalidTransctionList.locator("li").nth(2).getByText("quantity for reconciliation: 1").waitFor();
 	// That's it, no more rows
 	await invalidTransctionList.locator("li").nth(3).waitFor({ state: "detached" });
