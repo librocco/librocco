@@ -247,7 +247,7 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
 			warehouse_id AS warehouseId
 		FROM book_transaction
 		WHERE note_id = ?
-		AND warehouse_id IS NULL
+		AND warehouse_id = 0
 	`;
 
 	return db.execO<{
@@ -302,7 +302,10 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
 		return;
 	}
 
-	const { isbn, warehouseId, quantity } = volume;
+	const { isbn, quantity } = volume;
+	// If note.warehouseId is defined, we're within an inbound note - all txn warehouseIds should be the same as note.warehouseId
+	// If not an inbound note (outbound/reconciliation), read the provided warehouseId, default to 0 (as 0 = 0, and NULL is never equal)
+	const warehouseId = note.warehouseId || volume.warehouseId || 0;
 
 	const insertOrUpdateTxnStmt = `
 		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at)

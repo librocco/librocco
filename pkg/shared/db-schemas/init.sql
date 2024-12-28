@@ -93,7 +93,9 @@ CREATE TABLE reconciliation_order (
 SELECT crsql_as_crr('reconciliation_order');
 
 CREATE TABLE warehouse (
-    id INTEGER NOT NULL,
+	-- 0 id is reserved -- when warehouse id is unassigned (in a book txn for ex.) we're defaulting to 0
+	-- using 0 instead of NULL as 0 = 0 and NULL != NULL
+    id INTEGER NOT NULL CHECK (id <> 0),
     display_name TEXT,
     discount DECIMAL DEFAULT 0,
     PRIMARY KEY (id)
@@ -120,7 +122,7 @@ CREATE TABLE book_transaction (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 0,
 	note_id INTEGER NOT NULL,
-	warehouse_id INTEGER,
+	warehouse_id INTEGER NOT NULL DEFAULT 0,
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	committed_at INTEGER,
 	PRIMARY KEY (isbn, note_id, warehouse_id)
