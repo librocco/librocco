@@ -557,7 +557,7 @@
 									{/if}
 
 									<button
-										on:click={() => deleteRow(rowIx)}
+										on:click={deleteRow(rowIx)}
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
