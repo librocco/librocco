@@ -43,18 +43,7 @@ export function upsertBook(db: DB, book: BookData) {
 }
 
 export async function getBookData(db: DB, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
-	const [res] = await db.execO<{
-		isbn: string;
-		title: string;
-		authors: string;
-		publisher: string;
-		price: number;
-		year: string;
-		editedBy: string;
-		outOfPrint: number;
-		category: string;
-		updatedAt: number;
-	}>(
+	const [res] = await db.execO<RawBookRes>(
 		`SELECT
 				isbn,
 				COALESCE(title, '') as title,
@@ -73,16 +62,59 @@ export async function getBookData(db: DB, isbn: string): Promise<Required<BookDa
 	if (!res) {
 		return undefined;
 	}
-	return {
-		isbn: res.isbn,
-		title: res.title,
-		authors: res.authors,
-		publisher: res.publisher,
-		price: res.price,
-		year: res.year,
-		editedBy: res.editedBy,
-		outOfPrint: Boolean(res.outOfPrint),
-		category: res.category,
-		updatedAt: res.updatedAt ? new Date(res.updatedAt) : null
-	};
+	return processRawBookRes(res);
 }
+
+export async function searchBooks(db: DB, searchString: string): Promise<Required<BookData>[]> {
+	// Encode the search string for this (naive) query
+	const filters = [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`]; // One value for each ?
+
+	const res = await db.execO<RawBookRes>(
+		`
+			SELECT
+				isbn,
+				COALESCE(title, '') as title,
+				COALESCE(authors, '') as authors,
+				COALESCE(publisher, '') as publisher,
+				COALESCE(price, 0) as price,
+				COALESCE(year, '') as year,
+				COALESCE(edited_by, '') as editedBy,
+				COALESCE(out_of_print, 0) as outOfPrint,
+				COALESCE(category, '') as category,
+				updated_at as updatedAt
+			FROM book
+			WHERE isbn LIKE ? OR title LIKE ? OR authors LIKE ?
+			ORDER BY isbn ASC
+		`,
+		filters
+	);
+
+	return res.map(processRawBookRes);
+}
+
+// #region utils
+type RawBookRes = {
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	price: number;
+	year: string;
+	editedBy: string;
+	outOfPrint: number;
+	category: string;
+	updatedAt: number;
+};
+
+const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: Date | null } => ({
+	isbn: res.isbn,
+	title: res.title,
+	authors: res.authors,
+	publisher: res.publisher,
+	price: res.price,
+	year: res.year,
+	editedBy: res.editedBy,
+	outOfPrint: Boolean(res.outOfPrint),
+	category: res.category,
+	updatedAt: res.updatedAt ? new Date(res.updatedAt) : null
+});

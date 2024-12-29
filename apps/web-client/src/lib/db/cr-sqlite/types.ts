@@ -195,6 +195,22 @@ export type PastTransactionItem = {
 
 /* Misc */
 
+export type GetStockResponseItem = {
+	isbn: string;
+	quantity: number;
+	warehouseId: number;
+	warehouseName: string;
+	warehouseDiscount: number;
+	title: string;
+	price: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	category?: string;
+};
+
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
 export type TXAsync = Parameters<Parameters<_DB["tx"]>[0]>[0];
 export type DB = _DB | TXAsync;
