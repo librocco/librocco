@@ -1,38 +1,34 @@
 <script lang="ts">
+	import { writable } from "svelte/store";
 	import { Search } from "lucide-svelte";
-	import { createDropdownMenu } from "@melt-ui/svelte";
 
-	import type { BookEntry, SearchIndex } from "@librocco/db";
+	import type { BookEntry } from "@librocco/db";
 	import { entityListView, testId } from "@librocco/shared";
+
+	import type { BookData } from "$lib/db/cr-sqlite/types";
+	import type { PageData } from "./$types";
+
+	import { HistoryPage, PlaceholderBox } from "$lib/components";
+
+	import { createSearchDropdown } from "./[isbn]/actions";
+
+	import { goto } from "$lib/utils/navigation";
+	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { getDB } from "$lib/db";
+	export let data: PageData;
 
-	import { createSearchStore } from "$lib/stores/proto/search";
-	import { createSearchDropdown } from "./[isbn]/actions";
-	import { goto } from "$lib/utils/navigation";
-	import { browser } from "$app/environment";
-
-	const { db } = getDB();
+	$: db = data.dbCtx?.db;
 
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
 	// #region search
-	//
-	// Create a search index for books in the db. Each time the books change, we recreate the index.
-	// This is more/less inexpensive (around 2sec), considering it runs in the background.
-	let index: SearchIndex | undefined;
-	db?.books()
-		.streamSearchIndex()
-		.subscribe((ix) => (index = ix));
-	$: if (browser) window["_search_index"] = index;
+	const search = writable("");
 
-	$: bookSearch = createSearchStore({ name: "[SEARCH]", debug: false }, index);
-	$: search = bookSearch.searchStore;
-	$: entries = bookSearch.searchResStore;
+	$: entries = [] as BookData[];
+	$: $search.length > 2 ? searchBooks(db, $search).then((res) => (entries = res)) : (entries = []);
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
@@ -71,10 +67,10 @@
 	</svelte:fragment>
 </HistoryPage>
 
-{#if $open && $entries?.length}
+{#if $open && entries?.length}
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
-			{#each $entries as { isbn, title, authors, year, publisher }}
+			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					class="cursor-pointer items-start px-4 py-3"
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
