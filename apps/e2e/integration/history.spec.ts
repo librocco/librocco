@@ -4,6 +4,15 @@ import { BookEntry } from "@librocco/db";
 
 import { baseURL } from "@/constants";
 import { getDashboard, getDbHandle } from "@/helpers";
+import {
+	upsertWarehouse,
+	createInboundNote,
+	createOutboundNote,
+	addVolumesToNote,
+	commitNote,
+	upsertBook,
+	updateNote
+} from "../helpers/cr-sqlite";
 import { getDateStub } from "@/helpers/dateStub";
 
 const books: BookEntry[] = [
@@ -24,22 +33,12 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.view("stock").waitFor();
 
 	// Create two warehouses to work with
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh2")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 2"))
-	);
-	await dbHandle.evaluateHandle((db) => db.warehouse("wh2").setDiscount({}, 10));
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2", discount: 10 });
 
 	// Add book data to db as we'll be needing some book data (for testing of stats and such)
-	await dbHandle.evaluateHandle((db, books) => db.books().upsert({}, books), books);
+	await dbHandle.evaluate(upsertBook, books[0]);
+	await dbHandle.evaluate(upsertBook, books[1]);
 });
 
 test("history/date - display", async ({ page }) => {
@@ -52,15 +51,10 @@ test("history/date - display", async ({ page }) => {
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
 
 	// Add some transactions today (by way of inbound notes)
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	//  Stats should reflect the changes
 	const stats = dashboard.content().historyStats();
@@ -85,15 +79,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some txns to a different warehouse should be reflected in results (stats/table)
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh2")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 2"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	// Note: Warehouse 2 has a 10% discount
 	await stats.assert({
@@ -118,15 +106,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding additional transactions to the first warehouse should not aggregate the txns
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -151,17 +133,11 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some outbound transactions should be reflected in the stats
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 4"))
-			.then((n) =>
-				n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh2" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" })
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 4);
+	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -193,15 +169,9 @@ test("history/date - display", async ({ page }) => {
 
 	// Adding an unknown book should not break the stats (the price for the given book should be omitted)
 	// The book should be displayed with default values
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 5"))
-			.then((n) => n.addVolumes({}, { isbn: "3333333333", quantity: 2 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
+	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "3333333333", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 5);
 
 	await stats.assert({
 		// 2 + 1 + 3 + 2 = 6 books in inbound notes
@@ -260,15 +230,10 @@ test("history/date - general navigation", async ({ page }) => {
 	await dashboard.content().navigate("history/date");
 
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	await dashboard.content().table("history/date").row(0).field("noteName").click();
 
@@ -296,49 +261,27 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dateStub.mock(twoDaysAgo);
 
 	// Add one inbound note
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note("note-1")
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 3 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 	// ...and one outbound note
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note("note-2")
-			.create()
-			.then((n) => n.setName({}, "Note 2"))
-			.then((n) =>
-				n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh1" })
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 2);
+	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	// Reset the date and add some transactions today
 	await dateStub.reset();
 
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note("note-3")
-			.create()
-			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }))
-			.then((n) => n.commit({}))
-	);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note("note-4")
-			.create()
-			.then((n) => n.setName({}, "Note 4"))
-			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 1, warehouseId: "wh1" }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+	await dbHandle.evaluate(createOutboundNote, 4);
+	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
 
 	// Navigate to history/date page for assertions
 	await dashboard.navigate("history/date");
@@ -435,22 +378,13 @@ test("history/isbn - search results", async ({ page }) => {
 	// Searching for a book that exists in two warehouses should display only one result
 	//
 	// Add the same book in two warehouses
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh2")
-			.note()
-			.create()
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	// Check search results
 	await search.type("Book 1");
@@ -519,18 +453,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	await dashboard.content().header().getByText("2021").waitFor();
 
 	// Add some trasnactions
-	const txn2Date = await dbHandle
-		.evaluateHandle((db) =>
-			db
-				.warehouse("wh1")
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Note 1"))
-				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
-				.then((n) => n.commit({}))
-		)
-		// Return the (close) timestamp of the update
-		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+	const txn2Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Stock should be updated
 	await dashboard
@@ -548,18 +474,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	const dateStub = await getDateStub(page);
 	dateStub.mock(new Date(Date.now() - 2 * TIME_DAY));
 
-	const txn1Date = await dbHandle
-		.evaluateHandle((db) =>
-			db
-				.warehouse("wh1")
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Note -1"))
-				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }))
-				.then((n) => n.commit({}))
-		)
-		// Return the (close) timestamp of the update
-		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note -1" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
+	const txn1Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -579,18 +497,11 @@ test("history/isbn - transaction display", async ({ page }) => {
 	//
 	// Reset the date
 	await dateStub.reset();
-	const txn3Date = await dbHandle
-		.evaluateHandle((db) =>
-			db
-				.warehouse("wh2")
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Note 2"))
-				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
-				.then((n) => n.commit({}))
-		)
-		// Return the (close) timestamp of the update
-		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+	const txn3Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -615,20 +526,12 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// We're stubbing the date to be 2mins into the future (to ensure the txn ordering)
 	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
 
-	const txn4Date = await dbHandle
-		.evaluateHandle((db) =>
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Note 3"))
-				.then((n) =>
-					n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "1111111111", quantity: 1, warehouseId: "wh2" })
-				)
-				.then((n) => n.commit({}))
-		)
-		// Return the (close) timestamp of the update
-		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+	await dbHandle.evaluate(createOutboundNote, 4);
+	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 3" });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
+	const txn4Date = await dbHandle.evaluate(async () => new Date().toISOString().slice(0, 10));
 
 	await dashboard
 		.content()
@@ -665,18 +568,9 @@ test("history/isbn - navigation", async ({ page }) => {
 	await dashboard.content().header().title().assert("1111111111");
 
 	// Add some trasnactions
-	await dbHandle
-		.evaluateHandle((db) =>
-			db
-				.warehouse("wh1")
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Note 1"))
-				.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
-				.then((n) => n.commit({}))
-		)
-		// Return the (close) timestamp of the update
-		.then((h) => h.evaluate(() => new Date().toISOString().slice(0, 10)));
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	// Clickiong on the note name should redirect to the (committed) note page
 	await dashboard.content().table("history/isbn").row(0).field("noteName").click();
@@ -709,15 +603,10 @@ test("history/notes - date display", async ({ page }) => {
 	await dashboard.content().navigate("history/notes");
 
 	// Add some notes to work with
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }, { isbn: "2222222222", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	// Should display the note (including price data)
 	await dashboard
@@ -734,15 +623,10 @@ test("history/notes - date display", async ({ page }) => {
 	// Add an outbound note on the same day
 	// Stub the date to ensure ordering
 	await dateStub.mock(new Date(Date.now() + TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 2"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 2);
+	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 	await dashboard
 		.content()
 		.entityList("history/notes")
@@ -761,15 +645,9 @@ test("history/notes - date display", async ({ page }) => {
 
 	// Add a note to a different warehouse (on the same day)
 	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh2")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({}, { isbn: "2222222222", quantity: 3 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 3" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "2222222222", quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
 	await dashboard
 		.content()
 		.entityList("history/notes")
@@ -793,17 +671,11 @@ test("history/notes - date display", async ({ page }) => {
 
 	// Add an outbound note, containing transactions from both warehouses (discount applied only to part of txns)
 	await dateStub.mock(new Date(Date.now() + 3 * TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 4"))
-			.then((n) =>
-				n.addVolumes({}, { isbn: "1111111111", quantity: 1, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 1, warehouseId: "wh2" })
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 4);
+	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
 	await dashboard
 		.content()
 		.entityList("history/notes")
@@ -833,25 +705,15 @@ test("history/notes - date display", async ({ page }) => {
 	// Add two notes on a different date
 	const twoDaysAgo = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
 	await dateStub.mock(twoDaysAgo);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Past Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Past Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 5);
+
 	await dateStub.mock(new Date(new Date(twoDaysAgo).getTime() + TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Past Note 2"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3, warehouseId: "wh1" }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 6);
+	await dbHandle.evaluate(updateNote, { id: 6, displayName: "Past Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 6);
 
 	// The list hadn't changed (we're observing today)
 	await dashboard
@@ -945,93 +807,53 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	// Two days ago
 	const t_minus_2 = new Date(Date.now() - 2 * TIME_DAY).toISOString().slice(0, 10);
 	await dateStub.mock(t_minus_2);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+
 	await dateStub.mock(new Date(new Date(t_minus_2).getTime() + TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 2"))
-			.then((n) =>
-				n.addVolumes({}, { isbn: "1111111111", quantity: 3, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 3, warehouseId: "wh1" })
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 2);
+	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	// Yesterday
 	const t_minus_1 = new Date(Date.now() - TIME_DAY).toISOString().slice(0, 10);
 	await dateStub.mock(t_minus_1);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 3"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 3 }, { isbn: "2222222222", quantity: 3 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "2222222222", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 3);
+
 	await dateStub.mock(new Date(new Date(t_minus_1).getTime() + TIME_MIN));
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 4"))
-			.then((n) =>
-				n.addVolumes({}, { isbn: "1111111111", quantity: 2, warehouseId: "wh1" }, { isbn: "2222222222", quantity: 2, warehouseId: "wh1" })
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createOutboundNote, 4);
+	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 4);
 
 	// Today
 	await dateStub.reset();
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 5"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 1 }, { isbn: "2222222222", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
+	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 5);
 	await dateStub.mock(new Date(Date.now() + TIME_MIN));
 	// Note: This is an intruder (Warehouse 2) - this should not be shown in Warehouse 1 view
 	//
 	// No transactions should be shown
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh2")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 6"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 5 }, { isbn: "2222222222", quantity: 5 }))
-			.then((n) => n.commit({}))
-	);
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 7"))
-			.then((n) =>
-				n.addVolumes(
-					{},
-					{ isbn: "1111111111", quantity: 1, warehouseId: "wh1" },
-					// Note: This transaction is an intruder (wh2) - it shouldn't be shown
-					{ isbn: "2222222222", quantity: 3, warehouseId: "wh2" }
-				)
-			)
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 6, warehouseId: 2, displayName: "Note 6" });
+	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "1111111111", quantity: 5, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "2222222222", quantity: 5, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 6);
+
+	await dbHandle.evaluate(createOutboundNote, 7);
+	await dbHandle.evaluate(updateNote, { id: 7, displayName: "Note 7" });
+	await dbHandle.evaluate(addVolumesToNote, [7, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [7, { isbn: "2222222222", quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 7);
 
 	// Navigate to (default) history view
 	await dashboard.navigate("history/date");
@@ -1180,15 +1002,9 @@ test("history/warehose - navigation", async ({ page }) => {
 	await dashboard.content().header().title().assert("Warehouse 1 history");
 
 	// Add a transaction
-	await dbHandle.evaluateHandle((db) =>
-		db
-			.warehouse("wh1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1111111111", quantity: 2 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	// Clicking on note name should navigate to note page
 	await dashboard.content().table("history/warehouse").row(0).field("noteName").click();
