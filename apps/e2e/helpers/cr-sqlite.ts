@@ -134,7 +134,7 @@ type VolumeStock = {
 	warehouseId?: number;
 };
 
-export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
+export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: Required<VolumeStock>]): Promise<void> {
 	const [noteId, volume] = params;
 
 	const { isbn, quantity, warehouseId } = volume;
