@@ -182,7 +182,7 @@ export type PastNoteItem = {
 export type PastTransactionItem = {
 	isbn: string;
 	title?: string;
-	author?: string;
+	authors?: string;
 	quantity: number;
 	price: number;
 	committedAt: Date;

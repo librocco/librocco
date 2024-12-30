@@ -77,7 +77,7 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
         SELECT
             bt.isbn,
             b.title,
-            b.authors AS author,
+            b.authors,
             bt.quantity,
             b.price,
             n.committed_at,
