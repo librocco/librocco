@@ -176,6 +176,7 @@ export type PastNoteItem = {
 	warehouseName: string;
 	totalCoverPrice: number;
 	totalDiscountedPrice: number;
+	committedAt: Date;
 };
 
 export type PastTransactionItem = {
