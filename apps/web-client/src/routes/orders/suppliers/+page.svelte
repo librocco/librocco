@@ -13,6 +13,7 @@
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import type { LayoutData } from "./$types";
+	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 
 	export let data: LayoutData;
 
@@ -27,9 +28,16 @@
 		supplierOrderFilterStatus.set(status);
 	}
 
-	function handleReconcile(event: CustomEvent<{ supplierIds: number[] }>) {
-		console.log("Reconciling orders:", event.detail.supplierIds);
+	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
+		console.log("Reconciling orders:", event.detail.supplierOrderIds);
 		// TODO: Implement reconciliation logic
+		if (!data || !data?.ordersDb) {
+			console.error("Database connection not available");
+			return;
+		}
+
+		const id = await createReconciliationOrder(data.ordersDb, event.detail.supplierOrderIds);
+		goto(`${base}/orders/suppliers/reconcile/${id.toString()}`);
 	}
 </script>
 
