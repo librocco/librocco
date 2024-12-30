@@ -1,27 +1,28 @@
 <script lang="ts">
-	import { ArrowLeft, ArrowRight, FileCheck } from "lucide-svelte";
+	import { ArrowLeft, ArrowRight } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
+	import { download, generateCsv, mkConfig } from "export-to-csv";
+	import { browser } from "$app/environment";
 
 	import { entityListView, testId } from "@librocco/shared";
 
+	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
+
 	import { goto } from "$lib/utils/navigation";
-	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";
 
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
 
-	import { createWarehouseHistoryStores } from "$lib/stores/inventory/history_entries";
-
-	import { getDB } from "$lib/db";
+	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { generateUpdatedAtString } from "$lib/utils/time";
-	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
-	import { download, generateCsv, mkConfig } from "export-to-csv";
-	import type { DisplayRow } from "$lib/types/inventory";
 
 	export let data: PageData;
+
+	$: displayName = data.displayName;
+	$: transactions = data.transactions;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -70,7 +71,6 @@
 	// #endregion dropdown
 
 	// #region csv
-	type CsvEntries = Omit<DisplayRow<"book">, "warehouseId" | "availableWarehouses">;
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
@@ -85,28 +85,21 @@
 				{ displayLabel: "Edited by", key: "edited_by" },
 				{ displayLabel: "Out of print", key: "out_of_print" }
 			],
-			filename: `${$displayName.replace(" ", "-")}-${Date.now()}`
+			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
 
-		const gen = generateCsv(csvConfig)<CsvEntries>(
-			$transactions.map((txn) => ({ ...txn, quantity: txn.noteType === "outbound" ? -txn.quantity : txn.quantity }))
+		const gen = generateCsv(csvConfig)<Omit<PastTransactionItem, "committedAt">>(
+			transactions.map((txn) => ({ ...txn, quantity: txn.noteType === "outbound" ? -txn.quantity : txn.quantity }))
 		);
 		download(csvConfig)(gen);
 	};
 	// #endregion csv
-
-	const { db } = getDB();
-
-	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
-	$: historyStores = createWarehouseHistoryStores(dailySummaryCtx, db, data.warehouseId, data.from.dateValue, data.to.dateValue, filter);
-	$: transactions = historyStores.transactions;
-	$: displayName = historyStores.displayName;
 </script>
 
 <HistoryPage view="history/date">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
-			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{$displayName || ""} history</h1>
+			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{displayName || ""} history</h1>
 
 			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3">Export CSV</button>
 
@@ -149,7 +142,7 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-			{#if !$transactions?.length}
+			{#if !transactions?.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox
 					title="No transactions found"
@@ -162,10 +155,10 @@
 					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
 				</div>
 				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
-					{#each $transactions as txn}
+					{#each transactions as txn}
 						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-gray-800">
 							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
-								{generateUpdatedAtString(txn.date)}
+								{generateUpdatedAtString(txn.committedAt)}
 							</p>
 
 							<div class="col-span-8 grid items-center gap-x-4 md:grid-cols-1 lg:col-span-7 lg:grid-cols-7 xl:col-span-8 xl:grid-cols-8">
@@ -192,7 +185,7 @@
 									</div>
 								{/if}
 
-								<p data-property="noteName">{txn.noteDisplayName}</p>
+								<p data-property="noteName">{txn.noteName}</p>
 							</a>
 						</li>
 					{/each}
