@@ -1,4 +1,5 @@
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
+import type { BookEntry } from "@librocco/db";
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrderLine } from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -34,7 +35,7 @@ export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
  * Updates an existing supplier or inserts a new one if it doesn't exist.
  *
  * @param db - The database instance to query
- * @param supplier - The supplier data to upsert
+ * @param supplier - The supplier data1 to upsert
  * @throws {Error} If supplier.id is not provided
  */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
@@ -184,8 +185,8 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrder[]> {
-	const result = await db.execO<SupplierPlacedOrder>(
+export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrderLine[]> {
+	const result = await db.execO<SupplierPlacedOrderLine>(
 		`SELECT
              so.id,
              so.supplier_id,
@@ -202,8 +203,25 @@ export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrd
 	return result;
 }
 
-// TODO: this will be needed in the missing "placed" supplier order view
-// export async function getPlacedSupplierOrderLines(db: DB, supplier_id: number): Promise<SupplierPlacedOrder[]> {}
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_id: number): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
+	const res = await db.execO<SupplierPlacedOrderLine & BookEntry>(
+		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
+	book.isbn, book.title, book.authors, book.publisher, book.price,
+	so.supplier_id, so.created, s.name as supplier_name,
+	SUM(sol.quantity) OVER () as total_book_number,
+	SUM(book.price * sol.quantity) OVER () as total_price
+	FROM supplier_order_line as sol
+	LEFT JOIN book ON sol.isbn = book.isbn
+	LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+	LEFT JOIN supplier s ON s.id = so.supplier_id
+
+		WHERE sol.supplier_order_id = ?
+		`,
+		[supplier_order_id]
+	);
+
+	return res;
+}
 
 /**
  * TODO: I removed the getSupplierOrder query at the end of this because it seemed unnecessary, and it feels like it should be re-written inline with above structure
