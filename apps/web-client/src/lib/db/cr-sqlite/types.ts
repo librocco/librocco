@@ -108,6 +108,13 @@ export type InboundNoteListItem = {
 	totalBooks: number;
 };
 
+export type OutboundNoteListItem = {
+	id: number;
+	displayName: string;
+	updatedAt: Date;
+	totalBooks: number;
+};
+
 export type VolumeStock = {
 	isbn: string;
 	quantity: number;
