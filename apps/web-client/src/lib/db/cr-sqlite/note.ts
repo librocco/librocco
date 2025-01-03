@@ -45,20 +45,22 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 };
 
 export function createInboundNote(db: DB, warehouseId: number, noteId: number): Promise<void> {
-	const stmt = "INSERT INTO note (id, display_name, warehouse_id) VALUES (?, ?, ?)";
+	const timestamp = Date.now();
+	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at) VALUES (?, ?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "inbound");
-		await txDb.exec(stmt, [noteId, displayName, warehouseId]);
+		await txDb.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
 	});
 }
 
 export function createOutboundNote(db: DB, noteId: number): Promise<void> {
-	const stmt = "INSERT INTO note (id, display_name) VALUES (?, ?)";
+	const timestamp = Date.now();
+	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
 
 	return db.tx(async (txDb) => {
 		const displayName = await getSeqName(txDb, "outbound");
-		await txDb.exec(stmt, [noteId, displayName]);
+		await txDb.exec(stmt, [noteId, displayName, timestamp]);
 	});
 }
 
@@ -199,7 +201,9 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 		return;
 	}
 
-	updateFields.push("updated_at = (strftime('%s', 'now') * 1000)");
+	const timestamp = Date.now();
+	updateFields.push("updated_at = ?");
+	updateValues.push(timestamp);
 
 	const updateQuery = `
 		UPDATE note
@@ -301,15 +305,19 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
 	// If not an inbound note (outbound/reconciliation), read the provided warehouseId, default to 0 (as 0 = 0, and NULL is never equal)
 	const warehouseId = note.warehouseId || volume.warehouseId || 0;
 
-	const insertOrUpdateTxnQuery = `
-		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id)
-		VALUES (?, ?, ?, ?)
+	const insertOrUpdateTxnStmt = `
+		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at)
+		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = (strftime('%s', 'now') * 1000)
+			updated_at = excluded.updated_at
 	`;
 
-	await db.exec(insertOrUpdateTxnQuery, [isbn, quantity, warehouseId, noteId]);
+	await db.tx(async (txDb) => {
+		const timestamp = Date.now();
+		await txDb.exec(insertOrUpdateTxnStmt, [isbn, quantity, warehouseId, noteId, timestamp]);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
+	});
 }
 
 export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
@@ -386,19 +394,27 @@ export async function updateNoteTxn(
 		return;
 	}
 
+	// We're deleting the existing txn and placing the new one instead of it
+	// in case of mere update, we're keeping the original `updated_at`
 	const { updated_at } = existingTxn;
+	// In case of merging transactions, we're setting the `updated_at` to current timestamp: bubbling the
+	// merged txn to the top of the list
+	const timestamp = Date.now();
 
-	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, currWarehouseId, noteId]);
-	await db.exec(
-		`
-		INSERT INTO book_transaction (isbn, note_id, warehouse_id, quantity, updated_at)
-		VALUES (?, ?, ?, ?, ?)
-		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
-			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = (strftime('%s', 'now') * 1000)
+	await db.tx(async (txDb) => {
+		await txDb.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, currWarehouseId, noteId]);
+		await txDb.exec(
+			`
+			INSERT INTO book_transaction (isbn, note_id, warehouse_id, quantity, updated_at)
+			VALUES (?, ?, ?, ?, ?)
+			ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
+				quantity = book_transaction.quantity + excluded.quantity,
+				updated_at = ?
 		`,
-		[isbn, noteId, nextWarehouseId, nextQuantity, updated_at]
-	);
+			[isbn, noteId, nextWarehouseId, nextQuantity, updated_at, timestamp]
+		);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
+	});
 }
 
 export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: string; warehouseId: number }): Promise<void> {
@@ -410,7 +426,10 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
 
 	const { isbn, warehouseId } = match;
 
-	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, warehouseId, noteId]);
+	await db.tx(async (txDb) => {
+		await txDb.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, warehouseId, noteId]);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [Date.now(), noteId]);
+	});
 }
 
 export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
@@ -422,25 +441,37 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: Note
 
 	const { id, title, price } = payload;
 
+	const timestamp = Date.now();
+
+	// In case of conflict (update) we're keeping the initial 'updated_at' (to keep consistent display order)
+	// NOTE: naming this `created_at` would have worked better in this case, but we're using `updated_at` to keep consistent with
+	// book transactions ordering field
 	const query = `
-		INSERT INTO custom_item(id, note_id, title, price)
-		VALUES(?, ?, ?, ?)
+		INSERT INTO custom_item(id, note_id, title, price, updated_at)
+		VALUES(?, ?, ?, ?, ?)
 		ON CONFLICT(id, note_id) DO UPDATE SET
 			title = excluded.title,
-			price = excluded.price
+			price = excluded.price,
+			updated_at = custom_item.updated_at
 	`;
 
-	await db.exec(query, [id, noteId, title, price]);
+	await db.tx(async (txDb) => {
+		await txDb.exec(query, [id, noteId, title, price, timestamp]);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
+	});
 }
 
-export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
+export async function getNoteCustomItems(db: DB, noteId: number): Promise<(NoteCustomItem & { updatedAt: Date })[]> {
 	const query = `
-		SELECT id, title, price
+		SELECT id, title, price, updated_at
 		FROM custom_item
 		WHERE note_id = ?
+		ORDER BY updated_at DESC
 	`;
 
-	return db.execO(query, [noteId]);
+	const res = await db.execO<{ id: number; title: string; price: number; updated_at: number }>(query, [noteId]);
+
+	return res.map(({ updated_at, ...item }) => ({ ...item, updatedAt: new Date(updated_at) }));
 }
 
 export async function removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
@@ -450,7 +481,10 @@ export async function removeNoteCustomItem(db: DB, noteId: number, itemId: numbe
 		return;
 	}
 
-	await db.exec("DELETE FROM custom_item WHERE id = ? AND note_id = ?", [itemId, noteId]);
+	await db.tx(async (txDb) => {
+		await txDb.exec("DELETE FROM custom_item WHERE id = ? AND note_id = ?", [itemId, noteId]);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [Date.now(), noteId]);
+	});
 }
 
 export async function getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
@@ -463,7 +497,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 		SELECT
 			bt.isbn,
 			bt.quantity,
-			COALESCE(b.title, ''),
+			COALESCE(b.title, '') AS title,
 			b.price,
 			w.discount
 		FROM book_transaction bt

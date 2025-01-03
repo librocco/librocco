@@ -139,8 +139,10 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 
 	const { isbn, quantity, warehouseId } = volume;
 
-	const keys = ["note_id", "isbn", "quantity"];
-	const values = [noteId, isbn, quantity];
+	const timestamp = Date.now();
+
+	const keys = ["note_id", "isbn", "quantity", "updated_at"];
+	const values = [noteId, isbn, quantity, timestamp];
 
 	if (warehouseId) {
 		keys.push("warehouse_id");
@@ -152,10 +154,13 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 		VALUES (${keys.map(() => "?").join(", ")})
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = (strftime('%s', 'now') * 1000)
+			updated_at = excluded.updated_at
 	`;
 
-	await db.exec(insertOrUpdateTxnQuery, values);
+	await db.tx(async (txDb) => {
+		await txDb.exec(insertOrUpdateTxnQuery, values);
+		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
+	});
 }
 
 export type NoteCustomItem = { id: number; title: string; price: number };

@@ -18,6 +18,7 @@
 		"story:dev": "storybook dev",
 		"story:preview": "storybook preview",
 		"test": "vitest --ui",
+		"test:temp": "vitest --ui note",
 		"test:ci": "npx playwright install --with-deps && vitest --",
 		"typecheck": "svelte-check --tsconfig ./tsconfig.json --threshold error",
 		"typesafe-i18n": "typesafe-i18n",
