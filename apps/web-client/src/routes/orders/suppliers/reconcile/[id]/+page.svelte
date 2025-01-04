@@ -7,69 +7,24 @@
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
 	import Page from "$lib/components/Page.svelte";
-
-	import { view } from "@librocco/shared";
 	import type { PageData } from "./$types";
 	import { addOrderLinesToReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
+	import { processOrderDelivery } from "$lib/utils/misc";
+	import { bookData } from "$lib/stores/book-data";
 
 	// implement order reactivity/sync
 	export let data: PageData;
-	// Mock data for the comparison view
-	const mockSupplierBooks = [
-		{
-			supplier_name: "Academic Books Ltd",
-			supplier_id: 1,
-			books: [
-				{
-					isbn: "9781234567897",
-					title: "The Art of Learning",
-					authors: "Josh Waitzkin",
-					price: 15.99,
-					delivered: true,
-					ordered: 2
-				},
-				{
-					isbn: "9781234567880",
-					title: "Deep Work",
-					authors: "Cal Newport",
-					price: 18.0,
-					delivered: false,
-					ordered: 1
-				}
-			]
-		},
-		{
-			supplier_name: "Penguin Random House",
-			supplier_id: 2,
-			books: [
-				{
-					isbn: "9780987654321",
-					title: "Becoming",
-					authors: "Michelle Obama",
-					price: 19.5,
-					delivered: true,
-					ordered: 3
-				},
-				{
-					isbn: "9780987654314",
-					title: "Thinking, Fast and Slow",
-					authors: "Daniel Kahneman",
-					price: 12.99,
-					delivered: false,
-					ordered: 4
-				}
-			]
-		}
-	];
 
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
 		// NOTE: ordersDbCtx should always be defined on client
 		const { rx } = data.dbCtx;
+
+		console.log({ $bookData });
 
 		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
 		const disposer2 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliationOrder:data"));
@@ -98,11 +53,8 @@
 	let timeout = null;
 	let isbns = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
 	// Mock supplier orders data
-	const selectedOrders = [
-		{ id: 1, supplier: "Academic Books Ltd", books: 5 },
-		{ id: 2, supplier: "Penguin Random House", books: 3 }
-	];
 
+	$: scanned = data?.placedOrderLines;
 	function handleIsbnSubmit() {
 		if (!isbn) return;
 		isbns = [...isbns, isbn];
@@ -128,8 +80,10 @@
 		isbn = "";
 	}
 
-	$: totalDelivered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+	$: placedOrderLines = data?.placedOrderLines;
+	$: totalDelivered = data?.mergedBookData.length;
+	// mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalOrdered = placedOrderLines.length;
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -173,10 +127,10 @@
 						<div class="md:px-1">
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
-								{#each selectedOrders as order}
+								{#each Object.entries(data?.supplierOrders) as [supplierOrderId, { supplier_name, supplier_id }], i}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
-										#{order.id}
-										<span class="text-sm font-light">({order.supplier})</span>
+										#{supplierOrderId}
+										<span class="text-sm font-light">({supplier_name})</span>
 									</dd>
 								{/each}
 							</div>
@@ -264,7 +218,7 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					<ComparisonTable supplierBooks={mockSupplierBooks} />
+					<ComparisonTable supplierBooks={processOrderDelivery(data?.mergedBookData, placedOrderLines)} />
 				{/if}
 
 				{#if canCompare || currentStep > 1}
