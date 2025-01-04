@@ -4,6 +4,7 @@ import type { BookEntry, BookFetchResultEntry, WarehouseDataMap } from "@librocc
 import { wrapIter, debug } from "@librocco/shared";
 
 import type { DailySummaryStore } from "$lib/types/inventory";
+import type { SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/suppliers";
 
 /**
  * A util used to compare two paths. It trims the paths and removes the leading and trailing slashes
@@ -98,3 +99,30 @@ export const mergeBookData = (sources: BookFetchResultEntry[], kind: "prefer_fir
 			: sources.reduce((acc = {}, curr = {}) => ({ ...acc, ...curr }), {});
 
 // #endregion book data fetching
+
+export const processOrderDelivery = (scannedBooks: BookEntry[], placedOrderLines: (SupplierPlacedOrderLine & BookEntry)[]) => {
+	const placedOrderIsbnSet = new Set(placedOrderLines.map((b) => b.isbn));
+	const scannedIsbnSet = new Set(scannedBooks.map((b) => b.isbn));
+	const result = [];
+
+	for (const pol of placedOrderLines) {
+		result.push({ ...pol, delivered: scannedIsbnSet.has(pol.isbn), wasOrdered: true });
+	}
+	for (const sb of scannedBooks) {
+		if (!placedOrderIsbnSet.has(sb.isbn)) {
+			result.push({ ...sb, delivered: true, wasOrdered: false });
+		}
+	}
+
+	return result;
+};
+
+export const sortLinesBySupplier = (
+	orderLines: (SupplierPlacedOrderLine & BookEntry & { delivered: boolean })[]
+): { [supplier_name: string]: (SupplierPlacedOrderLine & BookEntry & { delivered: boolean })[] } => {
+	return orderLines.reduce((acc, curr) => {
+		return acc[curr.supplier_name]
+			? { ...acc, [curr.supplier_name]: [...acc[curr.supplier_name], curr] }
+			: { ...acc, [curr.supplier_name]: [curr] };
+	}, {});
+};
