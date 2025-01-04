@@ -1,4 +1,9 @@
 <script lang="ts">
+	import type { SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/suppliers";
+	import { sortLinesBySupplier } from "$lib/utils/misc";
+
+	import type { BookEntry } from "@librocco/db";
+
 	type Book = {
 		isbn: string;
 		title: string;
@@ -14,12 +19,18 @@
 		books: Book[];
 	};
 
-	$: totalDelivered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+	$: totalDelivered = supplierBooks.length;
+	// .reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalOrdered = supplierBooks.length;
+	// .reduce((acc, supplier) => acc + supplier.books.length, 0);
 
-	export let supplierBooks: SupplierBooks[];
+	export let supplierBooks: (SupplierPlacedOrderLine & BookEntry & { delivered: boolean })[];
 
-	$: getSupplierSummary = (books: Book[]) => {
+	$: sortedSupplierBooks = sortLinesBySupplier(supplierBooks);
+	// list all books by isbn
+	// // only show one row per isbn
+	//
+	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
 		return `${delivered} / ${books.length}`;
 	};
@@ -38,7 +49,7 @@
 				</th>
 			</tr>
 		</thead>
-		{#each supplierBooks as { supplier_name, books }}
+		{#each Object.entries(sortedSupplierBooks) as [supplier_name, supplierBooksList]}
 			<thead>
 				<tr class="bg-base-200/50">
 					<th colspan="4" class="text-left">
@@ -46,19 +57,20 @@
 					</th>
 					<th colspan="1" class="text-center">
 						<span class="badge-accent badge-outline badge-lg badge">
-							{getSupplierSummary(books)}
+							{getSupplierSummary(supplierBooks)}
 						</span>
 					</th>
 				</tr>
 			</thead>
 			<tbody>
-				{#each books as { isbn, title, authors, price, delivered }}
+				{#each supplierBooksList as { isbn, title, authors, price, delivered }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
 						<td>{authors}</td>
 						<td>€{price}</td>
 						<td class="text-center">
+							<!-- is true if book is in delivered books -->
 							<input type="checkbox" checked={delivered} disabled class="checkbox" />
 						</td>
 					</tr>
