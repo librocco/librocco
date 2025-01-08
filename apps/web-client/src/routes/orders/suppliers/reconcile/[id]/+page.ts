@@ -12,8 +12,6 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	// we need a list of all the books
 	// while going through them check if the isbn occurred twice
 	const supplierOrderIds = JSON.parse(reconciliationOrder.supplier_order_ids) || [];
-	console.log({ reconciliationOrder });
-	console.log({ supplierOrderIds });
 
 	const placedOrderLines = await getPlacedSupplierOrderLines(ordersDb, supplierOrderIds);
 
@@ -24,16 +22,12 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 				: { ...acc, [val.supplier_order_id]: { supplier_name: val.supplier_name, supplier_id: val.supplier_id } },
 		{}
 	);
-	console.log({ placedOrderLines });
-	console.log({ supplierOrders });
 
 	const books: string[] = JSON.parse(reconciliationOrder.customer_order_line_ids) || [];
 	let mergedBookData = [];
 	if (books.length) {
 		const fetchedBookData = await ordersDb.execO<BookEntry>(`SELECT *
 	FROM book WHERE isbn IN (${books.join(", ")})`);
-
-		console.log({ fetchedBookData });
 
 		mergedBookData = books.map((book) => {
 			//add empty string for supplier id
@@ -42,12 +36,15 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 		const reducedBooks = books.reduce((acc, curr) => {
 			const bookDataFetched = fetchedBookData.find((b) => b.isbn === curr);
-			return bookDataFetched ? { ...acc, [curr]: bookDataFetched } : { ...acc, [curr]: {} };
+			return bookDataFetched
+				? {
+						...acc,
+						[curr]: { ...bookDataFetched }
+					}
+				: { ...acc, [curr]: {} };
 		}, {});
 
 		bookData.update((store) => ({ ...store, ...reducedBooks }));
-		console.log({ reducedBooks });
-		console.log({ ...reducedBooks });
 	}
 
 	return { reconciliationOrder, ordersDb, mergedBookData, dbCtx, placedOrderLines, supplierOrders };
