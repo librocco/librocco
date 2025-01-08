@@ -58,6 +58,7 @@
 	function handleIsbnSubmit() {
 		if (!isbn) return;
 		isbns = [...isbns, isbn];
+
 		books = [
 			{
 				isbn,
@@ -202,15 +203,17 @@
 										<th>Title</th>
 										<th>Authors</th>
 										<th>Price</th>
+										<th>Quantity</th>
 									</tr>
 								</thead>
 								<tbody>
-									{#each books as { isbn, title, authors, price }}
+									{#each books as { isbn, title, authors, price, quantity }}
 										<tr>
 											<th>{isbn}</th>
 											<td>{title}</td>
 											<td>{authors}</td>
 											<td>€{price}</td>
+											<td>{quantity}</td>
 										</tr>
 									{/each}
 								</tbody>
