@@ -24,8 +24,6 @@
 		// NOTE: ordersDbCtx should always be defined on client
 		const { rx } = data.dbCtx;
 
-		console.log({ $bookData });
-
 		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
 		const disposer2 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliationOrder:data"));
 		disposer = () => (disposer1(), disposer2());
@@ -55,6 +53,14 @@
 	// Mock supplier orders data
 
 	$: scanned = data?.placedOrderLines;
+
+	async function finalizeScanning() {
+		if (timeout) {
+			clearTimeout(timeout);
+			timeout = null;
+			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+		}
+	}
 	function handleIsbnSubmit() {
 		if (!isbn) return;
 		isbns = [...isbns, isbn];
@@ -85,6 +91,7 @@
 	$: totalDelivered = data?.mergedBookData.length;
 	// mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
 	$: totalOrdered = placedOrderLines.length;
+	$: processedOrderDelivery = processOrderDelivery(data?.mergedBookData, data?.placedOrderLines);
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -154,7 +161,12 @@
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
 									disabled={isCurrent || step === 3}
-									on:click={() => (currentStep = step)}
+									on:click={async () => {
+										if (step === 2) {
+											await finalizeScanning();
+										}
+										currentStep = step;
+									}}
 								>
 									{#if isCompleted}
 										<span class="flex shrink-0 items-center justify-center rounded-full bg-primary p-1">
@@ -221,7 +233,7 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					<ComparisonTable supplierBooks={processOrderDelivery(data?.mergedBookData, placedOrderLines)} />
+					<ComparisonTable supplierBooks={processedOrderDelivery} />
 				{/if}
 
 				{#if canCompare || currentStep > 1}
@@ -239,8 +251,9 @@
 							{/if}
 							<button
 								class="btn-primary btn ml-auto"
-								on:click={() => {
+								on:click={async () => {
 									if (currentStep === 1) {
+										await finalizeScanning();
 										currentStep = 2;
 									} else {
 										commitDialogOpen.set(true);
