@@ -291,6 +291,7 @@ export type SupplierPlacedOrderLine = {
 	supplier_order_id: number;
 	total_price: number;
 	created: number;
+	quantity: number;
 };
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
