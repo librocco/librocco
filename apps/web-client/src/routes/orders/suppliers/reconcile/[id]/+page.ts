@@ -2,7 +2,7 @@ import { getReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 import type { BookEntry } from "@librocco/db";
 import type { PageLoad } from "./$types";
 import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
-import { bookData } from "$lib/stores/book-data";
+
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("reconciliationOrder:data");
 
@@ -33,18 +33,6 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 			//add empty string for supplier id
 			return fetchedBookData.find((bookD) => bookD.isbn === book) || { isbn: book };
 		});
-
-		const reducedBooks = books.reduce((acc, curr) => {
-			const bookDataFetched = fetchedBookData.find((b) => b.isbn === curr);
-			return bookDataFetched
-				? {
-						...acc,
-						[curr]: { ...bookDataFetched }
-					}
-				: { ...acc, [curr]: {} };
-		}, {});
-
-		bookData.update((store) => ({ ...store, ...reducedBooks }));
 	}
 
 	return { reconciliationOrder, ordersDb, mergedBookData, dbCtx, placedOrderLines, supplierOrders };
