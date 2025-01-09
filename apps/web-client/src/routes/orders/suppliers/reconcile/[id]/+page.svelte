@@ -12,8 +12,7 @@
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-	import { processOrderDelivery } from "$lib/utils/misc";
-	import { bookData } from "$lib/stores/book-data";
+	import { processOrderDelivery } from "$lib/db/cr-sqlite/utils";
 
 	// implement order reactivity/sync
 	export let data: PageData;
