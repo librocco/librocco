@@ -8,7 +8,7 @@
 
 	import Page from "$lib/components/Page.svelte";
 	import type { PageData } from "./$types";
-	import { addOrderLinesToReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { addOrderLinesToReconciliationOrder, finalizeReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
@@ -101,9 +101,10 @@
 
 	$: canCompare = books.length > 0;
 
-	function handleCommit() {
+	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
+		await finalizeReconciliationOrder(data?.ordersDb, parseInt($page.params.id));
 	}
 </script>
 
