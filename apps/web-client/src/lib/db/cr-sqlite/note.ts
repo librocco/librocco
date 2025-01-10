@@ -12,6 +12,8 @@ import type {
 
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
+import { getStock } from "./stock";
+
 const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
@@ -56,39 +58,46 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
+
 		SELECT
 			note.id,
 			note.display_name AS displayName,
 			warehouse.display_name AS warehouseName,
-			note.updated_at
+			note.updated_at,
+			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
-		INNER JOIN warehouse
-		WHERE note.warehouse_id = warehouse.id
-		AND note.committed = 0
+		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
+		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
+		WHERE note.committed = 0
+		GROUP BY note.id
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
+	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
 export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
+
 		SELECT
-			id,
-			display_name AS displayName,
-			updated_at
+			note.id,
+			note.display_name AS displayName,
+			note.updated_at,
+			COALESCE(SUM(book_transaction.quantity), 0) AS totalBooks
 		FROM note
-		WHERE warehouse_id IS NULL
-		AND committed = 0
+		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
+		WHERE note.warehouse_id IS NULL
+		AND note.committed = 0
+		GROUP BY note.id
 
 	`;
 
-	const res = await db.execO<{ id: number; displayName: string; updated_at: number }>(query);
+	const res = await db.execO<{ id: number; displayName: string; updated_at: number; totalBooks: number }>(query);
 
 	// TODO: update total books when we add note volume stock functionality
-	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at), totalBooks: 0 }));
+	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
 type GetNoteResponse = {
@@ -197,10 +206,26 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 	await db.exec(updateQuery, updateValues);
 }
 
-// TODO: this should be implemented when we implement stock functionality
-async function getOutOfStockEntries(_db: DB, _noteId: number): Promise<OutOfStockTransaction[]>;
-async function getOutOfStockEntries(): Promise<OutOfStockTransaction[]> {
-	return [];
+async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
+	const entries = await getNoteEntries(db, noteId);
+	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
+
+	const res: OutOfStockTransaction[] = [];
+
+	for (const { isbn, warehouseId, warehouseName, quantity } of entries) {
+		const existingStock = stock.get([isbn, warehouseId].join("-"));
+		if (!existingStock) {
+			res.push({ isbn, warehouseId, quantity, available: 0, warehouseName });
+			continue;
+		}
+
+		const { quantity: available } = existingStock;
+		if (quantity > available) {
+			res.push({ isbn, warehouseId, quantity, available, warehouseName });
+		}
+	}
+
+	return res;
 }
 
 export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
@@ -233,9 +258,11 @@ export async function commitNote(db: DB, id: number): Promise<void> {
 		throw new NoWarehouseSelectedError(noWarehouseTxns);
 	}
 
-	const outOfStockEntries = await getOutOfStockEntries(db, id);
-	if (outOfStockEntries.length) {
-		throw new OutOfStockError(outOfStockEntries);
+	if (note.noteType === "outbound") {
+		const outOfStockEntries = await getOutOfStockEntries(db, id);
+		if (outOfStockEntries.length) {
+			throw new OutOfStockError(outOfStockEntries);
+		}
 	}
 
 	const query = `
@@ -282,12 +309,14 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
+			w.display_name AS warehouseName,
 			b.title,
 			b.price,
 			b.authors,
 			b.publisher
 		FROM book_transaction bt
 		LEFT JOIN book b ON bt.isbn = b.isbn
+		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
 		WHERE bt.note_id = ?
 		ORDER BY bt.updated_at DESC
 	`;
@@ -296,6 +325,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		isbn: string | null;
 		quantity: number;
 		warehouseId: number;
+		warehouseName: string;
 		title?: string;
 		price?: number;
 		authors?: string;
