@@ -15,7 +15,17 @@ export type Customer = {
 	updatedAt?: number;
 };
 
-export type Book = { isbn: string; quantity: number };
+export type BookData = {
+	isbn: string;
+	title?: string;
+	price?: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	category?: string;
+};
 
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
@@ -125,6 +135,7 @@ export type NoteEntriesItem = {
 	isbn: string | null;
 	quantity: number;
 	warehouseId: number;
+	warehouseName: string;
 	title?: string;
 	price?: number;
 	year?: string;
