@@ -3,6 +3,7 @@ import { describe, it, expect } from "vitest";
 import type { DB } from "../types";
 
 import { getRandomDb } from "./lib";
+import { NoWarehouseSelectedError, OutOfStockError } from "../errors";
 
 import {
 	createInboundNote,
@@ -16,9 +17,14 @@ import {
 	addVolumesToNote,
 	getNoteEntries,
 	updateNoteTxn,
-	removeNoteTxn
+	removeNoteTxn,
+	upsertNoteCustomItem,
+	getNoteCustomItems,
+	removeNoteCustomItem,
+	getReceiptForNote
 } from "../note";
 import { upsertWarehouse } from "../warehouse";
+import { upsertBook } from "../books";
 
 describe("Inbound note tests", () => {
 	it("creates a new inbound note, using id and warehouseId, with default fields", async () => {
@@ -445,6 +451,56 @@ describe("Outbound note tests", () => {
 		);
 	});
 
+	it("doesn't allow for committing of a note if not all warehouse ids are assigned", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "3333333333", quantity: 2, warehouseId: 1 }); // Has a warehouse assigned to it - OK
+
+		expect(commitNote(db, 1)).rejects.toThrow(
+			new NoWarehouseSelectedError([
+				{ isbn: "1111111111", quantity: 2 },
+				{ isbn: "2222222222", quantity: 2 }
+			])
+		);
+	});
+
+	// TODO: this needs stock calculating logic in order to work, unskip when the logic is implemented
+	it.skip("doesn't allow for committing of a note if some transactions would result in negative stock", async () => {
+		const db = await getRandomDb();
+
+		// Set up state
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 2 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 2, 2);
+		await addVolumesToNote(db, 2, { isbn: "2222222222", quantity: 2 });
+		await commitNote(db, 2);
+
+		await createOutboundNote(db, 3);
+
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 1 }); // avlbl: 2, res = -1
+		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 2, warehouseId: 1 }); // avlbl: 2, res = 0 -- OK
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 2 }); // avlbl: 0, res = -3
+		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 4, warehouseId: 2 }); // avlbl: 2, res = -2
+
+		expect(await commitNote(db, 1)).toThrow(
+			new OutOfStockError([
+				{ isbn: "1111111111", quantity: 3, warehouseId: 1, available: 2, warehouseName: "Warehouse 1" },
+				{ isbn: "1111111111", quantity: 3, warehouseId: 2, available: 0, warehouseName: "Warehouse 2" },
+				{ isbn: "2222222222", quantity: 4, warehouseId: 2, available: 2, warehouseName: "Warehouse 2" }
+			])
+		);
+	});
+
 	it("doesn't allow committing of a note more than once (keeping the committed_at consistent)", async () => {
 		const db = await getRandomDb();
 
@@ -698,19 +754,74 @@ describe("Outbound note tests", () => {
 			})
 		);
 	});
+
+	it("retrieves the receipt using getReceiptForNote", async () => {
+		const db = await getRandomDb();
+
+		// Create warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1", discount: 10 });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2", discount: 0 });
+
+		// Add book data
+		await upsertBook(db, { isbn: "1111111111", title: "Book 1" });
+		await upsertBook(db, { isbn: "2222222222", title: "Book 2" });
+
+		// Create an outbound note
+		await createOutboundNote(db, 1);
+
+		// Add book transactions
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 2 });
+
+		// Add custom items
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 50 });
+		await upsertNoteCustomItem(db, 1, { id: 2, title: "Custom Item 2", price: 75 });
+
+		// Get the receipt
+		const receipt = await getReceiptForNote(db, 1);
+
+		// Assert the receipt data
+		expect(receipt.items).toEqual([
+			{
+				isbn: "1111111111",
+				title: "Book 1",
+				quantity: 2,
+				price: expect.any(Number),
+				discount: 10
+			},
+			{
+				isbn: "2222222222",
+				title: "Book 2",
+				quantity: 3,
+				price: expect.any(Number),
+				discount: 0
+			},
+			{
+				title: "Custom Item 1",
+				quantity: 1,
+				price: 50,
+				discount: 0
+			},
+			{
+				title: "Custom Item 2",
+				quantity: 1,
+				price: 75,
+				discount: 0
+			}
+		]);
+		expect(receipt.timestamp).toEqual(expect.any(String));
+	});
 });
 
-describe("Note transactions", async () => {
+describe("Book transactions", async () => {
 	it("adds volumes to a note", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
-		let entries = await getNoteEntries(db, 1);
-		expect(entries).toEqual([
+		expect(await getNoteEntries(db, 1)).toEqual([
 			expect.objectContaining({
 				isbn: "1234567890",
 				quantity: 10,
@@ -718,18 +829,44 @@ describe("Note transactions", async () => {
 			})
 		]);
 
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
 
-		entries = await getNoteEntries(db, 1);
-		expect(entries).toEqual([
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: 1
+			}),
 			expect.objectContaining({
 				isbn: "1234567890",
 				quantity: 10,
 				warehouseId: 1
+			})
+		]);
+
+		// Adding a volume without warehouseId should be possible
+		//
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5 });
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "0987654321",
+				quantity: 5,
+				warehouseId: undefined
 			}),
 			expect.objectContaining({
 				isbn: "0987654321",
 				quantity: 5,
+				warehouseId: 1
+			}),
+			expect.objectContaining({
+				isbn: "1234567890",
+				quantity: 10,
 				warehouseId: 1
 			})
 		]);
@@ -1062,5 +1199,190 @@ describe("Note transactions", async () => {
 			expect.objectContaining({ isbn: "1234567890", warehouseId: 1, quantity: 6 }),
 			expect.objectContaining({ isbn: "1234567890", warehouseId: 2, quantity: 12 })
 		]);
+	});
+});
+
+describe("Note custom items", async () => {
+	it("adds a custom item to an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Custom Item 1",
+				price: 100
+			})
+		]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("updates a custom item in an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Updated Custom Item 1", price: 150 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Updated Custom Item 1",
+				price: 150
+			})
+		]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("removes a custom item from an outbound note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await removeNoteCustomItem(db, 1, 1);
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("doesn't allow upserting custom items to a committed note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await commitNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([]);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt).toEqual(updatedAt);
+	});
+
+	it("doesn't allow removing custom items from a committed note", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
+		await commitNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		const updatedAt = note?.updatedAt;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await removeNoteCustomItem(db, 1, 1);
+
+		note = await getNoteById(db, 1);
+		expect(note?.updatedAt).toEqual(updatedAt);
+
+		const items = await getNoteCustomItems(db, 1);
+		expect(items).toEqual([
+			expect.objectContaining({
+				id: 1,
+				title: "Custom Item 1",
+				price: 100
+			})
+		]);
+	});
+
+	it("doesn't take into account custom items added to different note(s)", async () => {
+		const db = await getRandomDb();
+		await createOutboundNote(db, 1);
+		await createOutboundNote(db, 2);
+
+		await upsertNoteCustomItem(db, 1, { id: 1, title: "Item 1", price: 10 });
+		await upsertNoteCustomItem(db, 2, { id: 1, title: "Item 2", price: 12 });
+
+		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 10 }]);
+		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12 }]);
+	});
+});
+
+import { createAndCommitReconciliationNote } from "../note";
+
+describe("Reconciliation note", () => {
+	it("creates and commits the reconciliation note (along with respective transactions)", async () => {
+		const db = await getRandomDb();
+		const volumes = [
+			{ isbn: "1234567890", quantity: 5, warehouseId: 1 },
+			{ isbn: "0987654321", quantity: 10, warehouseId: 2 }
+		];
+
+		await createAndCommitReconciliationNote(db, 1, volumes);
+
+		const note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: expect.stringContaining("Reconciliation note:"),
+				isReconciliationNote: true,
+				committed: true,
+				committedAt: expect.any(Date),
+				updatedAt: expect.any(Date)
+			})
+		);
+		expect(note.committedAt).toEqual(note.updatedAt);
+		expect(note.displayName).toEqual(`Reconciliation note: ${note.committedAt.toISOString()}`);
+
+		const { committedAt } = note;
+
+		// TODO: this is tested somewhat explicitly for now, when we add stock functionality, test (implicitly) for stock state
+		const transactionsQuery = "SELECT isbn, quantity, warehouse_id, committed_at, updated_at FROM book_transaction WHERE note_id = 1";
+		const transactions = await db
+			.execO<{ isbn: string; quantity: number; warehouseId: number; updated_at: number; committed_at: number }>(transactionsQuery)
+			.then((x) =>
+				x.map(({ committed_at, updated_at, ...item }) => ({
+					...item,
+					committedAt: new Date(committed_at),
+					updatedAt: new Date(updated_at)
+				}))
+			);
+		expect(transactions).toEqual([
+			{ isbn: "1234567890", quantity: 5, warehouse_id: 1, committedAt, updatedAt: committedAt },
+			{ isbn: "0987654321", quantity: 10, warehouse_id: 2, committedAt, updatedAt: committedAt }
+		]);
+
+		// Check for updated_at consistency
+		expect(note.updatedAt).toEqual(note.committedAt);
 	});
 });

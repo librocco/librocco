@@ -1,4 +1,16 @@
-import type { DB, TXAsync, InboundNoteListItem, VolumeStock, NoteEntriesItem, OutboundNoteListItem } from "./types";
+import type {
+	DB,
+	TXAsync,
+	InboundNoteListItem,
+	VolumeStock,
+	NoteEntriesItem,
+	OutboundNoteListItem,
+	OutOfStockTransaction,
+	ReceiptData,
+	ReceiptItem
+} from "./types";
+
+import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
@@ -95,6 +107,7 @@ type GetNoteResponse = {
 	updatedAt: Date;
 	committed: boolean;
 	committedAt?: Date;
+	isReconciliationNote: boolean;
 };
 
 export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
@@ -139,7 +152,8 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
 		noteType,
 		updatedAt: new Date(updated_at),
 		committed: Boolean(committed),
-		committedAt: committed_at ? new Date(committed_at) : undefined
+		committedAt: committed_at ? new Date(committed_at) : undefined,
+		isReconciliationNote: Boolean(is_reconciliation_note)
 	};
 }
 
@@ -183,11 +197,45 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 	await db.exec(updateQuery, updateValues);
 }
 
+// TODO: this should be implemented when we implement stock functionality
+async function getOutOfStockEntries(_db: DB, _noteId: number): Promise<OutOfStockTransaction[]>;
+async function getOutOfStockEntries(): Promise<OutOfStockTransaction[]> {
+	return [];
+}
+
+export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
+	const query = `
+		SELECT
+			isbn,
+			quantity,
+			warehouse_id AS warehouseId
+		FROM book_transaction
+		WHERE note_id = ?
+		AND warehouse_id IS NULL
+	`;
+
+	return db.execO<{
+		isbn: string;
+		quantity: number;
+		warehouse_id: number;
+	}>(query, [id]);
+}
+
 export async function commitNote(db: DB, id: number): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to commit a note that is already committed: this is a noop, but probably indicates a bug in the calling code.");
 		return;
+	}
+
+	const noWarehouseTxns = await getNoWarehouseEntries(db, id);
+	if (noWarehouseTxns.length) {
+		throw new NoWarehouseSelectedError(noWarehouseTxns);
+	}
+
+	const outOfStockEntries = await getOutOfStockEntries(db, id);
+	if (outOfStockEntries.length) {
+		throw new OutOfStockError(outOfStockEntries);
 	}
 
 	const query = `
@@ -254,7 +302,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		publisher?: string;
 	}>(query, [id]);
 
-	return result;
+	return result.map(({ warehouseId, ...res }) => ({ ...res, warehouseId: warehouseId ?? undefined }));
 }
 
 export async function updateNoteTxn(
@@ -308,4 +356,118 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
 	const { isbn, warehouseId } = match;
 
 	await db.exec("DELETE FROM book_transaction WHERE isbn = ? AND warehouse_id = ? AND note_id = ?", [isbn, warehouseId, noteId]);
+}
+
+export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id: number; title: string; price: number }): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot upsert custom items to a committed note.");
+		return;
+	}
+
+	const { id, title, price } = payload;
+
+	const query = `
+		INSERT INTO custom_item(id, note_id, title, price)
+		VALUES(?, ?, ?, ?)
+		ON CONFLICT(id, note_id) DO UPDATE SET
+			title = excluded.title,
+			price = excluded.price
+	`;
+
+	await db.exec(query, [id, noteId, title, price]);
+}
+
+export async function getNoteCustomItems(db: DB, noteId: number): Promise<{ id: number; title: string; price: number }[]> {
+	const query = `
+		SELECT id, title, price
+		FROM custom_item
+		WHERE note_id = ?
+	`;
+
+	return db.execO(query, [noteId]);
+}
+
+export async function removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
+	const note = await getNoteById(db, noteId);
+	if (note?.committed) {
+		console.warn("Cannot remove custom items from a committed note.");
+		return;
+	}
+
+	await db.exec("DELETE FROM custom_item WHERE id = ? AND note_id = ?", [itemId, noteId]);
+}
+
+export async function getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
+	const note = await getNoteById(db, noteId);
+	if (!note) {
+		throw new Error("Note not found");
+	}
+
+	const bookQuery = `
+		SELECT
+			bt.isbn,
+			bt.quantity,
+			b.title,
+			b.price,
+			w.discount
+		FROM book_transaction bt
+		LEFT JOIN book b ON bt.isbn = b.isbn
+		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
+		WHERE bt.note_id = ?
+	`;
+
+	const customItemQuery = `
+		SELECT title, price
+		FROM custom_item
+		WHERE note_id = ?
+	`;
+
+	const bookEntries: ReceiptItem[] = await db.execO<ReceiptItem>(bookQuery, [noteId]).then((x) =>
+		x.map((entry) => ({
+			isbn: entry.isbn,
+			title: entry.title,
+			quantity: entry.quantity,
+			price: entry.price || 0,
+			discount: entry.discount || 0
+		}))
+	);
+
+	const customItems: ReceiptItem[] = await db.execO<{ title: string; price: number }>(customItemQuery, [noteId]).then((x) =>
+		x.map((item) => ({
+			title: item.title,
+			quantity: 1,
+			price: item.price,
+			discount: 0
+		}))
+	);
+
+	return {
+		items: bookEntries.concat(customItems),
+		timestamp: new Date().toISOString()
+	};
+}
+
+export async function createAndCommitReconciliationNote(db: DB, id: number, volumes: VolumeStock[]): Promise<void> {
+	const timestamp = Date.now();
+	const displayName = `Reconciliation note: ${new Date(timestamp).toISOString()}`;
+
+	await db.tx(async (txDb) => {
+		// Insert book transactions
+		for (const volume of volumes) {
+			// TODO: This isn't terribly efficient and should probably be run as a prepared statement, but having done so (with the exact same statement and args)
+			// made the tests fail. Should investigate further
+			await txDb.exec(
+				"INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at, committed_at) VALUES (?, ?, ?, ?, ?, ?)",
+				[volume.isbn, volume.quantity, volume.warehouseId, id, timestamp, timestamp]
+			);
+		}
+
+		// Insert the reconciliation note
+		await txDb.exec(
+			`INSERT INTO note (id, display_name, is_reconciliation_note, updated_at, committed, committed_at)
+			VALUES (?, ?, 1, ?, 1, ?)`,
+			[id, displayName, timestamp, timestamp]
+		);
+	});
 }
