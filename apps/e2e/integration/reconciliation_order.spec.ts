@@ -1,6 +1,6 @@
 import { test, expect } from "@playwright/test";
 
-import { baseURL } from "../constants";
+import { baseURL } from "./constants";
 test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
 	page.getByLabel("Main navigation");
@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 	page.getByLabel("CreateReconciliationOrder").click();
 	await expect(page.getByLabel("CreateReconciliationOrder")).toBeDisabled();
 
-	await page.goto(`${baseURL}/preview/orders/suppliers/reconcile/1`);
+	await page.goto(`${baseURL}orders/suppliers/reconcile/1`);
 
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
 });
