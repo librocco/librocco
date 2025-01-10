@@ -11,9 +11,11 @@ import { BehaviorSubject, catchError, from, map, of, share } from "rxjs";
 import { browser } from "$app/environment";
 
 const createDBConnectivityStream = () => {
+	const { data } = defaults(zod(settingsSchema));
+	settingsStore.set(data);
+
 	const shareSuject = new BehaviorSubject(true);
 	const url = get(settingsStore).couchUrl;
-
 	return browser && url
 		? from(checkUrlConnection(url)).pipe(
 				map((response: Response) => response.ok),
