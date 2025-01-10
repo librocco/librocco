@@ -6,9 +6,11 @@ import { getRandomDb } from "./lib";
 
 import {
 	createInboundNote,
+	createOutboundNote,
 	updateNote,
 	deleteNote,
 	getAllInboundNotes,
+	getAllOutboundNotes,
 	getNoteById,
 	commitNote,
 	addVolumesToNote,
@@ -39,7 +41,7 @@ describe("Inbound note tests", () => {
 		]);
 	});
 
-	it("retrieves a single note by id", async () => {
+	it("retrieves an inbound note using getNoteById", async () => {
 		const db = await getRandomDb();
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
@@ -62,7 +64,38 @@ describe("Inbound note tests", () => {
 		);
 	});
 
-	it("commits a note", async () => {
+	it("retrieves all inbound notes", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		await createInboundNote(db, 1, 1);
+		await createInboundNote(db, 1, 2);
+		await createInboundNote(db, 2, 3);
+
+		expect(await getAllInboundNotes(db)).toEqual([
+			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Committed notes aren't displayed in the list
+		await commitNote(db, 1);
+		expect(await getAllInboundNotes(db)).toEqual([
+			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Add an outbond note (as noise) - this shouldn't be returned
+		await createOutboundNote(db, 4);
+		expect(await getAllInboundNotes(db)).toEqual([
+			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+	});
+
+	it("commits an inbound note", async () => {
 		const db = await getRandomDb();
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
@@ -245,35 +278,34 @@ describe("Inbound note tests", () => {
 			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
-	});
 
-	it("retrieves all inbound notes", async () => {
-		const db = await getRandomDb();
+		// Adding an outbound note shouldn't mess with the sequence
+		await createOutboundNote(db, 5); // Latest (inbound note sequence) should still be 1 - "New Note"
+		await createInboundNote(db, 1, 6); // New Note (2) - continuing as if the outbound note doesn't exist
+		res = await getAllInboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 6, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		// Adding a note to a different warehouse should still continue the sequence
 		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
-
-		await createInboundNote(db, 1, 1);
-		await createInboundNote(db, 1, 2);
-		await createInboundNote(db, 2, 3);
-
-		expect(await getAllInboundNotes(db)).toEqual([
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
+		await createInboundNote(db, 2, 7); // New Note (2) - continuing as if the outbound note doesn't exist
+		res = await getAllInboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 6, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 7, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
-
-		// Committed notes aren't displayed in the list
-		await commitNote(db, 1);
-		expect(await getAllInboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", warehouseName: "Warehouse 2", updatedAt: expect.any(Date), totalBooks: 0 }
-		]);
-
-		// TODO: add additional outbound notes to verify the list only retrieves the inbound notes (when we add outbound note functionality) (skip this for now)
 	});
 
-	it("deletes a note", async () => {
+	it("deletes an inbound note", async () => {
 		const db = await getRandomDb();
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
@@ -298,6 +330,356 @@ describe("Inbound note tests", () => {
 
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await createInboundNote(db, 1, 1);
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to delete the committed note
+		await deleteNote(db, 1);
+
+		// Verify the note still exists
+		const note = await getNoteById(db, 1);
+		expect(note).toBeDefined();
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "New Note",
+				committed: true
+			})
+		);
+	});
+});
+
+describe("Outbound note tests", () => {
+	it("creates a new outbound note, using id, with default fields", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		const res = await db.execO("SELECT * FROM note");
+
+		expect(res).toEqual([
+			expect.objectContaining({
+				id: 1,
+				display_name: "New Note",
+				is_reconciliation_note: 0,
+				warehouse_id: null,
+				updated_at: expect.any(Number),
+				committed: 0,
+				committed_at: null
+			})
+		]);
+	});
+
+	it("retrieves an outbound note using getNoteById", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+		const note = await getNoteById(db, 1);
+
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "New Note",
+				warehouseId: null,
+				warehouseName: null,
+				defaultWarehouse: null,
+				noteType: "outbound",
+				updatedAt: expect.any(Date),
+				committed: false,
+				committedAt: undefined
+			})
+		);
+	});
+
+	it("retrieves all outbound notes", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+		await createOutboundNote(db, 2);
+		await createOutboundNote(db, 3);
+
+		expect(await getAllOutboundNotes(db)).toEqual([
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Committed notes aren't displayed in the list
+		await commitNote(db, 1);
+		expect(await getAllOutboundNotes(db)).toEqual([
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Add an outbond note (as noise) - this shouldn't be returned
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createInboundNote(db, 1, 4);
+		expect(await getAllOutboundNotes(db)).toEqual([
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+	});
+
+	it("commits an outbound note", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				committed: false,
+				committedAt: undefined
+			})
+		);
+
+		await commitNote(db, 1);
+
+		note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				committed: true,
+				committedAt: expect.any(Date)
+			})
+		);
+	});
+
+	it("doesn't allow committing of a note more than once (keeping the committed_at consistent)", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		// Commit the note for the first time
+		await commitNote(db, 1);
+		let note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				committed: true,
+				committedAt: expect.any(Date)
+			})
+		);
+
+		const firstCommitTime = note.committedAt;
+
+		// Attempt to commit the note again
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await commitNote(db, 1);
+		note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				committed: true,
+				committedAt: firstCommitTime // Should remain unchanged
+			})
+		);
+	});
+
+	it("updates an outbound note (displayName, defaultWarehouse) as instructed and updates the 'updated_at' field (under the hood)", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		let note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "New Note",
+				updatedAt: expect.any(Date),
+				committed: false,
+				committedAt: undefined
+			})
+		);
+		const { updatedAt } = note;
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await updateNote(db, 1, { displayName: "Updated Note" });
+
+		note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "Updated Note",
+				noteType: "outbound",
+				updatedAt: expect.any(Date),
+				committed: false,
+				committedAt: undefined
+			})
+		);
+
+		// The updated at should be newer
+		expect(note.updatedAt > updatedAt).toEqual(true);
+
+		// The DB saves updated_at with second intervals
+		// Wait for a second to observe the updated_at updated between writes
+		await new Promise((res) => setTimeout(res, 1000));
+		await updateNote(db, 1, { defaultWarehouse: 1 });
+
+		note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "Updated Note",
+				noteType: "outbound",
+				defaultWarehouse: 1,
+				updatedAt: expect.any(Date),
+				committed: false,
+				committedAt: undefined
+			})
+		);
+
+		// The updated at should be newer
+		expect(note.updatedAt > updatedAt).toEqual(true);
+	});
+
+	it("doesn't allow updates after the note had been committed", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+		await updateNote(db, 1, { displayName: "Note 1" });
+		let note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				displayName: "Note 1", // Should remain unchanged
+				committed: false,
+				updatedAt: expect.any(Date)
+			})
+		);
+		const updatedAt = note.updatedAt;
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to update the note
+		await updateNote(db, 1, { displayName: "Updated Note" });
+		await updateNote(db, 1, { defaultWarehouse: 2 });
+
+		// Retrieve the note to verify it hasn't been updated
+		note = await getNoteById(db, 1);
+		expect(note).toEqual(
+			expect.objectContaining({
+				displayName: "Note 1", // Should remain unchanged
+				committed: true
+			})
+		);
+		expect(note.updatedAt).toEqual(updatedAt);
+	});
+
+	it("assigns default note name continuing the sequence", async () => {
+		const db = await getRandomDb();
+
+		// Create note 1, default name should be 'New Note'
+		await createOutboundNote(db, 1);
+		let res = await getAllOutboundNotes(db);
+		expect(res).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }]);
+
+		// Create note 2, default name should be 'New Note (2)'
+		await createOutboundNote(db, 2);
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Rename note 1 to 'Note 1'
+		await updateNote(db, 1, { displayName: "Note 1" });
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Create note 3, default name should be 'New Note (3)' (continuing the sequence)
+		await createOutboundNote(db, 3);
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Rename note 2 to 'Note 2'
+		await updateNote(db, 2, { displayName: "Note 2" });
+		// Rename note 3 to 'Note 3'
+		await updateNote(db, 3, { displayName: "Note 3" });
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Create note 4, default name should be 'New Note' (restarting the sequence)
+		await createOutboundNote(db, 4);
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		// Adding an inbound note shouldn't mess with the sequence
+		await createInboundNote(db, 1, 5); // Latest (outbound note sequence) should still be 1 - "New Note"
+		await createOutboundNote(db, 6); // New Note (2) - continuing as if the inbound note doesn't exist
+		res = await getAllOutboundNotes(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 6, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+	});
+
+	it("doesn't allow deletion of a committed note", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+
+		// Commit the note
+		await commitNote(db, 1);
+
+		// Attempt to delete the committed note
+		await deleteNote(db, 1);
+
+		// Verify the note still exists
+		const note = await getNoteById(db, 1);
+		expect(note).toBeDefined();
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				displayName: "New Note",
+				committed: true
+			})
+		);
+	});
+
+	it("deletes an outboudn note", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+		await createOutboundNote(db, 2);
+
+		// TODO: update this when we implement the 'totalBooks' functionality
+		expect(await getAllOutboundNotes(db)).toEqual([
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+		]);
+
+		await deleteNote(db, 1);
+		expect(await getAllOutboundNotes(db)).toEqual([{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }]);
+	});
+
+	it("doesn't allow deletion of a committed note", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await createOutboundNote(db, 1);
 
 		// Commit the note
 		await commitNote(db, 1);
