@@ -13,9 +13,20 @@
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import type { LayoutData } from "./$types";
-	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { createReconciliationOrder, getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliation";
+	import {
+		associatePublisher,
+		createSupplierOrder,
+		getPlacedSupplierOrders,
+		getPossibleSupplierOrderLines,
+		upsertSupplier
+	} from "$lib/db/cr-sqlite/suppliers";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: LayoutData;
+
+	let publisherSupplierCreated = false;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -43,6 +54,37 @@
 
 <header class="navbar mb-4 bg-neutral">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
+
+	<button
+		class="bg-white"
+		disabled={publisherSupplierCreated}
+		aria-label="CreateReconciliationOrder"
+		on:click={async () => {
+			await upsertBook(data?.ordersDb, {
+				isbn: "123456789",
+				title: "Book 1",
+				authors: "Author 1",
+				price: 10,
+				publisher: "abcPub"
+			});
+			await upsertCustomer(data?.ordersDb, { id: 1, email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
+			await addBooksToCustomer(data?.ordersDb, 1, [
+				{
+					isbn: "123456789"
+				}
+			]);
+			await upsertSupplier(data?.ordersDb, { id: 123, name: "abcSup" });
+			await associatePublisher(data?.ordersDb, 123, "abcPub");
+			const possibleLines = await getPossibleSupplierOrderLines(data?.ordersDb, 123);
+
+			await createSupplierOrder(data?.ordersDb, possibleLines);
+
+			const placed = await getPlacedSupplierOrders(data?.ordersDb);
+			await createReconciliationOrder(data?.ordersDb, [placed[0].id]);
+
+			publisherSupplierCreated = true;
+		}}>Create publisher/supplier</button
+	>
 </header>
 
 <main class="h-screen">
@@ -76,6 +118,7 @@
 						on:click={() => setFilter("ordered")}
 						aria-pressed={$supplierOrderFilterStatus === "ordered"}
 						disabled={!hasOrderedOrders}
+						data-testid="ordered-list"
 					>
 						Ordered
 					</button>
