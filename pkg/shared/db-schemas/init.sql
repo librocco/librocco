@@ -58,8 +58,12 @@ CREATE TABLE book (
 	isbn TEXT NOT NULL,
 	title TEXT,
     authors TEXT,
-    publisher TEXT,
     price DECIMAL,
+	year INTEGER,
+	publisher TEXT,
+	edited_by TEXT,
+	out_of_print INTEGER,
+	category TEXT,
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
@@ -132,7 +136,7 @@ CREATE TABLE note (
 	is_reconciliation_note INTEGER DEFAULT 0,
 	default_warehouse INTEGER,
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-	committed INTEGER DEFAULT 0,
+	committed INTEGER NOT NULL DEFAULT 0,
 	committed_at INTEGER,
 	PRIMARY KEY (id)
 );
