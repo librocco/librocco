@@ -94,7 +94,7 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if data?.possibleOrders.length === 0}
+			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 					<p class="text-center text-base-content/70">
 						No supplier orders available. Create a customer order first to generate supplier orders.
