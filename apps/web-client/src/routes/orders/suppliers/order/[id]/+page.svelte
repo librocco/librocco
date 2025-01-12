@@ -1,13 +1,7 @@
 <script lang="ts">
-	import { invalidate } from "$app/navigation";
-
-	import { Truck } from "lucide-svelte";
-
-	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
-	import { goto } from "$lib/utils/navigation";
+	import { ArrowRight } from "lucide-svelte";
 
 	import type { PageData } from "./$types";
-	import { base } from "$app/paths";
 
 	export let data: PageData;
 
@@ -45,13 +39,19 @@
 								<dd class="stat-value text-2xl">€{placedOrder[0]?.total_price.toFixed(2)}</dd>
 							</div>
 							<div class="stat md:px-1">
-								<dt class="stat-title">Last updated</dt>
+								<dt class="stat-title">Ordered</dt>
 								<dd class="stat-value text-2xl">
 									<time dateTime={placedOrder[0]?.created.toString()}>{new Date(placedOrder[0]?.created).toLocaleDateString()}</time>
 								</dd>
 							</div>
 						</div>
 					</dl>
+					<div class="card-actions border-t py-6 md:mb-20">
+						<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled on:click={handlePrintOrder}>
+							Print Order
+							<ArrowRight aria-hidden size={20} />
+						</button>
+					</div>
 				</div>
 			</div>
 		</div>
@@ -83,27 +83,6 @@
 						{/each}
 					</tbody>
 				</table>
-			</div>
-			<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-				<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
-					<dl class="stats flex">
-						<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-							<div class="stat-title">Total books:</div>
-							<div class="stat-value text-lg">
-								{placedOrder[0]?.total_book_number}
-							</div>
-						</div>
-						<div class="stat flex place-items-center py-2 max-md:px-4">
-							<div class="stat-title sr-only">Total</div>
-							<div class="stat-value text-lg">€ {placedOrder[0]?.total_price.toFixed(2)}</div>
-						</div>
-					</dl>
-
-					<button class="btn-primary btn" on:click={handlePrintOrder}>
-						Print Order
-						<Truck aria-hidden size={20} class="hidden md:block" />
-					</button>
-				</div>
 			</div>
 		</div>
 	</div>
