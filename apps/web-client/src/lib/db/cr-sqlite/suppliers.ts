@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 import type { BookEntry } from "@librocco/db";
 import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
+=======
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrderLine } from "./types";
+>>>>>>> 89c35b1220fcc19a50b2d7f529f1b12456d94367
 
 /**
  * @fileoverview Supplier order management system
@@ -114,7 +118,7 @@ export async function getPossibleSupplerOrderLines(db: DB): Promise<SupplierOrde
 /**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.
  * Each row represents a potential order for a supplier with an aggregated `total_book_number` and `total_book_price`.
- * The result is rdered by supplier name.
+ * The result is ordered by supplier name.
  * e.g
  * ```
  * [{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
@@ -185,8 +189,8 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number):
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrder[]> {
-	const result = await db.execO<SupplierPlacedOrder>(
+export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrderLine[]> {
+	const result = await db.execO<SupplierPlacedOrderLine>(
 		`SELECT
              so.id,
              so.supplier_id,
@@ -202,9 +206,37 @@ export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrd
 	);
 	return result;
 }
+/**
+ * Retrieves all order lines for a specific placed supplier order, including
+book details and order totals.
+ *
+ * @param db
+ * @param supplier_order_id - supplier order to retrieve lines for
+ * @returns array of order lines:
+ *  - Order details: supplier_order_id, supplier_id, created date, supplier_na
+ *  - Book details: isbn, title, authors, publisher, price
+ *  - Line details: quantity
+ *  - Order totals: total_book_number (sum of all quantities), total_price (sum of price * quantity)
+**/
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_id: number): Promise<SupplierPlacedOrderLine[]> {
+	const res = await db.execO<SupplierPlacedOrderLine>(
+		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
+	book.isbn, book.title, book.authors, book.publisher, book.price,
+	so.supplier_id, so.created, s.name as supplier_name,
+	SUM(sol.quantity) OVER () as total_book_number,
+	SUM(book.price * sol.quantity) OVER () as total_price
+	FROM supplier_order_line as sol
+	LEFT JOIN book ON sol.isbn = book.isbn
+	JOIN supplier_order so ON so.id = sol.supplier_order_id
+	JOIN supplier s ON s.id = so.supplier_id
 
-// TODO: this will be needed in the missing "placed" supplier order view
-// export async function getPlacedSupplierOrderLines(db: DB, supplier_id: number): Promise<SupplierPlacedOrder[]> {}
+		WHERE sol.supplier_order_id = ?
+		`,
+		[supplier_order_id]
+	);
+
+	return res;
+}
 
 /**
  * TODO: I removed the getSupplierOrder query at the end of this because it seemed unnecessary, and it feels like it should be re-written inline with above structure
@@ -296,7 +328,7 @@ export type SupplierPlacedOrderLine = {
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
-export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
+export async function getPlacedSupplierOrderLinesForReconciliation(db: DB, supplier_order_ids: number[]): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
 	if (!supplier_order_ids.length) return [];
 	const res = await db.execO<SupplierPlacedOrderLine & BookEntry>(
 		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
