@@ -58,8 +58,12 @@ CREATE TABLE book (
 	isbn TEXT NOT NULL,
 	title TEXT,
     authors TEXT,
-    publisher TEXT,
     price DECIMAL,
+	year INTEGER,
+	publisher TEXT,
+	edited_by TEXT,
+	out_of_print INTEGER,
+	category TEXT,
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
@@ -113,3 +117,100 @@ CREATE TABLE reconciliation_order (
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('reconciliation_order');
+
+CREATE TABLE warehouse (
+    id INTEGER NOT NULL,
+    display_name TEXT,
+    discount DECIMAL DEFAULT 0,
+    PRIMARY KEY (id)
+);
+SELECT crsql_as_crr('warehouse');
+
+-- if warehouse_id is not null, the note is inbound
+-- if is_reconciliation_note is true (1) - it's a reconciliation note (obvious)
+-- if the note is not inbound, nor reconciliation, it is outbound
+CREATE TABLE note (
+	id INTEGER NOT NULL,
+	display_name TEXT,
+	warehouse_id INTEGER,
+	is_reconciliation_note INTEGER DEFAULT 0,
+	default_warehouse INTEGER,
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	committed INTEGER NOT NULL DEFAULT 0,
+	committed_at INTEGER,
+	PRIMARY KEY (id)
+);
+SELECT crsql_as_crr('note');
+
+CREATE TABLE book_transaction (
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 0,
+	note_id INTEGER NOT NULL,
+	warehouse_id INTEGER,
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	committed_at INTEGER,
+	PRIMARY KEY (isbn, note_id, warehouse_id)
+);
+
+CREATE TRIGGER update_note_timestamp_after_insert
+AFTER INSERT ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id AND committed = 0;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_update
+AFTER UPDATE ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id AND committed = 0;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_delete
+AFTER DELETE ON book_transaction
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = OLD.note_id AND committed = 0;
+END;
+
+CREATE TABLE custom_item (
+	id INTEGER NOT NULL,
+	title TEXT,
+	price DECIMAL,
+	note_id INTEGER,
+	PRIMARY KEY (id, note_id)
+);
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_insert
+AFTER INSERT ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id AND committed = 0;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_update
+AFTER UPDATE ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = NEW.note_id AND committed = 0;
+END;
+
+CREATE TRIGGER update_note_timestamp_after_custom_item_delete
+AFTER DELETE ON custom_item
+FOR EACH ROW
+BEGIN
+    UPDATE note
+    SET updated_at = (strftime('%s', 'now') * 1000)
+    WHERE id = OLD.note_id AND committed = 0;
+END;
+

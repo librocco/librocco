@@ -1,0 +1,147 @@
+import { describe, it, expect } from "vitest";
+
+import { getRandomDb } from "./lib";
+
+import { upsertWarehouse, getAllWarehouses } from "../warehouse";
+import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote } from "../note";
+
+describe("Warehouse tests", () => {
+	it("creates a new warehouse, using only id, with default fields", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1 });
+
+		const res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 0, totalBooks: 0 }]);
+	});
+
+	it("creates a new warehouse with full provided values", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1, displayName: "Central Warehouse", discount: 10 });
+
+		const res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "Central Warehouse", discount: 10, totalBooks: 0 }]);
+	});
+
+	it("updates single values in a predictable way", async () => {
+		const db = await getRandomDb();
+
+		// Insert initial warehouse
+		await upsertWarehouse(db, { id: 1, displayName: "Old Name", discount: 5 });
+
+		// Update display name
+		await upsertWarehouse(db, { id: 1, displayName: "New Warehouse" });
+
+		let res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 5, totalBooks: 0 }]);
+
+		// Update discount
+		await upsertWarehouse(db, { id: 1, discount: 15 });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 15, totalBooks: 0 }]);
+	});
+
+	it("assigns default warehouse name continuing the sequence", async () => {
+		const db = await getRandomDb();
+
+		// Create warehouse 1, default name should be 'New Warehouse'
+		await upsertWarehouse(db, { id: 1 });
+		let res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 0, totalBooks: 0 }]);
+
+		// Create warehouse 2, default name should be 'New Warehouse (2)'
+		await upsertWarehouse(db, { id: 2 });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "New Warehouse", discount: 0, totalBooks: 0 },
+			{ id: 2, displayName: "New Warehouse (2)", discount: 0, totalBooks: 0 }
+		]);
+
+		// Rename warehouse 1 to 'Warehouse 1'
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Warehouse 1", discount: 0, totalBooks: 0 },
+			{ id: 2, displayName: "New Warehouse (2)", discount: 0, totalBooks: 0 }
+		]);
+
+		// Create warehouse 3, default name should be 'New Warehouse (3)' (continuing the sequence)
+		await upsertWarehouse(db, { id: 3 });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Warehouse 1", discount: 0, totalBooks: 0 },
+			{ id: 2, displayName: "New Warehouse (2)", discount: 0, totalBooks: 0 },
+			{ id: 3, displayName: "New Warehouse (3)", discount: 0, totalBooks: 0 }
+		]);
+
+		// Rename warehouse 2 to 'Warehouse 2'
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+		// Rename warehouse 3 to 'Warehouse 3'
+		await upsertWarehouse(db, { id: 3, displayName: "Warehouse 3" });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Warehouse 1", discount: 0, totalBooks: 0 },
+			{ id: 2, displayName: "Warehouse 2", discount: 0, totalBooks: 0 },
+			{ id: 3, displayName: "Warehouse 3", discount: 0, totalBooks: 0 }
+		]);
+
+		// Create warehouse 4, default name should be 'New Warehouse' (restarting the sequence)
+		await upsertWarehouse(db, { id: 4 });
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([
+			{ id: 1, displayName: "Warehouse 1", discount: 0, totalBooks: 0 },
+			{ id: 2, displayName: "Warehouse 2", discount: 0, totalBooks: 0 },
+			{ id: 3, displayName: "Warehouse 3", discount: 0, totalBooks: 0 },
+			{ id: 4, displayName: "New Warehouse", discount: 0, totalBooks: 0 }
+		]);
+	});
+
+	it("reflects the total stock in each respective warehouse", async () => {
+		const db = await getRandomDb();
+
+		// Create two warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse A" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse B" });
+
+		// Add stock to both warehouses
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 20, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 20, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 2, 2);
+		await addVolumesToNote(db, 2, { isbn: "0987654321", quantity: 30, warehouseId: 2 });
+		await commitNote(db, 2);
+
+		// Add some reconciled stock (as to not leave out the reconciliation functionality effect)
+		await createAndCommitReconciliationNote(db, 3, [{ isbn: "1111111111", quantity: 10, warehouseId: 1 }]);
+
+		// Remove some stock
+		await createOutboundNote(db, 4);
+		await addVolumesToNote(db, 4, { isbn: "1234567890", quantity: 7, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "1111111111", quantity: 30, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "0987654321", quantity: 20, warehouseId: 2 });
+		await commitNote(db, 4);
+
+		// Retrieve the list and check totalBooks
+		expect(await getAllWarehouses(db)).toEqual([
+			{ id: 1, displayName: "Warehouse A", discount: 0, totalBooks: 18 },
+			{ id: 2, displayName: "Warehouse B", discount: 0, totalBooks: 10 }
+		]);
+
+		// Non committed notes aren't taken into account
+		await createInboundNote(db, 1, 5);
+		await addVolumesToNote(db, 5, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
+
+		await createOutboundNote(db, 6);
+		await addVolumesToNote(db, 6, { isbn: "1234567890", quantity: 15, warehouseId: 1 });
+
+		expect(await getAllWarehouses(db)).toEqual([
+			{ id: 1, displayName: "Warehouse A", discount: 0, totalBooks: 18 },
+			{ id: 2, displayName: "Warehouse B", discount: 0, totalBooks: 10 }
+		]);
+	});
+});
