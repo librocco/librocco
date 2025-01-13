@@ -43,13 +43,6 @@ export const bookSchema = z.object({
 	category: z.string().optional()
 });
 
-export type SettingsSchema = Infer<typeof settingsSchema>;
-export const settingsSchema = z.object({
-	couchUrl: z.string(),
-	labelPrinterUrl: z.string(),
-	receiptPrinterUrl: z.string()
-});
-
 export type CustomItemFormSchema = Infer<typeof customItemSchema>;
 export const customItemSchema = z.object({
 	id: z.string().optional(),

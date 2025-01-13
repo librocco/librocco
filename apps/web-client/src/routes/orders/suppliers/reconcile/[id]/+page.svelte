@@ -7,61 +7,37 @@
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
 	import Page from "$lib/components/Page.svelte";
+	import type { PageData } from "./$types";
+	import { addOrderLinesToReconciliationOrder, finalizeReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { page } from "$app/stores";
+	import { onDestroy, onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
+	import { processOrderDelivery } from "$lib/db/cr-sqlite/utils";
 
-	import { view } from "@librocco/shared";
-	// Mock data for the comparison view
-	const mockSupplierBooks = [
-		{
-			supplier_name: "Academic Books Ltd",
-			supplier_id: 1,
-			books: [
-				{
-					isbn: "9781234567897",
-					title: "The Art of Learning",
-					authors: "Josh Waitzkin",
-					price: 15.99,
-					delivered: true,
-					ordered: 2
-				},
-				{
-					isbn: "9781234567880",
-					title: "Deep Work",
-					authors: "Cal Newport",
-					price: 18.0,
-					delivered: false,
-					ordered: 1
-				}
-			]
-		},
-		{
-			supplier_name: "Penguin Random House",
-			supplier_id: 2,
-			books: [
-				{
-					isbn: "9780987654321",
-					title: "Becoming",
-					authors: "Michelle Obama",
-					price: 19.5,
-					delivered: true,
-					ordered: 3
-				},
-				{
-					isbn: "9780987654314",
-					title: "Thinking, Fast and Slow",
-					authors: "Daniel Kahneman",
-					price: 12.99,
-					delivered: false,
-					ordered: 4
-				}
-			]
+	// implement order reactivity/sync
+	export let data: PageData;
+
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliationOrder:data"));
+		disposer = () => (disposer1(), disposer2());
+	});
+
+	//#endregion reactivity
+
+	onDestroy(async () => {
+		// Unsubscribe on unmount
+		disposer();
+		if (timeout) {
+			clearTimeout(timeout);
+			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
 		}
-	];
-
-	const reconciliation = {
-		id: 123,
-		lastUpdated: new Date()
-	};
-
+	});
 	let isbn = "";
 	let books: Array<{
 		isbn: string;
@@ -69,33 +45,52 @@
 		authors: string;
 		price: number;
 		quantity: number;
-	}> = [];
+	}> = data?.mergedBookData || [];
 
+	let timeout = null;
+	let isbns = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
 	// Mock supplier orders data
-	const selectedOrders = [
-		{ id: 1, supplier: "Academic Books Ltd", books: 5 },
-		{ id: 2, supplier: "Penguin Random House", books: 3 }
-	];
 
+	$: scanned = data?.placedOrderLines;
+
+	async function finalizeScanning() {
+		if (timeout) {
+			clearTimeout(timeout);
+			timeout = null;
+			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+		}
+	}
 	function handleIsbnSubmit() {
 		if (!isbn) return;
+		isbns = [...isbns, isbn];
 
-		// Mock adding a book
 		books = [
 			{
 				isbn,
-				title: "Sample Book",
-				authors: "Sample Author",
-				price: 19.99,
+				title: "",
+				authors: "",
+				price: 0,
 				quantity: 1
 			},
 			...books
 		];
+
+		//invocation is debounced to 10 seconds from first call
+		if (!timeout) {
+			timeout = setTimeout(async () => {
+				await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+				timeout = null;
+			}, 10000);
+		}
+
 		isbn = "";
 	}
 
-	$: totalDelivered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+	$: placedOrderLines = data?.placedOrderLines;
+	$: totalDelivered = data?.mergedBookData.length;
+	// mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalOrdered = placedOrderLines.length;
+	$: processedOrderDelivery = processOrderDelivery(data?.mergedBookData, data?.placedOrderLines);
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -105,9 +100,10 @@
 
 	$: canCompare = books.length > 0;
 
-	function handleCommit() {
+	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
+		await finalizeReconciliationOrder(data?.ordersDb, parseInt($page.params.id));
 	}
 </script>
 
@@ -124,12 +120,14 @@
 						<h1 class="prose card-title">Reconcile Deliveries</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{reconciliation.id}</h2>
+							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={reconciliation.lastUpdated.toISOString()}>{reconciliation.lastUpdated.toLocaleDateString()}</time>
+								<!-- <time dateTime={data?.reconciliationOrder.created.toISOString()}
+									>{data?.reconciliationOrder.created.toLocaleDateString()}</time
+								> -->
 							</span>
 						</div>
 					</div>
@@ -137,10 +135,10 @@
 						<div class="md:px-1">
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
-								{#each selectedOrders as order}
+								{#each Object.entries(data?.supplierOrders) as [supplierOrderId, { supplier_name, supplier_id }], i}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
-										#{order.id}
-										<span class="text-sm font-light">({order.supplier})</span>
+										#{supplierOrderId}
+										<span class="text-sm font-light">({supplier_name})</span>
 									</dd>
 								{/each}
 							</div>
@@ -163,7 +161,12 @@
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
 									disabled={isCurrent || step === 3}
-									on:click={() => (currentStep = step)}
+									on:click={async () => {
+										if (step === 2) {
+											await finalizeScanning();
+										}
+										currentStep = step;
+									}}
 								>
 									{#if isCompleted}
 										<span class="flex shrink-0 items-center justify-center rounded-full bg-primary p-1">
@@ -212,15 +215,17 @@
 										<th>Title</th>
 										<th>Authors</th>
 										<th>Price</th>
+										<th>Quantity</th>
 									</tr>
 								</thead>
 								<tbody>
-									{#each books as { isbn, title, authors, price }}
+									{#each books as { isbn, title, authors, price, quantity }}
 										<tr>
 											<th>{isbn}</th>
 											<td>{title}</td>
 											<td>{authors}</td>
 											<td>€{price}</td>
+											<td>{quantity}</td>
 										</tr>
 									{/each}
 								</tbody>
@@ -228,7 +233,7 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					<ComparisonTable supplierBooks={mockSupplierBooks} />
+					<ComparisonTable supplierBooks={processedOrderDelivery} />
 				{/if}
 
 				{#if canCompare || currentStep > 1}
@@ -246,8 +251,9 @@
 							{/if}
 							<button
 								class="btn-primary btn ml-auto"
-								on:click={() => {
+								on:click={async () => {
 									if (currentStep === 1) {
+										await finalizeScanning();
 										currentStep = 2;
 									} else {
 										commitDialogOpen.set(true);

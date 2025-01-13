@@ -1,3 +1,4 @@
+import type { BookEntry } from "@librocco/db";
 import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
 
 /**
@@ -280,4 +281,37 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 			);
 		}
 	});
+}
+
+export type SupplierPlacedOrderLine = {
+	id: number;
+	supplier_name: string;
+	supplier_id: number;
+	total_book_number: number;
+	supplier_order_id: number;
+	total_price: number;
+	created: number;
+	quantity: number;
+};
+
+export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
+	if (!supplier_order_ids.length) return [];
+	const res = await db.execO<SupplierPlacedOrderLine & BookEntry>(
+		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
+	book.isbn, book.title, book.authors, book.publisher, book.price,
+	so.supplier_id, so.created, s.name as supplier_name,
+	SUM(sol.quantity) OVER () as total_book_number,
+	SUM(book.price * sol.quantity) OVER () as total_price
+	FROM supplier_order_line as sol
+	LEFT JOIN book ON sol.isbn = book.isbn
+	LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+	LEFT JOIN supplier s ON s.id = so.supplier_id
+		WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
+		`,
+		[...supplier_order_ids]
+	);
+
+	return res;
 }

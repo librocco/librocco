@@ -95,9 +95,9 @@ export type SupplierOrder = {
  * and their associated customer order lines for processing.
  */
 export type ReconciliationOrder = {
-	SupplierOrderIds: number[];
-	created: Date;
-	customer_order_line_ids: string[]; // isbns
+	supplier_order_ids: string;
+	created: number;
+	customer_order_line_ids: string; // json array
 	id?: number;
 	finalized: boolean;
 };

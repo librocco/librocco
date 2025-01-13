@@ -1,19 +1,15 @@
-import { LOCAL_STORAGE_SETTINGS } from "$lib/constants";
-import { settingsSchema } from "$lib/forms";
 import { readableFromStream } from "$lib/utils/streams";
 import type { DatabaseInterface } from "@librocco/db";
-import { defaults } from "sveltekit-superforms/client";
-import { zod } from "sveltekit-superforms/adapters";
-import { persisted } from "svelte-local-storage-store";
+
 import { checkUrlConnection } from "$lib/db";
 import { get } from "svelte/store";
 import { BehaviorSubject, catchError, from, map, of, share } from "rxjs";
 import { browser } from "$app/environment";
+import { settingsStore } from "./app";
 
 const createDBConnectivityStream = () => {
 	const shareSuject = new BehaviorSubject(true);
-	const url = get(settingsStore).couchUrl;
-
+	const { couchUrl: url } = get(settingsStore).defaultSettings;
 	return browser && url
 		? from(checkUrlConnection(url)).pipe(
 				map((response: Response) => response.ok),
@@ -38,6 +34,3 @@ export const createExtensionAvailabilityStore = (db: DatabaseInterface) => {
 export const createDBConnectivityStore = () => {
 	return readableFromStream({}, createDBConnectivityStream(), false);
 };
-
-const { data: defaultSettings } = defaults(zod(settingsSchema));
-export const settingsStore = persisted(LOCAL_STORAGE_SETTINGS, defaultSettings);
