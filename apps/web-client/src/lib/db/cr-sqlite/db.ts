@@ -50,6 +50,7 @@ export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	const db = await getDB(dbname);
 
 	const schemaRes = await getSchemaNameAndVersion(db);
+
 	if (!schemaRes) {
 		await initializeDB(db);
 	} else {
