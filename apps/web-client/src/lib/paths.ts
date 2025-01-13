@@ -3,6 +3,7 @@ import { base } from "$app/paths";
 const basepath = `${base}`;
 
 const PATHS = {
+	debug: `${basepath}/debug`,
 	// Inventory mgmt
 	stock: `${basepath}/stock/`,
 	warehouses: `${basepath}/inventory/warehouses/`,
@@ -29,7 +30,7 @@ const PATHS = {
  * - requires the first segment to be the location key (e.g. "stock", "inventory", etc.)
  * - joins all of the segments with "/"
  * - ensures that the path ends with "/" (adds a trailing slash if neecessary)
- * - ensutres that there are no double slashes in the path
+ * - ensures that there are no double slashes in the path
  * (often a result of joining constants + dynamis segments, e.g. `${base}/stock/${id}` -> base might or might not end with a slash)
  * @param location - the location key (e.g. "stock", "inventory", etc.)
  * @param segments - the dynamic segments of the path
