@@ -15,9 +15,6 @@ const config = {
 		alias: {
 			"$i18n/*": "./src/i18n/*"
 		},
-		serviceWorker: {
-			register: false
-		},
 		adapter: adapter(),
 		prerender: {
 			// Note: the '...path/1/' is a workaround for prebuilding the skeleton for all

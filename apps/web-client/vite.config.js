@@ -32,10 +32,8 @@ const config = {
 	plugins: [
 		sveltekit(),
 		SvelteKitPWA({
-			buildBase: `${BASE_PATH}/`,
-			kit: {
-				trailingSlash: "always"
-			},
+			registerType: "prompt",
+			filename: "librocco-service-worker.js",
 			manifest: {
 				name: "Librocco",
 				short_name: "Librocco",
@@ -54,8 +52,8 @@ const config = {
 				theme_color: "#ffffff",
 				background_color: "#ffffff",
 				display: "standalone",
-				start_url: `${BASE_PATH}/inventory/stock/0-all`,
-				scope: `${BASE_PATH}/`
+				start_url: "/",
+				scope: "/"
 			}
 		}),
 		{
