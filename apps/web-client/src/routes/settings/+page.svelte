@@ -14,15 +14,16 @@
 
 	import { dbName, dbNamePersisted, resetDB } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, settingsSchema, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { settingsStore } from "$lib/stores";
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
 
 	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
+	import { settingsSchema } from "$lib/schemas";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -280,7 +281,7 @@
 							validationMethod: "submit-only",
 							onUpdated: ({ form }) => {
 								if (form.valid) {
-									settingsStore.set(form.data);
+									settingsStore.set({ defaultSettings: form.data });
 									// Force reload the layout. A simple "invalidation" will not suffice as the existing DB reference will still exist
 									window.location.reload();
 								}
