@@ -20,6 +20,7 @@ const PATHS = {
 
 	// Order mgmt
 	supplier_orders: `${basepath}/orders/suppliers/`,
+	supplier_order_status: `${basepath}/orders/suppliers/order/`,
 	reconcile: `${basepath}/orders/suppliers/reconcile/`
 };
 

@@ -1,6 +1,7 @@
 /**
  * This is a placeholder as we're not using the generic DB, this might change as we add schema, but trying to keep this as a single source of truth
  */
+import type { BookEntry } from "@librocco/db";
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 export type { DB };
 
@@ -74,7 +75,26 @@ export type SupplierPlacedOrder = {
 	supplier_name: string;
 	supplier_id: number;
 	total_book_number: number;
-	created: Date;
+	created: number;
+};
+
+export type SupplierPlacedOrderLine = BookEntry & {
+	id: number;
+	supplier_name: string;
+	supplier_id: number;
+	total_book_number: number;
+	supplier_order_id: number;
+	total_price: number;
+	created: number;
+};
+export type SupplierPlacedOrderInfo = {
+	id: number;
+	supplier_name: string;
+	supplier_id: number;
+	total_book_number: number;
+	supplier_order_id: number;
+	total_price: number;
+	created: number;
 };
 export type Supplier = {
 	id?: number;
