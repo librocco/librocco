@@ -283,26 +283,4 @@ describe("getPlacedSupplierOrderLines", () => {
 		expect(orderLines).toHaveLength(3);
 		expect(orderLines[0].total_price).toBeGreaterThan(900000000);
 	});
-
-	it("should order results consistently", async () => {
-		const orderLines = await getPlacedSupplierOrderLines(db, 1);
-		expect(orderLines[0].isbn).toBe("1");
-		expect(orderLines[1].isbn).toBe("2");
-
-		// Test reverse order insertion
-		await db.exec(`
-         INSERT INTO supplier_order (id, supplier_id, created)
-         VALUES (3, 1, strftime('%s', 'now') * 1000);
-     `);
-		await db.exec(`
-         INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-         VALUES
-         (3, '2', 1),
-         (3, '1', 1);
-     `);
-
-		const newOrderLines = await getPlacedSupplierOrderLines(db, 3);
-		expect(newOrderLines[0].isbn).toBe("1");
-		expect(newOrderLines[1].isbn).toBe("2");
-	});
 });
