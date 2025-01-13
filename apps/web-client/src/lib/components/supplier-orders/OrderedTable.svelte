@@ -26,6 +26,9 @@
 		dispatch("reconcile", { supplierOrderIds: [supplierOrderId] });
 		// goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
+	function handleView(supplierOrderId: number) {
+		goto(`${base}/orders/suppliers/order/${supplierOrderId}`);
+	}
 
 	function handleBulkReconcile() {
 		const ids = Array.from(selectedOrders).join(",");
@@ -81,7 +84,8 @@
 							{new Date(created).toLocaleString()}
 						</span>
 					</td>
-					<td class="text-right">
+					<td class="flex items-center justify-evenly text-right">
+						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
 						{#if !hasSelectedOrders}
 							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile(id)}>
 								<ListTodo aria-hidden focusable="false" size={20} />

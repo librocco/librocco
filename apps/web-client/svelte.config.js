@@ -24,6 +24,7 @@ const config = {
 			// pages that will, in the browser have a param (in place of the 1), used to render dynamic data.
 			entries: [
 				"/",
+				"/debug",
 				"/inventory",
 				"/inventory/",
 				"/inventory/inbound/",
@@ -37,6 +38,7 @@ const config = {
 				"/orders/customers/1/",
 				"/orders/suppliers/",
 				"/orders/suppliers/reconcile/1/",
+				"/orders/suppliers/order/1",
 				"/orders/suppliers/1/",
 				"/history/date/1/",
 				"/history/isbn/",
