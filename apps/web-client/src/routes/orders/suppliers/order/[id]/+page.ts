@@ -9,5 +9,3 @@ export const load: PageLoad = async ({ parent, params }) => {
 	console.log({ placedOrder });
 	return { placedOrder };
 };
-
-export const ssr = false;
