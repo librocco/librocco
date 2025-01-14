@@ -66,7 +66,6 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
-
 		SELECT
 			note.id,
 			note.display_name AS displayName,
@@ -78,6 +77,7 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
 		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
 		WHERE note.committed = 0
 		GROUP BY note.id
+		ORDER BY note.updated_at DESC
 	`;
 
 	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
