@@ -22,5 +22,3 @@ export const load: LayoutLoad = async ({ depends, parent }) => {
 
 	return { possibleOrders, placedOrders, reconcilingOrders };
 };
-
-export const ssr = false;
