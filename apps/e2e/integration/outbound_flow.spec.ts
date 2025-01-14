@@ -35,10 +35,8 @@ test("should delete the note on delete button click (after confirming the prompt
 
 	// Create two notes to work with
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(createOutboundNote, 1);
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 
 	// Wait for the notes to appear
 	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }, { name: "Note 1" }]);
@@ -120,34 +118,48 @@ test("should continue the naming sequence from the highest sequenced note name (
 	const content = dashboard.content();
 	const dbHandle = await getDbHandle(page);
 
-	// Create three notes (default names: "New Note", "New Note (2)", "New Note (3)")
-	await dbHandle.evaluate(createOutboundNote, 1);
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(createOutboundNote, 3);
+	// Create notes with default names
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "New Note" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "New Note (2)" });
 
-	// Rename the first two notes (leaving us with only "New Note (3)", having the default name)
+	// Create a new note, continuing the naming sequence
+	await content.header().createNote();
+	await content.header().title().assert("New Note (3)");
+
+	// Verify names
+	await dashboard.navigate("outbound");
+	await content.entityList("outbound-list").assertElements([{ name: "New Note (3)" }, { name: "New Note (2)" }, { name: "New Note" }]);
+
+	// Rename the first two notes
 	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
 
-	// Check names (notes are sorted by updated at - newest first)
+	// Verify names
 	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }, { name: "Note 1" }, { name: "New Note (3)" }]);
 
-	// Create a new note (should continue the sequence)
-	await dbHandle.evaluate(createOutboundNote, 4);
+	// Create another note, continuing the sequence
+	await content.header().createNote();
+	await content.header().title().assert("New Note (4)");
+
+	// Verify names
+	await dashboard.navigate("outbound");
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "New Note (4)" }, { name: "Note 2" }, { name: "Note 1" }, { name: "New Note (3)" }]);
 
-	// Rename the remaining notes with default names
+	// Rename remaining notes to reset the sequence
 	await dbHandle.evaluate(updateNote, { id: 3, displayName: "Note 3" });
 	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
-
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "Note 4" }, { name: "Note 3" }, { name: "Note 2" }, { name: "Note 1" }]);
 
-	// Create a new note (should reset the sequence)
-	await dbHandle.evaluate(createOutboundNote, 5);
+	// Create a final note with reset sequence
+	await content.header().createNote();
+	await content.header().title().assert("New Note");
+
+	// Verify names
+	await dashboard.navigate("outbound");
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "New Note" }, { name: "Note 4" }, { name: "Note 3" }, { name: "Note 2" }, { name: "Note 1" }]);
@@ -159,10 +171,8 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	const dbHandle = await getDbHandle(page);
 
 	// Create two notes to work with
-	await dbHandle.evaluate(createOutboundNote, 1);
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 
 	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }, { name: "Note 1" }]);
 
@@ -189,10 +199,8 @@ test("should display book count for each respective note in the list", async ({ 
 	const dbHandle = await getDbHandle(page);
 
 	// Create two notes for display
-	await dbHandle.evaluate(createOutboundNote, 1);
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 
 	// Both should display 0 books
 	await content.entityList("outbound-list").assertElements([
@@ -232,8 +240,7 @@ test("should display book original price and discounted price as well as the war
 	await dbHandle.evaluate(upsertBook, book1);
 
 	// Create an outbound note
-	await dbHandle.evaluate(createOutboundNote, 1);
-	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
 
 	// Add book to note
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
