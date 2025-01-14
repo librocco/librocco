@@ -87,11 +87,12 @@ export function createInboundNote(db: DB, params: { id: number; warehouseId: num
 	return db.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
 }
 
-export function createOutboundNote(db: DB, noteId: number): Promise<void> {
+export function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
+	const { id: noteId, displayName = "New Note" } = params;
+
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
 
-	const displayName = "New Note";
 	return db.exec(stmt, [noteId, displayName, timestamp]);
 }
 

@@ -415,24 +415,24 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 3);
 
 		expect(await getAllOutboundNotes(db)).toEqual([
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Committed notes aren't displayed in the list
 		await commitNote(db, 1);
 		expect(await getAllOutboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Add an outbond note (as noise) - this shouldn't be returned
 		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
 		await createInboundNote(db, 1, 4);
 		expect(await getAllOutboundNotes(db)).toEqual([
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
@@ -638,8 +638,8 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 2);
 		res = await getAllOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Rename note 1 to 'Note 1'
@@ -654,9 +654,9 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 3);
 		res = await getAllOutboundNotes(db);
 		expect(res).toEqual([
+			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "New Note (3)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Rename note 2 to 'Note 2'
@@ -665,19 +665,19 @@ describe("Outbound note tests", () => {
 		await updateNote(db, 3, { displayName: "Note 3" });
 		res = await getAllOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Create note 4, default name should be 'New Note' (restarting the sequence)
 		await createOutboundNote(db, 4);
 		res = await getAllOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		// Adding an inbound note shouldn't mess with the sequence
@@ -685,11 +685,11 @@ describe("Outbound note tests", () => {
 		await createOutboundNote(db, 6); // New Note (2) - continuing as if the inbound note doesn't exist
 		res = await getAllOutboundNotes(db);
 		expect(res).toEqual([
-			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 6, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
 			{ id: 4, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 6, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 3, displayName: "Note 3", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 2, displayName: "Note 2", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "Note 1", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 	});
 
@@ -716,16 +716,15 @@ describe("Outbound note tests", () => {
 		);
 	});
 
-	it("deletes an outboudn note", async () => {
+	it("deletes an outbound note", async () => {
 		const db = await getRandomDb();
 
 		await createOutboundNote(db, 1);
 		await createOutboundNote(db, 2);
 
-		// TODO: update this when we implement the 'totalBooks' functionality
 		expect(await getAllOutboundNotes(db)).toEqual([
-			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 },
-			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 }
+			{ id: 2, displayName: "New Note (2)", updatedAt: expect.any(Date), totalBooks: 0 },
+			{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 0 }
 		]);
 
 		await deleteNote(db, 1);
