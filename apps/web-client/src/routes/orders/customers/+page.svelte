@@ -137,7 +137,7 @@
 									<span class="font-medium">{id}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>
+									<a href="{base}/#/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>
 								</td>
 							</tr>
 						{/each}

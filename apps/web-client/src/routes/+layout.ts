@@ -1,4 +1,3 @@
-import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
 import { createDB, dbNamePersisted } from "$lib/db";
@@ -22,12 +21,14 @@ import { DEFAULT_LOCALE } from "$lib/constants";
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
 export const load: LayoutLoad = async ({ url }) => {
-	const { pathname } = url;
+	const { hash } = url;
 
-	if (redirectPaths.includes(pathname)) {
+	if (redirectPaths.includes(`${base}/${hash}`)) {
 		// * Important: trailing slash is required here
 		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
-		redirect(307, `${base}/stock/`);
+		if (browser) {
+			window.location.hash = '#/stock/';
+		}
 	}
 
 	// Check for navigator locale or fallback to default defined on the server
@@ -68,5 +69,3 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { status: false, db: null };
 };
-export const prerender = true;
-export const trailingSlash = "always";

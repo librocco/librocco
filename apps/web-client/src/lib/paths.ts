@@ -3,25 +3,25 @@ import { base } from "$app/paths";
 const basepath = `${base}`;
 
 const PATHS = {
-	debug: `${basepath}/debug`,
+	debug: `${basepath}/#/debug`,
 	// Inventory mgmt
-	stock: `${basepath}/stock/`,
-	warehouses: `${basepath}/inventory/warehouses/`,
-	inventory: `${basepath}/inventory/`,
-	inbound: `${basepath}/inventory/inbound/`,
-	outbound: `${basepath}/outbound/`,
-	settings: `${basepath}/settings/`,
-	customers: `${basepath}/orders/customers/`,
-	"history/date": `${basepath}/history/date/`,
-	"history/isbn": `${basepath}/history/isbn/`,
-	"history/notes/date": `${basepath}/history/notes/`,
-	"history/notes/archive": `${basepath}/history/notes/archive`,
-	"history/warehouse": `${basepath}/history/warehouse/`,
+	stock: `${basepath}/#/stock/`,
+	warehouses: `${basepath}/#/inventory/warehouses/`,
+	inventory: `${basepath}/#/inventory/`,
+	inbound: `${basepath}/#/inventory/inbound/`,
+	outbound: `${basepath}/#/outbound/`,
+	settings: `${basepath}/#/settings/`,
+	customers: `${basepath}/#/orders/customers/`,
+	"history/date": `${basepath}/#/history/date/`,
+	"history/isbn": `${basepath}/#/history/isbn/`,
+	"history/notes/date": `${basepath}/#/history/notes/`,
+	"history/notes/archive": `${basepath}/#/history/notes/archive`,
+	"history/warehouse": `${basepath}/#/history/warehouse/`,
 
 	// Order mgmt
-	supplier_orders: `${basepath}/orders/suppliers/`,
-	supplier_order_status: `${basepath}/orders/suppliers/order/`,
-	reconcile: `${basepath}/orders/suppliers/reconcile/`
+	supplier_orders: `${basepath}/#/orders/suppliers/`,
+	supplier_order_status: `${basepath}/#/orders/suppliers/order/`,
+	reconcile: `${basepath}/#/orders/suppliers/reconcile/`
 };
 
 /**
