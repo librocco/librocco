@@ -15,5 +15,3 @@ export const load: PageLoad = async ({ parent, params }) => {
 
 	return { orderLines };
 };
-
-export const ssr = false;
