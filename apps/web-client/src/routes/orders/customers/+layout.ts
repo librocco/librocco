@@ -18,5 +18,3 @@ export const load: LayoutLoad = async ({ depends }) => {
 	// TODO: we could rename this to 'dbCtx' once the same approach is used in inventory db
 	return { ordersDbCtx: dbCtx, customers, customerOrderLines };
 };
-
-export const ssr = false;
