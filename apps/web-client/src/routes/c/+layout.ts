@@ -13,5 +13,3 @@ export const load: LayoutLoad = async ({ depends }) => {
 
 	return { ordersDbCtx: dbCtx, allCustomers };
 };
-
-export const ssr = false;
