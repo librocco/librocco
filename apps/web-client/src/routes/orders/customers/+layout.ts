@@ -18,5 +18,3 @@ export const load: LayoutLoad = async ({ depends, parent }) => {
 
 	return { customers, customerOrderLines };
 };
-
-export const ssr = false;
