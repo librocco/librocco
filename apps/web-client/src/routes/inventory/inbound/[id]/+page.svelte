@@ -54,7 +54,7 @@
 		// Reload when note
 		const disposer1 = rx.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
 		// Reload when entries change
-		const disposer2 = rx.onRange(["book_transaction"], () => invalidate("note:books"));
+		const disposer2 = rx.onRange(["book", "book_transaction"], () => invalidate("note:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {
