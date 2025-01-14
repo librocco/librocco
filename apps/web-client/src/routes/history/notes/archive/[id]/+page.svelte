@@ -14,7 +14,7 @@
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
@@ -33,6 +33,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).

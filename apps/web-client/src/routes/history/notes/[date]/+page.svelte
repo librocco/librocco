@@ -13,7 +13,7 @@
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { appPath } from "$lib/paths";
 
@@ -32,6 +32,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
 		if (!a || !b) return false;

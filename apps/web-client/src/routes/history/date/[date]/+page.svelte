@@ -6,7 +6,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";
@@ -32,6 +32,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: stats = data.stats;
 	$: bookList = data.bookList;

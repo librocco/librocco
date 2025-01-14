@@ -5,7 +5,7 @@
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { invalidate } from "$app/navigation";
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
@@ -37,6 +37,7 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {

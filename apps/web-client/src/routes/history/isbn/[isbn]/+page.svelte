@@ -17,7 +17,7 @@
 	import { createSearchDropdown } from "./actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
@@ -43,6 +43,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
