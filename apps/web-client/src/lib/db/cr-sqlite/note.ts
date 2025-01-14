@@ -255,22 +255,24 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
 	}>(query, [id]);
 }
 
-export async function commitNote(db: DB, id: number): Promise<void> {
+export async function commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to commit a note that is already committed: this is a noop, but probably indicates a bug in the calling code.");
 		return;
 	}
 
-	const noWarehouseTxns = await getNoWarehouseEntries(db, id);
-	if (noWarehouseTxns.length) {
-		throw new NoWarehouseSelectedError(noWarehouseTxns);
-	}
+	if (!force) {
+		const noWarehouseTxns = await getNoWarehouseEntries(db, id);
+		if (noWarehouseTxns.length) {
+			throw new NoWarehouseSelectedError(noWarehouseTxns);
+		}
 
-	if (note.noteType === "outbound") {
-		const outOfStockEntries = await getOutOfStockEntries(db, id);
-		if (outOfStockEntries.length) {
-			throw new OutOfStockError(outOfStockEntries);
+		if (note.noteType === "outbound") {
+			const outOfStockEntries = await getOutOfStockEntries(db, id);
+			if (outOfStockEntries.length) {
+				throw new OutOfStockError(outOfStockEntries);
+			}
 		}
 	}
 

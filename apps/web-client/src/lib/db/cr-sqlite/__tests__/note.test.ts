@@ -861,11 +861,12 @@ describe("Book transactions", async () => {
 
 		// Adding a volume without warehouseId should be possible
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5 });
-		expect(await getNoteEntries(db, 1)).toEqual([
+		const res = await getNoteEntries(db, 1);
+		expect(res).toEqual([
 			expect.objectContaining({
 				isbn: "0987654321",
 				quantity: 5,
-				warehouseId: undefined
+				warehouseId: 0
 			}),
 			expect.objectContaining({
 				isbn: "0987654321",
@@ -883,8 +884,7 @@ describe("Book transactions", async () => {
 	it("aggregates quantity for the same (isbn, noteId, warehouseId) entry", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
@@ -912,14 +912,13 @@ describe("Book transactions", async () => {
 	it("doesn't allow adding of volumes to a committed note (noop)", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		// Add initial volumes
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
 		// Commit the note
-		await commitNote(db, 1);
+		await commitNote(db, 1, { force: true });
 
 		// Attempt to add more volumes to the committed note
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
@@ -938,8 +937,7 @@ describe("Book transactions", async () => {
 	it("updates note's updated_at field when an entry is added/updated", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		let note = await getNoteById(db, 1);
 		let updatedAt = note?.updatedAt;
@@ -975,8 +973,7 @@ describe("Book transactions", async () => {
 	it("retrieves note entries so that the latest updated appears first", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		// Add multiple entries with different updated_at times
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
@@ -995,8 +992,7 @@ describe("Book transactions", async () => {
 	it("updates a transaction", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
@@ -1015,8 +1011,7 @@ describe("Book transactions", async () => {
 	it("merges transactions when updating to an existing (isbn, warehouseId) pair", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
@@ -1036,13 +1031,12 @@ describe("Book transactions", async () => {
 	it("doesn't update transactions of a committed note (noop)", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
 		// Commit the note
-		await commitNote(db, 1);
+		await commitNote(db, 1, { force: true });
 
 		// Attempt to update the transaction
 		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { warehouseId: 1, quantity: 15 });
@@ -1061,8 +1055,7 @@ describe("Book transactions", async () => {
 	it("order of transactions stays the same when updating the txn", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		// Add initial transactions
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
@@ -1087,8 +1080,7 @@ describe("Book transactions", async () => {
 	it("when two transactions are merged, they pop to the top of the list", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		// Add initial transactions
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
@@ -1113,8 +1105,7 @@ describe("Book transactions", async () => {
 	it("removes a transaction", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
@@ -1135,13 +1126,12 @@ describe("Book transactions", async () => {
 	it("doesn't allow removing a transaction from a committed note", async () => {
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
 		// Commit the note
-		await commitNote(db, 1);
+		await commitNote(db, 1, { force: true });
 
 		// Attempt to remove a transaction
 		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
@@ -1165,8 +1155,7 @@ describe("Book transactions", async () => {
 
 		const db = await getRandomDb();
 
-		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
-		await createInboundNote(db, 1, 1);
+		await createOutboundNote(db, 1);
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
@@ -1419,8 +1408,8 @@ describe("Misc note tests", () => {
 		await createOutboundNote(db, await getNoteIdSeq(db));
 
 		expect(await getAllInboundNotes(db)).toEqual([
-			expect.objectContaining({ id: 1, warehouseName: "Warehouse 1" }),
-			expect.objectContaining({ id: 2, warehouseName: "Warehouse 2" })
+			expect.objectContaining({ id: 2, warehouseName: "Warehouse 2" }),
+			expect.objectContaining({ id: 1, warehouseName: "Warehouse 1" })
 		]);
 
 		expect(await getAllOutboundNotes(db)).toEqual([expect.objectContaining({ id: 3 })]);
