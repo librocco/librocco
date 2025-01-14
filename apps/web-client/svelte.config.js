@@ -72,7 +72,7 @@ const config = {
 			})
 		},
 		router: {
-			type: 'hash'
+			type: "hash"
 		}
 	}
 };

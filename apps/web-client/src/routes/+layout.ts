@@ -27,7 +27,7 @@ export const load: LayoutLoad = async ({ url }) => {
 		// * Important: trailing slash is required here
 		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
 		if (browser) {
-			window.location.hash = '#/stock/';
+			window.location.hash = "#/stock/";
 		}
 	}
 
