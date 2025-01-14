@@ -76,21 +76,16 @@
 	/**
 	 * Filters the combobox list to show relevant options as input is provided
 	 */
-	const filteredPublishers = derived(
-		[touchedInput, inputValue],
-		([$touchedInput, $inputValue]) => {
-			return $touchedInput
-				? publisherList.filter((publisher) => publisher.includes($inputValue))
-				: publisherList;
-		}
-	);
+	const filteredPublishers = derived([touchedInput, inputValue], ([$touchedInput, $inputValue]) => {
+		return $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
+	});
 
 	// Derive selected and highlighted states
 	const selectedStates = derived([filteredPublishers, isSelected, isHighlighted], ([$filteredPublishers, $isSelected, $isHighlighted]) => {
 		return $filteredPublishers.map((publisher) => ({
 			publisher,
 			isSelected: $isSelected(publisher),
-			isHighlighted: $isHighlighted(publisher),
+			isHighlighted: $isHighlighted(publisher)
 		}));
 	});
 </script>
