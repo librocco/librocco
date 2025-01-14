@@ -9,7 +9,7 @@
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { testId } from "@librocco/shared";
+	import { desc, testId } from "@librocco/shared";
 	import { type BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -105,7 +105,7 @@
 	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
-	$: entries = bookEntries.concat(customItemEntries);
+	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt)));
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -340,7 +340,7 @@
 	$: handlePrintReceipt = async () => {
 		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
-	$: handlePrintLabel = (book: BookEntry) => async () => {
+	$: handlePrintLabel = (book: Omit<BookEntry, "updatedAt">) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 

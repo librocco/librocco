@@ -328,6 +328,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
+			bt.updated_at,
 			COALESCE(w.display_name, 'not-found') AS warehouseName,
 			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
@@ -349,6 +350,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		isbn: string;
 		quantity: number;
 		warehouseId?: number;
+		updated_at: number;
 
 		warehouseName?: string;
 		warehouseDiscount: number;
@@ -363,8 +365,9 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		category: string;
 	}>(query, [id]);
 
-	return result.map(({ warehouseId, out_of_print, ...res }) => ({
+	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
 		...res,
+		updatedAt: new Date(updated_at),
 		warehouseId: warehouseId ?? undefined,
 		outOfPrint: Boolean(out_of_print)
 	}));
