@@ -10,7 +10,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
@@ -46,6 +46,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
@@ -63,6 +64,9 @@
 	const handleCreateWarehouse = async () => {
 		const id = await getWarehouseIdSeq(db);
 		await upsertWarehouse(db, { id });
+
+		// Unsubscribe from db changes to prevent invalidate and page load race
+		disposer?.();
 		await goto(appPath("warehouses", id));
 	};
 
@@ -73,6 +77,9 @@
 	const handleCreateNote = (warehouseId: number) => async () => {
 		const id = await getNoteIdSeq(db);
 		await createInboundNote(db, warehouseId, id);
+
+		// Unsubscribe from db changes to prevent invalidate and page load race
+		disposer?.();
 		await goto(appPath("inbound", id));
 	};
 
@@ -86,8 +93,8 @@
 	let warehouseToDelete: { id: number; displayName: string } = null;
 	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 
-	// TODO: this was used with the previous DB, this probably won't be necessary with current impl
-	const initialized = true;
+	let initialized = false;
+	$: initialized = Boolean(db);
 </script>
 
 <InventoryManagementPage {handleCreateWarehouse}>

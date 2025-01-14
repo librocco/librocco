@@ -6,7 +6,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
@@ -35,12 +35,14 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
 	$: notes = data.notes;
 
-	const initialized = true;
+	let initialized = false;
+	$: initialized = Boolean(db);
 
 	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
 		await deleteNote(db, id);
@@ -54,6 +56,9 @@
 	const handleCreateNote = async () => {
 		const id = await getNoteIdSeq(db);
 		await createOutboundNote(db, id);
+
+		// Unsubscribe from db changes to prevent invalidate and page load race
+		disposer?.();
 		await goto(appPath("outbound", id));
 	};
 
