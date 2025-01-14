@@ -1,4 +1,3 @@
-import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
@@ -22,12 +21,14 @@ import { newPluginsInterface } from "$lib/plugins";
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
 export const load: LayoutLoad = async ({ url }) => {
-	const { pathname } = url;
+	const { hash } = url;
 
-	if (redirectPaths.includes(pathname)) {
+	if (redirectPaths.includes(`${base}/${hash}`)) {
 		// * Important: trailing slash is required here
 		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
-		redirect(307, `${base}/stock/`);
+		if (browser) {
+			window.location.hash = '#/stock/';
+		}
 	}
 
 	// Check for navigator locale or fallback to default defined on the server
@@ -69,5 +70,3 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, status: false, plugins };
 };
-export const prerender = true;
-export const trailingSlash = "always";
