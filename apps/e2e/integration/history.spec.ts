@@ -4,15 +4,7 @@ import { BookEntry } from "@librocco/db";
 
 import { baseURL } from "@/constants";
 import { getDashboard, getDbHandle } from "@/helpers";
-import {
-	upsertWarehouse,
-	createInboundNote,
-	createOutboundNote,
-	addVolumesToNote,
-	commitNote,
-	upsertBook,
-	updateNote
-} from "../helpers/cr-sqlite";
+import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote, upsertBook } from "../helpers/cr-sqlite";
 import { getDateStub } from "@/helpers/dateStub";
 
 const books: BookEntry[] = [
@@ -133,8 +125,7 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some outbound transactions should be reflected in the stats
-	await dbHandle.evaluate(createOutboundNote, 4);
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 4);
@@ -266,8 +257,8 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 1);
 	// ...and one outbound note
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dateStub.mock(new Date(Number(twoDaysAgo) + 2)); // Commit the note just 2ms after the first one
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
@@ -278,8 +269,7 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
 	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 3);
-	await dbHandle.evaluate(createOutboundNote, 4);
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 4);
 
@@ -526,8 +516,7 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// We're stubbing the date to be 2mins into the future (to ensure the txn ordering)
 	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
 
-	await dbHandle.evaluate(createOutboundNote, 4);
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 3" });
+	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 3" });
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 4);
@@ -623,8 +612,7 @@ test("history/notes - date display", async ({ page }) => {
 	// Add an outbound note on the same day
 	// Stub the date to ensure ordering
 	await dateStub.mock(new Date(Date.now() + TIME_MIN));
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
 	await dashboard
@@ -671,8 +659,7 @@ test("history/notes - date display", async ({ page }) => {
 
 	// Add an outbound note, containing transactions from both warehouses (discount applied only to part of txns)
 	await dateStub.mock(new Date(Date.now() + 3 * TIME_MIN));
-	await dbHandle.evaluate(createOutboundNote, 4);
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 1, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 4);
@@ -710,8 +697,7 @@ test("history/notes - date display", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 5);
 
 	await dateStub.mock(new Date(new Date(twoDaysAgo).getTime() + TIME_MIN));
-	await dbHandle.evaluate(createOutboundNote, 6);
-	await dbHandle.evaluate(updateNote, { id: 6, displayName: "Past Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 6, displayName: "Past Note 2" });
 	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 6);
 
@@ -813,8 +799,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 1);
 
 	await dateStub.mock(new Date(new Date(t_minus_2).getTime() + TIME_MIN));
-	await dbHandle.evaluate(createOutboundNote, 2);
-	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Note 2" });
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 2);
@@ -828,8 +813,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 3);
 
 	await dateStub.mock(new Date(new Date(t_minus_1).getTime() + TIME_MIN));
-	await dbHandle.evaluate(createOutboundNote, 4);
-	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
+	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "2222222222", quantity: 2, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(commitNote, 4);
@@ -849,8 +833,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await dbHandle.evaluate(addVolumesToNote, [6, { isbn: "2222222222", quantity: 5, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 6);
 
-	await dbHandle.evaluate(createOutboundNote, 7);
-	await dbHandle.evaluate(updateNote, { id: 7, displayName: "Note 7" });
+	await dbHandle.evaluate(createOutboundNote, { id: 7, displayName: "Note 7" });
 	await dbHandle.evaluate(addVolumesToNote, [7, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [7, { isbn: "2222222222", quantity: 3, warehouseId: 2 }] as const);
 	await dbHandle.evaluate(commitNote, 7);

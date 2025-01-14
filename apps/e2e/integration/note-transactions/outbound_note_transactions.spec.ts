@@ -31,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 
-	await dbHandle.evaluate(createOutboundNote, 1);
+	await dbHandle.evaluate(createOutboundNote, { id: 1 });
 	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
 
 	// Navigate to the note page
