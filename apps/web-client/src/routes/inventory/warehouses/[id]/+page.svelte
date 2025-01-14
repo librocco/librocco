@@ -51,7 +51,7 @@
 		// Reload when warehouse data changes
 		const disposer1 = rx.onPoint("warehouse", BigInt(data.id), () => invalidate("warehouse:data"));
 		// Reload when some stock changes (note being committed)
-		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
+		const disposer2 = rx.onRange(["note", "book"], () => invalidate("warehouse:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 	onDestroy(() => {

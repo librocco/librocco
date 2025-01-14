@@ -3,6 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "../constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
+import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote } from "@/helpers/cr-sqlite";
 
 import { book1 } from "./data";
 
@@ -19,19 +20,16 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	await dashboard.navigate("inventory");
 	await content.entityList("warehouse-list").waitFor();
 
+	const dbHandle = await getDbHandle(page);
+
 	// Setup
 	//
 	// Create the warehouse containing a certain book in stock
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("wh-1")
-			.create()
-			.then((wh) => wh.setName({}, "Warehouse 1"))
-			.then((wh) => wh.note().create())
-			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+	// await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 
 	// Navigate to the warehouse page
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
@@ -61,15 +59,9 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 	//
 	// Create a warehouse and a note containing a certain book in stock
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("wh-1")
-			.create()
-			.then((wh) => wh.setName({}, "Warehouse 1"))
-			.then((wh) => wh.note().create())
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
 	// Navigate to the note page
 	await content.entityList("inbound-list").item(0).edit();
@@ -99,14 +91,8 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	//
 	// Create a note containing a certain book in stock
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
-	);
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
@@ -136,14 +122,8 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	//
 	// Create a note containing a certain book in stock
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse()
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Note 1"))
-			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 1 }))
-	);
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Note 1" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
 
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
