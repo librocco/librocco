@@ -32,7 +32,8 @@
 
 	$: warehouses = data.warehouses;
 
-	let initialised = true;
+	let initialised = false;
+	$: initialised = Boolean(data);
 </script>
 
 <HistoryPage view="history/warehouse" loaded={initialised}>

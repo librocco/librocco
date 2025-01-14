@@ -71,7 +71,7 @@
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !data;
+	$: loading = !db;
 
 	$: noteId = data.id;
 	$: warehouseId = data.warehouseId;

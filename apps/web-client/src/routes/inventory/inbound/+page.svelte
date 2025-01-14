@@ -14,7 +14,7 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
@@ -36,12 +36,14 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
 	$: notes = data.notes;
 
-	const initialized = true;
+	let initialized = false;
+	$: initialized = Boolean(db);
 
 	const handleCreateWarehouse = async () => {
 		const id = await getWarehouseIdSeq(db);

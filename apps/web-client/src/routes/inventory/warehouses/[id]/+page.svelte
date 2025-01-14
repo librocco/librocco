@@ -26,7 +26,7 @@
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { settingsStore } from "$lib/stores";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
@@ -58,6 +58,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
@@ -68,7 +69,7 @@
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !data;
+	$: loading = !db;
 
 	$: id = data.id;
 	$: displayName = data.displayName;
