@@ -145,48 +145,54 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 
 	const content = dashboard.content();
 	const header = dashboard.content().header();
+	const warehouseList = content.entityList("warehouse-list");
 
 	const dbHandle = await getDbHandle(page);
 
-	// Create three warehouses (default names: "New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
+	// Create two warehouses with default names
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "New Warehouse" });
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "New Warehouse (2)" });
 
+	// Create a new warehouse, continuing the naming sequence
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse (3)");
 
-	// Rename the first two warehouses (leaving us with only "New Warehouse (3)", having the default name)
+	// Rename the first two warehouses
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 
+	// Create another warehouse
+	await dashboard.navigate("inventory");
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse (4)");
 
-	// Check names
+	// Verify warehouse names
 	await dashboard.navigate("inventory");
-	await content
-		.entityList("warehouse-list")
-		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "New Warehouse (3)" }, { name: "New Warehouse (4)" }]);
+	await warehouseList.assertElements([
+		{ name: "Warehouse 1" },
+		{ name: "Warehouse 2" },
+		{ name: "New Warehouse (3)" },
+		{ name: "New Warehouse (4)" }
+	]);
 
-	// Rename the remaining warehouses to restart the sequence
+	// Rename remaining warehouses to restart the sequence
 	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
 	await dbHandle.evaluate(upsertWarehouse, { id: 4, displayName: "Warehouse 4" });
 
-	// Create a final warehouse (with reset sequence)
+	// Create a final warehouse with reset sequence
+	await dashboard.navigate("inventory");
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse");
 
-	// Check names
+	// Verify final warehouse names
 	await dashboard.navigate("inventory");
-	await content
-		.entityList("warehouse-list")
-		.assertElements([
-			{ name: "Warehouse 1" },
-			{ name: "Warehouse 2" },
-			{ name: "Warehouse 3" },
-			{ name: "Warehouse 4" },
-			{ name: "New Warehouse" }
-		]);
+	await warehouseList.assertElements([
+		{ name: "Warehouse 1" },
+		{ name: "Warehouse 2" },
+		{ name: "Warehouse 3" },
+		{ name: "Warehouse 4" },
+		{ name: "New Warehouse" }
+	]);
 });
 
 test("should navigate to warehouse page on 'View stock' button click", async ({ page }) => {
