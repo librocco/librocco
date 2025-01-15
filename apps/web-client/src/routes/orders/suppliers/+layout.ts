@@ -12,5 +12,3 @@ export const load: LayoutLoad = async ({ depends }) => {
 
 	return { placedOrders, possibleOrders: possibleOrdersInfo, ordersDb: db };
 };
-
-export const ssr = false;
