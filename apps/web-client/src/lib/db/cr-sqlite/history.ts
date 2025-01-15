@@ -1,4 +1,4 @@
-import type { DB, PastNoteItem, PastTransactionItem } from "./types";
+import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
 
 export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
 	const query = `
@@ -45,10 +45,11 @@ type Params = {
 	warehouseId?: number;
 	startDate?: Date;
 	endDate?: Date;
+	noteType?: NoteType;
 };
 
 export async function getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
-	const { isbn, warehouseId, startDate, endDate } = params;
+	const { isbn, warehouseId, startDate, endDate, noteType } = params;
 	const conditions = [];
 	const values = [];
 
@@ -67,6 +68,12 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
 	if (endDate) {
 		conditions.push("n.committed_at <= ?");
 		values.push(endDate.getTime() + 24 * 60 * 60 * 1000 - 1);
+	}
+	if (noteType === "inbound") {
+		conditions.push("(n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1)");
+	}
+	if (noteType === "outbound") {
+		conditions.push("(n.warehouse_id IS NULL AND n.is_reconciliation_note = 0)");
 	}
 
 	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
@@ -91,12 +98,12 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
                 ELSE 'outbound'
             END AS noteType
         FROM book_transaction bt
-        JOIN note n ON bt.note_id = n.id
-        JOIN book b ON bt.isbn = b.isbn
+        LEFT JOIN note n ON bt.note_id = n.id
+        LEFT JOIN book b ON bt.isbn = b.isbn
         LEFT JOIN warehouse w ON bt.warehouse_id = w.id
         ${whereClause}
         AND n.committed = 1
-        ORDER BY n.committed_at
+        ORDER BY n.committed_at, bt.isbn, bt.warehouse_id
     `;
 
 	const res = await db.execO<QueryResItem>(query, values);

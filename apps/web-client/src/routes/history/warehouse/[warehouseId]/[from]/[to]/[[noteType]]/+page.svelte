@@ -1,14 +1,16 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { ArrowLeft, ArrowRight } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
 	import { download, generateCsv, mkConfig } from "export-to-csv";
 	import { browser } from "$app/environment";
+	import { invalidate } from "$app/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
@@ -21,8 +23,25 @@
 
 	export let data: PageData;
 
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
+		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
+		disposer = rx.onRange(["book", "note"], () => invalidate("history:transactions"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
 	$: displayName = data.displayName;
 	$: transactions = data.transactions;
+	$: filter = data.noteType;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -52,7 +71,6 @@
 	// #endregion date picker
 
 	// #region dropdown
-	let filter = "";
 	const options = [
 		{
 			label: "All",
@@ -67,7 +85,7 @@
 			value: "outbound"
 		}
 	];
-	const selectFilter = (value: string) => () => (filter = value);
+	const selectFilter = (value: string) => () => goto(appPath("history/warehouse", data.warehouseId, data.from.date, data.to.date, value));
 	// #endregion dropdown
 
 	// #region csv
