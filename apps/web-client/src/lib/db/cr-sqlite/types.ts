@@ -198,6 +198,8 @@ export type PastTransactionItem = {
 
 /* Misc */
 
+export type NoteType = "inbound" | "outbound";
+
 export type GetStockResponseItem = {
 	isbn: string;
 	quantity: number;
