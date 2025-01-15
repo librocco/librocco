@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { writable, type Readable, readable } from "svelte/store";
+	import { writable, readable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
