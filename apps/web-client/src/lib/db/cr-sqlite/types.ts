@@ -179,6 +179,32 @@ export type ReceiptData = {
 	timestamp: string;
 };
 
+/* History */
+export type PastNoteItem = {
+	id: number;
+	displayName: string;
+	noteType: string;
+	totalBooks: number;
+	warehouseName: string;
+	totalCoverPrice: number;
+	totalDiscountedPrice: number;
+};
+
+export type PastTransactionItem = {
+	isbn: string;
+	title?: string;
+	author?: string;
+	quantity: number;
+	price: number;
+	committedAt: Date;
+	warehouseId?: number;
+	warehouseName?: string;
+	discount: number;
+	noteId: number;
+	noteName: string;
+	noteType: string;
+};
+
 /* Misc */
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
