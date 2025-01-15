@@ -16,6 +16,9 @@ const config = {
 			"$i18n/*": "./src/i18n/*"
 		},
 		adapter: adapter(),
+		serviceWorker: {
+			register: false
+		},
 		prerender: {
 			// Note: the '...path/1/' is a workaround for prebuilding the skeleton for all
 			// pages that will, in the browser have a param (in place of the 1), used to render dynamic data.
@@ -55,8 +58,7 @@ const config = {
 			]
 		},
 		paths: {
-			base: BASE_PATH,
-			relative: false
+			base: BASE_PATH
 		},
 		typescript: {
 			config: (config) => ({

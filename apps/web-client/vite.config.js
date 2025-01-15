@@ -33,7 +33,6 @@ const config = {
 		sveltekit(),
 		SvelteKitPWA({
 			registerType: "prompt",
-			filename: "librocco-service-worker.js",
 			manifest: {
 				name: "Librocco",
 				short_name: "Librocco",
