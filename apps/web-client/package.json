@@ -100,7 +100,7 @@
 		"vite-plugin-pwa": "0.21.1",
 		"vitest": "~2.1.8",
 		"workbox-window": "~6.5.4",
-		"zod": "~3.22.2",
+		"zod": "~3.24.1",
 		"@internationalized/date": "~3.5.2",
 		"storybook": "~8.4.7",
 		"@storybook/sveltekit": "~8.4.7",
