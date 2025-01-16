@@ -1,6 +1,4 @@
 <script lang="ts">
-	import { isBookRow } from "@librocco/db";
-
 	import type { InventoryTableData } from "../types";
 
 	import BookHeadCell from "./BookHeadCell.svelte";
@@ -10,6 +8,9 @@
 
 	export let row: InventoryTableData;
 	export let rowIx: number;
+
+	// TODO: this is a duplicate
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 </script>
 
 {#if isBookRow(row)}

@@ -1,4 +1,4 @@
-import type { DB } from "./types";
+import type { DB, GetStockResponseItem } from "./types";
 
 type GetStockParams = {
 	searchString?: string;
@@ -7,22 +7,6 @@ type GetStockParams = {
 	// If provided the results are filtered by provided isbn, providing stock for each isbn across different warehouses
 	isbns?: string[];
 	warehouseId?: number;
-};
-
-type GetStockResponseItem = {
-	isbn: string;
-	quantity: number;
-	warehouseId: number;
-	warehouseName: string;
-	warehouseDiscount: number;
-	title: string;
-	price: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
 };
 
 export async function getStock(
@@ -63,12 +47,12 @@ export async function getStock(
 			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
 			COALESCE(b.price, 0) AS price,
-			b.year,
-			b.authors,
-			b.publisher,
-			b.edited_by AS editedBy,
-			b.out_of_print AS outOfPrint,
-			b.category
+			COALESCE(b.year, 'N/A') AS year,
+			COALESCE(b.authors, 'N/A') AS authors,
+			COALESCE(b.publisher, '') AS publisher,
+			COALESCE(b.edited_by, '') AS editedBy,
+			b.out_of_print,
+			COALESCE(b.category, '') AS category
 		FROM book_transaction bt
 		JOIN note n ON bt.note_id = n.id
 		LEFT JOIN book b ON bt.isbn = b.isbn
@@ -79,5 +63,6 @@ export async function getStock(
 		ORDER BY bt.isbn, bt.warehouse_id
 	`;
 
-	return db.execO<GetStockResponseItem>(query, filterValues);
+	const res = await db.execO<Omit<GetStockResponseItem, "outOfPrint"> & { out_of_print: number }>(query, filterValues);
+	return res.map(({ out_of_print, ...rest }) => ({ outOfPrint: !!out_of_print, ...rest }));
 }

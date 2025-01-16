@@ -150,11 +150,11 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number; updatedAt: Date } & Required<
+export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number; updatedAt?: Date } & Required<
 		Omit<BookData, "updatedAt">
 	>;
 
-export type NoteCustomItem = { id: number; title: string; price: number; updatedAt: Date };
+export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date };
 
 export type ReceiptItem = {
 	isbn?: string; // undefined for custom_item
@@ -208,12 +208,12 @@ export type GetStockResponseItem = {
 	warehouseDiscount: number;
 	title: string;
 	price: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
+	year: string;
+	authors: string;
+	publisher: string;
+	editedBy: string;
+	outOfPrint: boolean;
+	category: string;
 };
 
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
