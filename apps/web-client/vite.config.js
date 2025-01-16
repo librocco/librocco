@@ -21,6 +21,8 @@ if (typeof BASE_PATH === "undefined") {
 	// If no BASE_PATH was passed as environment variable, we default to either
 	// `/preview` or (if CURRENT_SHA is defined) to `/preview/<CURRENT_SHA>`
 	BASE_PATH = dev || !CURRENT_SHA ? DEFAULT_BASE_PATH : `${DEFAULT_BASE_PATH}/${CURRENT_SHA}`;
+	// make sure BASE_PATH does not end with a slash
+	BASE_PATH = BASE_PATH.replace(/\/?$/, "");
 	process.env.BASE_PATH = BASE_PATH;
 }
 
@@ -33,6 +35,7 @@ const config = {
 		sveltekit(),
 		SvelteKitPWA({
 			registerType: "prompt",
+			base: BASE_PATH + "/",
 			manifest: {
 				name: "Librocco",
 				short_name: "Librocco",
@@ -51,8 +54,9 @@ const config = {
 				theme_color: "#ffffff",
 				background_color: "#ffffff",
 				display: "standalone",
-				start_url: "/",
-				scope: "/"
+				start_url: BASE_PATH + "/",
+				scope: BASE_PATH + "/",
+				manifestPath: "/manifest.webmanifest/"
 			}
 		}),
 		{
