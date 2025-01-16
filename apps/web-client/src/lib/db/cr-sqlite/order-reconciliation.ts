@@ -1,23 +1,34 @@
 import { multiplyString } from "./customers";
-import type { DB, ReconciliationOrder } from "./types";
+import type { DB, ReconciliationOrder, ReconciliationOrderLine } from "./types";
 
 export async function getAllReconciliationOrders(db: DB): Promise<ReconciliationOrder[]> {
 	const result = await db.execO<ReconciliationOrder>(
-		"SELECT id, supplier_order_ids, finalized, customer_order_line_ids, created FROM reconciliation_order ORDER BY id ASC;"
+		"SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order ORDER BY id ASC;"
 	);
 	return result;
 }
 
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder> {
 	const result = await db.execO<ReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, customer_order_line_ids, created
+		`SELECT id, supplier_order_ids, finalized, updatedAt, created
 		FROM reconciliation_order WHERE id = ?;`,
 		[id]
 	);
+
 	if (!result.length) {
 		throw new Error(`Reconciliation order with id ${id} not found`);
 	}
+
 	return result[0];
+}
+export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
+	const result = await db.execO<ReconciliationOrderLine>(
+		`SELECT * FROM reconciliation_order_lines
+		WHERE reconciliation_order_id = ?;`,
+		[id]
+	);
+
+	return result;
 }
 
 export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
@@ -25,30 +36,30 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 		throw new Error("Reconciliation order must be based on at least one supplier order");
 	}
 
-	const recondOrder = await db.execA<number[]>(
+	const recondOrder = await db.execO<{ id: number }>(
 		`INSERT INTO reconciliation_order (supplier_order_ids) VALUES (json_array(${multiplyString(
 			"?",
 			supplierOrderIds.length
 		)})) RETURNING id;`,
 		supplierOrderIds
 	);
-	return recondOrder[0][0];
+	return recondOrder[0].id;
 }
 
 export async function addOrderLinesToReconciliationOrder(db: DB, id: number, isbns: string[]) {
-	const reconOrder = await db.execO<{ supplierOrderIds: number[] }>(
-		"SELECT supplier_order_ids as supplierOrderIds FROM reconciliation_order WHERE id = ?;",
-		[id]
-	);
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder[0]) {
 		throw new Error(`Reconciliation order ${id} not found`);
 	}
 
-	await db.exec(
-		`UPDATE reconciliation_order SET customer_order_line_ids = (json_array(${multiplyString("?", isbns.length)})) WHERE id = ?;`,
-		[...isbns, id]
-	);
+	const params = isbns.map((isbn) => [id, isbn]).flat();
+
+	const sql = `
+     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn)
+     VALUES ${multiplyString("(?,?)", isbns.length)};`;
+
+	await db.exec(sql, params);
 }
 
 export async function finalizeReconciliationOrder(db: DB, id: number) {
@@ -56,10 +67,9 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 		throw new Error("Reconciliation order must have an id");
 	}
 
-	const reconOrder = await db.execO<{
-		isbns: string;
-		finalized: number;
-	}>("SELECT customer_order_line_ids as isbns, finalized FROM reconciliation_order WHERE id = ?;", [id]);
+	const reconOrderLines = await db.execO<ReconciliationOrderLine>("SELECT * FROM reconciliation_order_lines WHERE id = ?;", [id]);
+
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT finalized FROM reconciliation_order WHERE id = ?;", [id]);
 	if (!reconOrder[0]) {
 		throw new Error(`Reconciliation order ${id} not found`);
 	}
@@ -70,7 +80,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 
 	let customerOrderLines: string[];
 	try {
-		customerOrderLines = reconOrder[0].isbns ? JSON.parse(reconOrder[0].isbns) : [];
+		customerOrderLines = reconOrderLines.map((line) => line.isbn);
 	} catch (e) {
 		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
 	}

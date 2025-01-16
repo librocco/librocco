@@ -37,6 +37,7 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
+		console.log({ books });
 		// NOTE: ordersDbCtx should always be defined on client
 		const { rx } = data.ordersDbCtx;
 
@@ -54,7 +55,7 @@
 	$: db = data.ordersDbCtx?.db;
 
 	$: orderLines = data?.customerOrderLines
-		.filter((line) => line.customer_id.toString() === $page.params.id)
+		.filter((line) => parseInt(line.customer_id).toFixed(0).toString() === $page.params.id)
 		.map((line) => ({ price: 0, ...books[line.isbn], ...line }));
 	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines?.slice(0, maxResults) || []

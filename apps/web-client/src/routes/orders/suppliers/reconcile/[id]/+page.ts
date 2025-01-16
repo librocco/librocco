@@ -1,12 +1,17 @@
-import { getReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+import { getReconciliationOrder, getReconciliationOrderLines } from "$lib/db/cr-sqlite/order-reconciliation";
 import type { PageLoad } from "./$types";
 import { getPlacedSupplierOrderLinesForReconciliation } from "$lib/db/cr-sqlite/suppliers";
+import type { BookEntry } from "@librocco/db";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("reconciliationOrder:data");
 
-	const { ordersDb, dbCtx } = await parent();
+	const { ordersDb } = await parent();
 	const reconciliationOrder = await getReconciliationOrder(ordersDb, parseInt(params.id));
+	const reconciliationOrderLines = await getReconciliationOrderLines(ordersDb, parseInt(params.id));
+
+	console.log({ reconciliationOrder });
+	console.log({ reconciliationOrderLines });
 
 	// we need a list of all the books
 	// while going through them check if the isbn occurred twice
@@ -22,10 +27,11 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		{}
 	);
 
-	const books: string[] = JSON.parse(reconciliationOrder.customer_order_line_ids) || [];
+	// const books: string[] = JSON.parse(reconciliationOrder.customer_order_line_ids) || [];
+	const books = reconciliationOrderLines.map((recon) => recon.isbn);
 	let mergedBookData = [];
 	if (books.length) {
-		const fetchedBookData = await ordersDb.execO(`SELECT *
+		const fetchedBookData = await ordersDb.execO<BookEntry>(`SELECT *
 	FROM book WHERE isbn IN (${books.join(", ")})`);
 
 		mergedBookData = books.map((book) => {
@@ -34,7 +40,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		});
 	}
 
-	return { reconciliationOrder, ordersDb, mergedBookData, dbCtx, placedOrderLines, supplierOrders };
+	return { reconciliationOrder, ordersDb, mergedBookData, placedOrderLines, supplierOrders, reconciliationOrderLines };
 };
 
 export const ssr = false;

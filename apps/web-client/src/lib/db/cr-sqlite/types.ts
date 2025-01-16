@@ -117,9 +117,16 @@ export type SupplierOrder = {
 export type ReconciliationOrder = {
 	supplier_order_ids: string;
 	created: number;
-	customer_order_line_ids: string; // json array
 	id?: number;
 	finalized: boolean;
+	updatedAt: Date;
+};
+
+export type ReconciliationOrderLine = {
+	reconciliation_order_id: number;
+	id: number;
+	isbn: string;
+	created: number;
 };
 
 /* Warehouse */
