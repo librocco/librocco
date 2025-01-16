@@ -16,8 +16,8 @@ export interface OrderData {
 
 // TODO: add availableWarehouses
 type InventoryTableDataBook = NoteEntriesItem & {
-	__kind: "book";
-	availableWarehouses: Map<number, { displayName: string; quantity: number }>;
+	__kind?: "book";
+	availableWarehouses?: Map<number, { displayName: string; quantity: number }>;
 };
 type InventoryTableDataCustomItem = NoteCustomItem & {
 	__kind: "custom";
