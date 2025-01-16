@@ -21,18 +21,13 @@
 	}
 	const dispatch = createEventDispatcher<{ reconcile: { supplierOrderIds: number[] } }>();
 
-	async function handleReconcile(supplierOrderId: number) {
+	async function handleReconcile(supplierOrderIds: number[]) {
 		/** @TODO replace with SOIds */
-		dispatch("reconcile", { supplierOrderIds: [supplierOrderId] });
+		dispatch("reconcile", { supplierOrderIds: supplierOrderIds });
 		// goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
 	function handleView(supplierOrderId: number) {
 		goto(`${base}/orders/suppliers/order/${supplierOrderId}`);
-	}
-
-	function handleBulkReconcile() {
-		const ids = Array.from(selectedOrders).join(",");
-		dispatch("reconcile", { supplierOrderIds: selectedOrders });
 	}
 </script>
 
@@ -62,7 +57,7 @@
 					<td role="cell" class="text-right">
 						<button
 							class="btn-primary btn-sm btn flex-nowrap gap-x-2"
-							on:click={handleBulkReconcile}
+							on:click={() => handleReconcile(selectedOrders)}
 							aria-label="Reconcile {selectedOrders.length} selected orders"
 						>
 							<ListTodo aria-hidden focusable="false" size={20} />
@@ -87,7 +82,7 @@
 					<td class="flex items-center justify-evenly text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
 						{#if !hasSelectedOrders}
-							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile(id)}>
+							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
 								<ListTodo aria-hidden focusable="false" size={20} />
 								Reconcile
 							</button>
