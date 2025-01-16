@@ -30,7 +30,7 @@
 	const { editQuantity, editWarehouse } = createOutboundTableEvents(dispatch);
 
 	// TODO: this is a duplicate
-	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind === "book";
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 </script>
 
 <table id="inventory-table" class="stock-table table-auto" use:tableAction={{ rowCount }}>

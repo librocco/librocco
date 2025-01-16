@@ -12,6 +12,7 @@
 	import { testId } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
+	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
 	import { LL } from "$i18n/i18n-svelte";
 
@@ -28,7 +29,6 @@
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
 	// TODO: revisit
 	// if (!status) goto(appPath("settings"));
@@ -67,9 +67,9 @@
 	$: currentQuery = Promise.resolve(db && $search.length > 2 ? getStock(db, { searchString: $search }) : ([] as GetStockResponseItem[]));
 	$: currentQuery.then((e) => (entries = e));
 
-	const tableOptions = writable({ data: entries.slice(0, maxResults).map((e) => ({ ...e, __kind: "book" })) });
+	const tableOptions = writable({ data: entries.slice(0, maxResults) });
 	const table = createTable(tableOptions);
-	$: tableOptions.set({ data: entries?.slice(0, maxResults).map((e) => ({ ...e, __kind: "book" })) });
+	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 
 	let searchField: HTMLInputElement;
 	$: tick().then(() => searchField?.focus());

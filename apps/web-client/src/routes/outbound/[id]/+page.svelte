@@ -105,7 +105,9 @@
 	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
-	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt)));
+
+	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
+	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -361,7 +363,7 @@
 		| { type: "reconcile"; invalidTransactions: OutOfStockTransaction[] };
 
 	// TODO: this is a duplicate
-	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind === "book";
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 </script>
 
 <Page view="outbound-note" loaded={!loading}>
