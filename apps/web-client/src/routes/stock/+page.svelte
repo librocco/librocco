@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { tick } from "svelte";
-	import { writable } from "svelte/store";
+	import { readable, writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
@@ -8,47 +8,45 @@
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
-	import type { SearchIndex, BookEntry } from "@librocco/db";
+	import type { BookEntry } from "@librocco/db";
 	import { testId } from "@librocco/shared";
+
+	import type { PageData } from "./$types";
 
 	import { LL } from "$i18n/i18n-svelte";
 
-	import { getDB } from "$lib/db";
 	import { printBookLabel } from "$lib/printer";
-
-	import { goto } from "$lib/utils/navigation";
 
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
-	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
-	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
+	import { getStock } from "$lib/db/cr-sqlite/stock";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
-	import { appPath } from "$lib/paths";
+	// TODO: revisit
+	// if (!status) goto(appPath("settings"));
 
-	const { db, status } = getDB();
-	if (!status) goto(appPath("settings"));
+	// TODO: develop publisher list functionality
+	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readable([]);
 
-	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	export let data: PageData;
+	$: db = data?.dbCtx?.db;
 
-	// Create a search index for books in the db. Each time the books change, we recreate the index.
-	// This is more/less inexpensive (around 2sec), considering it runs in the background.
-	let index: SearchIndex | undefined;
-	db?.books()
-		.streamSearchIndex()
-		.subscribe((ix) => (index = ix));
+	// TEMP
+	// import { getDB } from "$lib/db";
+	// const { db } = getDB();
 
-	$: stores = createFilteredEntriesStore({ name: "[SEARCH]", debug: false }, db, index);
-
-	$: search = stores.search;
-	$: entries = stores.entries;
+	const search = writable("");
+	let entries = [] as GetStockResponseItem[];
 
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
@@ -59,11 +57,19 @@
 	// We're using in intersection observer to create an infinite scroll effect
 	const scroll = createIntersectionObserver(seeMore);
 
-	const tableOptions = writable({
-		data: $entries
-	});
+	// Each time we update the search string, or max results, requery the entries
+	// We're using a sinple hack here:
+	// - we're querying for maxResults + 1
+	// - this is a cheap way to check if there are more results than requested
+	// - further below, we're checking that +1 entry exists, if so, we let the intersection observer know it can requery when reached (infinite scroll)
+	//
+	// TODO: 'db' should always be defined, as we want this to run ONLY in browser context, but, as of yet, I wasn't able to get this to work
+	$: currentQuery = Promise.resolve(db && $search.length > 2 ? getStock(db, { searchString: $search }) : ([] as GetStockResponseItem[]));
+	$: currentQuery.then((e) => (entries = e));
+
+	const tableOptions = writable({ data: entries.slice(0, maxResults).map((e) => ({ ...e, __kind: "book" })) });
 	const table = createTable(tableOptions);
-	$: tableOptions.set({ data: $entries?.slice(0, maxResults) });
+	$: tableOptions.set({ data: entries?.slice(0, maxResults).map((e) => ({ ...e, __kind: "book" })) });
 
 	let searchField: HTMLInputElement;
 	$: tick().then(() => searchField?.focus());
@@ -86,8 +92,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
-
+			await upsertBook(db, data);
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -95,7 +100,8 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	// TODO: revisit
+	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookEntry) => async () => {
@@ -127,10 +133,10 @@
 			<PlaceholderBox title={tSearch.empty.title()} description={tSearch.empty.description()} class="center-absolute">
 				<Search slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
-		{:else if !$entries?.length}
+		{:else if !entries?.length}
 			<!-- Using await :then trick we're displaying the loading state for 1s, after which we show no-results message -->
 			<!-- The waiting state is here so as to not display the no results to quickly (in case of initial search, being slightly slower) -->
-			{#await new Promise((r) => setTimeout(r, 1000))}
+			{#await currentQuery}
 				<div class="center-absolute">
 					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 				</div>
@@ -220,7 +226,7 @@
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $entries?.length > maxResults}
+				{#if $table.rows?.length === maxResults && entries.length > maxResults}
 					<div use:scroll.trigger />
 				{/if}
 			</div>
@@ -266,8 +272,11 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+						onFetch={async (_isbn, form) => {
+							// TODO: revisit
+							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = [];
+
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 
@@ -279,7 +288,7 @@
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
+						isExtensionAvailable={/* TODO: revisit this with ExtensionAvailabilityStore */ true}
 					/>
 				</div>
 			</div>
