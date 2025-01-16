@@ -22,7 +22,7 @@ export type WebClientView =
 	| "orders/customers/id"
 	| "orders/suppliers"
 	| "orders/suppliers/id"
-	| "orders/suppliers/reconcile";
+	| "orders/suppliers/reconcile/id";
 
 /** Union of names for all views containing entity lists (warehouses / notes) */
 export type EntityListView = "warehouse-list" | "inbound-list" | "outbound-list" | "history/notes";

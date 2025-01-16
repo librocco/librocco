@@ -1,9 +1,5 @@
-<<<<<<< HEAD
 import type { BookEntry } from "@librocco/db";
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrder } from "./types";
-=======
-import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine, SupplierPlacedOrderLine } from "./types";
->>>>>>> 89c35b1220fcc19a50b2d7f529f1b12456d94367
+import type { DB, Supplier, SupplierOrderInfo, SupplierOrderLine } from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -328,7 +324,10 @@ export type SupplierPlacedOrderLine = {
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
-export async function getPlacedSupplierOrderLinesForReconciliation(db: DB, supplier_order_ids: number[]): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
+export async function getPlacedSupplierOrderLinesForReconciliation(
+	db: DB,
+	supplier_order_ids: number[]
+): Promise<(SupplierPlacedOrderLine & BookEntry)[]> {
 	if (!supplier_order_ids.length) return [];
 	const res = await db.execO<SupplierPlacedOrderLine & BookEntry>(
 		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,

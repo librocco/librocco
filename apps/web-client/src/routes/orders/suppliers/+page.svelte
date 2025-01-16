@@ -13,7 +13,7 @@
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import type { LayoutData } from "./$types";
-	import { createReconciliationOrder, getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import {
 		associatePublisher,
 		createSupplierOrder,
@@ -47,8 +47,11 @@
 			return;
 		}
 
-		const id = await createReconciliationOrder(data.ordersDb, event.detail.supplierOrderIds);
-		goto(`${base}/orders/suppliers/reconcile/${id.toString()}`);
+		const id = await createReconciliationOrder(
+			data.ordersDb,
+			Array.isArray(event.detail.supplierOrderIds) ? event.detail.supplierOrderIds : [event.detail.supplierOrderIds]
+		);
+		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 </script>
 

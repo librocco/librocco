@@ -21,10 +21,10 @@
 	let disposer: () => void;
 	onMount(() => {
 		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data.dbCtx;
+		const { rx } = data;
 
 		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
-		const disposer2 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliationOrder:data"));
+		const disposer2 = rx.onRange(["reconciliation_order", "reconciliation_order_lines"], () => invalidate("reconciliationOrder:data"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
@@ -33,10 +33,6 @@
 	onDestroy(async () => {
 		// Unsubscribe on unmount
 		disposer();
-		if (timeout) {
-			clearTimeout(timeout);
-			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
-		}
 	});
 	let isbn = "";
 	let books: Array<{
@@ -47,20 +43,13 @@
 		quantity: number;
 	}> = data?.mergedBookData || [];
 
-	let timeout = null;
-	let isbns = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
+	let isbns = [];
+	// = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
 	// Mock supplier orders data
 
 	$: scanned = data?.placedOrderLines;
 
-	async function finalizeScanning() {
-		if (timeout) {
-			clearTimeout(timeout);
-			timeout = null;
-			await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
-		}
-	}
-	function handleIsbnSubmit() {
+	async function handleIsbnSubmit() {
 		if (!isbn) return;
 		isbns = [...isbns, isbn];
 
@@ -76,12 +65,8 @@
 		];
 
 		//invocation is debounced to 10 seconds from first call
-		if (!timeout) {
-			timeout = setTimeout(async () => {
-				await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
-				timeout = null;
-			}, 10000);
-		}
+
+		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
 
 		isbn = "";
 	}
@@ -123,11 +108,18 @@
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+								<span class="sr-only">Created</span>
+								<ClockArrowUp size={16} aria-hidden />
+								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
+									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
+								>
+							</span>
+							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<!-- <time dateTime={data?.reconciliationOrder.created.toISOString()}
-									>{data?.reconciliationOrder.created.toLocaleDateString()}</time
-								> -->
+								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
+									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
+								>
 							</span>
 						</div>
 					</div>
@@ -162,9 +154,6 @@
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
 									disabled={isCurrent || step === 3}
 									on:click={async () => {
-										if (step === 2) {
-											await finalizeScanning();
-										}
 										currentStep = step;
 									}}
 								>
@@ -253,7 +242,6 @@
 								class="btn-primary btn ml-auto"
 								on:click={async () => {
 									if (currentStep === 1) {
-										await finalizeScanning();
 										currentStep = 2;
 									} else {
 										commitDialogOpen.set(true);
