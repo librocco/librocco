@@ -351,6 +351,7 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	for (const e of entries) {
 		await db.evaluate(addVolumesToNote, [1, e] as const);
 	}
+	await db.evaluate(commitNote, 1);
 
 	const dashboard = getDashboard(page);
 	const table = dashboard.content().table("warehouse");
