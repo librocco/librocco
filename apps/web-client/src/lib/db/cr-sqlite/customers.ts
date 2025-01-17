@@ -31,27 +31,32 @@
 import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
-	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
-	return result;
+	const res = await db.execO<Omit<Customer, "updatedAt"> & { updated_at: number }>(
+		"SELECT id, fullname, email, updated_at, deposit FROM customer ORDER BY id ASC;"
+	);
+	return res.map(({ updated_at, ...row }) => ({ ...row, updatedAt: new Date(updated_at) }));
 }
 
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
+
+	const timestamp = Date.now();
 	await db.exec(
-		`INSERT INTO customer (id, fullname, email, deposit)
-         VALUES (?, ?, ?, ?)
+		`INSERT INTO customer (id, fullname, email, deposit, updated_at)
+         VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
-           updatedAt = (strftime('%s', 'now') * 1000),
+           updated_at = excluded.updated_at,
            deposit = COALESCE(?, deposit);`,
 		[
 			customer.id,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.deposit ?? null,
+			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.deposit ?? null
@@ -98,7 +103,7 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
  *                               containing id, fullname, deposit, and email information
  */
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updatedAt FROM customer WHERE id = $customerId;", [
+	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updated_at FROM customer WHERE id = $customerId;", [
 		customerId
 	]);
 
