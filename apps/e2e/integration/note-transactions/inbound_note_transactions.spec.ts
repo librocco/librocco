@@ -3,7 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
-import { addVolumesToNote, createInboundNote, updateNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
+import { addVolumesToNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 import { book1 } from "../data";
 

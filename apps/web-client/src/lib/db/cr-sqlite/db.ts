@@ -1,4 +1,5 @@
 import initWasm from "@vlcn.io/crsqlite-wasm";
+import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
 import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
@@ -26,7 +27,7 @@ async function getSchemaNameAndVersion(db: DB): Promise<[string, bigint] | null>
 	return [name, BigInt(version)];
 }
 
-export async function getDB(dbname: string): Promise<DB> {
+export async function getDB(dbname: string): Promise<_DB> {
 	const sqlite = await initWasm(() => wasmUrl);
 	return sqlite.open(dbname);
 }

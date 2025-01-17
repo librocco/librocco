@@ -12,7 +12,7 @@ export const rows: InventoryTableData<"book">[] = [
 		editedBy: "",
 		outOfPrint: false,
 		category: "",
-		warehouseId: "wh1",
+		warehouseId: 1,
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 20
 	},
@@ -27,7 +27,7 @@ export const rows: InventoryTableData<"book">[] = [
 		editedBy: "",
 		outOfPrint: false,
 		category: "",
-		warehouseId: "wh1",
+		warehouseId: 1,
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 10
 	},
@@ -43,16 +43,17 @@ export const rows: InventoryTableData<"book">[] = [
 		editedBy: "Renato Sironi, Francesca Desiderio, Evelina Poggi, Allesandro Lucchese",
 		outOfPrint: false,
 		category: "",
-		warehouseId: "wh1",
+		warehouseId: 1,
 		warehouseName: "Warehouse 1",
 		warehouseDiscount: 0
 	}
 ];
 
-export const availableWarehouses = new Map([
-	["wh1", { displayName: "Warehouse 1", quantity: 1 }],
-	["wh2", { displayName: "Warehouse 2", quantity: 1 }]
+export const availableWarehouses: Required<InventoryTableData<"book">>["availableWarehouses"] = new Map([
+	[1, { displayName: "Warehouse 1", quantity: 1 }],
+	[2, { displayName: "Warehouse 2", quantity: 1 }]
 ]);
+export const warehouseList = [...availableWarehouses.entries().map(([id, w]) => ({ id, discount: 0, ...w }))];
 
 /**
  * Includes three rows, with the first and the second row having the warehouse set up and third having it empty

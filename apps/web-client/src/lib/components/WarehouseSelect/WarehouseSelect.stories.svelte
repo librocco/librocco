@@ -11,17 +11,11 @@
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
 
-	import { rows, outNoteRows } from "$lib/__testData__/rowData";
+	import { outNoteRows, warehouseList } from "$lib/__testData__/rowData";
 </script>
 
 <Story name="Default">
 	<td>
-		<WarehouseSelect data={outNoteRows[0]} rowIx={0} />
-	</td>
-</Story>
-
-<Story name="Only one option - selected">
-	<td>
-		<WarehouseSelect data={rows[0]} rowIx={1} />
+		<WarehouseSelect data={outNoteRows[0]} rowIx={0} {warehouseList} />
 	</td>
 </Story>

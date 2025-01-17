@@ -13,7 +13,7 @@
 
 	export let data: InventoryTableData<"book">;
 	export let rowIx: number;
-	export let warehouseList: Warehouse[];
+	export let warehouseList: Omit<Warehouse, "discount">[];
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
 	const dispatchChange = (warehouseId: number) => dispatch("change", { warehouseId });
@@ -39,7 +39,7 @@
 
 	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
 
-	const mapWarehousesToOptions = (warehouseList: Warehouse[]) =>
+	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
 		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
 
 	/**

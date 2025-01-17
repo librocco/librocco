@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
-	import { type Writable, get, writable, readable } from "svelte/store";
+	import { type Writable, get, writable } from "svelte/store";
 	import { onMount, onDestroy } from "svelte";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults, type SuperForm } from "sveltekit-superforms";
+	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { QrCode, Trash2, FileEdit, MoreVertical } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
@@ -22,7 +22,8 @@
 		Dialog,
 		OrderLineTable,
 		TextEditable,
-		ExtensionAvailabilityToast
+		ExtensionAvailabilityToast,
+		NumberEditable
 	} from "$lib/components";
 	import { ScannerForm, scannerSchema } from "$lib/forms";
 
@@ -156,7 +157,7 @@
 					placeholder="Full Name"
 					bind:value={$name}
 				/>
-				<TextEditable
+				<NumberEditable
 					name="deposit"
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
