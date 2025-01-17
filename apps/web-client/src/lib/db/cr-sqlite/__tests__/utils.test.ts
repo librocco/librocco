@@ -22,7 +22,13 @@ describe("Misc helpers", () => {
 				authors: "Author 1",
 				price: 10,
 				quantity: 2,
-				supplier_name: "Supplier 1"
+				supplier_name: "Supplier 1",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 1,
+				total_price: 10,
+				created: Date.now()
 			}
 		];
 
@@ -49,7 +55,13 @@ describe("Misc helpers", () => {
 				authors: "Author 1",
 				price: 10,
 				quantity: 2,
-				supplier_name: "Supplier 1"
+				supplier_name: "Supplier 1",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 1,
+				total_price: 10,
+				created: Date.now()
 			}
 		];
 
@@ -80,7 +92,13 @@ describe("Misc helpers", () => {
 				authors: "Author 1",
 				price: 10,
 				quantity: 2,
-				supplier_name: "Supplier 1"
+				supplier_name: "Supplier 1",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 1,
+				total_price: 10,
+				created: Date.now()
 			}
 		];
 
@@ -110,7 +128,13 @@ describe("Misc helpers", () => {
 				authors: "Author 1",
 				price: 10,
 				quantity: 2,
-				supplier_name: "Supplier 1"
+				supplier_name: "Supplier 1",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 1,
+				total_price: 10,
+				created: Date.now()
 			}
 		];
 
