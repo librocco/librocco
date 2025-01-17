@@ -26,9 +26,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	bookData.forEach((book) => {
 		bookDataMap.set(book.isbn, book);
 	});
-
-	console.log({ customerOrderLines });
-	console.log({ isbns });
-	console.log({ bookDataMap });
 	return { books: bookData, customer: customerDetails[0] || ({} as Customer), customerOrderLines };
 };
