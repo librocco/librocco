@@ -13,7 +13,7 @@ export type Customer = {
 	phone?: string;
 	taxId?: string;
 	deposit?: number;
-	updatedAt?: number;
+	updatedAt?: Date;
 };
 
 export type BookData = {
