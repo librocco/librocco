@@ -1,4 +1,5 @@
 import type { BookEntry } from "@librocco/db";
+import type { SupplierPlacedOrderLine } from "./types";
 
 export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
 	delivered: boolean;
@@ -9,7 +10,7 @@ export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
 };
 export const processOrderDelivery = (
 	scannedBooks: BookEntry[],
-	placedOrderLines: ({ supplier_name: string; quantity: number } & BookEntry)[]
+	placedOrderLines: (SupplierPlacedOrderLine & { quantity: number })[]
 ): ProcessedOrderLine[] => {
 	// Count occurrences of each ISBN in scanned books
 	const scannedQuantities = scannedBooks.reduce((acc, book) => {
