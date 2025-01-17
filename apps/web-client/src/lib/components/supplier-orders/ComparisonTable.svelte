@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/suppliers";
+	import type { SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/types";
 	import { sortLinesBySupplier, type ProcessedOrderLine } from "$lib/db/cr-sqlite/utils";
 
 	import type { BookEntry } from "@librocco/db";
