@@ -13,7 +13,7 @@
 </script>
 
 <Story name="Interactive - default">
-	<TextEditable name="interactive" />
+	<TextEditable value="Vendita" name="interactive" />
 </Story>
 
 <Story name="Interactive - styled h2">
