@@ -21,7 +21,7 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	// Prepare the date for usage with date picker
 	const dateValue = fromDate(new Date(date), getLocalTimeZone());
 
-	let stats = {
+	const stats = {
 		totalInboundBookCount: 0,
 		totalInboundCoverPrice: 0,
 		totalOutboundBookCount: 0,

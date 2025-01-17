@@ -1,16 +1,11 @@
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
-import { createDB, dbNamePersisted } from "$lib/db";
+import { dbNamePersisted } from "$lib/db";
 import { navigatorDetector } from "typesafe-i18n/detectors";
 import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
-import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
-import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
-
-import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
-import { IS_E2E } from "$lib/constants";
 
 import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
