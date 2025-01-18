@@ -17,7 +17,6 @@ test.beforeEach(async ({ page }) => {
 	await page.getByRole("checkbox").nth(1).click();
 
 	await page.getByText("Reconcile").first().click();
-	// await page.goto(`${baseURL}/preview/orders/suppliers/reconcile/1`);
 
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
 });
@@ -31,7 +30,6 @@ test("should show correct delivery stats in commit view", async ({ page }) => {
 
 	const table = page.getByRole("table");
 	await expect(table.getByText("1111111111").first()).toBeVisible();
-	await expect(table.getByText("1111111111").nth(1)).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
@@ -40,38 +38,31 @@ test("should show correct delivery stats in commit view", async ({ page }) => {
 	await expect(table.getByText("123456789")).toBeVisible();
 	await expect(table.getByText("1111111111")).toBeVisible();
 
-	// Should show correct delivery stats
 	await expect(page.getByText("2 / 1")).toBeVisible();
 });
 
-test.skip("should show correct delivery stats in commit view (alt)", async ({ page }) => {
-	await page.getByRole("button", { name: "Place Order" }).click();
-	await page.getByRole("checkbox").nth(1).click();
-	await page.getByText("Place Order").click();
-
-	await page.getByText("Ordered").nth(1).click();
-
-	await page.getByRole("checkbox").nth(1).click();
-
-	await page.getByText("Reconcile").first().click();
-
+test("should correctly increment quantities when scanning same ISBN multiple times", async ({ page }) => {
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
 	await isbnInput.fill("1111111111");
 	await page.keyboard.press("Enter");
+
 	await isbnInput.fill("1111111111");
 	await page.keyboard.press("Enter");
 
 	const table = page.getByRole("table");
-	await expect(table.getByText("1111111111").first()).toBeVisible();
-	await expect(table.getByText("1111111111").nth(1)).toBeVisible();
 
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	await expect(page.getByText("Total delivered:")).toBeVisible();
-
-	await expect(table.getByText("123456789")).toBeVisible();
 	await expect(table.getByText("1111111111")).toBeVisible();
+	await expect(table.getByText("2")).toBeVisible();
 
-	// Should show correct delivery stats
-	await expect(page.getByText("2 / 1")).toBeVisible();
+	await isbnInput.fill("2222222222");
+	await page.keyboard.press("Enter");
+
+	await isbnInput.fill("1111111111");
+	await page.keyboard.press("Enter");
+
+	await expect(table.getByText("1111111111")).toBeVisible();
+	await expect(table.getByText("3")).toBeVisible();
+	await expect(table.getByText("2222222222")).toBeVisible();
+	await expect(table.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
