@@ -118,7 +118,7 @@
 	$: ({ search: tSearch } = $LL);
 </script>
 
-<Page view="stock" loaded={true}>
+<Page view="stock" loaded={Boolean(db)}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
