@@ -128,6 +128,7 @@ export type ReconciliationOrderLine = {
 	id: number;
 	isbn: string;
 	created: number;
+	quantity: number;
 };
 
 /* Warehouse */

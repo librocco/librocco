@@ -1,7 +1,5 @@
 import { vi, describe, it, expect, afterEach } from "vitest";
 
-import type { BookEntry } from "@librocco/db";
-
 import { processOrderDelivery, sortLinesBySupplier, type ProcessedOrderLine } from "../utils";
 
 afterEach(() => {
@@ -10,9 +8,9 @@ afterEach(() => {
 
 describe("Misc helpers", () => {
 	it("should process when delivery matches order exactly", () => {
-		const scannedBooks: BookEntry[] = [
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 }
+		const scannedBooks = [
+			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
+			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }
 		];
 
 		const placedOrderLines = [
@@ -46,7 +44,7 @@ describe("Misc helpers", () => {
 	});
 
 	it("should handle partial delivery", () => {
-		const scannedBooks: BookEntry[] = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 }];
+		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }];
 
 		const placedOrderLines = [
 			{
@@ -79,10 +77,10 @@ describe("Misc helpers", () => {
 	});
 
 	it("should handle over-delivery", () => {
-		const scannedBooks: BookEntry[] = [
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10 }
+		const scannedBooks = [
+			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
+			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
+			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }
 		];
 
 		const placedOrderLines = [
@@ -116,9 +114,9 @@ describe("Misc helpers", () => {
 	});
 
 	it("should handle unordered books", () => {
-		const scannedBooks: BookEntry[] = [
-			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15 },
-			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15 }
+		const scannedBooks = [
+			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15, quantity: 1 },
+			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15, quantity: 1 }
 		];
 
 		const placedOrderLines = [
