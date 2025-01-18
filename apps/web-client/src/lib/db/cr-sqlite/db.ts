@@ -10,7 +10,10 @@ import { type DB, type Change } from "./types";
 
 export type DbCtx = { db: DB; rx: ReturnType<typeof rxtbl> };
 
-const dbCache: Record<string, DbCtx> = {};
+// DB Cache combines name -> promise { db ctx } rather than the awaited value as we want to
+// chahe the DB as soon as the first time 'getInitializedDB' is called, so that all subsequent calls
+// await the same promise (which may or may not be resolved by then).
+const dbCache: Record<string, Promise<DbCtx>> = {};
 
 const schemaName = "init";
 const schemaVersion = cryb64(schema);
@@ -45,32 +48,30 @@ export async function initializeDB(db: DB) {
 
 export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	if (dbCache[dbname]) {
-		return dbCache[dbname];
+		return await dbCache[dbname];
 	}
 
-	const db = await getDB(dbname);
-
-	const schemaRes = await getSchemaNameAndVersion(db);
-	if (!schemaRes) {
-		await initializeDB(db);
-	} else {
-		// Check if schema name/version match
-		const [name, version] = schemaRes;
-		if (name !== schemaName || version !== schemaVersion) {
-			// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
-			const msg = [
-				"DB name/schema mismatch:",
-				`  req name: ${schemaName}, got name: ${name}`,
-				`  req version: ${schemaVersion}, got version: ${version}`
-			].join("\n");
-			throw new Error(msg);
-		}
-	}
-
-	const rx = rxtbl(db);
-	dbCache[dbname] = { db, rx };
-
-	return dbCache[dbname];
+	return await (dbCache[dbname] = getDB(dbname)
+		.then((db) => getSchemaNameAndVersion(db).then((schemaRes) => [db, schemaRes] as const))
+		.then(([db, schemaRes]) => {
+			if (!schemaRes) {
+				return initializeDB(db).then(() => db);
+			} else {
+				// Check if schema name/version match
+				const [name, version] = schemaRes;
+				if (name !== schemaName || version !== schemaVersion) {
+					// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
+					const msg = [
+						"DB name/schema mismatch:",
+						`  req name: ${schemaName}, got name: ${name}`,
+						`  req version: ${schemaVersion}, got version: ${version}`
+					].join("\n");
+					throw new Error(msg);
+				}
+				return db;
+			}
+		})
+		.then((db) => ({ db, rx: rxtbl(db) })));
 };
 
 export const getChanges = (db: DB, since: bigint | null = BigInt(0)): Promise<Change[]> => {
