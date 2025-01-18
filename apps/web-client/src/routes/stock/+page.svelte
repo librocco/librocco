@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { tick } from "svelte";
-	import { readable, writable } from "svelte/store";
+	import { onDestroy, onMount, tick } from "svelte";
+	import { writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -30,17 +31,22 @@
 
 	import { settingsStore } from "$lib/stores/app";
 
-	// TODO: develop publisher list functionality
-	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
-	const publisherList = readable([]);
-
 	export let data: PageData;
 	$: db = data?.dbCtx?.db;
 
-	// TEMP
-	// import { getDB } from "$lib/db";
-	// const { db } = getDB();
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+		disposer = rx.onRange(["book"], () => invalidate("book:data"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: publisherList = data?.publisherList;
 
 	const search = writable("");
 	let entries = [] as GetStockResponseItem[];
@@ -260,7 +266,7 @@
 				<div class="px-6">
 					<BookForm
 						data={defaults(bookFormData, zod(bookSchema))}
-						publisherList={$publisherList}
+						{publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
