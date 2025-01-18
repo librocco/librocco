@@ -11,5 +11,3 @@ export const load: PageLoad = async ({ parent, depends }) => {
 
 	return { dbCtx, notes };
 };
-
-export const prerender = false;
