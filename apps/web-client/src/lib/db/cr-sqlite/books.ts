@@ -95,6 +95,11 @@ export async function getBookData(db: DB, isbn: string): Promise<Required<BookDa
 	return processRawBookRes(res);
 }
 
+export async function getPublisherList(db: DB): Promise<string[]> {
+	const res = await db.execO<{ publisher: string }>(`SELECT DISTINCT publisher FROM book`);
+	return res.map(({ publisher }) => publisher);
+}
+
 export async function searchBooks(db: DB, searchString: string): Promise<Required<BookData>[]> {
 	// Encode the search string for this (naive) query
 	const filters = [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`]; // One value for each ?

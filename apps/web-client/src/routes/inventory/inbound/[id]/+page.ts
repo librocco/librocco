@@ -3,6 +3,7 @@ import { redirect } from "@sveltejs/kit";
 import type { PageLoad } from "./$types";
 
 import { getNoteById, getNoteEntries } from "$lib/db/cr-sqlite/note";
+import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { appPath } from "$lib/paths";
 
@@ -16,7 +17,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	// We're not in the browser, no need for further loading
 	if (!dbCtx) {
-		return { dbCtx, id, displayName: "N/A", entries: [] };
+		return { dbCtx, id, displayName: "N/A", entries: [], publisherList: [] as string[] };
 	}
 
 	const note = await getNoteById(dbCtx.db, id);
@@ -29,6 +30,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	}
 
 	const entries = await getNoteEntries(dbCtx.db, id);
+	const publisherList = await getPublisherList(dbCtx.db);
 
-	return { dbCtx, ...note, entries };
+	return { dbCtx, ...note, entries, publisherList };
 };
