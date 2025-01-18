@@ -56,9 +56,12 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, isb
 	const params = isbns.map((isbn) => [id, isbn]).flat();
 
 	const sql = `
-     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn)
-     VALUES ${multiplyString("(?,?)", isbns.length)};`;
-
+     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn,
+ quantity)
+     VALUES ${multiplyString("(?,?,1)", isbns.length)}
+     ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+         quantity = quantity + 1;
+     `;
 	await db.exec(sql, params);
 }
 
@@ -67,7 +70,10 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 		throw new Error("Reconciliation order must have an id");
 	}
 
-	const reconOrderLines = await db.execO<ReconciliationOrderLine>("SELECT * FROM reconciliation_order_lines WHERE id = ?;", [id]);
+	const reconOrderLines = await db.execO<ReconciliationOrderLine>(
+		"SELECT * FROM reconciliation_order_lines WHERE reconciliation_order_id = ?;",
+		[id]
+	);
 
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT finalized FROM reconciliation_order WHERE id = ?;", [id]);
 	if (!reconOrder[0]) {

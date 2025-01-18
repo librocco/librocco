@@ -9,12 +9,11 @@ export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
 	remainingQuantity: number;
 };
 export const processOrderDelivery = (
-	scannedBooks: BookEntry[],
-	placedOrderLines: (SupplierPlacedOrderLine & { quantity: number })[]
+	scannedBooks: (BookEntry & { quantity: number })[],
+	placedOrderLines: SupplierPlacedOrderLine[]
 ): ProcessedOrderLine[] => {
-	// Count occurrences of each ISBN in scanned books
 	const scannedQuantities = scannedBooks.reduce((acc, book) => {
-		acc.set(book.isbn, (acc.get(book.isbn) || 0) + 1); // Count each occurrence as 1
+		acc.set(book.isbn, (acc.get(book.isbn) || 0) + book.quantity);
 		return acc;
 	}, new Map<string, number>());
 
@@ -24,7 +23,7 @@ export const processOrderDelivery = (
 
 	for (const pol of placedOrderLines) {
 		const deliveredQuantity = scannedQuantities.get(pol.isbn) || 0;
-		const orderedQuantity = pol.quantity; // Assuming this is the original ordered quanti
+		const orderedQuantity = pol.quantity;
 		result.push({
 			...pol,
 			delivered: scannedIsbnSet.has(pol.isbn),

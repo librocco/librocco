@@ -35,13 +35,7 @@
 		disposer();
 	});
 	let isbn = "";
-	let books: Array<{
-		isbn: string;
-		title: string;
-		authors: string;
-		price: number;
-		quantity: number;
-	}> = data?.mergedBookData || [];
+	$: books = data?.mergedBookData || [];
 
 	let isbns = [];
 	// = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
@@ -51,29 +45,14 @@
 
 	async function handleIsbnSubmit() {
 		if (!isbn) return;
-		isbns = [...isbns, isbn];
 
-		books = [
-			{
-				isbn,
-				title: "",
-				authors: "",
-				price: 0,
-				quantity: 1
-			},
-			...books
-		];
-
-		//invocation is debounced to 10 seconds from first call
-
-		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), isbns);
+		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [isbn]);
 
 		isbn = "";
 	}
 
 	$: placedOrderLines = data?.placedOrderLines;
-	$: totalDelivered = data?.mergedBookData.length;
-	// mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
+	$: totalDelivered = data?.mergedBookData.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
 	$: totalOrdered = placedOrderLines.length;
 	$: processedOrderDelivery = processOrderDelivery(data?.mergedBookData, data?.placedOrderLines);
 

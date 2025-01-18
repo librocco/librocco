@@ -88,25 +88,25 @@ describe("Reconciliation order creation", () => {
 			finalized: 0
 		});
 
-		await addOrderLinesToReconciliationOrder(db, 1, ["123", "435", "324"]);
+		await addOrderLinesToReconciliationOrder(db, 1, ["123", "123", "435", "324"]);
 
 		const res3 = await getReconciliationOrderLines(db, reconOrderId);
 
 		expect(res3).toEqual([
 			{
-				id: 1,
 				isbn: "123",
-				reconciliation_order_id: 1
+				reconciliation_order_id: 1,
+				quantity: 2
 			},
 			{
-				id: 2,
-				isbn: "435",
-				reconciliation_order_id: 1
-			},
-			{
-				id: 3,
 				isbn: "324",
-				reconciliation_order_id: 1
+				reconciliation_order_id: 1,
+				quantity: 1
+			},
+			{
+				isbn: "435",
+				reconciliation_order_id: 1,
+				quantity: 1
 			}
 		]);
 	});

@@ -10,11 +10,6 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	const reconciliationOrder = await getReconciliationOrder(ordersDb, parseInt(params.id));
 	const reconciliationOrderLines = await getReconciliationOrderLines(ordersDb, parseInt(params.id));
 
-	console.log({ reconciliationOrder });
-	console.log({ reconciliationOrderLines });
-
-	// we need a list of all the books
-	// while going through them check if the isbn occurred twice
 	const supplierOrderIds = JSON.parse(reconciliationOrder.supplier_order_ids) || [];
 
 	const placedOrderLines = await getPlacedSupplierOrderLinesForReconciliation(ordersDb, supplierOrderIds);
@@ -27,16 +22,22 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		{}
 	);
 
-	// const books: string[] = JSON.parse(reconciliationOrder.customer_order_line_ids) || [];
-	const books = reconciliationOrderLines.map((recon) => recon.isbn);
-	let mergedBookData = [];
-	if (books.length) {
+	const books = reconciliationOrderLines.reduce(
+		(acc, recon) => ({
+			...acc,
+			[recon.isbn]: recon.quantity
+		}),
+		{} as Record<string, number>
+	);
+	let mergedBookData: (BookEntry & { quantity: number })[] = [];
+	if (Object.keys(books).length) {
 		const fetchedBookData = await ordersDb.execO<BookEntry>(`SELECT *
-	FROM book WHERE isbn IN (${books.join(", ")})`);
+	FROM book WHERE isbn IN (${Object.keys(books).join(", ")})`);
 
-		mergedBookData = books.map((book) => {
+		mergedBookData = Object.entries(books).map(([isbn, quantity]) => {
+			const fetchedBook = fetchedBookData.find((bookD) => bookD.isbn === isbn) || ({ isbn } as BookEntry);
 			//add empty string for supplier id
-			return fetchedBookData.find((bookD) => bookD.isbn === book) || { isbn: book };
+			return { ...fetchedBook, quantity };
 		});
 	}
 
