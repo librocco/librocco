@@ -118,14 +118,15 @@ CREATE TABLE IF NOT EXISTS reconciliation_order (
 );
 SELECT crsql_as_crr('reconciliation_order');
 
+SELECT crsql_begin_alter('reconciliation_order_lines');
 DROP TABLE IF EXISTS reconciliation_order_lines;
 CREATE TABLE reconciliation_order_lines (
 	reconciliation_order_id INTEGER NOT NULL,
-    isbn TEXT NOT NULL,
-    quantity INTEGER NOT NULL DEFAULT 1,
-    PRIMARY KEY (reconciliation_order_id)
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 1,
+	PRIMARY KEY (reconciliation_order_id, isbn)
 );
-SELECT crsql_as_crr('reconciliation_order_lines');
+SELECT crsql_commit_alter('reconciliation_order_lines');
 
 CREATE TABLE IF NOT EXISTS warehouse (
     id INTEGER NOT NULL,
