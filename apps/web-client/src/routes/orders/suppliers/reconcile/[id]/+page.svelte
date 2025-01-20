@@ -34,27 +34,18 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
-	let isbn = "";
-	$: books = data?.mergedBookData || [];
+	$: books = data?.reconciliationOrderLines || [];
 
-	let isbns = [];
-	// = JSON.parse(data?.reconciliationOrder.customer_order_line_ids) || [];
-	// Mock supplier orders data
-
-	$: scanned = data?.placedOrderLines;
-
-	async function handleIsbnSubmit() {
+	async function handleIsbnSubmit(isbn: string) {
 		if (!isbn) return;
 
-		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [isbn]);
-
-		isbn = "";
+		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
 	$: placedOrderLines = data?.placedOrderLines;
-	$: totalDelivered = data?.mergedBookData.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
+	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
 	$: totalOrdered = placedOrderLines.length;
-	$: processedOrderDelivery = processOrderDelivery(data?.mergedBookData, data?.placedOrderLines);
+	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -106,10 +97,10 @@
 						<div class="md:px-1">
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
-								{#each Object.entries(data?.supplierOrders) as [supplierOrderId, { supplier_name, supplier_id }], i}
+								{#each data?.placedOrderLines as placedOrderLine, i}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
-										#{supplierOrderId}
-										<span class="text-sm font-light">({supplier_name})</span>
+										#{placedOrderLine.supplier_order_id}
+										<span class="text-sm font-light">({placedOrderLine.supplier_name})</span>
 									</dd>
 								{/each}
 							</div>
@@ -160,10 +151,16 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form class="flex w-full gap-2" on:submit|preventDefault={handleIsbnSubmit}>
+					<form
+						class="flex w-full gap-2"
+						on:submit|preventDefault={(e) => {
+							handleIsbnSubmit(e.currentTarget.input.value);
+							e.currentTarget.input.value = "";
+						}}
+					>
 						<label class="input-bordered input flex flex-1 items-center gap-2">
 							<QrCode />
-							<input type="text" class="grow" placeholder="Enter ISBN of delivered books" bind:value={isbn} />
+							<input type="text" class="grow" placeholder="Enter ISBN of delivered books" />
 						</label>
 					</form>
 				{/if}
@@ -190,9 +187,9 @@
 									{#each books as { isbn, title, authors, price, quantity }}
 										<tr>
 											<th>{isbn}</th>
-											<td>{title}</td>
-											<td>{authors}</td>
-											<td>€{price}</td>
+											<td>{title || "-"}</td>
+											<td>{authors || "-"}</td>
+											<td>€{price || 0}</td>
 											<td>{quantity}</td>
 										</tr>
 									{/each}

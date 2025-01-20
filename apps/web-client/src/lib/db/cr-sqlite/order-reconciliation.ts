@@ -19,11 +19,18 @@ export async function getReconciliationOrder(db: DB, id: number): Promise<Reconc
 		throw new Error(`Reconciliation order with id ${id} not found`);
 	}
 
+	try {
+		JSON.parse(result[0].supplier_order_ids);
+	} catch (e) {
+		throw new Error(`Invalid json: supplier order ids`);
+	}
+
 	return result[0];
 }
 export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
 	const result = await db.execO<ReconciliationOrderLine>(
-		`SELECT * FROM reconciliation_order_lines
+		`SELECT rol.isbn, rol.quantity, rol.reconciliation_order_id, book.publisher, book.authors, book.title, book.price FROM reconciliation_order_lines as rol
+		LEFT JOIN book ON rol.isbn = book.isbn
 		WHERE reconciliation_order_id = ?;`,
 		[id]
 	);
@@ -46,21 +53,21 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 	return recondOrder[0].id;
 }
 
-export async function addOrderLinesToReconciliationOrder(db: DB, id: number, isbns: string[]) {
+export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder[0]) {
 		throw new Error(`Reconciliation order ${id} not found`);
 	}
 
-	const params = isbns.map((isbn) => [id, isbn]).flat();
+	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
 
 	const sql = `
      INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn,
  quantity)
-     VALUES ${multiplyString("(?,?,1)", isbns.length)}
+     VALUES ${multiplyString("(?,?,?)", newLines.length)}
      ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
-         quantity = quantity + 1;
+         quantity = quantity + excluded.quantity;
      `;
 	await db.exec(sql, params);
 }
