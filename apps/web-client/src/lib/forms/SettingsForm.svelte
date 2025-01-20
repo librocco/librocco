@@ -4,7 +4,7 @@
 	import compare from "just-compare";
 
 	import { Input } from "$lib/components";
-	import type { SettingsSchema } from "$lib/schemas";
+	import type { SettingsSchema } from "./schemas";
 
 	export let data: SuperValidated<SettingsSchema>;
 	export let options: FormOptions<SettingsSchema>;

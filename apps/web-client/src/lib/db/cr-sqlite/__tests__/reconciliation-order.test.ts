@@ -88,25 +88,42 @@ describe("Reconciliation order creation", () => {
 			finalized: 0
 		});
 
-		await addOrderLinesToReconciliationOrder(db, 1, ["123", "123", "435", "324"]);
+		await addOrderLinesToReconciliationOrder(db, 1, [
+			{ isbn: "1", quantity: 1 },
+			{ isbn: "1", quantity: 1 },
+			{ isbn: "2", quantity: 1 },
+			{ isbn: "3", quantity: 1 }
+		]);
 
 		const res3 = await getReconciliationOrderLines(db, reconOrderId);
 
 		expect(res3).toEqual([
 			{
-				isbn: "123",
+				isbn: "1",
 				reconciliation_order_id: 1,
-				quantity: 2
+				quantity: 2,
+				publisher: "MathsAndPhysicsPub",
+				title: "Physics",
+				price: 7,
+				authors: null
 			},
 			{
-				isbn: "324",
+				isbn: "2",
 				reconciliation_order_id: 1,
-				quantity: 1
+				quantity: 1,
+				publisher: "ChemPub",
+				title: "Chemistry",
+				price: 13,
+				authors: null
 			},
 			{
-				isbn: "435",
+				isbn: "3",
 				reconciliation_order_id: 1,
-				quantity: 1
+				quantity: 1,
+				publisher: "PhantasyPub",
+				title: "The Hobbit",
+				price: 5,
+				authors: null
 			}
 		]);
 	});
@@ -123,7 +140,7 @@ describe("Reconciliation order creation", () => {
 
 		const reconOrderId = await createReconciliationOrder(db, ids);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1"]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
 
 		await finalizeReconciliationOrder(db, reconOrderId);
 		const res3 = await getReconciliationOrder(db, reconOrderId);
@@ -150,7 +167,7 @@ describe("Reconciliation order creation", () => {
 
 		it("throws error when reconciliation order doesn't exist", async () => {
 			const nonExistentId = 999;
-			await expect(addOrderLinesToReconciliationOrder(db, nonExistentId, ["123"])).rejects.toThrow(
+			await expect(addOrderLinesToReconciliationOrder(db, nonExistentId, [{ isbn: "123", quantity: 1 }])).rejects.toThrow(
 				`Reconciliation order ${nonExistentId} not found`
 			);
 		});
