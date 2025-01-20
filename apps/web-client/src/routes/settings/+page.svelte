@@ -14,7 +14,8 @@
 
 	import { dbName, dbNamePersisted, resetDB } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm, settingsSchema } from "$lib/forms";
+	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { settingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
