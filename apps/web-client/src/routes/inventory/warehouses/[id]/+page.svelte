@@ -161,7 +161,7 @@
 
 	// #region printing
 	$: handlePrintLabel = (book: BookEntry) => async () => {
-		await printBookLabel($settingsStore.defaultSettings.labelPrinterUrl, book);
+		await printBookLabel($settingsStore.defaultSettings?.labelPrinterUrl, book);
 	};
 	// #endregion printing
 </script>

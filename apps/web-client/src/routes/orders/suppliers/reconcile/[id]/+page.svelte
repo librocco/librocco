@@ -13,6 +13,9 @@
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
 	import { processOrderDelivery } from "$lib/db/cr-sqlite/utils";
+	import { defaults, superForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
+	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -41,6 +44,13 @@
 
 		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
+
+	const form = superForm(defaults(zod(scannerSchema)), {
+		validators: zod(scannerSchema),
+		validationMethod: "submit-only"
+	});
+
+	const { form: formStore } = form;
 
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
@@ -153,14 +163,14 @@
 				{#if currentStep === 1}
 					<form
 						class="flex w-full gap-2"
-						on:submit|preventDefault={(e) => {
-							handleIsbnSubmit(e.currentTarget.input.value);
-							e.currentTarget.input.value = "";
+						on:submit|preventDefault={() => {
+							handleIsbnSubmit($formStore.isbn);
+							formStore.update(() => ({ isbn: "" }));
 						}}
 					>
 						<label class="input-bordered input flex flex-1 items-center gap-2">
 							<QrCode />
-							<input type="text" class="grow" placeholder="Enter ISBN of delivered books" />
+							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
 						</label>
 					</form>
 				{/if}
