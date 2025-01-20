@@ -125,10 +125,13 @@ export type ReconciliationOrder = {
 
 export type ReconciliationOrderLine = {
 	reconciliation_order_id: number;
-	id: number;
 	isbn: string;
 	created: number;
 	quantity: number;
+	authors: string;
+	publisher: string;
+	price: number;
+	title: string;
 };
 
 /* Warehouse */
