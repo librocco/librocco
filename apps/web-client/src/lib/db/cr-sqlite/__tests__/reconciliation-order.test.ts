@@ -64,7 +64,7 @@ describe("Reconciliation order creation", () => {
 
 		expect(res2).toMatchObject({
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 0
 		});
 	});
@@ -84,7 +84,7 @@ describe("Reconciliation order creation", () => {
 
 		expect(res2).toMatchObject({
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 0
 		});
 
@@ -149,9 +149,61 @@ describe("Reconciliation order creation", () => {
 		expect(books[0].received).toBeInstanceOf(Date);
 		expect(res3).toMatchObject({
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 1
 		});
+	});
+
+	it("updates existing order line quantity when adding duplicate ISBN", async () => {
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		const supplierOrders = await getPlacedSupplierOrders(db);
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		const reconOrderId = await createReconciliationOrder(db, ids);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 3 },
+			{ isbn: "2", quantity: 1 }
+		]);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 2 },
+			{ isbn: "3", quantity: 1 }
+		]);
+
+		const orderLines = await getReconciliationOrderLines(db, reconOrderId);
+
+		expect(orderLines).toEqual([
+			{
+				isbn: "1",
+				reconciliation_order_id: reconOrderId,
+				quantity: 5,
+				publisher: "MathsAndPhysicsPub",
+				title: "Physics",
+				price: 7,
+				authors: null
+			},
+			{
+				isbn: "2",
+				reconciliation_order_id: reconOrderId,
+				quantity: 1,
+				publisher: "ChemPub",
+				title: "Chemistry",
+				price: 13,
+				authors: null
+			},
+			{
+				isbn: "3",
+				reconciliation_order_id: reconOrderId,
+				quantity: 1,
+				publisher: "PhantasyPub",
+				title: "The Hobbit",
+				price: 5,
+				authors: null
+			}
+		]);
 	});
 
 	describe("Reconciliation order error cases", () => {
