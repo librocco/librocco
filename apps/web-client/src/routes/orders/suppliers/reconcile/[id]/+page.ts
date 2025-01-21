@@ -9,9 +9,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	const reconciliationOrder = await getReconciliationOrder(ordersDb, parseInt(params.id));
 	const reconciliationOrderLines = await getReconciliationOrderLines(ordersDb, parseInt(params.id));
 
-	const supplierOrderIds = JSON.parse(reconciliationOrder.supplier_order_ids);
-
-	const placedOrderLines = await getPlacedSupplierOrderLinesForReconciliation(ordersDb, supplierOrderIds);
+	const placedOrderLines = await getPlacedSupplierOrderLinesForReconciliation(ordersDb, reconciliationOrder.supplierOrderIds);
 
 	return { reconciliationOrder, ordersDb, placedOrderLines, reconciliationOrderLines };
 };
