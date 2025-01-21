@@ -55,7 +55,6 @@
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
 	$: totalOrdered = placedOrderLines.length;
-	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -208,6 +207,8 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
+					{@const processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines)}
+					}
 					<ComparisonTable supplierBooks={processedOrderDelivery} />
 				{/if}
 
