@@ -24,14 +24,7 @@ import type { DB, PastNoteItem, PastTransactionItem } from "./types";
  *
  * @param {DB} db - Database connection
  * @param {string} date - Date to query in YYYY-MM-DD format
- * @returns {Promise<PastNoteItem[]>} Committed notes with:
- *   - id: Note identifier
- *   - displayName: Human readable name
- *   - noteType: "inbound" or "outbound"
- *   - totalBooks: Sum of all book quantities
- *   - warehouseName: Associated warehouse
- *   - totalCoverPrice: Sum of (quantity * book price)
- *   - totalDiscountedPrice: Sum of (quantity * book price * (1 - discount))
+ * @returns {Promise<PastNoteItem[]>} Committed notes
  */
 export function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
 	const query = `
