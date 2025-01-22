@@ -10,4 +10,4 @@ const toggleAutoprintLabels = () => autoPrintLabelsInner.update((v) => !v);
 export const autoPrintLabels = Object.assign(autoPrintLabelsInner, { toggle: toggleAutoprintLabels });
 
 const { data: defaultSettings } = defaults(zod(settingsSchema));
-export const settingsStore = persisted(LOCAL_STORAGE_SETTINGS, { defaultSettings });
+export const settingsStore = persisted(LOCAL_STORAGE_SETTINGS, defaultSettings);

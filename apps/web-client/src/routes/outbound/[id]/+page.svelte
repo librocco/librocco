@@ -336,10 +336,10 @@
 
 	// #region temp
 	$: handlePrintReceipt = async () => {
-		await printReceipt($settingsStore.defaultSettings?.receiptPrinterUrl, await note.intoReceipt());
+		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
 	};
 	$: handlePrintLabel = (book: BookEntry) => async () => {
-		await printBookLabel($settingsStore.defaultSettings?.labelPrinterUrl, book);
+		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 	// #endregion temp
 
