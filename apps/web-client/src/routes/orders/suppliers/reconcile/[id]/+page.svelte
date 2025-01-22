@@ -6,15 +6,19 @@
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
+	import Page from "$lib/components/Page.svelte";
 	import type { PageData } from "./$types";
-	import { addOrderLinesToReconciliationOrder, finalizeReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import {
+		addOrderLinesToReconciliationOrder,
+		finalizeReconciliationOrder,
+		processOrderDelivery
+	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-	import { processOrderDelivery } from "$lib/db/cr-sqlite/utils";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { scannerSchema } from "$lib/forms/schemas";
+	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -45,19 +49,11 @@
 	}
 
 	const form = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
 		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdated: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-				handleIsbnSubmit(isbn);
-			}
-		}
+		validationMethod: "submit-only"
 	});
 
-	const { form: formStore, enhance } = form;
+	const { form: formStore } = form;
 
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
@@ -167,10 +163,16 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form class="flex w-full gap-2" use:enhance method="POST">
+					<form
+						class="flex w-full gap-2"
+						on:submit|preventDefault={() => {
+							handleIsbnSubmit($formStore.isbn);
+							formStore.update(() => ({ isbn: "" }));
+						}}
+					>
 						<label class="input-bordered input flex flex-1 items-center gap-2">
 							<QrCode />
-							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" required />
+							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
 						</label>
 					</form>
 				{/if}
