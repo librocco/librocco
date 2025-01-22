@@ -9,7 +9,7 @@
  *   - ISBN (unique identifier)
  *   - Title
  *   - Authors
- *   - Publisher
+ *   - Publisher (used to associate the book with a supplier)
  *   - Price
  *   - Year
  *   - Editor
