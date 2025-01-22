@@ -2,6 +2,36 @@ import { multiplyString } from "./customers";
 import type { DB, ReconciliationOrder, ReconciliationOrderLine } from "./types";
 
 /**
+ * @fileoverview Supplier order reconciliation system
+ *
+ * Reconciliation overview:
+ * - The reconciliation process begins when "placed" supplier orders are received
+ * - The intention is to compare the isbns and quantities of delivered books against those that were ordered
+ * - An employee starts a reconciliation process ("order") by selecting one or more supplier orders
+ * - These can be from the same supplier or from different ones => we work with a list of "ordered lines" (`supplier_order_lines`)
+ * - At the start of the process, a `reconciliation_order` is created. This tracks the selected `supplier_order` ids, as well as created, updatedAt, & finalized meta
+ * - The process involves 3 steps:
+ * - - scan/add delivered books
+ * - - compare the delivered lines against the ordered
+ * - - finalise the process
+ * - Delivered lines are managed in a separate table `reconciliation_order_lines`. This is consistent with how supplier and customer order lines are managed.
+ * - The comparison needs to check 3 cases:
+ * - - "unmatched" isbns - delivered or accidentally scanned books that were never ordered
+ * - - over delivered isbns
+ * - - under delivered isbns
+ * - The finalisation step should
+ * - - update the status of the "oldest" customer order line for a given isbn.
+ * - - It does not need to do anything with unmatched, or over delivered books. The employee should just be made aware of these anomalies.
+ * * - Un- or under delivered isbns should re-enter the working/"possible" order batch for a supplier. Do we need to do anything else here?
+ * - It should be possible for multiple people to work on the scan/add step of an in progress reconciliation at the same time
+ * - It should not be possible to work on a reconciliation order once it has been finalised.
+ *
+ * Data Sources:
+ * - The `reconciliation_order` table contains meta data about an in progress reconciliation order: related supplier_order ids, created, updatedAt, finalised (boolean)
+ * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
+ */
+
+/**
  * Retrieves all reconciliation orders from the database, ordered by ID
 ascending
  * @param db
@@ -44,7 +74,9 @@ export async function getReconciliationOrder(db: DB, id: number): Promise<Reconc
 }
 
 /**
- * Retrieves all order lines associated with a specific reconciliation order
+ * Retrieves all order lines associated with a specific reconciliation order.
+ * These are the _delivered_ books that an employee will add by scanning their isbns.
+ *
  * @param db
  * @param id - The ID of the reconciliation order
  * @returns array of ReconciliationOrderLine objects with book details
@@ -60,7 +92,10 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
 	return result;
 }
 /**
- * Creates a new reconciliation order based on existing supplier orders
+ * Creates a new reconciliation order.
+ * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
+ * delivered books will be compared against
+ *
  * @param db
  * @param supplierOrderIds - Array of su pplier order IDs to reconcile
  * @throws Error if supplierOrderIds array is empty
@@ -82,7 +117,9 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 }
 
 /**
- * Adds or updates order lines to an existing reconciliation order
+ * Adds order lines or updates the quantity of existing isbns for an existing reconciliation order.
+ * These are the _delivered_ books that an employee is adding by scanning their isbns.
+ *
  * @param db
  * @param id - The ID of the reconciliation order
  * @param newLines - Array of objects containing ISBN and quantity to add/update
