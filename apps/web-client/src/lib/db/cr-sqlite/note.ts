@@ -122,12 +122,7 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
  * Only returns notes that have not been committed (draft state).
  *
  * @param {DB} db - Database connection
- * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes with:
- *   - id: Note identifier
- *   - displayName: Human readable name
- *   - warehouseName: Associated warehouse name
- *   - updatedAt: Last modification timestamp
- *   - totalBooks: Sum of all book quantities in note
+ * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes
  */
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
