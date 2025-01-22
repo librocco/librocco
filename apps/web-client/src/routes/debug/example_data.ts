@@ -40,11 +40,6 @@ INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES
 (1, '9780590353427', 5),
 (2, '9780439064873', 3);
 
--- Customer Supplier Orders
-INSERT INTO customer_supplier_order (id, supplier_order_id, customer_order_line_id) VALUES
-(1, 1, 1),
-(2, 2, 2);
-
 -- Reconciliation Orders
 INSERT INTO reconciliation_order (id, supplier_order_ids, created, customer_order_line_ids, finalized) VALUES
 (1, '[1]', 1700010000000, '[1,2]', 0),
