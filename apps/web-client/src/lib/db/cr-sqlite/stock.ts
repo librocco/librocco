@@ -49,7 +49,7 @@ type GetStockResponseItem = {
  * Calculates quantities based on committed note transactions.
  * Can filter results by search string or specific ISBN/warehouse pairs.
  * Only returns entries with non-zero quantities.
- * 
+ *
  * @param {DB} db - Database connection
  * @param {GetStockParams} params - Query filters
  * @param {string} [params.searchString=""] - Filter by ISBN, title, or author
