@@ -35,12 +35,7 @@ import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } f
  * Returns basic customer information ordered by ID.
  *
  * @param {DB} db - Database connection
- * @returns {Promise<Customer[]>} Array of customers with:
- *   - id: Unique identifier
- *   - fullname: Customer's full name (optional)
- *   - email: Contact email (optional)
- *   - updatedAt: Last modification timestamp
- *   - deposit: Current deposit amount (optional)
+ * @returns {Promise<Customer[]>} Array of customers
  */
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
