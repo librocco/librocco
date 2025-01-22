@@ -70,11 +70,7 @@ type Params = {
  * Only includes transactions from committed notes.
  *
  * @param {DB} db - Database connection
- * @param {Params} params - Query filters:
- *   - isbn: Filter by specific book
- *   - warehouseId: Filter by specific warehouse
- *   - startDate: Include transactions after this date
- *   - endDate: Include transactions before this date
+ * @param {Params} params - Query filters
  * @returns {Promise<PastTransactionItem[]>} Historical transactions with:
  *   - Basic info (isbn, title, author, quantity)
  *   - Pricing (price, discount)
