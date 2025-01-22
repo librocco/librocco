@@ -355,7 +355,7 @@ async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockT
 /**
  * Retrieves all book transactions in a note that don't have a warehouse assigned.
  * Used during note validation to ensure all transactions have proper warehouse assignments.
- * 
+ *
  * @param {DB} db - Database connection
  * @param {number} id - ID of note to check
  * @returns {Promise<VolumeStock[]>} Array of transactions missing warehouse assignments
@@ -660,7 +660,7 @@ export async function removeNoteCustomItem(db: DB, noteId: number, itemId: numbe
 /**
  * Generates receipt data for a note, including both book transactions and custom items.
  * Calculates prices and applies any warehouse discounts.
- * 
+ *
  * @param {DB} db - Database connection
  * @param {number} noteId - ID of note to generate receipt for
  * @returns {Promise<ReceiptData>} Receipt data including items and timestamp
