@@ -26,16 +26,7 @@ import { type DB, type BookData } from "./types";
  * All fields except ISBN are optional and will only be updated if provided.
  *
  * @param {DB} db - Database connection
- * @param {BookData} book - Book metadata including:
- *   - isbn: Unique identifier (required)
- *   - title: Book title
- *   - authors: Author names
- *   - publisher: Publishing company
- *   - price: Book price
- *   - year: Publication year
- *   - editedBy: Editor name
- *   - outOfPrint: Whether book is out of print
- *   - category: Book category/genre
+ * @param {BookData} book - Book metadata
  * @throws {Error} If ISBN is not provided
  * @returns {Promise<void>} Resolves when book is created/updated
  */
