@@ -258,6 +258,6 @@ export const sortLinesBySupplier = (orderLines: ProcessedOrderLine[]): { [suppli
 	return orderLines.reduce((acc, curr) => {
 		return acc[curr.supplier_name]
 			? { ...acc, [curr.supplier_name]: [...acc[curr.supplier_name], curr] }
-			: { ...acc, [curr.supplier_name]: [curr] };
+			: { ...acc, [curr.supplier_name || "Supplier"]: [curr] };
 	}, {});
 };
