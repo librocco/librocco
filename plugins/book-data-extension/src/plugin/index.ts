@@ -1,6 +1,6 @@
 import { BehaviorSubject, Observable, concat, from, share } from "rxjs";
 
-import { BookFetcherPlugin, fetchBookDataFromSingleSource } from "@librocco/db";
+import { type BookFetcherPlugin, fetchBookDataFromSingleSource } from "@librocco/shared";
 
 import { continuousListener } from "./listeners";
 import { fetchBook, ping } from "./comm";

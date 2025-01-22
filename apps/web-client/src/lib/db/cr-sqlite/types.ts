@@ -1,8 +1,9 @@
 /**
  * This is a placeholder as we're not using the generic DB, this might change as we add schema, but trying to keep this as a single source of truth
  */
-import type { BookEntry } from "@librocco/db";
 import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
+
+import type { BookData } from "@librocco/shared";
 
 /* Customer orders/books */
 export type Customer = {
@@ -15,16 +16,16 @@ export type Customer = {
 	updatedAt?: Date;
 };
 
-export type BookData = {
+export type DBCustomerOrderLine = {
+	// A customer order line as it is stored in the database
+	id: number;
 	isbn: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
+	customer_id: number;
+	created: number; // as milliseconds since epoch
+	placed?: number; // as milliseconds since epoch
+	received?: number; // as milliseconds since epoch
+	collected?: number; // as milliseconds since epoch
+	supplierOrderIds: string; // Comma separated list of supplier order ids that this book order is part of
 };
 
 export type CustomerOrderLine = {
@@ -60,7 +61,7 @@ export type SupplierPlacedOrder = {
 	created: number;
 };
 
-export type SupplierPlacedOrderLine = BookEntry & {
+export type SupplierPlacedOrderLine = BookData & {
 	id: number;
 	supplier_name: string;
 	supplier_id: number;
@@ -116,7 +117,7 @@ export type ReconciliationOrderLine = {
 	title: string;
 };
 
-export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
+export type ProcessedOrderLine = ({ supplier_name: string } & BookData) & {
 	orderedQuantity: number;
 	deliveredQuantity: number;
 };

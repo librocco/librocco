@@ -3,13 +3,14 @@
 	import { fade, fly } from "svelte/transition";
 	import { writable, readable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
+	import { filter, scan } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { NoteState, testId } from "@librocco/shared";
+	import { testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
@@ -32,6 +33,8 @@
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { autoPrintLabels, settingsStore } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -40,7 +43,6 @@
 
 	import { addVolumesToNote, commitNote, deleteNote, getReceiptForNote, removeNoteTxn, updateNoteTxn } from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { autoPrintLabels, settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -75,6 +77,8 @@
 	$: updatedAt = data.updatedAt;
 	$: entries = data.entries;
 	$: publisherList = data.publisherList;
+
+	$: plugins = data.plugins;
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		await commitNote(db, noteId);
@@ -124,17 +128,17 @@
 			await upsertBook(db, { isbn });
 		}
 
-		// TODO revisit this when we implement book fetching plugin functionality
-		// // At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		// db.plugin("book-fetcher")
-		// 	.fetchBookData(isbn)
-		// 	.stream()
-		// 	.pipe(
-		// 		filter((data) => Boolean(data)),
-		// 		// Here we're prefering the latest result to be able to observe the updates as they come in
-		// 		scan((acc, next) => ({ ...acc, ...next }))
-		// 	)
-		// 	.subscribe((b) => db.books().upsert({}, [b]));
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
@@ -180,9 +184,7 @@
 		}
 	};
 
-	// TODO: revisit
-	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
-	const bookDataExtensionAvailable = readable(false);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
@@ -450,7 +452,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
@@ -496,11 +498,11 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (_isbn, form) => {
-							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							const results = [];
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
+							const bookData = mergeBookData({ isbn }, results);
 
 							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {

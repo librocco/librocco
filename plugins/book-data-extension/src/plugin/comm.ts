@@ -1,4 +1,4 @@
-import { BookEntry } from "@librocco/db";
+import type { BookData } from "@librocco/shared";
 
 import { postMessage } from "./window-helpers";
 import { listenWithTimeout } from "./listeners";
@@ -10,10 +10,10 @@ export async function ping() {
 	return res.ok;
 }
 
-export async function fetchBook(isbn: string): Promise<BookEntry | undefined> {
+export async function fetchBook(isbn: string): Promise<BookData | undefined> {
 	// Post message for the extension
 	postMessage(`BOOK_FETCHER:REQ:${isbn}`);
-	const res = await listenWithTimeout<{ book: BookEntry }, BookEntry>(`BOOK_FETCHER:RES:${isbn}`, ({ book }) => book, 4000);
+	const res = await listenWithTimeout<{ book: BookData }, BookData>(`BOOK_FETCHER:RES:${isbn}`, ({ book }) => book, 4000);
 	// 'res.data' could also be undefined here, meaning: the extension responded, but no data was found (this aligns with the expected behaviour)
 	return res.ok ? res.data : undefined;
 }
