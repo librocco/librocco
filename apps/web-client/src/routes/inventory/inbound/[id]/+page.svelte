@@ -33,7 +33,7 @@
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -44,7 +44,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { autoPrintLabels } from "$lib/stores/app";
+	import { autoPrintLabels, settingsStore } from "$lib/stores/app";
 	import { filter, scan } from "rxjs";
 
 	export let data: PageData;
