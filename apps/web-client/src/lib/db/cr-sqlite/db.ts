@@ -36,19 +36,14 @@ export async function getDB(dbname: string): Promise<_DB> {
 }
 
 export async function initializeDB(db: DB) {
-	// Store schema info in crsql_master
-
 	// Thought: This could probably be wrapped into a txn
 	// not really: transactions are for DML, not for DDL
 	// Apply the schema (initialise the db)
-	//
-	// TEST: Actually wrapping in a txn so as to test if that fixes the e2e
-	await db.tx(async (db) => {
-		await db.exec(schema);
+	await db.exec(schema);
 
-		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
-		await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
-	});
+	// Store schema info in crsql_master
+	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_name", schemaName]);
+	await db.exec("INSERT OR REPLACE INTO crsql_master (key, value) VALUES (?, ?)", ["schema_version", schemaVersion]);
 }
 
 export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
