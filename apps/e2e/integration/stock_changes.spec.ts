@@ -12,6 +12,8 @@ test.beforeEach(async ({ page }) => {
 
 	// Navigate to warehouse-list view and wait for the page to load
 	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
 	await dashboard.navigate("inventory");
 	await dashboard.content().entityList("warehouse-list").waitFor();
 
