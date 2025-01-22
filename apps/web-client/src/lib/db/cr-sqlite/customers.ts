@@ -49,11 +49,7 @@ export async function getAllCustomers(db: DB): Promise<Customer[]> {
  * All fields except ID are optional and will only be updated if provided.
  *
  * @param {DB} db - Database connection
- * @param {Customer} customer - Customer data including:
- *   - id: Unique identifier (required)
- *   - fullname: Customer's full name
- *   - email: Contact email
- *   - deposit: Current deposit amount
+ * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
  * @returns {Promise<void>} Resolves when customer is created/updated
  */
