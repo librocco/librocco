@@ -9,7 +9,8 @@ import { settingsStore } from "./app";
 
 const createDBConnectivityStream = () => {
 	const shareSuject = new BehaviorSubject(true);
-	const { couchUrl: url } = get(settingsStore).defaultSettings;
+	const { couchUrl: url } = get(settingsStore);
+
 	return browser && url
 		? from(checkUrlConnection(url)).pipe(
 				map((response: Response) => response.ok),

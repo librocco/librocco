@@ -9,7 +9,7 @@ import { settingsSchema } from "$lib/forms/schemas";
 export const load: PageLoad = async () => {
 	const settingsData = get(settingsStore);
 
-	const form = await superValidate(settingsData.defaultSettings, zod(settingsSchema));
+	const form = await superValidate(settingsData, zod(settingsSchema));
 
 	return {
 		form
