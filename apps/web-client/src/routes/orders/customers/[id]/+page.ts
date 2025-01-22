@@ -1,5 +1,5 @@
 import type { PageLoad } from "./$types";
-import { getCustomerBooks, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
+import { getCustomerOrderLines, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
 import type { Customer } from "$lib/db/cr-sqlite/types";
 import type { BookEntry } from "@librocco/db";
 
@@ -18,14 +18,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const customerDetails = await getCustomerDetails(db, Number(params.id));
 
-	// TODO: make this a single query
-	const customerOrderLines = await getCustomerBooks(db, Number(params.id));
-	const isbns = customerOrderLines.map((book) => book.isbn);
-	const bookData = (await db.execO(`SELECT * FROM book WHERE isbn IN (${isbns.join(", ")})`)) as BookEntry[];
-	const bookDataMap = new Map<string, BookEntry>();
-	bookData.forEach((book) => {
-		bookDataMap.set(book.isbn, book);
-	});
+	const customerOrderLines = await getCustomerOrderLines(db, Number(params.id));
 
-	return { books: bookData, customer: customerDetails[0] || ({} as Customer), customerOrderLines };
+	return { customer: customerDetails[0] || ({} as Customer), customerOrderLines };
 };

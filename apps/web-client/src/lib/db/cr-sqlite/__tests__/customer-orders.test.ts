@@ -7,7 +7,7 @@ import { getDB, initializeDB } from "../db";
 import {
 	getAllCustomers,
 	upsertCustomer,
-	getCustomerBooks,
+	getCustomerOrderLines,
 	// markCustomerOrderAsReceived,
 	addBooksToCustomer,
 	removeBooksFromCustomer
@@ -51,11 +51,11 @@ describe("Customer order tests", () => {
 
 	it("can add books to a customer", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-		let books = await getCustomerBooks(db, 1);
+		let books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(0);
 
 		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
-		books = await getCustomerBooks(db, 1);
+		books = await getCustomerOrderLines(db, 1);
 
 		expect(books.length).toBe(2);
 		expect(books[0].id).toBeTypeOf("number");
@@ -83,7 +83,7 @@ describe("Customer order tests", () => {
 			});
 		}
 		const duration = Date.now() - startTime;
-		const books = await getCustomerBooks(db, 1);
+		const books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(10 * howMany);
 		expect(duration).toBeLessThanOrEqual(400);
 	});
@@ -92,10 +92,10 @@ describe("Customer order tests", () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 
 		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
-		let books = await getCustomerBooks(db, 1);
+		let books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(2);
 		removeBooksFromCustomer(db, 1, [books[0].id]);
-		books = await getCustomerBooks(db, 1);
+		books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(1);
 	});
 });
