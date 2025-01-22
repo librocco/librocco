@@ -1,26 +1,7 @@
 <script lang="ts">
-	import type { SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/types";
 	import { sortLinesBySupplier, type ProcessedOrderLine } from "$lib/db/cr-sqlite/utils";
 
 	import type { BookEntry } from "@librocco/db";
-
-	type Book = {
-		isbn: string;
-		title: string;
-		authors: string;
-		price: number;
-		delivered: boolean;
-		ordered: number;
-	};
-
-	type SupplierBooks = {
-		supplier_name: string;
-		supplier_id: number;
-		books: Book[];
-	};
-
-	$: totalDelivered = supplierBooks.length;
-	$: totalOrdered = supplierBooks.length;
 
 	export let supplierBooks: ProcessedOrderLine[];
 
