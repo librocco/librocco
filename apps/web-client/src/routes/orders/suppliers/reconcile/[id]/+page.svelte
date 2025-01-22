@@ -46,11 +46,19 @@
 	}
 
 	const form = superForm(defaults(zod(scannerSchema)), {
+		SPA: true,
 		validators: zod(scannerSchema),
-		validationMethod: "submit-only"
+		validationMethod: "submit-only",
+		onUpdated: async ({ form: { data, valid } }) => {
+			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
+			if (valid) {
+				const { isbn } = data;
+				handleIsbnSubmit(isbn);
+			}
+		}
 	});
 
-	const { form: formStore } = form;
+	const { form: formStore, enhance } = form;
 
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
@@ -160,16 +168,10 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form
-						class="flex w-full gap-2"
-						on:submit|preventDefault={() => {
-							handleIsbnSubmit($formStore.isbn);
-							formStore.update(() => ({ isbn: "" }));
-						}}
-					>
+					<form class="flex w-full gap-2" use:enhance method="POST">
 						<label class="input-bordered input flex flex-1 items-center gap-2">
 							<QrCode />
-							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
+							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" required />
 						</label>
 					</form>
 				{/if}
