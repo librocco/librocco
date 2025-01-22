@@ -19,6 +19,8 @@ test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
 	const dbHandle = await getDbHandle(page);
 
 	// Wait for the default view to load
