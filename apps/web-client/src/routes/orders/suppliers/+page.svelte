@@ -40,22 +40,17 @@
 	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
-		console.log("Reconciling orders:", event.detail.supplierOrderIds);
-		// TODO: Implement reconciliation logic
 		if (!data || !data?.ordersDb) {
 			console.error("Database connection not available");
 			return;
 		}
 
-		const id = await createReconciliationOrder(
-			data.ordersDb,
-			Array.isArray(event.detail.supplierOrderIds) ? event.detail.supplierOrderIds : [event.detail.supplierOrderIds]
-		);
+		const id = await createReconciliationOrder(data.ordersDb, event.detail.supplierOrderIds);
 		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 </script>
 
-<header class="navbar mb-4 bg-neutral">
+<header class="navbar bg-neutral mb-4">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
 
 	<button
@@ -98,8 +93,8 @@
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
+				<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+					<p class="text-base-content/70 text-center">
 						No supplier orders available. Create a customer order first to generate supplier orders.
 					</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
