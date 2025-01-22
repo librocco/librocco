@@ -3,6 +3,7 @@
 	import { fade, fly } from "svelte/transition";
 	import { writable, readable } from "svelte/store";
 	import { invalidate } from "$app/navigation";
+	import { filter, scan } from "rxjs";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -42,6 +43,8 @@
 	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -64,7 +67,6 @@
 		upsertNoteCustomItem
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -101,6 +103,8 @@
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
+
+	$: plugins = data.plugins;
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
@@ -193,17 +197,17 @@
 			await upsertBook(db, { isbn });
 		}
 
-		// TODO revisit this when we implement book fetching plugin functionality
-		// // At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		// db.plugin("book-fetcher")
-		// 	.fetchBookData(isbn)
-		// 	.stream()
-		// 	.pipe(
-		// 		filter((data) => Boolean(data)),
-		// 		// Here we're prefering the latest result to be able to observe the updates as they come in
-		// 		scan((acc, next) => ({ ...acc, ...next }))
-		// 	)
-		// 	.subscribe((b) => db.books().upsert({}, [b]));
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
 	};
 
 	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: VolumeStock) => {
@@ -308,9 +312,7 @@
 		}
 	};
 
-	// TODO: revisit
-	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
-	const bookDataExtensionAvailable = readable(false);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	const onCustomItemUpdated: SuperForm<CustomItemFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
@@ -595,7 +597,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
@@ -681,11 +683,11 @@
 							onUpdated: onBookFormUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (_isbn, form) => {
-							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							const results = [];
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
+							const bookData = mergeBookData({ isbn }, results);
 
 							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {

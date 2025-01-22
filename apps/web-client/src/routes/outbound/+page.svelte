@@ -41,6 +41,8 @@
 
 	$: notes = data.notes;
 
+	$: plugins = data.plugins;
+
 	let initialized = false;
 	$: initialized = Boolean(db);
 
@@ -163,7 +165,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

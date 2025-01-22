@@ -1,9 +1,10 @@
 <script lang="ts">
-	import { getDB } from "$lib/db";
+	import type { PluginsInterface } from "$lib/plugins";
 	import { createDBConnectivityStore, createExtensionAvailabilityStore } from "$lib/stores";
 
-	const { db } = getDB();
-	$: extensionAvailable = createExtensionAvailabilityStore(db);
+	export let plugins: PluginsInterface;
+
+	$: extensionAvailable = createExtensionAvailabilityStore(plugins);
 	$: dbConnectivity = createDBConnectivityStore();
 </script>
 

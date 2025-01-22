@@ -1,6 +1,10 @@
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
+import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
+import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
+import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
+
 import { dbNamePersisted } from "$lib/db";
 import { navigatorDetector } from "typesafe-i18n/detectors";
 import type { LayoutLoad } from "./$types";
@@ -11,7 +15,8 @@ import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
 import { detectLocale } from "$i18n/i18n-util";
 
-import { DEFAULT_LOCALE } from "$lib/constants";
+import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
+import { newPluginsInterface } from "$lib/plugins";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -41,6 +46,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	await loadLocaleAsync(locale);
 	setLocale(locale);
 
+	const plugins = newPluginsInterface();
+
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
 		// Init the db
@@ -49,19 +56,18 @@ export const load: LayoutLoad = async ({ url }) => {
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
 		const dbCtx = await getInitializedDB(name);
 
-		// TODO: revisit this later - PLUGINS
-		// // Register plugins
-		// // Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
-		// if (status && !IS_E2E) {
-		// 	db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
-		// 	db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
-		// 	db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
-		// }
+		// Register plugins
+		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
+		if (!IS_E2E) {
+			plugins.get("book-fetcher").register(createBookDataExtensionPlugin());
+			plugins.get("book-fetcher").register(createOpenLibraryApiPlugin());
+			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
+		}
 
-		return { dbCtx, status: true };
+		return { dbCtx, status: true, plugins };
 	}
 
-	return { dbCtx: null, status: false };
+	return { dbCtx: null, status: false, plugins };
 };
 export const prerender = true;
 export const trailingSlash = "always";
