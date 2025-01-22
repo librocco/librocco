@@ -86,6 +86,7 @@ export type SupplierPlacedOrderLine = BookEntry & {
 	supplier_order_id: number;
 	total_price: number;
 	created: number;
+	quantity: number;
 };
 export type SupplierPlacedOrderInfo = {
 	id: number;
@@ -115,11 +116,22 @@ export type SupplierOrder = {
  * and their associated customer order lines for processing.
  */
 export type ReconciliationOrder = {
-	SupplierOrderIds: number[];
-	created: Date;
-	customer_order_line_ids: string[]; // isbns
+	supplier_order_ids: string;
+	created: number;
 	id?: number;
 	finalized: boolean;
+	updatedAt: Date;
+};
+
+export type ReconciliationOrderLine = {
+	reconciliation_order_id: number;
+	isbn: string;
+	created: number;
+	quantity: number;
+	authors: string;
+	publisher: string;
+	price: number;
+	title: string;
 };
 
 /* Warehouse */
