@@ -71,12 +71,7 @@ type Params = {
  *
  * @param {DB} db - Database connection
  * @param {Params} params - Query filters
- * @returns {Promise<PastTransactionItem[]>} Historical transactions with:
- *   - Basic info (isbn, title, author, quantity)
- *   - Pricing (price, discount)
- *   - Location (warehouseId, warehouseName)
- *   - Note details (noteId, noteName, noteType)
- *   - Timestamp (committedAt)
+ * @returns {Promise<PastTransactionItem[]>} Historical transactions
  */
 export async function getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
 	const { isbn, warehouseId, startDate, endDate } = params;
