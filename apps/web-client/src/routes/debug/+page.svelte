@@ -25,7 +25,6 @@
 	let customer_order_lines;
 	let supplier_order;
 	let supplier_order_line;
-	let customer_supplier_order;
 	let reconciliation_order;
 
 	let isLoading = true;
@@ -38,7 +37,6 @@
 		{ label: "Customer Order Lines", value: () => customer_order_lines },
 		{ label: "Supplier Orders", value: () => supplier_order },
 		{ label: "Supplier Order Lines", value: () => supplier_order_line },
-		{ label: "Customer Supplier Orders", value: () => customer_supplier_order },
 		{ label: "Reconciliation Orders", value: () => reconciliation_order }
 	];
 
@@ -99,7 +97,6 @@
 			"customer_order_lines",
 			"supplier_order",
 			"supplier_order_line",
-			"customer_supplier_order",
 			"reconciliation_order"
 		];
 		console.log("Resetting database");
@@ -127,7 +124,6 @@
 		customer_order_lines = await db.db.exec("SELECT COUNT(*) from customer_order_lines;");
 		supplier_order = await db.db.exec("SELECT COUNT(*) from supplier_order;");
 		supplier_order_line = await db.db.exec("SELECT COUNT(*) from supplier_order_line;");
-		customer_supplier_order = await db.db.exec("SELECT COUNT(*) from customer_supplier_order;");
 		reconciliation_order = await db.db.exec("SELECT COUNT(*) from reconciliation_order;");
 
 		isLoading = false;
@@ -180,7 +176,7 @@
 	<div id="content" class="relative flex h-full w-full flex-col overflow-hidden">
 		<!-- Main section -->
 
-		<header class="navbar mb-4 bg-neutral">
+		<header class="navbar bg-neutral mb-4">
 			<input type="checkbox" value="forest" class="theme-controller toggle" />
 		</header>
 
