@@ -28,7 +28,14 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
+import type { DB, Customer, CustomerOrderLine, BookLine } from "./types";
+
+type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "received" | "collected"> & {
+	created: number; // as milliseconds since epoch
+	placed?: number; // as milliseconds since epoch
+	received?: number; // as milliseconds since epoch
+	collected?: number; // as milliseconds since epoch
+};
 
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
@@ -77,14 +84,16 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 	return result;
 };
 
-export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
+export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, isbn, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
-		FROM customer_order_lines
-		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
+		`SELECT 
+			id, customer_id, created, placed, received, collected,
+			col.isbn, 
+			book.title, book.authors, book.price
+		FROM customer_order_lines col
+		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = $customerId
-		GROUP BY customer_order_lines.id, isbn, created, placed, received, collected
-		ORDER BY customer_order_lines.id ASC;`,
+		ORDER BY col.isbn ASC;`,
 		[customerId]
 	);
 	return result.map(marshallCustomerOrderLine);
@@ -128,8 +137,7 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 		created: new Date(line.created),
 		placed: line.placed ? new Date(line.placed) : undefined,
 		received: line.received ? new Date(line.received) : undefined,
-		collected: line.collected ? new Date(line.collected) : undefined,
-		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : []
+		collected: line.collected ? new Date(line.collected) : undefined
 	};
 };
 
