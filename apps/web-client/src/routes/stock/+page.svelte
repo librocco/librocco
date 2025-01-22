@@ -21,8 +21,6 @@
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
-	import { settingsStore } from "$lib/stores";
-
 	import { Page, PlaceholderBox } from "$lib/components";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
@@ -30,8 +28,7 @@
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
-	// TODO: revisit
-	// if (!status) goto(appPath("settings"));
+	import { settingsStore } from "$lib/stores/app";
 
 	// TODO: develop publisher list functionality
 	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };

@@ -13,11 +13,20 @@
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import type { LayoutData } from "./$types";
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import {
+		associatePublisher,
+		createSupplierOrder,
+		getPlacedSupplierOrders,
+		getPossibleSupplierOrderLines,
+		upsertSupplier
+	} from "$lib/db/cr-sqlite/suppliers";
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { associatePublisher, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: LayoutData;
+
+	let publisherSupplierCreated = false;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -30,16 +39,23 @@
 		supplierOrderFilterStatus.set(status);
 	}
 
-	function handleReconcile(event: CustomEvent<{ supplierIds: number[] }>) {
-		console.log("Reconciling orders:", event.detail.supplierIds);
-		// TODO: Implement reconciliation logic
+	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
+		if (!data || !data?.ordersDb) {
+			console.error("Database connection not available");
+			return;
+		}
+
+		const id = await createReconciliationOrder(data.ordersDb, event.detail.supplierOrderIds);
+		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 </script>
 
 <header class="navbar mb-4 bg-neutral">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
+
 	<button
 		class="bg-white"
+		disabled={publisherSupplierCreated}
 		aria-label="CreateReconciliationOrder"
 		on:click={async () => {
 			await upsertBook(data?.ordersDb, {
@@ -57,6 +73,14 @@
 			]);
 			await upsertSupplier(data?.ordersDb, { id: 123, name: "abcSup" });
 			await associatePublisher(data?.ordersDb, 123, "abcPub");
+			const possibleLines = await getPossibleSupplierOrderLines(data?.ordersDb, 123);
+
+			await createSupplierOrder(data?.ordersDb, possibleLines);
+
+			const placed = await getPlacedSupplierOrders(data?.ordersDb);
+			await createReconciliationOrder(data?.ordersDb, [placed[0].id]);
+
+			publisherSupplierCreated = true;
 		}}>Create publisher/supplier</button
 	>
 </header>
@@ -68,7 +92,7 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if data?.possibleOrders.length === 0}
+			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 					<p class="text-center text-base-content/70">
 						No supplier orders available. Create a customer order first to generate supplier orders.
@@ -92,6 +116,7 @@
 						on:click={() => setFilter("ordered")}
 						aria-pressed={$supplierOrderFilterStatus === "ordered"}
 						disabled={!hasOrderedOrders}
+						data-testid="ordered-list"
 					>
 						Ordered
 					</button>
