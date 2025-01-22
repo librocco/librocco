@@ -8,10 +8,7 @@ afterEach(() => {
 
 describe("Misc helpers", () => {
 	it("should process when delivery matches order exactly", () => {
-		const scannedBooks = [
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }
-		];
+		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 2 }];
 
 		const placedOrderLines = [
 			{
@@ -31,16 +28,20 @@ describe("Misc helpers", () => {
 		];
 
 		const result = processOrderDelivery(scannedBooks, placedOrderLines);
-		expect(result[0]).toEqual(
-			expect.objectContaining({
-				isbn: "123",
-				delivered: true,
-				wasOrdered: true,
-				orderedQuantity: 2,
-				deliveredQuantity: 2,
-				remainingQuantity: 0
-			})
-		);
+		expect(result).toEqual({
+			processedLines: [
+				{
+					isbn: "123",
+					authors: "Author 1",
+					deliveredQuantity: 2,
+					orderedQuantity: 2,
+					price: 10,
+					quantity: 2,
+					title: "Book 1"
+				}
+			],
+			unmatchedBooks: []
+		});
 	});
 
 	it("should handle partial delivery", () => {
@@ -64,24 +65,24 @@ describe("Misc helpers", () => {
 		];
 
 		const result = processOrderDelivery(scannedBooks, placedOrderLines);
-		expect(result[0]).toEqual(
-			expect.objectContaining({
-				isbn: "123",
-				delivered: true,
-				wasOrdered: true,
-				orderedQuantity: 2,
-				deliveredQuantity: 1,
-				remainingQuantity: 1
-			})
-		);
+		expect(result).toEqual({
+			processedLines: [
+				{
+					isbn: "123",
+					authors: "Author 1",
+					deliveredQuantity: 1,
+					orderedQuantity: 2,
+					price: 10,
+					quantity: 1,
+					title: "Book 1"
+				}
+			],
+			unmatchedBooks: []
+		});
 	});
 
 	it("should handle over-delivery", () => {
-		const scannedBooks = [
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 },
-			{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }
-		];
+		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 3 }];
 
 		const placedOrderLines = [
 			{
@@ -101,23 +102,24 @@ describe("Misc helpers", () => {
 		];
 
 		const result = processOrderDelivery(scannedBooks, placedOrderLines);
-		expect(result[0]).toEqual(
-			expect.objectContaining({
-				isbn: "123",
-				delivered: true,
-				wasOrdered: true,
-				orderedQuantity: 2,
-				deliveredQuantity: 3,
-				remainingQuantity: 0
-			})
-		);
+		expect(result).toEqual({
+			processedLines: [
+				{
+					isbn: "123",
+					authors: "Author 1",
+					deliveredQuantity: 3,
+					orderedQuantity: 2,
+					price: 10,
+					quantity: 3,
+					title: "Book 1"
+				}
+			],
+			unmatchedBooks: []
+		});
 	});
 
 	it("should handle unordered books", () => {
-		const scannedBooks = [
-			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15, quantity: 1 },
-			{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15, quantity: 1 }
-		];
+		const scannedBooks = [{ isbn: "456", title: "Book 2", authors: "Author 2", price: 15, quantity: 2 }];
 
 		const placedOrderLines = [
 			{
@@ -137,17 +139,31 @@ describe("Misc helpers", () => {
 		];
 
 		const result = processOrderDelivery(scannedBooks, placedOrderLines);
-		expect(result).toHaveLength(2);
-		expect(result[1]).toEqual(
-			expect.objectContaining({
-				isbn: "456",
-				delivered: true,
-				wasOrdered: false,
-				orderedQuantity: 0,
-				deliveredQuantity: 2,
-				remainingQuantity: 0
-			})
-		);
+		expect(result).toEqual({
+			processedLines: [],
+			unmatchedBooks: [
+				expect.objectContaining({
+					authors: "Author 1",
+					id: 1,
+					isbn: "123",
+					price: 10,
+					quantity: 2,
+					supplier_id: 1,
+					supplier_name: "Supplier 1",
+					supplier_order_id: 1,
+					title: "Book 1",
+					total_book_number: 1,
+					total_price: 10
+				}),
+				expect.objectContaining({
+					authors: "Author 2",
+					isbn: "456",
+					price: 15,
+					quantity: 2,
+					title: "Book 2"
+				})
+			]
+		});
 	});
 	it("should group order lines by supplier", () => {
 		const orderLines = [
