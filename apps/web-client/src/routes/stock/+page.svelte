@@ -22,7 +22,7 @@
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
 	import { createFilteredEntriesStore } from "$lib/stores/proto/search";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 
@@ -31,6 +31,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
+	import { settingsStore } from "$lib/stores/app";
 
 	const { db, status } = getDB();
 	if (!status) goto(appPath("settings"));
