@@ -309,3 +309,28 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 		}
 	});
 }
+
+export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+export async function getPlacedSupplierOrderLinesForReconciliation(
+	db: DB,
+	supplier_order_ids: number[]
+): Promise<SupplierPlacedOrderLine[]> {
+	if (!supplier_order_ids.length) return [];
+	const res = await db.execO<SupplierPlacedOrderLine>(
+		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
+	book.isbn, book.title, book.authors, book.publisher, book.price,
+	so.supplier_id, so.created, s.name as supplier_name,
+	SUM(sol.quantity) OVER () as total_book_number,
+	SUM(book.price * sol.quantity) OVER () as total_price
+	FROM supplier_order_line as sol
+	LEFT JOIN book ON sol.isbn = book.isbn
+	LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+	LEFT JOIN supplier s ON s.id = so.supplier_id
+		WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
+		`,
+		[...supplier_order_ids]
+	);
+
+	return res;
+}

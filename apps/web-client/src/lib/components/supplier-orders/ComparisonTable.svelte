@@ -1,25 +1,15 @@
 <script lang="ts">
-	type Book = {
-		isbn: string;
-		title: string;
-		authors: string;
-		price: number;
-		delivered: boolean;
-		ordered: number;
-	};
+	import { sortLinesBySupplier, type ProcessedOrderLine } from "$lib/db/cr-sqlite/utils";
 
-	type SupplierBooks = {
-		supplier_name: string;
-		supplier_id: number;
-		books: Book[];
-	};
+	import type { BookEntry } from "@librocco/db";
 
-	$: totalDelivered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = supplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+	export let supplierBooks: ProcessedOrderLine[];
 
-	export let supplierBooks: SupplierBooks[];
-
-	$: getSupplierSummary = (books: Book[]) => {
+	$: sortedSupplierBooks = sortLinesBySupplier(supplierBooks);
+	// list all books by isbn
+	// // only show one row per isbn
+	//
+	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
 		return `${delivered} / ${books.length}`;
 	};
@@ -33,33 +23,38 @@
 				<th>Title</th>
 				<th>Authors</th>
 				<th>Price</th>
-				<th class="w-16">
+				<th>Ordered Quantity</th>
+				<th>Delivered Quantity</th>
+				<!-- <th class="w-16">
 					<span class="sr-only">Delivered</span>
-				</th>
+				</th> -->
 			</tr>
 		</thead>
-		{#each supplierBooks as { supplier_name, books }}
+		{#each Object.entries(sortedSupplierBooks) as [supplier_name, supplierBooksList]}
 			<thead>
 				<tr class="bg-base-200/50">
-					<th colspan="4" class="text-left">
+					<th colspan="7" class="text-left">
 						{supplier_name}
 					</th>
-					<th colspan="1" class="text-center">
+					<!-- <th colspan="1" class="text-center">
 						<span class="badge-accent badge-outline badge-lg badge">
-							{getSupplierSummary(books)}
+							{getSupplierSummary(supplierBooks)}
 						</span>
-					</th>
+					</th> -->
 				</tr>
 			</thead>
 			<tbody>
-				{#each books as { isbn, title, authors, price, delivered }}
+				{#each supplierBooksList as { isbn, title, authors, price, delivered, deliveredQuantity, orderedQuantity }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
 						<td>{authors}</td>
 						<td>€{price}</td>
+						<td class="text-center">{orderedQuantity}</td>
+						<td class="text-center">{deliveredQuantity}</td>
 						<td class="text-center">
-							<input type="checkbox" checked={delivered} disabled class="checkbox" />
+							<!-- is true if book is in delivered books -->
+							<input type="checkbox" checked={deliveredQuantity >= orderedQuantity} disabled class="checkbox" />
 						</td>
 					</tr>
 				{/each}

@@ -24,7 +24,7 @@
 		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { goto } from "$lib/utils/navigation";
 
@@ -41,6 +41,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
