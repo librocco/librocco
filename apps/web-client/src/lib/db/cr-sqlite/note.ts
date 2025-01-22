@@ -156,11 +156,7 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
  * Only returns notes that have not been committed (draft state).
  *
  * @param {DB} db - Database connection
- * @returns {Promise<OutboundNoteListItem[]>} Array of outbound notes with:
- *   - id: Note identifier
- *   - displayName: Human readable name
- *   - updatedAt: Last modification timestamp
- *   - totalBooks: Sum of all book quantities in note
+ * @returns {Promise<OutboundNoteListItem[]>} Array of outbound notes
  */
 export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
@@ -209,12 +205,7 @@ type GetNoteResponse = {
  *
  * @param {DB} db - Database connection
  * @param {number} id - ID of note to retrieve
- * @returns {Promise<GetNoteResponse | undefined>} Note details including:
- *   - Basic info (id, displayName)
- *   - Warehouse associations (warehouseId, warehouseName)
- *   - Type info (noteType, isReconciliationNote)
- *   - Status (committed, committedAt, updatedAt)
- *   - Default warehouse for outbound notes
+ * @returns {Promise<GetNoteResponse | undefined>} Note details
  */
 export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
 	const query = `
