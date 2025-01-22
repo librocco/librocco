@@ -16,9 +16,6 @@
  *   - Out of print status
  *   - Category
  *
- * Data Sources:
- * - book table: Core book metadata
- * - book_transaction table: References books in note transactions
  */
 
 import { type DB, type BookData } from "./types";
