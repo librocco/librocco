@@ -14,15 +14,16 @@
 
 	import { dbName, dbNamePersisted, resetDB } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, settingsSchema, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { settingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { settingsStore } from "$lib/stores";
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
 
 	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -175,7 +176,7 @@
 									<li
 										on:click={handleSelect(file)}
 										data-active={active}
-										class="group flex h-16 cursor-pointer items-center justify-between py-3 px-4 {active
+										class="group flex h-16 cursor-pointer items-center justify-between px-4 py-3 {active
 											? 'bg-green-300'
 											: 'hover:bg-gray-50'}"
 									>
@@ -185,7 +186,7 @@
 									<li
 										data-file={file}
 										data-active={active}
-										class="group flex h-16 items-center justify-between py-3 px-4 {active ? 'bg-gray-100' : ''}"
+										class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-gray-100' : ''}"
 									>
 										<span>{file}</span>
 										<div class="hidden gap-x-2 group-hover:flex">
@@ -278,9 +279,9 @@
 							dataType: "json",
 							validators: zod(settingsSchema),
 							validationMethod: "submit-only",
-							onUpdated: ({ form }) => {
-								if (form.valid) {
-									settingsStore.set(form.data);
+							onUpdated: ({ form: { data, valid } }) => {
+								if (valid) {
+									settingsStore.set(data);
 									// Force reload the layout. A simple "invalidation" will not suffice as the existing DB reference will still exist
 									window.location.reload();
 								}
@@ -304,7 +305,7 @@
 
 		{#if type === "create"}
 			<div
-				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
+				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white px-4 py-6"
 				use:melt={$content}
 			>
 				<h2 class="sr-only" use:melt={$title}>

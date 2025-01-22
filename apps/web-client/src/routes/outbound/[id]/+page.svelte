@@ -51,7 +51,7 @@
 	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore, settingsStore } from "$lib/stores";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 
 	import { createNoteStores } from "$lib/stores/proto";
 
@@ -65,6 +65,7 @@
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { appPath } from "$lib/paths";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 

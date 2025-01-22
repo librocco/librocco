@@ -37,7 +37,7 @@ const config = {
 				"/orders/customers/",
 				"/orders/customers/1/",
 				"/orders/suppliers/",
-				"/orders/suppliers/reconcile/",
+				"/orders/suppliers/reconcile/1/",
 				"/orders/suppliers/order/1",
 				"/orders/suppliers/1/",
 				"/history/date/1/",

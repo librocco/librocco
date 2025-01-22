@@ -9,13 +9,14 @@ import {
 	createReconciliationOrder,
 	getReconciliationOrder,
 	addOrderLinesToReconciliationOrder,
-	finalizeReconciliationOrder
+	finalizeReconciliationOrder,
+	getReconciliationOrderLines
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerBooks } from "../customers";
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
-describe("Suppliers order creation", () => {
+describe("Reconciliation order creation", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
@@ -41,7 +42,6 @@ describe("Suppliers order creation", () => {
 
 		expect(res2).toMatchObject([
 			{
-				customer_order_line_ids: null,
 				id: 1,
 				supplier_order_ids: "[1]",
 				finalized: 0
@@ -63,9 +63,8 @@ describe("Suppliers order creation", () => {
 		const res2 = await getReconciliationOrder(db, reconOrderId);
 
 		expect(res2).toMatchObject({
-			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 0
 		});
 	});
@@ -84,22 +83,49 @@ describe("Suppliers order creation", () => {
 		const res2 = await getReconciliationOrder(db, reconOrderId);
 
 		expect(res2).toMatchObject({
-			customer_order_line_ids: null,
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 0
 		});
 
-		await addOrderLinesToReconciliationOrder(db, 1, ["123", "435", "324"]);
+		await addOrderLinesToReconciliationOrder(db, 1, [
+			{ isbn: "1", quantity: 1 },
+			{ isbn: "1", quantity: 1 },
+			{ isbn: "2", quantity: 1 },
+			{ isbn: "3", quantity: 1 }
+		]);
 
-		const res3 = await getReconciliationOrder(db, reconOrderId);
+		const res3 = await getReconciliationOrderLines(db, reconOrderId);
 
-		expect(res3).toMatchObject({
-			customer_order_line_ids: `["123","435","324"]`,
-			id: 1,
-			supplier_order_ids: "[1]",
-			finalized: 0
-		});
+		expect(res3).toEqual([
+			{
+				isbn: "1",
+				reconciliation_order_id: 1,
+				quantity: 2,
+				publisher: "MathsAndPhysicsPub",
+				title: "Physics",
+				price: 7,
+				authors: null
+			},
+			{
+				isbn: "2",
+				reconciliation_order_id: 1,
+				quantity: 1,
+				publisher: "ChemPub",
+				title: "Chemistry",
+				price: 13,
+				authors: null
+			},
+			{
+				isbn: "3",
+				reconciliation_order_id: 1,
+				quantity: 1,
+				publisher: "PhantasyPub",
+				title: "The Hobbit",
+				price: 5,
+				authors: null
+			}
+		]);
 	});
 
 	it("can finalize a currently reconciliating order", async () => {
@@ -114,7 +140,7 @@ describe("Suppliers order creation", () => {
 
 		const reconOrderId = await createReconciliationOrder(db, ids);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, ["1"]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
 
 		await finalizeReconciliationOrder(db, reconOrderId);
 		const res3 = await getReconciliationOrder(db, reconOrderId);
@@ -122,11 +148,62 @@ describe("Suppliers order creation", () => {
 		const books = await getCustomerBooks(db, 1);
 		expect(books[0].received).toBeInstanceOf(Date);
 		expect(res3).toMatchObject({
-			customer_order_line_ids: `["1"]`,
 			id: 1,
-			supplier_order_ids: "[1]",
+			supplierOrderIds: [1],
 			finalized: 1
 		});
+	});
+
+	it("updates existing order line quantity when adding duplicate ISBN", async () => {
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		const supplierOrders = await getPlacedSupplierOrders(db);
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		const reconOrderId = await createReconciliationOrder(db, ids);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 3 },
+			{ isbn: "2", quantity: 1 }
+		]);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 2 },
+			{ isbn: "3", quantity: 1 }
+		]);
+
+		const orderLines = await getReconciliationOrderLines(db, reconOrderId);
+
+		expect(orderLines).toEqual([
+			{
+				isbn: "1",
+				reconciliation_order_id: reconOrderId,
+				quantity: 5,
+				publisher: "MathsAndPhysicsPub",
+				title: "Physics",
+				price: 7,
+				authors: null
+			},
+			{
+				isbn: "2",
+				reconciliation_order_id: reconOrderId,
+				quantity: 1,
+				publisher: "ChemPub",
+				title: "Chemistry",
+				price: 13,
+				authors: null
+			},
+			{
+				isbn: "3",
+				reconciliation_order_id: reconOrderId,
+				quantity: 1,
+				publisher: "PhantasyPub",
+				title: "The Hobbit",
+				price: 5,
+				authors: null
+			}
+		]);
 	});
 
 	describe("Reconciliation order error cases", () => {
@@ -142,7 +219,7 @@ describe("Suppliers order creation", () => {
 
 		it("throws error when reconciliation order doesn't exist", async () => {
 			const nonExistentId = 999;
-			await expect(addOrderLinesToReconciliationOrder(db, nonExistentId, ["123"])).rejects.toThrow(
+			await expect(addOrderLinesToReconciliationOrder(db, nonExistentId, [{ isbn: "123", quantity: 1 }])).rejects.toThrow(
 				`Reconciliation order ${nonExistentId} not found`
 			);
 		});
@@ -172,26 +249,6 @@ describe("Suppliers order creation", () => {
 
 			await expect(finalizeReconciliationOrder(db, reconOrderId)).rejects.toThrow(
 				`Reconciliation order ${reconOrderId} is already finalized`
-			);
-		});
-
-		it("throws error when customer order lines are in invalid JSON format", async () => {
-			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-			await createSupplierOrder(db, newSupplierOrderLines);
-
-			// TODO: might be useful to have a way to filter for a few particular ids?
-			// It's only going to be one here...
-			const supplierOrders = await getPlacedSupplierOrders(db);
-
-			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
-
-			const reconOrderId = await createReconciliationOrder(db, ids);
-
-			// Directly insert malformed JSON
-			await db.exec("UPDATE reconciliation_order SET customer_order_line_ids = ? WHERE id = ?", ["{invalid-json", reconOrderId]);
-
-			await expect(finalizeReconciliationOrder(db, reconOrderId)).rejects.toThrow(
-				`Invalid customer order lines format in reconciliation order ${reconOrderId}`
 			);
 		});
 	});
