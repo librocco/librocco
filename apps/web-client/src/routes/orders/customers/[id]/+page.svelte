@@ -14,20 +14,17 @@
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
-	import { writable } from "svelte/store";
-	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
-	import type { BookEntry } from "@librocco/db";
 	// import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
 
-	const { customer, books } = data;
+	const { customer, customerOrderLines } = data;
 
 	const id = parseInt($page.params.id);
 	let currentBookISBN = "";
 
 	// #region infinite-scroll
-	let maxResults = 20;
+	// let maxResults = 20;
 	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	// const seeMore = () => (maxResults += 20);
 	// // We're using in intersection observer to create an infinite scroll effect
@@ -53,14 +50,7 @@
 
 	$: db = data.ordersDbCtx?.db;
 
-	$: orderLines = data?.customerOrderLines
-		.filter((line) => line.customer_id.toString() === $page.params.id)
-		.map((line) => ({ price: 0, ...books[line.isbn], ...line }));
-	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
-		data: orderLines?.slice(0, maxResults) || []
-	});
-	$: lines.set({ data: orderLines?.slice(0, maxResults) || [] });
-	$: totalAmount = orderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
+	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0);
 	// #endregion reactivity
 	// #region dialog
 
@@ -88,7 +78,7 @@
 	};
 </script>
 
-<header class="navbar mb-4 bg-neutral">
+<header class="navbar bg-neutral mb-4">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
 </header>
 
@@ -97,7 +87,7 @@
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card h-full">
 				<div class="card-body gap-y-2 p-0">
-					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
+					<div class="bg-base-100 sticky top-0 flex flex-col gap-y-2 pb-3">
 						<h1 class="prose card-title">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
@@ -120,7 +110,7 @@
 
 						<div class="flex w-full flex-col gap-y-4 py-6">
 							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-								<div class="max-w-96 flex flex-col gap-y-4">
+								<div class="flex max-w-96 flex-col gap-y-4">
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer name</span>
@@ -195,7 +185,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each $lines.data as { isbn, title, authors, price, placed, received, collected }}
+							{#each customerOrderLines as { isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
