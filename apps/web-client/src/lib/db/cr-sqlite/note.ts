@@ -3,6 +3,7 @@
  *
  * Note Overview:
  * Notes represent transactions that track the movement of books in our out of warehouses.
+ * They "contain" (through the `book_transaction` table) a list of "transactions", i.e. books going in or out of a warehouse.
  *
  * Types of Notes:
  * 1. Inbound Notes:
@@ -14,10 +15,8 @@
  * 2. Outbound Notes:
  *    - Track books moving OUT of warehouses
  *    - No specific warehouse association (warehouse_id is NULL).
- * 		If a book (isbn) exists in more than one warehouse,
- * 		the user must select which warehouse it is being removed from.
- * 	  - A default warehouse can be selected to make this more convenient
- *    - Used for sales of inventory
+ *    - Each transaction MUST specify a warehouse id where the book(s) come(s) from
+ * 		- Used for sales of inventory
  *
  * 3. Reconciliation Notes:
  *    - Special type of inbound note
