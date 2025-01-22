@@ -42,7 +42,6 @@
 	} from "$lib/forms";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { settingsStore } from "$lib/stores";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -65,6 +64,7 @@
 		upsertNoteCustomItem
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
