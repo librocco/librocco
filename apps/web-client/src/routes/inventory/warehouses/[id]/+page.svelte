@@ -24,7 +24,6 @@
 		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
-	import { settingsStore } from "$lib/stores";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -39,6 +38,7 @@
 	import { appPath } from "$lib/paths";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 

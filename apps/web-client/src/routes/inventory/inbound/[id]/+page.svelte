@@ -32,16 +32,15 @@
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { settingsStore } from "$lib/stores";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import { autoPrintLabels } from "$lib/stores/app";
 	import { addVolumesToNote, commitNote, deleteNote, getReceiptForNote, removeNoteTxn, updateNoteTxn } from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { autoPrintLabels, settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 

@@ -86,11 +86,19 @@ CREATE TABLE reconciliation_order (
 	id INTEGER NOT NULL,
 	supplier_order_ids TEXT CHECK (json_valid(supplier_order_ids) AND json_array_length(supplier_order_ids) >= 1),
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-	customer_order_line_ids TEXT CHECK (json_valid(supplier_order_ids)),
+	updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	finalized INTEGER DEFAULT 0,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('reconciliation_order');
+
+CREATE TABLE reconciliation_order_lines (
+	reconciliation_order_id INTEGER NOT NULL,
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 1,
+	PRIMARY KEY (reconciliation_order_id, isbn)
+);
+SELECT crsql_as_crr('reconciliation_order_lines');
 
 CREATE TABLE warehouse (
 	-- 0 id is reserved -- when warehouse id is unassigned (in a book txn for ex.) we're defaulting to 0
@@ -137,5 +145,4 @@ CREATE TABLE custom_item (
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
 );
-
 
