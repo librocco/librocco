@@ -30,11 +30,38 @@
 
 import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
 
+/**
+ * Retrieves all customers from the database.
+ * Returns basic customer information ordered by ID.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<Customer[]>} Array of customers with:
+ *   - id: Unique identifier
+ *   - fullname: Customer's full name (optional)
+ *   - email: Contact email (optional)
+ *   - updatedAt: Last modification timestamp
+ *   - deposit: Current deposit amount (optional)
+ */
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
 	return result;
 }
 
+/**
+ * Creates a new customer or updates an existing one.
+ * Uses customer ID as the unique identifier for upsert operations.
+ * Updates the customer's lastModified timestamp automatically.
+ * All fields except ID are optional and will only be updated if provided.
+ *
+ * @param {DB} db - Database connection
+ * @param {Customer} customer - Customer data including:
+ *   - id: Unique identifier (required)
+ *   - fullname: Customer's full name
+ *   - email: Contact email
+ *   - deposit: Current deposit amount
+ * @throws {Error} If customer ID is not provided
+ * @returns {Promise<void>} Resolves when customer is created/updated
+ */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
@@ -77,6 +104,23 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 	return result;
 };
 
+/**
+ * Retrieves all book order lines for a specific customer.
+ * Includes both active and historical orders.
+ * Groups orders by supplier order IDs if applicable.
+ * Orders are returned sorted by ID (oldest first).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} customerId - Customer to query orders for
+ * @returns {Promise<CustomerOrderLine[]>} Customer's order lines with:
+ *   - id: Order line identifier
+ *   - isbn: Book identifier
+ *   - created: Order creation date
+ *   - placed: Date order was sent to supplier (optional)
+ *   - received: Date books arrived from supplier (optional)
+ *   - collected: Date customer collected books (optional)
+ *   - supplierOrderIds: Associated supplier order IDs
+ */
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT customer_order_lines.id, isbn, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
