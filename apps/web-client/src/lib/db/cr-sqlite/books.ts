@@ -18,7 +18,9 @@
  *
  */
 
-import { type DB, type BookData } from "./types";
+import { type BookData } from "@librocco/shared";
+
+import { type DB } from "./types";
 
 /**
  * Creates a new book record or updates an existing one.
@@ -34,7 +36,9 @@ export async function upsertBook(db: DB, book: BookData) {
 	if (!book.isbn) {
 		throw new Error("Book must have an ISBN");
 	}
+
 	const updatedAt = Object.keys(book).length > 1 ? Date.now() : null;
+
 	return db.exec(
 		`INSERT INTO book (isbn, title, authors, publisher, price, year, edited_by, out_of_print, category, updated_at)
           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)

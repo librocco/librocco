@@ -1,7 +1,8 @@
 /** Content script */
 
+import type { BookData } from "@librocco/shared";
+
 import type { Result } from "../types";
-import { BookEntry } from "@librocco/db";
 
 // #region client_interface
 //
@@ -83,11 +84,11 @@ function pollBackgroundScript() {
 pollBackgroundScript();
 
 // #region scrapers
-type ParsingResult = Result<BookEntry>;
+type ParsingResult = Result<BookData>;
 
 function annasArchiveScraper(rawHTML: Document): ParsingResult {
 	let ok = false;
-	const book: BookEntry = {
+	const book: BookData = {
 		isbn: "",
 		title: "",
 		authors: "",
