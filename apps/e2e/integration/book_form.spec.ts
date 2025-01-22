@@ -10,6 +10,7 @@ import { book1 } from "./data";
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
+	await getDashboard(page).waitFor();
 });
 
 test("update is reflected in table view - stock", async ({ page }) => {
