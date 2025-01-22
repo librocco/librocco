@@ -1,14 +1,20 @@
 <script lang="ts">
-	import { sortLinesBySupplier, type ProcessedOrderLine } from "$lib/db/cr-sqlite/utils";
+	import { sortLinesBySupplier } from "$lib/db/cr-sqlite/order-reconciliation";
+	import type { ProcessedOrderLine, SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/types";
 
 	import type { BookEntry } from "@librocco/db";
+	import { onMount } from "svelte";
 
-	export let supplierBooks: ProcessedOrderLine[];
+	export let supplierBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
+		processedLines: [],
+		unmatchedBooks: []
+	};
 
-	$: sortedSupplierBooks = sortLinesBySupplier(supplierBooks);
-	// list all books by isbn
-	// // only show one row per isbn
-	//
+	$: sortedSupplierBooks = sortLinesBySupplier(supplierBooks.processedLines);
+
+	onMount(() => {
+		console.log({ sortedSupplierBooks });
+	});
 	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
 		return `${delivered} / ${books.length}`;
@@ -30,11 +36,28 @@
 				</th> -->
 			</tr>
 		</thead>
+		{#if supplierBooks.unmatchedBooks.length}
+			<thead>
+				<tr class="bg-base-200/50">
+					<th colspan="7" class="text-left"> Unmatched Books </th>
+				</tr>
+			</thead>
+			<tbody>
+				{#each supplierBooks.unmatchedBooks as { isbn, title, authors, price }}
+					<tr>
+						<td>{isbn}</td>
+						<td>{title}</td>
+						<td>{authors}</td>
+						<td>€{price}</td>
+					</tr>
+				{/each}
+			</tbody>
+		{/if}
 		{#each Object.entries(sortedSupplierBooks) as [supplier_name, supplierBooksList]}
 			<thead>
 				<tr class="bg-base-200/50">
 					<th colspan="7" class="text-left">
-						{supplier_name}
+						{supplier_name || ""}
 					</th>
 					<!-- <th colspan="1" class="text-center">
 						<span class="badge-accent badge-outline badge-lg badge">
@@ -44,7 +67,7 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each supplierBooksList as { isbn, title, authors, price, delivered, deliveredQuantity, orderedQuantity }}
+				{#each supplierBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
