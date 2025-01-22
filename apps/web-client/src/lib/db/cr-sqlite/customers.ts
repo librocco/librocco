@@ -103,14 +103,7 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
  *
  * @param {DB} db - Database connection
  * @param {number} customerId - Customer to query orders for
- * @returns {Promise<CustomerOrderLine[]>} Customer's order lines with:
- *   - id: Order line identifier
- *   - isbn: Book identifier
- *   - created: Order creation date
- *   - placed: Date order was sent to supplier (optional)
- *   - received: Date books arrived from supplier (optional)
- *   - collected: Date customer collected books (optional)
- *   - supplierOrderIds: Associated supplier order IDs
+ * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
  */
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
