@@ -49,10 +49,6 @@ export type CustomerOrderLine = {
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
-	/**
-	 * This will come out from the customer_supplier_order table
-	 */
-	supplierOrderIds: number[]; // List of supplier order ids that this book order is part of
 };
 export type BookLine = { isbn: string };
 

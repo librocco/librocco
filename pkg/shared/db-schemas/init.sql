@@ -100,14 +100,6 @@ CREATE TABLE supplier_order_line (
 );
 SELECT crsql_as_crr('supplier_order_line');
 
-CREATE TABLE customer_supplier_order (
-	id INTEGER NOT NULL,
-	supplier_order_id INTEGER,
-	customer_order_line_id INTEGER,
-	PRIMARY KEY (id)
-);
-SELECT crsql_as_crr('customer_supplier_order');
-
 CREATE TABLE reconciliation_order (
 	id INTEGER NOT NULL,
 	supplier_order_ids TEXT CHECK (json_valid(supplier_order_ids) AND json_array_length(supplier_order_ids) >= 1),
