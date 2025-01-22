@@ -209,7 +209,7 @@
 					{/if}
 				{:else if currentStep > 1}
 					{@const processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines)}
-					}
+					
 					<ComparisonTable supplierBooks={processedOrderDelivery} />
 				{/if}
 
