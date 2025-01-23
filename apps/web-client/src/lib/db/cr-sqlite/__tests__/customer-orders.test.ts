@@ -114,6 +114,8 @@ describe("Customer order tests", () => {
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
 
+		// This tests for a regression we had: we want to ensure that the sync won't update the `updated_at` field
+		// - it should be the same as for the original entry
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 
 		await syncDBs(db1, db2);
