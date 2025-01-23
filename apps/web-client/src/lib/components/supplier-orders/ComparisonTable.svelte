@@ -5,16 +5,13 @@
 	import type { BookEntry } from "@librocco/db";
 	import { onMount } from "svelte";
 
-	export let supplierBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
+	export let reconciledBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
 		processedLines: [],
 		unmatchedBooks: []
 	};
 
-	$: sortedSupplierBooks = sortLinesBySupplier(supplierBooks.processedLines);
+	$: sortedSupplierBooks = sortLinesBySupplier(reconciledBooks.processedLines);
 
-	onMount(() => {
-		console.log({ sortedSupplierBooks });
-	});
 	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
 		return `${delivered} / ${books.length}`;
@@ -36,14 +33,14 @@
 				</th> -->
 			</tr>
 		</thead>
-		{#if supplierBooks.unmatchedBooks.length}
+		{#if reconciledBooks.unmatchedBooks.length}
 			<thead>
 				<tr class="bg-base-200/50">
 					<th colspan="7" class="text-left"> Unmatched Books </th>
 				</tr>
 			</thead>
 			<tbody>
-				{#each supplierBooks.unmatchedBooks as { isbn, title, authors, price }}
+				{#each reconciledBooks.unmatchedBooks as { isbn, title, authors, price }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
@@ -53,7 +50,7 @@
 				{/each}
 			</tbody>
 		{/if}
-		{#each Object.entries(sortedSupplierBooks) as [supplier_name, supplierBooksList]}
+		{#each Object.entries(sortedSupplierBooks) as [supplier_name, reconciledBooksList]}
 			<thead>
 				<tr class="bg-base-200/50">
 					<th colspan="7" class="text-left">
@@ -61,13 +58,13 @@
 					</th>
 					<!-- <th colspan="1" class="text-center">
 						<span class="badge-accent badge-outline badge-lg badge">
-							{getSupplierSummary(supplierBooks)}
+							{getSupplierSummary(reconciledBooks)}
 						</span>
 					</th> -->
 				</tr>
 			</thead>
 			<tbody>
-				{#each supplierBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
+				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
 					<tr>
 						<td>{isbn}</td>
 						<td>{title}</td>
