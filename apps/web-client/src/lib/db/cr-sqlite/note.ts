@@ -302,12 +302,12 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
 		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = excluded.updated_at
+			updated_at = ?
 	`;
 
 	await db.tx(async (txDb) => {
 		const timestamp = Date.now();
-		await txDb.exec(insertOrUpdateTxnStmt, [isbn, quantity, warehouseId, noteId, timestamp]);
+		await txDb.exec(insertOrUpdateTxnStmt, [isbn, quantity, warehouseId, noteId, timestamp, timestamp]);
 		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
 	});
 }
