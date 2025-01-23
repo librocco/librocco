@@ -49,7 +49,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
-           updated_at = excluded.updated_at,
+           updated_at = ?,
            deposit = COALESCE(?, deposit);`,
 		[
 			customer.id,
@@ -59,6 +59,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
+			timestamp,
 			customer.deposit ?? null
 		]
 	);
