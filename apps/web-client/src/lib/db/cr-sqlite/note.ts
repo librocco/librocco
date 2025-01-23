@@ -308,12 +308,7 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
  *
  * @param {DB} db - Database connection
  * @param {number} noteId - ID of note to check
- * @returns {Promise<OutOfStockTransaction[]>} Array of transactions that would result in negative stock:
- *   - isbn: Book identifier
- *   - warehouseId: Source warehouse
- *   - quantity: Requested quantity
- *   - available: Current stock level
- *   - warehouseName: Source warehouse name
+ * @returns {Promise<OutOfStockTransaction[]>} Array of transactions that would result in negative stock
  */
 async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
 	const entries = await getNoteEntries(db, noteId);
@@ -339,7 +334,7 @@ async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockT
 
 /**
  * Retrieves all book transactions in a note that don't have a warehouse assigned.
- * Used during note validation to ensure all transactions have proper warehouse assignments.
+ * Used during outbound note validation to ensure all transactions have proper warehouse assignments.
  *
  * @param {DB} db - Database connection
  * @param {number} id - ID of note to check
@@ -427,10 +422,7 @@ export async function deleteNote(db: DB, id: number): Promise<void> {
  *
  * @param {DB} db - Database connection
  * @param {number} noteId - ID of note to modify
- * @param {VolumeStock} volume - Book data containing:
- *   - isbn: Book identifier
- *   - warehouseId: Source/destination warehouse
- *   - quantity: Number of books to add/remove
+ * @param {VolumeStock} volume - Book data containing ISBN, warehouseId and quantity
  * @returns {Promise<void>} Resolves when volumes are added
  */
 export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
@@ -703,7 +695,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 
 /**
  * Creates and immediately commits a reconciliation note.
- * Used to adjust inventory counts after physical stock checks.
+ * Used to adjust inventory counts when the physical word contradcts the database.
  * Creates book transactions and the note itself in a single transaction.
  *
  * @param {DB} db - Database connection
