@@ -180,7 +180,6 @@
 								<th>Title</th>
 								<th>Authors</th>
 								<th>Price</th>
-								<th>Quantity</th>
 								<th>Status</th>
 							</tr>
 						</thead>
