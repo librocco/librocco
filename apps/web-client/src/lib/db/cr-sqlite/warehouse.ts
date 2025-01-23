@@ -11,9 +11,6 @@
  *
  * Data Sources:
  * - warehouse table:
- *   - id: Primary key
- *   - display_name: Human readable name
- *   - discount: Optional percentage discount applied to books
  * - note table: Contains metadata about transactions
  * - book_transaction table: Records book "line-item" movements
  */
@@ -90,9 +87,8 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
 /**
  * Retrieves all warehouses with their total book counts.
  * Book counts are calculated from book transactions, considering:
- * - Positive quantities for transactions associated with warehouse notes
- * - Positive quantities for reconciliation notes
- * - Negative quantities for transactions without warehouse notes
+ * - Positive quantities for inbound and reconciliation notes
+ * - Negative quantities for outbound notes
  * Only committed notes are included in calculations.
  *
  * @param {DB} db - Database connection
