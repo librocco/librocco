@@ -66,6 +66,6 @@ export type CustomerOrderSchema = Infer<typeof customerOrderSchema>;
 export const customerOrderSchema = z.object({
 	id: z.number(),
 	fullname: z.string().default(""),
-	email: z.string().email(""),
+	email: z.string().email("").optional(),
 	deposit: z.number().default(0)
 });
