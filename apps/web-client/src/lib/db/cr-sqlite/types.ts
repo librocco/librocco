@@ -38,6 +38,14 @@ export type DBCustomerOrderLine = {
 	received?: number; // as milliseconds since epoch
 	collected?: number; // as milliseconds since epoch
 	supplierOrderIds: string; // Comma separated list of supplier order ids that this book order is part of
+	title: string;
+	price: number;
+	year: string;
+	authors: string;
+	publisher: string;
+	editedBy: string;
+	out_of_print?: number;
+	category: string;
 };
 
 export type CustomerOrderLine = {
@@ -53,7 +61,7 @@ export type CustomerOrderLine = {
 	 * This will come out from the customer_supplier_order table
 	 */
 	supplierOrderIds: number[]; // List of supplier order ids that this book order is part of
-};
+} & Required<BookData>;
 export type BookLine = { isbn: string };
 
 /* Suppliers */
