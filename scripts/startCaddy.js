@@ -40,6 +40,11 @@ function checkCaddy() {
 }
 
 function checkCaddyCapabilities() {
+  // On Mac, we can't set these permissions
+  // Instead, we're running as root (which is handled in the script)
+  if (process.platform === "darwin") {
+    return true
+  }
   // Check `getcap caddy`. Return false if it's missing
   // caddy cap_net_bind_service=ep
   const caddyCapabilities = child_process.execSync(
@@ -136,7 +141,8 @@ ${dnsName} {
 function startCaddy() {
   var command = `${CADDY_DIR}/caddy run --config ${CADDY_DIR}/Caddyfile`;
   if (process.platform === "darwin") {
-    command = "sudo " + command;
+    // Adding -E to 'sudo' keeps the environment: CADDY_DIR, CADDY_EMAIL, CLOUDFLARE_API_TOKEN
+    command = "sudo -E" + command;
   }
   child_process.execSync(command, { stdio: "inherit" });
 }
