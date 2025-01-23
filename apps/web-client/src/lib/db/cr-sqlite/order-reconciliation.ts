@@ -235,12 +235,16 @@ export const processOrderDelivery = (
 			const scannedBook = scannedLinesMap.get(placedOrderLine.isbn);
 			scannedLinesMap.delete(placedOrderLine.isbn);
 			result.processedLines.push({
-				...scannedBook,
+				...placedOrderLine,
 				deliveredQuantity: scannedBook.quantity,
 				orderedQuantity: placedOrderLine.quantity
 			});
 		} else {
-			result.unmatchedBooks.push(placedOrderLine);
+			result.processedLines.push({
+				...placedOrderLine,
+				deliveredQuantity: 0,
+				orderedQuantity: placedOrderLine.quantity
+			});
 		}
 	}
 	result.unmatchedBooks = [...result.unmatchedBooks, ...scannedLinesMap.values()];
