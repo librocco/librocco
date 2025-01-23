@@ -79,16 +79,34 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 
 export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, isbn, customer_id, created, placed, received, collected, GROUP_CONCAT(supplier_order_id) as supplierOrderIds
+		`SELECT
+			customer_order_lines.id,
+			customer_order_lines.isbn,
+			customer_order_lines.customer_id,
+			customer_order_lines.created,
+			customer_order_lines.placed,
+			customer_order_lines.received,
+			customer_order_lines.collected,
+			GROUP_CONCAT(customer_supplier_order.id) as supplierOrderIds,
+			COALESCE(book.title, 'N/A') AS title,
+			COALESCE(book.price, 0) AS price,
+			COALESCE(book.year, 'N/A') AS year,
+			COALESCE(book.authors, 'N/A') AS authors,
+			COALESCE(book.publisher, '') AS publisher,
+			COALESCE(book.edited_by, '') AS editedBy,
+			book.out_of_print,
+			COALESCE(book.category, '') AS category
 		FROM customer_order_lines
 		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
+		LEFT JOIN book ON customer_order_lines.isbn = book.isbn
 		WHERE customer_id = $customerId
-		GROUP BY customer_order_lines.id, isbn, created, placed, received, collected
+		GROUP BY customer_order_lines.id, customer_order_lines.isbn, created, placed, received, collected
 		ORDER BY customer_order_lines.id ASC;`,
 		[customerId]
 	);
 	return result.map(marshallCustomerOrderLine);
 };
+
 /**
  * Retrieves customer details from the database for a specific customer ID.
  *
@@ -129,7 +147,8 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
 		placed: line.placed ? new Date(line.placed) : undefined,
 		received: line.received ? new Date(line.received) : undefined,
 		collected: line.collected ? new Date(line.collected) : undefined,
-		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : []
+		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : [],
+		outOfPrint: Boolean(line.out_of_print)
 	};
 };
 
