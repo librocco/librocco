@@ -1,5 +1,28 @@
+/**
+ * @fileoverview Stock management system
+ *
+ * Stock Overview:
+ * - Tracks current book quantities across all warehouses
+ * - Stock levels are calculated from committed note transactions
+ * - For inbound notes and reconciliation notes: quantities are added
+ * - For outbound notes: quantities are subtracted
+ * - Stock can be filtered by ISBN/warehouse pairs or search string
+ * - Includes book metadata (title, price, etc) in stock queries
+ * - Only considers committed notes when calculating quantities
+ * - Returns zero or positive quantities only (negative stock is prevented)
+ *
+ * Data Sources:
+ * - book_transaction table: Records individual book movements
+ * - note table: Contains transaction metadata (committed status)
+ * - warehouse table: Contains warehouse information
+ * - book table: Contains book metadata
+ */
+
 import type { DB } from "./types";
 
+/**
+ * Parameters for filtering stock queries
+ */
 type GetStockParams = {
 	searchString?: string;
 	// If provided the results are filtered by provided (isbn, warehouseId) pairs
@@ -21,6 +44,23 @@ type GetStockResponseItem = {
 	category?: string;
 };
 
+/**
+ * Retrieves current stock levels for books across all warehouses.
+ * Calculates quantities based on committed note transactions.
+ * Can filter results by search string or specific ISBN/warehouse pairs.
+ * Only returns entries with non-zero quantities.
+ *
+ * @param {DB} db - Database connection
+ * @param {GetStockParams} params - Query filters
+ * @param {string} [params.searchString=""] - Filter by ISBN, title, or author
+ * @param {Array<{isbn: string, warehouseId: number}>} [params.entries=[]] - Specific ISBN/warehouse pairs to query
+ * @returns {Promise<GetStockResponseItem[]>} Current stock levels with book details:
+ *   - isbn: Book identifier
+ *   - quantity: Current stock level
+ *   - warehouseId: Location of stock
+ *   - warehouseName: Human readable warehouse name
+ *   - Book metadata: title, price, year, authors, etc
+ */
 export async function getStock(db: DB, { searchString = "", entries = [] }: GetStockParams = {}): Promise<GetStockResponseItem[]> {
 	const query = `
 		SELECT

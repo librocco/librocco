@@ -6,96 +6,62 @@
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
-	import Page from "$lib/components/Page.svelte";
+	import type { PageData } from "./$types";
+	import { addOrderLinesToReconciliationOrder, finalizeReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { page } from "$app/stores";
+	import { onDestroy, onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
+	import { processOrderDelivery } from "$lib/db/cr-sqlite/utils";
+	import { defaults, superForm } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
+	import { scannerSchema } from "$lib/forms/schemas";
 
-	import { view } from "@librocco/shared";
-	// Mock data for the comparison view
-	const mockSupplierBooks = [
-		{
-			supplier_name: "Academic Books Ltd",
-			supplier_id: 1,
-			books: [
-				{
-					isbn: "9781234567897",
-					title: "The Art of Learning",
-					authors: "Josh Waitzkin",
-					price: 15.99,
-					delivered: true,
-					ordered: 2
-				},
-				{
-					isbn: "9781234567880",
-					title: "Deep Work",
-					authors: "Cal Newport",
-					price: 18.0,
-					delivered: false,
-					ordered: 1
-				}
-			]
-		},
-		{
-			supplier_name: "Penguin Random House",
-			supplier_id: 2,
-			books: [
-				{
-					isbn: "9780987654321",
-					title: "Becoming",
-					authors: "Michelle Obama",
-					price: 19.5,
-					delivered: true,
-					ordered: 3
-				},
-				{
-					isbn: "9780987654314",
-					title: "Thinking, Fast and Slow",
-					authors: "Daniel Kahneman",
-					price: 12.99,
-					delivered: false,
-					ordered: 4
-				}
-			]
-		}
-	];
+	// implement order reactivity/sync
+	export let data: PageData;
 
-	const reconciliation = {
-		id: 123,
-		lastUpdated: new Date()
-	};
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data;
 
-	let isbn = "";
-	let books: Array<{
-		isbn: string;
-		title: string;
-		authors: string;
-		price: number;
-		quantity: number;
-	}> = [];
+		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
+		const disposer2 = rx.onRange(["reconciliation_order", "reconciliation_order_lines"], () => invalidate("reconciliationOrder:data"));
+		disposer = () => (disposer1(), disposer2());
+	});
 
-	// Mock supplier orders data
-	const selectedOrders = [
-		{ id: 1, supplier: "Academic Books Ltd", books: 5 },
-		{ id: 2, supplier: "Penguin Random House", books: 3 }
-	];
+	//#endregion reactivity
 
-	function handleIsbnSubmit() {
+	onDestroy(async () => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+	$: books = data?.reconciliationOrderLines || [];
+
+	async function handleIsbnSubmit(isbn: string) {
 		if (!isbn) return;
 
-		// Mock adding a book
-		books = [
-			{
-				isbn,
-				title: "Sample Book",
-				authors: "Sample Author",
-				price: 19.99,
-				quantity: 1
-			},
-			...books
-		];
-		isbn = "";
+		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
-	$: totalDelivered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.filter((b) => b.delivered).length, 0);
-	$: totalOrdered = mockSupplierBooks.reduce((acc, supplier) => acc + supplier.books.length, 0);
+	const form = superForm(defaults(zod(scannerSchema)), {
+		SPA: true,
+		validators: zod(scannerSchema),
+		validationMethod: "submit-only",
+		onUpdated: async ({ form: { data, valid } }) => {
+			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
+			if (valid) {
+				const { isbn } = data;
+				handleIsbnSubmit(isbn);
+			}
+		}
+	});
+
+	const { form: formStore, enhance } = form;
+
+	$: placedOrderLines = data?.placedOrderLines;
+	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
+	$: totalOrdered = placedOrderLines.length;
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -105,9 +71,10 @@
 
 	$: canCompare = books.length > 0;
 
-	function handleCommit() {
+	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
+		await finalizeReconciliationOrder(data?.ordersDb, parseInt($page.params.id));
 	}
 </script>
 
@@ -124,12 +91,21 @@
 						<h1 class="prose card-title">Reconcile Deliveries</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{reconciliation.id}</h2>
+							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
+							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+								<span class="sr-only">Created</span>
+								<ClockArrowUp size={16} aria-hidden />
+								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
+									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
+								>
+							</span>
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={reconciliation.lastUpdated.toISOString()}>{reconciliation.lastUpdated.toLocaleDateString()}</time>
+								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
+									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
+								>
 							</span>
 						</div>
 					</div>
@@ -137,10 +113,10 @@
 						<div class="md:px-1">
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
-								{#each selectedOrders as order}
+								{#each data?.placedOrderLines as placedOrderLine, i}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
-										#{order.id}
-										<span class="text-sm font-light">({order.supplier})</span>
+										#{placedOrderLine.supplier_order_id}
+										<span class="text-sm font-light">({placedOrderLine.supplier_name})</span>
 									</dd>
 								{/each}
 							</div>
@@ -163,7 +139,9 @@
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
 									disabled={isCurrent || step === 3}
-									on:click={() => (currentStep = step)}
+									on:click={async () => {
+										currentStep = step;
+									}}
 								>
 									{#if isCompleted}
 										<span class="flex shrink-0 items-center justify-center rounded-full bg-primary p-1">
@@ -189,10 +167,10 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form class="flex w-full gap-2" on:submit|preventDefault={handleIsbnSubmit}>
+					<form class="flex w-full gap-2" use:enhance method="POST">
 						<label class="input-bordered input flex flex-1 items-center gap-2">
 							<QrCode />
-							<input type="text" class="grow" placeholder="Enter ISBN of delivered books" bind:value={isbn} />
+							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" required />
 						</label>
 					</form>
 				{/if}
@@ -212,15 +190,17 @@
 										<th>Title</th>
 										<th>Authors</th>
 										<th>Price</th>
+										<th>Quantity</th>
 									</tr>
 								</thead>
 								<tbody>
-									{#each books as { isbn, title, authors, price }}
+									{#each books as { isbn, title, authors, price, quantity }}
 										<tr>
 											<th>{isbn}</th>
-											<td>{title}</td>
-											<td>{authors}</td>
-											<td>€{price}</td>
+											<td>{title || "-"}</td>
+											<td>{authors || "-"}</td>
+											<td>€{price || 0}</td>
+											<td>{quantity}</td>
 										</tr>
 									{/each}
 								</tbody>
@@ -228,7 +208,9 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					<ComparisonTable supplierBooks={mockSupplierBooks} />
+					{@const processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines)}
+
+					<ComparisonTable supplierBooks={processedOrderDelivery} />
 				{/if}
 
 				{#if canCompare || currentStep > 1}
@@ -246,7 +228,7 @@
 							{/if}
 							<button
 								class="btn-primary btn ml-auto"
-								on:click={() => {
+								on:click={async () => {
 									if (currentStep === 1) {
 										currentStep = 2;
 									} else {

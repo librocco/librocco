@@ -1,6 +1,13 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
 
+export type SettingsSchema = Infer<typeof settingsSchema>;
+export const settingsSchema = z.object({
+	couchUrl: z.string(),
+	labelPrinterUrl: z.string(),
+	receiptPrinterUrl: z.string()
+});
+
 export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
 	id: z.string(),
@@ -43,13 +50,6 @@ export const bookSchema = z.object({
 	category: z.string().optional()
 });
 
-export type SettingsSchema = Infer<typeof settingsSchema>;
-export const settingsSchema = z.object({
-	couchUrl: z.string(),
-	labelPrinterUrl: z.string(),
-	receiptPrinterUrl: z.string()
-});
-
 export type CustomItemFormSchema = Infer<typeof customItemSchema>;
 export const customItemSchema = z.object({
 	id: z.string().optional(),
@@ -66,6 +66,6 @@ export type CustomerOrderSchema = Infer<typeof customerOrderSchema>;
 export const customerOrderSchema = z.object({
 	id: z.number(),
 	fullname: z.string().default(""),
-	email: z.string().email(""),
+	email: z.string().email().optional(),
 	deposit: z.number().default(0)
 });

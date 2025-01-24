@@ -37,11 +37,29 @@ type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "recei
 	collected?: number; // as milliseconds since epoch
 };
 
+/**
+ * Retrieves all customers from the database.
+ * Returns basic customer information ordered by ID.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<Customer[]>} Array of customers
+ */
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
 	return result;
 }
 
+/**
+ * Creates a new customer or updates an existing one.
+ * Uses customer ID as the unique identifier for upsert operations.
+ * Updates the customer's lastModified timestamp automatically.
+ * All fields except ID are optional and will only be updated if provided.
+ *
+ * @param {DB} db - Database connection
+ * @param {Customer} customer - Customer data
+ * @throws {Error} If customer ID is not provided
+ * @returns {Promise<void>} Resolves when customer is created/updated
+ */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
@@ -84,20 +102,32 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 	return result;
 };
 
+/**
+ * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
+ * Lines include book data that is displayed in the customer orders table: title, price, authors
+ * Orders are returned sorted by ID (oldest first).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} customerId - Customer to query orders for
+ * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
+ */
 export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT 
 			id, customer_id, created, placed, received, collected,
 			col.isbn, 
-			book.title, book.authors, book.price
+			COALESCE(book.title, 'N/A') AS title,
+			COALESCE(book.price, 0) AS price,
+			COALESCE(book.authors, 'N/A') AS authors,
 		FROM customer_order_lines col
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = $customerId
 		ORDER BY col.isbn ASC;`,
 		[customerId]
 	);
-	return result.map(marshallCustomerOrderLine);
+	return result.map(marshallCustomerOrderLineDates);
 };
+
 /**
  * Retrieves customer details from the database for a specific customer ID.
  *
@@ -117,7 +147,6 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 /**
  * Converts a database customer order line to an application customer order line.
  * This transformation primarily involves converting timestamp numbers to Date objects
- * and parsing the supplier order IDs string into an array of numbers.
  *
  * @param {DBCustomerOrderLine} line - The database representation of a customer order line
  * @returns {CustomerOrderLine} The application representation of a customer order line with proper date objects
@@ -129,9 +158,9 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
  *   supplierOrderIds: "1,2,3"
  * };
  * const appLine = marshallCustomerOrderLine(dbLine);
- * // Returns: { created: Date(...), placed: Date(...), supplierOrderIds: [1,2,3] }
+ * Returns: { created: Date(...), placed: Date(...), supplierOrderIds: [1,2,3] }
  */
-export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
+export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
 		...line,
 		created: new Date(line.created),
