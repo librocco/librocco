@@ -51,15 +51,31 @@ describe("Customer order tests", () => {
 
 	it("can add books to a customer", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
-		let books = await getCustomerOrderLines(db, 1);
-		expect(books.length).toBe(0);
 
-		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
-		books = await getCustomerOrderLines(db, 1);
+		const initialBooks = await getCustomerOrderLines(db, 1);
 
-		expect(books.length).toBe(2);
-		expect(books[0].id).toBeTypeOf("number");
-		expect(books[0].created).toBeInstanceOf(Date);
+		expect(initialBooks.length).toBe(0);
+
+		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9title780000000000" }]);
+
+		const newBooks = await getCustomerOrderLines(db, 1);
+
+		expect(newBooks.length).toBe(2);
+
+		const [book1] = newBooks;
+
+		// Each order line should have an auto-generated Id
+		expect(book1.id).toBeTypeOf("number");
+		// Numeric dates of each order line should be marshalled to Date objects
+		expect(book1.created).toBeInstanceOf(Date);
+		// If date column is not populated (these orders have not been placed) it should be undefined
+		expect(book1.placed).toBe(undefined);
+
+		// A subset of book data that is displayed in the Customer Orders table should be returned
+		// and coalesced to defaults if a corresponding book entry is not joined by isbn (isbn's added above are not in randomDb)
+		expect(book1.title).toBe("N/A");
+		expect(book1.price).toBe(0);
+		expect(book1.authors).toBe("N/A");
 	});
 
 	it("can add ten books to a customer 10 times and not take more than 400ms", async () => {
