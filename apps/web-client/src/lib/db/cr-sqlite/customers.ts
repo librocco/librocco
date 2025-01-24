@@ -38,7 +38,9 @@ import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } f
  * @returns {Promise<Customer[]>} Array of customers
  */
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
-	const result = await db.execO<Customer>("SELECT id, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;");
+	const result = await db.execO<Customer>(
+		"SELECT id, display_id AS displayId, fullname, email, updatedAt, deposit FROM customer ORDER BY id ASC;"
+	);
 	return result;
 }
 
@@ -152,9 +154,10 @@ export const getCustomerBooks = async (db: DB, customerId: number): Promise<Cust
  *                               containing id, fullname, deposit, and email information
  */
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updatedAt FROM customer WHERE id = $customerId;", [
-		customerId
-	]);
+	const result = await db.execO<Customer>(
+		"SELECT id, display_id AS displayId, fullname, deposit, email, updatedAt FROM customer WHERE id = $customerId;",
+		[customerId]
+	);
 
 	return result;
 };
