@@ -4,9 +4,11 @@
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 
+	import { stripNulls } from "@librocco/shared";
+
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { customerOrderSchema } from "$lib/forms";
+	import { createCustomerOrderSchema } from "$lib/forms";
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 	import type { PageData } from "./$types";
@@ -21,7 +23,7 @@
 
 	export let data: PageData;
 
-	const { customer, books } = data;
+	$: customer = data.customer;
 
 	const id = parseInt($page.params.id);
 	let currentBookISBN = "";
@@ -53,9 +55,7 @@
 
 	$: db = data.ordersDbCtx?.db;
 
-	$: orderLines = data?.customerOrderLines
-		.filter((line) => line.customer_id.toString() === $page.params.id)
-		.map((line) => ({ price: 0, ...books[line.isbn], ...line }));
+	$: orderLines = data?.customerOrderLines.filter((line) => line.customer_id.toString() === $page.params.id);
 	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
 		data: orderLines?.slice(0, maxResults) || []
 	});
@@ -101,7 +101,7 @@
 						<h1 class="prose card-title">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{customer.id}</h2>
+							<h2 class="prose">#{customer.displayId}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
@@ -230,13 +230,16 @@
 	<CustomerOrderMetaForm
 		heading="Update customer details"
 		saveLabel="Update"
-		data={defaults({ ...customer }, zod(customerOrderSchema))}
+		kind="update"
+		data={defaults(stripNulls(customer), zod(createCustomerOrderSchema("update")))}
 		options={{
 			SPA: true,
-			validators: zod(customerOrderSchema),
+			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
+				console.log("data:", form.data);
+				console.log("valid:", form.valid);
 				if (form.valid) {
-					upsertCustomer(db, { ...customer, ...form.data, id });
+					upsertCustomer(db, { ...stripNulls(customer), ...form.data, id });
 				}
 			},
 			onUpdated: async ({ form }) => {

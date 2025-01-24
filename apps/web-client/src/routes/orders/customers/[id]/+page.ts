@@ -15,12 +15,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const { db } = data.ordersDbCtx;
 
-	const customerDetails = await getCustomerDetails(db, Number(params.id));
-
+	const [customer = {} as Customer] = await getCustomerDetails(db, Number(params.id));
 	const customerOrderLines = await getCustomerBooks(db, Number(params.id));
-	return {
-		books: customerOrderLines,
-		customer: customerDetails[0] || ({} as Customer),
-		customerOrderLines
-	};
+
+	return { customer, customerOrderLines };
 };
