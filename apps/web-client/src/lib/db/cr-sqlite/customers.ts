@@ -145,10 +145,9 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 };
 
 /**
- * Converts a database customer order line to an application customer order line.
- * This transformation primarily involves converting timestamp numbers to Date objects
+ * Converts a database customer order line numeric dates to Date objects for ease of use in the UI
  *
- * @param {DBCustomerOrderLine} line - The database representation of a customer order line
+ * @param {DBCustomerOrderLine} line - The database representation of a customer order line dates
  * @returns {CustomerOrderLine} The application representation of a customer order line with proper date objects
  *
  * @example
@@ -158,7 +157,7 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
  *   supplierOrderIds: "1,2,3"
  * };
  * const appLine = marshallCustomerOrderLine(dbLine);
- * Returns: { created: Date(...), placed: Date(...), supplierOrderIds: [1,2,3] }
+ * Returns: { created: Date(...), placed: Date(...) }
  */
 export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
