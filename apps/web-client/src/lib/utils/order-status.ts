@@ -26,6 +26,7 @@ export function getOrderLineStatus(line: { placed?: number; received?: number; c
 }
 
 export function getOrderStatus(orderLines: { placed?: number; received?: number; collected?: number }[]): OrderStatus {
+	if (!orderLines.length) return "in_progress";
 	const allCollected = orderLines.every((line) => getOrderLineStatus(line) === "collected");
 	return allCollected ? "completed" : "in_progress";
 }
