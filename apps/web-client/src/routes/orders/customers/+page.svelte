@@ -132,7 +132,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each filteredOrders as { fullname, email, id }}
+						{#each filteredOrders as { id, fullname, email = "", displayId }}
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
@@ -142,7 +142,7 @@
 									</dl>
 								</td>
 								<td>
-									<span class="font-medium">{id}</span>
+									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
 									<a href="{base}/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>

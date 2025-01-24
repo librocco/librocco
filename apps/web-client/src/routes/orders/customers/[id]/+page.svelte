@@ -6,6 +6,8 @@
 
 	import { stripNulls } from "@librocco/shared";
 
+	import type { Customer } from "$lib/db/cr-sqlite/types";
+
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
@@ -13,12 +15,13 @@
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 	import type { PageData } from "./$types";
 	import { page } from "$app/stores";
-	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { addBooksToCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { onDestroy, onMount } from "svelte";
 	import { invalidate } from "$app/navigation";
 	import { writable } from "svelte/store";
 	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 	import type { BookEntry } from "@librocco/db";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	// import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
@@ -62,12 +65,42 @@
 	$: lines.set({ data: orderLines?.slice(0, maxResults) || [] });
 	$: totalAmount = orderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 	// #endregion reactivity
-	// #region dialog
 
+	// #region dialog
 	const customerMetaDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
+
+	const handleUpdateCustomer = async (_data: Partial<Customer>) => {
+		const data = { ...stripNulls(customer), ..._data };
+
+		if (!(await isDisplayIdUnique(db, data))) {
+			return handleOpenNonUniqueIdDialog(data);
+		}
+
+		await upsertCustomer(db, data);
+	};
+
+	const nonUniqueIdDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: nonUniqueIdDialogOpen }
+	} = nonUniqueIdDialog;
+	let submittingCustomer: Customer | null = null;
+
+	const nonUniqueIdDialogHeading = "Non unique customer ID";
+	const nonUniqueIdDialogDescription = "There's at least one more order with the same ID. Please confirm you're ok with this?";
+
+	const handleOpenNonUniqueIdDialog = (data: Customer) => {
+		submittingCustomer = data;
+		nonUniqueIdDialogOpen.set(true);
+	};
+
+	const handleConfirmNonUniqueIdDialog = async () => {
+		await upsertCustomer(db, submittingCustomer);
+		submittingCustomer = null;
+		nonUniqueIdDialogOpen.set(false);
+	};
 
 	// #endregion dialog
 	const handleAddOrderLine = async (isbn: string) => {
@@ -236,10 +269,8 @@
 			SPA: true,
 			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
-				console.log("data:", form.data);
-				console.log("valid:", form.valid);
 				if (form.valid) {
-					upsertCustomer(db, { ...stripNulls(customer), ...form.data, id });
+					handleUpdateCustomer(form.data);
 				}
 			},
 			onUpdated: async ({ form }) => {
@@ -249,6 +280,16 @@
 			}
 		}}
 		onCancel={() => customerMetaDialogOpen.set(false)}
+	/>
+</PageCenterDialog>
+
+<PageCenterDialog dialog={nonUniqueIdDialog} title="" description="">
+	<ConfirmDialog
+		on:confirm={handleConfirmNonUniqueIdDialog}
+		on:cancel={() => nonUniqueIdDialogOpen.set(false)}
+		heading={nonUniqueIdDialogHeading}
+		description={nonUniqueIdDialogDescription}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>
 
