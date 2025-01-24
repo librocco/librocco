@@ -57,22 +57,30 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
+
+	if (!customer.displayId) {
+		throw new Error("Customer must have a displayId");
+	}
+
 	await db.exec(
-		`INSERT INTO customer (id, fullname, email, deposit)
-         VALUES (?, ?, ?, ?)
+		`INSERT INTO customer (id, fullname, email, deposit, display_id)
+         VALUES (?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
            updatedAt = (strftime('%s', 'now') * 1000),
-           deposit = COALESCE(?, deposit);`,
+           deposit = COALESCE(?, deposit),
+           display_id = COALESCE(?, display_id);`,
 		[
 			customer.id,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.deposit ?? null,
+			customer.displayId,
 			customer.fullname ?? null,
 			customer.email ?? null,
-			customer.deposit ?? null
+			customer.deposit ?? null,
+			customer.displayId
 		]
 	);
 }
@@ -201,6 +209,11 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
      VALUES ${multiplyString("(?,?)", books.length)};`;
 
 	await db.exec(sql, params);
+};
+
+export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
+	const [result] = await db.execO<{ nextId: number }>("SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer;");
+	return result.nextId;
 };
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"

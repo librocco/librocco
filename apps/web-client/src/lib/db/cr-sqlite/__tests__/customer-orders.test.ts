@@ -10,7 +10,8 @@ import {
 	getCustomerBooks,
 	// markCustomerOrderAsReceived,
 	addBooksToCustomer,
-	removeBooksFromCustomer
+	removeBooksFromCustomer,
+	getCustomerDisplayIdSeq
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import {
@@ -34,15 +35,22 @@ describe("Customer order tests", () => {
 	let db: DB;
 	beforeEach(async () => (db = await getRandomDb()));
 
+	it("throws if no customer id provided", async () => {
+		await expect(upsertCustomer(db, { fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have an id");
+	});
+
+	it("throws if no display id provided", async () => {
+		await expect(upsertCustomer(db, { id: 1, fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have a displayId");
+	});
+
 	it("can create and update a customer", async () => {
-		await expect(upsertCustomer(db, { fullname: "John Doe" })).rejects.toThrow("Customer must have an id");
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2 });
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
 		let customers = await getAllCustomers(db);
 		expect(customers.length).toBe(2);
 		expect(customers[0].fullname).toBe("John Doe");
 		expect(customers[0].email).toBe("john@example.com");
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, email: "jane@example.com" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, email: "jane@example.com", displayId: "2" });
 		expect(customers.length).toBe(2);
 		customers = await getAllCustomers(db);
 		expect(customers[0].email).toBe("john@example.com");
@@ -50,7 +58,7 @@ describe("Customer order tests", () => {
 	});
 
 	it("can add books to a customer", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		let books = await getCustomerBooks(db, 1);
 		expect(books.length).toBe(0);
 
@@ -63,7 +71,7 @@ describe("Customer order tests", () => {
 	});
 
 	it("can add ten books to a customer 10 times and not take more than 400ms", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const howMany = 10;
 		const startTime = Date.now();
 		for (let i = 0; i < howMany; i++) {
@@ -89,7 +97,7 @@ describe("Customer order tests", () => {
 	});
 
 	it("can remove books from a customer order", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 
 		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
 		let books = await getCustomerBooks(db, 1);
@@ -106,8 +114,8 @@ describe("Customer order tests", () => {
 	it("Should sync customer creation", async () => {
 		// We create one customer in db1 and a different one in db2
 		let db1Customers: Customer[], db2Customers: Customer[];
-		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
-		await upsertCustomer(db2, { fullname: "Jane Doe", id: 2 });
+		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2, displayId: "1" });
+		await upsertCustomer(db2, { fullname: "Jane Doe", id: 2, displayId: "2" });
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
@@ -118,16 +126,44 @@ describe("Customer order tests", () => {
 		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
 	});
+
 	it("Should keep both updates done at the same time on different dbs", async () => {
 		// We create one customer in db1 and a different one in db2
-		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2 });
+		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2, displayId: "1" });
 		await syncDBs(db1, db2);
-		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com" });
+		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com", displayId: "1" });
 		await syncDBs(db2, db1);
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
+});
+
+describe("Customer display id seq", () => {
+	it("returns 1 when there are no customer orders in the DB", async () => {
+		const db = await getRandomDb();
+		const displayId = await getCustomerDisplayIdSeq(db);
+		expect(displayId).toBe(1);
+	});
+
+	it("returns n + 1 when there are notes in the DB", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+		const displayId = await getCustomerDisplayIdSeq(db);
+		expect(displayId).toBe(2);
+	});
+
+	it("returns n + 1 when there are notes in the DB, even when there are spaces between seq", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+		const displayId = await getCustomerDisplayIdSeq(db);
+		expect(displayId).toBe(4);
+	});
+
+	// TODO: write a test for when the n + 1 > 10_000
 });
 
 // TODO: update this when we have a handler to getPlacedOrderLines
