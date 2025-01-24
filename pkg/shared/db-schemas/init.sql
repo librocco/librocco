@@ -1,5 +1,6 @@
 CREATE TABLE customer (
 	id INTEGER NOT NULL,
+	display_id TEXT,
 	fullname TEXT,
 	email TEXT,
 	deposit DECIMAL,
