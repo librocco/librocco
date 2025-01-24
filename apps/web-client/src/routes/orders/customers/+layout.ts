@@ -15,6 +15,8 @@ export const load: LayoutLoad = async ({ depends }) => {
 	const customers = await getAllCustomers(db);
 	const customerOrderLines = await getAllCustomerOrderLines(db);
 
+	console.log(customerOrderLines);
+
 	// TODO: we could rename this to 'dbCtx' once the same approach is used in inventory db
 	return { ordersDbCtx: dbCtx, customers, customerOrderLines };
 };
