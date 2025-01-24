@@ -56,7 +56,7 @@ describe("Customer order tests", () => {
 
 		expect(initialBooks.length).toBe(0);
 
-		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9title780000000000" }]);
+		await addBooksToCustomer(db, 1, ["9780000000000", "9title780000000000"]);
 
 		const newBooks = await getCustomerOrderLines(db, 1);
 
@@ -85,16 +85,16 @@ describe("Customer order tests", () => {
 		for (let i = 0; i < howMany; i++) {
 			await db.tx(async (db) => {
 				await addBooksToCustomer(db as DB, 1, [
-					{ isbn: "9780000000000" },
-					{ isbn: "9780000000001" },
-					{ isbn: "9780000000002" },
-					{ isbn: "9780000000003" },
-					{ isbn: "9780000000004" },
-					{ isbn: "9780000000005" },
-					{ isbn: "9780000000006" },
-					{ isbn: "9780000000007" },
-					{ isbn: "9780000000008" },
-					{ isbn: "9780000000009" }
+					"9780000000000",
+					"9780000000001",
+					"9780000000002",
+					"9780000000003",
+					"9780000000004",
+					"9780000000005",
+					"9780000000006",
+					"9780000000007",
+					"9780000000008",
+					"9780000000009"
 				]);
 			});
 		}
@@ -107,7 +107,7 @@ describe("Customer order tests", () => {
 	it("can remove books from a customer order", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1 });
 
-		await addBooksToCustomer(db, 1, [{ isbn: "9780000000000" }, { isbn: "9780000000000" }]);
+		await addBooksToCustomer(db, 1, ["9780000000000", "9780000000000"]);
 		let books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(2);
 		removeBooksFromCustomer(db, 1, [books[0].id]);
