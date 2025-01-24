@@ -118,7 +118,7 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 			col.isbn, 
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.price, 0) AS price,
-			COALESCE(book.authors, 'N/A') AS authors,
+			COALESCE(book.authors, 'N/A') AS authors
 		FROM customer_order_lines col
 		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = $customerId
