@@ -48,20 +48,24 @@
 		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
-	const form = superForm(defaults(zod(scannerSchema)), {
+	let scanInputRef: HTMLInputElement = null;
+	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
+		SPA: true,
 		validators: zod(scannerSchema),
 		validationMethod: "submit-only",
-		onUpdated: async ({ form: { data, valid } }) => {
+		onUpdate: async ({ form: { data, valid } }) => {
 			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
 			if (valid) {
 				const { isbn } = data;
 				handleIsbnSubmit(isbn);
 			}
 		},
-		SPA: true,
-		dataType: "json"
+		onUpdated: ({ form: { valid } }) => {
+			if (valid) {
+				scanInputRef?.focus();
+			}
+		}
 	});
-	const { form: formStore, enhance } = form;
 
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
