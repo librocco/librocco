@@ -142,6 +142,10 @@ export type ReconciliationOrderLine = {
 	title: string;
 };
 
+export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
+	orderedQuantity: number;
+	deliveredQuantity: number;
+};
 /* Warehouse */
 export type Warehouse = {
 	id: number;
