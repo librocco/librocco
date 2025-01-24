@@ -25,6 +25,7 @@ describe("Supplier order handlers should", () => {
 		// Customer order lines can be aggregated into these suppliers.
 		// The aggregation includes the total number of books and total price
 		expect(await getPossibleSupplierOrders(db)).toStrictEqual([
+			{ supplier_name: "General", supplier_id: null, total_book_number: 2, total_book_price: 100_000_060 },
 			{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
 			{ supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 }
 		]);
@@ -53,6 +54,7 @@ describe("Supplier order handlers should", () => {
 				line_price: 13
 			}
 		]);
+
 		// Supplier 2 lines should have the following lines
 		expect(await getPossibleSupplierOrderLines(db, 2)).toEqual([
 			{
@@ -88,6 +90,28 @@ describe("Supplier order handlers should", () => {
 				title: "The Hobbit",
 				quantity: 2,
 				line_price: 10
+			}
+		]);
+
+		// Retrieves the null supplier order lines as well
+		expect(await getPossibleSupplierOrderLines(db, null)).toEqual([
+			{
+				supplier_id: null,
+				supplier_name: "General",
+				isbn: "4",
+				authors: "Dan Brown",
+				title: "The Secret of Secrets",
+				quantity: 1,
+				line_price: 60
+			},
+			{
+				supplier_id: null,
+				supplier_name: "General",
+				isbn: "666",
+				authors: "Aristide de Torchia",
+				title: "The Nine Gates of the Kingdom of Shadows",
+				quantity: 1,
+				line_price: 100_000_000
 			}
 		]);
 	});
