@@ -11,7 +11,8 @@ import {
 	// markCustomerOrderAsReceived,
 	addBooksToCustomer,
 	removeBooksFromCustomer,
-	getCustomerDisplayIdSeq
+	getCustomerDisplayIdSeq,
+	isDisplayIdUnique
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import {
@@ -164,6 +165,28 @@ describe("Customer display id seq", () => {
 	});
 
 	// TODO: write a test for when the n + 1 > 10_000
+});
+
+describe("isDisplayIdUnique", () => {
+	it("returns true if unique", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		expect(await isDisplayIdUnique(db, { id: 1, displayId: "2" })).toEqual(true);
+	});
+
+	it("returns false if one or more entries have the same value", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "1" });
+		await upsertCustomer(db, { fullname: "James Doe", id: 3, displayId: "3" });
+		expect(await isDisplayIdUnique(db, { id: 3, displayId: "1" })).toEqual(false);
+	});
+
+	it("edge case: returns true if the only entry with the same value is the exact one comparing", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		expect(await isDisplayIdUnique(db, { id: 1, displayId: "1" })).toEqual(true);
+	});
 });
 
 // TODO: update this when we have a handler to getPlacedOrderLines

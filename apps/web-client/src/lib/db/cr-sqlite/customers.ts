@@ -214,6 +214,15 @@ export const addBooksToCustomer = async (db: DB, customerId: number, books: Book
 	await db.exec(sql, params);
 };
 
+/** Checks if there's another customer with the same display ID */
+export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
+	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
+		customer.displayId,
+		customer.id
+	]);
+	return !res.count;
+};
+
 export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
 	const [result] = await db.execO<{ nextId: number }>("SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer;");
 	return result.nextId;
