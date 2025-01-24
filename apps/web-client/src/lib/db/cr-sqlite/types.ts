@@ -39,8 +39,6 @@ export type CustomerOrderLine = {
 	isbn: string;
 } & Pick<BookData, "title" | "authors" | "price">;
 
-export type BookLine = { isbn: string };
-
 /* Suppliers */
 export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
 export type SupplierOrderLine = {

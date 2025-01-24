@@ -28,7 +28,7 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, CustomerOrderLine, BookLine } from "./types";
+import type { DB, Customer, CustomerOrderLine } from "./types";
 
 type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "received" | "collected"> & {
 	created: number; // as milliseconds since epoch
@@ -175,19 +175,19 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
- * @param {BookLine[]} books - Array of books to add, each containing ISBN
+ * @param {string[]} books - Array of book ISBNs to add
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */
-export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]): Promise<void> => {
+export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
 	/**
 	 * @TODO the customerId is persisted with a decimal point,
 	 * converting it to a string here resulted in the book not getting persisted
 	 */
-	const params = books.map((book) => [customerId, book.isbn]).flat();
+	const params = bookIsbns.map((isbn) => [customerId, isbn]).flat();
 	const sql = `
      INSERT INTO customer_order_lines (customer_id, isbn)
-     VALUES ${multiplyString("(?,?)", books.length)};`;
+     VALUES ${multiplyString("(?,?)", bookIsbns.length)};`;
 
 	await db.exec(sql, params);
 };
