@@ -63,7 +63,9 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 		const randomId = Math.floor(Math.random() * 1e10);
-		await upsertCustomer(db, { id: randomId });
+
+		// assigning displayId this way isn't the proper way, but this page is a zombie kept alive for some reason
+		await upsertCustomer(db, { id: randomId, displayId: randomId.toString() });
 		goto(appPath("customers", randomId.toString()));
 	};
 
