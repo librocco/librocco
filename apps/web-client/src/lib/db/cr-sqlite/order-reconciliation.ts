@@ -1,5 +1,5 @@
 import { multiplyString } from "./customers";
-import type { DB, ReconciliationOrder, ReconciliationOrderLine } from "./types";
+import type { DB, ReconciliationOrder, ReconciliationOrderLine, SupplierPlacedOrderLine } from "./types";
 
 /**
  * @fileoverview Supplier order reconciliation system
@@ -201,4 +201,37 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			);
 		}
 	});
+}
+
+export async function getNonReconcilingSupplierOrders(db: DB) {
+	const result = await db.execO<SupplierPlacedOrderLine>(
+		` WITH Reconciled AS (
+     SELECT CAST(value AS INTEGER) AS supplier_order_id
+     FROM reconciliation_order AS ro
+     CROSS JOIN json_each(ro.supplier_order_ids)
+ )
+ SELECT
+     so.id,
+     so.supplier_id,
+     s.name AS supplier_name,
+     so.created,
+     COALESCE(SUM(sol.quantity), 0) AS total_book_number
+ FROM supplier_order AS so
+ JOIN supplier AS s
+     ON so.supplier_id = s.id
+ LEFT JOIN supplier_order_line AS sol
+     ON sol.supplier_order_id = so.id
+ LEFT JOIN Reconciled AS r
+     ON r.supplier_order_id = so.id
+ WHERE
+     so.created IS NOT NULL
+     AND r.supplier_order_id IS NULL
+ GROUP BY
+     so.id,
+     so.supplier_id,
+     s.name,
+     so.created  `
+	);
+
+	return result;
 }
