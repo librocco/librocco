@@ -104,16 +104,19 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
 	const query = `
 		SELECT
             supplier_id,
-			supplier.name as supplier_name,
+			CASE WHEN supplier.id IS NULL
+				THEN 'General'
+				ELSE supplier.name
+			END as supplier_name,
             COUNT(*) as total_book_number,
             SUM(COALESCE(book.price, 0)) as total_book_price
         FROM supplier
-    	JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        JOIN book ON sp.publisher = book.publisher
-        JOIN customer_order_lines col ON book.isbn = col.isbn
+    	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
+        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
         WHERE col.placed IS NULL
         GROUP BY supplier.id, supplier.name
-        ORDER BY supplier.name ASC;
+        ORDER BY supplier.name ASC
 	`;
 
 	return db.execO<PossibleSupplierOrder>(query);
@@ -131,27 +134,42 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @param supplierId - The ID of the supplier to get order lines for
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
-export async function getPossibleSupplierOrderLines(db: DB, supplierId: number): Promise<PossibleSupplierOrderLine[]> {
-	// We need to build a query that will yield all books we can order, grouped by supplier
+export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
+	const conditions = ["col.placed is NULL"];
+	const params = [];
+
+	if (!supplierId) {
+		conditions.push("supplier.id IS NULL");
+	} else {
+		conditions.push("supplier.id = ?");
+		params.push(supplierId);
+	}
+
+	const whereClause = `WHERE ${conditions.join(" AND ")}`;
+
 	const query = `
 		SELECT
 			supplier_id,
-			supplier.name as supplier_name,
+			CASE WHEN supplier.id IS NULL
+				THEN 'General'
+				ELSE supplier.name
+			END as supplier_name,
 			col.isbn,
     		COALESCE(book.title, 'N/A') AS title,
     		COALESCE(book.authors, 'N/A') AS authors,
 			COUNT(*) as quantity,
 			SUM(COALESCE(book.price, 0)) as line_price
        	FROM supplier
-        JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
-        JOIN book ON sp.publisher = book.publisher
-        JOIN customer_order_lines col ON book.isbn = col.isbn
-      	WHERE col.placed is NULL AND supplier_id = ?
+        RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
+        RIGHT JOIN book ON sp.publisher = book.publisher
+        RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
+		${whereClause}
       	GROUP BY book.isbn
-      	ORDER BY book.isbn ASC;
+      	ORDER BY book.isbn ASC
 	`;
 
-	return db.execO<PossibleSupplierOrderLine>(query, [supplierId]);
+	// We need to build a query that will yield all books we can order, grouped by supplier
+	return db.execO<PossibleSupplierOrderLine>(query, params);
 }
 
 /**
@@ -185,6 +203,7 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
 	);
 	return result;
 }
+
 /**
  * Retrieves all supplier order lines for the provided `supplier_order_id`s.
  * Returns an ordered set of rows if multiple ids are provided.
