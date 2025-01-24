@@ -104,11 +104,19 @@ CREATE TABLE reconciliation_order (
 	id INTEGER NOT NULL,
 	supplier_order_ids TEXT CHECK (json_valid(supplier_order_ids) AND json_array_length(supplier_order_ids) >= 1),
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
-	customer_order_line_ids TEXT CHECK (json_valid(supplier_order_ids)),
+	updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	finalized INTEGER DEFAULT 0,
 	PRIMARY KEY (id)
 );
 SELECT crsql_as_crr('reconciliation_order');
+
+CREATE TABLE reconciliation_order_lines (
+	reconciliation_order_id INTEGER NOT NULL,
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 1,
+	PRIMARY KEY (reconciliation_order_id, isbn)
+);
+SELECT crsql_as_crr('reconciliation_order_lines');
 
 CREATE TABLE warehouse (
     id INTEGER NOT NULL,
@@ -205,4 +213,3 @@ BEGIN
     SET updated_at = (strftime('%s', 'now') * 1000)
     WHERE id = OLD.note_id AND committed = 0;
 END;
-

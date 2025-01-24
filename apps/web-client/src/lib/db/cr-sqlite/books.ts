@@ -1,5 +1,35 @@
+/**
+ * @fileoverview Book management system
+ *
+ * Book Overview:
+ * - Manages book metadata in the system (ISBN, title, price, etc.)
+ * - Books are the core entities that can be moved between warehouses
+ * - Book records are referenced by transactions in notes
+ * - Book data includes:
+ *   - ISBN (unique identifier)
+ *   - Title
+ *   - Authors
+ *   - Publisher (used to associate the book with a supplier)
+ *   - Price
+ *   - Year
+ *   - Editor
+ *   - Out of print status
+ *   - Category
+ *
+ */
+
 import { type DB, type BookData } from "./types";
 
+/**
+ * Creates a new book record or updates an existing one.
+ * Uses ISBN as the unique identifier for upsert operations.
+ * All fields except ISBN are optional and will only be updated if provided.
+ *
+ * @param {DB} db - Database connection
+ * @param {BookData} book - Book metadata
+ * @throws {Error} If ISBN is not provided
+ * @returns {Promise<void>} Resolves when book is created/updated
+ */
 export async function upsertBook(db: DB, book: BookData) {
 	if (!book.isbn) {
 		throw new Error("Book must have an ISBN");
