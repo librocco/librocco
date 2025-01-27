@@ -13,7 +13,8 @@ import {
 	getReconciliationOrderLines,
 	processOrderDelivery,
 	sortLinesBySupplier,
-	getUnreconciledSupplierOrders
+	getUnreconciledSupplierOrders,
+	getReconcilingOrders
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerOrderLines } from "../customers";
@@ -28,7 +29,7 @@ describe("Reconciliation order creation", () => {
 		await createCustomerOrders(db);
 	});
 
-	it("can get all currently reconciliating orders", async () => {
+	it("can get all reconciliation orders", async () => {
 		const res = await getAllReconciliationOrders(db);
 		expect(res).toEqual([]);
 
@@ -53,7 +54,35 @@ describe("Reconciliation order creation", () => {
 			}
 		]);
 	});
+	it("can get all currently reconciliating orders", async () => {
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
 
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
+
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		// use supplier order ids to create a recon
+		const id = await createReconciliationOrder(db, ids);
+
+		const res = await getReconcilingOrders(db);
+		expect(res).toEqual([
+			{
+				id: 1,
+				supplier_order_ids: "[1]",
+				finalized: 0,
+				created: expect.any(Number),
+				updatedAt: expect.any(Number)
+			}
+		]);
+
+		await finalizeReconciliationOrder(db, id);
+		const res2 = await getReconcilingOrders(db);
+
+		expect(res2).toMatchObject([]);
+	});
 	it("can create a reconciliation order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		await createSupplierOrder(db, newSupplierOrderLines);
