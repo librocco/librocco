@@ -49,7 +49,6 @@ export type SupplierOrderLine = {
 	title: string;
 	authors: string;
 	publisher: string;
-	0.84;
 	quantity: number;
 	line_price: number;
 };
