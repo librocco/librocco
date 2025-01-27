@@ -110,7 +110,7 @@ describe("Customer order tests", () => {
 		await addBooksToCustomer(db, 1, ["9780000000000", "9780000000000"]);
 		let books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(2);
-		removeBooksFromCustomer(db, 1, [books[0].id]);
+		await removeBooksFromCustomer(db, 1, [books[0].id]);
 		books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(1);
 	});
