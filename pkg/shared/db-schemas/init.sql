@@ -3,7 +3,7 @@ CREATE TABLE customer (
 	fullname TEXT,
 	email TEXT,
 	deposit DECIMAL,
-	updatedAt INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
 );
 
@@ -17,33 +17,6 @@ CREATE TABLE customer_order_lines (
 	collected INTEGER,
 	PRIMARY KEY (id)
 );
-
-CREATE TRIGGER update_customer_timestamp_upsert_customer
-AFTER UPDATE ON customer
-FOR EACH ROW
-BEGIN
-	UPDATE customer
-    SET updatedAt = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER update_customer_timestamp_insert
-AFTER INSERT ON customer_order_lines
-FOR EACH ROW
-BEGIN
-    UPDATE customer
-    SET updatedAt = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.customer_id;
-END;
-
-CREATE TRIGGER update_customer_timestamp_delete
-AFTER DELETE ON customer_order_lines
-FOR EACH ROW
-BEGIN
-    UPDATE customer
-    SET updatedAt = (strftime('%s', 'now') * 1000)
-    WHERE id = OLD.customer_id;
-END;
 
 -- We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
 -- Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
@@ -155,69 +128,18 @@ CREATE TABLE book_transaction (
 	quantity INTEGER NOT NULL DEFAULT 0,
 	note_id INTEGER NOT NULL,
 	warehouse_id INTEGER,
-	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
+	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	committed_at INTEGER,
 	PRIMARY KEY (isbn, note_id, warehouse_id)
 );
 
-CREATE TRIGGER update_note_timestamp_after_insert
-AFTER INSERT ON book_transaction
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id AND committed = 0;
-END;
-
-CREATE TRIGGER update_note_timestamp_after_update
-AFTER UPDATE ON book_transaction
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id AND committed = 0;
-END;
-
-CREATE TRIGGER update_note_timestamp_after_delete
-AFTER DELETE ON book_transaction
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = OLD.note_id AND committed = 0;
-END;
 
 CREATE TABLE custom_item (
 	id INTEGER NOT NULL,
 	title TEXT,
 	price DECIMAL,
 	note_id INTEGER,
+	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
 );
 
-CREATE TRIGGER update_note_timestamp_after_custom_item_insert
-AFTER INSERT ON custom_item
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id AND committed = 0;
-END;
-
-CREATE TRIGGER update_note_timestamp_after_custom_item_update
-AFTER UPDATE ON custom_item
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = NEW.note_id AND committed = 0;
-END;
-
-CREATE TRIGGER update_note_timestamp_after_custom_item_delete
-AFTER DELETE ON custom_item
-FOR EACH ROW
-BEGIN
-    UPDATE note
-    SET updated_at = (strftime('%s', 'now') * 1000)
-    WHERE id = OLD.note_id AND committed = 0;
-END;
