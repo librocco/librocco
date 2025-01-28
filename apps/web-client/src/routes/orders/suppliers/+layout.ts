@@ -1,5 +1,5 @@
 import { getInitializedDB } from "$lib/db/cr-sqlite";
-import { getNonReconcilingSupplierOrders } from "$lib/db/cr-sqlite/order-reconciliation";
+import { getUnreconciledSupplierOrders } from "$lib/db/cr-sqlite/order-reconciliation";
 
 import { getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 import type { LayoutLoad } from "./$types";
@@ -9,7 +9,7 @@ export const load: LayoutLoad = async ({ depends }) => {
 
 	const { db, rx } = await getInitializedDB("librocco-current-db");
 	const possibleOrdersInfo = await getPossibleSupplierOrders(db);
-	const placedOrders = await getNonReconcilingSupplierOrders(db);
+	const placedOrders = await getUnreconciledSupplierOrders(db);
 
 	return { placedOrders, possibleOrders: possibleOrdersInfo, ordersDb: db, rx };
 };
