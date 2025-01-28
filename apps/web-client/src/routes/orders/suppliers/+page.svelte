@@ -65,14 +65,12 @@
 				price: 10,
 				publisher: "abcPub"
 			});
+
 			await upsertCustomer(data?.ordersDb, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
-			await addBooksToCustomer(data?.ordersDb, 1, [
-				{
-					isbn: "123456789"
-				}
-			]);
+			await addBooksToCustomer(data?.ordersDb, 1, ["123456789"]);
 			await upsertSupplier(data?.ordersDb, { id: 123, name: "abcSup" });
 			await associatePublisher(data?.ordersDb, 123, "abcPub");
+
 			const possibleLines = await getPossibleSupplierOrderLines(data?.ordersDb, 123);
 
 			await createSupplierOrder(data?.ordersDb, possibleLines);

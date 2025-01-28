@@ -48,10 +48,10 @@ export const createCustomerOrders = async (db: DB) => {
 
 	// Two customers order some books
 	await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-	addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
+	addBooksToCustomer(db, 1, ["1", "2", "3"]);
 
 	await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
-	addBooksToCustomer(db, 2, [{ isbn: "3" }]);
+	addBooksToCustomer(db, 2, ["3"]);
 
 	// We have two different suppliers
 	await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
