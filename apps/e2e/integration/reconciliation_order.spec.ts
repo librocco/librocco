@@ -1,9 +1,12 @@
 import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
+import { getDashboard } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {
 	await page.goto(baseURL);
+	await getDashboard(page).waitFor();
+
 	page.getByLabel("Main navigation");
 	page.getByRole("listitem").last().click();
 	const nav = page.getByLabel("Main navigation");
