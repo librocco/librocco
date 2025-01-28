@@ -1,5 +1,6 @@
+import type { BookEntry } from "@librocco/db";
 import { multiplyString } from "./customers";
-import type { DB, ReconciliationOrder, ReconciliationOrderLine, SupplierPlacedOrderLine } from "./types";
+import type { DB, ProcessedOrderLine, ReconciliationOrder, ReconciliationOrderLine, SupplierPlacedOrderLine } from "./types";
 
 /**
  * @fileoverview Supplier order reconciliation system
@@ -235,3 +236,65 @@ export async function getNonReconcilingSupplierOrders(db: DB) {
 
 	return result;
 }
+
+/**
+* Processes delivered books against placed order lines to identify matches an
+discrepancies
+*
+* @param scannedBooks - Array of scanned books with their quantities
+* @param placedOrderLines - Array of originally placed order lines from
+supplier
+*
+* @returns Object containing:
+*  - processedLines: Array of matched books with both ordered and delivered
+quantities
+*  - unmatchedBooks: Array of books that either:
+*    - Were ordered but not delivered
+*    - Were delivered but not in original order
+*/
+export const processOrderDelivery = (
+	scannedBooks: (BookEntry & { quantity: number })[],
+	placedOrderLines: SupplierPlacedOrderLine[]
+): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
+	const scannedLinesMap = new Map<string, BookEntry & { quantity: number }>(
+		scannedBooks.map((book) => {
+			return [book.isbn, book];
+		})
+	);
+	const result = { processedLines: [], unmatchedBooks: [] };
+
+	for (const placedOrderLine of placedOrderLines) {
+		if (scannedLinesMap.has(placedOrderLine.isbn)) {
+			const scannedBook = scannedLinesMap.get(placedOrderLine.isbn);
+			scannedLinesMap.delete(placedOrderLine.isbn);
+			result.processedLines.push({
+				...placedOrderLine,
+				deliveredQuantity: scannedBook.quantity,
+				orderedQuantity: placedOrderLine.quantity
+			});
+		} else {
+			result.processedLines.push({
+				...placedOrderLine,
+				deliveredQuantity: 0,
+				orderedQuantity: placedOrderLine.quantity
+			});
+		}
+	}
+	result.unmatchedBooks = [...result.unmatchedBooks, ...scannedLinesMap.values()];
+
+	return result;
+};
+
+/**
+ * Groups processed order lines by supplier name
+ *
+ * @param orderLines - Array of processed order lines containing supplier information
+ * @returns Object with supplier names as keys and arrays of their respective order lines as values
+ */
+export const sortLinesBySupplier = (orderLines: ProcessedOrderLine[]): { [supplier_name: string]: ProcessedOrderLine[] } => {
+	return orderLines.reduce((acc, curr) => {
+		return acc[curr.supplier_name]
+			? { ...acc, [curr.supplier_name]: [...acc[curr.supplier_name], curr] }
+			: { ...acc, [curr.supplier_name || "Supplier"]: [curr] };
+	}, {});
+};

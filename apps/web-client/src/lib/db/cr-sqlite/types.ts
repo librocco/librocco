@@ -13,7 +13,7 @@ export type Customer = {
 	phone?: string;
 	taxId?: string;
 	deposit?: number;
-	updatedAt?: number;
+	updatedAt?: Date;
 };
 
 export type BookData = {
@@ -142,6 +142,10 @@ export type ReconciliationOrderLine = {
 	title: string;
 };
 
+export type ProcessedOrderLine = ({ supplier_name: string } & BookEntry) & {
+	orderedQuantity: number;
+	deliveredQuantity: number;
+};
 /* Warehouse */
 export type Warehouse = {
 	id: number;
