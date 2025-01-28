@@ -204,7 +204,18 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	});
 }
 
-export async function getNonReconcilingSupplierOrders(db: DB) {
+/**
+ * Retrieves all supplier orders that have not yet been included in any reconciliation process.
+ * @param db
+ *
+ * @returns {Promise<SupplierPlacedOrderLine[]>} Array of unreconciled supplier orders with:
+ *  - id: The supplier order ID
+ *  - supplier_id: The ID of the supplier
+ *  - supplier_name: The name of the supplier
+ *  - created: Creation timestamp of the order
+ *  - total_book_number: Total quantity of books in the order (0 if no books)
+ */
+export async function getUnreconciledSupplierOrders(db: DB): Promise<SupplierPlacedOrderLine[]> {
 	const result = await db.execO<SupplierPlacedOrderLine>(
 		` WITH Reconciled AS (
      SELECT CAST(value AS INTEGER) AS supplier_order_id
