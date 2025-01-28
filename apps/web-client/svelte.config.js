@@ -50,8 +50,6 @@ const config = {
 				"/history/warehouse/1/1/1/",
 				"/outbound/1/",
 				"/settings/",
-				"/c/1/",
-				"/c/",
 				"/s/",
 				"/s/1/",
 				"/s/reconcile"
