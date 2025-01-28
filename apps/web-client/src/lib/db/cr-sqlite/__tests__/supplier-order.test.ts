@@ -109,7 +109,7 @@ describe("Supplier order handlers should", () => {
 		const newPossibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		expect(newPossibleOrderLines.length).toBe(0);
 	});
-	it("Aggregates supplier orders lines quantity when placing an order", async () => {
+	it("Aggregates supplier orders lines quantity when getting possible order lines", async () => {
 		await addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
 		await addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
 		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
@@ -175,7 +175,7 @@ describe("Supplier order handlers should", () => {
 		]);
 	});
 
-	describe.skip("placed supplier orders:", () => {
+	describe("placed supplier orders:", () => {
 		it("retrieves a list of placed supplier orders", async () => {
 			// Create two supplier orders using the existing test data
 			await db.exec(`
@@ -238,7 +238,7 @@ describe("Supplier order handlers should", () => {
 	});
 });
 
-describe.skip("getPlacedSupplierOrderLines", () => {
+describe("getPlacedSupplierOrderLines", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
