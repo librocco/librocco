@@ -77,10 +77,6 @@
 
 			await createSupplierOrder(data?.ordersDb, possibleLines);
 
-			const placed = await getPlacedSupplierOrders(data?.ordersDb);
-			await createReconciliationOrder(data?.ordersDb, [placed[0].id]);
-			await createSupplierOrder(data?.ordersDb, possibleLines);
-
 			publisherSupplierCreated = true;
 		}}>Create publisher/supplier</button
 	>
