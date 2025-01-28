@@ -148,9 +148,6 @@ describe("Inbound note tests", () => {
 
 		// Attempt to commit the note again
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await commitNote(db, 1);
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
@@ -178,9 +175,6 @@ describe("Inbound note tests", () => {
 		);
 		const { updatedAt } = note;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await updateNote(db, 1, { displayName: "Updated Note" });
 
 		note = await getNoteById(db, 1);
@@ -505,11 +499,13 @@ describe("Outbound note tests", () => {
 		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 3, warehouseId: 2 }); // avlbl: 0, res = -3
 		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 4, warehouseId: 2 }); // avlbl: 2, res = -2
 
+		// The transactions are ordered in the reverse order of being added/updated (latest-first) in note view
+		// so the error follows the same ordering
 		expect(commitNote(db, 3)).rejects.toThrow(
 			new OutOfStockError([
-				{ isbn: "1111111111", quantity: 3, warehouseId: 1, available: 2, warehouseName: "Warehouse 1" },
+				{ isbn: "2222222222", quantity: 4, warehouseId: 2, available: 2, warehouseName: "Warehouse 2" },
 				{ isbn: "1111111111", quantity: 3, warehouseId: 2, available: 0, warehouseName: "Warehouse 2" },
-				{ isbn: "2222222222", quantity: 4, warehouseId: 2, available: 2, warehouseName: "Warehouse 2" }
+				{ isbn: "1111111111", quantity: 3, warehouseId: 1, available: 2, warehouseName: "Warehouse 1" }
 			])
 		);
 	});
@@ -533,9 +529,6 @@ describe("Outbound note tests", () => {
 
 		// Attempt to commit the note again
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await commitNote(db, 1);
 		note = await getNoteById(db, 1);
 		expect(note).toEqual(
@@ -563,9 +556,6 @@ describe("Outbound note tests", () => {
 		);
 		const { updatedAt } = note;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await updateNote(db, 1, { displayName: "Updated Note" });
 
 		note = await getNoteById(db, 1);
@@ -583,9 +573,6 @@ describe("Outbound note tests", () => {
 		// The updated at should be newer
 		expect(note.updatedAt > updatedAt).toEqual(true);
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await updateNote(db, 1, { defaultWarehouse: 1 });
 
 		note = await getNoteById(db, 1);
@@ -856,9 +843,6 @@ describe("Book transactions", async () => {
 			})
 		]);
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
 
 		expect(await getNoteEntries(db, 1)).toEqual([
@@ -875,10 +859,6 @@ describe("Book transactions", async () => {
 		]);
 
 		// Adding a volume without warehouseId should be possible
-		//
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5 });
 		expect(await getNoteEntries(db, 1)).toEqual([
 			expect.objectContaining({
@@ -963,9 +943,6 @@ describe("Book transactions", async () => {
 		let note = await getNoteById(db, 1);
 		let updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
@@ -973,10 +950,6 @@ describe("Book transactions", async () => {
 		updatedAt = note?.updatedAt;
 
 		// Add some more volumes
-		//
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
@@ -984,10 +957,6 @@ describe("Book transactions", async () => {
 		updatedAt = note?.updatedAt;
 
 		// Should also work with txn update
-		//
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { quantity: 7, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
@@ -995,10 +964,6 @@ describe("Book transactions", async () => {
 		updatedAt = note?.updatedAt;
 
 		// Should also work when removing a txn
-		//
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
@@ -1014,9 +979,7 @@ describe("Book transactions", async () => {
 
 		// Add multiple entries with different updated_at times
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
-		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
-		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
 		await addVolumesToNote(db, 1, { isbn: "1122334455", quantity: 8, warehouseId: 1 });
 
 		const entries = await getNoteEntries(db, 1);
@@ -1102,7 +1065,6 @@ describe("Book transactions", async () => {
 
 		// Add initial transactions
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
-		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
 
 		// Check before updating
@@ -1130,7 +1092,6 @@ describe("Book transactions", async () => {
 		// Add initial transactions
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 2 });
-		await new Promise((res) => setTimeout(res, 1000)); // Ensure different timestamps
 		await addVolumesToNote(db, 1, { isbn: "0987654321", quantity: 5, warehouseId: 1 });
 		expect(await getNoteEntries(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "0987654321" }),
@@ -1237,9 +1198,6 @@ describe("Note custom items", async () => {
 		let note = await getNoteById(db, 1);
 		const updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
 		const items = await getNoteCustomItems(db, 1);
@@ -1264,9 +1222,6 @@ describe("Note custom items", async () => {
 		let note = await getNoteById(db, 1);
 		const updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Updated Custom Item 1", price: 150 });
 
 		const items = await getNoteCustomItems(db, 1);
@@ -1291,9 +1246,6 @@ describe("Note custom items", async () => {
 		let note = await getNoteById(db, 1);
 		const updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await removeNoteCustomItem(db, 1, 1);
 
 		const items = await getNoteCustomItems(db, 1);
@@ -1312,9 +1264,6 @@ describe("Note custom items", async () => {
 		let note = await getNoteById(db, 1);
 		const updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
 		const items = await getNoteCustomItems(db, 1);
@@ -1334,9 +1283,6 @@ describe("Note custom items", async () => {
 		let note = await getNoteById(db, 1);
 		const updatedAt = note?.updatedAt;
 
-		// The DB saves updated_at with second intervals
-		// Wait for a second to observe the updated_at updated between writes
-		await new Promise((res) => setTimeout(res, 1000));
 		await removeNoteCustomItem(db, 1, 1);
 
 		note = await getNoteById(db, 1);
@@ -1360,8 +1306,8 @@ describe("Note custom items", async () => {
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Item 1", price: 10 });
 		await upsertNoteCustomItem(db, 2, { id: 1, title: "Item 2", price: 12 });
 
-		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 10 }]);
-		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12 }]);
+		expect(await getNoteCustomItems(db, 1)).toEqual([{ id: 1, title: "Item 1", price: 10, updatedAt: expect.any(Date) }]);
+		expect(await getNoteCustomItems(db, 2)).toEqual([{ id: 1, title: "Item 2", price: 12, updatedAt: expect.any(Date) }]);
 	});
 });
 

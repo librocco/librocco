@@ -1,70 +1,68 @@
 <script lang="ts">
+	import { onDestroy, onMount } from "svelte";
 	import { QrCode, Mail, ReceiptEuro, UserCircle, ArrowRight, ClockArrowUp, PencilLine } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
-	import { defaults } from "sveltekit-superforms";
+	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
+	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
 
 	import { stripNulls } from "@librocco/shared";
 
 	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { PageData } from "./$types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
-	import type { PageData } from "./$types";
-	import { page } from "$app/stores";
+
 	import { addBooksToCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { onDestroy, onMount } from "svelte";
-	import { invalidate } from "$app/navigation";
-	import { writable } from "svelte/store";
-	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
-	import type { BookEntry } from "@librocco/db";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+
+	import { scannerSchema } from "$lib/forms/schemas";
 	// import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
 
-	$: customer = data.customer;
+	// #region reactivity
+	let disposer: () => void;
 
-	const id = parseInt($page.params.id);
-	let currentBookISBN = "";
+	onMount(() => {
+		// NOTE: ordersDbCtx should always be defined on client
+		const { rx } = data.ordersDbCtx;
+
+		// Reload add customer data dependants when the data changes
+		const disposer1 = rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
+		// Reload all customer order line/book data dependants when the data changes
+		const disposer2 = rx.onRange(["customer_order_lines"], () => invalidate("customer:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+	// #endregion reactivity
+
+	$: customerId = parseInt($page.params.id);
+
+	$: db = data.ordersDbCtx?.db;
+
+	$: customer = data.customer;
+	$: customerOrderLines = data.customerOrderLines;
+
+	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
 	// #region infinite-scroll
-	let maxResults = 20;
+	// let maxResults = 20;
 	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	// const seeMore = () => (maxResults += 20);
 	// // We're using in intersection observer to create an infinite scroll effect
 	// const scroll = createIntersectionObserver(seeMore);
 
 	// #endregion infinite-scroll
-	// #region reactivity
-	let disposer: () => void;
-	onMount(() => {
-		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data.ordersDbCtx;
-
-		// Reload add customer data dependants when the data changes
-		const disposer1 = rx.onPoint("customer", BigInt(id), () => invalidate("customer:data"));
-		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
-		disposer = () => (disposer1(), disposer2());
-	});
-	onDestroy(() => {
-		// Unsubscribe on unmount
-		disposer();
-	});
-
-	$: db = data.ordersDbCtx?.db;
-
-	$: orderLines = data?.customerOrderLines.filter((line) => line.customer_id.toString() === $page.params.id);
-	const lines = writable<{ data: (CustomerOrderLine & BookEntry)[] }>({
-		data: orderLines?.slice(0, maxResults) || []
-	});
-	$: lines.set({ data: orderLines?.slice(0, maxResults) || [] });
-	$: totalAmount = orderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
-	// #endregion reactivity
 
 	// #region dialog
 	const customerMetaDialog = createDialog(defaultDialogConfig);
@@ -103,22 +101,29 @@
 	};
 
 	// #endregion dialog
-	const handleAddOrderLine = async (isbn: string) => {
-		const newBook = {
-			isbn,
-			/** @TODO remove quantity from bookLine */
-			quantity: 1,
-			id: parseInt($page.params.id),
-			created: new Date(),
-			/** @TODO provide supplierIds */
-			supplierOrderIds: [],
-			title: "",
-			price: 0
-		};
 
-		await addBooksToCustomer(db, parseInt($page.params.id), [newBook]);
-		currentBookISBN = "";
-	};
+	let scanInputRef: HTMLInputElement = null;
+
+	// TODO: We reuse the ScannerForm and setup across a few pages => good candidate for a component...
+	// It already exists as one but not with the new skin
+	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
+		SPA: true,
+		validators: zod(scannerSchema),
+		validationMethod: "submit-only",
+		onUpdate: async ({ form: { data, valid } }) => {
+			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
+			if (valid) {
+				const { isbn } = data;
+
+				await addBooksToCustomer(db, customerId, [isbn]);
+			}
+		},
+		onUpdated: ({ form: { valid } }) => {
+			if (valid) {
+				scanInputRef?.focus();
+			}
+		}
+	});
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -202,16 +207,19 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
 				<h3 class="max-md:divider-start max-md:divider">Books</h3>
-				<label class="input-bordered input flex items-center gap-2">
-					<QrCode />
-					<input
-						type="text"
-						class="grow"
-						bind:value={currentBookISBN}
-						on:keydown={(e) => (e.key === "Enter" ? handleAddOrderLine(currentBookISBN) : null)}
-						placeholder="Enter ISBN to add books"
-					/>
-				</label>
+				<form class="flex w-full gap-2" use:enhance method="POST">
+					<label class="input-bordered input flex flex-1 items-center gap-2">
+						<QrCode />
+						<input
+							type="text"
+							class="grow"
+							bind:value={$formStore.isbn}
+							placeholder="Enter ISBN of delivered books"
+							required
+							bind:this={scanInputRef}
+						/>
+					</label>
+				</form>
 			</div>
 
 			<div class="h-full overflow-x-auto">
@@ -223,12 +231,11 @@
 								<th>Title</th>
 								<th>Authors</th>
 								<th>Price</th>
-								<th>Quantity</th>
 								<th>Status</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each $lines.data as { isbn, title, authors, price, placed, received, collected }}
+							{#each customerOrderLines as { isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -242,11 +249,11 @@
 										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "received"}
-											<span class="badge-info badge">Received</span>
+											<span class="badge-info badge">Delievered</span>
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
-											<span class="badge">Draft</span>
+											<span class="badge">Received</span>
 										{/if}
 									</td>
 								</tr>
