@@ -283,21 +283,6 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 				if (customerOrderLine) {
 					// The whole line can be fulfilled
 					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
-					// To think about: maybe a better time to create this row is when the order proceeds to the next state:
-					// at that point we will mark books as "we tried to order them in this order here"
-					// In a scenario where a customer cancels a book order, and another comes by and orders the same book,
-					// we don't want the canceled one to be marked with the order id.
-					// Consider this timeline:
-					// Order is sent - includes 10x book A
-					// Customer YYY cancels their order for book A
-					// Customer ZZZ orders book A
-					// Order comes in. No Book A was delivered: it's not currently available.
-					// We ordered 10 copies. We will mark 10 copies worth of customer orders as "we tried to order them"
-					// not including the canceled order.
-					await db.exec(`INSERT INTO customer_supplier_order (customer_order_line_id, supplier_order_id) VALUES (?, ?);`, [
-						customerOrderLine.id,
-						supplierOrderMapping[orderLine.supplier_id]
-					]);
 				}
 				copiesToGo--;
 			}

@@ -1,5 +1,21 @@
-import type { PickPartial } from "@librocco/db";
+/**
+ * @fileoverview Warehouse management system
+ *
+ * Warehouse Overview:
+ * - A warehouse represents a logical grouping of books based on categories or attributes
+ * - Examples: "New Books", "Used Books", "2025 School Year", "Computer Science", etc.
+ * - Each warehouse can have a display name and an optional discount that applies to all of its books
+ * - Books are moved in to or out of warehouses via "notes" - these are transactions that increase/decrease a batch of isbn-quantities
+ * - Book counts are maintained through a running total of these transactions
+ * - Warehouses are created with auto-incrementing display names (e.g., "New Warehouse", "New Warehouse (2)")
+ *
+ * Data Sources:
+ * - warehouse table:
+ * - note table: Contains metadata about transactions
+ * - book_transaction table: Records book "line-item" movements
+ */
 
+import type { PickPartial } from "@librocco/db";
 import type { DB, TXAsync, Warehouse } from "./types";
 
 export async function getWarehouseIdSeq(db: DB) {
@@ -8,6 +24,15 @@ export async function getWarehouseIdSeq(db: DB) {
 	return result.nextId;
 }
 
+/**
+ * Generates the next sequential warehouse display name.
+ * If no warehouses exist, returns "New Warehouse".
+ * If "New Warehouse" exists, returns "New Warehouse (2)".
+ * Otherwise returns "New Warehouse (n+1)" where n is the highest existing sequence number.
+ *
+ * @param {DB | TXAsync} db - Database connection
+ * @returns {Promise<string>} The next sequential warehouse name
+ */
 const getSeqName = async (db: DB | TXAsync) => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM warehouse
@@ -31,6 +56,16 @@ const getSeqName = async (db: DB | TXAsync) => {
 	return `New Warehouse (${maxSequence})`;
 };
 
+/**
+ * Creates a new warehouse or updates an existing one.
+ * If no display name is provided, generates one using getSeqName().
+ * Updates are performed as a single transaction.
+ *
+ * @param {DB} db - Database connection
+ * @param {PickPartial<Warehouse, "displayName" | "discount">} data - Warehouse data with required id
+ * @throws {Error} If warehouse id is not provided
+ * @returns {Promise<void>} Resolves when upsert completes
+ */
 export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayName" | "discount">): Promise<void> {
 	if (!data.id) {
 		throw new Error("Warehouse must have an id");
@@ -55,6 +90,16 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
 	});
 }
 
+/**
+ * Retrieves all warehouses with their total book counts.
+ * Book counts are calculated from book transactions, considering:
+ * - Positive quantities for inbound and reconciliation notes
+ * - Negative quantities for outbound notes
+ * Only committed notes are included in calculations.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<(Warehouse & { totalBooks: number })[]>} Warehouses with book counts
+ */
 export async function getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: number })[]> {
 	// NOTE: there's a n.committed IS NULL constraint
 	// - this makes sure there are no issues if warehouse doesn't have any notes associated with it
