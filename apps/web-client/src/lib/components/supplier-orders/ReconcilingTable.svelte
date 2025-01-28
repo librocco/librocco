@@ -4,6 +4,7 @@
 	import { base } from "$app/paths";
 	import { goto } from "$lib/utils/navigation";
 	import type { ReconciliationOrder } from "$lib/db/cr-sqlite/types";
+	import { appPath } from "$lib/paths";
 
 	function handleUpdateOrder(reconciliationOrderId: number) {
 		goto(`${base}/orders/suppliers/reconcile/${reconciliationOrderId}`);
@@ -16,9 +17,9 @@
 		<thead>
 			<tr>
 				<th scope="col">Order Id</th>
-				<th scope="col">Supplier Order Ids</th>
+				<th scope="col"></th>
 				<th scope="col">Last Updated</th>
-				<th scope="col">Created</th>
+				<th scope="col"></th>
 				<th scope="col"><span class="sr-only">Update order</span></th>
 			</tr>
 		</thead>
@@ -27,7 +28,12 @@
 				<tr class="hover focus-within:bg-base-200">
 					<td>{id}</td>
 					<!-- @TODO replace with supplierOrderIds parse array??? -->
-					<td>Includes Orders #{(JSON.parse(supplier_order_ids) || []).join(", ")}</td>
+					<td
+						>Includes Orders
+						{#each supplier_order_ids as supplier_id}
+							<a class="hover:underline" href={appPath("supplier_order_status", supplier_id)}>#{supplier_id} </a>
+						{/each}
+					</td>
 					<td>
 						<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 							<span class="sr-only">Last updated</span>
@@ -35,17 +41,11 @@
 							<time dateTime={new Date(updatedAt).toISOString()}>{new Date(updatedAt).toLocaleString()}</time>
 						</span></td
 					>
-					<td>
-						<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-							<span class="sr-only">Created</span>
-							<ClockArrowUp size={16} aria-hidden />
-							<time dateTime={new Date(created).toISOString()}>{new Date(created).toDateString()}</time>
-						</span></td
-					>
+					<td> </td>
 					<td class="text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleUpdateOrder(id)}>
 							<Scan aria-hidden focusable="false" size={20} />
-							Update Order
+							Continue
 						</button>
 					</td>
 				</tr>
