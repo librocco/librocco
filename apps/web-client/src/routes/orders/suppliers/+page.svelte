@@ -126,7 +126,6 @@
 					>
 						Reconciling
 					</button>
-					<button class="btn-outline btn-sm btn" disabled> Received </button>
 					<button class="btn-outline btn-sm btn" disabled> Completed </button>
 				</div>
 				{#if $supplierOrderFilterStatus === "unordered"}
