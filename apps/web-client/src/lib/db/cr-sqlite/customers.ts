@@ -80,7 +80,7 @@ export async function upsertCustomer(db: DB, customer: Customer) {
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
            deposit = COALESCE(?, deposit),
-           display_id = COALESCE(?, display_id)
+           display_id = COALESCE(?, display_id),
            updated_at = ?
 		   `,
 		[
