@@ -116,11 +116,12 @@
 							<th>Title</th>
 							<th>Authors</th>
 							<th>Price</th>
+							<th>Quantity</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each orderLines as orderLine}
-							{@const { isbn, title, authors, line_price } = orderLine}
+							{@const { isbn, title, authors, line_price, quantity } = orderLine}
 							<tr>
 								<td>
 									<input
@@ -140,6 +141,7 @@
 								<td>{title}</td>
 								<td>{authors}</td>
 								<td>€{line_price}</td>
+								<td>{quantity}</td>
 							</tr>
 						{/each}
 					</tbody>
