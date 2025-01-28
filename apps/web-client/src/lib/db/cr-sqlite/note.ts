@@ -1,3 +1,39 @@
+/**
+ * @fileoverview Note management system
+ *
+ * Note Overview:
+ * Notes represent transactions that track the movement of books in our out of warehouses.
+ * They "contain" (through the `book_transaction` table) a list of "transactions", i.e. books going in or out of a warehouse.
+ *
+ * Types of Notes:
+ * 1. Inbound Notes:
+ *    - Track books moving INTO a specific warehouse
+ *    - Always associated with a specific warehouse_id
+ *    - Used for receiving new inventory into warehouses
+ *    - Can include multiple book transactions with quantities
+ *
+ * 2. Outbound Notes:
+ *    - Track books moving OUT of warehouses
+ *    - No specific warehouse association (warehouse_id is NULL).
+ *    - Each transaction MUST specify a warehouse id where the book(s) come(s) from
+ * 		- Used for sales of inventory
+ *
+ * 3. Reconciliation Notes:
+ *    - Special type of inbound note
+ *    - Used to correct inventory discrepancies
+ *    - Created during stock reconciliation process
+ *    - Automatically committed upon creation
+ *
+ * Note States:
+ * - Draft: Initial state, can be modified
+ * - Committed: Final state, cannot be modified
+ *
+ * Data Sources:
+ * - note table: Core note data (id, type, status, timestamps)
+ * - book_transaction table: Individual book movements
+ * - custom_item table: Additional non-book items (for receipts)
+ */
+
 import type {
 	DB,
 	InboundNoteListItem,
@@ -20,6 +56,14 @@ export async function getNoteIdSeq(db: DB) {
 	return result.nextId;
 }
 
+/**
+ * Generates a sequential display name for a new note.
+ * Format follows: "New Note", "New Note (2)", "New Note (3)", etc.
+ *
+ * @param {DB | TXAsync} db - Database connection
+ * @param {"inbound" | "outbound"} kind - Type of note being created
+ * @returns {Promise<string>} Next available sequential name
+ */
 const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
@@ -44,6 +88,15 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	return `New Note (${maxSequence})`;
 };
 
+/**
+ * Creates a new inbound note associated with a specific warehouse.
+ * Generates a default sequential display name automatically.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} warehouseId - ID of warehouse receiving books
+ * @param {number} noteId - Unique identifier for the new note
+ * @returns {Promise<void>} Resolves when note is created
+ */
 export function createInboundNote(db: DB, warehouseId: number, noteId: number): Promise<void> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at) VALUES (?, ?, ?, ?)";
@@ -54,6 +107,14 @@ export function createInboundNote(db: DB, warehouseId: number, noteId: number): 
 	});
 }
 
+/**
+ * Creates a new outbound note for tracking books leaving the system.
+ * Generates a default sequential display name automatically.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - Unique identifier for the new note
+ * @returns {Promise<void>} Resolves when note is created
+ */
 export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 	const timestamp = Date.now();
 	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
@@ -64,6 +125,13 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 	});
 }
 
+/**
+ * Retrieves all uncommitted inbound notes with their associated warehouse and book totals.
+ * Only returns notes that have not been committed (draft state).
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes
+ */
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
 		SELECT
@@ -86,6 +154,13 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
 	return res.map(({ updated_at, ...el }) => ({ ...el, updatedAt: new Date(updated_at) }));
 }
 
+/**
+ * Retrieves all uncommitted outbound notes with their total book quantities.
+ * Only returns notes that have not been committed (draft state).
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<OutboundNoteListItem[]>} Array of outbound notes
+ */
 export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
 		SELECT
@@ -126,6 +201,14 @@ type GetNoteResponse = {
 	isReconciliationNote: boolean;
 };
 
+/**
+ * Retrieves detailed information about a specific note by its ID.
+ * Includes warehouse associations and note status information.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to retrieve
+ * @returns {Promise<GetNoteResponse | undefined>} Note details
+ */
 export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
 	const query = `
 		SELECT
@@ -174,6 +257,18 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
 }
 
 // NOTE: default warehouse is not used at the moment (it will be used for outbound notes)
+/**
+ * Updates the metadata of an uncommitted note.
+ * Can modify the display name and default warehouse.
+ * Will not update committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to update
+ * @param {Object} payload - Fields to update
+ * @param {string} [payload.displayName] - New display name for the note
+ * @param {number} [payload.defaultWarehouse] - New default warehouse ID for outbound notes
+ * @returns {Promise<void>} Resolves when note is updated
+ */
 export async function updateNote(db: DB, id: number, payload: { displayName?: string; defaultWarehouse?: number }): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
@@ -215,6 +310,15 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
 	await db.exec(updateQuery, updateValues);
 }
 
+/**
+ * Checks if an outbound note would result in negative stock levels.
+ * Used during note validation before committing.
+ * Compares requested quantities against available stock in each warehouse.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note to check
+ * @returns {Promise<OutOfStockTransaction[]>} Array of transactions that would result in negative stock
+ */
 async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
 	const entries = (await getNoteEntries(db, noteId)) as Required<NoteEntriesItem>[];
 	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
@@ -237,6 +341,14 @@ async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockT
 	return res;
 }
 
+/**
+ * Retrieves all book transactions in a note that don't have a warehouse assigned.
+ * Used during outbound note validation to ensure all transactions have proper warehouse assignments.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to check
+ * @returns {Promise<VolumeStock[]>} Array of transactions missing warehouse assignments
+ */
 export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
 	const query = `
 		SELECT
@@ -255,6 +367,18 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
 	}>(query, [id]);
 }
 
+/**
+ * Commits a note, making it permanent and unmodifiable.
+ * Performs validation before committing:
+ * - Checks all transactions have warehouse assignments
+ * - For outbound notes, verifies sufficient stock exists
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to commit
+ * @throws {NoWarehouseSelectedError} If any transaction lacks a warehouse
+ * @throws {OutOfStockError} If outbound note requests more books than available
+ * @returns {Promise<void>} Resolves when note is committed
+ */
 export async function commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
@@ -286,6 +410,14 @@ export async function commitNote(db: DB, id: number, { force = false }: { force?
 	await db.exec(query, [timestamp, id]);
 }
 
+/**
+ * Deletes an uncommitted note and all its associated transactions.
+ * Will not delete committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to delete
+ * @returns {Promise<void>} Resolves when note is deleted
+ */
 export async function deleteNote(db: DB, id: number): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
@@ -295,6 +427,16 @@ export async function deleteNote(db: DB, id: number): Promise<void> {
 	return db.exec("DELETE FROM note WHERE id = ?", [id]);
 }
 
+/**
+ * Adds or updates book quantities in a note.
+ * If an entry for the ISBN+warehouse already exists, quantities are added together.
+ * Only works on uncommitted notes.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note to modify
+ * @param {VolumeStock} volume - Book data containing ISBN, warehouseId and quantity
+ * @returns {Promise<void>} Resolves when volumes are added
+ */
 export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
@@ -312,16 +454,24 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
 		VALUES (?, ?, ?, ?, ?)
 		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
 			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = excluded.updated_at
+			updated_at = ?
 	`;
 
 	await db.tx(async (txDb) => {
 		const timestamp = Date.now();
-		await txDb.exec(insertOrUpdateTxnStmt, [isbn, quantity, warehouseId, noteId, timestamp]);
+		await txDb.exec(insertOrUpdateTxnStmt, [isbn, quantity, warehouseId, noteId, timestamp, timestamp]);
 		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
 	});
 }
 
+/**
+ * Retrieves all entries (book transactions) in a note with their associated book and warehouse details.
+ * Results are ordered by most recently updated first.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID of note to get entries for
+ * @returns {Promise<NoteEntriesItem[]>} Array of note entries with book details (title, price, etc)
+ */
 export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 	const query = `
 		SELECT
@@ -373,6 +523,21 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 	}));
 }
 
+/**
+ * Updates a book transaction within an uncommitted note.
+ * Can modify both the warehouse and quantity.
+ * Will not update transactions in committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note containing transaction
+ * @param {Object} curr - Current transaction details
+ * @param {string} curr.isbn - Book ISBN
+ * @param {number} curr.warehouseId - Current warehouse ID
+ * @param {Object} next - New transaction details
+ * @param {number} next.warehouseId - New warehouse ID
+ * @param {number} next.quantity - New quantity
+ * @returns {Promise<void>} Resolves when transaction is updated
+ */
 export async function updateNoteTxn(
 	db: DB,
 	noteId: number,
@@ -422,6 +587,17 @@ export async function updateNoteTxn(
 	});
 }
 
+/**
+ * Removes a specific book transaction from an uncommitted note.
+ * Will not remove transactions from committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note containing transaction
+ * @param {Object} match - Transaction to remove
+ * @param {string} match.isbn - Book ISBN
+ * @param {number} match.warehouseId - Warehouse ID
+ * @returns {Promise<void>} Resolves when transaction is removed
+ */
 export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: string; warehouseId: number }): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
@@ -437,6 +613,19 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
 	});
 }
 
+/**
+ * Adds or updates a custom item in an uncommitted note.
+ * Custom items are non-book items that can be added to notes/receipts.
+ * Will not modify committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note to modify
+ * @param {Object} payload - Custom item details
+ * @param {number} payload.id - Unique identifier for item
+ * @param {string} payload.title - Item description
+ * @param {number} payload.price - Item price
+ * @returns {Promise<void>} Resolves when item is added/updated
+ */
 export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
@@ -466,6 +655,14 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: Note
 	});
 }
 
+/**
+ * Retrieves all custom items associated with a note.
+ * Custom items are non-book items that can be added to notes/receipts.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note to get items for
+ * @returns {Promise<Array<{id: number, title: string, price: number}>>} Array of custom items
+ */
 export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
 		SELECT id, title, price, updated_at
@@ -479,6 +676,15 @@ export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCu
 	return res.map(({ updated_at, ...item }) => ({ ...item, updatedAt: new Date(updated_at) }));
 }
 
+/**
+ * Removes a custom item from an uncommitted note.
+ * Will not remove items from committed notes (no-op with warning).
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note containing item
+ * @param {number} itemId - ID of custom item to remove
+ * @returns {Promise<void>} Resolves when item is removed
+ */
 export async function removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
@@ -492,6 +698,15 @@ export async function removeNoteCustomItem(db: DB, noteId: number, itemId: numbe
 	});
 }
 
+/**
+ * Generates receipt data for a note, including both book transactions and custom items.
+ * Calculates prices and applies any warehouse discounts.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} noteId - ID of note to generate receipt for
+ * @returns {Promise<ReceiptData>} Receipt data including items and timestamp
+ * @throws {Error} If note doesn't exist
+ */
 export async function getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
 	const note = await getNoteById(db, noteId);
 	if (!note) {
@@ -542,6 +757,16 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 	};
 }
 
+/**
+ * Creates and immediately commits a reconciliation note.
+ * Used to adjust inventory counts when the physical word contradcts the database.
+ * Creates book transactions and the note itself in a single transaction.
+ *
+ * @param {DB} db - Database connection
+ * @param {number} id - ID for the new note
+ * @param {VolumeStock[]} volumes - Array of book quantity adjustments
+ * @returns {Promise<void>} Resolves when note is created and committed
+ */
 export async function createAndCommitReconciliationNote(db: DB, id: number, volumes: VolumeStock[]): Promise<void> {
 	const timestamp = Date.now();
 	const displayName = `Reconciliation note: ${new Date(timestamp).toISOString()}`;

@@ -1,5 +1,31 @@
+/**
+ * @fileoverview Transaction History System
+ *
+ * History Overview:
+ * - Provides historical views of committed notes and transactions
+ * - Supports querying past notes by date
+ * - Supports querying past transactions with flexible filters
+ * - Calculates totals and pricing for historical analysis
+ * - Only includes committed notes/transactions
+ *
+ * Data Sources:
+ * - note table: Core note data and commit timestamps
+ * - book_transaction table: Individual book movements
+ * - book table: Book metadata and pricing
+ * - warehouse table: Location names and discounts
+ */
+
 import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
 
+/**
+ * Retrieves all committed notes for a specific date.
+ * Includes summary information like total books and pricing.
+ * Groups transactions by note and calculates warehouse-specific discounts.
+ *
+ * @param {DB} db - Database connection
+ * @param {string} date - Date to query in YYYY-MM-DD format
+ * @returns {Promise<PastNoteItem[]>} Committed notes
+ */
 export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
 	const query = `
             SELECT
@@ -40,6 +66,9 @@ export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]
 	return res.map(({ committed_at, ...note }) => ({ ...note, committedAt: new Date(committed_at) }));
 }
 
+/**
+ * Parameters for filtering transaction history queries
+ */
 type Params = {
 	isbn?: string;
 	warehouseId?: number;
@@ -48,6 +77,16 @@ type Params = {
 	noteType?: NoteType;
 };
 
+/**
+ * Retrieves historical transactions with flexible filtering options.
+ * Can filter by ISBN, warehouse, and date range.
+ * Returns detailed information about each transaction including book metadata.
+ * Only includes transactions from committed notes.
+ *
+ * @param {DB} db - Database connection
+ * @param {Params} params - Query filters
+ * @returns {Promise<PastTransactionItem[]>} Historical transactions
+ */
 export async function getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
 	const { isbn, warehouseId, startDate, endDate, noteType } = params;
 	const conditions = [];
