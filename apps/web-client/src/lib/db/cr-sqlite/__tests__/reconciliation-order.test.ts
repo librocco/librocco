@@ -15,7 +15,7 @@ import {
 	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
-import { getCustomerBooks } from "../customers";
+import { getCustomerOrderLines } from "../customers";
 
 import {} from "../order-reconciliation";
 
@@ -149,7 +149,7 @@ describe.skip("Reconciliation order creation", () => {
 		await finalizeReconciliationOrder(db, reconOrderId);
 		const res3 = await getReconciliationOrder(db, reconOrderId);
 
-		const books = await getCustomerBooks(db, 1);
+		const books = await getCustomerOrderLines(db, 1);
 		expect(books[0].received).toBeInstanceOf(Date);
 		expect(res3).toMatchObject({
 			id: 1,

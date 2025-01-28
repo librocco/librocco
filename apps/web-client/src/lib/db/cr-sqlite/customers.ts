@@ -28,7 +28,14 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, BookLine } from "./types";
+import type { DB, Customer, CustomerOrderLine } from "./types";
+
+type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "received" | "collected"> & {
+	created: number; // as milliseconds since epoch
+	placed?: number; // as milliseconds since epoch
+	received?: number; // as milliseconds since epoch
+	collected?: number; // as milliseconds since epoch
+};
 
 /**
  * Retrieves all customers from the database.
@@ -102,43 +109,29 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
 };
 
 /**
- * Retrieves all book order lines for a specific customer.
- * Includes both active and historical orders.
- * Groups orders by supplier order IDs if applicable.
+ * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
+ * Lines include book data that is displayed in the customer orders table: title, price, authors
  * Orders are returned sorted by ID (oldest first).
  *
  * @param {DB} db - Database connection
  * @param {number} customerId - Customer to query orders for
  * @returns {Promise<CustomerOrderLine[]>} Customer's order lines
  */
-export const getCustomerBooks = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
+export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT
-			customer_order_lines.id,
-			customer_order_lines.isbn,
-			customer_order_lines.customer_id,
-			customer_order_lines.created,
-			customer_order_lines.placed,
-			customer_order_lines.received,
-			customer_order_lines.collected,
-			GROUP_CONCAT(customer_supplier_order.id) as supplierOrderIds,
+		`SELECT 
+			id, customer_id, created, placed, received, collected,
+			col.isbn, 
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.price, 0) AS price,
-			COALESCE(book.year, 'N/A') AS year,
-			COALESCE(book.authors, 'N/A') AS authors,
-			COALESCE(book.publisher, '') AS publisher,
-			COALESCE(book.edited_by, '') AS editedBy,
-			book.out_of_print,
-			COALESCE(book.category, '') AS category
-		FROM customer_order_lines
-		LEFT JOIN customer_supplier_order ON customer_order_lines.id = customer_supplier_order.customer_order_line_id
-		LEFT JOIN book ON customer_order_lines.isbn = book.isbn
+			COALESCE(book.authors, 'N/A') AS authors
+		FROM customer_order_lines col
+		LEFT JOIN book ON col.isbn = book.isbn
 		WHERE customer_id = $customerId
-		GROUP BY customer_order_lines.id, customer_order_lines.isbn, created, placed, received, collected
-		ORDER BY customer_order_lines.id ASC;`,
+		ORDER BY col.isbn ASC;`,
 		[customerId]
 	);
-	return result.map(marshallCustomerOrderLine);
+	return result.map(marshallCustomerOrderLineDates);
 };
 
 /**
@@ -158,11 +151,9 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 };
 
 /**
- * Converts a database customer order line to an application customer order line.
- * This transformation primarily involves converting timestamp numbers to Date objects
- * and parsing the supplier order IDs string into an array of numbers.
+ * Converts a database customer order line numeric dates to Date objects for ease of use in the UI
  *
- * @param {DBCustomerOrderLine} line - The database representation of a customer order line
+ * @param {DBCustomerOrderLine} line - The database representation of a customer order line dates
  * @returns {CustomerOrderLine} The application representation of a customer order line with proper date objects
  *
  * @example
@@ -172,17 +163,15 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
  *   supplierOrderIds: "1,2,3"
  * };
  * const appLine = marshallCustomerOrderLine(dbLine);
- * // Returns: { created: Date(...), placed: Date(...), supplierOrderIds: [1,2,3] }
+ * Returns: { created: Date(...), placed: Date(...) }
  */
-export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
+export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
 		...line,
 		created: new Date(line.created),
 		placed: line.placed ? new Date(line.placed) : undefined,
 		received: line.received ? new Date(line.received) : undefined,
-		collected: line.collected ? new Date(line.collected) : undefined,
-		supplierOrderIds: line.supplierOrderIds ? line.supplierOrderIds.split(",").map(Number) : [],
-		outOfPrint: Boolean(line.out_of_print)
+		collected: line.collected ? new Date(line.collected) : undefined
 	};
 };
 
@@ -192,19 +181,19 @@ export const marshallCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOr
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
- * @param {BookLine[]} books - Array of books to add, each containing ISBN
+ * @param {string[]} books - Array of book ISBNs to add
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */
-export const addBooksToCustomer = async (db: DB, customerId: number, books: BookLine[]): Promise<void> => {
+export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
 	/**
 	 * @TODO the customerId is persisted with a decimal point,
 	 * converting it to a string here resulted in the book not getting persisted
 	 */
-	const params = books.map((book) => [customerId, book.isbn]).flat();
+	const params = bookIsbns.map((isbn) => [customerId, isbn]).flat();
 	const sql = `
      INSERT INTO customer_order_lines (customer_id, isbn)
-     VALUES ${multiplyString("(?,?)", books.length)};`;
+     VALUES ${multiplyString("(?,?)", bookIsbns.length)};`;
 
 	await db.exec(sql, params);
 };

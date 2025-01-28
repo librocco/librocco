@@ -1,6 +1,5 @@
 import type { PageLoad } from "./$types";
-import { getCustomerBooks, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
-import type { Customer } from "$lib/db/cr-sqlite/types";
+import { getCustomerOrderLines, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("customer:data");
@@ -15,12 +14,9 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const { db } = data.ordersDbCtx;
 
-	const customerDetails = await getCustomerDetails(db, Number(params.id));
+	const [customerDetails] = await getCustomerDetails(db, Number(params.id));
 
-	const customerOrderLines = await getCustomerBooks(db, Number(params.id));
-	return {
-		books: customerOrderLines,
-		customer: customerDetails[0] || ({} as Customer),
-		customerOrderLines
-	};
+	const customerOrderLines = await getCustomerOrderLines(db, Number(params.id));
+
+	return { customer: customerDetails, customerOrderLines };
 };

@@ -28,41 +28,16 @@ export type BookData = {
 	category?: string;
 };
 
-export type DBCustomerOrderLine = {
-	// A customer order line as it is stored in the database
-	id: number;
-	isbn: string;
-	customer_id: number;
-	created: number; // as milliseconds since epoch
-	placed?: number; // as milliseconds since epoch
-	received?: number; // as milliseconds since epoch
-	collected?: number; // as milliseconds since epoch
-	supplierOrderIds: string; // Comma separated list of supplier order ids that this book order is part of
-	title: string;
-	price: number;
-	year: string;
-	authors: string;
-	publisher: string;
-	editedBy: string;
-	out_of_print?: number;
-	category: string;
-};
-
 export type CustomerOrderLine = {
 	// A customer order line to be passed around in the application
 	id: number;
-	isbn: string;
 	customer_id: number;
 	created: Date; // Date when the book order was entered
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
-	/**
-	 * This will come out from the customer_supplier_order table
-	 */
-	supplierOrderIds: number[]; // List of supplier order ids that this book order is part of
-} & Required<BookData>;
-export type BookLine = { isbn: string };
+	isbn: string;
+} & Pick<BookData, "title" | "authors" | "price">;
 
 /* Suppliers */
 export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
