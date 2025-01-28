@@ -12,9 +12,8 @@ import {
 	finalizeReconciliationOrder,
 	getReconciliationOrderLines,
 	processOrderDelivery,
-	sortLinesBySupplier,
 	getUnreconciledSupplierOrders,
-	getReconcilingOrders
+	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerOrderLines } from "../customers";
@@ -49,8 +48,33 @@ describe("Reconciliation order creation", () => {
 		expect(res2).toMatchObject([
 			{
 				id: 1,
-				supplier_order_ids: "[1]",
+				supplier_order_ids: [1],
 				finalized: 0
+			}
+		]);
+	});
+	it("can get all finalized reconciliation orders", async () => {
+		const res = await getAllReconciliationOrders(db);
+		expect(res).toEqual([]);
+
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		const supplierOrders = await getPlacedSupplierOrders(db);
+
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		// use supplier order ids to create a recon
+		const reconId = await createReconciliationOrder(db, ids);
+
+		await finalizeReconciliationOrder(db, reconId);
+		const res2 = await getAllReconciliationOrders(db, true);
+
+		expect(res2).toMatchObject([
+			{
+				id: 1,
+				supplier_order_ids: [1],
+				finalized: 1
 			}
 		]);
 	});
@@ -67,11 +91,11 @@ describe("Reconciliation order creation", () => {
 		// use supplier order ids to create a recon
 		const id = await createReconciliationOrder(db, ids);
 
-		const res = await getReconcilingOrders(db);
+		const res = await getAllReconciliationOrders(db, false);
 		expect(res).toEqual([
 			{
 				id: 1,
-				supplier_order_ids: "[1]",
+				supplier_order_ids: [1],
 				finalized: 0,
 				created: expect.any(Number),
 				updatedAt: expect.any(Number)
@@ -79,7 +103,7 @@ describe("Reconciliation order creation", () => {
 		]);
 
 		await finalizeReconciliationOrder(db, id);
-		const res2 = await getReconcilingOrders(db);
+		const res2 = await getAllReconciliationOrders(db, false);
 
 		expect(res2).toMatchObject([]);
 	});

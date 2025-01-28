@@ -45,26 +45,19 @@ ascending
  * @param db
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB): Promise<ReconciliationOrder[]> {
+export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
 	const result = await db.execO<ReconciliationOrder>(
 		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
 			ORDER BY id ASC;`
 	);
-	return result;
-}
-/**
- * Retrieves currently reconciling orders, ordered by ID
-ascending
- * @param db
- * @returns ReconciliationOrder array
- */
-export async function getReconcilingOrders(db: DB): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<ReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
-			WHERE finalized = 0
-			ORDER BY id ASC;`
-	);
-	return result;
+
+	const parsedRes = [];
+	for (const order of result) {
+		const parsedSup = JSON.parse(order.supplier_order_ids);
+		parsedRes.push({ ...order, supplier_order_ids: parsedSup });
+	}
+	return parsedRes;
 }
 
 /**
