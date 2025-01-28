@@ -25,8 +25,8 @@ INSERT INTO customer (id, fullname, email, deposit) VALUES
 
 -- Customer Order Lines
 INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
-(1, 1, '9780590353427', 1, 0, 0),
-(2, 1, '9780439064873', 1, 1, 0),
+(1, 1, '9781234567897', 1, 0, 0),
+(2, 1, '9788804797142', 1, 1, 0),
 (3, 2, '9780385504201', 1, 1, 1),
 (4, 2, '9780553296983', 1, 0, 0);
 
@@ -39,11 +39,6 @@ INSERT INTO supplier_order (id, supplier_id, created) VALUES
 INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES
 (1, '9780590353427', 5),
 (2, '9780439064873', 3);
-
--- Customer Supplier Orders
-INSERT INTO customer_supplier_order (id, supplier_order_id, customer_order_line_id) VALUES
-(1, 1, 1),
-(2, 2, 2);
 
 -- Reconciliation Orders
 INSERT INTO reconciliation_order (id, supplier_order_ids, created, finalized) VALUES

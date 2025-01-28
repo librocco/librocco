@@ -36,7 +36,7 @@
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total value</dt>
-								<dd class="stat-value text-2xl">€{placedOrder[0]?.total_price.toFixed(2)}</dd>
+								<dd class="stat-value text-2xl">€{(placedOrder[0]?.total_price || 0).toFixed(2)}</dd>
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Ordered</dt>
