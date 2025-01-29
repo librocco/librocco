@@ -119,9 +119,9 @@ export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderL
  */
 export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT 
+		`SELECT
 			id, customer_id, created, placed, received, collected,
-			col.isbn, 
+			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.price, 0) AS price,
 			COALESCE(book.authors, 'N/A') AS authors
@@ -181,7 +181,7 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
  *
  * @param {DB} db - The database connection instance
  * @param {number} customerId - The unique identifier of the customer
- * @param {string[]} books - Array of book ISBNs to add
+ * @param {string[]} bookIsbns - Array of book ISBNs to add
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
  */

@@ -110,8 +110,8 @@ describe("Supplier order handlers should", () => {
 		expect(newPossibleOrderLines.length).toBe(0);
 	});
 	it("Aggregates supplier orders lines quantity when getting possible order lines", async () => {
-		await addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
-		await addBooksToCustomer(db, 1, [{ isbn: "1" }, { isbn: "2" }, { isbn: "3" }]);
+		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		expect(possibleOrderLines).toEqual([
 			{
