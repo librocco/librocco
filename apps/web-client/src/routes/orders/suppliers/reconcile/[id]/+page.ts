@@ -25,3 +25,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	return { reconciliationOrder, placedOrderLines, reconciliationOrderLines };
 };
+
+export const ssr = false;
