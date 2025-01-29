@@ -3,6 +3,8 @@
 
 	import { entityListView } from "@librocco/shared";
 
+	import type { PluginsInterface } from "$lib/plugins";
+
 	import { page } from "$app/stores";
 	import { goto } from "$lib/utils/navigation";
 
@@ -25,8 +27,7 @@
 		}
 	];
 
-	// TODO: revisit
-	// if (!status) goto(appPath("settings"));
+	export let plugins: PluginsInterface;
 
 	export let handleCreateWarehouse = () => Promise.resolve();
 </script>
@@ -69,6 +70,6 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>

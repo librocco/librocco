@@ -24,6 +24,8 @@
 		StockBookRow
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores/app";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -38,7 +40,6 @@
 	import { appPath } from "$lib/paths";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 
@@ -70,6 +71,8 @@
 	$: displayName = data.displayName;
 	$: entries = data.entries;
 	$: publisherList = data.publisherList;
+
+	$: plugins = data.plugins;
 
 	// #region csv
 	const handleExportCsv = () => {
@@ -132,9 +135,7 @@
 		}
 	};
 
-	// TODO: revisit
-	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
-	const bookDataExtensionAvailable = readable(false);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 	// #endregion book-form
 
 	// #region infinite-scroll
@@ -268,7 +269,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
@@ -306,11 +307,11 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (_isbn, form) => {
-							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							const results = [];
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
+							const bookData = mergeBookData({ isbn }, results);
 
 							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {

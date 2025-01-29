@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 
-import { type BookFetcherPlugin, type BookEntry, fetchBookDataFromSingleSource } from "@librocco/db";
+import { type BookFetcherPlugin, BookData, fetchBookDataFromSingleSource } from "@librocco/shared";
 
 const baseurl = "https://www.googleapis.com/books/v1/volumes";
 const reqFields = [
@@ -48,12 +48,12 @@ async function fetchBook(isbn: string): Promise<GBookEntry | undefined> {
 }
 
 function processResponse(isbn: string) {
-	return (gBook: GBookEntry | undefined): Partial<BookEntry> | undefined => {
+	return (gBook: GBookEntry | undefined): BookData | undefined => {
 		if (!gBook) {
 			return undefined;
 		}
 
-		const res: Partial<BookEntry> = {};
+		const res: BookData = { isbn };
 
 		// TODO: We're picking the first category, whereas google books can return multiple categories, find a way to handle this
 		const { title, authors: _authors, publisher, publishedDate, categories: [category] = [] } = gBook.volumeInfo;
@@ -66,6 +66,6 @@ function processResponse(isbn: string) {
 		if (year) res.year = year;
 		if (category) res.category = category;
 
-		return { ...res, isbn };
+		return res;
 	};
 }
