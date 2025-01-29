@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import "./global.css";
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
@@ -68,12 +69,3 @@
 </svelte:head>
 
 <slot />
-
-<style global>
-	:global(body) {
-		height: 100%;
-		padding: 0;
-		margin: 0;
-		overflow-y: hidden;
-	}
-</style>
