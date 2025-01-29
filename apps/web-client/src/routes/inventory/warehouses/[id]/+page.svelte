@@ -62,11 +62,6 @@
 
 	$: db = data.dbCtx?.db;
 
-	// TODO: revisit when implemented
-	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
-	const publisherList = readable([]);
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
@@ -74,6 +69,7 @@
 	$: id = data.id;
 	$: displayName = data.displayName;
 	$: entries = data.entries;
+	$: publisherList = data.publisherList;
 
 	// #region csv
 	const handleExportCsv = () => {
@@ -301,7 +297,7 @@
 				<div class="px-6">
 					<BookForm
 						data={defaults(bookFormData, zod(bookSchema))}
-						publisherList={$publisherList}
+						{publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
