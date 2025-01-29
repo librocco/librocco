@@ -87,11 +87,6 @@
 
 	$: db = data.dbCtx?.db;
 
-	// TODO: revisit when implemented
-	// const publisherListCtx = { name: "[PUBLISHER_LIST::OUTBOUND]", debug: false };
-	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
-	const publisherList = readable([]);
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
@@ -105,6 +100,7 @@
 	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
+	$: publisherList = data.publisherList;
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
@@ -676,7 +672,7 @@
 				<div class="px-6">
 					<BookForm
 						data={defaults(bookFormData, zod(bookSchema))}
-						publisherList={$publisherList}
+						{publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
