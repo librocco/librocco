@@ -68,17 +68,19 @@
 							<th>ISBN</th>
 							<th>Title</th>
 							<th>Authors</th>
-							<th>Price</th>
+							<th>Quantity</th>
+							<th>Total Price</th>
 						</tr>
 					</thead>
 					<tbody>
 						{#each placedOrder as orderLine}
-							{@const { isbn, title, authors, price } = orderLine}
+							{@const { isbn, title, authors, price, quantity } = orderLine}
 							<tr>
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
-								<td>€{price}</td>
+								<td>{quantity}</td>
+								<td>€{price * quantity}</td>
 							</tr>
 						{/each}
 					</tbody>
