@@ -21,9 +21,9 @@ import { DEFAULT_LOCALE } from "$lib/constants";
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
 export const load: LayoutLoad = async ({ url }) => {
-	const { hash } = url;
+	const { pathname, hash } = url;
 
-	if (redirectPaths.includes(`${base}/${hash}`)) {
+	if (redirectPaths.includes(pathname) && !hash) {
 		// * Important: trailing slash is required here
 		// * otherwise sveltekit will attempt to add it, and in doing so will strip `base`
 		if (browser) {
