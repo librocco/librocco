@@ -68,9 +68,6 @@ const config = {
 					allowSyntheticDefaultImports: true
 				}
 			})
-		},
-		router: {
-			type: "hash"
 		}
 	}
 };
