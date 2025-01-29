@@ -8,5 +8,3 @@ export const load: PageLoad = async ({ parent, params }) => {
 
 	return { placedOrder };
 };
-
-export const ssr = false;
