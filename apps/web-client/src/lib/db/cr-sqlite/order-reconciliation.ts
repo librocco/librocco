@@ -43,6 +43,8 @@ import type {
  * Retrieves all reconciliation orders from the database, ordered by ID
 ascending
  * @param db
+ * @param finalized - an optional boolean that's used to query finalized or non finalized orders
+ * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
 export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
