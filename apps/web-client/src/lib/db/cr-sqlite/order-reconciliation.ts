@@ -205,7 +205,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 }
 
 /**
- * Retrieves all supplier orders that have not yet been included in any reconciliation process.
+ * Retrieves all supplier orders that have not been selected for reconciliation in any `reconciliation_order`.
  * @param db
  *
  * @returns {Promise<SupplierPlacedOrderLine[]>} Array of unreconciled supplier orders with:
