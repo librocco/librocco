@@ -132,7 +132,7 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
  * @param {DB} db - Database connection
  * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes
  */
-export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
+export async function getActiveInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
 		SELECT
 			note.id,
@@ -161,7 +161,7 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
  * @param {DB} db - Database connection
  * @returns {Promise<OutboundNoteListItem[]>} Array of outbound notes
  */
-export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
+export async function getActiveOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
 		SELECT
 			note.id,
