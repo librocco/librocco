@@ -1,16 +1,11 @@
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
 
-import { createDB, dbNamePersisted } from "$lib/db";
+import { dbNamePersisted } from "$lib/db";
 import { navigatorDetector } from "typesafe-i18n/detectors";
 import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
-import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
-import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
-
-import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
-import { IS_E2E } from "$lib/constants";
 
 import { loadLocaleAsync } from "$i18n/i18n-util.async";
 import { setLocale } from "$i18n/i18n-svelte";
@@ -50,23 +45,23 @@ export const load: LayoutLoad = async ({ url }) => {
 	if (browser) {
 		// Init the db
 		const name = get(dbNamePersisted);
-		const { db, status } = await createDB(name);
 
-		// Register plugins
-		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
-		if (status && !IS_E2E) {
-			db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
-			db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
-			db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
-		}
+		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
+		const dbCtx = await getInitializedDB(name);
 
-		return {
-			db,
-			status: true
-		};
+		// TODO: revisit this later - PLUGINS
+		// // Register plugins
+		// // Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
+		// if (status && !IS_E2E) {
+		// 	db.plugin("book-fetcher").register(createBookDataExtensionPlugin());
+		// 	db.plugin("book-fetcher").register(createOpenLibraryApiPlugin());
+		// 	db.plugin("book-fetcher").register(createGoogleBooksApiPlugin());
+		// }
+
+		return { dbCtx, status: true };
 	}
 
-	return { status: false, db: null };
+	return { dbCtx: null, status: false };
 };
 export const prerender = true;
 export const trailingSlash = "always";

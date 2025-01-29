@@ -15,7 +15,7 @@
  * - warehouse table: Location names and discounts
  */
 
-import type { DB, PastNoteItem, PastTransactionItem } from "./types";
+import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
 
 /**
  * Retrieves all committed notes for a specific date.
@@ -26,7 +26,7 @@ import type { DB, PastNoteItem, PastTransactionItem } from "./types";
  * @param {string} date - Date to query in YYYY-MM-DD format
  * @returns {Promise<PastNoteItem[]>} Committed notes
  */
-export function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
+export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
 	const query = `
             SELECT
                 n.id,
@@ -41,7 +41,8 @@ export function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
                     ELSE 'Outbound'
 				END AS warehouseName,
                 SUM(bt.quantity * b.price) AS totalCoverPrice,
-                SUM(bt.quantity * b.price * (1 - w.discount / 100.0)) AS totalDiscountedPrice
+                SUM(bt.quantity * b.price * (1 - COALESCE(w.discount, 0) / 100.0)) AS totalDiscountedPrice,
+				n.committed_at
             FROM note n
             JOIN book_transaction bt ON n.id = bt.note_id
             JOIN book b ON bt.isbn = b.isbn
@@ -50,7 +51,19 @@ export function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
             GROUP BY n.id
             ORDER BY n.committed_at
         `;
-	return db.execO(query, [date]);
+
+	const res = await db.execO<{
+		id: number;
+		displayName: string;
+		noteType: string;
+		totalBooks: number;
+		warehouseName: string;
+		totalCoverPrice: number;
+		totalDiscountedPrice: number;
+		committed_at: number;
+	}>(query, [date]);
+
+	return res.map(({ committed_at, ...note }) => ({ ...note, committedAt: new Date(committed_at) }));
 }
 
 /**
@@ -61,6 +74,7 @@ type Params = {
 	warehouseId?: number;
 	startDate?: Date;
 	endDate?: Date;
+	noteType?: NoteType;
 };
 
 /**
@@ -74,7 +88,7 @@ type Params = {
  * @returns {Promise<PastTransactionItem[]>} Historical transactions
  */
 export async function getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
-	const { isbn, warehouseId, startDate, endDate } = params;
+	const { isbn, warehouseId, startDate, endDate, noteType } = params;
 	const conditions = [];
 	const values = [];
 
@@ -94,6 +108,12 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
 		conditions.push("n.committed_at <= ?");
 		values.push(endDate.getTime() + 24 * 60 * 60 * 1000 - 1);
 	}
+	if (noteType === "inbound") {
+		conditions.push("(n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1)");
+	}
+	if (noteType === "outbound") {
+		conditions.push("(n.warehouse_id IS NULL AND n.is_reconciliation_note = 0)");
+	}
 
 	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 
@@ -103,7 +123,7 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
         SELECT
             bt.isbn,
             b.title,
-            b.authors AS author,
+            b.authors,
             bt.quantity,
             b.price,
             n.committed_at,
@@ -117,12 +137,12 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
                 ELSE 'outbound'
             END AS noteType
         FROM book_transaction bt
-        JOIN note n ON bt.note_id = n.id
-        JOIN book b ON bt.isbn = b.isbn
+        LEFT JOIN note n ON bt.note_id = n.id
+        LEFT JOIN book b ON bt.isbn = b.isbn
         LEFT JOIN warehouse w ON bt.warehouse_id = w.id
         ${whereClause}
         AND n.committed = 1
-        ORDER BY n.committed_at
+        ORDER BY n.committed_at, bt.isbn, bt.warehouse_id
     `;
 
 	const res = await db.execO<QueryResItem>(query, values);

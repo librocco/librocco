@@ -36,19 +36,25 @@
 
 import type {
 	DB,
-	TXAsync,
 	InboundNoteListItem,
 	VolumeStock,
 	NoteEntriesItem,
 	OutboundNoteListItem,
 	OutOfStockTransaction,
 	ReceiptData,
-	ReceiptItem
+	ReceiptItem,
+	NoteCustomItem
 } from "./types";
 
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 import { getStock } from "./stock";
+
+export async function getNoteIdSeq(db: DB) {
+	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM note;`;
+	const [result] = await db.execO<{ nextId: number }>(query);
+	return result.nextId;
+}
 
 /**
  * Generates a sequential display name for a new note.
@@ -58,7 +64,7 @@ import { getStock } from "./stock";
  * @param {"inbound" | "outbound"} kind - Type of note being created
  * @returns {Promise<string>} Next available sequential name
  */
-const getSeqName = async (db: DB | TXAsync, kind: "inbound" | "outbound") => {
+const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 	const sequenceQuery = `
 			SELECT display_name AS displayName FROM note
 			WHERE displayName LIKE 'New Note%'
@@ -128,7 +134,6 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
  */
 export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
-
 		SELECT
 			note.id,
 			note.display_name AS displayName,
@@ -140,6 +145,7 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
 		LEFT JOIN book_transaction ON note.id = book_transaction.note_id
 		WHERE note.committed = 0
 		GROUP BY note.id
+		ORDER BY note.updated_at DESC
 	`;
 
 	const res = await db.execO<{ id: number; displayName: string; warehouseName: string; updated_at: number; totalBooks: number }>(query);
@@ -157,7 +163,6 @@ export async function getAllInboundNotes(db: DB): Promise<InboundNoteListItem[]>
  */
 export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
-
 		SELECT
 			note.id,
 			note.display_name AS displayName,
@@ -168,7 +173,7 @@ export async function getAllOutboundNotes(db: DB): Promise<OutboundNoteListItem[
 		WHERE note.warehouse_id IS NULL
 		AND note.committed = 0
 		GROUP BY note.id
-
+		ORDER BY note.updated_at DESC
 	`;
 
 	const res = await db.execO<{ id: number; displayName: string; updated_at: number; totalBooks: number }>(query);
@@ -315,7 +320,7 @@ export async function updateNote(db: DB, id: number, payload: { displayName?: st
  * @returns {Promise<OutOfStockTransaction[]>} Array of transactions that would result in negative stock
  */
 async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockTransaction[]> {
-	const entries = await getNoteEntries(db, noteId);
+	const entries = (await getNoteEntries(db, noteId)) as Required<NoteEntriesItem>[];
 	const stock = await getStock(db, { entries }).then((x) => new Map(x.map((e) => [[e.isbn, e.warehouseId].join("-"), e])));
 
 	const res: OutOfStockTransaction[] = [];
@@ -352,7 +357,7 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
 			warehouse_id AS warehouseId
 		FROM book_transaction
 		WHERE note_id = ?
-		AND warehouse_id IS NULL
+		AND warehouse_id = 0
 	`;
 
 	return db.execO<{
@@ -374,22 +379,24 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
  * @throws {OutOfStockError} If outbound note requests more books than available
  * @returns {Promise<void>} Resolves when note is committed
  */
-export async function commitNote(db: DB, id: number): Promise<void> {
+export async function commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to commit a note that is already committed: this is a noop, but probably indicates a bug in the calling code.");
 		return;
 	}
 
-	const noWarehouseTxns = await getNoWarehouseEntries(db, id);
-	if (noWarehouseTxns.length) {
-		throw new NoWarehouseSelectedError(noWarehouseTxns);
-	}
+	if (!force) {
+		const noWarehouseTxns = await getNoWarehouseEntries(db, id);
+		if (noWarehouseTxns.length) {
+			throw new NoWarehouseSelectedError(noWarehouseTxns);
+		}
 
-	if (note.noteType === "outbound") {
-		const outOfStockEntries = await getOutOfStockEntries(db, id);
-		if (outOfStockEntries.length) {
-			throw new OutOfStockError(outOfStockEntries);
+		if (note.noteType === "outbound") {
+			const outOfStockEntries = await getOutOfStockEntries(db, id);
+			if (outOfStockEntries.length) {
+				throw new OutOfStockError(outOfStockEntries);
+			}
 		}
 	}
 
@@ -437,7 +444,10 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
 		return;
 	}
 
-	const { isbn, warehouseId, quantity } = volume;
+	const { isbn, quantity } = volume;
+	// If note.warehouseId is defined, we're within an inbound note - all txn warehouseIds should be the same as note.warehouseId
+	// If not an inbound note (outbound/reconciliation), read the provided warehouseId, default to 0 (as 0 = 0, and NULL is never equal)
+	const warehouseId = note.warehouseId || volume.warehouseId || 0;
 
 	const insertOrUpdateTxnStmt = `
 		INSERT INTO book_transaction (isbn, quantity, warehouse_id, note_id, updated_at)
@@ -468,11 +478,17 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 			bt.isbn,
 			bt.quantity,
 			bt.warehouse_id AS warehouseId,
-			w.display_name AS warehouseName,
-			b.title,
-			b.price,
-			b.authors,
-			b.publisher
+			bt.updated_at,
+			COALESCE(w.display_name, 'not-found') AS warehouseName,
+			COALESCE(w.discount, 0) AS warehouseDiscount,
+			COALESCE(b.title, 'N/A') AS title,
+			COALESCE(b.price, 0) AS price,
+			COALESCE(b.year, 'N/A') AS year,
+			COALESCE(b.authors, 'N/A') AS authors,
+			COALESCE(b.publisher, '') AS publisher,
+			COALESCE(b.edited_by, '') AS editedBy,
+			b.out_of_print,
+			COALESCE(b.category, '') AS category
 		FROM book_transaction bt
 		LEFT JOIN book b ON bt.isbn = b.isbn
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
@@ -481,17 +497,30 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 	`;
 
 	const result = await db.execO<{
-		isbn: string | null;
+		isbn: string;
 		quantity: number;
-		warehouseId: number;
-		warehouseName: string;
-		title?: string;
-		price?: number;
-		authors?: string;
-		publisher?: string;
+		warehouseId?: number;
+		updated_at: number;
+
+		warehouseName?: string;
+		warehouseDiscount: number;
+
+		title: string;
+		price: number;
+		year: string;
+		authors: string;
+		publisher: string;
+		editedBy: string;
+		out_of_print: number;
+		category: string;
 	}>(query, [id]);
 
-	return result.map(({ warehouseId, ...res }) => ({ ...res, warehouseId: warehouseId ?? undefined }));
+	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
+		...res,
+		updatedAt: new Date(updated_at),
+		warehouseId: warehouseId ?? undefined,
+		outOfPrint: Boolean(out_of_print)
+	}));
 }
 
 /**
@@ -597,7 +626,7 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
  * @param {number} payload.price - Item price
  * @returns {Promise<void>} Resolves when item is added/updated
  */
-export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id: number; title: string; price: number }): Promise<void> {
+export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot upsert custom items to a committed note.");
@@ -634,7 +663,7 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: { id
  * @param {number} noteId - ID of note to get items for
  * @returns {Promise<Array<{id: number, title: string, price: number}>>} Array of custom items
  */
-export async function getNoteCustomItems(db: DB, noteId: number): Promise<{ id: number; title: string; price: number }[]> {
+export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
 		SELECT id, title, price, updated_at
 		FROM custom_item
@@ -724,7 +753,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 
 	return {
 		items: bookEntries.concat(customItems),
-		timestamp: new Date().toISOString()
+		timestamp: Date.now()
 	};
 }
 

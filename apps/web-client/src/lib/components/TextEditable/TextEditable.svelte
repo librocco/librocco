@@ -2,6 +2,7 @@
 	import { tick } from "svelte";
 	import { PencilLine } from "lucide-svelte";
 	import { clickOutside } from "$lib/actions";
+	import { createEventDispatcher } from "svelte";
 
 	export let name: string;
 	export let id: string = name;
@@ -15,7 +16,9 @@
 	 * - the user saves the input - the parent component is updated with the new value
 	 */
 
-	export let value: string | number = "";
+	// export let value: string | number = "";
+	// TODO: check if this can be string-only
+	export let value: string = "";
 	export let placeholder = "Enter text or number here...";
 	export let isEditing = false;
 	export let disabled = false;
@@ -24,6 +27,8 @@
 	export let textClassName: string = "text-base font-normal";
 	/** This is the internal value, used to store the current state of the input */
 	$: text = value;
+
+	const dispatch = createEventDispatcher<{ change: string }>();
 
 	/** Enter edit mode */
 	function edit() {
@@ -43,6 +48,7 @@
 	function save() {
 		if (value != text) {
 			value = text;
+			dispatch("change", text);
 		}
 		isEditing = false;
 	}

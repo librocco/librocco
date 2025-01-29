@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import { getRandomDb } from "./lib";
 
-import { upsertWarehouse, getAllWarehouses } from "../warehouse";
+import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
 import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote } from "../note";
 
 describe("Warehouse tests", () => {
@@ -33,13 +33,11 @@ describe("Warehouse tests", () => {
 		// Update display name
 		await upsertWarehouse(db, { id: 1, displayName: "New Warehouse" });
 
-		let res = await getAllWarehouses(db);
-		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 5, totalBooks: 0 }]);
+		expect(await getWarehouseById(db, 1)).toEqual({ id: 1, displayName: "New Warehouse", discount: 5 });
 
 		// Update discount
 		await upsertWarehouse(db, { id: 1, discount: 15 });
-		res = await getAllWarehouses(db);
-		expect(res).toEqual([{ id: 1, displayName: "New Warehouse", discount: 15, totalBooks: 0 }]);
+		expect(await getWarehouseById(db, 1)).toEqual({ id: 1, displayName: "New Warehouse", discount: 15 });
 	});
 
 	it("assigns default warehouse name continuing the sequence", async () => {
@@ -97,6 +95,24 @@ describe("Warehouse tests", () => {
 		]);
 	});
 
+	it("deletes a warehouse", async () => {
+		const db = await getRandomDb();
+
+		// Create a warehouse
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse to Delete" });
+
+		// Verify the warehouse exists
+		let res = await getAllWarehouses(db);
+		expect(res).toEqual([{ id: 1, displayName: "Warehouse to Delete", discount: 0, totalBooks: 0 }]);
+
+		// Delete the warehouse
+		await deleteWarehouse(db, 1);
+
+		// Verify the warehouse is deleted
+		res = await getAllWarehouses(db);
+		expect(res).toEqual([]);
+	});
+
 	it("reflects the total stock in each respective warehouse", async () => {
 		const db = await getRandomDb();
 
@@ -143,5 +159,32 @@ describe("Warehouse tests", () => {
 			{ id: 1, displayName: "Warehouse A", discount: 0, totalBooks: 18 },
 			{ id: 2, displayName: "Warehouse B", discount: 0, totalBooks: 10 }
 		]);
+	});
+
+	it("regression: shows warehouse with single open note", async () => {
+		// I've caught a bug where, in case of warehouse having one non-committed note with some transactions,
+		// the warehouse is not shown on the list. This is due to clause:
+		// 'warehouse LEFT JOIN book_transaction (...) LEFT JOIN note (...) WHERE note.committed = 1 OR note.committed IS NULL'
+		// and since all resulting rows were joined with transactions, there was no NULL committed value, yet no committed note/txn would omit the
+		// warehouse from the list.
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: 1 });
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 })]);
+
+		// Add some non-committed txns (this is where the bug happened)
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 1, warehouseId: 1 });
+
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 })]);
+	});
+
+	it("retrieves a warehouse id seq", async () => {
+		const db = await getRandomDb();
+
+		await upsertWarehouse(db, { id: await getWarehouseIdSeq(db) });
+		await upsertWarehouse(db, { id: await getWarehouseIdSeq(db) });
+
+		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 }), expect.objectContaining({ id: 2 })]);
 	});
 });

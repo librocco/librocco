@@ -9,6 +9,7 @@ test("should navigate using the side nav", async ({ page }) => {
 	await page.goto(baseURL);
 
 	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
 
 	// Should load 'stock' page as default
 	await dashboard.view("stock").waitFor();

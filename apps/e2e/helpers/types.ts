@@ -28,7 +28,7 @@ export interface DisplayRow {
 	isbn: string;
 	title: string;
 	quantity: number;
-	warehouseId: string;
+	warehouseId: number;
 	price: number | string | IBookPrice;
 	year?: string;
 	authors?: string;

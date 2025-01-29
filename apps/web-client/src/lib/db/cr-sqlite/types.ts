@@ -2,8 +2,7 @@
  * This is a placeholder as we're not using the generic DB, this might change as we add schema, but trying to keep this as a single source of truth
  */
 import type { BookEntry } from "@librocco/db";
-import type { DB } from "@vlcn.io/crsqlite-wasm";
-export type { DB };
+import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
 
 /* Customer orders/books */
 export type Customer = {
@@ -150,24 +149,15 @@ export type VolumeStock = {
 	warehouseId?: number;
 };
 
-export type NoteEntriesItem = {
-	isbn: string | null;
-	quantity: number;
-	warehouseId: number;
-	warehouseName: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
+export type NoteEntriesItem = VolumeStock & { warehouseName?: string; warehouseDiscount: number; updatedAt?: Date } & Required<
+		Omit<BookData, "updatedAt">
+	>;
+
+export type NoteCustomItem = { id: number; title: string; price: number; updatedAt?: Date };
 
 export type ReceiptItem = {
 	isbn?: string; // undefined for custom_item
-	title?: string; // undefined for book_transction
+	title: string;
 	quantity: number; // For books read from book_transaction entry, for custom item it is 1
 	price: number; // For books - read from books table, for custom items read directly from custom_item entry
 	discount: number; // Discount for a respective warehouse (matched by book transaction't warehouse_id), 0 for custom_item
@@ -175,7 +165,7 @@ export type ReceiptItem = {
 
 export type ReceiptData = {
 	items: ReceiptItem[];
-	timestamp: string;
+	timestamp: number;
 };
 
 /* History */
@@ -187,12 +177,13 @@ export type PastNoteItem = {
 	warehouseName: string;
 	totalCoverPrice: number;
 	totalDiscountedPrice: number;
+	committedAt: Date;
 };
 
 export type PastTransactionItem = {
 	isbn: string;
 	title?: string;
-	author?: string;
+	authors?: string;
 	quantity: number;
 	price: number;
 	committedAt: Date;
@@ -206,8 +197,27 @@ export type PastTransactionItem = {
 
 /* Misc */
 
+export type NoteType = "inbound" | "outbound";
+
+export type GetStockResponseItem = {
+	isbn: string;
+	quantity: number;
+	warehouseId: number;
+	warehouseName: string;
+	warehouseDiscount: number;
+	title: string;
+	price: number;
+	year: string;
+	authors: string;
+	publisher: string;
+	editedBy: string;
+	outOfPrint: boolean;
+	category: string;
+};
+
 /** The type of the DB object passed to sqlite DB.tx transaction callback */
-export type TXAsync = Parameters<Parameters<DB["tx"]>[0]>[0];
+export type TXAsync = Parameters<Parameters<_DB["tx"]>[0]>[0];
+export type DB = _DB | TXAsync;
 
 /** The transaction returned (thrown) by outbound note commit check - if certin txn will result in negative stock */
 export interface OutOfStockTransaction extends VolumeStock {
