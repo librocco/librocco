@@ -6,7 +6,6 @@ export const load: PageLoad = async ({ parent, params }) => {
 
 	const placedOrder = await getPlacedSupplierOrderLines(ordersDb, parseInt(params.id));
 
-	console.log({ placedOrder });
 	return { placedOrder };
 };
 
