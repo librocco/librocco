@@ -63,7 +63,7 @@
 	use:trigger
 	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}" />
+	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
 			{$selectedLabel}
