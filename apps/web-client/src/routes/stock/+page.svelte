@@ -22,14 +22,15 @@
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores/app";
+
 	import { Page, PlaceholderBox } from "$lib/components";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-
-	import { settingsStore } from "$lib/stores/app";
 
 	export let data: PageData;
 	$: db = data?.dbCtx?.db;
@@ -47,6 +48,8 @@
 	});
 
 	$: publisherList = data?.publisherList;
+
+	$: plugins = data?.plugins;
 
 	const search = writable("");
 	let entries = [] as GetStockResponseItem[];
@@ -103,8 +106,7 @@
 		}
 	};
 
-	// TODO: revisit
-	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookEntry) => async () => {
@@ -237,7 +239,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
@@ -275,13 +277,11 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (_isbn, form) => {
-							// TODO: revisit
-							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							const results = [];
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
+							const bookData = mergeBookData({ isbn }, results);
 
 							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
@@ -291,7 +291,7 @@
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
-						isExtensionAvailable={/* TODO: revisit this with ExtensionAvailabilityStore */ true}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

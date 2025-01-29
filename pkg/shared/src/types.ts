@@ -1,3 +1,4 @@
+// #region misc
 export type VolumeStockKind = "book" | "custom";
 
 /* eslint-disable @typescript-eslint/ban-types */
@@ -18,3 +19,16 @@ export type VolumeStock<K extends VolumeStockKind = VolumeStockKind> = K extends
 			title: string;
 			price: number;
 		};
+
+// #region DB
+export type BookData = {
+	isbn: string;
+	title?: string;
+	price?: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	category?: string;
+};

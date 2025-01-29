@@ -11,7 +11,7 @@ const config = {
 			}
 		},
 		rollupOptions: {
-			external: ["@librocco/db"],
+			external: ["@librocco/shared"],
 			input: {
 				"plugin/index": path.join(__dirname, "src", "plugin", "index.ts"),
 				"extension/index": path.join(__dirname, "src", "extension", "index.ts"),
