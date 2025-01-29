@@ -5,13 +5,13 @@ const config = {
 	build: {
 		sourcemap: true,
 		lib: {
-			name: "@librocco/db",
+			name: "@librocco/google-books-api-plugin",
 			entry: path.join(__dirname, "src", "index.ts"),
 			fileName: (fmt) => (fmt === "es" ? "index.es.js" : "index.js"),
 			formats: ["es", "cjs"]
 		},
 		rollupOptions: {
-			external: ["@librocco/db"],
+			external: ["@librocco/shared"],
 			output: {
 				exports: "named"
 			}

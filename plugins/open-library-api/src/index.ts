@@ -1,6 +1,6 @@
 import { BehaviorSubject } from "rxjs";
 
-import { type BookFetcherPlugin, type BookEntry, fetchBookDataFromSingleSource } from "@librocco/db";
+import { type BookFetcherPlugin, type BookData, fetchBookDataFromSingleSource } from "@librocco/shared";
 
 const baseurl = "https://openlibrary.org/search.json";
 // publisher is an array
@@ -42,12 +42,12 @@ async function fetchBook(isbn: string): Promise<OLBookEntry> {
 }
 
 function processResponse(isbn: string) {
-	return (olBook: OLBookEntry | undefined): Partial<BookEntry> | undefined => {
+	return (olBook: OLBookEntry | undefined): BookData | undefined => {
 		if (!olBook) {
 			return undefined;
 		}
 
-		const res: Partial<BookEntry> = {};
+		const res: BookData = { isbn };
 
 		const { title, author_name: _authors, publisher, publish_date } = olBook;
 		const authors = _authors?.join(", ");
@@ -59,6 +59,6 @@ function processResponse(isbn: string) {
 		if (publishers) res.publisher = publishers;
 		if (year) res.year = year;
 
-		return { ...res, isbn };
+		return res;
 	};
 }

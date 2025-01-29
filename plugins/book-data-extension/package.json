@@ -24,7 +24,6 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
-		"@librocco/db": "workspace:*",
 		"@librocco/shared": "workspace:*",
 		"@types/chrome": "^0.0.241",
 		"@types/node": "16",

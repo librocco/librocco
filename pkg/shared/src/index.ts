@@ -8,3 +8,5 @@ export * as debug from "./debugger";
 export * from "./utils";
 export * from "./generators";
 export * from "./StockMap";
+
+export * from "./plugins";

@@ -1,7 +1,8 @@
 import { Observable, combineLatest, map } from "rxjs";
 
-import type { BookEntry, BookFetchResultEntry, WarehouseDataMap } from "@librocco/db";
 import { wrapIter, debug } from "@librocco/shared";
+import type { BookData, BookFetchResultEntry } from "@librocco/shared";
+import type { WarehouseDataMap } from "@librocco/db";
 
 import type { DailySummaryStore } from "$lib/types/inventory";
 
@@ -31,13 +32,13 @@ export const compareNotes = <N extends { updatedAt?: string | Date | null }>({ u
 
 export const mapMergeBookWarehouseData =
 	(ctx: debug.DebugCtx, entries: Iterable<any>, warehouseListStream: Observable<WarehouseDataMap>) =>
-	(books: Observable<Iterable<BookEntry | undefined>>): Observable<DailySummaryStore> =>
+	(books: Observable<Iterable<BookData | undefined>>): Observable<DailySummaryStore> =>
 		combineLatest([books, warehouseListStream]).pipe(
 			map(([booksData, warehouseData]) => {
 				const books = wrapIter(entries)
 					.zip(booksData)
 
-					.map(([s, b = {} as BookEntry]) => {
+					.map(([s, b = {} as BookData]) => {
 						const warehouse = warehouseData.size ? warehouseData.get(s.warehouseId) : { displayName: "", discountPercentage: 0 };
 						return {
 							...s,
@@ -90,11 +91,15 @@ export const mapMergeBookWarehouseData =
  * @param kind "prefer_first" - values from the source that comes first in the array will be preferred and vice versa
  * @returns
  */
-export const mergeBookData = (sources: BookFetchResultEntry[], kind: "prefer_first" | "prefer_last" = "prefer_first") =>
+export const mergeBookData = (
+	seed: BookData,
+	sources: BookFetchResultEntry[],
+	kind: "prefer_first" | "prefer_last" = "prefer_first"
+): BookData | undefined =>
 	!sources.some(Boolean)
 		? undefined
 		: kind === "prefer_first"
-			? sources.reduceRight((acc = {}, curr = {}) => ({ ...acc, ...curr }), {})
-			: sources.reduce((acc = {}, curr = {}) => ({ ...acc, ...curr }), {});
+			? sources.filter(Boolean).reduceRight((acc, curr) => ({ ...acc, ...curr }), seed)
+			: sources.filter(Boolean).reduce((acc, curr) => ({ ...acc, ...curr }), seed);
 
 // #endregion book data fetching

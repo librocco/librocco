@@ -27,6 +27,8 @@
 
 	export let data: PageData;
 
+	$: plugins = data.plugins;
+
 	// #region files list
 	let files: string[] = [];
 
@@ -294,7 +296,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

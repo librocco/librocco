@@ -1,11 +1,17 @@
 <script lang="ts">
 	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 
+	import type { LayoutData } from "../../$types";
+
 	import { ExtensionAvailabilityToast, Page, PlaceholderBox } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
 
 	import { goto } from "$lib/utils/navigation";
+
+	export let data: LayoutData;
+
+	$: plugins = data.plugins;
 
 	let initialized = true;
 </script>
@@ -33,6 +39,6 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>

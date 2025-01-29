@@ -5,6 +5,8 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
+	import type { LayoutData } from "../$types";
+
 	import { Page, PlaceholderBox, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { appPath } from "$lib/paths";
@@ -12,6 +14,10 @@
 	import { LL } from "$i18n/i18n-svelte";
 	import { writable } from "svelte/store";
 	import SupplierOrderTable, { type SupplierOrderData } from "$lib/components/Tables/OrderTables/SupplierOrderTable.svelte";
+
+	export let data: LayoutData;
+
+	$: plugins = data.plugins;
 
 	$: ({ nav: tNav } = $LL);
 
@@ -86,6 +92,6 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
