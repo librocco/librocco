@@ -8,20 +8,21 @@
 	import type { NavEntry } from "@librocco/db";
 
 	import type { WarehouseChangeDetail } from "./types";
+	import type { Warehouse } from "$lib/db/cr-sqlite/types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	export let data: InventoryTableData<"book">;
 	export let rowIx: number;
-	export let warehouseList: Iterable<[string, NavEntry]> = new Map<string, { displayName: string }>();
+	export let warehouseList: Omit<Warehouse, "discount">[];
 
 	const dispatch = createEventDispatcher<{ change: WarehouseChangeDetail }>();
-	const dispatchChange = (warehouseId: string) => dispatch("change", { warehouseId });
+	const dispatchChange = (warehouseId: number) => dispatch("change", { warehouseId });
 
 	const {
 		elements: { trigger, menu, option, label },
 		states: { selectedLabel, open, selected },
 		helpers: { isSelected }
-	} = createSelect<string>({
+	} = createSelect<number>({
 		forceVisible: true,
 		positioning: {
 			placement: "bottom",
@@ -36,26 +37,15 @@
 		}
 	});
 
-	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<string, { displayName: string; quantity: number }>() } = data);
+	$: ({ warehouseId, warehouseName, availableWarehouses = new Map<number, { displayName: string; quantity: number }>() } = data);
 
-	const mapWarehousesToOptions = (warehouseList: Iterable<[string, NavEntry]>) =>
-		[...warehouseList].map(([value, { displayName }]) => ({ value, label: displayName }));
+	const mapWarehousesToOptions = (warehouseList: Omit<Warehouse, "discount">[]) =>
+		[...warehouseList].map(({ id, displayName }) => ({ value: id, label: displayName }));
 
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
 	 */
 	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
-
-	// If there's only one warehouse the book is available in, and the selected warehouse is not that one, change the selected warehouse
-	onMount(() => {
-		if (availableWarehouses.size !== 1) return;
-
-		const availableWarehouse = availableWarehouses.keys().next().value;
-		if (!warehouseId) {
-			// Tick isn't necessary here, but it's much easier when testing
-			tick().then(() => dispatchChange(availableWarehouse));
-		}
-	});
 
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or

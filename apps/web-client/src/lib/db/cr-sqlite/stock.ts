@@ -18,7 +18,7 @@
  * - book table: Contains book metadata
  */
 
-import type { DB } from "./types";
+import type { DB, GetStockResponseItem } from "./types";
 
 /**
  * Parameters for filtering stock queries
@@ -27,21 +27,9 @@ type GetStockParams = {
 	searchString?: string;
 	// If provided the results are filtered by provided (isbn, warehouseId) pairs
 	entries?: { isbn: string; warehouseId: number }[];
-};
-
-type GetStockResponseItem = {
-	isbn: string;
-	quantity: number;
+	// If provided the results are filtered by provided isbn, providing stock for each isbn across different warehouses
+	isbns?: string[];
 	warehouseId?: number;
-	warehouseName?: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
 };
 
 /**
@@ -61,36 +49,60 @@ type GetStockResponseItem = {
  *   - warehouseName: Human readable warehouse name
  *   - Book metadata: title, price, year, authors, etc
  */
-export async function getStock(db: DB, { searchString = "", entries = [] }: GetStockParams = {}): Promise<GetStockResponseItem[]> {
+export async function getStock(
+	db: DB,
+	{ searchString = "", entries = [], isbns = [], warehouseId }: GetStockParams = {}
+): Promise<GetStockResponseItem[]> {
+	const filterClauses = [];
+	const filterValues = [];
+
+	if (searchString) {
+		filterClauses.push(`(bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)`);
+		filterValues.push(`%${searchString}%`, `%${searchString}%`, `%${searchString}%`); // One value for each ?
+	}
+
+	if (entries?.length) {
+		filterClauses.push(`(bt.isbn, bt.warehouse_id) IN (${entries.map(() => "(?, ?)").join(", ")})`);
+		filterValues.push(...entries.flatMap(({ isbn, warehouseId }) => [isbn, warehouseId]));
+	}
+
+	if (isbns?.length) {
+		filterClauses.push(`bt.isbn IN (${isbns.map(() => "?").join(", ")})`);
+		filterValues.push(...isbns);
+	}
+
+	if (warehouseId) {
+		filterClauses.push(`bt.warehouse_id = ?`);
+		filterValues.push(warehouseId);
+	}
+
+	const whereClause = ["WHERE n.committed = 1", ...filterClauses].join(" AND ");
+
 	const query = `
 		SELECT
 			bt.isbn,
 			SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) AS quantity,
 			bt.warehouse_id AS warehouseId,
-			w.display_name AS warehouseName,
-			b.title,
-			b.price,
-			b.year,
-			b.authors,
-			b.publisher,
-			b.edited_by AS editedBy,
-			b.out_of_print AS outOfPrint,
-			b.category
+			COALESCE(w.display_name, w.id) AS warehouseName,
+			COALESCE(w.discount, 0) AS warehouseDiscount,
+			COALESCE(b.title, 'N/A') AS title,
+			COALESCE(b.price, 0) AS price,
+			COALESCE(b.year, 'N/A') AS year,
+			COALESCE(b.authors, 'N/A') AS authors,
+			COALESCE(b.publisher, '') AS publisher,
+			COALESCE(b.edited_by, '') AS editedBy,
+			b.out_of_print,
+			COALESCE(b.category, '') AS category
 		FROM book_transaction bt
 		JOIN note n ON bt.note_id = n.id
 		LEFT JOIN book b ON bt.isbn = b.isbn
 		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
-		WHERE n.committed = 1
-		${searchString ? `AND (bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)` : ""}
-		${entries.length ? `AND (bt.isbn, bt.warehouse_id) IN (${entries.map(() => "(?, ?)").join(", ")})` : ""}
+		${whereClause}
 		GROUP BY bt.isbn, bt.warehouse_id
 		HAVING SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) != 0
 		ORDER BY bt.isbn, bt.warehouse_id
 	`;
 
-	const params = [
-		...(searchString ? [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`] : []),
-		...(entries ? entries.flatMap(({ isbn, warehouseId }) => [isbn, warehouseId]) : [])
-	];
-	return db.execO<GetStockResponseItem>(query, params);
+	const res = await db.execO<Omit<GetStockResponseItem, "outOfPrint"> & { out_of_print: number }>(query, filterValues);
+	return res.map(({ out_of_print, ...rest }) => ({ outOfPrint: !!out_of_print, ...rest }));
 }

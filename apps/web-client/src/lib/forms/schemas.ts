@@ -10,7 +10,7 @@ export const settingsSchema = z.object({
 
 export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
-	id: z.string(),
+	id: z.number(),
 	name: z.string(),
 	discount: z.number()
 });
@@ -52,7 +52,7 @@ export const bookSchema = z.object({
 
 export type CustomItemFormSchema = Infer<typeof customItemSchema>;
 export const customItemSchema = z.object({
-	id: z.string().optional(),
+	id: z.number().optional(),
 	title: z.string(),
 	price: z.number()
 });

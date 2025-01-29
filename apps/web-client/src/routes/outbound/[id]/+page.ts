@@ -1,26 +1,65 @@
 import { redirect } from "@sveltejs/kit";
 
-import type { NoteLookupResult, NoteInterface, WarehouseInterface } from "@librocco/db";
-
 import type { PageLoad } from "./$types";
+import type { Warehouse } from "$lib/db/cr-sqlite/types";
+
+import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
+import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
+import type { DB, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 import { appPath } from "$lib/paths";
+import { getStock } from "$lib/db/cr-sqlite/stock";
 
-export const load: PageLoad = async ({ params, parent }): Promise<Partial<NoteLookupResult<NoteInterface, WarehouseInterface>>> => {
-	// await db init in ../layout.ts
-	const { db } = await parent();
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	const id = Number(params.id);
 
-	// This should re-run on change to path, as far as I understand: https://kit.svelte.dev/docs/load#invalidation
-	const docId = params?.id;
+	depends("note:data");
+	depends("note:books");
+	depends("warehouse:list");
 
-	// If db is not returned (we're not in the browser environment, no need for additional loading)
-	if (!db) {
-		return {};
+	const { dbCtx } = await parent();
+
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
+		return {
+			dbCtx,
+			id,
+			displayName: "N/A",
+			warehouses: [] as Warehouse[],
+			entries: [] as NoteEntriesItem[],
+			customItems: [] as NoteCustomItem[]
+		};
 	}
 
-	const findNoteRes = await db.findNote(docId);
-	if (!findNoteRes) {
-		redirect(307, appPath("outbound"));
+	const note = await getNoteById(dbCtx.db, id);
+	// If note not found, we shouldn't be here
+	// If note committed, we shouldn't be here either (it can be viewed in the note archive)
+	// This also triggers redirect to inbound (reactively) upon committing of the note
+	if (!note || note.committed) {
+		throw redirect(307, appPath("outbound"));
 	}
-	return findNoteRes;
+
+	const warehouses = await getAllWarehouses(dbCtx.db);
+	const _entries = await getNoteEntries(dbCtx.db, id);
+	const entriesAvailability = await getAvailabilityByISBN(
+		dbCtx.db,
+		_entries.map(({ isbn }) => isbn)
+	);
+	const entries = _entries.map((e, i) => ({ ...e, availableWarehouses: entriesAvailability[i] }));
+
+	const customItems = await getNoteCustomItems(dbCtx.db, id);
+
+	return { dbCtx, ...note, warehouses, entries, customItems };
+};
+
+// TODO: replace the type
+const getAvailabilityByISBN = async (db: DB, isbns: string[]): Promise<Map<number, { displayName: string; quantity: number }>[]> => {
+	const resMap = new Map(isbns.map((isbn) => [isbn, new Map<number, { displayName: string; quantity: number }>()]));
+
+	const stock = await getStock(db, { isbns });
+	for (const { isbn, warehouseId, warehouseName, quantity } of stock) {
+		resMap.get(isbn)?.set(warehouseId, { displayName: warehouseName, quantity });
+	}
+
+	return [...resMap.values()];
 };

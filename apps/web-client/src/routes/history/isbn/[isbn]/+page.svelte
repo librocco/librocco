@@ -1,49 +1,64 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
+	import { writable } from "svelte/store";
 	import { Search, Library, ArrowLeft, ArrowRight } from "lucide-svelte";
+	import { invalidate } from "$app/navigation";
 
 	import { page } from "$app/stores";
 
-	import type { BookEntry, SearchIndex } from "@librocco/db";
+	import type { BookEntry } from "@librocco/db";
 	import { entityListView, testId } from "@librocco/shared";
+
+	import type { PageData } from "./$types";
+	import type { BookData } from "$lib/db/cr-sqlite/types";
+
+	import { HistoryPage, PlaceholderBox } from "$lib/components";
+
+	import { createSearchDropdown } from "./actions";
+
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { racefreeGoto } from "$lib/utils/navigation";
+	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { getDB } from "$lib/db";
-
-	import { createBookHistoryStores } from "$lib/stores/inventory/history_entries";
-	import { createSearchStore } from "$lib/stores/proto/search";
-
-	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { goto } from "$lib/utils/navigation";
-	import { createSearchDropdown } from "./actions";
-
-	const { db } = getDB();
-
 	$: isbn = $page.params.isbn;
 
-	const dailySummaryCtx = { name: "[BOOK_HISTORY]", debug: false };
-	$: stores = createBookHistoryStores(dailySummaryCtx, db, isbn);
+	export let data: PageData;
 
-	$: bookData = stores.bookData;
-	$: transactions = stores.transactions;
-	$: stock = stores.stock;
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
+		// We also subscribe to warehouse data changes (for naming/discount changes)
+		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
+		//
+		// TODO: subscribe to only the book data for the particular ISBN
+		disposer = rx.onRange(["warehouse", "book", "note"], () => invalidate("history:transactions"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
+	$: db = data.dbCtx?.db;
+
+	$: bookData = data.bookData;
+	$: transactions = data.transactions;
+	$: stock = data.stock;
 
 	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
 	// #region search
-	//
-	// Create a search index for books in the db. Each time the books change, we recreate the index.
-	// This is more/less inexpensive (around 2sec), considering it runs in the background.
-	let index: SearchIndex | undefined;
-	db?.books()
-		.streamSearchIndex()
-		.subscribe((ix) => (index = ix));
+	const search = writable("");
 
-	$: bookSearch = createSearchStore({ name: "[SEARCH]", debug: false }, index);
-	$: search = bookSearch.searchStore;
-	$: entries = bookSearch.searchResStore;
+	$: entries = [] as BookData[];
+	$: $search.length > 2 ? searchBooks(db, $search).then((res) => (entries = res)) : (entries = []);
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
@@ -63,14 +78,14 @@
 		<div class="w-full text-gray-700">
 			<!--text-2xl font-bold leading-7 text-gray-900-->
 			<h1 class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
-			{#if $bookData}
+			{#if bookData}
 				<p class="mb-1 min-h-[32px] text-2xl">
-					{#if $bookData.title}<span class="font-bold">{$bookData.title}, </span>{/if}
-					{#if $bookData.authors}<span>{$bookData.authors}</span>{/if}
+					{#if bookData.title}<span class="font-bold">{bookData.title}, </span>{/if}
+					{#if bookData.authors}<span>{bookData.authors}</span>{/if}
 				</p>
 				<p>
-					{#if $bookData.year}{`${$bookData.year}, ` || ""}{/if}
-					{#if $bookData.publisher}{$bookData.publisher || ""}{/if}
+					{#if bookData.year}{`${bookData.year}, ` || ""}{/if}
+					{#if bookData.publisher}{bookData.publisher || ""}{/if}
 				</p>
 			{/if}
 		</div>
@@ -86,7 +101,7 @@
 					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
-						{#each $stock as s}
+						{#each stock as s}
 							<div
 								data-testid={testId("history-stock-report-entry")}
 								data-warehouse={s.warehouseName}
@@ -103,7 +118,7 @@
 					</div>
 				</div>
 
-				{#if !$transactions?.length}
+				{#if !transactions?.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox
 						title="No transactions found"
@@ -116,14 +131,7 @@
 						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
-						{#each $transactions as txn}
-							{@const quantity = txn.quantity}
-							{@const noteId = txn.noteId}
-							{@const noteName = txn.noteDisplayName}
-							{@const noteType = txn.noteType}
-							{@const committedAt = txn.date}
-							{@const warehouseName = txn.warehouseName}
-
+						{#each transactions as { quantity, noteId, noteName, noteType, committedAt, warehouseName }}
 							<li class="col-span-12 grid grid-cols-12">
 								<div class="entity-list-row col-span-8 grid grid-cols-8 items-center text-gray-800">
 									<p data-property="committedAt" class="col-span-2">
@@ -161,10 +169,10 @@
 	</svelte:fragment>
 </HistoryPage>
 
-{#if $open && $entries?.length}
+{#if $open && entries?.length}
 	<div use:dropdown>
 		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
-			{#each $entries as { isbn, title, authors, year, publisher }}
+			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					data-testid={testId("search-completion")}
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}

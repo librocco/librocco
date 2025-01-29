@@ -1,8 +1,10 @@
 <script lang="ts">
-	import { isBookRow } from "@librocco/db";
 	import type { InventoryTableData } from "../types";
 
 	export let data: InventoryTableData;
+
+	// TODO: this is a duplicate
+	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 </script>
 
 {#if isBookRow(data) && data.price && data.warehouseDiscount}

@@ -1,19 +1,19 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { fade, fly } from "svelte/transition";
-	import { writable, type Readable } from "svelte/store";
+	import { writable, readable } from "svelte/store";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
-	import { goto } from "$lib/utils/navigation";
-
 	import { NoteState, testId } from "@librocco/shared";
 	import type { BookEntry } from "@librocco/db";
 
 	import type { PageData } from "./$types";
-	import type { DisplayRow } from "$lib/types/inventory";
+	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	import {
 		Breadcrumbs,
@@ -29,64 +29,65 @@
 	} from "$lib/components";
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
-	import { getDB } from "$lib/db";
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-	import { createExtensionAvailabilityStore } from "$lib/stores";
-
-	import { createNoteStores } from "$lib/stores/proto";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import { appPath } from "$lib/paths";
+	import { addVolumesToNote, commitNote, deleteNote, getReceiptForNote, removeNoteTxn, updateNoteTxn } from "$lib/db/cr-sqlite/note";
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import { autoPrintLabels, settingsStore } from "$lib/stores/app";
-	import { filter, scan } from "rxjs";
 
 	export let data: PageData;
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB()!;
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
-	const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+		// Reload when note
+		const disposer1 = rx.onPoint("note", BigInt(data.id), () => invalidate("note:data"));
+		// Reload when entries change
+		const disposer2 = rx.onRange(["book", "book_transaction"], () => invalidate("note:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: db = data.dbCtx?.db;
+
+	// TODO: revisit when implemented
+	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
+	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
+	const publisherList = readable([]);
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
-	$: loading = !data;
+	$: loading = !db;
 
-	$: note = data.note!;
-	$: warehouse = data.warehouse!;
+	$: noteId = data.id;
+	$: warehouseId = data.warehouseId;
+	$: warehouseName = data.warehouseName;
+	$: displayName = data.displayName;
 
-	$: noteStores = createNoteStores(note);
-
-	$: displayName = noteStores.displayName;
-	$: state = noteStores.state;
-	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries as Readable<DisplayRow<"book">[]>;
-
-	// #region note-actions
-	//
-	// When the note is committed or deleted, automatically redirect to 'inbound' page.
-	$: {
-		if ($state === NoteState.Committed || $state === NoteState.Deleted) {
-			goto(appPath("inbound"));
-		}
-	}
+	$: state = data.committed ? NoteState.Committed : NoteState.Draft;
+	$: updatedAt = data.updatedAt;
+	$: entries = data.entries;
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
-		await note.commit({});
+		await commitNote(db, noteId);
 		closeDialog();
 	};
 
 	const handleDeleteSelf = async (closeDialog: () => void) => {
-		await note.delete({});
+		await deleteNote(db, noteId);
 		closeDialog();
 	};
 	// #region note-actions
@@ -103,23 +104,19 @@
 	// * NOTE: removing __kind from entries helps align data & types in table interfaces.
 	// This is convulted.
 	// It was causing errors when passing a row to the edit form
-	const tableOptions = writable({
-		data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData)
-	});
-
+	const tableOptions = writable({ data: entries?.slice(0, maxResults) });
 	const table = createTable(tableOptions);
-
-	$: tableOptions.set({ data: $entries?.slice(0, maxResults).map(({ __kind, ...bookData }) => bookData) });
+	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		await note.addVolumes({}, { isbn, quantity: 1 });
+		await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId });
 
 		// First check if there exists a book entry in the db, if not, fetch book data using external sources
 		//
 		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
-		const [localBookData] = await db.books().get({}, [isbn]);
+		const localBookData = await getBookData(db, isbn);
 
 		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
 		// no need for further action
@@ -129,22 +126,23 @@
 
 		// If local book data doesn't exist at all, create an isbn-only entry
 		if (!localBookData) {
-			await db.books().upsert({}, [{ isbn }]);
+			await upsertBook(db, { isbn });
 		}
 
-		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
-		db.plugin("book-fetcher")
-			.fetchBookData(isbn)
-			.stream()
-			.pipe(
-				filter((data) => Boolean(data)),
-				// Here we're prefering the latest result to be able to observe the updates as they come in
-				scan((acc, next) => ({ ...acc, ...next }))
-			)
-			.subscribe((b) => db.books().upsert({}, [b]));
+		// TODO revisit this when we implement book fetching plugin functionality
+		// // At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		// db.plugin("book-fetcher")
+		// 	.fetchBookData(isbn)
+		// 	.stream()
+		// 	.pipe(
+		// 		filter((data) => Boolean(data)),
+		// 		// Here we're prefering the latest result to be able to observe the updates as they come in
+		// 		scan((acc, next) => ({ ...acc, ...next }))
+		// 	)
+		// 	.subscribe((b) => db.books().upsert({}, [b]));
 	};
 
-	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }) => {
+	const updateRowQuantity = async (e: SubmitEvent, { isbn, warehouseId, quantity: currentQty }: InventoryTableData<"book">) => {
 		const data = new FormData(e.currentTarget as HTMLFormElement);
 		// Number form control validation means this string->number conversion should yield a valid result
 		const nextQty = Number(data.get("quantity"));
@@ -155,11 +153,11 @@
 			return;
 		}
 
-		await note.updateTransaction({}, transaction, { quantity: nextQty, ...transaction });
+		await updateNoteTxn(db, noteId, transaction, { ...transaction, quantity: nextQty });
 	};
 
-	const deleteRow = async (isbn: string, warehouseId: string) => {
-		await note.removeTransactions({}, { isbn, warehouseId });
+	const deleteRow = async (isbn: string, warehouseId: number) => {
+		await removeNoteTxn(db, noteId, { isbn, warehouseId });
 	};
 	// #region transaction-actions
 
@@ -179,8 +177,7 @@
 		const data = form?.data as BookEntry;
 
 		try {
-			await db.books().upsert({}, [data]);
-
+			await upsertBook(db, data);
 			bookFormData = null;
 			open.set(false);
 		} catch (err) {
@@ -188,11 +185,13 @@
 		}
 	};
 
-	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	// TODO: revisit
+	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	const bookDataExtensionAvailable = readable(false);
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
-		await printReceipt($settingsStore.receiptPrinterUrl, await note.intoReceipt());
+		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = (book: BookEntry) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
@@ -200,9 +199,7 @@
 	// #endregion book-form
 
 	$: breadcrumbs =
-		note?.id && warehouse?.id
-			? createBreadcrumbs("inbound", { id: warehouse.id, displayName: warehouse.displayName }, { id: note.id, displayName: $displayName })
-			: [];
+		noteId && warehouseId ? createBreadcrumbs("inbound", { id: warehouseId, displayName: warehouseName }, { id: noteId, displayName }) : [];
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -232,9 +229,7 @@
 
 					if ($autoPrintLabels) {
 						try {
-							db.books()
-								.get({}, [isbn])
-								.then(([b]) => handlePrintLabel(b)());
+							getBookData(db, isbn).then((b) => handlePrintLabel({ ...b, updatedAt: b.updatedAt.toISOString() })());
 							// Success
 						} catch (err) {
 							// Show error
@@ -254,12 +249,13 @@
 					textEl="h1"
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Note"
-					bind:value={$displayName}
+					value={displayName}
+					on:change={(e) => console.log(e)}
 				/>
 
 				<div class="w-fit">
-					{#if $updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString($updatedAt)}</span>
+					{#if updatedAt}
+						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -271,16 +267,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(note.displayName),
-							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							title: dialogTitle.commitInbound(displayName),
+							description: dialogDescription.commitInbound(entries.length, warehouseName),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(note.displayName),
-							description: dialogDescription.commitInbound($entries.length, warehouse.displayName),
+							title: dialogTitle.commitInbound(displayName),
+							description: dialogDescription.commitInbound(entries.length, warehouseName),
 							type: "commit"
 						};
 					}}
@@ -296,8 +292,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(note.displayName),
-								description: dialogDescription.commitOutbound($entries.length),
+								title: dialogTitle.commitOutbound(displayName),
+								description: dialogDescription.commitOutbound(entries.length),
 								type: "commit"
 							};
 						}}
@@ -331,7 +327,7 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(note.displayName),
+								title: dialogTitle.delete(displayName),
 								description: dialogDescription.deleteNote(),
 								type: "delete"
 							};
@@ -339,7 +335,7 @@
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(note.displayName),
+								title: dialogTitle.delete(displayName),
 								description: dialogDescription.deleteNote(),
 								type: "delete"
 							};
@@ -357,7 +353,7 @@
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
-		{:else if !$entries.length}
+		{:else if !entries.length}
 			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
@@ -451,7 +447,7 @@
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $entries?.length > maxResults}
+				{#if entries?.length > maxResults}
 					<div use:scroll.trigger />
 				{/if}
 			</div>
@@ -505,8 +501,9 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+						onFetch={async (_isbn, form) => {
+							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+							const results = [];
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
 							const bookData = mergeBookData(results);
 

@@ -1,5 +1,7 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { writable } from "svelte/store";
+	import { invalidate } from "$app/navigation";
 
 	import { QrCode, Loader2 as Loader, Search } from "lucide-svelte";
 
@@ -8,25 +10,41 @@
 	import { Page, PlaceholderBox, ExtensionAvailabilityToast, StockTable, StockBookRow } from "$lib/components";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
-	import { createNoteStores } from "$lib/stores/proto";
-
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Here we only care about updates to warehouses (displayName)
+		// as the rest of the data is immutable at this point (archived)
+		disposer = rx.onRange(["warehouse"], () => invalidate("note:books"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
+	// We display loading state before navigation (in case of creating new note/warehouse)
+	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
-	$: note = data.note;
 
-	$: noteStores = createNoteStores(note);
+	$: displayName = data.displayName;
+	$: updatedAt = data.updatedAt;
 
-	$: displayName = noteStores.displayName;
-	$: updatedAt = noteStores.updatedAt;
-	$: entries = noteStores.entries;
+	$: bookEntries = data.entries?.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
+	$: customItemEntries = data.customItems?.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
+	$: entries = bookEntries.concat(customItemEntries);
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -37,18 +55,9 @@
 	// #endregion infinite-scroll
 
 	// #region table
-	const tableOptions = writable<{ data: InventoryTableData[] }>({
-		data: $entries
-			?.slice(0, maxResults)
-			// TEMP: remove this when the db is updated
-			.map((entry) => ({ __kind: "book", ...entry }))
-	});
-
+	const tableOptions = writable({ data: entries?.slice(0, maxResults) });
 	const table = createTable(tableOptions);
-
-	$: tableOptions.set({
-		data: ($entries as InventoryTableData[])?.slice(0, maxResults)
-	});
+	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 </script>
 
@@ -63,13 +72,13 @@
 			<div class="flex max-w-md flex-col">
 				<div class="relative block w-full p-2">
 					<div class="flex flex-row items-center gap-x-2 text-gray-400">
-						<h1 class="text-2xl font-bold leading-7 text-gray-900">{$displayName}</h1>
+						<h1 class="text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
 					</div>
 				</div>
 
 				<div class="w-fit">
-					{#if $updatedAt}
-						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString($updatedAt)}</span>
+					{#if updatedAt}
+						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -85,7 +94,7 @@
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
-		{:else if !$entries.length}
+		{:else if !entries.length}
 			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
 				<QrCode slot="icon" let:iconProps {...iconProps} />
 			</PlaceholderBox>
@@ -101,7 +110,7 @@
 				</div>
 
 				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if $entries?.length > maxResults}
+				{#if entries?.length > maxResults}
 					<div use:scroll.trigger />
 				{/if}
 			</div>

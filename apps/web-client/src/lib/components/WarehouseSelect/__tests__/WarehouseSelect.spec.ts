@@ -5,7 +5,7 @@ import type { WarehouseChangeDetail } from "../types";
 
 import WarehouseSelect from "../../WarehouseSelect/WarehouseSelect.svelte";
 
-import { rows, availableWarehouses } from "$lib/__testData__/rowData";
+import { rows, availableWarehouses, warehouseList } from "$lib/__testData__/rowData";
 
 describe("WarehouseSelect", async () => {
 	// See comment below
@@ -20,7 +20,8 @@ describe("WarehouseSelect", async () => {
 			data: {
 				...row,
 				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName, quantity: 1 }]])
-			}
+			},
+			warehouseList: [{ id: warehouseId, displayName: warehouseName }]
 		});
 		// We're testing for an event that should be dispatched onMount, and it seems the event gets dispatched before we assign the listener.
 		// TODO: This probably isn't the best way to handle this anyway (should happen on db side of things probably)
@@ -40,7 +41,8 @@ describe("WarehouseSelect", async () => {
 			data: {
 				...row,
 				availableWarehouses: new Map([[warehouseId, { displayName: warehouseName, quantity: 1 }]])
-			}
+			},
+			warehouseList: [{ id: warehouseId, displayName: warehouseName }]
 		});
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));
 
@@ -59,7 +61,8 @@ describe("WarehouseSelect", async () => {
 			data: {
 				...row,
 				availableWarehouses
-			}
+			},
+			warehouseList
 		});
 		component.$on("change", (e: CustomEvent<WarehouseChangeDetail>) => mockOnChange(e.detail.warehouseId));
 

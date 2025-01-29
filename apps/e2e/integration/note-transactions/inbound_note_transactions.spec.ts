@@ -3,6 +3,7 @@ import { test } from "@playwright/test";
 import { baseURL } from "@/constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
+import { addVolumesToNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 import { book1 } from "../data";
 
@@ -18,14 +19,8 @@ test.beforeEach(async ({ page }) => {
 
 	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("wh-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-			.then((wh) => wh.note("note-1").create())
-			.then((n) => n.setName({}, "Note 1"))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 
 	// Navigate to the note page
 	await dashboard.content().entityList("inbound-list").item(0).edit();
@@ -35,7 +30,7 @@ test.beforeEach(async ({ page }) => {
 test("should display correct transaction fields for the inbound-note note view", async ({ page }) => {
 	// Setup: Add the book data to the database
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db, book) => db.books().upsert({}, [book]), book1);
+	await dbHandle.evaluate(upsertBook, book1);
 
 	const content = getDashboard(page).content();
 
@@ -97,9 +92,8 @@ test("should add a transaction to the note by 'typing the ISBN into the 'Scan' f
 test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	// Setup: Add two transactions to the note
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db.warehouse("wh-1").note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 })
-	);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
@@ -124,7 +118,7 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 test("should autofill the existing book data when adding a transaction with existing isbn", async ({ page }) => {
 	// Setup: Add book data to the database
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db, book) => db.books().upsert({}, [book]), book1);
+	await dbHandle.evaluate(upsertBook, book1);
 
 	const content = getDashboard(page).content();
 
@@ -138,7 +132,7 @@ test("should autofill the existing book data when adding a transaction with exis
 test("should allow for changing of transaction quantity using the quantity field", async ({ page }) => {
 	// Setup: Add one transaction to the note
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) => db.warehouse("wh-1").note("note-1").addVolumes({}, { isbn: "1234567890", quantity: 1 }));
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
@@ -183,12 +177,9 @@ test("should sort in reverse order to being added/aggregated", async ({ page }) 
 test("should delete the transaction from the note on delete button click", async ({ page }) => {
 	// Setup: Add three transactions to the note
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			.warehouse("wh-1")
-			.note("note-1")
-			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1234567891", quantity: 1 }, { isbn: "1234567892", quantity: 1 })
-	);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
 
 	const entries = getDashboard(page).content().table("inbound-note");
 

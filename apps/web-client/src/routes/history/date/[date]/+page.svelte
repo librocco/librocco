@@ -1,24 +1,41 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { Library, ArrowLeft, ArrowRight } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
+	import { invalidate } from "$app/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";
 
 	import { HistoryPage, PlaceholderBox, CalendarPicker } from "$lib/components";
 
-	import { createDailySummaryStore } from "$lib/stores/inventory/history_entries";
-
-	import { getDB } from "$lib/db";
-
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	export let data: PageData;
+
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when book data changes, or when a note "changes" (we're interested in committed change)
+		// We don't subscribe to book_transaction as we're only interested in committed txns - and this is triggered by note change
+		disposer = rx.onRange(["book", "note"], () => invalidate("history:transactions"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
+	$: stats = data.stats;
+	$: bookList = data.bookList;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -39,12 +56,6 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
-
-	const { db, status } = getDB();
-	if (!status) goto(appPath("settings"));
-
-	const dailySummaryCtx = { name: "[DAILY_SUMMARY]", debug: false };
-	$: dailySummary = createDailySummaryStore(dailySummaryCtx, db, data.date);
 </script>
 
 <HistoryPage view="history/date">
@@ -63,7 +74,7 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
-			{#if !$dailySummary?.bookList?.length}
+			{#if !bookList?.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
 				<!-- End entity list placeholder -->
@@ -73,30 +84,26 @@
 				<div data-testid={testId("history-date-stats")}>
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Book Count: <span data-property="inbound-count">{$dailySummary.stats.totalInboundBookCount}</span>
+							Inbound Book Count: <span data-property="inbound-count">{stats.totalInboundBookCount}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Cover Price: <span data-property="inbound-cover-price">{$dailySummary.stats.totalInboundCoverPrice.toFixed(2)}</span>
+							Inbound Cover Price: <span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Discounted Price: <span data-property="inbound-discounted-price"
-								>{$dailySummary.stats.totalInboundDiscountedPrice.toFixed(2)}</span
-							>
+							Inbound Discounted Price: <span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-red m-2 p-2 font-bold">
-							Outbound Book Count: <span data-property="outbound-count">{$dailySummary.stats.totalOutboundBookCount}</span>
+							Outbound Book Count: <span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							Outbound Cover Price: <span data-property="outbound-cover-price"
-								>{$dailySummary.stats.totalOutboundCoverPrice.toFixed(2)}</span
-							>
+							Outbound Cover Price: <span data-property="outbound-cover-price">{stats.totalOutboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
 							Outbound Discounted Price: <span data-property="outbound-discounted-price"
-								>{$dailySummary.stats.totalOutboundDiscountedPrice.toFixed(2)}</span
+								>{stats.totalOutboundDiscountedPrice.toFixed(2)}</span
 							>
 						</div>
 					</div>
@@ -106,16 +113,7 @@
 
 				<div id="history-table" class="w-full">
 					<ul class="w-full divide-y divide-gray-300">
-						{#each $dailySummary.bookList as entry}
-							{@const isbn = entry.isbn}
-							{@const title = entry.title}
-							{@const quantity = entry.quantity}
-							{@const warehouseName = entry.warehouseName}
-							{@const committedAt = entry.date}
-							{@const noteType = entry.noteType}
-							{@const noteName = entry.noteDisplayName}
-							{@const noteId = entry.noteId}
-
+						{#each bookList as { isbn, title, quantity, warehouseName, committedAt, noteType, noteName, noteId }}
 							<!--<div class="w-full text-gray-700">
 								<p class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
 								<p class="mb-1 text-2xl">{title}</p>

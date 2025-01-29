@@ -1,64 +1,58 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { fade } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { Library, Loader2 as Loader, Trash } from "lucide-svelte";
-	import { firstValueFrom, map } from "rxjs";
 
-	import { entityListView, testId, wrapIter } from "@librocco/shared";
+	import { entityListView, testId } from "@librocco/shared";
+
+	import type { PageData } from "./$types";
 
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { getDB } from "$lib/db";
-	import { goto } from "$lib/utils/navigation";
-
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import { readableFromStream } from "$lib/utils/streams";
-	import { compareNotes } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
+	import { deleteNote } from "$lib/db/cr-sqlite/note";
+	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
+	export let data: PageData;
 
-	const inNoteListCtx = { name: "[IN_NOTE_LIST]", debug: false };
-	const inNoteListStream = db
-		?.stream()
-		.inNoteList(inNoteListCtx)
-		.pipe(
-			map((m) =>
-				wrapIter(m)
-					.filter(([warehouseId]) => !warehouseId.includes("all"))
-					.flatMap(([warehouseId, { displayName, notes }]) => wrapIter(notes).map((note) => [displayName || warehouseId, note] as const))
-					.array()
-					.sort(([, [, a]], [, [, b]]) => compareNotes(a, b))
-			)
-		)!;
-	const inNoteList = readableFromStream(inNoteListCtx, inNoteListStream, []);
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+		// Warehouse (names), note (names/list) and book_transaction (note's totalBooks) all affect the list
+		disposer = rx.onRange(["warehouse", "note", "book_transaction"], () => invalidate("inbound:list"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
+	$: db = data.dbCtx?.db;
+
+	$: notes = data.notes;
 
 	let initialized = false;
-	onMount(() => {
-		if (status) {
-			firstValueFrom(inNoteListStream).then(() => (initialized = true));
-		} else {
-			goto(appPath("settings"));
-		}
-	});
+	$: initialized = Boolean(db);
 
-	// TODO: This way of deleting notes is rather slow - update the db interface to allow for more direct approach
-	const handleDeleteNote = (noteId: string) => async (closeDialog: () => void) => {
-		const result = await db?.findNote(noteId);
+	const handleCreateWarehouse = async () => {
+		const id = await getWarehouseIdSeq(db);
+		await upsertWarehouse(db, { id });
+		await goto(appPath("warehouses", id));
+	};
 
-		if (!result) {
-			return;
-		}
-		await result.note.delete({});
+	const handleDeleteNote = (id: number) => async (closeDialog: () => void) => {
+		await deleteNote(db, id);
 		closeDialog();
 	};
 
@@ -71,7 +65,7 @@
 	let dialogContent: DialogContent;
 </script>
 
-<InventoryManagementPage>
+<InventoryManagementPage {handleCreateWarehouse}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -81,7 +75,7 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
-			{#if !$inNoteList.length}
+			{#if !notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox
 					title="No open notes"
@@ -97,12 +91,12 @@
 				<!-- End entity list placeholder -->
 			{:else}
 				<!-- Start entity list -->
-				{#each $inNoteList as [warehouseName, [noteId, note]]}
-					{@const noteName = note.displayName || noteId}
-					{@const displayName = `${warehouseName} / ${noteName}`}
+				{#each notes as note}
+					{@const noteName = note.displayName || `Note - ${note.id}`}
+					{@const displayName = `${note.warehouseName} / ${noteName}`}
 					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
 					{@const totalBooks = note.totalBooks}
-					{@const href = appPath("inbound", noteId)}
+					{@const href = appPath("inbound", note.id)}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2">
@@ -129,7 +123,7 @@
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
 									dialogContent = {
-										onConfirm: handleDeleteNote(noteId),
+										onConfirm: handleDeleteNote(note.id),
 										title: dialogTitle.delete(note.displayName),
 										description: dialogDescription.deleteNote()
 									};

@@ -1,22 +1,38 @@
 <script lang="ts">
+	import { onMount, onDestroy } from "svelte";
 	import { Library } from "lucide-svelte";
 	import { now, getLocalTimeZone, type DateValue } from "@internationalized/date";
+	import { browser } from "$app/environment";
+	import { invalidate } from "$app/navigation";
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
-
 	import type { PageData } from "./$types";
 
-	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { createPastNotesStore } from "$lib/stores/inventory/history_entries";
-	import { browser } from "$app/environment";
-	import { generateUpdatedAtString } from "$lib/utils/time";
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
+	import { HistoryPage, PlaceholderBox } from "$lib/components";
+
+	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { racefreeGoto } from "$lib/utils/navigation";
+
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when note/warehouse changes (warehouse name/discount, note committed status)
+		disposer = rx.onRange(["note", "warehouse"], () => invalidate("history:notes"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
 
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
 		if (!a || !b) return false;
@@ -39,10 +55,7 @@
 	};
 	// #endregion date picker
 
-	const { db } = getDB();
-
-	const pastNotesCtx = { name: "[NOTES_BY_DAY]", debug: false };
-	$: notes = createPastNotesStore(pastNotesCtx, db, data.date);
+	$: notes = data.notes;
 </script>
 
 <HistoryPage view="history/notes">
@@ -61,15 +74,15 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")} data-loaded={true}>
-			{#if !$notes.length}
+			{#if !notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" class="center-absolute" />
 				<!-- End entity list placeholder -->
 			{:else}
 				<!-- Start entity list -->
-				{#each $notes as note}
+				{#each notes as note}
 					{@const displayName = `${note.warehouseName} / ${note.displayName}`}
-					{@const totalBooks = note.books}
+					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("history/notes/archive", note.id)}
 
 					<div class="group entity-list-row">
@@ -88,7 +101,7 @@
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										Committed: {generateUpdatedAtString(note.date, "time-only")}
+										Committed: {generateUpdatedAtString(note.committedAt, "time-only")}
 									</span>
 								</p>
 

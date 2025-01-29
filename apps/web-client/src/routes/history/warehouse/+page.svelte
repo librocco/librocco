@@ -1,36 +1,39 @@
 <script lang="ts">
-	import { onMount } from "svelte";
-
-	import { firstValueFrom, map } from "rxjs";
+	import { onMount, onDestroy } from "svelte";
 	import { Loader2 as Loader, Library, Percent } from "lucide-svelte";
+	import { invalidate } from "$app/navigation";
 
-	import { entityListView, filter, testId } from "@librocco/shared";
+	import type { PageData } from "./$types";
+
+	import { entityListView, testId } from "@librocco/shared";
 
 	import HistoryPage from "$lib/components/HistoryPage.svelte";
 
-	import { getDB } from "$lib/db";
-
-	import { readableFromStream } from "$lib/utils/streams";
-
 	import { appPath } from "$lib/paths";
 
-	const { db } = getDB();
+	export let data: PageData;
 
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
-		?.stream()
-		.warehouseMap(warehouseListCtx)
-		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("all"))]));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when warehouse data changes
+		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
+		// Reload when a note gets committed (affecting stock)
+		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: warehouses = data.warehouses;
 
 	let initialised = false;
-	onMount(() => {
-		firstValueFrom(warehouseListStream).then((wls) => {
-			console.log("warehouseListStream", wls);
-			initialised = true;
-		});
-	});
+	$: initialised = Boolean(data);
 </script>
 
 <HistoryPage view="history/warehouse" loaded={initialised}>
@@ -45,11 +48,11 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
 				<!-- Start entity list -->
-				{#each $warehouseList as [warehouseId, warehouse]}
-					{@const displayName = warehouse.displayName || warehouseId}
+				{#each warehouses as warehouse}
+					{@const displayName = warehouse.displayName || warehouse.id}
 					{@const totalBooks = warehouse.totalBooks}
-					{@const href = appPath("history/warehouse", warehouseId)}
-					{@const warehouseDiscount = warehouse.discountPercentage}
+					{@const href = appPath("history/warehouse", warehouse.id)}
+					{@const warehouseDiscount = warehouse.discount}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">

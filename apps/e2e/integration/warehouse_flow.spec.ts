@@ -4,10 +4,13 @@ import { baseURL } from "./constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
 import { book1 } from "@/integration/data";
+import { addVolumesToNote, commitNote, createInboundNote, upsertBook, upsertWarehouse } from "@/helpers/cr-sqlite";
 
 test.beforeEach(async ({ page }) => {
+	await page.waitForTimeout(1000);
 	// Load the app
 	await page.goto(baseURL);
+	await page.waitForTimeout(1000);
 
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
@@ -18,10 +21,22 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('should create a new warehouse, on "New warehouse" and redirect to it', async ({ page }) => {
+	// page.on("console", (msg) => {
+	// 	console.log(`[browser] ${msg.type()}: ${msg.text()}`);
+	// });
+
+	// // Capture unhandled exceptions on the page
+	// page.on("pageerror", (err) => {
+	// 	console.log("[browser pageerror]", err);
+	// });
+
 	const dashboard = getDashboard(page);
 
 	// Create a new warehouse
+	await dashboard.view("inventory").waitFor();
 	await dashboard.content().header().getByRole("button", { name: "New warehouse" }).click();
+
+	await page.waitForTimeout(2000);
 
 	// Check that we've been redirected to the new warehouse's page
 	await dashboard.view("warehouse").waitFor();
@@ -37,18 +52,9 @@ test("should delete the warehouse on delete button click (after confirming the p
 
 	// Create two warehouses to work with
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-2")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 2"))
-	);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 
 	// Wait for the warehouses to appear
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
@@ -138,52 +144,55 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	const dashboard = getDashboard(page);
 
 	const content = dashboard.content();
+	const header = dashboard.content().header();
+	const warehouseList = content.entityList("warehouse-list");
 
 	const dbHandle = await getDbHandle(page);
 
-	// Create three warehouses (default names: "New Warehouse", "New Warehouse (2)", "New Warehouse (3)")
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").create());
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-2").create());
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-3").create());
+	// Create two warehouses with default names
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "New Warehouse" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "New Warehouse (2)" });
 
-	// Rename the first two warehouses (leaving us with only "New Warehouse (3)", having the default name)
-	await dbHandle.evaluate((db) =>
-		Promise.all([db.warehouse("warehouse-1").setName({}, "Warehouse 1"), db.warehouse("warehouse-2").setName({}, "Warehouse 2")])
-	);
+	// Create a new warehouse, continuing the naming sequence
+	await header.createWarehouse();
+	await header.title().assert("New Warehouse (3)");
 
-	// Check names
-	await content
-		.entityList("warehouse-list")
-		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "New Warehouse (3)" }]);
+	// Rename the first two warehouses
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 
-	// TODO: the following should be refactored to use the dashboard (when the renaming functionality is in).
-	// For now we're using the db directly (not really e2e way).
-	//
-	// Create a new warehouse (should continue the sequence)
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-4").create());
-	await content
-		.entityList("warehouse-list")
-		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "New Warehouse (3)" }, { name: "New Warehouse (4)" }]);
+	// Create another warehouse
+	await dashboard.navigate("inventory");
+	await header.createWarehouse();
+	await header.title().assert("New Warehouse (4)");
 
-	// Rename the remaining warehouses with default names
-	await dbHandle.evaluate((db) =>
-		Promise.all([db.warehouse("warehouse-3").setName({}, "Warehouse 3"), db.warehouse("warehouse-4").setName({}, "Warehouse 4")])
-	);
-	await content
-		.entityList("warehouse-list")
-		.assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }, { name: "Warehouse 3" }, { name: "Warehouse 4" }]);
+	// Verify warehouse names
+	await dashboard.navigate("inventory");
+	await warehouseList.assertElements([
+		{ name: "Warehouse 1" },
+		{ name: "Warehouse 2" },
+		{ name: "New Warehouse (3)" },
+		{ name: "New Warehouse (4)" }
+	]);
 
-	// Create a new warehouse (should reset the sequence)
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-5").create());
-	await content
-		.entityList("warehouse-list")
-		.assertElements([
-			{ name: "Warehouse 1" },
-			{ name: "Warehouse 2" },
-			{ name: "Warehouse 3" },
-			{ name: "Warehouse 4" },
-			{ name: "New Warehouse" }
-		]);
+	// Rename remaining warehouses to restart the sequence
+	await dbHandle.evaluate(upsertWarehouse, { id: 3, displayName: "Warehouse 3" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 4, displayName: "Warehouse 4" });
+
+	// Create a final warehouse with reset sequence
+	await dashboard.navigate("inventory");
+	await header.createWarehouse();
+	await header.title().assert("New Warehouse");
+
+	// Verify final warehouse names
+	await dashboard.navigate("inventory");
+	await warehouseList.assertElements([
+		{ name: "Warehouse 1" },
+		{ name: "Warehouse 2" },
+		{ name: "Warehouse 3" },
+		{ name: "Warehouse 4" },
+		{ name: "New Warehouse" }
+	]);
 });
 
 test("should navigate to warehouse page on 'View stock' button click", async ({ page }) => {
@@ -193,18 +202,8 @@ test("should navigate to warehouse page on 'View stock' button click", async ({ 
 
 	// Create two warehouses to work with
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-2")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 2"))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
 
 	// Navigate to first warehouse
@@ -231,18 +230,8 @@ test("should display book count and warehouse discount for each respective wareh
 	const dbHandle = await getDbHandle(page);
 
 	// Create two warehouses for display
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-2")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 2"))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 
 	// Both should display 0 books
 	await content.entityList("warehouse-list").assertElements([
@@ -251,13 +240,10 @@ test("should display book count and warehouse discount for each respective wareh
 	]);
 
 	// Add two books to first warehouse
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.note()
-			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	await content.entityList("warehouse-list").assertElements([
 		{ name: "Warehouse 1", numBooks: 2 },
@@ -265,13 +251,11 @@ test("should display book count and warehouse discount for each respective wareh
 	]);
 
 	// Add books to second warehouse
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-2")
-			.note()
-			.addVolumes({}, { isbn: "2222222222", quantity: 1 }, { isbn: "3333333333", quantity: 1 }, { isbn: "4444444444", quantity: 1 })
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "2222222222", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "3333333333", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "4444444444", quantity: 1, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	await content.entityList("warehouse-list").assertElements([
 		{ name: "Warehouse 1", numBooks: 2 },
@@ -279,9 +263,8 @@ test("should display book count and warehouse discount for each respective wareh
 	]);
 
 	// Add discounts to warehouses
-	await dbHandle.evaluate((db) =>
-		Promise.all([db.warehouse("warehouse-1").setDiscount({}, 10), db.warehouse("warehouse-2").setDiscount({}, 20)])
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, discount: 10 });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, discount: 20 });
 
 	await content.entityList("warehouse-list").assertElements([
 		{ name: "Warehouse 1", numBooks: 2, discount: 10 },
@@ -297,24 +280,12 @@ test("should update the warehouse using the 'Edit' dialog", async ({ page }) => 
 	const dbHandle = await getDbHandle(page);
 
 	// Create a warehouse to work with
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((w) => w.setName({}, "Warehouse 1"))
-	);
-	// Set initial discount for the warehouse
-	//
-	// TODO: This should all have been done in the previous block, but chaining 'setName' and 'setDiscount' doesn't update the discount - investigate
-	await dbHandle.evaluate((db) => db.warehouse("warehouse-1").setDiscount({}, 10));
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1", discount: 10 });
 	// Add some books to the warehouse as additional noise (to keep consistent)
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.note()
-			.addVolumes({}, { isbn: "1234567890", quantity: 1 }, { isbn: "1111111111", quantity: 1 })
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1", numBooks: 2, discount: 10 }]);
 
@@ -348,24 +319,15 @@ test("should display book original price and discounted price as well as the war
 	const dbHandle = await getDbHandle(page);
 
 	// Create a basic warehouse with 10% discount
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((wh) => wh.setDiscount({}, 10))
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1", discount: 10 });
 
 	// Create a new book with price
-	await dbHandle.evaluate((db, book) => db.books().upsert({}, [book]), book1);
+	await dbHandle.evaluate(upsertBook, book1);
 
 	// Add book to warehouse
-	await dbHandle.evaluate((db) =>
-		db
-			.warehouse("warehouse-1")
-			.note()
-			.addVolumes({}, { isbn: "1234567890", quantity: 1 })
-			.then((n) => n.commit({}))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
 	// Navigate to the warehouse page
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
@@ -379,21 +341,17 @@ test("should display book original price and discounted price as well as the war
 test("should progressively load entries until all are shown", async ({ page }) => {
 	const entries = Array(100)
 		.fill(null)
-		.map((_, i) => ({ isbn: i.toString(10).padStart(10, "0"), quantity: 1 }));
+		.map((_, i) => ({ isbn: i.toString(10).padStart(10, "0"), quantity: 1, warehouseId: 1 }));
 
 	// Setup: create a warehouse and add a bunch of entries
 	const db = await getDbHandle(page);
-	await db.evaluate(
-		(db, entries) =>
-			db
-				.warehouse("warehouse-1")
-				.create()
-				.then((w) => w.setName({}, "Warehouse 1"))
-				.then((w) => w.note("note-1").create())
-				.then((n) => n.addVolumes({}, ...entries))
-				.then((n) => n.commit({})),
-		entries
-	);
+	await db.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await db.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	// TODO: replace this with a batched op
+	for (const e of entries) {
+		await db.evaluate(addVolumesToNote, [1, e] as const);
+	}
+	await db.evaluate(commitNote, 1);
 
 	const dashboard = getDashboard(page);
 	const table = dashboard.content().table("warehouse");
