@@ -1,15 +1,12 @@
 <script lang="ts">
 	import { Building, Plus, Search, CopyPlus } from "lucide-svelte";
 
-	import { NEW_WAREHOUSE } from "@librocco/db";
 	import { entityListView } from "@librocco/shared";
 
 	import { page } from "$app/stores";
 	import { goto } from "$lib/utils/navigation";
 
 	import { ExtensionAvailabilityToast, Page } from "$lib/components";
-
-	import { getDB } from "$lib/db";
 
 	import { appPath } from "$lib/paths";
 
@@ -28,20 +25,10 @@
 		}
 	];
 
-	// Db will be undefined only on server side. If in browser,
-	// it will be defined immediately, but `db.init` is ran asynchronously.
-	// We don't care about 'db.init' here (for nav stream), hence the non-reactive 'const' declaration.
-	const { db, status } = getDB();
-	if (!status) goto(appPath("settings"));
+	// TODO: revisit
+	// if (!status) goto(appPath("settings"));
 
-	/**
-	 * Handle create warehouse is an `on:click` handler used to create a new warehouse
-	 * _(and navigate to the newly created warehouse page)_.
-	 */
-	const handleCreateWarehouse = async () => {
-		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		await goto(appPath("warehouses", warehouse.id));
-	};
+	export let handleCreateWarehouse = () => Promise.resolve();
 </script>
 
 <Page view="inventory" loaded={true}>

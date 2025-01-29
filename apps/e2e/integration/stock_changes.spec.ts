@@ -4,23 +4,23 @@ import { baseURL } from "../constants";
 
 import { getDashboard, getDbHandle } from "@/helpers";
 
+import { addVolumesToNote, commitNote, createInboundNote, createOutboundNote, upsertWarehouse } from "@/helpers/cr-sqlite";
+
 test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
 	// Navigate to warehouse-list view and wait for the page to load
 	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
 	await dashboard.navigate("inventory");
 	await dashboard.content().entityList("warehouse-list").waitFor();
 
 	// We're creating one warehouse (for each test) and are using its stock view as default view
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			.warehouse("warehouse-1")
-			.create()
-			.then((wh) => wh.setName({}, "Warehouse 1"))
-	);
+
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
 
 	// Navigate to "Warehouse 1" stock view
 	await dashboard.content().entityList("warehouse-list").item(0).dropdown().viewStock();
@@ -31,16 +31,9 @@ test.beforeEach(async ({ page }) => {
 test("should update the stock when the inbound note is committed", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		db
-			// Create one inbound note
-			.warehouse("warehouse-1")
-			.note()
-			.create()
-			.then((n) => n.setName({}, "Test Note"))
-			// Add two transactions to the note
-			.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Test Note" });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 3, warehouseId: 1 }] as const);
 
 	// Initial view: Warehouse 1 stock page
 
@@ -75,26 +68,15 @@ test("should update the stock when the inbound note is committed", async ({ page
 test("should aggrgate the transactions of the same isbn and warehouse (in stock) when the inbound note is committed", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) => {
-		const wh1 = db.warehouse("warehouse-1");
+	// ai - the inbound note transactions should also have a warehouseId specified (same as the note warehouseId)
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
-		await Promise.all([
-			// Add some stock to the warehouse (through the inbound note)
-			wh1
-				.note()
-				.create()
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }, { isbn: "1234567891", quantity: 3 }))
-				.then((n) => n.commit({})),
-
-			// Create another (non-committed) note
-			wh1
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Test Note"))
-				// Add two transactions to the note
-				.then((n) => n.addVolumes({}, { isbn: "1234567891", quantity: 2 }, { isbn: "1234567893", quantity: 1 }))
-		]);
-	});
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Test Note" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567893", quantity: 1, warehouseId: 1 }] as const);
 
 	// Initial view: Warehouse 1 stock page
 
@@ -133,26 +115,15 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 test('warehouse stock page should show only the stock for a praticular warehouse, "All" should show all', async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		Promise.all([
-			// Add some stock to Warehouse 1
-			db
-				.warehouse("warehouse-1")
-				.note()
-				.create()
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
-				.then((n) => n.commit({})),
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
-			// Create a second warehouse and add some stock to it
-			db
-				.warehouse("warehouse-2")
-				.create()
-				.then((wh) => wh.setName({}, "Warehouse 2"))
-				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({}, { isbn: "1234567891", quantity: 3 }))
-				.then((n) => n.commit({}))
-		])
-	);
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
@@ -171,33 +142,15 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 test("committing an outbound note should decrement the stock by the quantities in its transactions", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		Promise.all([
-			// Add some stock to Warehouse 1
-			db
-				.warehouse("warehouse-1")
-				.note()
-				.create()
-				.then((n) =>
-					n.addVolumes({}, { isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }, { isbn: "1234567892", quantity: 2 })
-				)
-				.then((n) => n.commit({})),
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
-			// Create (but don't commit) an outbound note with two tranasctions (with isbns of stock already contained in the warehouse)
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Test Note"))
-				.then((n) =>
-					n.addVolumes(
-						{},
-						{ isbn: "1234567890", quantity: 2, warehouseId: "warehouse-1" },
-						{ isbn: "1234567891", quantity: 3, warehouseId: "warehouse-1" }
-					)
-				)
-		])
-	);
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Test Note" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567891", quantity: 3, warehouseId: 1 }] as const);
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
@@ -231,25 +184,14 @@ test("committing an outbound note should decrement the stock by the quantities i
 test("should remove 0 quantity stock entries from the stock", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		Promise.all([
-			// Create a warehouse and set it up with two transactions
-			db
-				.warehouse("warehouse-1")
-				.note()
-				.create()
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3 }, { isbn: "1234567891", quantity: 5 }))
-				.then((n) => n.commit({})),
 
-			// Create (but don't commit) an outbound note with transaction, which, when committed should result in 0-quantity
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Test Note"))
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3, warehouseId: "warehouse-1" }))
-		])
-	);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 5, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
+
+	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "Test Note" });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
@@ -278,41 +220,19 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 test("committing an outbound note with transactions in two warehouses should decrement the stock in both", async ({ page }) => {
 	// Setup
 	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(async (db) =>
-		Promise.all([
-			// Add some stock to warehouse-1
-			db
-				.warehouse("warehouse-1")
-				.create()
-				.then((wh) => wh.setName({}, "Warehouse 1"))
-				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 2 }))
-				.then((n) => n.commit({})),
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1 });
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(commitNote, 1);
 
-			// Create warehouse 2 and add some stock to it
-			db
-				.warehouse("warehouse-2")
-				.create()
-				.then((wh) => wh.setName({}, "Warehouse 2"))
-				.then((wh) => wh.note().create())
-				.then((n) => n.addVolumes({}, { isbn: "1234567890", quantity: 3 }))
-				.then((n) => n.commit({})),
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2 });
+	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1234567890", quantity: 3, warehouseId: 2 }] as const);
+	await dbHandle.evaluate(commitNote, 2);
 
-			// Create (but don't commit) an outbound note with two tranasctions (with isbns of stock already contained in the warehouse, one in each)
-			db
-				.warehouse()
-				.note()
-				.create()
-				.then((n) => n.setName({}, "Test Note"))
-				.then((n) =>
-					n.addVolumes(
-						{},
-						{ isbn: "1234567890", quantity: 1, warehouseId: "warehouse-1" },
-						{ isbn: "1234567890", quantity: 1, warehouseId: "warehouse-2" }
-					)
-				)
-		])
-	);
+	await dbHandle.evaluate(createOutboundNote, { id: 3, displayName: "Test Note" });
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1234567890", quantity: 1, warehouseId: 2 }] as const);
 
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();

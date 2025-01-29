@@ -35,6 +35,6 @@ const PATHS = {
  * @param location - the location key (e.g. "stock", "inventory", etc.)
  * @param segments - the dynamic segments of the path
  */
-export const appPath = (location: keyof typeof PATHS, ...segments: string[]) => {
+export const appPath = (location: keyof typeof PATHS, ...segments: (number | string)[]) => {
 	return [PATHS[location], ...segments].join("/").concat("/").replaceAll(/\/\/+/g, "/");
 };

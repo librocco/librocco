@@ -11,7 +11,7 @@ import TextEditable from "../TextEditable.svelte";
 describe("TextEditable", () => {
 	describe("smoke test", () => {
 		test("clicking an edit button should toggle edit mode", async () => {
-			render(TextEditable, { isEditing: false, name: "title-to-edit" });
+			render(TextEditable, { isEditing: false, name: "title-to-edit", value: "" });
 
 			// The component is not in edit mode, should be plain text.
 			expect(screen.queryByRole("textbox", { name: "title-to-edit" })).toBeFalsy();

@@ -7,25 +7,23 @@
 	import { pwaInfo } from "virtual:pwa-info";
 
 	import type { LayoutData } from "./$types";
-	import { goto } from "$lib/utils/navigation";
-	import { appPath } from "$lib/paths";
 	import { browser } from "$app/environment";
 
 	export let data: LayoutData & { status: boolean };
 
-	const { db, status } = data;
+	const { dbCtx } = data;
 
 	$: {
 		// Register (and update on each change) the db to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
 		// This is not a security concern as the db is in the user's browser anyhow.
-		if (browser && db) {
+		if (browser && dbCtx) {
 			window["db_ready"] = true;
-			window["_db"] = db;
+			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
 		}
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
-		if (browser && !db) {
+		if (browser && !dbCtx) {
 			window["db_ready"] = false;
 			window["_db"] = undefined;
 		}
@@ -34,9 +32,10 @@
 	let availabilitySubscription: Subscription;
 
 	onMount(async () => {
-		if (!status) {
-			await goto(appPath("settings"));
-		}
+		// TODO: revisit
+		// if (!status) {
+		// 	await goto(appPath("settings"));
+		// }
 
 		if (pwaInfo) {
 			const { registerSW } = await import("virtual:pwa-register");

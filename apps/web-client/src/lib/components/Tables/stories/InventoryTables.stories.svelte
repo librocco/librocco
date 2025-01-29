@@ -16,7 +16,7 @@
 
 	import { createTable } from "$lib/actions";
 
-	import { rows, availableWarehouses, outNoteRows } from "$lib/__testData__/rowData";
+	import { rows, warehouseList, outNoteRows } from "$lib/__testData__/rowData";
 
 	const inboundTable = createTable(
 		writable({
@@ -27,7 +27,7 @@
 	const stockTable = createTable(
 		writable({
 			// Stock table needs to support custom items as well, as we're using it to display (already) committed notes (both inbound and outbound)
-			data: [...rows, { __kind: "custom" as const, id: "custom-1", title: "Custom Item 1", price: 10 }]
+			data: [...rows, { __kind: "custom" as const, id: 1, title: "Custom Item 1", price: 10 }]
 		})
 	);
 
@@ -62,7 +62,7 @@
 
 <Story name="Outbound">
 	<OutboundTable
-		warehouseList={availableWarehouses}
+		{warehouseList}
 		table={outboundTable}
 		on:edit-row-warehouse={({ detail }) => console.log("Edit Warehouse", detail)}
 		on:edit-row-quantity={({ detail }) => console.log("Edit Quantity", detail)}

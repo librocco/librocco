@@ -1,26 +1,21 @@
 <script lang="ts">
-	import { onMount } from "svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { fade } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { firstValueFrom, map } from "rxjs";
 	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
 
-	import { entityListView, filter, testId } from "@librocco/shared";
-	import { NEW_WAREHOUSE } from "@librocco/db";
+	import { entityListView, testId } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
-	import { getDB } from "$lib/db";
-
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-
-	import { readableFromStream } from "$lib/utils/streams";
 
 	import { appPath } from "$lib/paths";
 
@@ -29,27 +24,36 @@
 	import { warehouseSchema, type WarehouseFormSchema } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
-	const { db, status } = getDB();
+	import type { PageData } from "./$types";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 
-	const warehouseListCtx = { name: "[WAREHOUSE_LIST]", debug: false };
-	const warehouseListStream = db
-		?.stream()
-		.warehouseMap(warehouseListCtx)
-		/** @TODO we could probably wrap the Map to be ArrayLike (by having 'm.length' = 'm.size') */
-		.pipe(map((m) => [...filter(m, ([warehouseId]) => !warehouseId.includes("all"))]));
-	const warehouseList = readableFromStream(warehouseListCtx, warehouseListStream, []);
+	export let data: PageData;
 
-	let initialized = false;
+	// #region reactivity
+	let disposer: () => void;
 	onMount(() => {
-		if (status) {
-			firstValueFrom(warehouseListStream).then((wls) => (initialized = true));
-		} else {
-			goto(appPath("settings"));
-		}
-	});
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
-	const handleDeleteWarehouse = (warehouseId: string, warehouseName: string) => async () => {
-		await db?.warehouse(warehouseId).delete();
+		// Reload when warehouse data changes
+		const disposer1 = rx.onRange(["warehouse"], () => invalidate("warehouse:list"));
+		// Reload when a note gets committed (affecting stock)
+		const disposer2 = rx.onRange(["note"], () => invalidate("warehouse:books"));
+		disposer = () => (disposer1(), disposer2());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	$: goto = racefreeGoto(disposer);
+
+	$: db = data.dbCtx?.db;
+
+	$: warehouses = data.warehouses;
+
+	const handleDeleteWarehouse = (id: number) => async () => {
+		await deleteWarehouse(db, id);
 		open.set(false);
 	};
 
@@ -58,17 +62,25 @@
 	 * _(and navigate to the newly created warehouse page)_.
 	 */
 	const handleCreateWarehouse = async () => {
-		const warehouse = await db.warehouse(NEW_WAREHOUSE).create();
-		await goto(appPath("warehouses", warehouse.id));
+		const id = await getWarehouseIdSeq(db);
+		await upsertWarehouse(db, { id });
+
+		// Unsubscribe from db changes to prevent invalidate and page load race
+		disposer?.();
+		await goto(appPath("warehouses", id));
 	};
 
 	/**
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateNote = (warehouseId: string) => async () => {
-		const note = await db?.warehouse(warehouseId).note().create();
-		await goto(appPath("inbound", note.id));
+	const handleCreateNote = (warehouseId: number) => async () => {
+		const id = await getNoteIdSeq(db);
+		await createInboundNote(db, warehouseId, id);
+
+		// Unsubscribe from db changes to prevent invalidate and page load race
+		disposer?.();
+		await goto(appPath("inbound", id));
 	};
 
 	const dialog = createDialog({ forceVisible: true });
@@ -77,12 +89,15 @@
 		states: { open }
 	} = dialog;
 
-	let editWarehouse: WarehouseFormSchema | null = null;
-	let deleteWarehouse: { id: string; displayName: string } = null;
+	let warehouseToEdit: WarehouseFormSchema | null = null;
+	let warehouseToDelete: { id: number; displayName: string } = null;
 	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
+
+	let initialized = false;
+	$: initialized = Boolean(db);
 </script>
 
-<InventoryManagementPage>
+<InventoryManagementPage {handleCreateWarehouse}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -92,7 +107,7 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
-			{#if !$warehouseList.length}
+			{#if !warehouses.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
 					<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
@@ -100,11 +115,8 @@
 				<!-- End entity list placeholder -->
 			{:else}
 				<!-- Start entity list -->
-				{#each $warehouseList as [warehouseId, warehouse]}
-					{@const displayName = warehouse.displayName || warehouseId}
-					{@const totalBooks = warehouse.totalBooks}
-					{@const href = appPath("warehouses", warehouseId)}
-					{@const warehouseDiscount = warehouse.discountPercentage}
+				{#each warehouses as { id, displayName, totalBooks, discount }}
+					{@const href = appPath("warehouses", id)}
 
 					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
@@ -121,19 +133,19 @@
 									books
 								</div>
 
-								{#if warehouseDiscount}
+								{#if discount}
 									<div class="flex items-center gap-x-1">
 										<div class="border border-gray-700 p-[1px]">
 											<Percent class="text-gray-700" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+										<span class="entity-list-text-sm text-gray-500">{discount}% discount</span>
 									</div>
 								{/if}
 							</div>
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateNote(warehouseId)} class="button button-green">
+							<button on:click={handleCreateNote(id)} class="button button-green">
 								<span class="button-text"> New note </span>
 							</button>
 
@@ -143,7 +155,7 @@
 									use:item.action
 									use:melt={$trigger}
 									on:m-click={() => {
-										editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editWarehouse(),
@@ -152,7 +164,7 @@
 										};
 									}}
 									on:m-keydown={() => {
-										editWarehouse = { name: warehouse.displayName, discount: warehouse.discountPercentage, id: warehouseId };
+										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
 											title: dialogTitle.editWarehouse(),
@@ -183,18 +195,18 @@
 									use:item.action
 									use:melt={$trigger}
 									on:m-click={() => {
-										deleteWarehouse = { id: warehouseId, displayName };
+										warehouseToDelete = { id, displayName };
 										dialogContent = {
-											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											onConfirm: handleDeleteWarehouse(id),
 											title: dialogTitle.delete(displayName),
 											description: dialogDescription.deleteWarehouse(totalBooks),
 											type: "delete"
 										};
 									}}
 									on:m-keydown={() => {
-										deleteWarehouse = { id: warehouseId, displayName };
+										warehouseToDelete = { id, displayName };
 										dialogContent = {
-											onConfirm: handleDeleteWarehouse(warehouseId, displayName),
+											onConfirm: handleDeleteWarehouse(id),
 											title: dialogTitle.delete(displayName),
 											description: dialogDescription.deleteWarehouse(totalBooks),
 											type: "delete"
@@ -232,19 +244,15 @@
 						{dialogDescription}
 					</p>
 					<WarehouseForm
-						data={defaults(editWarehouse, zod(warehouseSchema))}
+						data={defaults(warehouseToEdit, zod(warehouseSchema))}
 						options={{
 							SPA: true,
 							dataType: "json",
 							validators: zod(warehouseSchema),
 							validationMethod: "submit-only",
 							onUpdated: async ({ form }) => {
-								const { id, name, discount } = form?.data;
-								const warehouseInterface = db.warehouse(id);
-
-								await warehouseInterface.setName({}, name);
-								await warehouseInterface.setDiscount({}, discount);
-
+								const { id, name: displayName, discount } = form?.data;
+								await upsertWarehouse(db, { id, displayName, discount });
 								open.set(false);
 							}
 						}}
@@ -257,12 +265,12 @@
 						{dialog}
 						{dialogTitle}
 						{dialogDescription}
-						{...deleteWarehouse}
+						{...warehouseToDelete}
 						options={{
 							SPA: true,
 							dataType: "json",
 							validationMethod: "submit-only",
-							onSubmit: handleDeleteWarehouse(deleteWarehouse.id, deleteWarehouse.displayName)
+							onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
 						}}
 					/>
 				</div>

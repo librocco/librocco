@@ -165,6 +165,40 @@ describe("Stock integration tests", async () => {
 		]);
 	});
 
+	it("filters by isbn values if provided", async () => {
+		const db = await getRandomDb();
+
+		// create a warehouse and add some stock
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+		await upsertWarehouse(db, { id: 3, displayName: "Warehouse 3" });
+
+		// add stock to both warehouses
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 2, 2);
+		await addVolumesToNote(db, 2, { isbn: "1111111111", quantity: 15, warehouseId: 2 });
+		await addVolumesToNote(db, 2, { isbn: "2222222222", quantity: 15, warehouseId: 2 });
+		await commitNote(db, 2);
+
+		await createInboundNote(db, 3, 3);
+		await addVolumesToNote(db, 3, { isbn: "3333333333", quantity: 5, warehouseId: 3 });
+		await addVolumesToNote(db, 3, { isbn: "2222222222", quantity: 10, warehouseId: 3 });
+		await commitNote(db, 3);
+
+		// filter by specific (isbn, warehouseId) pair
+		expect(await getStock(db, { isbns: ["2222222222", "3333333333"] })).toEqual([
+			expect.objectContaining({ isbn: "2222222222", quantity: 15, warehouseId: 2 }),
+			expect.objectContaining({ isbn: "2222222222", quantity: 10, warehouseId: 3 }),
+			expect.objectContaining({ isbn: "3333333333", quantity: 5, warehouseId: 3 })
+		]);
+
+		// ensure no results for non-matching pair
+		expect(await getStock(db, { isbns: ["4444444444"] })).toEqual([]);
+	});
+
 	it("filters by (isbn, warehouseId) pairs if provided", async () => {
 		const db = await getRandomDb();
 
@@ -197,5 +231,42 @@ describe("Stock integration tests", async () => {
 
 		// ensure no results for non-matching pair
 		expect(await getStock(db, { entries: [{ isbn: "3333333333", warehouseId: 1 }] })).toEqual([]);
+	});
+
+	it("filters by warehouseId (if provided)", async () => {
+		const db = await getRandomDb();
+
+		// create two warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2" });
+
+		// add stock to both warehouses
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 1, 2);
+		await addVolumesToNote(db, 2, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await addVolumesToNote(db, 2, { isbn: "2222222222", quantity: 12, warehouseId: 1 });
+		await commitNote(db, 2);
+
+		await createInboundNote(db, 2, 3);
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 15, warehouseId: 2 });
+		await commitNote(db, 3);
+
+		await createOutboundNote(db, 4);
+		await addVolumesToNote(db, 4, { isbn: "1111111111", quantity: 15, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "2222222222", quantity: 8, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "1111111111", quantity: 12, warehouseId: 2 });
+		await commitNote(db, 4);
+
+		// filter by warehouseId 1
+		expect(await getStock(db, { warehouseId: 1 })).toEqual([
+			expect.objectContaining({ isbn: "1111111111", quantity: 5, warehouseId: 1 }),
+			expect.objectContaining({ isbn: "2222222222", quantity: 4, warehouseId: 1 })
+		]);
+
+		// filter by warehouseId 2
+		expect(await getStock(db, { warehouseId: 2 })).toEqual([expect.objectContaining({ isbn: "1111111111", quantity: 3, warehouseId: 2 })]);
 	});
 });

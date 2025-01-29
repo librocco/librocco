@@ -389,4 +389,115 @@ describe("getPastTransactions", async () => {
 			})
 		]);
 	});
+
+	it("retrieves committed transactions for a warehouse id, date range and note type", async () => {
+		const db = await getRandomDb();
+
+		// Set up warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1", discount: 0 });
+		await upsertWarehouse(db, { id: 2, displayName: "Warehouse 2", discount: 20 });
+
+		// Set up books
+		await upsertBook(db, { isbn: "1111111111", price: 10 });
+		await upsertBook(db, { isbn: "2222222222", price: 20 });
+
+		// Create and commit notes
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		await createInboundNote(db, 1, 2);
+		await addVolumesToNote(db, 2, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await addVolumesToNote(db, 2, { isbn: "2222222222", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 2);
+
+		await createInboundNote(db, 2, 3);
+		await addVolumesToNote(db, 3, { isbn: "1111111111", quantity: 5, warehouseId: 2 });
+		await commitNote(db, 3);
+
+		await createOutboundNote(db, 4);
+		await addVolumesToNote(db, 4, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+		await addVolumesToNote(db, 4, { isbn: "1111111111", quantity: 3, warehouseId: 2 });
+		await commitNote(db, 4);
+
+		await createOutboundNote(db, 5);
+		await addVolumesToNote(db, 5, { isbn: "1111111111", quantity: 1, warehouseId: 1 });
+		await addVolumesToNote(db, 5, { isbn: "1111111111", quantity: 1, warehouseId: 2 });
+		await commitNote(db, 5);
+
+		// Directly update committed_at for testing
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-01') * 1000 WHERE id IN (1)");
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-02') * 1000 WHERE id IN (2, 3)");
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-03') * 1000 WHERE id IN (4)");
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-04') * 1000 WHERE id IN (5)");
+
+		const inboundTxns = await getPastTransactions(db, {
+			warehouseId: 1,
+			startDate: new Date("2024-01-02"),
+			endDate: new Date("2024-01-03"),
+			noteType: "inbound"
+		});
+
+		expect(inboundTxns).toEqual([
+			expect.objectContaining({
+				isbn: "1111111111",
+				quantity: 5,
+				price: 10,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 2,
+				noteName: expect.any(String),
+				noteType: "inbound"
+			}),
+			expect.objectContaining({
+				isbn: "2222222222",
+				quantity: 5,
+				price: 20,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 2,
+				noteName: expect.any(String),
+				noteType: "inbound"
+			})
+		]);
+
+		const outboundTxns = await getPastTransactions(db, {
+			warehouseId: 1,
+			startDate: new Date("2024-01-02"),
+			endDate: new Date("2024-01-03"),
+			noteType: "outbound"
+		});
+
+		expect(outboundTxns).toEqual([
+			expect.objectContaining({
+				isbn: "1111111111",
+				quantity: 2,
+				price: 10,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 4,
+				noteName: expect.any(String),
+				noteType: "outbound"
+			}),
+			expect.objectContaining({
+				isbn: "2222222222",
+				quantity: 3,
+				price: 20,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 4,
+				noteName: expect.any(String),
+				noteType: "outbound"
+			})
+		]);
+	});
 });
