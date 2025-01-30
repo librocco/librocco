@@ -204,18 +204,17 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
 
 	const query = `
         SELECT 
-			sol.id,
             sol.supplier_order_id, 
             sol.isbn, 
             sol.quantity,
-			SUM(COALESCE(book.price, 0)) as line_price
+			SUM(COALESCE(book.price, 0)) as line_price,
 			COALESCE(book.title, 'N/A') AS title, 
 			COALESCE(book.authors, 'N/A') AS authors, 
             so.supplier_id, 
             so.created, 
             s.name AS supplier_name,
             SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
-            SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_price
+            SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
         FROM supplier_order_line AS sol
         LEFT JOIN book ON sol.isbn = book.isbn
         JOIN supplier_order so ON so.id = sol.supplier_order_id

@@ -310,7 +310,7 @@ describe("Misc helpers", () => {
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -329,7 +329,7 @@ describe("Misc helpers", () => {
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 2,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -354,7 +354,7 @@ describe("Misc helpers", () => {
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -373,7 +373,7 @@ describe("Misc helpers", () => {
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 1,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -398,7 +398,7 @@ describe("Misc helpers", () => {
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -417,7 +417,7 @@ describe("Misc helpers", () => {
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 3,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -442,7 +442,7 @@ describe("Misc helpers", () => {
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -461,7 +461,7 @@ describe("Misc helpers", () => {
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})
@@ -492,8 +492,8 @@ describe("Misc helpers", () => {
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
+				total_book_price: 10,
 				supplier_order_id: 1,
-				total_price: 10,
 				created: Date.now()
 			}
 		];
@@ -512,7 +512,7 @@ describe("Misc helpers", () => {
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})

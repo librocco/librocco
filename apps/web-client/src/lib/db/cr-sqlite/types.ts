@@ -84,26 +84,24 @@ export type PlacedSupplierOrder = {
 
 /**
  * Possible order lines are aggregated from customer order lins for a given supplier
+ * Book price is multiplied by line quantity => `line_price`
  */
 export type PossibleSupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 } & SupplierJoinData &
-	BookDataCols;
+	Omit<BookDataCols, "price">;
 
 /**
  * Order lines of a placed supplier order
+ * Book price is multiplied by line => `line_price`
  */
 export type PlacedSupplierOrderLine = {
-	id: number;
 	supplier_order_id: number;
-	supplier_id: number;
 	created: number;
 	total_book_number: number;
-	total_price: number;
-} & SupplierJoinData &
-	PossibleSupplierOrderLine &
-	BookDataCols;
+	total_book_price: number;
+} & PossibleSupplierOrderLine;
 
 /**
  * Represents a reconciliation order that groups multiple supplier orders

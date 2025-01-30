@@ -155,7 +155,7 @@ describe("Supplier order handlers should", () => {
 				created: expect.any(Number),
 				supplier_order_id: 1,
 				total_book_number: 6,
-				total_price: 60,
+				total_book_price: 60,
 				price: 7
 			},
 			{
@@ -169,7 +169,7 @@ describe("Supplier order handlers should", () => {
 				created: expect.any(Number),
 				supplier_order_id: 1,
 				total_book_number: 6,
-				total_price: 60,
+				total_book_price: 60,
 				price: 13
 			}
 		]);
@@ -276,7 +276,7 @@ describe("getPlacedSupplierOrderLines", () => {
 				supplier_order_id: 1,
 				title: "Physics",
 				total_book_number: 5,
-				total_price: 37,
+				total_book_price: 37,
 				supplier_name: "Science Books LTD",
 				created: expect.any(Number)
 			},
@@ -290,7 +290,7 @@ describe("getPlacedSupplierOrderLines", () => {
 				supplier_order_id: 1,
 				title: "Chemistry",
 				total_book_number: 5,
-				total_price: 37,
+				total_book_price: 37,
 				supplier_name: "Science Books LTD",
 				created: expect.any(Number)
 			},
@@ -304,7 +304,7 @@ describe("getPlacedSupplierOrderLines", () => {
 				supplier_order_id: 1,
 				title: "The Hobbit",
 				total_book_number: 5,
-				total_price: 37,
+				total_book_price: 37,
 				supplier_name: "Science Books LTD",
 				created: expect.any(Number)
 			}
@@ -329,7 +329,7 @@ describe("getPlacedSupplierOrderLines", () => {
 
 		orderLines.forEach((line) => {
 			expect(line.total_book_number).toBe(5);
-			expect(line.total_price).toBe(37);
+			expect(line.total_book_price).toBe(37);
 		});
 
 		expect(orderLines).toHaveLength(3);
@@ -343,7 +343,7 @@ describe("getPlacedSupplierOrderLines", () => {
 
 		const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 		expect(orderLines).toHaveLength(3);
-		expect(orderLines[0].total_price).toBe(23);
+		expect(orderLines[0].total_book_price).toBe(23);
 	});
 
 	it("should handle large quantities and prices", async () => {
@@ -355,6 +355,6 @@ describe("getPlacedSupplierOrderLines", () => {
 
 		const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 		expect(orderLines).toHaveLength(3);
-		expect(orderLines[0].total_price).toBeGreaterThan(900000000);
+		expect(orderLines[0].total_book_price).toBeGreaterThan(900000000);
 	});
 });
