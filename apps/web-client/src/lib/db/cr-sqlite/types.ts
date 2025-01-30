@@ -7,11 +7,12 @@ import type { BookData } from "@librocco/shared";
 
 /* Customer orders/books */
 export type Customer = {
-	id?: number;
+	id: number;
 	fullname?: string;
 	email?: string;
 	phone?: string;
 	taxId?: string;
+	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
 };
