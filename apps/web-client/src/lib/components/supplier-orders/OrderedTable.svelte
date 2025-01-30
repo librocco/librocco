@@ -1,11 +1,11 @@
 <script lang="ts">
 	import { ListTodo } from "lucide-svelte";
-	import type { SupplierPlacedOrder } from "$lib/db/cr-sqlite/types";
+	import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 	import { goto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";
 	import { createEventDispatcher } from "svelte";
 
-	export let orders: Array<SupplierPlacedOrder>;
+	export let orders: Array<PlacedSupplierOrder>;
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
