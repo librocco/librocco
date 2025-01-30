@@ -1,4 +1,5 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
+import { Customer } from "./types";
 
 // #region books
 
@@ -190,3 +191,47 @@ export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: num
 export async function commitNote(db: DB, id: number): Promise<void> {
 	return db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [Date.now(), id]);
 }
+
+// #region customerOrders
+
+export async function upsertCustomer(db: DB, customer: Customer) {
+	if (!customer.id) {
+		throw new Error("Customer must have an id");
+	}
+
+	const timestamp = Date.now();
+	await db.exec(
+		`INSERT INTO customer (id, fullname, email, deposit, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           fullname = COALESCE(?, fullname),
+           email = COALESCE(?, email),
+           updated_at = ?,
+           deposit = COALESCE(?, deposit);`,
+		[
+			customer.id,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null,
+			timestamp,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			timestamp,
+			customer.deposit ?? null
+		]
+	);
+}
+
+export const addBooksToCustomer = async (db: DB, params: { customerId: number; bookIsbns: string[] }): Promise<void> => {
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+	const { customerId, bookIsbns } = params;
+	const sqlParams = bookIsbns.map((isbn) => [customerId, isbn]).flat();
+	const sql = `
+     INSERT INTO customer_order_lines (customer_id, isbn)
+     VALUES ${multiplyString("(?,?)", bookIsbns.length)} RETURNING customer_id;`;
+
+	const id = await db.exec(sql, sqlParams);
+	console.log({ id });
+};
+
+// #endregion customerOrders
