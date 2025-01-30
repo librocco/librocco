@@ -12,7 +12,8 @@ import {
 	finalizeReconciliationOrder,
 	getReconciliationOrderLines,
 	processOrderDelivery,
-	sortLinesBySupplier
+	sortLinesBySupplier,
+	getUnreconciledSupplierOrders
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { getCustomerOrderLines } from "../customers";
@@ -20,7 +21,7 @@ import { getCustomerOrderLines } from "../customers";
 import {} from "../order-reconciliation";
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
-describe.skip("Reconciliation order creation", () => {
+describe("Reconciliation order creation", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
@@ -255,6 +256,38 @@ describe.skip("Reconciliation order creation", () => {
 				`Reconciliation order ${reconOrderId} is already finalized`
 			);
 		});
+	});
+});
+
+describe("getUnreconciledSupplierOrders", () => {
+	let db: DB;
+
+	beforeEach(async () => {
+		db = await getRandomDb();
+		await createCustomerOrders(db);
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+	});
+
+	it("should return only unreconciled supplier orders with correct totals", async () => {
+		const result = await getUnreconciledSupplierOrders(db);
+
+		expect(result).toHaveLength(1);
+
+		expect(result[0]).toEqual({
+			id: 1,
+			supplier_id: 1,
+			created: expect.any(Number),
+			supplier_name: "Science Books LTD",
+			total_book_number: 2
+		});
+	});
+
+	it("should return empty array when all orders are reconciled", async () => {
+		await createReconciliationOrder(db, [1, 3]);
+
+		const result = await getUnreconciledSupplierOrders(db);
+		expect(result).toHaveLength(0);
 	});
 });
 
