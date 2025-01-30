@@ -202,35 +202,46 @@ export async function getPlacedSupplierOrders(db: DB): Promise<SupplierPlacedOrd
 	return result;
 }
 /**
- * Retrieves all order lines for a specific placed supplier order, including
-book details and order totals.
+ * Retrieves all supplier order lines for the provided `supplier_order_id`s.
+ * Returns an ordered set of rows if multiple ids are provided.
+ * Each row includes:
+ * - line quantity
+ * - book details
+ * - supplier details
+ * - supplier order details, including total book number and price
  *
  * @param db
  * @param supplier_order_id - supplier order to retrieve lines for
- * @returns array of order lines:
- *  - Order details: supplier_order_id, supplier_id, created date, supplier_na
- *  - Book details: isbn, title, authors, publisher, price
- *  - Line details: quantity
- *  - Order totals: total_book_number (sum of all quantities), total_price (sum of price * quantity)
-**/
-export async function getPlacedSupplierOrderLines(db: DB, supplier_order_id: number): Promise<SupplierPlacedOrderLine[]> {
-	const res = await db.execO<SupplierPlacedOrderLine>(
-		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
-	book.isbn, book.title, book.authors, book.publisher, book.price,
-	so.supplier_id, so.created, s.name as supplier_name,
-	SUM(sol.quantity) OVER () as total_book_number,
-	SUM(book.price * sol.quantity) OVER () as total_price
-	FROM supplier_order_line as sol
-	LEFT JOIN book ON sol.isbn = book.isbn
-	JOIN supplier_order so ON so.id = sol.supplier_order_id
-	JOIN supplier s ON s.id = so.supplier_id
+ * @returns array of place supplier order lines:
+ **/
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<SupplierPlacedOrderLine[]> {
+	if (!supplier_order_ids.length) {
+		return [];
+	}
 
-		WHERE sol.supplier_order_id = ?
-		`,
-		[supplier_order_id]
-	);
+	const query = `
+        SELECT 
+            sol.supplier_order_id, 
+            sol.isbn, 
+            sol.quantity,
+            book.isbn, 
+            book.title, 
+            book.authors, 
+            book.price,
+            so.supplier_id, 
+            so.created, 
+            s.name AS supplier_name,
+            SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
+            SUM(book.price * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_price
+        FROM supplier_order_line AS sol
+        LEFT JOIN book ON sol.isbn = book.isbn
+        JOIN supplier_order so ON so.id = sol.supplier_order_id
+        JOIN supplier s ON s.id = so.supplier_id
+        WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
+        ORDER BY sol.supplier_order_id, sol.isbn ASC;
+    `;
 
-	return res;
+	return db.execO<SupplierPlacedOrderLine>(query, supplier_order_ids);
 }
 
 /**
@@ -296,26 +307,3 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 }
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
-
-export async function getPlacedSupplierOrderLinesForReconciliation(
-	db: DB,
-	supplier_order_ids: number[]
-): Promise<SupplierPlacedOrderLine[]> {
-	if (!supplier_order_ids.length) return [];
-	const res = await db.execO<SupplierPlacedOrderLine>(
-		`SELECT sol.supplier_order_id, sol.isbn, sol.quantity,
-	book.isbn, book.title, book.authors, book.publisher, book.price,
-	so.supplier_id, so.created, s.name as supplier_name,
-	SUM(sol.quantity) OVER () as total_book_number,
-	SUM(book.price * sol.quantity) OVER () as total_price
-	FROM supplier_order_line as sol
-	LEFT JOIN book ON sol.isbn = book.isbn
-	LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
-	LEFT JOIN supplier s ON s.id = so.supplier_id
-		WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
-		`,
-		[...supplier_order_ids]
-	);
-
-	return res;
-}
