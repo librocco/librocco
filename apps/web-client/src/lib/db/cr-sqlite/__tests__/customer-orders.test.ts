@@ -187,6 +187,24 @@ describe("Customer display id seq", () => {
 		const displayId = await getCustomerDisplayIdSeq(db);
 		expect(displayId).toBe(4);
 	});
+
+	it("returns n + 1 ignoring n > 10k", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "10000" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+		const displayId = await getCustomerDisplayIdSeq(db);
+		expect(displayId).toBe(4);
+	});
+
+	it("can cope with invalid displayIds", async () => {
+		const db = await getRandomDb();
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "invalid" });
+		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+		const displayId = await getCustomerDisplayIdSeq(db);
+		expect(displayId).toBe(4);
+	});
 });
 
 describe("isDisplayIdUnique function", () => {
