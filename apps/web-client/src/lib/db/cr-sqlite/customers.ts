@@ -46,7 +46,7 @@ type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "recei
  */
 export async function getAllCustomers(db: DB): Promise<Customer[]> {
 	const res = await db.execO<Omit<Customer, "updatedAt"> & { updated_at: number }>(
-		"SELECT id, fullname, email, updated_at, deposit FROM customer ORDER BY id ASC;"
+		"SELECT id, display_id AS displayId, fullname, email, updated_at, deposit FROM customer ORDER BY id ASC;"
 	);
 	return res.map(({ updated_at, ...row }) => ({ ...row, updatedAt: new Date(updated_at) }));
 }
@@ -67,25 +67,34 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		throw new Error("Customer must have an id");
 	}
 
+	if (!customer.displayId) {
+		throw new Error("Customer must have a displayId");
+	}
+
 	const timestamp = Date.now();
+
 	await db.exec(
-		`INSERT INTO customer (id, fullname, email, deposit, updated_at)
-         VALUES (?, ?, ?, ?, ?)
+		`INSERT INTO customer (id, fullname, email, deposit, display_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
-           updated_at = ?,
-           deposit = COALESCE(?, deposit);`,
+           deposit = COALESCE(?, deposit),
+           display_id = COALESCE(?, display_id),
+           updated_at = ?
+		   `,
 		[
 			customer.id,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.deposit ?? null,
+			customer.displayId,
 			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
-			timestamp,
-			customer.deposit ?? null
+			customer.deposit ?? null,
+			customer.displayId,
+			timestamp
 		]
 	);
 }
@@ -141,13 +150,16 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
  * @param {number} customerId - The unique identifier of the customer
  * @returns {Promise<Customer[]>} A promise that resolves to an array of customer details
  *                               containing id, fullname, deposit, and email information
+ *
+ * TODO: it would probably make more sense to return Promise<Customer | undefined> (instead of a list)
  */
 export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Customer>("SELECT id, fullname, deposit, email, updated_at FROM customer WHERE id = $customerId;", [
-		customerId
-	]);
+	const result = await db.execO<Omit<Customer, "updatedAt"> & { updated_at: number }>(
+		"SELECT id, display_id AS displayId, fullname, deposit, email, updated_at FROM customer WHERE id = $customerId;",
+		[customerId]
+	);
 
-	return result;
+	return result.map(({ updated_at, ...row }) => ({ ...row, updatedAt: new Date(updated_at) }));
 };
 
 /**
@@ -196,6 +208,22 @@ export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: 
      VALUES ${multiplyString("(?,?)", bookIsbns.length)};`;
 
 	await db.exec(sql, params);
+};
+
+/** Checks if there's another customer with the same display ID */
+export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
+	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
+		customer.displayId,
+		customer.id
+	]);
+	return !res.count;
+};
+
+export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
+	const [result] = await db.execO<{ nextId: number }>(
+		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
+	);
+	return result.nextId;
 };
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
