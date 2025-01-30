@@ -141,7 +141,7 @@ describe("Supplier order handlers should", () => {
 		await createSupplierOrder(db, possibleOrderLines);
 
 		await getPlacedSupplierOrders(db);
-		const newOrders = await getPlacedSupplierOrderLines(db, 1);
+		const newOrders = await getPlacedSupplierOrderLines(db, [1]);
 
 		expect(newOrders).toEqual([
 			{
@@ -262,8 +262,8 @@ describe("getPlacedSupplierOrderLines", () => {
 		`);
 	});
 
-	it("should retrieve a single supplier order with its line items", async () => {
-		const order = await getPlacedSupplierOrderLines(db, 1);
+	it("should retrieve order lines for a single supplier", async () => {
+		const order = await getPlacedSupplierOrderLines(db, [1]);
 
 		expect(order).toEqual([
 			{
@@ -311,13 +311,21 @@ describe("getPlacedSupplierOrderLines", () => {
 		]);
 	});
 
+	it("should retrieve order lines for multiple suppliers and order results", async () => {
+		const orderLines = await getPlacedSupplierOrderLines(db, [1, 2]);
+
+		// The result should be as test above, but we should have the additional supplier_order 2 at the end
+		expect(orderLines.length).toBe(4);
+		expect(orderLines[4].supplier_order_id).toBe("2");
+	});
+
 	it("should return empty array for non-existent order", async () => {
-		const order = await getPlacedSupplierOrderLines(db, 999);
+		const order = await getPlacedSupplierOrderLines(db, [999]);
 		expect(order).toHaveLength(0);
 	});
 
 	it("should calculate correct totals for multiple line items", async () => {
-		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 
 		orderLines.forEach((line) => {
 			expect(line.total_book_number).toBe(5);
@@ -333,7 +341,7 @@ describe("getPlacedSupplierOrderLines", () => {
          UPDATE book SET price = NULL WHERE isbn = '1';
      `);
 
-		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 		expect(orderLines).toHaveLength(3);
 		expect(orderLines[0].total_price).toBe(23);
 	});
@@ -345,7 +353,7 @@ describe("getPlacedSupplierOrderLines", () => {
          UPDATE supplier_order_line SET quantity = 999999 WHERE isbn = '1';
      `);
 
-		const orderLines = await getPlacedSupplierOrderLines(db, 1);
+		const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 		expect(orderLines).toHaveLength(3);
 		expect(orderLines[0].total_price).toBeGreaterThan(900000000);
 	});
