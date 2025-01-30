@@ -220,7 +220,9 @@ export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
 };
 
 export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
-	const [result] = await db.execO<{ nextId: number }>("SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer;");
+	const [result] = await db.execO<{ nextId: number }>(
+		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
+	);
 	return result.nextId;
 };
 
