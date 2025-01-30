@@ -16,17 +16,19 @@
 	import { createTable } from "$lib/actions";
 	import type { CustomerOrderSchema } from "$lib/forms/schemas";
 
-	const customerData: CustomerOrderSchema[] = [
+	const customerData: Required<CustomerOrderSchema>[] = [
 		{
 			fullname: "Billy Bob",
 			email: "bill@bbob.com",
-			id: 1021921,
+			id: 10219,
+			displayId: "10219",
 			deposit: 100
 		},
 		{
 			fullname: "Kim K",
 			email: "kim@spills-it.com",
-			id: 119281023,
+			id: 11928,
+			displayId: "11928",
 			deposit: 200
 		}
 	];

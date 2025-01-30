@@ -19,15 +19,15 @@
 </script>
 
 <script lang="ts">
-	import { Story, Template } from "@storybook/addon-svelte-csf";
+	import { Story } from "@storybook/addon-svelte-csf";
 
 	import { defaults } from "sveltekit-superforms";
 
 	import { zod } from "sveltekit-superforms/adapters";
 
-	import { customerOrderSchema } from "../schemas";
+	import { createCustomerOrderSchema } from "../schemas";
 
-	const form = defaults(zod(customerOrderSchema));
+	const form = defaults(zod(createCustomerOrderSchema("update")));
 </script>
 
 <Story name="Customer Order Meta">
@@ -40,5 +40,6 @@
 		}}
 		heading="Create a new customer order"
 		saveLabel="Update"
+		kind="update"
 	/>
 </Story>
