@@ -1,6 +1,13 @@
 import type { BookEntry } from "@librocco/db";
 import { multiplyString } from "./customers";
-import type { DB, ProcessedOrderLine, ReconciliationOrder, ReconciliationOrderLine, SupplierPlacedOrderLine } from "./types";
+import type {
+	DB,
+	ProcessedOrderLine,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine
+} from "./types";
 
 /**
  * @fileoverview Supplier order reconciliation system
@@ -208,10 +215,10 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
  * Retrieves all supplier orders that have not been selected for reconciliation in any `reconciliation_order`.
  * @param db
  *
- * @returns {Promise<SupplierPlacedOrderLine[]>} Array of unreconciled supplier orders with:
+ * @returns {Promise<PlacedSupplierOrder[]>} Array of unreconciled supplier orders with:
  */
-export async function getUnreconciledSupplierOrders(db: DB): Promise<SupplierPlacedOrderLine[]> {
-	const result = await db.execO<SupplierPlacedOrderLine>(
+export async function getUnreconciledSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
+	const result = await db.execO<PlacedSupplierOrder>(
 		` WITH Reconciled AS (
      SELECT CAST(value AS INTEGER) AS supplier_order_id
      FROM reconciliation_order AS ro
@@ -260,7 +267,7 @@ quantities
 */
 export const processOrderDelivery = (
 	scannedBooks: (BookEntry & { quantity: number })[],
-	placedOrderLines: SupplierPlacedOrderLine[]
+	placedOrderLines: PlacedSupplierOrderLine[]
 ): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
 	const scannedLinesMap = new Map<string, BookEntry & { quantity: number }>(
 		scannedBooks.map((book) => {
