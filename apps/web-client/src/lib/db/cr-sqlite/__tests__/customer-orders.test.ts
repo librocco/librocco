@@ -171,7 +171,7 @@ describe("Customer display id seq", () => {
 		expect(displayId).toBe(1);
 	});
 
-	it("returns n + 1 when there are notes in the DB", async () => {
+	it("returns n + 1 when there are customers in the DB", async () => {
 		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 
@@ -179,7 +179,7 @@ describe("Customer display id seq", () => {
 		expect(displayId).toBe(2);
 	});
 
-	it("returns n + 1 when there are notes in the DB, even when there are spaces between seq", async () => {
+	it("returns n + 1 when there are customers in the DB, even when there are spaces between seq", async () => {
 		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
@@ -187,11 +187,9 @@ describe("Customer display id seq", () => {
 		const displayId = await getCustomerDisplayIdSeq(db);
 		expect(displayId).toBe(4);
 	});
-
-	// TODO: write a test for when the n + 1 > 10_000
 });
 
-describe("isDisplayIdUnique", () => {
+describe("isDisplayIdUnique function", () => {
 	it("returns true if unique", async () => {
 		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
