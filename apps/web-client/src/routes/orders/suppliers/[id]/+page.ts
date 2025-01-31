@@ -1,12 +1,21 @@
-import { getPossibleSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 import { redirect } from "@sveltejs/kit";
+
+import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
+
+import { getPossibleSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+
 import { base } from "$app/paths";
 
 export const load: PageLoad = async ({ parent, params }) => {
-	const { ordersDb } = await parent();
+	const { dbCtx } = await parent();
 
-	const orderLines = await getPossibleSupplierOrderLines(ordersDb, parseInt(params.id));
+	// We're not in browser, no need for further processing
+	if (!dbCtx) {
+		return { orderLines: [] as PossibleSupplierOrderLine[] };
+	}
+
+	const orderLines = await getPossibleSupplierOrderLines(dbCtx.db, parseInt(params.id));
 
 	// TODO: when we update the routing, this will move to something like `/suppliers/[id]/new-order`
 	// so if there are no possible order lines, we should redirect to `/suppliers/[id]`

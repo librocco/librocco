@@ -21,7 +21,8 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	// Prepare the date for usage with date picker
 	const dateValue = fromDate(new Date(date), getLocalTimeZone());
 
-	if (!browser) {
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
 		return { date, dateValue, notes: [] as PastNoteItem[] };
 	}
 
