@@ -30,8 +30,8 @@
 	let disposer: () => void;
 
 	onMount(() => {
-		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data.ordersDbCtx;
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
 		// Reload add customer data dependants when the data changes
 		const disposer1 = rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
@@ -48,7 +48,7 @@
 
 	$: customerId = parseInt($page.params.id);
 
-	$: db = data.ordersDbCtx?.db;
+	$: db = data.dbCtx?.db;
 
 	$: customer = data.customer;
 	$: customerOrderLines = data.customerOrderLines;

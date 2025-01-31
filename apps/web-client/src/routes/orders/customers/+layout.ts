@@ -1,22 +1,22 @@
 import type { LayoutLoad } from "./$types";
 
-import { getInitializedDB } from "$lib/db/cr-sqlite";
 import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
 
-export const load: LayoutLoad = async ({ depends }) => {
+export const load: LayoutLoad = async ({ depends, parent }) => {
 	depends("customer:data");
 	depends("customer:books");
 
-	console.log("running layout load");
+	const { dbCtx } = await parent();
 
-	const dbCtx = await getInitializedDB("librocco-current-db");
-	const { db } = dbCtx;
+	// We're not in browser, no need for further processing
+	if (!dbCtx) {
+		return { customers: [], customerOrderLines: [] };
+	}
 
-	const customers = await getAllCustomers(db);
-	const customerOrderLines = await getAllCustomerOrderLines(db);
+	const customers = await getAllCustomers(dbCtx.db);
+	const customerOrderLines = await getAllCustomerOrderLines(dbCtx.db);
 
-	// TODO: we could rename this to 'dbCtx' once the same approach is used in inventory db
-	return { ordersDbCtx: dbCtx, customers, customerOrderLines };
+	return { customers, customerOrderLines };
 };
 
 export const ssr = false;

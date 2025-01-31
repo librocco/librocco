@@ -4,27 +4,27 @@
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { goto } from "$lib/utils/navigation";
+	import { base } from "$app/paths";
+
+	import type { LayoutData } from "./$types";
+	import type { Customer } from "$lib/db/cr-sqlite/types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
-	import { base } from "$app/paths";
+
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
-	import type { LayoutData } from "./$types";
+
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import {
-		associatePublisher,
-		createSupplierOrder,
-		getPlacedSupplierOrders,
-		getPossibleSupplierOrderLines,
-		upsertSupplier
-	} from "$lib/db/cr-sqlite/suppliers";
-	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { associatePublisher, createSupplierOrder, getPossibleSupplierOrderLines, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { addBooksToCustomer, getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: LayoutData;
+
+	$: db = data?.dbCtx?.db;
 
 	let publisherSupplierCreated = false;
 
@@ -40,14 +40,23 @@
 	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
-		if (!data || !data?.ordersDb) {
-			console.error("Database connection not available");
-			return;
-		}
-
-		const id = await createReconciliationOrder(data.ordersDb, event.detail.supplierOrderIds);
+		const id = await createReconciliationOrder(db, event.detail.supplierOrderIds);
 		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
+
+	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		const displayId = await getCustomerDisplayIdSeq(db).then(String);
+
+		await upsertCustomer(db, { ...customer, id, displayId });
+
+		newOrderDialogOpen.set(false);
+
+		await goto(`${base}/orders/customers/${id}`);
+	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -58,7 +67,7 @@
 		disabled={publisherSupplierCreated}
 		aria-label="CreateReconciliationOrder"
 		on:click={async () => {
-			await upsertBook(data?.ordersDb, {
+			await upsertBook(db, {
 				isbn: "123456789",
 				title: "Book 1",
 				authors: "Author 1",
@@ -66,14 +75,14 @@
 				publisher: "abcPub"
 			});
 
-			await upsertCustomer(data?.ordersDb, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
-			await addBooksToCustomer(data?.ordersDb, 1, ["123456789"]);
-			await upsertSupplier(data?.ordersDb, { id: 123, name: "abcSup" });
-			await associatePublisher(data?.ordersDb, 123, "abcPub");
+			await upsertCustomer(db, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
+			await addBooksToCustomer(db, 1, ["123456789"]);
+			await upsertSupplier(db, { id: 123, name: "abcSup" });
+			await associatePublisher(db, 123, "abcPub");
 
-			const possibleLines = await getPossibleSupplierOrderLines(data?.ordersDb, 123);
+			const possibleLines = await getPossibleSupplierOrderLines(db, 123);
 
-			await createSupplierOrder(data?.ordersDb, possibleLines);
+			await createSupplierOrder(db, possibleLines);
 
 			publisherSupplierCreated = true;
 		}}>Create publisher/supplier</button
@@ -139,14 +148,7 @@
 			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					// TODO: update data
-				}
-			},
-			onUpdated: async ({ form }) => {
-				if (form.valid) {
-					const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
-					newOrderDialogOpen.set(false);
-					await goto(`${base}/orders/customers/${newCustomerId}`);
+					createCustomer(form.data);
 				}
 			}
 		}}

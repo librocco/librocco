@@ -91,6 +91,8 @@ export type PossibleSupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 } & SupplierJoinData &
+	// TODO: Maybe not re-derive the already derived type, use this instead:
+	// Pick<BookData, "isbn" | "title" | "authors">;
 	Omit<BookDataCols, "price">;
 
 /**
@@ -104,12 +106,22 @@ export type PlacedSupplierOrderLine = {
 	total_book_price: number;
 } & PossibleSupplierOrderLine;
 
+/** Raw reconciliation order, returned from DB, before parsing supplier order ids JSON string */
+export type DBReconciliationOrder = {
+	/** JSON string */
+	supplier_order_ids: string;
+	created: number;
+	id?: number;
+	finalized: boolean;
+	updatedAt: Date;
+};
+
 /**
  * Represents a reconciliation order that groups multiple supplier orders
  * and their associated customer order lines for processing.
  */
 export type ReconciliationOrder = {
-	supplier_order_ids: string;
+	supplierOrderIds: number[];
 	created: number;
 	id?: number;
 	finalized: boolean;
