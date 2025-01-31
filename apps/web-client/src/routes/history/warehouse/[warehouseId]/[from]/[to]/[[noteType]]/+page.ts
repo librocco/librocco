@@ -14,7 +14,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const { dbCtx } = await parent();
 
-	if (!browser) {
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
 		return { displayName: "N/A", transactions: [], noteType: "" };
 	}
 

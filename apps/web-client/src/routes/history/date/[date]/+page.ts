@@ -30,7 +30,8 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 		totalInboundDiscountedPrice: 0
 	};
 
-	if (!browser) {
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
 		return { date, dateValue, bookList: [] as PastTransactionItem[], stats };
 	}
 

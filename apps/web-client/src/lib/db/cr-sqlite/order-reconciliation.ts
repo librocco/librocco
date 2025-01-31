@@ -6,7 +6,8 @@ import type {
 	ReconciliationOrder,
 	ReconciliationOrderLine,
 	PlacedSupplierOrder,
-	PlacedSupplierOrderLine
+	PlacedSupplierOrderLine,
+	DBReconciliationOrder
 } from "./types";
 
 /**
@@ -46,11 +47,25 @@ ascending
  * @returns ReconciliationOrder array
  */
 export async function getAllReconciliationOrders(db: DB): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<ReconciliationOrder>(
+	const result = await db.execO<DBReconciliationOrder>(
 		"SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order ORDER BY id ASC;"
 	);
-	return result;
+
+	return result.map(unmarshalReconciliationOrder);
 }
+
+const unmarshalReconciliationOrder = ({ supplier_order_ids, ...order }: DBReconciliationOrder): ReconciliationOrder => {
+	let supplierOrderIds = [];
+
+	try {
+		supplierOrderIds = JSON.parse(supplier_order_ids);
+	} catch {
+		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
+		throw new Error(msg);
+	}
+
+	return { ...order, supplierOrderIds };
+};
 
 /**
  * Retrieves a specific reconciliation order by ID
@@ -61,24 +76,17 @@ JSON
  * @returns ReconciliationOrder with parsed supplier_order_ids
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
-	const result = await db.execO<ReconciliationOrder>(
+	const [result] = await db.execO<DBReconciliationOrder>(
 		`SELECT id, supplier_order_ids, finalized, updatedAt, created
 		FROM reconciliation_order WHERE id = ?;`,
 		[id]
 	);
 
-	if (!result.length) {
+	if (!result) {
 		throw new Error(`Reconciliation order with id ${id} not found`);
 	}
 
-	try {
-		JSON.parse(result[0].supplier_order_ids);
-	} catch (e) {
-		throw new Error(`Invalid json: supplier order ids`);
-	}
-
-	const res = { ...result[0], supplierOrderIds: JSON.parse(result[0].supplier_order_ids) };
-	return res;
+	return unmarshalReconciliationOrder(result);
 }
 
 /**
