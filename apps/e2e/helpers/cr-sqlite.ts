@@ -1,5 +1,5 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import { Customer } from "./types";
+import { Customer, Supplier, SupplierOrderLine } from "./types";
 
 // #region books
 
@@ -235,3 +235,82 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
 };
 
 // #endregion customerOrders
+
+export async function upsertSupplier(db: DB, supplier: Supplier) {
+	if (!supplier.id) {
+		throw new Error("Supplier must have an id");
+	}
+	await db.exec(
+		`INSERT INTO supplier (id, name, email, address)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            name = COALESCE(?, name),
+            email = COALESCE(?, email),
+            address = COALESCE(?, address);`,
+		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
+	);
+}
+
+export async function associatePublisher(db: DB, params: { supplierId: number; publisherId: string }): Promise<void> {
+	const { publisherId, supplierId } = params;
+	/* Makes sure the given publisher is associated with the given supplier id.
+     If necessary it disassociates a different supplier */
+	await db.exec(
+		`INSERT INTO supplier_publisher (supplier_id, publisher)
+         VALUES (?, ?)
+         ON CONFLICT(publisher) DO UPDATE SET
+           supplier_id = ?;`,
+		[supplierId, publisherId, supplierId]
+	);
+}
+
+export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]) {
+	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
+	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
+	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
+
+	const supplierOrderMapping: { [supplierId: number]: number } = {};
+	// Collect all supplier ids involved in the order lines
+	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+
+	await db.tx(async (passedDb) => {
+		const db: DB = passedDb as DB;
+		for (const supplierId of supplierIds) {
+			// Create a new supplier order for each supplier
+			const newSupplierOrderId = (
+				await db.execA<number[]>(
+					`INSERT INTO supplier_order (supplier_id)
+			      VALUES (?) RETURNING id;`,
+					[supplierId]
+				)
+			)[0][0];
+			// Save the newly created supplier order id
+			supplierOrderMapping[supplierId] = newSupplierOrderId;
+		}
+
+		for (const orderLine of orderLines) {
+			// Find the customer order lines corresponding to this supplier order line
+			const customerOrderLines = await db.execO<any>(
+				// TODO: write tests to check the sorting by order creation
+				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
+				[orderLine.isbn]
+			);
+
+			let copiesToGo = orderLine.quantity;
+			while (copiesToGo > 0) {
+				const customerOrderLine = customerOrderLines.shift();
+				if (customerOrderLine) {
+					// The whole line can be fulfilled
+					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
+				}
+				copiesToGo--;
+			}
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+	      VALUES (?, ?, ?);`,
+				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
+			);
+		}
+	});
+	console.log(supplierOrderMapping);
+}
