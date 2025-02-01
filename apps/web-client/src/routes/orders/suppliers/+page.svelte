@@ -7,7 +7,7 @@
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { customerOrderSchema } from "$lib/forms";
+	import { createCustomerOrderSchema } from "$lib/forms";
 	import { base } from "$app/paths";
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
@@ -65,10 +65,12 @@
 				price: 10,
 				publisher: "abcPub"
 			});
-			await upsertCustomer(data?.ordersDb, { id: 1, email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
+
+			await upsertCustomer(data?.ordersDb, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
 			await addBooksToCustomer(data?.ordersDb, 1, ["123456789"]);
 			await upsertSupplier(data?.ordersDb, { id: 123, name: "abcSup" });
 			await associatePublisher(data?.ordersDb, 123, "abcPub");
+
 			const possibleLines = await getPossibleSupplierOrderLines(data?.ordersDb, 123);
 
 			await createSupplierOrder(data?.ordersDb, possibleLines);
@@ -130,10 +132,11 @@
 	<CustomerOrderMetaForm
 		heading="Create new order"
 		saveLabel="Create"
-		data={defaults(zod(customerOrderSchema))}
+		kind="create"
+		data={defaults(zod(createCustomerOrderSchema("create")))}
 		options={{
 			SPA: true,
-			validators: zod(customerOrderSchema),
+			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					// TODO: update data
