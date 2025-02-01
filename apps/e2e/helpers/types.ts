@@ -318,3 +318,22 @@ export type Customer = {
 	updatedAt?: Date;
 };
 // #endregion customerOrder
+
+export type Supplier = {
+	id?: number;
+	name?: string;
+	email?: string;
+	address?: string;
+};
+
+export type SupplierOrderLine = {
+	supplier_id: number;
+	supplier_name: string;
+	// TODO: extend from Book type (which properties are optional?)
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	quantity: number;
+	line_price: number;
+};
