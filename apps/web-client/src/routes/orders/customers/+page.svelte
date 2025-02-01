@@ -9,13 +9,13 @@
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { customerOrderSchema } from "$lib/forms";
+	import { createCustomerOrderSchema } from "$lib/forms";
 	import { getOrderStatus } from "$lib/utils/order-status";
 	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
 	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
-	import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import type { Customer } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
@@ -27,7 +27,7 @@
 		const { rx } = data.ordersDbCtx;
 
 		// Reload add customer data dependants when the data changes
-		const disposer1 = rx.onRange(["customer"], () => (console.log("customer data changed"), invalidate("customer:data")));
+		const disposer1 = rx.onRange(["customer"], () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
 		const disposer2 = rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
 
@@ -47,7 +47,6 @@
 	$: customers = data.customers;
 	$: customerOrderLines = data.customerOrderLines;
 
-	const newCustomerId = Math.floor(Math.random() * 1000000); // Temporary ID generation
 	$: ordersWithStatus = customers.map((customer) => {
 		const orders = customerOrderLines.filter((line) => line.customer_id.toString() === customer.id.toString());
 		const status = getOrderStatus(orders);
@@ -65,13 +64,22 @@
 		orderFilterStatus.set(status);
 	}
 
-	const createCustomer = async (customer: Customer) => {
+	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
 		// NOTE: ordersDbCtx should always be defined on client
 		const { db } = data.ordersDbCtx;
-		await upsertCustomer(db, { ...customer, id: newCustomerId });
+
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		const displayId = await getCustomerDisplayIdSeq(db).then(String);
+
+		await upsertCustomer(db, { ...customer, id, displayId });
+
+		newOrderDialogOpen.set(false);
+
+		// TODO: replace this with 'racefreeGoto'
+		await goto(`${base}/orders/customers/${id}`);
 	};
 </script>
 
@@ -125,7 +133,7 @@
 						</tr>
 					</thead>
 					<tbody>
-						{#each filteredOrders as { fullname, email, id }}
+						{#each filteredOrders as { id, fullname, email = "", displayId }}
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
@@ -135,7 +143,7 @@
 									</dl>
 								</td>
 								<td>
-									<span class="font-medium">{id}</span>
+									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
 									<a href="{base}/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>
@@ -153,20 +161,14 @@
 	<CustomerOrderMetaForm
 		heading="Create new order"
 		saveLabel="Create"
-		data={defaults(zod(customerOrderSchema))}
+		kind="create"
+		data={defaults(zod(createCustomerOrderSchema("create")))}
 		options={{
 			SPA: true,
-			validators: zod(customerOrderSchema),
+			validators: zod(createCustomerOrderSchema("create")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					createCustomer(form.data);
-				}
-			},
-			onUpdated: async ({ form }) => {
-				if (form.valid) {
-					data.customers = [...data.customers, { ...form.data, id: newCustomerId }];
-					newOrderDialogOpen.set(false);
-					await goto(`${base}/orders/customers/${newCustomerId}`);
 				}
 			}
 		}}

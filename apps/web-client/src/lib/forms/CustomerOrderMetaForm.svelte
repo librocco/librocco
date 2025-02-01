@@ -9,6 +9,7 @@
 
 	export let saveLabel: string;
 	export let heading = "";
+	export let kind: "create" | "update";
 
 	export let data: SuperValidated<CustomerOrderSchema>;
 	export let options: FormOptions<CustomerOrderSchema>;
@@ -32,6 +33,16 @@
 		{/if}
 
 		<div class="form-fields w-full">
+			{#if kind === "update"}
+				<div class="form-control gap-y-2">
+					<FormFieldProxy {form} name="displayId">
+						<TextControl label="Display ID" let:controlAttrs>
+							<input {...controlAttrs} bind:value={$formStore.displayId} class="input-bordered input w-full" />
+						</TextControl>
+					</FormFieldProxy>
+				</div>
+			{/if}
+
 			<div class="form-control gap-y-2">
 				<FormFieldProxy {form} name="fullname">
 					<TextControl label="Name" let:controlAttrs>
