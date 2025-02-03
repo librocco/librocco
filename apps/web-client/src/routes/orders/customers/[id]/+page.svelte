@@ -99,13 +99,13 @@
 						<h1 class="prose card-title">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{customer.id}</h2>
+							<h2 class="prose">#{data?.customer?.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={data?.customer.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}
-									>{new Date(data?.customer.updatedAt).toLocaleString()}</time
+								<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
+									>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
 								>
 							</span>
 						</div>
@@ -124,14 +124,14 @@
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{data?.customer.fullname || ""}</dd>
+										<dd class="truncate">{data?.customer?.fullname || ""}</dd>
 									</div>
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer email</span>
 											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{data?.customer.email || ""}</dd>
+										<dd class="truncate">{data?.customer?.email || ""}</dd>
 									</div>
 								</div>
 								<div class="flex gap-x-3">
@@ -139,7 +139,7 @@
 										<span class="sr-only">Deposit</span>
 										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 									</dt>
-									<dd>€{data?.customer.deposit || 0} deposit</dd>
+									<dd>€{data?.customer?.deposit || 0} deposit</dd>
 								</div>
 							</div>
 							<div class="w-full pr-2">

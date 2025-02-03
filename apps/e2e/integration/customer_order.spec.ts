@@ -1,39 +1,20 @@
 import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
-import { getDashboard, getDbHandle } from "@/helpers";
+import { getDbHandle } from "@/helpers";
 import { addBooksToCustomer, upsertCustomer } from "@/helpers/cr-sqlite";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto(baseURL);
-	await getDashboard(page).waitFor();
-
-	page.getByLabel("Main navigation");
-	page.getByRole("listitem").nth(5).click();
-	const nav = page.getByLabel("Main navigation");
-	await nav.waitFor();
-
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(upsertCustomer, { id: 1, fullname: "John Doe", email: "john@example.com" });
-	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234"] });
-	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234", "4321"] });
-});
-
-test("should show list of In Progress orders", async ({ page }) => {
-	page.getByRole("button", { name: "In Progress" });
-
-	// Verify customer data is displayed
-	await expect(page.getByText("John Doe")).toBeVisible();
-	await expect(page.getByText("john@example.com")).toBeVisible();
+	await page.goto(`${baseURL}orders/customers/`);
 });
 test("should create a new customer order", async ({ page }) => {
-	await page.getByRole("button", { name: "New Order" }).click();
+	await page.getByRole("button", { name: "New Order" }).first().click();
 
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
 
-	await page.getByLabel("Full Name").fill("New Customer");
-	await page.getByLabel("Email").fill("new@example.com");
+	await page.getByLabel("Name").nth(1).fill("New Customer");
+	await page.getByLabel("Email").nth(1).fill("new@example.com");
 
 	await page.getByRole("button", { name: "Create" }).click();
 
@@ -41,46 +22,79 @@ test("should create a new customer order", async ({ page }) => {
 	await expect(page.getByText("New Customer")).toBeVisible();
 	await expect(page.getByText("new@example.com")).toBeVisible();
 });
-test("should show a customer order with the correct details", async ({ page }) => {
+
+type CustomerTestFixture = {
+	customer: { id: number; fullname: string; email: string };
+};
+
+const testOrders = test.extend<CustomerTestFixture>({
+	customer: async ({ page }, use) => {
+		await page.goto(baseURL);
+
+		const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com" };
+
+		const dbHandle = await getDbHandle(page);
+
+		// dbHandler
+		await dbHandle.evaluate(upsertCustomer, customer);
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234"] });
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234", "4321"] });
+
+		await use(customer);
+	}
+});
+
+testOrders("should show list of In Progress orders", async ({ page, customer }) => {
+	await page.goto(`${baseURL}orders/customers/`);
+	page.getByRole("button", { name: "In Progress" });
+
+	await expect(page.getByText(customer.fullname)).toBeVisible();
+	await expect(page.getByText(customer.email)).toBeVisible();
+});
+testOrders("should show a customer order with the correct details", async ({ page, customer }) => {
+	await page.goto(`${baseURL}orders/customers/`);
 	const updateButton = page.getByRole("link", { name: "Update" }).first();
 	await updateButton.click();
+	await page.waitForURL(`${baseURL}orders/customers/1/`);
 
-	expect(page.url()).toContain("/orders/customers/1");
+	await expect(page.getByText(customer.fullname)).toBeVisible();
+	await expect(page.getByText(customer.email)).toBeVisible();
 
-	// Verify customer details are shown
-	await expect(page.getByText("John Doe")).toBeVisible();
-	await expect(page.getByText("john@example.com")).toBeVisible();
+	await expect(page.getByText("1234").first()).toBeVisible();
+	await expect(page.getByText("1234").nth(1)).toBeVisible();
 
-	// Verify order books are listed
-	await expect(page.getByText("1234")).toBeVisible();
 	await expect(page.getByText("4321")).toBeVisible();
 });
-test("should update a customer details", async ({ page }) => {
-	page.getByLabel("Edit customer order name, email or deposit").click();
+testOrders("should update a customer details", async ({ page, customer }) => {
+	await page.goto(`${baseURL}orders/customers/1/`);
+
+	page.getByText(customer.fullname);
+	await page.getByLabel("Edit customer order name, email or deposit").click();
 	const dialog = page.getByRole("dialog");
 	await expect(dialog).toBeVisible();
-	await page.getByLabel("Full Name").fill("New Customer");
-	await page.getByLabel("Email").fill("new@example.com");
+	await page.getByLabel("Name").nth(2).fill("New Customer");
+	await page.getByLabel("Email").nth(2).fill("new@gmail.com");
 
-	await page.getByRole("button", { name: "Update" }).click();
+	await page.getByLabel("Deposit").nth(2).fill("10");
 
-	await expect(dialog).toBeHidden();
+	await page.locator('button[type="submit"]').click();
+
+	await expect(page.getByLabel("Edit customer order name, email or deposit").nth(1)).toBeHidden();
 
 	await expect(page.getByText("New Customer")).toBeVisible();
-	await expect(page.getByText("new@example.com")).toBeVisible();
+	await expect(page.getByText("new@gmail.com")).toBeVisible();
 });
-test("should add books to a customer order", async ({ page }) => {
+
+testOrders("should add books to a customer order", async ({ page, customer }) => {
+	await page.goto(`${baseURL}orders/customers/`);
+
 	await page.getByRole("link", { name: "Update" }).first().click();
 
-	// Wait for order page
-	expect(page.url()).toContain("/orders/customers/1");
+	await page.waitForURL(`${baseURL}orders/customers/1/`);
+	await expect(page.getByText(customer.fullname)).toBeVisible();
+	await expect(page.getByText(customer.email)).toBeVisible();
 
-	// or  placeholder="Enter ISBN of delivered books"
-
-	const isbnField = page.getByLabel("Enter ISBN of delivered books");
-	isbnField.fill("1234");
-	isbnField.press("Enter");
-
+	const isbnField = page.getByRole("textbox");
 	isbnField.fill("5678");
 	isbnField.press("Enter");
 
