@@ -1,5 +1,3 @@
-import { browser } from "$app/environment";
-
 import type { PageLoad } from "./$types";
 import type { GetStockResponseItem, PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
