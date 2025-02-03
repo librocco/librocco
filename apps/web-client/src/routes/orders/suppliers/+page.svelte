@@ -157,7 +157,7 @@
 		data={defaults(zod(createCustomerOrderSchema("create")))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("update")),
+			validators: zod(createCustomerOrderSchema("create")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					createCustomer(form.data);
