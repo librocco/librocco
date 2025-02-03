@@ -1,4 +1,3 @@
-import { browser } from "$app/environment";
 import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
 

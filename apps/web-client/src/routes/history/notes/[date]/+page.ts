@@ -1,6 +1,5 @@
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
-import { browser } from "$app/environment";
 
 import type { PageLoad } from "./$types";
 import type { PastNoteItem } from "$lib/db/cr-sqlite/types";
