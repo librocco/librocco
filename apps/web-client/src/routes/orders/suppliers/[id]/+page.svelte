@@ -13,19 +13,22 @@
 
 	$: ({ orderLines } = data);
 
-	// Mock supplier data
-	const supplier = {
-		name: "Academic Books Ltd",
-		id: 1,
-		lastUpdated: new Date()
-	};
+	// Supplier meta data is returned per row. We just need one copy of it
+	$: [orderLine] = orderLines;
+	$: ({
+		supplier_id,
+		supplier_name
+		// last_updated_at // TODO: re-introduce this
+	} = orderLine);
+
+	// $: lastUpdatedAtDate = new Date(last_updated_at)
 
 	let selectedBooks = orderLines ?? [];
 	$: selectedIsbns = selectedBooks.map(({ isbn }) => isbn);
 	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
 
 	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
-	$: totalBooks = data?.orderLines.length;
+	$: totalBooks = orderLines.length;
 
 	$: canPlaceOrder = selectedBooks.length > 0;
 
@@ -40,7 +43,7 @@
 		await invalidate("suppliers:data");
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(`${base}/orders/suppliers`);
+		await goto(`${base}/orders/suppliers/`);
 	}
 
 	function selectPortion(portion: number) {
@@ -64,10 +67,10 @@
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
-						<h1 class="prose card-title">{supplier.name}</h1>
+						<h1 class="prose card-title">{supplier_name}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{supplier.id}</h2>
+							<h2 class="prose">#{supplier_id}</h2>
 						</div>
 					</div>
 					<dl class="flex flex-col">
@@ -80,12 +83,13 @@
 								<dt class="stat-title">Total value</dt>
 								<dd class="stat-value text-2xl">€{totalAmount}</dd>
 							</div>
-							<div class="stat md:px-1">
+							<!-- TODO: re-introduce last_updated_at -->
+							<!-- <div class="stat md:px-1">
 								<dt class="stat-title">Last updated</dt>
 								<dd class="stat-value text-2xl">
-									<time dateTime={supplier.lastUpdated.toISOString()}>{supplier.lastUpdated.toLocaleDateString()}</time>
+									<time dateTime={lastUpdatedAtDate.toISOString()}>{lastUpdatedAtDate.toLocaleDateString()}</time>
 								</dd>
-							</div>
+							</div> -->
 						</div>
 					</dl>
 				</div>
@@ -115,8 +119,8 @@
 							<th>ISBN</th>
 							<th>Title</th>
 							<th>Authors</th>
-							<th>Price</th>
 							<th>Quantity</th>
+							<th>Total Price</th>
 						</tr>
 					</thead>
 					<tbody>

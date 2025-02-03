@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { sortLinesBySupplier } from "$lib/db/cr-sqlite/order-reconciliation";
-	import type { ProcessedOrderLine, SupplierPlacedOrderLine } from "$lib/db/cr-sqlite/types";
+	import type { ProcessedOrderLine } from "$lib/db/cr-sqlite/types";
 
 	import type { BookEntry } from "@librocco/db";
-	import { onMount } from "svelte";
 
 	export let reconciledBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
 		processedLines: [],

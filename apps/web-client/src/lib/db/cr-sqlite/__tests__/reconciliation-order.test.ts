@@ -53,6 +53,7 @@ describe("Reconciliation order creation", () => {
 			}
 		]);
 	});
+
 	it("can create a reconciliation order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		await createSupplierOrder(db, newSupplierOrderLines);
@@ -73,6 +74,7 @@ describe("Reconciliation order creation", () => {
 			finalized: 0
 		});
 	});
+
 	it("can update a currently reconciliating order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		await createSupplierOrder(db, newSupplierOrderLines);
@@ -295,6 +297,7 @@ describe("Misc helpers", () => {
 	afterEach(() => {
 		vi.clearAllMocks();
 	});
+
 	it("should process when delivery matches order exactly", () => {
 		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 2 }];
 
@@ -303,14 +306,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -322,14 +325,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 2,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -347,14 +350,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -366,14 +369,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 1,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -391,14 +394,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -410,14 +413,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 3,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -435,14 +438,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -454,14 +457,14 @@ describe("Misc helpers", () => {
 					authors: "Author 1",
 					id: 1,
 					isbn: "123",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_id: 1,
 					supplier_name: "Supplier 1",
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})
@@ -478,6 +481,7 @@ describe("Misc helpers", () => {
 			]
 		});
 	});
+
 	it("should handle under-delivery", () => {
 		const scannedBooks = [];
 
@@ -486,14 +490,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
+				total_book_price: 10,
 				supplier_order_id: 1,
-				total_price: 10,
 				created: Date.now()
 			}
 		];
@@ -505,14 +509,14 @@ describe("Misc helpers", () => {
 					authors: "Author 1",
 					id: 1,
 					isbn: "123",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_id: 1,
 					supplier_name: "Supplier 1",
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})
@@ -520,6 +524,7 @@ describe("Misc helpers", () => {
 			unmatchedBooks: []
 		});
 	});
+
 	it("should group order lines by supplier", () => {
 		const orderLines = [
 			{ supplier_name: "Supplier 1", isbn: "123" },
