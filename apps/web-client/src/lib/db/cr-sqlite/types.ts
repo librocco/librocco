@@ -91,9 +91,7 @@ export type PossibleSupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 } & SupplierJoinData &
-	// TODO: Maybe not re-derive the already derived type, use this instead:
-	// Pick<BookData, "isbn" | "title" | "authors">;
-	Omit<BookDataCols, "price">;
+	Pick<BookData, "isbn" | "title" | "authors">;
 
 /**
  * Order lines of a placed supplier order
