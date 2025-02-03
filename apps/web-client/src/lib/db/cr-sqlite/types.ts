@@ -5,6 +5,11 @@ import type { DB as _DB } from "@vlcn.io/crsqlite-wasm";
 
 import type { BookData } from "@librocco/shared";
 
+/**
+ * Order tables only show a slice of book data => our order lines only need to return relevant cols
+ */
+type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
+
 /* Customer orders/books */
 export type Customer = {
 	id: number;
@@ -37,50 +42,13 @@ export type CustomerOrderLine = {
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
-	isbn: string;
-} & Pick<BookData, "title" | "authors" | "price">;
+} & BookDataCols;
 
 /* Suppliers */
-export type SupplierOrderInfo = { supplier_id: number; isbn: string; total_book_number: number };
-export type SupplierOrderLine = {
-	supplier_id: number;
-	supplier_name: string;
-	// TODO: extend from Book type (which properties are optional?)
-	isbn: string;
-	title: string;
-	authors: string;
-	publisher: string;
-	quantity: number;
-	line_price: number;
-};
 
-export type SupplierPlacedOrder = {
-	id: number;
-	supplier_name: string;
-	supplier_id: number;
-	total_book_number: number;
-	created: number;
-};
-
-export type SupplierPlacedOrderLine = BookData & {
-	id: number;
-	supplier_name: string;
-	supplier_id: number;
-	total_book_number: number;
-	supplier_order_id: number;
-	total_price: number;
-	created: number;
-	quantity: number;
-};
-export type SupplierPlacedOrderInfo = {
-	id: number;
-	supplier_name: string;
-	supplier_id: number;
-	total_book_number: number;
-	supplier_order_id: number;
-	total_price: number;
-	created: number;
-};
+/**
+ * A supplier table
+ */
 export type Supplier = {
 	id?: number;
 	name?: string;
@@ -88,12 +56,53 @@ export type Supplier = {
 	address?: string;
 };
 
-export type SupplierOrder = {
+/**
+ * Supplier data returned through supplier order & order line joins
+ * name and id are prefixed with `supplier_` to avoid conflicts
+ */
+export type SupplierJoinData = {
 	supplier_id: number;
-	created: Date;
-	lines: SupplierOrderLine[];
-	id: number;
+	supplier_name: string;
 };
+
+/**
+ * A nascent supplier order. It has not yet been placed.
+ * Order lines (total books and price) are aggregated form customer orders
+ */
+export type PossibleSupplierOrder = {
+	total_book_number: number;
+	total_book_price: number;
+} & SupplierJoinData;
+
+/**
+ * A placed supplier order: a batch of books ordered on a specific date
+ * from the "possible" batch
+ */
+export type PlacedSupplierOrder = {
+	id: number;
+	created: number;
+} & PossibleSupplierOrder;
+
+/**
+ * Possible order lines are aggregated from customer order lins for a given supplier
+ * Book price is multiplied by line quantity => `line_price`
+ */
+export type PossibleSupplierOrderLine = {
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Pick<BookData, "isbn" | "title" | "authors">;
+
+/**
+ * Order lines of a placed supplier order
+ * Book price is multiplied by line => `line_price`
+ */
+export type PlacedSupplierOrderLine = {
+	supplier_order_id: number;
+	created: number;
+	total_book_number: number;
+	total_book_price: number;
+} & PossibleSupplierOrderLine;
 
 /**
  * Represents a reconciliation order that groups multiple supplier orders
