@@ -38,8 +38,7 @@ describe("Supplier order handlers should", () => {
 				supplier_id: 1,
 				supplier_name: "Science Books LTD",
 				isbn: "1",
-				publisher: "MathsAndPhysicsPub",
-				authors: null,
+				authors: "N/A",
 				title: "Physics",
 				quantity: 1,
 				line_price: 7
@@ -48,8 +47,7 @@ describe("Supplier order handlers should", () => {
 				supplier_id: 1,
 				supplier_name: "Science Books LTD",
 				isbn: "2",
-				publisher: "ChemPub",
-				authors: null,
+				authors: "N/A",
 				title: "Chemistry",
 				quantity: 1,
 				line_price: 13
@@ -61,8 +59,7 @@ describe("Supplier order handlers should", () => {
 				supplier_id: 2,
 				supplier_name: "Phantasy Books LTD",
 				isbn: "3",
-				publisher: "PhantasyPub",
-				authors: null,
+				authors: "N/A",
 				title: "The Hobbit",
 				quantity: 2,
 				line_price: 10
@@ -78,8 +75,7 @@ describe("Supplier order handlers should", () => {
 				supplier_id: 2,
 				supplier_name: "Phantasy Books LTD",
 				isbn: "2",
-				publisher: "ChemPub",
-				authors: null,
+				authors: "N/A",
 				title: "Chemistry",
 				quantity: 1,
 				line_price: 13
@@ -88,8 +84,7 @@ describe("Supplier order handlers should", () => {
 				supplier_id: 2,
 				supplier_name: "Phantasy Books LTD",
 				isbn: "3",
-				publisher: "PhantasyPub",
-				authors: null,
+				authors: "N/A",
 				title: "The Hobbit",
 				quantity: 2,
 				line_price: 10
@@ -109,16 +104,16 @@ describe("Supplier order handlers should", () => {
 		const newPossibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		expect(newPossibleOrderLines.length).toBe(0);
 	});
+
 	it("Aggregates supplier orders lines quantity when getting possible order lines", async () => {
 		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		expect(possibleOrderLines).toEqual([
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "1",
 				line_price: 21,
-				publisher: "MathsAndPhysicsPub",
 				quantity: 3,
 
 				supplier_id: 1,
@@ -126,9 +121,8 @@ describe("Supplier order handlers should", () => {
 				title: "Physics"
 			},
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "2",
-				publisher: "ChemPub",
 				quantity: 3,
 				line_price: 39,
 
@@ -145,9 +139,8 @@ describe("Supplier order handlers should", () => {
 
 		expect(newOrders).toEqual([
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "1",
-				publisher: "MathsAndPhysicsPub",
 				quantity: 3,
 				supplier_id: 1,
 				supplier_name: "Science Books LTD",
@@ -156,12 +149,11 @@ describe("Supplier order handlers should", () => {
 				supplier_order_id: 1,
 				total_book_number: 6,
 				total_book_price: 60,
-				price: 7
+				line_price: 21
 			},
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "2",
-				publisher: "ChemPub",
 				quantity: 3,
 				supplier_id: 1,
 				supplier_name: "Science Books LTD",
@@ -170,7 +162,7 @@ describe("Supplier order handlers should", () => {
 				supplier_order_id: 1,
 				total_book_number: 6,
 				total_book_price: 60,
-				price: 13
+				line_price: 39
 			}
 		]);
 	});
@@ -268,10 +260,9 @@ describe("getPlacedSupplierOrderLines", () => {
 		expect(order).toEqual([
 			{
 				supplier_id: 1,
-				authors: null,
+				authors: "N/A",
 				isbn: "1",
-				price: 7,
-				publisher: "MathsAndPhysicsPub",
+				line_price: 14,
 				quantity: 2,
 				supplier_order_id: 1,
 				title: "Physics",
@@ -281,10 +272,9 @@ describe("getPlacedSupplierOrderLines", () => {
 				created: expect.any(Number)
 			},
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "2",
-				price: 13,
-				publisher: "ChemPub",
+				line_price: 13,
 				quantity: 1,
 				supplier_id: 1,
 				supplier_order_id: 1,
@@ -295,10 +285,9 @@ describe("getPlacedSupplierOrderLines", () => {
 				created: expect.any(Number)
 			},
 			{
-				authors: null,
+				authors: "N/A",
 				isbn: "3",
-				price: 5,
-				publisher: "PhantasyPub",
+				line_price: 10,
 				quantity: 2,
 				supplier_id: 1,
 				supplier_order_id: 1,
@@ -316,7 +305,7 @@ describe("getPlacedSupplierOrderLines", () => {
 
 		// The result should be as test above, but we should have the additional supplier_order 2 at the end
 		expect(orderLines.length).toBe(4);
-		expect(orderLines[4].supplier_order_id).toBe("2");
+		expect(orderLines[3].supplier_order_id).toBe(2);
 	});
 
 	it("should return empty array for non-existent order", async () => {
