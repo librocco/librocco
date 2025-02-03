@@ -18,7 +18,7 @@
 	}
 </script>
 
-<header class="navbar bg-neutral mb-4">
+<header class="navbar mb-4 bg-neutral">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
 </header>
 
@@ -27,7 +27,7 @@
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
-					<div class="bg-base-100 sticky top-0 flex gap-2 pb-3 md:flex-col">
+					<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
 						<h1 class="prose card-title">{supplier_order_id}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
