@@ -11,6 +11,7 @@
 	import { base } from "$app/paths";
 	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
+	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 	import type { LayoutData } from "./$types";
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
@@ -34,6 +35,7 @@
 	} = newOrderDialog;
 
 	$: hasOrderedOrders = data.placedOrders.length;
+	$: hasReconcilingOrders = data.reconcilingOrders.length;
 
 	function setFilter(status: SupplierOrderFilterStatus) {
 		supplierOrderFilterStatus.set(status);
@@ -115,13 +117,23 @@
 					>
 						Ordered
 					</button>
-					<button class="btn-outline btn-sm btn" disabled> Received </button>
+					<button
+						class="btn-sm btn {$supplierOrderFilterStatus === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("reconciling")}
+						aria-pressed={$supplierOrderFilterStatus === "reconciling"}
+						disabled={!hasReconcilingOrders}
+						data-testid="reconciling-list"
+					>
+						Reconciling
+					</button>
 					<button class="btn-outline btn-sm btn" disabled> Completed </button>
 				</div>
 				{#if $supplierOrderFilterStatus === "unordered"}
 					<UnorderedTable orders={data.possibleOrders} />
-				{:else}
+				{:else if $supplierOrderFilterStatus === "ordered"}
 					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
+				{:else}
+					<ReconcilingTable orders={data.reconcilingOrders} />
 				{/if}
 			{/if}
 		</div>
