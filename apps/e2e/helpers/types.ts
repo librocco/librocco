@@ -314,6 +314,7 @@ export type Customer = {
 	email?: string;
 	phone?: string;
 	taxId?: string;
+	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
 };

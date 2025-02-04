@@ -24,14 +24,14 @@ test("should create a new customer order", async ({ page }) => {
 });
 
 type CustomerTestFixture = {
-	customer: { id: number; fullname: string; email: string };
+	customer: { id: number; fullname: string; email: string; displayId: string };
 };
 
 const testOrders = test.extend<CustomerTestFixture>({
 	customer: async ({ page }, use) => {
 		await page.goto(baseURL);
 
-		const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com" };
+		const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" };
 
 		const dbHandle = await getDbHandle(page);
 
