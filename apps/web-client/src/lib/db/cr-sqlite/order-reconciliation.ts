@@ -43,13 +43,23 @@ import type {
  * Retrieves all reconciliation orders from the database, ordered by ID
 ascending
  * @param db
+ * @param finalized - an optional boolean that's used to query finalized or non finalized orders
+ * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB): Promise<ReconciliationOrder[]> {
+export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
 	const result = await db.execO<ReconciliationOrder>(
-		"SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order ORDER BY id ASC;"
+		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
+			ORDER BY id ASC;`
 	);
-	return result;
+
+	const parsedRes = [];
+	for (const order of result) {
+		const parsedSup = JSON.parse(order.supplier_order_ids);
+		parsedRes.push({ ...order, supplier_order_ids: parsedSup });
+	}
+	return parsedRes;
 }
 
 /**
