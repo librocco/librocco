@@ -31,7 +31,6 @@ export type DBCustomerOrderLine = {
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
 	collected?: number; // as milliseconds since epoch
-	supplierOrderIds: string; // Comma separated list of supplier order ids that this book order is part of
 };
 
 export type CustomerOrderLine = {
