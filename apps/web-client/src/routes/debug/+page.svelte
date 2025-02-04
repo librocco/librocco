@@ -7,6 +7,7 @@
 	import { onMount } from "svelte";
 	import { page } from "$app/stores";
 	import { getInitializedDB } from "$lib/db/cr-sqlite";
+	import { dbNamePersisted } from "$lib/db";
 
 	import exampleData from "./example_data";
 
@@ -79,8 +80,10 @@
 		}
 	];
 
+	$: dbName = $dbNamePersisted;
+
 	const populateDatabase = async function () {
-		const db = await getInitializedDB("librocco-current-db");
+		const db = await getInitializedDB(dbName);
 		console.log("Populating database");
 		await db.db.exec(exampleData);
 		console.log("Finished populating database.");
@@ -88,7 +91,7 @@
 	};
 
 	const resetDatabase = async function resetDatabase() {
-		const db = await getInitializedDB("librocco-current-db");
+		const db = await getInitializedDB(dbName);
 		const tables = [
 			"book",
 			"supplier",
@@ -115,7 +118,7 @@
 
 		isLoading = true;
 
-		const db = await getInitializedDB("librocco-current-db");
+		const db = await getInitializedDB(dbName);
 
 		book = await db.db.exec("SELECT COUNT(*) from book;");
 		supplier = await db.db.exec("SELECT COUNT(*) from supplier;");

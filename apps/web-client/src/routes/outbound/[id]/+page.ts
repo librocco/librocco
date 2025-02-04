@@ -1,14 +1,14 @@
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { Warehouse } from "$lib/db/cr-sqlite/types";
+import type { Warehouse, DB, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 import { getNoteById, getNoteCustomItems, getNoteEntries } from "$lib/db/cr-sqlite/note";
 import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
-import type { DB, NoteCustomItem, NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+import { getStock } from "$lib/db/cr-sqlite/stock";
+import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { appPath } from "$lib/paths";
-import { getStock } from "$lib/db/cr-sqlite/stock";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	const id = Number(params.id);
@@ -27,7 +27,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 			displayName: "N/A",
 			warehouses: [] as Warehouse[],
 			entries: [] as NoteEntriesItem[],
-			customItems: [] as NoteCustomItem[]
+			customItems: [] as NoteCustomItem[],
+			publisherList: [] as string[]
 		};
 	}
 
@@ -46,10 +47,11 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		_entries.map(({ isbn }) => isbn)
 	);
 	const entries = _entries.map((e, i) => ({ ...e, availableWarehouses: entriesAvailability[i] }));
-
 	const customItems = await getNoteCustomItems(dbCtx.db, id);
 
-	return { dbCtx, ...note, warehouses, entries, customItems };
+	const publisherList = await getPublisherList(dbCtx.db);
+
+	return { dbCtx, ...note, warehouses, entries, customItems, publisherList };
 };
 
 // TODO: replace the type

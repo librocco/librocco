@@ -1,12 +1,19 @@
 import type { PageLoad } from "./$types";
+import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+
 import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 
 export const load: PageLoad = async ({ parent, params }) => {
-	const { ordersDb } = await parent();
+	const { dbCtx } = await parent();
 
-	const placedOrder = await getPlacedSupplierOrderLines(ordersDb, parseInt(params.id));
+	// We're not in browser, no need for further processing
+	if (!dbCtx) {
+		return { orderLines: [] as PlacedSupplierOrderLine[] };
+	}
 
-	return { placedOrder };
+	const orderLines = await getPlacedSupplierOrderLines(dbCtx.db, [parseInt(params.id)]);
+
+	return { orderLines };
 };
 
 export const ssr = false;

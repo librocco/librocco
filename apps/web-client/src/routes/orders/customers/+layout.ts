@@ -1,25 +1,22 @@
 import type { LayoutLoad } from "./$types";
 
-import { getInitializedDB } from "$lib/db/cr-sqlite";
 import { getAllCustomers, getAllCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
-import { dbNamePersisted } from "$lib/db";
-import { get } from "svelte/store";
 
-export const load: LayoutLoad = async ({ depends }) => {
+export const load: LayoutLoad = async ({ depends, parent }) => {
 	depends("customer:data");
 	depends("customer:books");
 
-	const name = get(dbNamePersisted);
+	const { dbCtx } = await parent();
 
-	const dbCtx = await getInitializedDB(name);
-	const { db } = dbCtx;
+	// We're not in browser, no need for further processing
+	if (!dbCtx) {
+		return { customers: [], customerOrderLines: [] };
+	}
 
-	const customers = await getAllCustomers(db);
+	const customers = await getAllCustomers(dbCtx.db);
+	const customerOrderLines = await getAllCustomerOrderLines(dbCtx.db);
 
-	const customerOrderLines = await getAllCustomerOrderLines(db);
-
-	// TODO: we could rename this to 'dbCtx' once the same approach is used in inventory db
-	return { ordersDbCtx: dbCtx, customers, customerOrderLines };
+	return { customers, customerOrderLines };
 };
 
 export const ssr = false;
