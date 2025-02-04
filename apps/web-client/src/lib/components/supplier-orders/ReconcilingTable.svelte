@@ -17,20 +17,19 @@
 		<thead>
 			<tr>
 				<th scope="col">Order Id</th>
-				<th scope="col"></th>
+				<th scope="col">Supplier Orders</th>
 				<th scope="col">Last Updated</th>
 				<th scope="col"></th>
 				<th scope="col"><span class="sr-only">Update order</span></th>
 			</tr>
 		</thead>
 		<tbody>
-			{#each orders as { id, supplier_order_ids, created, updatedAt }}
+			{#each orders as { id, supplierOrderIds, created, updatedAt }}
 				<tr class="hover focus-within:bg-base-200">
 					<td>{id}</td>
 					<!-- @TODO replace with supplierOrderIds parse array??? -->
-					<td
-						>Includes Orders
-						{#each supplier_order_ids as supplier_id}
+					<td>
+						{#each supplierOrderIds as supplier_id}
 							<a class="hover:underline" href={appPath("supplier_order_status", supplier_id)}>#{supplier_id} </a>
 						{/each}
 					</td>
