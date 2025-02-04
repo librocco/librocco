@@ -179,7 +179,7 @@
 	<div id="content" class="relative flex h-full w-full flex-col overflow-hidden">
 		<!-- Main section -->
 
-		<header class="navbar bg-neutral mb-4">
+		<header class="navbar mb-4 bg-neutral">
 			<input type="checkbox" value="forest" class="theme-controller toggle" />
 		</header>
 
