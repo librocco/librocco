@@ -10,7 +10,7 @@
 
 	const {
 		elements: { portalled, overlay, content, title: titleStore, description: desciptionStore },
-		states: { open },
+		states: { open }
 	} = dialog;
 </script>
 
