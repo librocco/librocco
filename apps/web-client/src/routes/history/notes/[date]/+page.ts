@@ -1,6 +1,5 @@
 import { redirect } from "@sveltejs/kit";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
-import { browser } from "$app/environment";
 
 import type { PageLoad } from "./$types";
 import type { PastNoteItem } from "$lib/db/cr-sqlite/types";
@@ -21,7 +20,8 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	// Prepare the date for usage with date picker
 	const dateValue = fromDate(new Date(date), getLocalTimeZone());
 
-	if (!browser) {
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
 		return { date, dateValue, notes: [] as PastNoteItem[] };
 	}
 

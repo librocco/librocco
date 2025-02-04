@@ -11,6 +11,8 @@
 
 	export let data: PageData;
 
+	$: db = data?.dbCtx?.db;
+
 	$: ({ orderLines } = data);
 
 	// Supplier meta data is returned per row. We just need one copy of it
@@ -39,7 +41,7 @@
 
 		const selection = orderLines.filter(({ isbn }) => selectedIsbns.includes(isbn));
 
-		await createSupplierOrder(data.ordersDb, selection);
+		await createSupplierOrder(db, selection);
 		await invalidate("suppliers:data");
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
