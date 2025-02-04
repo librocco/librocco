@@ -34,7 +34,7 @@ export const createCustomerOrders = async (db: DB) => {
 	await upsertBook(db, { isbn: "3", publisher: "PhantasyPub", title: "The Hobbit", price: 5 });
 
 	// There is an old order that has been completely fullfilled
-	await upsertCustomer(db, { fullname: "An older order", id: 100 });
+	await upsertCustomer(db, { fullname: "An older order", id: 100, displayId: "100" });
 	const sql = "INSERT INTO customer_order_lines (customer_id, isbn, created, placed, received, collected) VALUES (?, ?, ?, ?, ?, ?);";
 	const params = [
 		100,
@@ -47,10 +47,10 @@ export const createCustomerOrders = async (db: DB) => {
 	await db.exec(sql, params);
 
 	// Two customers order some books
-	await upsertCustomer(db, { fullname: "John Doe", id: 1 });
+	await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 	addBooksToCustomer(db, 1, ["1", "2", "3"]);
 
-	await upsertCustomer(db, { fullname: "Jane Doe", id: 2 });
+	await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
 	addBooksToCustomer(db, 2, ["3"]);
 
 	// We have two different suppliers

@@ -1,7 +1,7 @@
 import { filter, firstValueFrom } from "rxjs";
 import { test, expect, vi } from "vitest";
 
-import { BookEntry, BookFetcherPlugin } from "@librocco/db";
+import type { BookData, BookFetcherPlugin } from "@librocco/shared";
 import { testUtils } from "@librocco/shared";
 
 import * as comm from "../comm";
@@ -20,7 +20,7 @@ const withExtensionAvailable = async (plugin: BookFetcherPlugin) => {
 
 test("fetchBookData returns book when called with isbn", async () => {
 	vi.spyOn(comm, "ping").mockImplementation(() => Promise.resolve(true));
-	vi.spyOn(comm, "fetchBook").mockImplementation((isbn: string) => Promise.resolve({ title: `book-${isbn}` } as BookEntry));
+	vi.spyOn(comm, "fetchBook").mockImplementation((isbn: string) => Promise.resolve({ title: `book-${isbn}` } as BookData));
 
 	const plugin = await withExtensionAvailable(createBookDataExtensionPlugin());
 

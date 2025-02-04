@@ -62,10 +62,15 @@ export const scannerSchema = z.object({
 	isbn: z.string()
 });
 
-export type CustomerOrderSchema = Infer<typeof customerOrderSchema>;
-export const customerOrderSchema = z.object({
-	id: z.number(),
-	fullname: z.string().default(""),
-	email: z.string().email().optional(),
-	deposit: z.number().default(0)
-});
+export type CustomerOrderSchema = Infer<ReturnType<typeof createCustomerOrderSchema>>;
+export const createCustomerOrderSchema = (kind: "create" | "update") => {
+	const isUpdate = kind === "update";
+	const displayId = isUpdate ? z.string() : z.string().optional();
+	return z.object({
+		id: z.number(),
+		displayId,
+		fullname: z.string().default(""),
+		email: z.string().email().optional(),
+		deposit: z.number().default(0)
+	});
+};

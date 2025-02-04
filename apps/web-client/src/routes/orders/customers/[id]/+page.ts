@@ -1,22 +1,23 @@
 import type { PageLoad } from "./$types";
+
+import type { Customer, CustomerOrderLine } from "$lib/db/cr-sqlite/types";
+
 import { getCustomerOrderLines, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("customer:data");
 	depends("customer:books");
 
-	const data = await parent();
+	const { dbCtx } = await parent();
 
-	// If db is not returned (we're not in the browser environment, no need for additional loading)
-	if (!data?.ordersDbCtx?.db) {
-		return {};
+	// We're not in browser, no need for further processing
+	if (!dbCtx) {
+		return { customer: {} as Customer, possibleOrders: [] as CustomerOrderLine[] };
 	}
 
-	const { db } = data.ordersDbCtx;
+	// TODO: Retirect to customers page perhaps
+	const [customer = {} as Customer] = await getCustomerDetails(dbCtx.db, Number(params.id));
+	const customerOrderLines = await getCustomerOrderLines(dbCtx.db, Number(params.id));
 
-	const [customerDetails] = await getCustomerDetails(db, Number(params.id));
-
-	const customerOrderLines = await getCustomerOrderLines(db, Number(params.id));
-
-	return { customer: customerDetails, customerOrderLines };
+	return { customer, customerOrderLines };
 };

@@ -1,11 +1,13 @@
-import { readableFromStream } from "$lib/utils/streams";
-import type { DatabaseInterface } from "@librocco/db";
-
-import { checkUrlConnection } from "$lib/db";
 import { get } from "svelte/store";
 import { BehaviorSubject, catchError, from, map, of, share } from "rxjs";
 import { browser } from "$app/environment";
+
+import { checkUrlConnection } from "$lib/db";
+import type { PluginsInterface } from "$lib/plugins";
+
 import { settingsStore } from "./app";
+
+import { readableFromStream } from "$lib/utils/streams";
 
 const createDBConnectivityStream = () => {
 	const shareSuject = new BehaviorSubject(true);
@@ -25,8 +27,8 @@ const createDBConnectivityStream = () => {
  * This is a function, rather than the store as the store (subscription) needs to be created after the initial load
  * (in browser environment) as the db won't be available before that
  */
-export const createExtensionAvailabilityStore = (db: DatabaseInterface) => {
-	return readableFromStream({}, db?.plugin("book-fetcher").isAvailableStream, false);
+export const createExtensionAvailabilityStore = (plugins: PluginsInterface) => {
+	return readableFromStream({}, plugins.get("book-fetcher").isAvailableStream, false);
 };
 
 /**

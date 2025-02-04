@@ -24,7 +24,7 @@
 		"format": "prettier --write ."
 	},
 	"devDependencies": {
-		"@librocco/db": "workspace:*",
+		"@librocco/shared": "workspace:*",
 		"@typescript-eslint/eslint-plugin": "^7.17.1",
 		"@typescript-eslint/parser": "^7.17.1",
 		"eslint": "^8.13.0",
@@ -35,7 +35,7 @@
 		"vite": "~4.0.0"
 	},
 	"peerDependencies": {
-		"@librocco/db": "workspace:*"
+		"@librocco/shared": "workspace:*"
 	},
 	"type": "module"
 }
