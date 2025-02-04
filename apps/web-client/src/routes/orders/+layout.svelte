@@ -5,6 +5,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { WorkerInterface } from "@vlcn.io/ws-client";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
+	import { WITH_SYNC } from "$lib/constants";
 
 	import { LL } from "$i18n/i18n-svelte";
 
@@ -22,8 +23,10 @@
 
 	onMount(() => {
 		// Start the sync worker
-		wkr = new WorkerInterface(new SyncWorker());
-		wkr.startSync(dbid, { url: WS_URL, room: dbid });
+		if (WITH_SYNC) {
+			wkr = new WorkerInterface(new SyncWorker());
+			wkr.startSync(dbid, { url: WS_URL, room: dbid });
+		}
 	});
 
 	onDestroy(() => {

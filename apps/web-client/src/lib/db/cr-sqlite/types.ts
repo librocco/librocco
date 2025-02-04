@@ -31,7 +31,6 @@ export type DBCustomerOrderLine = {
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
 	collected?: number; // as milliseconds since epoch
-	supplierOrderIds: string; // Comma separated list of supplier order ids that this book order is part of
 };
 
 export type CustomerOrderLine = {
@@ -104,12 +103,22 @@ export type PlacedSupplierOrderLine = {
 	total_book_price: number;
 } & PossibleSupplierOrderLine;
 
+/** Raw reconciliation order, returned from DB, before parsing supplier order ids JSON string */
+export type DBReconciliationOrder = {
+	/** JSON string */
+	supplier_order_ids: string;
+	created: number;
+	id?: number;
+	finalized: boolean;
+	updatedAt: Date;
+};
+
 /**
  * Represents a reconciliation order that groups multiple supplier orders
  * and their associated customer order lines for processing.
  */
 export type ReconciliationOrder = {
-	supplier_order_ids: string;
+	supplierOrderIds: number[];
 	created: number;
 	id?: number;
 	finalized: boolean;
