@@ -34,8 +34,8 @@
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	$: hasOrderedOrders = data.placedOrders.length;
 	$: hasReconcilingOrders = data.reconcilingOrders.length;
+	$: hasPlacedOrders = data.placedOrders.length;
 
 	function setFilter(status: SupplierOrderFilterStatus) {
 		supplierOrderFilterStatus.set(status);
@@ -121,7 +121,7 @@
 						class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
 						on:click={() => setFilter("ordered")}
 						aria-pressed={$supplierOrderFilterStatus === "ordered"}
-						disabled={!hasOrderedOrders}
+						disabled={!hasPlacedOrders}
 						data-testid="ordered-list"
 					>
 						Ordered
@@ -157,7 +157,7 @@
 		data={defaults(zod(createCustomerOrderSchema("create")))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("update")),
+			validators: zod(createCustomerOrderSchema("create")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
 					createCustomer(form.data);
