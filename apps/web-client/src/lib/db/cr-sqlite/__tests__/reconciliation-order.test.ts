@@ -43,12 +43,11 @@ describe("Reconciliation order creation", () => {
 
 		// use supplier order ids to create a recon
 		await createReconciliationOrder(db, ids);
-		const res2 = await getAllReconciliationOrders(db);
 
-		expect(res2).toMatchObject([
+		expect(await getAllReconciliationOrders(db)).toMatchObject([
 			{
 				id: 1,
-				supplier_order_ids: [1],
+				supplierOrderIds: [1],
 				finalized: 0
 			}
 		]);
@@ -73,7 +72,7 @@ describe("Reconciliation order creation", () => {
 		expect(res2).toMatchObject([
 			{
 				id: 1,
-				supplier_order_ids: [1],
+				supplierOrderIds: [1],
 				finalized: 1
 			}
 		]);
@@ -95,7 +94,7 @@ describe("Reconciliation order creation", () => {
 		expect(res).toEqual([
 			{
 				id: 1,
-				supplier_order_ids: [1],
+				supplierOrderIds: [1],
 				finalized: 0,
 				created: expect.any(Number),
 				updatedAt: expect.any(Number)

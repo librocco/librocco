@@ -23,8 +23,8 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data.ordersDbCtx;
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
 		// Reload add customer data dependants when the data changes
 		const disposer1 = rx.onRange(["customer"], () => invalidate("customer:data"));
@@ -68,8 +68,8 @@
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
 
-		// NOTE: ordersDbCtx should always be defined on client
-		const { db } = data.ordersDbCtx;
+		// NOTE: dbCtx should always be defined on client
+		const { db } = data.dbCtx;
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		const displayId = await getCustomerDisplayIdSeq(db).then(String);
@@ -78,7 +78,6 @@
 
 		newOrderDialogOpen.set(false);
 
-		// TODO: replace this with 'racefreeGoto'
 		await goto(`${base}/orders/customers/${id}`);
 	};
 </script>
