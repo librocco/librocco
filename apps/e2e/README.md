@@ -30,6 +30,10 @@ We're using [Playwright](https://playwright.dev/) for e2e tests.
      - [Book from field interface](#2214-book-form-field-interface)
    - [Test setup](#23-test-setup)
      - [DB](#231-db)
+3. [Inpecting failures from the CI](#3-ci-failures)
+   [Download report from github actions](#3.1-download-report-from-github-actions)
+   [Unzip the report](#3.2-unzip-the-report)
+   [Browse the report](#3.3-browse-the-report)
 
 ## 1. Running tests
 
@@ -448,4 +452,38 @@ const dbHandle = await getDbHandle(page);
 await dbHandle.evaluate(async (db, book) => {
   await db.books().upsert([book]);
 }, book);
+```
+
+## 3 CI failures
+
+### 3.1 Download report from github actions
+
+When an e2e test job fails it will generate a report that is uploaded as a job artifact. The `Run actions/upload-artifact@v4` step will upload it and print a URL to download it.
+
+### 3.2 Unzip the report
+
+The downloaded zip file needs to be extracted in the `apps/e2e/test-results` directory. For instance:
+
+```bash
+rm -rf apps/e2e/test-results
+mkdir -p apps/e2e/test-results
+cd apps/e2e/test-results
+unzip /tmp/playwright-test-results.zip
+```
+
+### 3.3 Browse the report
+
+Use the command
+
+```bash
+npx playwright show-report
+```
+
+to start a web server with the test results from the CI.
+
+You can also inspect a single test trace by pointing the command `npx playwright show-trace` at the `trace.zip` file.
+For instance:
+
+```bash
+npx playwright show-trace  test-results/book_form-book-form-can-be-submitted-using-keyboard-chromium-retry1/trace.zip
 ```
