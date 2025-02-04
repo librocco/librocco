@@ -4,45 +4,34 @@
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-
-	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { getOrderLineStatus } from "$lib/utils/order-status";
-	import { scannerSchema } from "$lib/forms/schemas";
-	import { customerOrderSchema } from "$lib/forms";
-	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
-	// import { createIntersectionObserver } from "$lib/actions";
-
-	import { invalidate } from "$app/navigation";
 	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
 
+	import { stripNulls } from "@librocco/shared";
+
+	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
+	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
+	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
+	import { createCustomerOrderSchema } from "$lib/forms";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+
+	import { getOrderLineStatus } from "$lib/utils/order-status";
+
+	import { addBooksToCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+
+	import { scannerSchema } from "$lib/forms/schemas";
+	// import { createIntersectionObserver } from "$lib/actions";
+
 	export let data: PageData;
-
-	$: ({
-		customer,
-		customerOrderLines,
-		ordersDbCtx: { db }
-	} = data);
-	$: customerId = parseInt($page.params.id);
-	$: totalAmount = customerOrderLines.reduce((acc, cur) => acc + cur.price, 0);
-
-	// #region infinite-scroll
-	// let maxResults = 20;
-	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
-	// const seeMore = () => (maxResults += 20);
-	// // We're using in intersection observer to create an infinite scroll effect
-	// const scroll = createIntersectionObserver(seeMore);
-
-	// #endregion infinite-scroll
 
 	// #region reactivity
 	let disposer: () => void;
 
 	onMount(() => {
-		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data.ordersDbCtx;
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
 		// Reload add customer data dependants when the data changes
 		const disposer1 = rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
@@ -57,10 +46,61 @@
 	});
 	// #endregion reactivity
 
+	$: customerId = parseInt($page.params.id);
+
+	$: db = data.dbCtx?.db;
+
+	$: customer = data.customer;
+	$: customerOrderLines = data.customerOrderLines;
+
+	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
+
+	// #region infinite-scroll
+	// let maxResults = 20;
+	// // Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
+	// const seeMore = () => (maxResults += 20);
+	// // We're using in intersection observer to create an infinite scroll effect
+	// const scroll = createIntersectionObserver(seeMore);
+
+	// #endregion infinite-scroll
+
+	// #region dialog
 	const customerMetaDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: customerMetaDialogOpen }
 	} = customerMetaDialog;
+
+	const handleUpdateCustomer = async (_data: Partial<Customer>) => {
+		const data = { ...stripNulls(customer), ..._data };
+
+		if (!(await isDisplayIdUnique(db, data))) {
+			return handleOpenNonUniqueIdDialog(data);
+		}
+
+		await upsertCustomer(db, data);
+	};
+
+	const nonUniqueIdDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: nonUniqueIdDialogOpen }
+	} = nonUniqueIdDialog;
+	let submittingCustomer: Customer | null = null;
+
+	const nonUniqueIdDialogHeading = "Non unique customer ID";
+	const nonUniqueIdDialogDescription = "There's at least one more order with the same ID. Please confirm you're ok with this?";
+
+	const handleOpenNonUniqueIdDialog = (data: Customer) => {
+		submittingCustomer = data;
+		nonUniqueIdDialogOpen.set(true);
+	};
+
+	const handleConfirmNonUniqueIdDialog = async () => {
+		await upsertCustomer(db, submittingCustomer);
+		submittingCustomer = null;
+		nonUniqueIdDialogOpen.set(false);
+	};
+
+	// #endregion dialog
 
 	let scanInputRef: HTMLInputElement = null;
 
@@ -99,7 +139,7 @@
 						<h1 class="prose card-title">Customer Order</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{data?.customer?.id}</h2>
+							<h2 class="prose">#{customer.displayId}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
@@ -230,13 +270,14 @@
 	<CustomerOrderMetaForm
 		heading="Update customer details"
 		saveLabel="Update"
-		data={defaults({ ...customer }, zod(customerOrderSchema))}
+		kind="update"
+		data={defaults(stripNulls(customer), zod(createCustomerOrderSchema("update")))}
 		options={{
 			SPA: true,
-			validators: zod(customerOrderSchema),
+			validators: zod(createCustomerOrderSchema("update")),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					upsertCustomer(db, { ...customer, ...form.data, id: customerId });
+					handleUpdateCustomer(form.data);
 				}
 			},
 			onUpdated: async ({ form }) => {
@@ -246,6 +287,16 @@
 			}
 		}}
 		onCancel={() => customerMetaDialogOpen.set(false)}
+	/>
+</PageCenterDialog>
+
+<PageCenterDialog dialog={nonUniqueIdDialog} title="" description="">
+	<ConfirmDialog
+		on:confirm={handleConfirmNonUniqueIdDialog}
+		on:cancel={() => nonUniqueIdDialogOpen.set(false)}
+		heading={nonUniqueIdDialogHeading}
+		description={nonUniqueIdDialogDescription}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>
 

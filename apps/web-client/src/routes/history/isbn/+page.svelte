@@ -2,10 +2,8 @@
 	import { writable } from "svelte/store";
 	import { Search } from "lucide-svelte";
 
-	import type { BookEntry } from "@librocco/db";
-	import { entityListView, testId } from "@librocco/shared";
+	import { entityListView, testId, type BookData } from "@librocco/shared";
 
-	import type { BookData } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
@@ -21,7 +19,7 @@
 
 	$: db = data.dbCtx?.db;
 
-	const createMetaString = ({ authors, year, publisher }: Partial<Pick<BookEntry, "authors" | "year" | "publisher">>) =>
+	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
 	// #region search

@@ -12,6 +12,7 @@ import {
 	finalizeReconciliationOrder,
 	getReconciliationOrderLines,
 	processOrderDelivery,
+	getUnreconciledSupplierOrders,
 	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
@@ -20,14 +21,14 @@ import { getCustomerOrderLines } from "../customers";
 import {} from "../order-reconciliation";
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
-describe.skip("Reconciliation order creation", () => {
+describe("Reconciliation order creation", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
 		await createCustomerOrders(db);
 	});
 
-	it("can get all currently reconciliating orders", async () => {
+	it("can get all reconciliation orders", async () => {
 		const res = await getAllReconciliationOrders(db);
 		expect(res).toEqual([]);
 
@@ -42,15 +43,68 @@ describe.skip("Reconciliation order creation", () => {
 
 		// use supplier order ids to create a recon
 		await createReconciliationOrder(db, ids);
-		const res2 = await getAllReconciliationOrders(db);
+
+		expect(await getAllReconciliationOrders(db)).toMatchObject([
+			{
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: 0
+			}
+		]);
+	});
+	it("can get all finalized reconciliation orders", async () => {
+		const res = await getAllReconciliationOrders(db);
+		expect(res).toEqual([]);
+
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		const supplierOrders = await getPlacedSupplierOrders(db);
+
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		// use supplier order ids to create a recon
+		const reconId = await createReconciliationOrder(db, ids);
+
+		await finalizeReconciliationOrder(db, reconId);
+		const res2 = await getAllReconciliationOrders(db, true);
 
 		expect(res2).toMatchObject([
 			{
 				id: 1,
-				supplier_order_ids: "[1]",
-				finalized: 0
+				supplierOrderIds: [1],
+				finalized: 1
 			}
 		]);
+	});
+	it("can get all currently reconciliating orders", async () => {
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+
+		// TODO: might be useful to have a way to filter for a few particular ids?
+		// It's only going to be one here...
+		const supplierOrders = await getPlacedSupplierOrders(db);
+
+		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+
+		// use supplier order ids to create a recon
+		const id = await createReconciliationOrder(db, ids);
+
+		const res = await getAllReconciliationOrders(db, false);
+		expect(res).toEqual([
+			{
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: 0,
+				created: expect.any(Number),
+				updatedAt: expect.any(Number)
+			}
+		]);
+
+		await finalizeReconciliationOrder(db, id);
+		const res2 = await getAllReconciliationOrders(db, false);
+
+		expect(res2).toMatchObject([]);
 	});
 	it("can create a reconciliation order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
@@ -72,6 +126,7 @@ describe.skip("Reconciliation order creation", () => {
 			finalized: 0
 		});
 	});
+
 	it("can update a currently reconciliating order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		await createSupplierOrder(db, newSupplierOrderLines);
@@ -258,10 +313,43 @@ describe.skip("Reconciliation order creation", () => {
 	});
 });
 
+describe("getUnreconciledSupplierOrders", () => {
+	let db: DB;
+
+	beforeEach(async () => {
+		db = await getRandomDb();
+		await createCustomerOrders(db);
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, newSupplierOrderLines);
+	});
+
+	it("should return only unreconciled supplier orders with correct totals", async () => {
+		const result = await getUnreconciledSupplierOrders(db);
+
+		expect(result).toHaveLength(1);
+
+		expect(result[0]).toEqual({
+			id: 1,
+			supplier_id: 1,
+			created: expect.any(Number),
+			supplier_name: "Science Books LTD",
+			total_book_number: 2
+		});
+	});
+
+	it("should return empty array when all orders are reconciled", async () => {
+		await createReconciliationOrder(db, [1, 3]);
+
+		const result = await getUnreconciledSupplierOrders(db);
+		expect(result).toHaveLength(0);
+	});
+});
+
 describe("Misc helpers", () => {
 	afterEach(() => {
 		vi.clearAllMocks();
 	});
+
 	it("should process when delivery matches order exactly", () => {
 		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 2 }];
 
@@ -270,14 +358,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -289,14 +377,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 2,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -314,14 +402,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -333,14 +421,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 1,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -358,14 +446,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -377,14 +465,14 @@ describe("Misc helpers", () => {
 					isbn: "123",
 					title: "Book 1",
 					authors: "Author 1",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_name: "Supplier 1",
 					id: 1,
 					supplier_id: 1,
 					total_book_number: 1,
 					supplier_order_id: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 3,
 					orderedQuantity: 2,
 					created: expect.any(Number)
@@ -402,14 +490,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
 				supplier_order_id: 1,
-				total_price: 10,
+				total_book_price: 10,
 				created: Date.now()
 			}
 		];
@@ -421,14 +509,14 @@ describe("Misc helpers", () => {
 					authors: "Author 1",
 					id: 1,
 					isbn: "123",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_id: 1,
 					supplier_name: "Supplier 1",
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})
@@ -445,6 +533,7 @@ describe("Misc helpers", () => {
 			]
 		});
 	});
+
 	it("should handle under-delivery", () => {
 		const scannedBooks = [];
 
@@ -453,14 +542,14 @@ describe("Misc helpers", () => {
 				isbn: "123",
 				title: "Book 1",
 				authors: "Author 1",
-				price: 10,
+				line_price: 10,
 				quantity: 2,
 				supplier_name: "Supplier 1",
 				id: 1,
 				supplier_id: 1,
 				total_book_number: 1,
+				total_book_price: 10,
 				supplier_order_id: 1,
-				total_price: 10,
 				created: Date.now()
 			}
 		];
@@ -472,14 +561,14 @@ describe("Misc helpers", () => {
 					authors: "Author 1",
 					id: 1,
 					isbn: "123",
-					price: 10,
+					line_price: 10,
 					quantity: 2,
 					supplier_id: 1,
 					supplier_name: "Supplier 1",
 					supplier_order_id: 1,
 					title: "Book 1",
 					total_book_number: 1,
-					total_price: 10,
+					total_book_price: 10,
 					deliveredQuantity: 0,
 					orderedQuantity: 2
 				})
@@ -487,6 +576,7 @@ describe("Misc helpers", () => {
 			unmatchedBooks: []
 		});
 	});
+
 	it("should group order lines by supplier", () => {
 		const orderLines = [
 			{ supplier_name: "Supplier 1", isbn: "123" },

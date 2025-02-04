@@ -52,6 +52,8 @@
 
 	$: warehouses = data.warehouses;
 
+	$: plugins = data.plugins;
+
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
 		open.set(false);
@@ -97,7 +99,7 @@
 	$: initialized = Boolean(db);
 </script>
 
-<InventoryManagementPage {handleCreateWarehouse}>
+<InventoryManagementPage {plugins} {handleCreateWarehouse}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />

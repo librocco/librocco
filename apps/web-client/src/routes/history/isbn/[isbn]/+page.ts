@@ -1,5 +1,3 @@
-import { browser } from "$app/environment";
-
 import type { PageLoad } from "./$types";
 import type { GetStockResponseItem, PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
@@ -12,8 +10,9 @@ export const load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 
 	const { dbCtx } = await parent();
 
-	if (!browser) {
-		return { dbCtx, transactions: [] as PastTransactionItem[], stock: [] as GetStockResponseItem[] };
+	// We're not in the browser, no need for further loading
+	if (!dbCtx) {
+		return { transactions: [] as PastTransactionItem[], stock: [] as GetStockResponseItem[] };
 	}
 
 	const transactions = await getPastTransactions(dbCtx.db, { isbn });

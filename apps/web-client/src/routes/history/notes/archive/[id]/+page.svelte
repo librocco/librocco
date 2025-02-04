@@ -46,6 +46,8 @@
 	$: customItemEntries = data.customItems?.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: entries = bookEntries.concat(customItemEntries);
 
+	$: plugins = data.plugins;
+
 	// #region infinite-scroll
 	let maxResults = 20;
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
@@ -118,6 +120,6 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>

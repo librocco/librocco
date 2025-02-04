@@ -26,26 +26,27 @@
 	// #region reactivity
 	let disposer: () => void;
 	onMount(() => {
-		// NOTE: ordersDbCtx should always be defined on client
-		const { rx } = data;
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
 		const disposer1 = rx.onPoint("reconciliationOrder", BigInt($page.params.id), () => invalidate("reconciliationOrder:data"));
 		const disposer2 = rx.onRange(["reconciliation_order", "reconciliation_order_lines"], () => invalidate("reconciliationOrder:data"));
 		disposer = () => (disposer1(), disposer2());
 	});
-
-	//#endregion reactivity
-
 	onDestroy(async () => {
 		// Unsubscribe on unmount
 		disposer();
 	});
+	//#endregion reactivity
+
+	$: db = data?.dbCtx?.db;
+
 	$: books = data?.reconciliationOrderLines || [];
 
 	async function handleIsbnSubmit(isbn: string) {
 		if (!isbn) return;
 
-		await addOrderLinesToReconciliationOrder(data.ordersDb, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+		await addOrderLinesToReconciliationOrder(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
 	let scanInputRef: HTMLInputElement = null;
@@ -82,7 +83,7 @@
 	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
-		await finalizeReconciliationOrder(data?.ordersDb, parseInt($page.params.id));
+		await finalizeReconciliationOrder(db, parseInt($page.params.id));
 	}
 </script>
 

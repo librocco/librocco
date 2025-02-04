@@ -1,6 +1,14 @@
 import type { BookEntry } from "@librocco/db";
 import { multiplyString } from "./customers";
-import type { DB, ProcessedOrderLine, ReconciliationOrder, ReconciliationOrderLine, SupplierPlacedOrderLine } from "./types";
+import type {
+	DB,
+	ProcessedOrderLine,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine,
+	DBReconciliationOrder
+} from "./types";
 
 /**
  * @fileoverview Supplier order reconciliation system
@@ -36,14 +44,31 @@ import type { DB, ProcessedOrderLine, ReconciliationOrder, ReconciliationOrderLi
  * Retrieves all reconciliation orders from the database, ordered by ID
 ascending
  * @param db
+ * @param finalized - an optional boolean that's used to query finalized or non finalized orders
+ * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<ReconciliationOrder>(
-		"SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order ORDER BY id ASC;"
+export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
+	const result = await db.execO<DBReconciliationOrder>(
+		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
+			ORDER BY id ASC;`
 	);
-	return result;
+	return result.map(unmarshalReconciliationOrder);
 }
+
+const unmarshalReconciliationOrder = ({ supplier_order_ids, ...order }: DBReconciliationOrder): ReconciliationOrder => {
+	let supplierOrderIds = [];
+
+	try {
+		supplierOrderIds = JSON.parse(supplier_order_ids);
+	} catch {
+		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
+		throw new Error(msg);
+	}
+
+	return { ...order, supplierOrderIds };
+};
 
 /**
  * Retrieves a specific reconciliation order by ID
@@ -54,24 +79,17 @@ JSON
  * @returns ReconciliationOrder with parsed supplier_order_ids
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
-	const result = await db.execO<ReconciliationOrder>(
+	const [result] = await db.execO<DBReconciliationOrder>(
 		`SELECT id, supplier_order_ids, finalized, updatedAt, created
 		FROM reconciliation_order WHERE id = ?;`,
 		[id]
 	);
 
-	if (!result.length) {
+	if (!result) {
 		throw new Error(`Reconciliation order with id ${id} not found`);
 	}
 
-	try {
-		JSON.parse(result[0].supplier_order_ids);
-	} catch (e) {
-		throw new Error(`Invalid json: supplier order ids`);
-	}
-
-	const res = { ...result[0], supplierOrderIds: JSON.parse(result[0].supplier_order_ids) };
-	return res;
+	return unmarshalReconciliationOrder(result);
 }
 
 /**
@@ -205,6 +223,45 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 }
 
 /**
+ * Retrieves all supplier orders that have not been selected for reconciliation in any `reconciliation_order`.
+ * @param db
+ *
+ * @returns {Promise<PlacedSupplierOrder[]>} Array of unreconciled supplier orders with:
+ */
+export async function getUnreconciledSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
+	const result = await db.execO<PlacedSupplierOrder>(
+		` WITH Reconciled AS (
+     SELECT CAST(value AS INTEGER) AS supplier_order_id
+     FROM reconciliation_order AS ro
+     CROSS JOIN json_each(ro.supplier_order_ids)
+ )
+ SELECT
+     so.id,
+     so.supplier_id,
+     s.name AS supplier_name,
+     so.created,
+     COALESCE(SUM(sol.quantity), 0) AS total_book_number
+ FROM supplier_order AS so
+ JOIN supplier AS s
+     ON so.supplier_id = s.id
+ LEFT JOIN supplier_order_line AS sol
+     ON sol.supplier_order_id = so.id
+ LEFT JOIN Reconciled AS r
+     ON r.supplier_order_id = so.id
+ WHERE
+     so.created IS NOT NULL
+     AND r.supplier_order_id IS NULL
+ GROUP BY
+     so.id,
+     so.supplier_id,
+     s.name,
+     so.created  `
+	);
+
+	return result;
+}
+
+/**
 * Processes delivered books against placed order lines to identify matches an
 discrepancies
 *
@@ -221,7 +278,7 @@ quantities
 */
 export const processOrderDelivery = (
 	scannedBooks: (BookEntry & { quantity: number })[],
-	placedOrderLines: SupplierPlacedOrderLine[]
+	placedOrderLines: PlacedSupplierOrderLine[]
 ): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
 	const scannedLinesMap = new Map<string, BookEntry & { quantity: number }>(
 		scannedBooks.map((book) => {

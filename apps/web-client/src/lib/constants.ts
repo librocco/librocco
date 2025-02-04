@@ -6,7 +6,8 @@ import {
 	PUBLIC_COUCHDB_PASSWORD,
 	PUBLIC_IS_E2E,
 	PUBLIC_LOG_LEVEL,
-	PUBLIC_WS_URL
+	PUBLIC_WS_URL,
+	PUBLIC_WITH_SYNC
 } from "$env/static/public";
 import type { Locales } from "$i18n/i18n-types";
 
@@ -24,6 +25,8 @@ export const LOG_LEVEL = PUBLIC_LOG_LEVEL;
 export const DEFAULT_LOCALE: Locales = "en";
 
 export const WS_URL = PUBLIC_WS_URL;
+
+export const WITH_SYNC = PUBLIC_WITH_SYNC === "true";
 
 const PKG_VERSION = import.meta.env.VITE_PKG_VERSION;
 export const GIT_SHA = import.meta.env.VITE_GIT_SHA || "dev";

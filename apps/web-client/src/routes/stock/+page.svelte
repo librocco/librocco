@@ -1,7 +1,8 @@
 <script lang="ts">
-	import { tick } from "svelte";
-	import { readable, writable } from "svelte/store";
+	import { onDestroy, onMount, tick } from "svelte";
+	import { writable } from "svelte/store";
 	import { fade, fly } from "svelte/transition";
+	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
@@ -21,6 +22,9 @@
 	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
+	import { createExtensionAvailabilityStore } from "$lib/stores";
+	import { settingsStore } from "$lib/stores/app";
+
 	import { Page, PlaceholderBox } from "$lib/components";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
@@ -28,19 +32,24 @@
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
-	import { settingsStore } from "$lib/stores/app";
-
-	// TODO: develop publisher list functionality
-	// const publisherListCtx = { name: "[PUBLISHER_LIST::INBOUND]", debug: false };
-	// const publisherList = readableFromStream(publisherListCtx, db?.books().streamPublishers(publisherListCtx), []);
-	const publisherList = readable([]);
-
 	export let data: PageData;
 	$: db = data?.dbCtx?.db;
 
-	// TEMP
-	// import { getDB } from "$lib/db";
-	// const { db } = getDB();
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+		disposer = rx.onRange(["book"], () => invalidate("book:data"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: publisherList = data?.publisherList;
+
+	$: plugins = data?.plugins;
 
 	const search = writable("");
 	let entries = [] as GetStockResponseItem[];
@@ -97,8 +106,7 @@
 		}
 	};
 
-	// TODO: revisit
-	// $: bookDataExtensionAvailable = createExtensionAvailabilityStore(db);
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookEntry) => async () => {
@@ -231,7 +239,7 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast />
+		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
@@ -260,7 +268,7 @@
 				<div class="px-6">
 					<BookForm
 						data={defaults(bookFormData, zod(bookSchema))}
-						publisherList={$publisherList}
+						{publisherList}
 						options={{
 							SPA: true,
 							dataType: "json",
@@ -269,13 +277,11 @@
 							onUpdated
 						}}
 						onCancel={() => open.set(false)}
-						onFetch={async (_isbn, form) => {
-							// TODO: revisit
-							// const results = await db.plugin("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-							const results = [];
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 
 							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData(results);
+							const bookData = mergeBookData({ isbn }, results);
 
 							// If there's no book was retrieved from any of the sources, exit early
 							if (!bookData) {
@@ -285,7 +291,7 @@
 							form.update((data) => ({ ...data, ...bookData }));
 							// TODO: handle loading and errors
 						}}
-						isExtensionAvailable={/* TODO: revisit this with ExtensionAvailabilityStore */ true}
+						isExtensionAvailable={$bookDataExtensionAvailable}
 					/>
 				</div>
 			</div>

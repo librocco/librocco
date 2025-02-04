@@ -41,14 +41,14 @@ INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES
 (2, '9780439064873', 3);
 
 -- Reconciliation Orders
-INSERT INTO reconciliation_order (id, supplier_order_ids, created, finalized) VALUES
-(1, '[1]', 1700010000000, 0),
-(2, '[2]', 1700020000000, 1);
+INSERT INTO reconciliation_order (supplier_order_ids, finalized) VALUES
+('[1]', 0),
+('[2]', 1);
 
 -- Reconciliation Order Lines
-INSERT INTO reconciliation_order_lines (id, reconciliation_order_id, isbn, created) VALUES
-(1, 1, 1700010000000, '9780590353427'),
-(2, 2, 1700020000000, '9780439064873');
+INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn) VALUES
+ 	(1, '9781234567897'),
+ 	(2, '9788804797142');
 `;
 
 export default exampleData;
