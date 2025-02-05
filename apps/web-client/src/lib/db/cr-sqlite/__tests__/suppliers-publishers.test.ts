@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { type DB } from "../types";
 import { getRandomDb } from "./lib";
 import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
 
