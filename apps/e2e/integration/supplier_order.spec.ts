@@ -2,69 +2,11 @@ import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { getDbHandle } from "@/helpers";
-import {
-	addBooksToCustomer,
-	associatePublisher,
-	upsertCustomer,
-	upsertSupplier,
-	createSupplierOrder,
-	upsertBook
-} from "@/helpers/cr-sqlite";
+import { createSupplierOrder } from "@/helpers/cr-sqlite";
+import { testOrders } from "@/helpers/fixtures";
 
 test.beforeEach(async ({ page }) => {
 	await page.goto(`${baseURL}orders/suppliers/`);
-});
-
-type SupplierTestFixture = {
-	supplier: { id: number; name: string; email: string };
-};
-export type Supplier = {
-	id?: number;
-	name?: string;
-	email?: string;
-	address?: string;
-};
-
-export type SupplierOrder = {
-	supplier_id: number;
-	created: Date;
-	lines: SupplierOrderLine[];
-	id: number;
-};
-export type SupplierOrderLine = {
-	supplier_id: number;
-	supplier_name: string;
-	isbn: string;
-	title: string;
-	authors: string;
-	publisher: string;
-	quantity: number;
-	line_price: number;
-};
-
-const testOrders = test.extend<SupplierTestFixture>({
-	supplier: async ({ page }, use) => {
-		await page.goto(baseURL);
-
-		const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com" };
-		const supplier = { id: 1, name: "Sup1", email: "sup1@gmail.com" };
-
-		const dbHandle = await getDbHandle(page);
-
-		// dbHandler
-		await dbHandle.evaluate(upsertCustomer, customer);
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234", "4321"] });
-
-		await dbHandle.evaluate(upsertSupplier, supplier);
-
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
-		await dbHandle.evaluate(upsertBook, { isbn: "1234", title: "Book1", authors: "Author1", publisher: "pub1", price: 12 });
-
-		await dbHandle.evaluate(upsertBook, { isbn: "4321", title: "Book2", authors: "Author2", publisher: "pub1", price: 13 });
-
-		await use(supplier);
-	}
 });
 
 testOrders("should create a new supplier order", async ({ page, supplier }) => {
