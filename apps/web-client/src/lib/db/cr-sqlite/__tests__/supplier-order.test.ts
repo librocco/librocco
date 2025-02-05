@@ -302,6 +302,8 @@ describe("New supplier orders:", () => {
 			expect(orderLine.line_price).toBe(0);
 		});
 	});
+
+	describe("createSupplierOrder should", () => {});
 });
 
 describe("create supplier order should", () => {
