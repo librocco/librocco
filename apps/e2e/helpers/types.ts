@@ -349,3 +349,20 @@ export type BookData = {
 	outOfPrint?: boolean;
 	category?: string;
 };
+
+export type SupplierOrder = {
+	supplier_id: number;
+	created: Date;
+	lines: SupplierOrderLine[];
+	id: number;
+};
+export type SupplierOrderLine = {
+	supplier_id: number;
+	supplier_name: string;
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	quantity: number;
+	line_price: number;
+};
