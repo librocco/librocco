@@ -1,6 +1,6 @@
 import { baseURL } from "@/integration/constants";
 import test from "@playwright/test";
-import { addBooksToCustomer, associatePublisher, upsertBook, upsertCustomer, upsertSupplier } from "./cr-sqlite";
+import { associatePublisher, upsertBook, upsertCustomer, upsertSupplier } from "./cr-sqlite";
 import { getDbHandle } from "./db";
 
 type OrderTestFixture = {
