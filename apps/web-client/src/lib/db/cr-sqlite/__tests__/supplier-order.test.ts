@@ -5,6 +5,7 @@ import { type DB } from "../types";
 import { getRandomDb, createCustomerOrders } from "./lib";
 
 import {
+	DEFAULT_SUPPLIER_NAME,
 	upsertSupplier,
 	associatePublisher,
 	getPlacedSupplierOrders,
@@ -66,21 +67,45 @@ describe("Possible (new) supplier orders:", () => {
 			expect(supplierOrder.total_book_price).toBe(books.reduce((acc, { price }) => acc + price, 0));
 		});
 
+		it("aggregate books that are not associated with a supplier into a 'General' order", async () => {
+			// Do not associatePublisher
+
+			// Add book1 and book2 to different customer orders
+			addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			addBooksToCustomer(db, customer2.id, [book2.isbn]);
+
+			// There should be one possible supplier order...
+			const result = await getPossibleSupplierOrders(db);
+			expect(result.length).toBe(1);
+
+			const [supplierOrder] = result;
+			expect(supplierOrder.supplier_id).toBe(null);
+			expect(supplierOrder.supplier_name).toBe(DEFAULT_SUPPLIER_NAME);
+		});
+
 		it("group supplier orders and order them ascending by supplier name", async () => {
 			// Associate book1 and book2 with the different suppliers
 			await associatePublisher(db, supplier1.id, book1.publisher);
 			await associatePublisher(db, supplier2.id, book2.publisher);
 
+			// Add a book but don't associate it with a supplier
+			const rogueBook = { isbn: "666", publisher: "Devil business", title: "The occult", price: 6 };
+			await upsertBook(db, rogueBook);
+
 			// Add books to a customer order
-			addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+			addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn, rogueBook.isbn]);
 
 			// There should be two possible supplier order...
 			const result = await getPossibleSupplierOrders(db);
-			expect(result.length).toBe(2);
+			expect(result.length).toBe(3);
 
-			const [supplierOrder1, supplierOrder2] = result;
-			// They should be ordered: Supplier1 name = "Alphabet ...", Suplier2 name = "Xanax ..."
+			const [supplierOrder1, generalOrder, supplierOrder2] = result;
+			// They should be ordered:
+			// Supplier1 name = "Alphabet ...",
 			expect(supplierOrder1.supplier_name).toBe(supplier1.name);
+			// The default "General" supplier
+			expect(generalOrder.supplier_name).toBe(DEFAULT_SUPPLIER_NAME);
+			// Suplier2 name = "Xanax ..."
 			expect(supplierOrder2.supplier_name).toBe(supplier2.name);
 		});
 
@@ -138,22 +163,6 @@ describe("Possible (new) supplier orders:", () => {
 
 			// Supplier2 order should be 0
 			expect(newSupplierOrder2.total_book_price).toBe(0);
-		});
-
-		it("aggregate books that are not associated with a supplier into a 'General' order", async () => {
-			// Do not associatePublisher
-
-			// Add book1 and book2 to different customer orders
-			addBooksToCustomer(db, customer1.id, [book1.isbn]);
-			addBooksToCustomer(db, customer2.id, [book2.isbn]);
-
-			// There should be one possible supplier order...
-			const result = await getPossibleSupplierOrders(db);
-			expect(result.length).toBe(1);
-
-			const [supplierOrder] = result;
-			expect(supplierOrder.supplier_id).toBe(null);
-			expect(supplierOrder.supplier_name).toBe("General");
 		});
 	});
 });
