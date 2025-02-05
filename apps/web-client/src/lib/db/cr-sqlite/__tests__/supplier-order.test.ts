@@ -574,120 +574,159 @@ describe("Placing supplier orders", () => {
 	});
 
 	describe("getPlacedSupplierOrderLines should", () => {
-		let db: DB;
-		beforeEach(async () => {
-			db = await getRandomDb();
-			// Set up test data
-			await createCustomerOrders(db);
-			// Create two supplier orders using the existing test data
-			await db.exec(`
-				INSERT INTO supplier_order (id, supplier_id, created)
+		it("retrieve order lines from a single supplier order", async () => {
+			const db = await getRandomDb();
+			const { id: supplierId, name: supplierName } = supplier1;
+
+			// Create supplier order
+			await db.exec(
+				`INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (1, ?, strftime('%s', 'now') * 1000)`,
+				[supplierId]
+			);
+
+			// Add multiple books with different quantities
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
 				VALUES
-				(1, 1, strftime('%s', 'now') * 1000),
-				(2, 2, strftime('%s', 'now') * 1000)
-			`);
+				(1, ?, 2),  -- 2 copies of book1
+				(1, ?, 1)   -- 1 copy of book2`,
+				[book1.isbn, book2.isbn]
+			);
 
-			await db.exec(`
-				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-				VALUES
-				(1, '3', 2),
-				(1, '1', 2),
-				(1, '2', 1),
-				(2, '3', 3)
-			`);
-		});
-
-		it("should retrieve order lines for a single supplier", async () => {
-			const order = await getPlacedSupplierOrderLines(db, [1]);
-
-			expect(order).toEqual([
-				{
-					supplier_id: 1,
-					authors: "N/A",
-					isbn: "1",
-					line_price: 14,
-					quantity: 2,
-					supplier_order_id: 1,
-					title: "Physics",
-					total_book_number: 5,
-					total_book_price: 37,
-					supplier_name: "Science Books LTD",
-					created: expect.any(Number)
-				},
-				{
-					authors: "N/A",
-					isbn: "2",
-					line_price: 13,
-					quantity: 1,
-					supplier_id: 1,
-					supplier_order_id: 1,
-					title: "Chemistry",
-					total_book_number: 5,
-					total_book_price: 37,
-					supplier_name: "Science Books LTD",
-					created: expect.any(Number)
-				},
-				{
-					authors: "N/A",
-					isbn: "3",
-					line_price: 10,
-					quantity: 2,
-					supplier_id: 1,
-					supplier_order_id: 1,
-					title: "The Hobbit",
-					total_book_number: 5,
-					total_book_price: 37,
-					supplier_name: "Science Books LTD",
-					created: expect.any(Number)
-				}
-			]);
-		});
-
-		it("should retrieve order lines for multiple suppliers and order results", async () => {
-			const orderLines = await getPlacedSupplierOrderLines(db, [1, 2]);
-
-			// The result should be as test above, but we should have the additional supplier_order 2 at the end
-			expect(orderLines.length).toBe(4);
-			expect(orderLines[3].supplier_order_id).toBe(2);
-		});
-
-		it("should return empty array for non-existent order", async () => {
-			const order = await getPlacedSupplierOrderLines(db, [999]);
-			expect(order).toHaveLength(0);
-		});
-
-		it("should calculate correct totals for multiple line items", async () => {
 			const orderLines = await getPlacedSupplierOrderLines(db, [1]);
+			expect(orderLines).toHaveLength(2);
 
-			orderLines.forEach((line) => {
-				expect(line.total_book_number).toBe(5);
-				expect(line.total_book_price).toBe(37);
+			// Verify first line details
+			expect(orderLines[0]).toEqual({
+				supplier_order_id: 1,
+				supplier_id: supplierId,
+				supplier_name: supplierName,
+				isbn: book1.isbn,
+				title: book1.title,
+				authors: book1.authors,
+				quantity: 2,
+				line_price: book1.price * 2,
+				total_book_number: 3,
+				total_book_price: (book1.price * 2) + book2.price,
+				created: expect.any(Number)
 			});
 
-			expect(orderLines).toHaveLength(3);
+			// Verify second line details
+			expect(orderLines[1]).toEqual({
+				supplier_order_id: 1,
+				supplier_id: supplierId,
+				supplier_name: supplierName,
+				isbn: book2.isbn,
+				title: book2.title,
+				authors: book2.authors,
+				quantity: 1,
+				line_price: book2.price,
+				total_book_number: 3,
+				total_book_price: (book1.price * 2) + book2.price,
+				created: expect.any(Number)
+			});
 		});
 
-		it("should handle books with null prices", async () => {
-			// Add a book with null price
-			await db.exec(`
-			 UPDATE book SET price = NULL WHERE isbn = '1';
-		 `);
+		it("retrieve order lines from multiple supplier orders", async () => {
+			const db = await getRandomDb();
 
-			const orderLines = await getPlacedSupplierOrderLines(db, [1]);
-			expect(orderLines).toHaveLength(3);
-			expect(orderLines[0].total_book_price).toBe(23);
+			// Create orders for both suppliers
+			await db.exec(
+				`INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES 
+				(1, ?, strftime('%s', 'now') * 1000),
+				(2, ?, strftime('%s', 'now') * 1000)`,
+				[supplier1.id, supplier2.id]
+			);
+
+			// Add books to both orders
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 2),  -- supplier1: 2 copies of book1
+				(2, ?, 1)   -- supplier2: 1 copy of book2`,
+				[book1.isbn, book2.isbn]
+			);
+
+			const orderLines = await getPlacedSupplierOrderLines(db, [1, 2]);
+			expect(orderLines).toHaveLength(2);
+
+			// Lines should be ordered by supplier_order_id, then isbn
+			expect(orderLines[0].supplier_id).toBe(supplier1.id);
+			expect(orderLines[0].isbn).toBe(book1.isbn);
+			expect(orderLines[1].supplier_id).toBe(supplier2.id);
+			expect(orderLines[1].isbn).toBe(book2.isbn);
 		});
 
-		it("should handle large quantities and prices", async () => {
-			// Update to large numbers
-			await db.exec(`
-			 UPDATE book SET price = 999999.99 WHERE isbn = '1';
-			 UPDATE supplier_order_line SET quantity = 999999 WHERE isbn = '1';
-		 `);
+		it("handle books with missing prices", async () => {
+			const db = await getRandomDb();
+			
+			// Create book without price
+			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub", title: "No Price Book", authors: "Anonymous" };
+			await upsertBook(db, bookNoPrice);
+
+			// Create supplier order with both priced and unpriced books
+			await db.exec(
+				`INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (1, ?, strftime('%s', 'now') * 1000)`,
+				[supplier1.id]
+			);
+
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 1),  -- book with price
+				(1, ?, 2)   -- book without price`,
+				[book1.isbn, bookNoPrice.isbn]
+			);
 
 			const orderLines = await getPlacedSupplierOrderLines(db, [1]);
-			expect(orderLines).toHaveLength(3);
-			expect(orderLines[0].total_book_price).toBeGreaterThan(900000000);
+			expect(orderLines).toHaveLength(2);
+
+			// Total price should only include the priced book
+			orderLines.forEach(line => {
+				expect(line.total_book_price).toBe(book1.price);
+				expect(line.total_book_number).toBe(3);
+			});
+		});
+
+		it("return empty array for non-existent order ids", async () => {
+			const db = await getRandomDb();
+			const orderLines = await getPlacedSupplierOrderLines(db, [999]);
+			expect(orderLines).toEqual([]);
+		});
+
+		it("return empty array when no order ids provided", async () => {
+			const db = await getRandomDb();
+			const orderLines = await getPlacedSupplierOrderLines(db, []);
+			expect(orderLines).toEqual([]);
+		});
+
+		it("handle orders with missing book metadata", async () => {
+			const db = await getRandomDb();
+			
+			// Create order for book that doesn't exist in books table
+			await db.exec(
+				`INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (1, ?, strftime('%s', 'now') * 1000)`,
+				[supplier1.id]
+			);
+
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES (1, '999', 1)`  // Non-existent ISBN
+			);
+
+			const orderLines = await getPlacedSupplierOrderLines(db, [1]);
+			expect(orderLines).toHaveLength(1);
+			expect(orderLines[0]).toEqual(expect.objectContaining({
+				isbn: '999',
+				title: 'N/A',
+				authors: 'N/A',
+				line_price: 0,
+				quantity: 1
+			}));
 		});
 	});
 });
