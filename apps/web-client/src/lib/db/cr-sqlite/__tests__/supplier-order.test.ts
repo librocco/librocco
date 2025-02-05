@@ -397,64 +397,145 @@ describe("Placing supplier orders", () => {
 	});
 
 	describe("getPlacedSupplierOrders should", () => {
-		it("retrieves a list of placed supplier orders", async () => {
-			// Create two supplier orders using the existing test data
+		it("retrieve orders from multiple suppliers with their details", async () => {
+			const { id: supplier1Id } = supplier1;
+			const { id: supplier2Id } = supplier2;
+
+			// Create orders for both suppliers
 			await db.exec(`
 				INSERT INTO supplier_order (id, supplier_id, created)
 				VALUES
-				(1, 1, strftime('%s', 'now') * 1000),
-				(2, 2, strftime('%s', 'now') * 1000)
-			`);
+				(?, ?, strftime('%s', 'now') * 1000),
+				(?, ?, strftime('%s', 'now') * 1000)
+			`, [1, supplier1Id, 2, supplier2Id]);
+
+			// Add order lines with different quantities
+			await db.exec(`
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 2),  -- 2 copies of Physics
+				(1, ?, 1),  -- 1 copy of Chemistry
+				(2, ?, 3)   -- 3 copies of Physics
+			`, [book1.isbn, book2.isbn, book1.isbn]);
+
+			const orders = await getPlacedSupplierOrders(db);
+			expect(orders).toHaveLength(2);
+
+			// Check first supplier order
+			expect(orders[0]).toEqual(expect.objectContaining({
+				id: 1,
+				supplier_id: supplier1Id,
+				supplier_name: supplier1.name,
+				total_book_number: 3,
+				total_book_price: (book1.price * 2) + book2.price,
+				created: expect.any(Number)
+			}));
+
+			// Check second supplier order
+			expect(orders[1]).toEqual(expect.objectContaining({
+				id: 2,
+				supplier_id: supplier2Id,
+				supplier_name: supplier2.name,
+				total_book_number: 3,
+				total_book_price: book1.price * 3,
+				created: expect.any(Number)
+			}));
+		});
+
+		it("return orders sorted by creation date descending", async () => {
+			const { id: supplierId } = supplier1;
+			const now = Date.now();
+
+			// Create orders with different timestamps
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES
+				(1, ?, ?),  -- older order
+				(2, ?, ?)   -- newer order
+			`, [supplierId, now - 1000, supplierId, now]);
+
+			// Add same books to both orders
+			await db.exec(`
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 1),
+				(2, ?, 1)
+			`, [book1.isbn, book1.isbn]);
+
+			const orders = await getPlacedSupplierOrders(db);
+			expect(orders).toHaveLength(2);
+			expect(orders[0].id).toBe(2); // Newer order first
+			expect(orders[1].id).toBe(1); // Older order second
+		});
+
+		it("calculate correct totals when books have no prices", async () => {
+			const { id: supplierId } = supplier1;
+
+			// Create book without price
+			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub" };
+			await upsertBook(db, bookNoPrice);
+
+			// Create order with mix of priced and non-priced books
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (1, ?, strftime('%s', 'now') * 1000)
+			`, [supplierId]);
 
 			await db.exec(`
 				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
 				VALUES
-				(1, '1', 2),
-				(1, '2', 1),
-				(2, '3', 3)
-			`);
+				(1, ?, 2),  -- 2 copies of book with price
+				(1, ?, 1)   -- 1 copy of book without price
+			`, [book1.isbn, bookNoPrice.isbn]);
 
-			const orders = await getPlacedSupplierOrders(db);
-
-			expect(orders).toHaveLength(2);
-			expect(orders).toEqual([
-				expect.objectContaining({
-					id: 1,
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					total_book_number: 3, // 2 Physics + 1 Chemistry
-					created: expect.any(Number)
-				}),
-				expect.objectContaining({
-					id: 2,
-					supplier_id: 2,
-					supplier_name: "Phantasy Books LTD",
-					total_book_number: 3, // 3 copies of The Hobbit
-					created: expect.any(Number)
-				})
-			]);
+			const [order] = await getPlacedSupplierOrders(db);
+			expect(order.total_book_number).toBe(3);
+			expect(order.total_book_price).toBe(book1.price * 2); // Only count books with prices
 		});
 
-		it("returns empty array when no orders exist", async () => {
+		it("return empty array when no orders exist", async () => {
 			const orders = await getPlacedSupplierOrders(db);
 			expect(orders).toEqual([]);
 		});
 
-		// TODO: should this be possible?
-		it("handles orders with no order lines", async () => {
-			// Create orders but no order lines
+		it("handle orders with no order lines", async () => {
+			const { id: supplierId } = supplier1;
+
+			// Create order without any lines
 			await db.exec(`
 				INSERT INTO supplier_order (id, supplier_id, created)
-				VALUES
-				(1, 1, strftime('%s', 'now') * 1000),
-				(2, 2, strftime('%s', 'now') * 1000)
-			`);
+				VALUES (1, ?, strftime('%s', 'now') * 1000)
+			`, [supplierId]);
 
-			const orders = await getPlacedSupplierOrders(db);
-			expect(orders).toHaveLength(2);
-			orders.forEach((order) => {
-				expect(order.total_book_number).toBe(0);
-			});
+			const [order] = await getPlacedSupplierOrders(db);
+			expect(order).toEqual(expect.objectContaining({
+				id: 1,
+				supplier_id: supplierId,
+				supplier_name: supplier1.name,
+				total_book_number: 0,
+				total_book_price: 0
+			}));
+		});
+
+		it("aggregate quantities and prices correctly for multiple lines", async () => {
+			const { id: supplierId } = supplier1;
+
+			// Create order with multiple lines of the same book
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (1, ?, strftime('%s', 'now') * 1000)
+			`, [supplierId]);
+
+			await db.exec(`
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 2),  -- First line for book1
+				(1, ?, 3)   -- Second line for book1
+			`, [book1.isbn, book1.isbn]);
+
+			const [order] = await getPlacedSupplierOrders(db);
+			expect(order.total_book_number).toBe(5);
+			expect(order.total_book_price).toBe(book1.price * 5);
 		});
 	});
 });
