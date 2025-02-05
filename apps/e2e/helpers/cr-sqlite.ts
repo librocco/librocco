@@ -187,25 +187,34 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		throw new Error("Customer must have an id");
 	}
 
+	if (!customer.displayId) {
+		throw new Error("Customer must have a displayId");
+	}
+
 	const timestamp = Date.now();
+
 	await db.exec(
-		`INSERT INTO customer (id, fullname, email, deposit, updated_at)
-         VALUES (?, ?, ?, ?, ?)
+		`INSERT INTO customer (id, fullname, email, deposit, display_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
          ON CONFLICT(id) DO UPDATE SET
            fullname = COALESCE(?, fullname),
            email = COALESCE(?, email),
-           updated_at = ?,
-           deposit = COALESCE(?, deposit);`,
+           deposit = COALESCE(?, deposit),
+           display_id = COALESCE(?, display_id),
+           updated_at = ?
+		   `,
 		[
 			customer.id,
 			customer.fullname ?? null,
 			customer.email ?? null,
 			customer.deposit ?? null,
+			customer.displayId,
 			timestamp,
 			customer.fullname ?? null,
 			customer.email ?? null,
-			timestamp,
-			customer.deposit ?? null
+			customer.deposit ?? null,
+			customer.displayId,
+			timestamp
 		]
 	);
 }
@@ -300,5 +309,20 @@ export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOr
 			);
 		}
 	});
-	console.log(supplierOrderMapping);
+}
+export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+	if (!supplierOrderIds.length) {
+		throw new Error("Reconciliation order must be based on at least one supplier order");
+	}
+
+	const recondOrder = await db.execO<{ id: number }>(
+		`INSERT INTO reconciliation_order (supplier_order_ids) VALUES (json_array(${multiplyString(
+			"?",
+			supplierOrderIds.length
+		)})) RETURNING id;`,
+		supplierOrderIds
+	);
+	return recondOrder[0].id;
 }
