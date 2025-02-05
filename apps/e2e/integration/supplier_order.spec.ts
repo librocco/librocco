@@ -2,26 +2,27 @@ import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { getDbHandle } from "@/helpers";
-import { createSupplierOrder } from "@/helpers/cr-sqlite";
+import { addBooksToCustomer, createSupplierOrder } from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";
 
 test.beforeEach(async ({ page }) => {
 	await page.goto(`${baseURL}orders/suppliers/`);
 });
 
-testOrders("should create a new supplier order", async ({ page, supplier }) => {
+testOrders("should create a new supplier order", async ({ page, supplier, books }) => {
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 	await page.goto(`${baseURL}orders/suppliers/`);
 	page.getByRole("button", { name: "Unordered" });
 
 	await page.getByRole("button", { name: "Place Order" }).first().click();
 
-	await expect(page.getByText("1234")).toBeVisible();
+	await expect(page.getByText(books[0].isbn)).toBeVisible();
 
 	// price
-	await expect(page.getByText("24")).toBeVisible();
 
-	await expect(page.getByText("13")).toBeVisible();
-	await expect(page.getByText("37")).toBeVisible();
+	await expect(page.getByRole("cell", { name: "€" })).toHaveText("€20");
 
 	await page.getByRole("checkbox").first().click();
 
@@ -35,21 +36,25 @@ testOrders("should create a new supplier order", async ({ page, supplier }) => {
 	await expect(page.getByText("reconcile")).toBeVisible();
 });
 
-testOrders("should show list of unordered orders", async ({ page, supplier }) => {
+testOrders("should show list of unordered orders", async ({ page, supplier, books }) => {
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
+
 	await page.goto(`${baseURL}orders/suppliers/`);
 	page.getByRole("button", { name: "Unordered" });
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
-	await expect(page.getByText("2")).toBeVisible();
+	await expect(page.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
-testOrders("should show a supplier order with the correct details", async ({ page, supplier }) => {
+testOrders("should show a supplier order with the correct details", async ({ page, supplier, books }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(createSupplierOrder, [
 		{
 			supplier_id: supplier.id,
 			supplier_name: supplier.name,
-			isbn: "1234",
+			isbn: books[0].isbn,
 			line_price: 12,
 			quantity: 1,
 			title: "Book1",
@@ -62,10 +67,6 @@ testOrders("should show a supplier order with the correct details", async ({ pag
 
 	const updateButton = page.getByRole("button", { name: "View Order" }).first();
 	await updateButton.click();
-	// await page.waitForURL(`${baseURL}orders/suppliers/1/`);
-
-	// await expect(page.getByText(customer.fullname)).toBeVisible();
-	// await expect(page.getByText(customer.email)).toBeVisible();
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
 });

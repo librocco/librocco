@@ -40,22 +40,15 @@ export const testOrders = test.extend<OrderTestFixture>({
 	supplier: async ({ page }, use) => {
 		await page.goto(baseURL);
 
-		const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" };
 		const supplier = { id: 1, name: "Sup1", email: "sup1@gmail.com" };
 
 		const dbHandle = await getDbHandle(page);
 
 		// dbHandler
-		await dbHandle.evaluate(upsertCustomer, customer);
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234", "4321"] });
 
 		await dbHandle.evaluate(upsertSupplier, supplier);
 
 		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
-		await dbHandle.evaluate(upsertBook, { isbn: "1234", title: "Book1", authors: "Author1", publisher: "pub1", price: 12 });
-
-		await dbHandle.evaluate(upsertBook, { isbn: "4321", title: "Book2", authors: "Author2", publisher: "pub1", price: 13 });
 
 		await use(supplier);
 	}
