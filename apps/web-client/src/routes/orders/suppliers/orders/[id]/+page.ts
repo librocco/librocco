@@ -1,7 +1,7 @@
-import type { PageLoad } from "./$types";
-import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
-
 import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+
+import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ parent, params }) => {
 	const { dbCtx } = await parent();

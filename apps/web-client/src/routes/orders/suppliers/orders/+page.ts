@@ -2,9 +2,9 @@ import { getUnreconciledSupplierOrders, getAllReconciliationOrders } from "$lib/
 import { getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 
 import type { PlacedSupplierOrder, PossibleSupplierOrder } from "$lib/db/cr-sqlite/types";
-import type { LayoutLoad } from "./$types";
+import type { PageLoad } from "./$types";
 
-export const load: LayoutLoad = async ({ depends, parent }) => {
+export const load: PageLoad = async ({ depends, parent }) => {
 	depends("suppliers:data");
 
 	const { dbCtx } = await parent();
