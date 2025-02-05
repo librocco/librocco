@@ -89,6 +89,11 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 }
 
 /**
+ * A default group for books whose publishers are not associated with a supplier
+ */
+export const DEFAULT_SUPPLIER_NAME = "General";
+
+/**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.
  * Each row represents a potential order for a supplier with an aggregated `total_book_number` and `total_book_price`.
  * The result is ordered by supplier name.
@@ -97,6 +102,9 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
  * [{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
  * { supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 }]
  *```
+ * There is a fallback category "General" for books that are not explicitly linked to any supplier,
+ * ensuring all unplaced customer orders are accounted for, even if the supplier relationship is missing.
+ *
  * @param db - The database instance to query
  * @returns Promise resolving to an array of supplier order summaries with supplier information
  */
@@ -105,7 +113,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
 		SELECT
             supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
             COUNT(*) as total_book_number,
@@ -116,7 +124,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
         WHERE col.placed IS NULL
         GROUP BY supplier.id, supplier.name
-        ORDER BY supplier.name ASC
+        ORDER BY supplier_name ASC
 	`;
 
 	return db.execO<PossibleSupplierOrder>(query);
@@ -151,7 +159,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 		SELECT
 			supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
 			col.isbn,
