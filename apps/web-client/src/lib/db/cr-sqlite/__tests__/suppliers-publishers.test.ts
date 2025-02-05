@@ -7,20 +7,31 @@ import { getRandomDb } from "./lib";
 import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
 
 describe("Suppliers CRUD tests", () => {
-	let db: DB;
-	beforeEach(async () => (db = await getRandomDb()));
+	it("retrieves all suppliers, with their assigned publishers", async () => {
+		const db = await getRandomDb();
 
-	it("can create and update a supplier", async () => {
-		await expect(upsertSupplier(db, { name: "Science Books LTD" })).rejects.toThrow("Supplier must have an id");
 		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
-		let suppliers = await getAllSuppliers(db);
-		expect(suppliers.length).toBe(1);
-		await upsertSupplier(db, { id: 2, name: "Phantasy Books LTD" });
-		suppliers = await getAllSuppliers(db);
-		expect(suppliers.length).toBe(2);
-		await upsertSupplier(db, { id: 1, name: "Science Books inc." });
-		suppliers = await getAllSuppliers(db);
-		expect(suppliers.length).toBe(2);
+		expect(await getAllSuppliers(db)).toEqual([{ id: 1, name: "Science Books LTD", address: "N/A", email: "N/A", assignedPublishers: [] }]);
+
+		await upsertSupplier(db, { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd" });
+		expect(await getAllSuppliers(db)).toEqual([
+			{ id: 1, name: "Science Books LTD", address: "N/A", email: "N/A", assignedPublishers: [] },
+			{ id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd", assignedPublishers: [] }
+		]);
+
+		await associatePublisher(db, 1, "SciencePublisher");
+		expect(await getAllSuppliers(db)).toEqual([
+			{ id: 1, name: "Science Books LTD", address: "N/A", email: "N/A", assignedPublishers: ["SciencePublisher"] },
+			{ id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd", assignedPublishers: [] }
+		]);
+
+		await associatePublisher(db, 1, "PhysicsPublisher");
+		expect(await getAllSuppliers(db)).toEqual([
+			{ id: 1, name: "Science Books LTD", address: "N/A", email: "N/A", assignedPublishers: ["PhysicsPublisher", "SciencePublisher"] },
+			{ id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd", assignedPublishers: [] }
+		]);
+
+		await associatePublisher(db, 2, "FantasyPublisher");
 	});
 });
 

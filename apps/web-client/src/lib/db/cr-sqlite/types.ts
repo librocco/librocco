@@ -55,6 +55,14 @@ export type Supplier = {
 	address?: string;
 };
 
+export type SupplierExtendedDB = Supplier & {
+	assignedPublishers: string;
+};
+
+export type SupplierExtended = Supplier & {
+	assignedPublishers: string[];
+};
+
 /**
  * Supplier data returned through supplier order & order line joins
  * name and id are prefixed with `supplier_` to avoid conflicts
