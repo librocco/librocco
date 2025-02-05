@@ -166,151 +166,163 @@ describe("New supplier orders:", () => {
 		});
 	});
 
-	describe("getPossibleSupplierOrderLines should:", () => {
-		it("retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
-			// Supplier 1 should have the following lines
-			expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([
+	describe("getPossibleSupplierOrderLines should", () => {
+		const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
+		const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
+
+		const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", price: 7 };
+		const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", price: 13 };
+		const books = [book1, book2];
+
+		const supplier1 = { id: 1, name: "Alphabet Books LTD" };
+		const supplier2 = { id: 2, name: "Xanax Books LTD" };
+
+		let db: DB;
+
+		beforeEach(async () => {
+			db = await getRandomDb();
+
+			// Setup the entities that we're going to need each time
+			await upsertCustomer(db, customer1);
+			await upsertCustomer(db, customer2);
+			await upsertBook(db, book1);
+			await upsertBook(db, book2);
+			await upsertSupplier(db, supplier1);
+			await upsertSupplier(db, supplier2);
+		});
+
+		it("aggregate order lines from multiple customer orders for a supplier", async () => {
+			const { id: supplierId, name: supplierName } = supplier1;
+
+			// Associate both books with supplier1
+			await associatePublisher(db, supplierId, book1.publisher);
+			await associatePublisher(db, supplierId, book2.publisher);
+
+			// Add books to different customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
+
+			const result = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(result.length).toBe(2);
+
+			// Should include both books from different customer orders
+			expect(result).toEqual([
 				{
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					isbn: "1",
+					supplier_id: supplierId,
+					supplier_name: supplierName,
+					isbn: book1.isbn,
 					authors: "N/A",
-					title: "Physics",
+					title: book1.title,
 					quantity: 1,
-					line_price: 7
+					line_price: book1.price
 				},
 				{
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					isbn: "2",
+					supplier_id: supplierId,
+					supplier_name: supplierName,
+					isbn: book2.isbn,
 					authors: "N/A",
-					title: "Chemistry",
+					title: book2.title,
 					quantity: 1,
-					line_price: 13
-				}
-			]);
-
-			// Supplier 2 lines should have the following lines
-			expect(await getPossibleSupplierOrderLines(db, 2)).toEqual([
-				{
-					supplier_id: 2,
-					supplier_name: "Phantasy Books LTD",
-					isbn: "3",
-					authors: "N/A",
-					title: "The Hobbit",
-					quantity: 2,
-					line_price: 10
-				}
-			]);
-
-			// If we change the supplier for ChemPub to Phantasy Books LTD
-			// the supplier order will reflect that
-			await associatePublisher(db, 2, "ChemPub");
-			expect(await getPossibleSupplierOrderLines(db, 2)).toEqual([
-				// This is now from supplier 2
-				{
-					supplier_id: 2,
-					supplier_name: "Phantasy Books LTD",
-					isbn: "2",
-					authors: "N/A",
-					title: "Chemistry",
-					quantity: 1,
-					line_price: 13
-				},
-				{
-					supplier_id: 2,
-					supplier_name: "Phantasy Books LTD",
-					isbn: "3",
-					authors: "N/A",
-					title: "The Hobbit",
-					quantity: 2,
-					line_price: 10
-				}
-			]);
-
-			// Retrieves the null supplier order lines as well
-			expect(await getPossibleSupplierOrderLines(db, null)).toEqual([
-				{
-					supplier_id: null,
-					supplier_name: "General",
-					isbn: "4",
-					authors: "Dan Brown",
-					title: "The Secret of Secrets",
-					quantity: 1,
-					line_price: 60
-				},
-				{
-					supplier_id: null,
-					supplier_name: "General",
-					isbn: "666",
-					authors: "Aristide de Torchia",
-					title: "The Nine Gates of the Kingdom of Shadows",
-					quantity: 1,
-					line_price: 100_000_000
+					line_price: book2.price
 				}
 			]);
 		});
 
-		it("Aggregates supplier orders lines quantity when getting possible order lines", async () => {
-			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-			const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
-			expect(possibleOrderLines).toEqual([
-				{
-					authors: "N/A",
-					isbn: "1",
-					line_price: 21,
-					quantity: 3,
+		it("aggregate books without supplier association into a 'General' order", async () => {
+			// Do not associate publishers with suppliers
+			
+			// Add books to customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
 
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					title: "Physics"
+			const result = await getPossibleSupplierOrderLines(db, null);
+			expect(result.length).toBe(2);
+
+			// Both books should be in the general supplier order
+			expect(result).toEqual([
+				{
+					supplier_id: null,
+					supplier_name: DEFAULT_SUPPLIER_NAME,
+					isbn: book1.isbn,
+					authors: "N/A",
+					title: book1.title,
+					quantity: 1,
+					line_price: book1.price
 				},
 				{
+					supplier_id: null,
+					supplier_name: DEFAULT_SUPPLIER_NAME,
+					isbn: book2.isbn,
 					authors: "N/A",
-					isbn: "2",
-					quantity: 3,
-					line_price: 39,
-
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					title: "Chemistry"
+					title: book2.title,
+					quantity: 1,
+					line_price: book2.price
 				}
 			]);
+		});
 
-			await createSupplierOrder(db, possibleOrderLines);
+		it("aggregate quantities when same book is ordered multiple times", async () => {
+			const { id: supplierId, name: supplierName } = supplier1;
+			
+			// Associate book1 with supplier1
+			await associatePublisher(db, supplierId, book1.publisher);
 
-			await getPlacedSupplierOrders(db);
-			const newOrders = await getPlacedSupplierOrderLines(db, [1]);
+			// Add same book twice to customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book1.isbn]);
 
-			expect(newOrders).toEqual([
+			const result = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(result.length).toBe(1);
+
+			// Should show aggregated quantity
+			expect(result).toEqual([
 				{
+					supplier_id: supplierId,
+					supplier_name: supplierName,
+					isbn: book1.isbn,
 					authors: "N/A",
-					isbn: "1",
-					quantity: 3,
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					title: "Physics",
-					created: expect.any(Number),
-					supplier_order_id: 1,
-					total_book_number: 6,
-					total_book_price: 60,
-					line_price: 21
-				},
-				{
-					authors: "N/A",
-					isbn: "2",
-					quantity: 3,
-					supplier_id: 1,
-					supplier_name: "Science Books LTD",
-					title: "Chemistry",
-					created: expect.any(Number),
-					supplier_order_id: 1,
-					total_book_number: 6,
-					total_book_price: 60,
-					line_price: 39
+					title: book1.title,
+					quantity: 2,
+					line_price: book1.price * 2
 				}
 			]);
+		});
+
+		it("should only include unplaced customer order lines", async () => {
+			const { id: supplierId } = supplier1;
+			
+			// Associate book1 with supplier1
+			await associatePublisher(db, supplierId, book1.publisher);
+
+			// Add one unplaced order
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			
+			// Add one placed order
+			await db.exec(
+				`INSERT INTO customer_order_lines (customer_id, isbn, placed)
+				VALUES (?, ?, ?)`,
+				[customer1.id, book1.isbn, new Date().getTime()]
+			);
+
+			const result = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(result.length).toBe(1);
+			expect(result[0].quantity).toBe(1);
+		});
+
+		it("should handle missing book prices", async () => {
+			const { id: supplierId } = supplier1;
+			
+			// Create book without price
+			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub", title: "No Price Book" };
+			await upsertBook(db, bookNoPrice);
+			await associatePublisher(db, supplierId, bookNoPrice.publisher);
+
+			// Add to customer order
+			await addBooksToCustomer(db, customer1.id, [bookNoPrice.isbn]);
+
+			const result = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(result.length).toBe(1);
+			expect(result[0].line_price).toBe(0);
 		});
 	});
 });
