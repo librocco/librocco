@@ -21,8 +21,8 @@ describe("New supplier orders:", () => {
 	const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 	const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
 
-	const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", price: 7 };
-	const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", price: 13 };
+	const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
+	const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
 	const books = [book1, book2];
 
 	const supplier1 = { id: 1, name: "Alphabet Books LTD" };
@@ -167,30 +167,6 @@ describe("New supplier orders:", () => {
 	});
 
 	describe("getPossibleSupplierOrderLines should", () => {
-		const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
-		const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
-
-		const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", price: 7 };
-		const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", price: 13 };
-		const books = [book1, book2];
-
-		const supplier1 = { id: 1, name: "Alphabet Books LTD" };
-		const supplier2 = { id: 2, name: "Xanax Books LTD" };
-
-		let db: DB;
-
-		beforeEach(async () => {
-			db = await getRandomDb();
-
-			// Setup the entities that we're going to need each time
-			await upsertCustomer(db, customer1);
-			await upsertCustomer(db, customer2);
-			await upsertBook(db, book1);
-			await upsertBook(db, book2);
-			await upsertSupplier(db, supplier1);
-			await upsertSupplier(db, supplier2);
-		});
-
 		it("aggregate order lines from multiple customer orders for a supplier", async () => {
 			const { id: supplierId, name: supplierName } = supplier1;
 
@@ -211,7 +187,7 @@ describe("New supplier orders:", () => {
 					supplier_id: supplierId,
 					supplier_name: supplierName,
 					isbn: book1.isbn,
-					authors: "N/A",
+					authors: book1.authors,
 					title: book1.title,
 					quantity: 1,
 					line_price: book1.price
@@ -220,7 +196,7 @@ describe("New supplier orders:", () => {
 					supplier_id: supplierId,
 					supplier_name: supplierName,
 					isbn: book2.isbn,
-					authors: "N/A",
+					authors: book2.authors,
 					title: book2.title,
 					quantity: 1,
 					line_price: book2.price
@@ -230,7 +206,7 @@ describe("New supplier orders:", () => {
 
 		it("aggregate books without supplier association into a 'General' order", async () => {
 			// Do not associate publishers with suppliers
-			
+
 			// Add books to customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
@@ -244,7 +220,7 @@ describe("New supplier orders:", () => {
 					supplier_id: null,
 					supplier_name: DEFAULT_SUPPLIER_NAME,
 					isbn: book1.isbn,
-					authors: "N/A",
+					authors: book1.authors,
 					title: book1.title,
 					quantity: 1,
 					line_price: book1.price
@@ -253,7 +229,7 @@ describe("New supplier orders:", () => {
 					supplier_id: null,
 					supplier_name: DEFAULT_SUPPLIER_NAME,
 					isbn: book2.isbn,
-					authors: "N/A",
+					authors: book2.authors,
 					title: book2.title,
 					quantity: 1,
 					line_price: book2.price
@@ -263,7 +239,7 @@ describe("New supplier orders:", () => {
 
 		it("aggregate quantities when same book is ordered multiple times", async () => {
 			const { id: supplierId, name: supplierName } = supplier1;
-			
+
 			// Associate book1 with supplier1
 			await associatePublisher(db, supplierId, book1.publisher);
 
@@ -280,7 +256,7 @@ describe("New supplier orders:", () => {
 					supplier_id: supplierId,
 					supplier_name: supplierName,
 					isbn: book1.isbn,
-					authors: "N/A",
+					authors: book1.authors,
 					title: book1.title,
 					quantity: 2,
 					line_price: book1.price * 2
@@ -290,13 +266,13 @@ describe("New supplier orders:", () => {
 
 		it("should only include unplaced customer order lines", async () => {
 			const { id: supplierId } = supplier1;
-			
+
 			// Associate book1 with supplier1
 			await associatePublisher(db, supplierId, book1.publisher);
 
 			// Add one unplaced order
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
-			
+
 			// Add one placed order
 			await db.exec(
 				`INSERT INTO customer_order_lines (customer_id, isbn, placed)
@@ -304,25 +280,26 @@ describe("New supplier orders:", () => {
 				[customer1.id, book1.isbn, new Date().getTime()]
 			);
 
-			const result = await getPossibleSupplierOrderLines(db, supplierId);
-			expect(result.length).toBe(1);
-			expect(result[0].quantity).toBe(1);
+			const [orderLine] = await getPossibleSupplierOrderLines(db, supplierId);
+			// There should only be one copy to be ordered
+			expect(orderLine.quantity).toBe(1);
 		});
 
-		it("should handle missing book prices", async () => {
+		it("should handle missing book prices, title and authors", async () => {
 			const { id: supplierId } = supplier1;
-			
+
 			// Create book without price
-			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub", title: "No Price Book" };
+			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub" };
 			await upsertBook(db, bookNoPrice);
 			await associatePublisher(db, supplierId, bookNoPrice.publisher);
 
 			// Add to customer order
 			await addBooksToCustomer(db, customer1.id, [bookNoPrice.isbn]);
 
-			const result = await getPossibleSupplierOrderLines(db, supplierId);
-			expect(result.length).toBe(1);
-			expect(result[0].line_price).toBe(0);
+			const [orderLine] = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(orderLine.title).toBe("N/A");
+			expect(orderLine.authors).toBe("N/A");
+			expect(orderLine.line_price).toBe(0);
 		});
 	});
 });
