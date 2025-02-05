@@ -54,18 +54,24 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 }
 
 /**
- * Retrieves all publishers associated with a specific supplier.
+ * Retrieves all publishers associated with a specific supplier ordered alphabetically
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
-	const result = await db.execA("SELECT publisher FROM supplier_publisher WHERE supplier_id = ?;", [supplierId]);
-	if (result.length > 0) {
-		return result[0];
-	}
-	return [];
+	const stmt = await db.prepare(
+		`SELECT publisher 
+		FROM supplier_publisher 
+		WHERE supplier_id = ?
+		ORDER BY publisher ASC;`
+	);
+
+	// For some reason `stmt.all` does not accept a type arg. Docs say it should
+	const result = (await stmt.all(null, supplierId)) as unknown as { publisher: string }[];
+
+	return result.map(({ publisher }) => publisher);
 }
 
 /**

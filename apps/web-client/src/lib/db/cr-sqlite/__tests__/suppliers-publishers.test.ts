@@ -8,9 +8,9 @@ const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.bo
 const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave" };
 const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd" };
 
-const publisher1 = "SciencePublisher";
+const publisher1 = "AnimalPublisher";
 const publisher2 = "FantasyPublisher";
-const publisher3 = "HistoryPublisher";
+const publisher3 = "XanaxPublisher";
 
 describe("Supplier management:", () => {
 	describe("upsertSupplier should", () => {
@@ -169,7 +169,7 @@ describe("Publisher associations:", () => {
 			expect(publishers).toEqual([]);
 		});
 
-		it("return all associated publishers", async () => {
+		it("return all associated publishers ordered alphabetically", async () => {
 			const db = await getRandomDb();
 			await upsertSupplier(db, supplier1);
 
