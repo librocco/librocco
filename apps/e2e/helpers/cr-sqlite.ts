@@ -1,19 +1,7 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import { Customer, Supplier, SupplierOrderLine } from "./types";
+import { Customer, Supplier, PossibleSupplierOrderLine, BookData } from "./types";
 
 // #region books
-
-export type BookData = {
-	isbn: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
 
 export async function upsertBook(db: DB, book: BookData) {
 	await db.exec(
@@ -251,7 +239,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 	);
 }
 
-export async function associatePublisher(db: DB, params: { supplierId: number; publisherId: string }): Promise<void> {
+export async function associatePublisher(db: DB, params: { supplierId: number; publisherId: string }) {
 	const { publisherId, supplierId } = params;
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
@@ -264,7 +252,7 @@ export async function associatePublisher(db: DB, params: { supplierId: number; p
 	);
 }
 
-export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]) {
+export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
 	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
