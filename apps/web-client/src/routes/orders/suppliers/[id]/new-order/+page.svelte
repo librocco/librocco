@@ -45,7 +45,7 @@
 		await invalidate("suppliers:data");
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(`${base}/orders/suppliers/`);
+		await goto(`${base}/orders/suppliers/orders/`);
 	}
 
 	function selectPortion(portion: number) {
