@@ -206,7 +206,7 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
             s.name as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
-			SUM(COALESCE(book.price, 0)) as total_book_price
+			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
         FROM supplier_order so
         JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
