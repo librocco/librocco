@@ -3,9 +3,9 @@ import { getRandomDb } from "./lib";
 import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
 
 // Test fixtures
-const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St" };
-const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave" };
-const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd" };
+const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St", numPublishers: 0 };
+const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave", numPublishers: 0 };
+const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd", numPublishers: 0 };
 
 const publisher1 = "AnimalPublisher";
 const publisher2 = "FantasyPublisher";
@@ -36,8 +36,9 @@ describe("Supplier management:", () => {
 				{
 					id: 1,
 					name: "Partial Books",
-					email: null,
-					address: null
+					email: "N/A",
+					address: "N/A",
+					numPublishers: 0
 				}
 			]);
 		});
@@ -151,6 +152,24 @@ describe("Publisher associations:", () => {
 
 			const publishers = await getPublishersFor(db, supplier1.id);
 			expect(publishers).toEqual([publisher1, publisher2]);
+		});
+	});
+
+	describe("getAllSuppliers shold", () => {
+		it("the correct 'numPublishers'", async () => {
+			const db = await getRandomDb();
+			await upsertSupplier(db, supplier1);
+
+			// NOTE: supplier1 has 'numPublishers' = 0
+			expect(await getAllSuppliers(db)).toEqual([supplier1]);
+
+			await associatePublisher(db, supplier1.id, publisher1);
+			expect(await getAllSuppliers(db)).toEqual([{ ...supplier1, numPublishers: 1 }]);
+
+			await associatePublisher(db, supplier1.id, publisher2);
+			expect(await getAllSuppliers(db)).toEqual([{ ...supplier1, numPublishers: 2 }]);
+
+			// TODO: test the publisher being removed here
 		});
 	});
 
