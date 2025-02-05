@@ -253,7 +253,7 @@
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
-											<span class="badge">Received</span>
+											<span class="badge">Draft</span>
 										{/if}
 									</td>
 								</tr>
