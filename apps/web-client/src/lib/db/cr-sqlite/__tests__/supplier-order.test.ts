@@ -17,7 +17,7 @@ import {
 import { addBooksToCustomer, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
-describe("Possible (new) supplier orders:", () => {
+describe("New supplier orders:", () => {
 	const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 	const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
 
@@ -166,7 +166,7 @@ describe("Possible (new) supplier orders:", () => {
 		});
 	});
 
-	describe("getPossibleSupplierOrderLInes should", () => {
+	describe("getPossibleSupplierOrderLines should:", () => {
 		it("retrieves possible order lines for a specific supplier from unplaced customer orders", async () => {
 			// Supplier 1 should have the following lines
 			expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([
