@@ -1,4 +1,13 @@
-import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
+import { asc } from "@librocco/shared";
+import type {
+	DB,
+	Supplier,
+	PossibleSupplierOrder,
+	PossibleSupplierOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine,
+	SupplierExtended
+} from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -26,9 +35,21 @@ import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, Pl
  * @param db - The database instance to query
  * @returns Promise resolving to an array of suppliers with their basic info
  */
-export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
-	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
-	return result;
+export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	const query = `
+		SELECT
+			supplier.id,
+			name,
+			COALESCE(email, 'N/A') as email,
+			COALESCE(address, 'N/A') as address,
+			COUNT(publisher) as numPublishers
+		FROM supplier
+		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		GROUP BY supplier.id
+		ORDER BY supplier.id ASC
+	`;
+
+	return await db.execO<SupplierExtended>(query);
 }
 
 /**
@@ -62,8 +83,8 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
 	const stmt = await db.prepare(
-		`SELECT publisher 
-		FROM supplier_publisher 
+		`SELECT publisher
+		FROM supplier_publisher
 		WHERE supplier_id = ?
 		ORDER BY publisher ASC;`
 	);
