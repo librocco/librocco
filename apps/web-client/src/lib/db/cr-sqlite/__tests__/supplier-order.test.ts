@@ -303,27 +303,115 @@ describe("New supplier orders:", () => {
 		});
 	});
 
-	describe("createSupplierOrder should", () => {});
-});
+	describe("createSupplierOrder should", () => {
+		const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
+		const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
 
-describe("create supplier order should", () => {
-	let db: DB;
-	beforeEach(async () => {
-		db = await getRandomDb();
-		await createCustomerOrders(db);
-	});
+		const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
+		const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
 
-	it("place a new order with possible order lines", async () => {
-		const possibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		const supplier1 = { id: 1, name: "Alphabet Books LTD" };
+		const supplier2 = { id: 2, name: "Xanax Books LTD" };
 
-		await createSupplierOrder(db, possibleOrderLines);
+		let db: DB;
 
-		const newOrders = await getPlacedSupplierOrders(db);
+		beforeEach(async () => {
+			db = await getRandomDb();
 
-		expect(newOrders.length).toBe(1);
+			await upsertCustomer(db, customer1);
+			await upsertCustomer(db, customer2);
+			await upsertBook(db, book1);
+			await upsertBook(db, book2);
+			await upsertSupplier(db, supplier1);
+			await upsertSupplier(db, supplier2);
+		});
 
-		const newPossibleOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		expect(newPossibleOrderLines.length).toBe(0);
+		it("create a supplier order from multiple customer orders", async () => {
+			const { id: supplierId } = supplier1;
+
+			// Associate both books with supplier1
+			await associatePublisher(db, supplierId, book1.publisher);
+			await associatePublisher(db, supplierId, book2.publisher);
+
+			// Add books to different customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
+
+			// Get possible order lines and create the order
+			const possibleOrderLines = await getPossibleSupplierOrderLines(db, supplierId);
+			await createSupplierOrder(db, possibleOrderLines);
+
+			// Verify the order was created correctly
+			const placedOrders = await getPlacedSupplierOrders(db);
+			expect(placedOrders.length).toBe(1);
+			expect(placedOrders[0]).toEqual(expect.objectContaining({
+				supplier_id: supplierId,
+				supplier_name: supplier1.name,
+				total_book_number: 2,
+				total_book_price: book1.price + book2.price
+			}));
+
+			// Verify the customer order lines were marked as placed
+			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, supplierId);
+			expect(remainingPossibleLines.length).toBe(0);
+		});
+
+		it("create multiple supplier orders from the same batch of customer orders", async () => {
+			// Associate each book with a different supplier
+			await associatePublisher(db, supplier1.id, book1.publisher);
+			await associatePublisher(db, supplier2.id, book2.publisher);
+
+			// Add both books to a single customer order
+			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+
+			// Create orders for both suppliers
+			const supplier1Lines = await getPossibleSupplierOrderLines(db, supplier1.id);
+			const supplier2Lines = await getPossibleSupplierOrderLines(db, supplier2.id);
+			await createSupplierOrder(db, [...supplier1Lines, ...supplier2Lines]);
+
+			// Verify two separate orders were created
+			const placedOrders = await getPlacedSupplierOrders(db);
+			expect(placedOrders.length).toBe(2);
+
+			// Check specific order details
+			const [order1, order2] = placedOrders;
+			expect(order1.total_book_number).toBe(1);
+			expect(order2.total_book_number).toBe(1);
+
+			// Verify all customer order lines were marked as placed
+			const remainingLines1 = await getPossibleSupplierOrderLines(db, supplier1.id);
+			const remainingLines2 = await getPossibleSupplierOrderLines(db, supplier2.id);
+			expect(remainingLines1.length).toBe(0);
+			expect(remainingLines2.length).toBe(0);
+		});
+
+		it("handle creating an order with missing book prices", async () => {
+			const { id: supplierId } = supplier1;
+
+			// Create and associate a book without price
+			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub" };
+			await upsertBook(db, bookNoPrice);
+			await associatePublisher(db, supplierId, bookNoPrice.publisher);
+
+			// Add to customer order
+			await addBooksToCustomer(db, customer1.id, [bookNoPrice.isbn]);
+
+			// Create the order
+			const possibleOrderLines = await getPossibleSupplierOrderLines(db, supplierId);
+			await createSupplierOrder(db, possibleOrderLines);
+
+			// Verify order was created with zero price
+			const [placedOrder] = await getPlacedSupplierOrders(db);
+			expect(placedOrder.total_book_price).toBe(0);
+			expect(placedOrder.total_book_number).toBe(1);
+		});
+
+		it("create an empty order when no order lines are provided", async () => {
+			await createSupplierOrder(db, []);
+
+			const placedOrders = await getPlacedSupplierOrders(db);
+			expect(placedOrders).toEqual([]);
+		});
 	});
 });
 
