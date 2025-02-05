@@ -17,32 +17,32 @@ import {
 import { addBooksToCustomer, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
+const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
+const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
+
+const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
+const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
+const books = [book1, book2];
+
+const supplier1 = { id: 1, name: "Alphabet Books LTD" };
+const supplier2 = { id: 2, name: "Xanax Books LTD" };
+
+let db: DB;
+
+beforeEach(async () => {
+	db = await getRandomDb();
+
+	// Setup the entities that we're going to need each time, but don't associate them...
+	// leave this to the tests for different scenarios
+	await upsertCustomer(db, customer1);
+	await upsertCustomer(db, customer2);
+	await upsertBook(db, book1);
+	await upsertBook(db, book2);
+	await upsertSupplier(db, supplier1);
+	await upsertSupplier(db, supplier2);
+});
+
 describe("New supplier orders:", () => {
-	const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
-	const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
-
-	const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
-	const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
-	const books = [book1, book2];
-
-	const supplier1 = { id: 1, name: "Alphabet Books LTD" };
-	const supplier2 = { id: 2, name: "Xanax Books LTD" };
-
-	let db: DB;
-
-	beforeEach(async () => {
-		db = await getRandomDb();
-
-		// Setup the entities that we're going to need each time, but don't associate them...
-		// leave this to the tests for different scenarios
-		await upsertCustomer(db, customer1);
-		await upsertCustomer(db, customer2);
-		await upsertBook(db, book1);
-		await upsertBook(db, book2);
-		await upsertSupplier(db, supplier1);
-		await upsertSupplier(db, supplier2);
-	});
-
 	describe("getPossibleSupplierOrders should", () => {
 		it("aggregate a supplier order from multiple client orders", async () => {
 			const { id: supplierId, name: supplierName } = supplier1;
@@ -302,30 +302,10 @@ describe("New supplier orders:", () => {
 			expect(orderLine.line_price).toBe(0);
 		});
 	});
+});
 
+describe("Placing supplier orders", () => {
 	describe("createSupplierOrder should", () => {
-		const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
-		const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
-
-		const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
-		const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
-
-		const supplier1 = { id: 1, name: "Alphabet Books LTD" };
-		const supplier2 = { id: 2, name: "Xanax Books LTD" };
-
-		let db: DB;
-
-		beforeEach(async () => {
-			db = await getRandomDb();
-
-			await upsertCustomer(db, customer1);
-			await upsertCustomer(db, customer2);
-			await upsertBook(db, book1);
-			await upsertBook(db, book2);
-			await upsertSupplier(db, supplier1);
-			await upsertSupplier(db, supplier2);
-		});
-
 		it("create a supplier order from multiple customer orders", async () => {
 			const { id: supplierId } = supplier1;
 
@@ -344,12 +324,14 @@ describe("New supplier orders:", () => {
 			// Verify the order was created correctly
 			const placedOrders = await getPlacedSupplierOrders(db);
 			expect(placedOrders.length).toBe(1);
-			expect(placedOrders[0]).toEqual(expect.objectContaining({
-				supplier_id: supplierId,
-				supplier_name: supplier1.name,
-				total_book_number: 2,
-				total_book_price: book1.price + book2.price
-			}));
+			expect(placedOrders[0]).toEqual(
+				expect.objectContaining({
+					supplier_id: supplierId,
+					supplier_name: supplier1.name,
+					total_book_number: 2,
+					total_book_price: book1.price + book2.price
+				})
+			);
 
 			// Verify the customer order lines were marked as placed
 			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, supplierId);
