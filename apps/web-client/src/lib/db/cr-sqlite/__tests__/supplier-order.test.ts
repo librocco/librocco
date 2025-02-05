@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from "vitest";
 
 import { type DB } from "../types";
 
-import { getRandomDb, createCustomerOrders } from "./lib";
+import { getRandomDb } from "./lib";
 
 import {
 	DEFAULT_SUPPLIER_NAME,
@@ -388,6 +388,7 @@ describe("Placing supplier orders", () => {
 			expect(placedOrder.total_book_number).toBe(1);
 		});
 
+		// TODO: should this even be possible? Also see below `getPlacedSupplierOrders` - "handle orders with no order line"
 		it("create an empty order when no order lines are provided", async () => {
 			await createSupplierOrder(db, []);
 
@@ -608,7 +609,7 @@ describe("Placing supplier orders", () => {
 				quantity: 2,
 				line_price: book1.price * 2,
 				total_book_number: 3,
-				total_book_price: (book1.price * 2) + book2.price,
+				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
 			});
 
@@ -623,7 +624,7 @@ describe("Placing supplier orders", () => {
 				quantity: 1,
 				line_price: book2.price,
 				total_book_number: 3,
-				total_book_price: (book1.price * 2) + book2.price,
+				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
 			});
 		});
@@ -661,7 +662,7 @@ describe("Placing supplier orders", () => {
 
 		it("handle books with missing prices", async () => {
 			const db = await getRandomDb();
-			
+
 			// Create book without price
 			const bookNoPrice = { isbn: "3", publisher: "MathsAndPhysicsPub", title: "No Price Book", authors: "Anonymous" };
 			await upsertBook(db, bookNoPrice);
@@ -685,7 +686,7 @@ describe("Placing supplier orders", () => {
 			expect(orderLines).toHaveLength(2);
 
 			// Total price should only include the priced book
-			orderLines.forEach(line => {
+			orderLines.forEach((line) => {
 				expect(line.total_book_price).toBe(book1.price);
 				expect(line.total_book_number).toBe(3);
 			});
@@ -705,7 +706,7 @@ describe("Placing supplier orders", () => {
 
 		it("handle orders with missing book metadata", async () => {
 			const db = await getRandomDb();
-			
+
 			// Create order for book that doesn't exist in books table
 			await db.exec(
 				`INSERT INTO supplier_order (id, supplier_id, created)
@@ -715,18 +716,20 @@ describe("Placing supplier orders", () => {
 
 			await db.exec(
 				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-				VALUES (1, '999', 1)`  // Non-existent ISBN
+				VALUES (1, '999', 1)` // Non-existent ISBN
 			);
 
 			const orderLines = await getPlacedSupplierOrderLines(db, [1]);
 			expect(orderLines).toHaveLength(1);
-			expect(orderLines[0]).toEqual(expect.objectContaining({
-				isbn: '999',
-				title: 'N/A',
-				authors: 'N/A',
-				line_price: 0,
-				quantity: 1
-			}));
+			expect(orderLines[0]).toEqual(
+				expect.objectContaining({
+					isbn: "999",
+					title: "N/A",
+					authors: "N/A",
+					line_price: 0,
+					quantity: 1
+				})
+			);
 		});
 	});
 });
