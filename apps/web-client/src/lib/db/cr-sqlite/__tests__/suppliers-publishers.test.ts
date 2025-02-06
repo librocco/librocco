@@ -42,51 +42,50 @@ describe("Supplier management:", () => {
 			});
 		});
 
-		// TODO: the following upsertSupplier behaviour needs to be fixed
-		// it("update existing supplier fields", async () => {
-		// 	const db = await getRandomDb();
+		it("update existing supplier fields", async () => {
+			const db = await getRandomDb();
 
-		// 	// Create initial supplier
-		// 	await upsertSupplier(db, supplier1);
+			// Create initial supplier
+			await upsertSupplier(db, supplier1);
 
-		// 	// Update some fields
-		// 	const updates = {
-		// 		id: supplier1.id,
-		// 		name: "Updated Science Books",
-		// 		email: "new@science.books"
-		// 	};
-		// 	await upsertSupplier(db, updates);
+			// Update some fields
+			const updates = {
+				id: supplier1.id,
+				name: "Updated Science Books",
+				email: "new@science.books"
+			};
+			await upsertSupplier(db, updates);
 
-		// 	const suppliers = await getAllSuppliers(db);
-		// 	expect(suppliers).toEqual([
-		// 		{
-		// 			...supplier1,
-		// 			name: updates.name,
-		// 			email: updates.email
-		// 		}
-		// 	]);
-		// });
+			const suppliers = await getAllSuppliers(db);
+			expect(suppliers).toEqual([
+				{
+					...supplier1,
+					name: updates.name,
+					email: updates.email
+				}
+			]);
+		});
 
-		// it("only update provided fields", async () => {
-		// 	const db = await getRandomDb();
+		it("only update provided fields", async () => {
+			const db = await getRandomDb();
 
-		// 	// Create initial supplier
-		// 	await upsertSupplier(db, supplier1);
+			// Create initial supplier
+			await upsertSupplier(db, supplier1);
 
-		// 	// Update only name
-		// 	await upsertSupplier(db, {
-		// 		id: supplier1.id,
-		// 		name: "Updated Name"
-		// 	});
+			// Update only name
+			await upsertSupplier(db, {
+				id: supplier1.id,
+				name: "Updated Name"
+			});
 
-		// 	const suppliers = await getAllSuppliers(db);
-		// 	expect(suppliers).toEqual([
-		// 		{
-		// 			...supplier1,
-		// 			name: "Updated Name"
-		// 		}
-		// 	]);
-		// });
+			const suppliers = await getAllSuppliers(db);
+			expect(suppliers).toEqual([
+				{
+					...supplier1,
+					name: "Updated Name"
+				}
+			]);
+		});
 	});
 
 	describe("getAllSuppliers should", () => {
