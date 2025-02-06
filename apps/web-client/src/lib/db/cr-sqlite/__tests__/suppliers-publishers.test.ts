@@ -7,6 +7,25 @@ import { getRandomDb } from "./lib";
 import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher, getSupplierDetails } from "../suppliers";
 
 describe("Suppliers CRUD tests", () => {
+	it("creates and updates a supplier", async () => {
+		const db = await getRandomDb();
+
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
+		expect(await getSupplierDetails(db, 1)).toEqual(
+			expect.objectContaining({ id: 1, name: "Science Books LTD", address: "N/A", email: "N/A" })
+		);
+
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD - update" });
+		expect(await getSupplierDetails(db, 1)).toEqual(
+			expect.objectContaining({ id: 1, name: "Science Books LTD - update", address: "N/A", email: "N/A" })
+		);
+
+		await upsertSupplier(db, { id: 1, email: "email@email.com", address: "123 Black Hole Rd" });
+		expect(await getSupplierDetails(db, 1)).toEqual(
+			expect.objectContaining({ id: 1, name: "Science Books LTD - update", email: "email@email.com", address: "123 Black Hole Rd" })
+		);
+	});
+
 	it("retrieves all suppliers, with their assigned publishers", async () => {
 		const db = await getRandomDb();
 

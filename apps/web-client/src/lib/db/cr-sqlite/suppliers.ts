@@ -95,6 +95,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
 	}
+
 	await db.exec(
 		`INSERT INTO supplier (id, name, email, address)
         VALUES (?, ?, ?, ?)
@@ -102,7 +103,15 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address);`,
-		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
+		[
+			supplier.id,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null
+		]
 	);
 }
 
