@@ -1,4 +1,3 @@
-import { asc } from "@librocco/shared";
 import type {
 	DB,
 	Supplier,
@@ -29,13 +28,17 @@ import type {
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
-/**
- * Retrieves all suppliers from the database. This include their name, email & address.
- *
- * @param db - The database instance to query
- * @returns Promise resolving to an array of suppliers with their basic info
- */
-export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
+async function _getSuppliers(db: DB, id?: number) {
+	const conditions = [];
+	const params = [];
+
+	if (id) {
+		conditions.push("supplier.id = ?");
+		params.push(id);
+	}
+
+	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const query = `
 		SELECT
 			supplier.id,
@@ -45,11 +48,33 @@ export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		${whereClause}
 		GROUP BY supplier.id
 		ORDER BY supplier.id ASC
 	`;
 
-	return await db.execO<SupplierExtended>(query);
+	return await db.execO<SupplierExtended>(query, params);
+}
+
+/**
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of suppliers with their basic info
+ */
+export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	return _getSuppliers(db);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+	const [res] = await _getSuppliers(db, id);
+	return res || undefined;
 }
 
 /**
@@ -219,9 +244,19 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		`SELECT
+export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
+	const whereConditions = ["so.created IS NOT NULL"];
+	const params = [];
+
+	if (supplierId) {
+		whereConditions.push("so.supplier_id = ?");
+		params.push(supplierId);
+	}
+
+	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+	const query = `
+		SELECT
             so.id,
             so.supplier_id,
             s.name as supplier_name,
@@ -232,11 +267,12 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
         JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
-        WHERE so.created IS NOT NULL
+		${whereClause}
         GROUP BY so.id, so.supplier_id, s.name, so.created
-        ORDER BY so.created DESC;`
-	);
-	return result;
+        ORDER BY so.created DESC
+	`;
+
+	return await db.execO<PlacedSupplierOrder>(query, params);
 }
 
 /**
@@ -294,7 +330,7 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * @todo Rewrite this function to accommodate for removing quantity in
 customerOrderLine
  */
-export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
+export async function createSupplierOrder(db: DB, orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
 	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
