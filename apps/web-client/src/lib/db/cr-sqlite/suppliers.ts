@@ -30,13 +30,17 @@ import type {
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
-/**
- * Retrieves all suppliers from the database. This include their name, email & address.
- *
- * @param db - The database instance to query
- * @returns Promise resolving to an array of suppliers with their basic info
- */
-export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
+async function _getSuppliers(db: DB, id?: number) {
+	let conditions = [];
+	const params = [];
+
+	if (id) {
+		conditions.push("supplier.id = ?");
+		params.push(id);
+	}
+
+	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
 	const query = `
 		SELECT
 			supplier.id,
@@ -46,16 +50,38 @@ export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
 			JSON_GROUP_ARRAY(publisher) as assignedPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		${whereClause}
 		GROUP BY supplier.id
 		ORDER BY supplier.id ASC
 	`;
 
-	const res = await db.execO<SupplierExtendedDB>(query);
+	const res = await db.execO<SupplierExtendedDB>(query, params);
 
 	return res.map((supplier) => {
 		const assignedPublishers = JSON.parse(supplier.assignedPublishers).filter(Boolean).sort(asc());
 		return { ...supplier, assignedPublishers };
 	});
+}
+
+/**
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of suppliers with their basic info
+ */
+export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	return _getSuppliers(db);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+	const [res] = await _getSuppliers(db, id);
+	return res || undefined;
 }
 
 /**
@@ -211,9 +237,19 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		`SELECT
+export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
+	const whereConditions = ["so.created IS NOT NULL"];
+	const params = [];
+
+	if (supplierId) {
+		whereConditions.push("so.supplier_id = ?");
+		params.push(supplierId);
+	}
+
+	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+	const query = `
+		SELECT
             so.id,
             so.supplier_id,
             s.name as supplier_name,
@@ -224,11 +260,12 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
         JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
-        WHERE so.created IS NOT NULL
+		${whereClause}
         GROUP BY so.id, so.supplier_id, s.name, so.created
-        ORDER BY so.created DESC;`
-	);
-	return result;
+        ORDER BY so.created DESC
+	`;
+
+	return await db.execO<PlacedSupplierOrder>(query, params);
 }
 
 /**

@@ -4,7 +4,7 @@ import { type DB } from "../types";
 
 import { getRandomDb } from "./lib";
 
-import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
+import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher, getSupplierDetails } from "../suppliers";
 
 describe("Suppliers CRUD tests", () => {
 	it("retrieves all suppliers, with their assigned publishers", async () => {
@@ -32,6 +32,34 @@ describe("Suppliers CRUD tests", () => {
 		]);
 
 		await associatePublisher(db, 2, "FantasyPublisher");
+	});
+
+	it("retrieves data for single supplier by id", async () => {
+		const db = await getRandomDb();
+
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
+		await upsertSupplier(db, { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd" });
+		await associatePublisher(db, 1, "SciencePublisher");
+		await associatePublisher(db, 1, "PhysicsPublisher");
+
+		expect(await getSupplierDetails(db, 1)).toEqual({
+			id: 1,
+			name: "Science Books LTD",
+			address: "N/A",
+			email: "N/A",
+			assignedPublishers: ["PhysicsPublisher", "SciencePublisher"]
+		});
+
+		expect(await getSupplierDetails(db, 2)).toEqual({
+			id: 2,
+			name: "Fantasy Books LTD",
+			address: "123 Yellow Brick Rd",
+			email: "info@fantasy.com",
+			assignedPublishers: []
+		});
+
+		// Non-existent supplier
+		expect(await getSupplierDetails(db, 3)).toEqual(undefined);
 	});
 });
 

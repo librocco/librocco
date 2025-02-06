@@ -230,6 +230,42 @@ describe("Supplier order handlers should", () => {
 			]);
 		});
 
+		it("retrieves a list of placed supplier orders, filtered by supplier id", async () => {
+			await db.exec(`
+				INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES
+				(1, 1, strftime('%s', 'now') * 1000),
+				(2, 2, strftime('%s', 'now') * 1000),
+				(3, 1, strftime('%s', 'now') * 1000)
+			`);
+			await db.exec(`
+				INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, '1', 2),
+				(1, '2', 1),
+				(2, '3', 3),
+				(3, '2', 3),
+				(3, '3', 3)
+			`);
+
+			expect(await getPlacedSupplierOrders(db, 1)).toEqual([
+				expect.objectContaining({
+					id: 1,
+					supplier_id: 1,
+					supplier_name: "Science Books LTD",
+					total_book_number: 3, // 2 Physics + 1 Chemistry
+					created: expect.any(Number)
+				}),
+				expect.objectContaining({
+					id: 3,
+					supplier_id: 1,
+					supplier_name: "Science Books LTD",
+					total_book_number: 6, // 3 Physics + 3 The Hobbit
+					created: expect.any(Number)
+				})
+			]);
+		});
+
 		it("returns empty array when no orders exist", async () => {
 			const orders = await getPlacedSupplierOrders(db);
 			expect(orders).toEqual([]);
