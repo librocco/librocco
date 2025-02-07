@@ -1,7 +1,14 @@
 import { describe, it, expect } from "vitest";
 import { getRandomDb } from "./lib";
 
-import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher, getSupplierDetails } from "../suppliers";
+import {
+	getAllSuppliers,
+	upsertSupplier,
+	getPublishersFor,
+	associatePublisher,
+	getSupplierDetails,
+	removePublisherFromSupplier
+} from "../suppliers";
 
 // Test fixtures
 const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St", numPublishers: 0 };
@@ -195,7 +202,8 @@ describe("Publisher associations:", () => {
 			await associatePublisher(db, supplier1.id, publisher2);
 			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 2 }));
 
-			// TODO: test the publisher being removed here
+			await removePublisherFromSupplier(db, supplier1.id, publisher2);
+			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 1 }));
 		});
 	});
 

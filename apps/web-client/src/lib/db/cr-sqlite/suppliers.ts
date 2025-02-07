@@ -135,18 +135,25 @@ export async function getPublishersFor(db: DB, supplierId: number): Promise<stri
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier to associate to
- * @param publisherId - The id of the publisher to associate
+ * @param publisher - The id of the publisher to associate
  */
-export async function associatePublisher(db: DB, supplierId: number, publisherId: string) {
+export async function associatePublisher(db: DB, supplierId: number, publisher: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
 	await db.exec(
-		`INSERT INTO supplier_publisher (supplier_id, publisher)
-        VALUES (?, ?)
-        ON CONFLICT(publisher) DO UPDATE SET
-        supplier_id = ?;`,
-		[supplierId, publisherId, supplierId]
+		`
+			INSERT INTO supplier_publisher (supplier_id, publisher)
+			VALUES (?, ?)
+			ON CONFLICT(publisher) DO UPDATE SET
+			supplier_id = ?
+		`,
+		[supplierId, publisher, supplierId]
 	);
+}
+
+/** Removes a publisher from the list of publishers for a supplier */
+export async function removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
+	await db.exec("DELETE FROM supplier_publisher WHERE supplier_id = ? AND publisher = ?", [supplierId, publisher]);
 }
 
 /**
