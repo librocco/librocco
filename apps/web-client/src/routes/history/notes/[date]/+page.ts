@@ -30,4 +30,5 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	return { date, dateValue, notes };
 };
 
+// eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface DailySummaryStore {}
