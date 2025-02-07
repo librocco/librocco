@@ -45,7 +45,9 @@
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
 	 */
-	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
+	$: if (warehouseName) {
+		selected.set({ value: warehouseId, label: warehouseName });
+	}
 
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
