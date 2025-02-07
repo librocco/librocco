@@ -14,17 +14,16 @@
 
 	const { dbCtx } = data;
 
-	$: {
-		// Register (and update on each change) the db to the window object.
-		// This is used for e2e tests (easier setup through direct access to the db).
-		// This is not a security concern as the db is in the user's browser anyhow.
-		if (browser && dbCtx) {
+	$: if (browser) {
+		if (dbCtx) {
+			// Register (and update on each change) the db to the window object.
+			// This is used for e2e tests (easier setup through direct access to the db).
+			// This is not a security concern as the db is in the user's browser anyhow.
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
-		}
-		// This shouldn't affect much, but is here for the purpose of exhaustive handling
-		if (browser && !dbCtx) {
+		} else {
+			// This shouldn't affect much, but is here for the purpose of exhaustive handling
 			window["db_ready"] = false;
 			window["_db"] = undefined;
 		}
@@ -43,10 +42,11 @@
 			registerSW({
 				immediate: true,
 				onRegistered(r) {
-					r &&
+					if (r) {
 						setInterval(() => {
 							r.update();
 						}, 20000);
+					}
 				},
 				onRegisterError() {
 					/**
@@ -58,7 +58,9 @@
 	});
 
 	export function onDestroy() {
-		availabilitySubscription && availabilitySubscription.unsubscribe();
+		if (availabilitySubscription) {
+			availabilitySubscription.unsubscribe();
+		}
 	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";

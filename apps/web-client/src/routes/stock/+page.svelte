@@ -57,7 +57,9 @@
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
 	// Reset max results when search string changes
-	$: $search.length && resetMaxResults();
+	$: if ($search.length > 0) {
+		resetMaxResults();
+	}
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	const seeMore = () => (maxResults += 20);
 	// We're using in intersection observer to create an infinite scroll effect

@@ -196,7 +196,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	try {
 		customerOrderLines = reconOrderLines.map((line) => line.isbn);
 	} catch (e) {
-		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
+		throw new Error(`Invalid customer order lines format in reconciliation order ${id}: ${e}`);
 	}
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
