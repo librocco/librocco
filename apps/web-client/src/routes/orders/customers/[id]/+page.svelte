@@ -19,7 +19,7 @@
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 
-	import { addBooksToCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { addBooksToCustomer, removeBooksFromCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
 	// import { createIntersectionObserver } from "$lib/actions";
@@ -101,6 +101,10 @@
 	};
 
 	// #endregion dialog
+
+	const handleDeleteLine = async (lineId) => {
+		await removeBooksFromCustomer(db, customerId, [lineId]);
+	};
 
 	let scanInputRef: HTMLInputElement = null;
 
@@ -232,10 +236,11 @@
 								<th>Authors</th>
 								<th>Price</th>
 								<th>Status</th>
+								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { isbn, title, authors, price, placed, received, collected }}
+							{#each customerOrderLines as { id, isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -256,6 +261,11 @@
 											<span class="badge">Received</span>
 										{/if}
 									</td>
+									{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "draft"}
+										<td>
+											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
+										</td>
+									{/if}
 								</tr>
 							{/each}
 						</tbody>
