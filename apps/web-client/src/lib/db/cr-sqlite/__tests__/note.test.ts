@@ -472,8 +472,8 @@ describe("Outbound note tests", () => {
 
 		expect(commitNote(db, 1)).rejects.toThrow(
 			new NoWarehouseSelectedError([
-				{ isbn: "1111111111", quantity: 2 },
-				{ isbn: "2222222222", quantity: 2 }
+				{ isbn: "1111111111", quantity: 2, "warehouseId": 0 },
+				{ isbn: "2222222222", quantity: 2, "warehouseId": 0 }
 			])
 		);
 	});
