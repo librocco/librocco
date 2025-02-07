@@ -4,6 +4,7 @@
 	"description": "JS Search is an efficient, client-side search library for JavaScript and JSON objects",
 	"main": "./source/index.ts",
 	"module": "./source/index.ts",
+	"type": "module",
 	"exports": {
 		".": {
 			"require": "./dist/umd/js-search.js",
