@@ -54,18 +54,24 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 }
 
 /**
- * Retrieves all publishers associated with a specific supplier.
+ * Retrieves all publishers associated with a specific supplier ordered alphabetically
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
-	const result = await db.execA("SELECT publisher FROM supplier_publisher WHERE supplier_id = ?;", [supplierId]);
-	if (result.length > 0) {
-		return result[0];
-	}
-	return [];
+	const stmt = await db.prepare(
+		`SELECT publisher 
+		FROM supplier_publisher 
+		WHERE supplier_id = ?
+		ORDER BY publisher ASC;`
+	);
+
+	// For some reason `stmt.all` does not accept a type arg. Docs say it should
+	const result = (await stmt.all(null, supplierId)) as unknown as { publisher: string }[];
+
+	return result.map(({ publisher }) => publisher);
 }
 
 /**
@@ -89,6 +95,11 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
 }
 
 /**
+ * A default group for books whose publishers are not associated with a supplier
+ */
+export const DEFAULT_SUPPLIER_NAME = "General";
+
+/**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.
  * Each row represents a potential order for a supplier with an aggregated `total_book_number` and `total_book_price`.
  * The result is ordered by supplier name.
@@ -97,6 +108,9 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
  * [{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
  * { supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 }]
  *```
+ * There is a fallback category "General" for books that are not explicitly linked to any supplier,
+ * ensuring all unplaced customer orders are accounted for, even if the supplier relationship is missing.
+ *
  * @param db - The database instance to query
  * @returns Promise resolving to an array of supplier order summaries with supplier information
  */
@@ -105,7 +119,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
 		SELECT
             supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
             COUNT(*) as total_book_number,
@@ -116,7 +130,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
         WHERE col.placed IS NULL
         GROUP BY supplier.id, supplier.name
-        ORDER BY supplier.name ASC
+        ORDER BY supplier_name ASC
 	`;
 
 	return db.execO<PossibleSupplierOrder>(query);
@@ -151,7 +165,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 		SELECT
 			supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
 			col.isbn,
@@ -192,7 +206,7 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
             s.name as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
-			SUM(COALESCE(book.price, 0)) as total_book_price
+			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
         FROM supplier_order so
         JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
