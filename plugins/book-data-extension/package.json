@@ -5,12 +5,12 @@
 	"exports": {
 		".": {
 			"import": {
-				"default": "./dist/plugin/index.es.js",
-				"types": "./dist/plugin/index.d.ts"
+				"types": "./dist/plugin/index.d.ts",
+				"default": "./dist/plugin/index.es.js"
 			},
 			"require": {
-				"default": "./dist/plugin/index.js",
-				"types": "./dist/plugin/index.d.ts"
+				"types": "./dist/plugin/index.d.ts",
+				"default": "./dist/plugin/index.js"
 			}
 		}
 	},
