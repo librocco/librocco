@@ -399,6 +399,13 @@ export async function createSupplierOrder(
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
 
 			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [orderId, isbn, quantity]);
+
+			// Create customer order line - supplier order relations - keeping track of all times a customer order line was ordered from the supplier
+			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, orderId]);
+			await db.exec(
+				`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+				values.flat()
+			);
 		}
 	});
 }
