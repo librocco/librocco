@@ -43,6 +43,16 @@ export type CustomerOrderLine = {
 	collected?: Date; // Date when the book order was collected by the customer
 } & BookDataCols;
 
+export type CustomerOrderLineHistoryDB = {
+	supplierOrderId: number;
+	placed: number;
+};
+
+export type CustomerOrderLineHistory = {
+	supplierOrderId: number;
+	placed: Date;
+};
+
 /* Suppliers */
 
 /**
