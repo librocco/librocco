@@ -346,52 +346,69 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * @todo Rewrite this function to accommodate for removing quantity in
 customerOrderLine
  */
-export async function createSupplierOrder(db: DB, orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]) {
+export async function createSupplierOrder(
+	db: DB,
+	supplierId: number | null,
+	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
-	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
-	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
 
-	const supplierOrderMapping = {};
-	// Collect all supplier ids involved in the order lines
-	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+	if (!orderLines.length) {
+		throw new Error("No order lines provided");
+	}
 
-	await db.tx(async (passedDb) => {
-		const db: DB = passedDb as DB;
-		for (const supplierId of supplierIds) {
-			// Create a new supplier order for each supplier
-			const newSupplierOrderId = (
-				await db.execA(
-					`INSERT INTO supplier_order (supplier_id)
-			      VALUES (?) RETURNING id;`,
-					[supplierId]
-				)
-			)[0][0];
-			// Save the newly created supplier order id
-			supplierOrderMapping[supplierId] = newSupplierOrderId;
-		}
+	// Check if all order lines belong to the provided supplier
+	// NOTE: This is really conservative/defensive - sholdn't really happen
+	const faultyLines = orderLines.filter((line) => line.supplier_id !== supplierId);
+	if (faultyLines.length) {
+		const msg = [
+			"All order lines must belong to the same supplier:",
+			`  supplier id: ${supplierId}`,
+			"  faulty lines:",
+			...faultyLines.map((line) => JSON.stringify(line))
+		].join("\n");
+		throw new Error(msg);
+	}
+
+	await db.tx(async (db) => {
+		// Create a supplier order
+		// TODO: check how conflict - free (when syncing) this way of assigning ids is
+		const [[orderId]] = await db.execA("INSERT INTO supplier_order (supplier_id) VALUES (?) RETURNING id", [supplierId]);
+		const timestamp = Date.now();
 
 		for (const orderLine of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
-			const customerOrderLines = await db.execO<any>(
-				// TODO: write tests to check the sorting by order creation
-				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
-				[orderLine.isbn]
-			);
+			const _customerOrderLineIds = await db
+				.execO<{
+					id: number;
+				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC", [orderLine.isbn])
+				.then((res) => res.map(({ id }) => id));
 
-			let copiesToGo = orderLine.quantity;
-			while (copiesToGo > 0) {
-				const customerOrderLine = customerOrderLines.shift();
-				if (customerOrderLine) {
-					// The whole line can be fulfilled
-					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
-				}
-				copiesToGo--;
+			// NOTE: this is a really defnsive check:
+			// - if there are not enough customer order lines to justify this order line, we should order (at maximum)
+			//  the number of customer order lines available
+			// - other constraint, ofc, is the number of quantity specified by the orderLines param
+			const quantity = Math.min(orderLine.quantity, _customerOrderLineIds.length);
+			if (quantity < orderLine.quantity) {
+				const msg = [
+					"There are fewer customer order lines than requested by the supplier order line:",
+					"  this isn't a problem as the final quantity will be truncated, but indicates a bug in calculating of possible supplier order lines:",
+					`  quantity requested: ${orderLine.quantity}`,
+					`  quantity required (by customer order lines): ${_customerOrderLineIds.length}`
+				];
+				console.warn(msg);
 			}
-			await db.exec(
-				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-	      VALUES (?, ?, ?);`,
-				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
-			);
+			// The truncated list of custome order line ids - the lines we need to update to "placed"
+			const customerOrderLineIds = _customerOrderLineIds.slice(0, quantity);
+
+			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
+			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
+
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [
+				orderId,
+				orderLine.isbn,
+				quantity
+			]);
 		}
 	});
 }
