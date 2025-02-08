@@ -9,7 +9,7 @@
 	import { getInitializedDB } from "$lib/db/cr-sqlite";
 	import { dbNamePersisted } from "$lib/db";
 
-	import exampleData from "./example_data";
+	import exampleData from "./example_data.sql?raw";
 
 	$: ({ nav: tNav } = $LL);
 
