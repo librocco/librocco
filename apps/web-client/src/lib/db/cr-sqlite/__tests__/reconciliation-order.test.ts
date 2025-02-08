@@ -33,7 +33,7 @@ describe("Reconciliation order creation", () => {
 		expect(res).toEqual([]);
 
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		// TODO: might be useful to have a way to filter for a few particular ids?
 		// It's only going to be one here...
@@ -52,12 +52,13 @@ describe("Reconciliation order creation", () => {
 			}
 		]);
 	});
+
 	it("can get all finalized reconciliation orders", async () => {
 		const res = await getAllReconciliationOrders(db);
 		expect(res).toEqual([]);
 
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		const supplierOrders = await getPlacedSupplierOrders(db);
 
@@ -77,9 +78,10 @@ describe("Reconciliation order creation", () => {
 			}
 		]);
 	});
+
 	it("can get all currently reconciliating orders", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		// TODO: might be useful to have a way to filter for a few particular ids?
 		// It's only going to be one here...
@@ -106,9 +108,10 @@ describe("Reconciliation order creation", () => {
 
 		expect(res2).toMatchObject([]);
 	});
+
 	it("can create a reconciliation order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		// TODO: might be useful to have a way to filter for a few particular ids?
 		// It's only going to be one here...
@@ -129,7 +132,7 @@ describe("Reconciliation order creation", () => {
 
 	it("can update a currently reconciliating order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		// TODO: might be useful to have a way to filter for a few particular ids?
 		// It's only going to be one here...
@@ -189,7 +192,7 @@ describe("Reconciliation order creation", () => {
 
 	it("can finalize a currently reconciliating order", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		// TODO: might be useful to have a way to filter for a few particular ids?
 		// It's only going to be one here...
@@ -215,7 +218,7 @@ describe("Reconciliation order creation", () => {
 
 	it("updates existing order line quantity when adding duplicate ISBN", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 		const supplierOrders = await getPlacedSupplierOrders(db);
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
@@ -294,7 +297,7 @@ describe("Reconciliation order creation", () => {
 
 		it("throws error when trying to finalize an already finalized order", async () => {
 			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-			await createSupplierOrder(db, newSupplierOrderLines);
+			await createSupplierOrder(db, 1, newSupplierOrderLines);
 
 			// TODO: might be useful to have a way to filter for a few particular ids?
 			// It's only going to be one here...
@@ -320,7 +323,7 @@ describe("getUnreconciledSupplierOrders", () => {
 		db = await getRandomDb();
 		await createCustomerOrders(db);
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, newSupplierOrderLines);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
 	});
 
 	it("should return only unreconciled supplier orders with correct totals", async () => {
