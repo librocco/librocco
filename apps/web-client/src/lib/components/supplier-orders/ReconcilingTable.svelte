@@ -30,7 +30,7 @@
 					<!-- @TODO replace with supplierOrderIds parse array??? -->
 					<td>
 						{#each supplierOrderIds as supplier_id}
-							<a class="hover:underline" href={appPath("supplier_order_status", supplier_id)}>#{supplier_id} </a>
+							<a class="hover:underline" href={appPath("supplier_orders", supplier_id)}>#{supplier_id} </a>
 						{/each}
 					</td>
 					<td>
