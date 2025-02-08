@@ -1,4 +1,3 @@
-const exampleData = `
 -- Books
 INSERT INTO book (isbn, title, authors, publisher, price) VALUES
 ('9781234567897', 'The Art of Learning', 'Josh Waitzkin', 'Scholastic', 15.99),
@@ -19,9 +18,9 @@ INSERT INTO supplier_publisher (supplier_id, publisher) VALUES
 (2, 'Ace');
 
 -- Customers
-INSERT INTO customer (id, fullname, email, deposit) VALUES
-(1, 'Alice Smith', 'alice.smith@example.com', 50.00),
-(2, 'Bob Johnson', 'bob.johnson@example.com', 30.00);
+INSERT INTO customer (id, display_id, fullname, email, deposit) VALUES
+(1, '1', 'Alice Smith', 'alice.smith@example.com', 50.00),
+(2, '2', 'Bob Johnson', 'bob.johnson@example.com', 30.00);
 
 -- Customer Order Lines
 INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
@@ -51,4 +50,3 @@ INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn) VALUES
  	(2, '9788804797142');
 `;
 
-export default exampleData;
