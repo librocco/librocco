@@ -306,3 +306,35 @@ export interface FieldConstructor<L extends Record<string, any>, K extends keyof
 	(parent: DashboardNode, view: TableView): L[K];
 }
 // #endregion asserters
+
+// #region customerOrder
+export type Customer = {
+	id?: number;
+	fullname?: string;
+	email?: string;
+	phone?: string;
+	taxId?: string;
+	displayId: string;
+	deposit?: number;
+	updatedAt?: Date;
+};
+// #endregion customerOrder
+
+export type Supplier = {
+	id?: number;
+	name?: string;
+	email?: string;
+	address?: string;
+};
+
+export type SupplierOrderLine = {
+	supplier_id: number;
+	supplier_name: string;
+	// TODO: extend from Book type (which properties are optional?)
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	quantity: number;
+	line_price: number;
+};
