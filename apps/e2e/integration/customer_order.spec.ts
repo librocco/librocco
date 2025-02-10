@@ -6,7 +6,7 @@ import { testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 import { addBooksToCustomer } from "@/helpers/cr-sqlite";
 
-test.skip("should create a new customer order", async ({ page }) => {
+test("should create a new customer order", async ({ page }) => {
 	await page.goto(`${baseURL}orders/customers/`);
 	await page.getByRole("button", { name: "New Order" }).first().click();
 
@@ -77,7 +77,7 @@ testOrders("should update a customer details", async ({ page, customer }) => {
 
 	await expect(page.getByText(newCustomer.fullname)).toBeVisible();
 	await expect(page.getByText(newCustomer.email)).toBeVisible();
-	await expect(page.getByText(newCustomer.deposit)).toBeVisible();
+	await expect(page.getByText("€10 deposit")).toBeVisible();
 });
 
 testOrders("should add books to a customer order", async ({ page, customer, books }) => {
