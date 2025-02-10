@@ -6,7 +6,7 @@ import { addBooksToCustomer, associatePublisher, createSupplierOrder } from "@/h
 import { testOrders } from "@/helpers/fixtures";
 
 testOrders.beforeEach(async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 });
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
 	await expect(page.getByRole("table")).not.toBeVisible();
@@ -25,12 +25,12 @@ testOrders("should show list of unordered orders", async ({ page, supplier, book
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
 
-	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	page.getByRole("button", { name: "Unordered" });
 
 	await expect(page.getByText(supplier.name)).toBeVisible();
 	const table = page.getByRole("table");
-	const firstRow = table.getByRole("row").nth(1);
+	const firstRow = table.getByRole("row").nth(2);
 	await expect(firstRow.getByRole("cell", { name: supplier.name })).toBeVisible();
 	// assert for quantity cell with a value of "1"
 	await expect(firstRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
@@ -51,7 +51,7 @@ testOrders(
 			bookIsbns: [books[2].isbn, books[2].isbn]
 		});
 
-		await page.goto(`${baseURL}orders/suppliers/`);
+		await page.goto(`${baseURL}orders/suppliers/orders`);
 		page.getByRole("button", { name: "Unordered" });
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
@@ -91,13 +91,13 @@ testOrders(
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
-		await page.waitForURL(`${baseURL}orders/suppliers/`);
+		await page.waitForURL(`${baseURL}orders/suppliers/orders/`);
 		page.getByRole("button", { name: "Ordered" }).nth(1).click();
 
 		await expect(page.getByText(supplier.name)).toBeVisible();
 		await expect(page.getByText("reconcile")).toBeVisible();
 
-		await page.goto(`${baseURL}orders/suppliers/`);
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
 		page.getByRole("button", { name: "Unordered" });
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
@@ -124,7 +124,7 @@ testOrders("should show a placed supplier order with the correct details", async
 		}
 	]);
 
-	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	page.getByRole("button", { name: "Ordered" }).nth(1).click();
 
 	const updateButton = page.getByRole("button", { name: "View Order" }).first();
