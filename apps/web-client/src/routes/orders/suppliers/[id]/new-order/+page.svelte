@@ -30,7 +30,7 @@
 	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
 
 	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
-	$: totalBooks = orderLines.length;
+	$: totalBooks = orderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	$: canPlaceOrder = selectedBooks.length > 0;
 
