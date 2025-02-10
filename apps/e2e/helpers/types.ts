@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import type { Locator, Page } from "@playwright/test";
 
-import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId } from "@librocco/shared";
+import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId, BookData } from "@librocco/shared";
 import { SearchFieldInterface } from "./searchField";
 
 /** A util type used to "pick" a subset of the given (union type) */
@@ -338,3 +338,28 @@ export type SupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 };
+export type PossibleSupplierOrderLine = {
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Pick<BookData, "isbn" | "title" | "authors">;
+
+export type SupplierJoinData = {
+	supplier_id: number;
+	supplier_name: string;
+};
+export type PlacedSupplierOrderLine = {
+	supplier_order_id: number;
+	created: number;
+	total_book_number: number;
+	total_book_price: number;
+} & PossibleSupplierOrderLine;
+export type PossibleSupplierOrder = {
+	total_book_number: number;
+	total_book_price: number;
+} & SupplierJoinData;
+
+export type PlacedSupplierOrder = {
+	id: number;
+	created: number;
+} & PossibleSupplierOrder;

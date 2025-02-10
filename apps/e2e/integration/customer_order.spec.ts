@@ -6,7 +6,7 @@ import { testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 import { addBooksToCustomer } from "@/helpers/cr-sqlite";
 
-test.skip("should create a new customer order", async ({ page }) => {
+test("should create a new customer order", async ({ page }) => {
 	await page.goto(`${baseURL}orders/customers/`);
 	await page.getByRole("button", { name: "New Order" }).first().click();
 
