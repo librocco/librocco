@@ -1,6 +1,6 @@
 import { baseURL } from "@/integration/constants";
 import test, { JSHandle } from "@playwright/test";
-import { associatePublisher, upsertBook, upsertCustomer, upsertSupplier } from "./cr-sqlite";
+import { upsertBook, upsertCustomer, upsertSupplier } from "./cr-sqlite";
 import { getDbHandle } from "./db";
 import { DB } from "@vlcn.io/crsqlite-wasm";
 
