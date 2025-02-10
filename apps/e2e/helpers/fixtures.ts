@@ -20,7 +20,8 @@ type OrderTestFixture = {
 };
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },
-	{ isbn: "4321", authors: "author2", title: "title2", publisher: "pub2", price: 20 }
+	{ isbn: "4321", authors: "author2", title: "title2", publisher: "pub2", price: 20 },
+	{ isbn: "5678", authors: "author3", title: "title3", publisher: "pub1", price: 30 }
 ];
 const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" };
 export const testOrders = test.extend<OrderTestFixture>({
@@ -42,6 +43,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 		// dbHandler
 		await dbHandle.evaluate(upsertBook, books[0]);
 		await dbHandle.evaluate(upsertBook, books[1]);
+		await dbHandle.evaluate(upsertBook, books[2]);
 
 		await use(books);
 	},
@@ -55,6 +57,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 		// await dbHandle.evaluate(upsertBook, books[1]);
 
 		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[2].isbn] });
 
 		await dbHandle.evaluate(upsertSupplier, { id: 1, name: "sup1" });
 		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
@@ -64,7 +67,6 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 		const orderIds = placedOrders.map((order) => order.id);
 		const placedOrderLines = await dbHandle.evaluate(getPlacedSupplierOrderLines, orderIds);
-		console.log(placedOrderLines);
 		/** @TODO replace with supplier id when supplier_order spec is merged in */
 		await use(placedOrderLines);
 	}
