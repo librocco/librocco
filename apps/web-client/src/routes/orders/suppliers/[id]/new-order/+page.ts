@@ -1,11 +1,11 @@
 import { redirect } from "@sveltejs/kit";
 
-import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
-import type { PageLoad } from "./$types";
-
 import { getPossibleSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 
 import { base } from "$app/paths";
+
+import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
+import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ parent, params }) => {
 	const { dbCtx } = await parent();

@@ -11,7 +11,7 @@
 	import { goto } from "$lib/utils/navigation";
 
 	function handlePlaceOrder(supplierId: number) {
-		goto(`${base}/orders/suppliers/${supplierId}`);
+		goto(`${base}/orders/suppliers/${supplierId}/new-order`);
 	}
 </script>
 
