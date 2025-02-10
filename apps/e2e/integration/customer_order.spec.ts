@@ -95,13 +95,13 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(page.getByText(books[0].authors)).toBeVisible();
 	await expect(page.getByText("Draft")).toBeVisible();
 
-	isbnField.fill("5678");
+	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
 
-	await expect(page.getByText("5678")).toBeVisible();
-	await expect(page.getByText("N/A").first()).toBeVisible();
-	await expect(page.getByText("N/A").nth(1)).toBeVisible();
-	await expect(page.getByText("0", { exact: true })).toBeVisible();
+	await expect(page.getByText(books[2].isbn)).toBeVisible();
+	await expect(page.getByText(books[2].authors).first()).toBeVisible();
+	await expect(page.getByText(books[2].title).first()).toBeVisible();
+	await expect(page.getByText(`${books[2].price}`, { exact: true })).toBeVisible();
 	await expect(page.getByText("Draft").nth(1)).toBeVisible();
 });
 testOrders("should delete books from a customer order", async ({ page, books }) => {
