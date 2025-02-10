@@ -19,15 +19,12 @@
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import { associatePublisher, createSupplierOrder, getPossibleSupplierOrderLines, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
-	import { addBooksToCustomer, getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
 
 	$: db = data?.dbCtx?.db;
-
-	let publisherSupplierCreated = false;
 
 	const newOrderDialog = createDialog(defaultDialogConfig);
 	const {
@@ -63,32 +60,6 @@
 
 <header class="navbar mb-4 bg-neutral">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
-
-	<button
-		class="bg-white"
-		disabled={publisherSupplierCreated}
-		aria-label="CreateReconciliationOrder"
-		on:click={async () => {
-			await upsertBook(db, {
-				isbn: "123456789",
-				title: "Book 1",
-				authors: "Author 1",
-				price: 10,
-				publisher: "abcPub"
-			});
-
-			await upsertCustomer(db, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
-			await addBooksToCustomer(db, 1, ["123456789"]);
-			await upsertSupplier(db, { id: 123, name: "abcSup" });
-			await associatePublisher(db, 123, "abcPub");
-
-			const possibleLines = await getPossibleSupplierOrderLines(db, 123);
-
-			await createSupplierOrder(db, possibleLines);
-
-			publisherSupplierCreated = true;
-		}}>Create publisher/supplier</button
-	>
 </header>
 
 <main class="h-screen">
