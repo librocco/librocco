@@ -51,7 +51,7 @@ testOrders(
 			bookIsbns: [books[2].isbn, books[2].isbn]
 		});
 
-		await page.goto(`${baseURL}orders/suppliers/orders`);
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
 		page.getByRole("button", { name: "Unordered" });
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
