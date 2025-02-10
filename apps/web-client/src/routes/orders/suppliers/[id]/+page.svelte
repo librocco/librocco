@@ -30,7 +30,7 @@
 	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
 
 	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
-	$: totalBooks = orderLines.length;
+	$: totalBooks = orderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	$: canPlaceOrder = selectedBooks.length > 0;
 
@@ -146,8 +146,8 @@
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
-								<td>€{line_price}</td>
 								<td>{quantity}</td>
+								<td>€{line_price}</td>
 							</tr>
 						{/each}
 					</tbody>
