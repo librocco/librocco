@@ -32,6 +32,14 @@ export const createCustomerOrders = async (db: DB) => {
 	await upsertBook(db, { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", price: 7 });
 	await upsertBook(db, { isbn: "2", publisher: "ChemPub", title: "Chemistry", price: 13 });
 	await upsertBook(db, { isbn: "3", publisher: "PhantasyPub", title: "The Hobbit", price: 5 });
+	// NOTE: the following have no supplier assigned to them
+	await upsertBook(db, { isbn: "4", title: "The Secret of Secrets", authors: "Dan Brown", publisher: "Barnes and Noble", price: 60 });
+	await upsertBook(db, {
+		isbn: "666",
+		title: "The Nine Gates of the Kingdom of Shadows",
+		authors: "Aristide de Torchia",
+		price: 100_000_000
+	});
 
 	// There is an old order that has been completely fullfilled
 	await upsertCustomer(db, { fullname: "An older order", id: 100, displayId: "100" });
@@ -48,14 +56,23 @@ export const createCustomerOrders = async (db: DB) => {
 
 	// Two customers order some books
 	await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-	addBooksToCustomer(db, 1, ["1", "2", "3"]);
+	await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 
 	await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
-	addBooksToCustomer(db, 2, ["3"]);
+	await addBooksToCustomer(db, 2, ["3"]);
+
+	// NOTE: No publisher
+	await upsertCustomer(db, { fullname: "Boris Balkan", id: 4, displayId: "4" });
+	await addBooksToCustomer(db, 4, ["666"]);
+
+	// NOTE: No supplier associated with the publisher
+	await upsertCustomer(db, { fullname: "James Doe", id: 5, displayId: "5" });
+	await addBooksToCustomer(db, 5, ["4"]);
 
 	// We have two different suppliers
 	await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
 	await upsertSupplier(db, { id: 2, name: "Phantasy Books LTD" });
+
 	// Publishers are associated with suppliers
 	await associatePublisher(db, 1, "MathsAndPhysicsPub");
 	await associatePublisher(db, 1, "ChemPub");

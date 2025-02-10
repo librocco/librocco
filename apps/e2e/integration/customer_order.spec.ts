@@ -104,3 +104,17 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(page.getByText("0", { exact: true })).toBeVisible();
 	await expect(page.getByText("Draft").nth(1)).toBeVisible();
 });
+testOrders("should delete books from a customer order", async ({ page, books }) => {
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
+
+	await page.goto(`${baseURL}orders/customers/1/`);
+
+	await expect(page.getByText(books[0].isbn).first()).toBeVisible();
+	await expect(page.getByText(books[1].isbn).first()).toBeVisible();
+
+	await page.getByRole("button", { name: "Delete" }).first().click();
+
+	await expect(page.getByText(books[0].isbn)).not.toBeVisible();
+});
