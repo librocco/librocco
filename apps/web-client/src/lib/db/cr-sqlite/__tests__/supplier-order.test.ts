@@ -546,6 +546,37 @@ describe("Placing supplier orders", () => {
 				})
 			);
 		});
+
+		it("retrieve a list of placed supplier orders, filtered by supplier id", async () => {
+			await createSupplierOrder(db, [
+				{ supplier_id: 1, isbn: "1", quantity: 2 },
+				{ supplier_id: 1, isbn: "2", quantity: 1 }
+			]);
+
+			await createSupplierOrder(db, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
+
+			await createSupplierOrder(db, [
+				{ supplier_id: 1, isbn: "2", quantity: 3 },
+				{ supplier_id: 1, isbn: "3", quantity: 3 }
+			]);
+
+			expect(await getPlacedSupplierOrders(db, 1)).toEqual([
+				expect.objectContaining({
+					id: 1,
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 3, // 2 Physics + 1 Chemistry
+					created: expect.any(Number)
+				}),
+				expect.objectContaining({
+					id: 3,
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 6, // 3 Physics + 3 The Hobbit
+					created: expect.any(Number)
+				})
+			]);
+		});
 	});
 
 	describe("getPlacedSupplierOrderLines should", () => {
@@ -607,7 +638,7 @@ describe("Placing supplier orders", () => {
 			// Create orders for both suppliers
 			await db.exec(
 				`INSERT INTO supplier_order (id, supplier_id, created)
-				VALUES 
+				VALUES
 				(1, ?, strftime('%s', 'now') * 1000),
 				(2, ?, strftime('%s', 'now') * 1000)`,
 				[supplier1.id, supplier2.id]
