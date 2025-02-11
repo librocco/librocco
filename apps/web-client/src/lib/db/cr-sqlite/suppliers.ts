@@ -280,7 +280,7 @@ export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Prom
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
         FROM supplier_order so
-        JOIN supplier s ON s.id = so.supplier_id
+		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
 		${whereClause}
@@ -388,11 +388,15 @@ export async function createSupplierOrder(
 			// - if there are not enough customer order lines to justify this order line, we should order (at maximum)
 			//  the number of customer order lines available
 			// - other constraint, ofc, is the number of quantity specified by the orderLines param
+			//
+			// TODO: we should really check this - potentially throw an error here and show a dialog in the UI confirming the order
+			// - kinda like with out-of-stock outbound notes
 			const quantity = Math.min(orderLine.quantity, _customerOrderLineIds.length);
 			if (quantity < orderLine.quantity) {
 				const msg = [
 					"There are fewer customer order lines than requested by the supplier order line:",
 					"  this isn't a problem as the final quantity will be truncated, but indicates a bug in calculating of possible supplier order lines:",
+					`  isbn: ${orderLine.isbn}`,
 					`  quantity requested: ${orderLine.quantity}`,
 					`  quantity required (by customer order lines): ${_customerOrderLineIds.length}`
 				];
