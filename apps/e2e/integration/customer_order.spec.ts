@@ -31,6 +31,7 @@ testOrders("should show list of In Progress orders", async ({ page, customer }) 
 	await expect(page.getByText(customer.fullname)).toBeVisible();
 	await expect(page.getByText(customer.email)).toBeVisible();
 });
+
 testOrders("should allow navigation to a specific order", async ({ page, customer, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -56,6 +57,7 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await expect(page.getByText(books[1].isbn)).toBeVisible();
 });
+
 testOrders("should update a customer details", async ({ page, customer }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
@@ -77,7 +79,7 @@ testOrders("should update a customer details", async ({ page, customer }) => {
 
 	await expect(page.getByText(newCustomer.fullname)).toBeVisible();
 	await expect(page.getByText(newCustomer.email)).toBeVisible();
-	await expect(page.getByText(newCustomer.deposit)).toBeVisible();
+	await expect(page.getByText(`€${newCustomer.deposit}`)).toBeVisible();
 });
 
 testOrders("should add books to a customer order", async ({ page, customer, books }) => {
@@ -104,6 +106,7 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(page.getByText("0", { exact: true })).toBeVisible();
 	await expect(page.getByText("Draft").nth(1)).toBeVisible();
 });
+
 testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
