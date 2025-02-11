@@ -628,14 +628,28 @@ describe("Placing supplier orders", () => {
 		});
 
 		it("retrieve a list of placed supplier orders, filtered by supplier id", async () => {
-			await createSupplierOrder(db, [
+			// Setup: add enough books to customer orders to avoid createSupplierOrder truncating
+			// the quantity ordered, TODO: check for truncating functionality (might not be what we want)
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await upsertCustomer(db, { id: 4, displayId: "4" });
+			await upsertCustomer(db, { id: 5, displayId: "5" });
+			await upsertCustomer(db, { id: 6, displayId: "6" });
+
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 2, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 3, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+
+			await createSupplierOrder(db, 1, [
 				{ supplier_id: 1, isbn: "1", quantity: 2 },
 				{ supplier_id: 1, isbn: "2", quantity: 1 }
 			]);
 
-			await createSupplierOrder(db, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
+			await createSupplierOrder(db, 2, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
 
-			await createSupplierOrder(db, [
+			await createSupplierOrder(db, 1, [
 				{ supplier_id: 1, isbn: "2", quantity: 3 },
 				{ supplier_id: 1, isbn: "3", quantity: 3 }
 			]);
