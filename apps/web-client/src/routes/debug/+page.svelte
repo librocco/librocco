@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
-	import { Plus, RotateCcw } from "lucide-svelte";
+	import { Plus, RotateCcw, Play } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
 	import { appPath } from "$lib/paths";
 	import { TooltipWrapper } from "$lib/components";
@@ -9,7 +9,7 @@
 	import { getInitializedDB } from "$lib/db/cr-sqlite";
 	import { dbNamePersisted } from "$lib/db";
 
-	import exampleData from "./example_data.sql?raw";
+	import debugData from "$lib/__testData__/debugData.sql?raw";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -27,8 +27,14 @@
 	let supplier_order;
 	let supplier_order_line;
 	let reconciliation_order;
+	let reconciliation_order_lines;
 
 	let isLoading = true;
+
+	let query = "SELECT * FROM reconciliation_order_lines LIMIT 10;";
+	let queryResult = null;
+	let errorMessage = null;
+	let loading = false;
 
 	const tableData = [
 		{ label: "Books", value: () => book },
@@ -38,7 +44,8 @@
 		{ label: "Customer Order Lines", value: () => customer_order_lines },
 		{ label: "Supplier Orders", value: () => supplier_order },
 		{ label: "Supplier Order Lines", value: () => supplier_order_line },
-		{ label: "Reconciliation Orders", value: () => reconciliation_order }
+		{ label: "Reconciliation Orders", value: () => reconciliation_order },
+		{ label: "Reconciliation Order Lines", value: () => reconciliation_order_lines }
 	];
 
 	let links: Link[];
@@ -84,14 +91,21 @@
 
 	const populateDatabase = async function () {
 		const db = await getInitializedDB(dbName);
+		errorMessage = null;
 		console.log("Populating database");
-		await db.db.exec(exampleData);
-		console.log("Finished populating database.");
-		await loadData();
+		try {
+			await db.db.exec(debugData);
+			console.log("Finished populating database.");
+		} catch (error) {
+			errorMessage = error;
+		} finally {
+			await loadData();
+		}
 	};
 
 	const resetDatabase = async function resetDatabase() {
 		const db = await getInitializedDB(dbName);
+		errorMessage = null;
 		const tables = [
 			"book",
 			"supplier",
@@ -100,7 +114,8 @@
 			"customer_order_lines",
 			"supplier_order",
 			"supplier_order_line",
-			"reconciliation_order"
+			"reconciliation_order",
+			"reconciliation_order_lines"
 		];
 		console.log("Resetting database");
 
@@ -128,9 +143,24 @@
 		supplier_order = await db.db.exec("SELECT COUNT(*) from supplier_order;");
 		supplier_order_line = await db.db.exec("SELECT COUNT(*) from supplier_order_line;");
 		reconciliation_order = await db.db.exec("SELECT COUNT(*) from reconciliation_order;");
-
+		reconciliation_order_lines = await db.db.exec("SELECT COUNT(*) from reconciliation_order_lines;");
 		isLoading = false;
 	};
+
+	async function executeQuery() {
+		isLoading = true;
+		errorMessage = null;
+		const db = await getInitializedDB(dbName);
+
+		try {
+			queryResult = await db.db.exec(query);
+		} catch (error) {
+			errorMessage = error;
+		} finally {
+			isLoading = false;
+		}
+		await loadData();
+	}
 
 	onMount(async function () {
 		await loadData();
@@ -184,9 +214,9 @@
 		</header>
 
 		<main class="h-screen">
-			<div class="relative mx-auto flex h-full flex-col gap-y-10 px-4">
+			<div class="relative mx-auto flex h-full flex-col px-4">
 				<div class="flex items-center justify-between">
-					<h1 class="prose font-bold">Debug</h1>
+					<h1 class="prose text-2xl font-bold">Debug</h1>
 					<div class="gap-2">
 						<button class="btn-primary btn" on:click={() => populateDatabase()}>
 							<Plus size={20} />
@@ -199,29 +229,73 @@
 					</div>
 				</div>
 
-				<div class="flex flex-col gap-y-10 overflow-x-auto py-2">
-					<table class="table">
-						<thead>
-							<tr>
-								<th scope="col">Table</th>
-								<th scope="col">Number of objects</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each tableData as row}
-								<tr class="hover focus-within:bg-base-200">
-									<td>{row.label}</td>
-									<td>
-										{#if isLoading}
-											<div class="spinner"></div>
-										{:else}
-											{row.value()}
-										{/if}
-									</td>
+				<div class="flex py-2">
+					<div class="mr-5 flex-auto overflow-x-auto py-2">
+						<h2 class="prose font-bold">Database Query Interface</h2>
+						<div class="mr-5 flex flex-col py-2">
+							<textarea bind:value={query} id="query"></textarea>
+
+							<button class="btn-sm btn" on:click={executeQuery} disabled={loading}>
+								<Play size={20} />
+								{loading ? "Executing..." : "Run Query"}
+							</button>
+
+							{#if queryResult || errorMessage}
+								<h2 class="prose mt-3 font-bold">Query Results:</h2>
+
+								{#if errorMessage}
+									<div class="mt-4 rounded-lg bg-red-500 p-3 text-white shadow">
+										{errorMessage}
+									</div>
+								{:else if queryResult.length === 0}
+									<p>No results found.</p>
+								{:else}
+									<table class="table">
+										<thead>
+											<tr>
+												{#each Object.keys(queryResult[0]) as column}
+													<th scope="col">{column}</th>
+												{/each}
+											</tr>
+										</thead>
+										<tbody>
+											{#each queryResult as row}
+												<tr class="hover focus-within:bg-base-200">
+													{#each Object.values(row) as value}
+														<td>{value}</td>
+													{/each}
+												</tr>
+											{/each}
+										</tbody>
+									</table>
+								{/if}
+							{/if}
+						</div>
+					</div>
+					<div class="w-64 overflow-x-auto py-2">
+						<table class="table">
+							<thead>
+								<tr>
+									<th scope="col">Table</th>
+									<th scope="col">Number of objects</th>
 								</tr>
-							{/each}
-						</tbody>
-					</table>
+							</thead>
+							<tbody>
+								{#each tableData as row}
+									<tr class="hover focus-within:bg-base-200">
+										<td>{row.label}</td>
+										<td>
+											{#if isLoading}
+												<div class="spinner"></div>
+											{:else}
+												{row.value()}
+											{/if}
+										</td>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
 				</div>
 			</div>
 
@@ -250,5 +324,14 @@
 		to {
 			transform: rotate(360deg);
 		}
+	}
+
+	textarea {
+		width: 100%;
+		height: 100px;
+		font-size: 1rem;
+		padding: 0.5rem;
+		margin-bottom: 0.5rem;
+		border: solid 1px;
 	}
 </style>

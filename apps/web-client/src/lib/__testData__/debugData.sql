@@ -48,5 +48,3 @@ INSERT INTO reconciliation_order (supplier_order_ids, finalized) VALUES
 INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn) VALUES
  	(1, '9781234567897'),
  	(2, '9788804797142');
-`;
-
