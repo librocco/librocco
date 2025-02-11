@@ -31,10 +31,9 @@
 
 	let isLoading = true;
 
-	let query = "SELECT * FROM reconciliation_order_lines LIMIT 10;";
+	let query = "SELECT * FROM book LIMIT 10;";
 	let queryResult = null;
 	let errorMessage = null;
-	let loading = false;
 
 	const tableData = [
 		{ label: "Books", value: () => book },
@@ -235,9 +234,9 @@
 						<div class="mr-5 flex flex-col py-2">
 							<textarea bind:value={query} id="query"></textarea>
 
-							<button class="btn-sm btn" on:click={executeQuery} disabled={loading}>
+							<button class="btn-sm btn" on:click={executeQuery} disabled={isLoading}>
 								<Play size={20} />
-								{loading ? "Executing..." : "Run Query"}
+								{isLoading ? "Executing..." : "Run Query"}
 							</button>
 
 							{#if queryResult || errorMessage}
