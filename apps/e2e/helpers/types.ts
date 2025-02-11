@@ -3,6 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 
 import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId } from "@librocco/shared";
 import { SearchFieldInterface } from "./searchField";
+import { BookData } from "./cr-sqlite";
 
 /** A util type used to "pick" a subset of the given (union type) */
 export type Subset<T, S extends T> = S;
@@ -338,3 +339,62 @@ export type SupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 };
+
+export type ReconciliationOrderLine = {
+	reconciliation_order_id: number;
+	isbn: string;
+	created: number;
+	quantity: number;
+	authors: string;
+	publisher: string;
+	price: number;
+	title: string;
+};
+export type ReconciliationOrder = {
+	supplierOrderIds: number[];
+	created: number;
+	id?: number;
+	finalized: boolean;
+	updatedAt: Date;
+};
+
+export type SupplierJoinData = {
+	supplier_id: number;
+	supplier_name: string;
+};
+export type PossibleSupplierOrder = {
+	total_book_number: number;
+	total_book_price: number;
+} & SupplierJoinData;
+
+/**
+ * A placed supplier order: a batch of books ordered on a specific date
+ * from the "possible" batch
+ */
+export type PlacedSupplierOrder = {
+	id: number;
+	created: number;
+} & PossibleSupplierOrder;
+
+type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
+
+export type DBCustomerOrderLine = {
+	// A customer order line as it is stored in the database
+	id: number;
+	isbn: string;
+	customer_id: number;
+	created: number; // as milliseconds since epoch
+	placed?: number; // as milliseconds since epoch
+	received?: number; // as milliseconds since epoch
+	collected?: number; // as milliseconds since epoch
+};
+
+export type CustomerOrderLine = {
+	// A customer order line to be passed around in the application
+	id: number;
+	customer_id: number;
+	created: Date; // Date when the book order was entered
+	placed?: Date; // Last date when the book order was placed to the supplier
+	received?: Date; // Date when the book order was received from the supplier
+	collected?: Date; // Date when the book order was collected by the customer
+} & BookDataCols;
