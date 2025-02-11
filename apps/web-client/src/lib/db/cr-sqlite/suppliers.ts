@@ -1,4 +1,12 @@
-import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
+import type {
+	DB,
+	Supplier,
+	PossibleSupplierOrder,
+	PossibleSupplierOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine,
+	SupplierExtended
+} from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -20,15 +28,53 @@ import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, Pl
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
+/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
+async function _getSuppliers(db: DB, id?: number) {
+	const conditions = [];
+	const params = [];
+
+	if (id) {
+		conditions.push("supplier.id = ?");
+		params.push(id);
+	}
+
+	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+	const query = `
+		SELECT
+			supplier.id,
+			name,
+			COALESCE(email, 'N/A') as email,
+			COALESCE(address, 'N/A') as address,
+			COUNT(publisher) as numPublishers
+		FROM supplier
+		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		${whereClause}
+		GROUP BY supplier.id
+		ORDER BY supplier.id ASC
+	`;
+
+	return await db.execO<SupplierExtended>(query, params);
+}
+
 /**
- * Retrieves all suppliers from the database. This include their name, email & address.
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
  *
  * @param db - The database instance to query
  * @returns Promise resolving to an array of suppliers with their basic info
  */
-export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
-	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
-	return result;
+export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	return _getSuppliers(db);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+	const [res] = await _getSuppliers(db, id);
+	return res || undefined;
 }
 
 /**
@@ -42,6 +88,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
 	}
+
 	await db.exec(
 		`INSERT INTO supplier (id, name, email, address)
         VALUES (?, ?, ?, ?)
@@ -49,7 +96,15 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address);`,
-		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
+		[
+			supplier.id,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null
+		]
 	);
 }
 
@@ -62,8 +117,8 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
 	const stmt = await db.prepare(
-		`SELECT publisher 
-		FROM supplier_publisher 
+		`SELECT publisher
+		FROM supplier_publisher
 		WHERE supplier_id = ?
 		ORDER BY publisher ASC;`
 	);
@@ -80,18 +135,25 @@ export async function getPublishersFor(db: DB, supplierId: number): Promise<stri
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier to associate to
- * @param publisherId - The id of the publisher to associate
+ * @param publisher - The id of the publisher to associate
  */
-export async function associatePublisher(db: DB, supplierId: number, publisherId: string) {
+export async function associatePublisher(db: DB, supplierId: number, publisher: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
 	await db.exec(
-		`INSERT INTO supplier_publisher (supplier_id, publisher)
-        VALUES (?, ?)
-        ON CONFLICT(publisher) DO UPDATE SET
-        supplier_id = ?;`,
-		[supplierId, publisherId, supplierId]
+		`
+			INSERT INTO supplier_publisher (supplier_id, publisher)
+			VALUES (?, ?)
+			ON CONFLICT(publisher) DO UPDATE SET
+			supplier_id = ?
+		`,
+		[supplierId, publisher, supplierId]
 	);
+}
+
+/** Removes a publisher from the list of publishers for a supplier */
+export async function removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
+	await db.exec("DELETE FROM supplier_publisher WHERE supplier_id = ? AND publisher = ?", [supplierId, publisher]);
 }
 
 /**
@@ -198,9 +260,19 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		`SELECT
+export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
+	const whereConditions = ["so.created IS NOT NULL"];
+	const params = [];
+
+	if (supplierId) {
+		whereConditions.push("so.supplier_id = ?");
+		params.push(supplierId);
+	}
+
+	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+	const query = `
+		SELECT
             so.id,
             so.supplier_id,
             s.name as supplier_name,
@@ -211,11 +283,12 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
         JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
-        WHERE so.created IS NOT NULL
+		${whereClause}
         GROUP BY so.id, so.supplier_id, s.name, so.created
-        ORDER BY so.created DESC;`
-	);
-	return result;
+        ORDER BY so.created DESC
+	`;
+
+	return await db.execO<PlacedSupplierOrder>(query, params);
 }
 
 /**
@@ -273,7 +346,7 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * @todo Rewrite this function to accommodate for removing quantity in
 customerOrderLine
  */
-export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
+export async function createSupplierOrder(db: DB, orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
 	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
