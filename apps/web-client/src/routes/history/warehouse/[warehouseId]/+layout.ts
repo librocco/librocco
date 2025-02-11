@@ -14,7 +14,7 @@ export const load: LayoutLoad = async ({ params }) => {
 	// Validate dates - if not valid, redirect to default
 	if (!_from || !_to || ![_from, _to].every((date) => /^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(date))) {
 		const today = new Date().toISOString().slice(0, 10);
-		throw redirect(307, appPath("history/warehouse", warehouseId, today, today));
+		redirect(307, appPath("history/warehouse", warehouseId, today, today));
 	}
 
 	const from = {
