@@ -22,7 +22,8 @@
 		const minimumDivs = 10; // Magic number empirically chosen: if there are at least 10 divs the
 		// page did render
 		if (document.getElementsByTagName("div").length < minimumDivs) {
-			location.href = location.href; // Full reload
+			// eslint-disable-next-line no-self-assign
+			location.href = location.href;
 		}
 	});
 
