@@ -19,7 +19,14 @@
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 
-	import { addBooksToCustomer, removeBooksFromCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		addBooksToCustomer,
+		removeBooksFromCustomer,
+		isDisplayIdUnique,
+		upsertCustomer,
+		markCustomerOrderAsReceived,
+		markCustomerOrderAsCollected
+	} from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
 	// import { createIntersectionObserver } from "$lib/actions";
@@ -104,6 +111,9 @@
 
 	const handleDeleteLine = async (lineId) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
+	};
+	const handleCollect = async (isbns: string[]) => {
+		await markCustomerOrderAsCollected(db, isbns);
 	};
 
 	let scanInputRef: HTMLInputElement = null;
@@ -236,6 +246,7 @@
 								<th>Authors</th>
 								<th>Price</th>
 								<th>Status</th>
+								<th>Collect</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
@@ -244,6 +255,7 @@
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
+								{@const orderLineStatus = getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime })}
 
 								<tr>
 									<th>{isbn}</th>
@@ -251,14 +263,25 @@
 									<td>{authors}</td>
 									<td>{price}</td>
 									<td>
-										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
+										{#if orderLineStatus === "collected"}
 											<span class="badge-success badge">Collected</span>
-										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "received"}
+										{:else if orderLineStatus === "received"}
 											<span class="badge-info badge">Delievered</span>
-										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
+										{:else if orderLineStatus === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
+										{/if}
+									</td>
+									<td>
+										{#if orderLineStatus === "collected"}
+											{collected.toLocaleDateString()}
+										{:else}
+											<button
+												disabled={orderLineStatus !== "received"}
+												on:click={() => handleCollect([isbn])}
+												class="btn-outline btn-sm btn">Collect📚</button
+											>
 										{/if}
 									</td>
 									{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "draft"}

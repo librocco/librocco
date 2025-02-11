@@ -1,5 +1,13 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import { Customer, Supplier, SupplierOrderLine } from "./types";
+import {
+	Customer,
+	DBCustomerOrderLine,
+	PlacedSupplierOrder,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	Supplier,
+	SupplierOrderLine
+} from "./types";
 
 // #region books
 
@@ -338,3 +346,107 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 	);
 	return recondOrder[0].id;
 }
+
+export async function finalizeReconciliationOrder(db: DB, id: number) {
+	if (!id) {
+		throw new Error("Reconciliation order must have an id");
+	}
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+	const reconOrderLines = await db.execO<ReconciliationOrderLine>(
+		"SELECT * FROM reconciliation_order_lines WHERE reconciliation_order_id = ?;",
+		[id]
+	);
+
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT finalized FROM reconciliation_order WHERE id = ?;", [id]);
+	if (!reconOrder[0]) {
+		throw new Error(`Reconciliation order ${id} not found`);
+	}
+
+	if (reconOrder[0].finalized) {
+		throw new Error(`Reconciliation order ${id} is already finalized`);
+	}
+
+	let customerOrderLines: string[];
+	try {
+		customerOrderLines = reconOrderLines.map((line) => line.isbn);
+	} catch (e) {
+		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
+	}
+	return db.tx(async (txDb) => {
+		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
+
+		const placeholders = multiplyString("?", customerOrderLines.length);
+
+		if (customerOrderLines.length > 0) {
+			await txDb.exec(
+				`
+				UPDATE customer_order_lines
+            	SET received = (strftime('%s', 'now') * 1000)
+            	WHERE rowid IN (
+            	    SELECT MIN(rowid)
+            	    FROM customer_order_lines
+            	    WHERE isbn IN (${placeholders})
+            	        AND placed IS NOT NULL
+            	        AND received IS NULL
+            	    GROUP BY isbn
+				);`,
+				customerOrderLines
+			);
+		}
+	});
+}
+
+export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
+	const result = await db.execO<PlacedSupplierOrder>(
+		`SELECT
+            so.id,
+            so.supplier_id,
+            s.name as supplier_name,
+            so.created,
+            COALESCE(SUM(sol.quantity), 0) as total_book_number,
+			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
+        FROM supplier_order so
+        JOIN supplier s ON s.id = so.supplier_id
+		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
+		LEFT JOIN book ON sol.isbn = book.isbn
+        WHERE so.created IS NOT NULL
+        GROUP BY so.id, so.supplier_id, s.name, so.created
+        ORDER BY so.created DESC;`
+	);
+	return result;
+}
+
+export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
+	const { id, newLines } = params;
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+	if (!reconOrder[0]) {
+		throw new Error(`Reconciliation order ${id} not found`);
+	}
+
+	const sqlParams = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
+
+	const sql = `
+     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn,
+ quantity)
+     VALUES ${multiplyString("(?,?,?)", newLines.length)}
+     ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+         quantity = quantity + excluded.quantity;
+     `;
+	await db.exec(sql, sqlParams);
+}
+
+export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
+	const result = await db.execO<DBCustomerOrderLine>(
+		`SELECT
+			id, customer_id, created, placed, received, collected,
+			col.isbn
+			FROM customer_order_lines col
+		WHERE customer_id = $customerId
+		ORDER BY col.isbn ASC;`,
+		[customerId]
+	);
+	return result;
+};

@@ -291,3 +291,35 @@ export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]): Prom
 		);
 	});
 };
+
+/**
+ * Marks customer order lines as collected when customer order lines are picked up.
+ * For each supplied ISBN, it updates the earliest unfulfilled customer order line
+ * (that has been received but not collected) with the current timestamp as collected date.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {isbns[]} isbns - Array of supplier order line isbns that have been collected
+ * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as collected
+ */
+
+export const markCustomerOrderAsCollected = async (db: DB, isbns: string[]): Promise<void> => {
+	if (!isbns.length) return;
+	return db.tx(async (txDb) => {
+		const placeholders = multiplyString("?", isbns.length);
+		await txDb.exec(
+			`
+		 UPDATE customer_order_lines
+            SET collected = (strftime('%s', 'now') * 1000)
+            WHERE rowid IN (
+                SELECT MIN(rowid)
+                FROM customer_order_lines
+                WHERE isbn IN (${placeholders})
+                    AND placed IS NOT NULL
+                    AND received IS NOT NULL
+                    AND collected IS NULL
+                GROUP BY isbn
+);`,
+			isbns
+		);
+	});
+};
