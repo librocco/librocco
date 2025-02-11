@@ -14,6 +14,18 @@
 
 	const { dbCtx } = data;
 
+	import { afterNavigate } from "$app/navigation";
+
+	afterNavigate((nav) => {
+		// Painful workaround: for some reasons sometimes navigating to a different route
+		// yields a blank page. This is the lamest of possible workarounds
+		const minimumDivs = 10; // Magic number empirically chosen: if there are at least 10 divs the
+		// page did render
+		if (document.getElementsByTagName("div").length < minimumDivs) {
+			location.href = location.href; // Full reload
+		}
+	});
+
 	$: if (browser) {
 		if (dbCtx) {
 			// Register (and update on each change) the db to the window object.
