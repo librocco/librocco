@@ -84,7 +84,7 @@
 
 			const possibleLines = await getPossibleSupplierOrderLines(db, 123);
 
-			await createSupplierOrder(db, possibleLines);
+			await createSupplierOrder(db, 123, possibleLines);
 
 			publisherSupplierCreated = true;
 		}}>Create publisher/supplier</button
