@@ -56,7 +56,7 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await expect(page.getByText(books[1].isbn)).toBeVisible();
 });
-testOrders("should update a customer details", async ({ page, customer }) => {
+testOrders("should update customer details", async ({ page, customer }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
 	const newCustomer = { fullname: "New Customer", email: "new@gmail.com", deposit: "10" };
@@ -77,7 +77,7 @@ testOrders("should update a customer details", async ({ page, customer }) => {
 
 	await expect(page.getByText(newCustomer.fullname)).toBeVisible();
 	await expect(page.getByText(newCustomer.email)).toBeVisible();
-	await expect(page.getByText(newCustomer.deposit)).toBeVisible();
+	await expect(page.getByText(`€${newCustomer.deposit} deposit`)).toBeVisible();
 });
 
 testOrders("should add books to a customer order", async ({ page, customer, books }) => {

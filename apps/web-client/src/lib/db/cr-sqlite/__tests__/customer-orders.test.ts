@@ -8,11 +8,12 @@ import {
 	getAllCustomers,
 	upsertCustomer,
 	getCustomerOrderLines,
-	// markCustomerOrderAsReceived,
+	markCustomerOrderAsCollected,
 	addBooksToCustomer,
 	removeBooksFromCustomer,
 	getCustomerDisplayIdSeq,
-	isDisplayIdUnique
+	isDisplayIdUnique,
+	markCustomerOrderAsReceived
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import {
@@ -164,6 +165,61 @@ describe("Customer order tests", () => {
 		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
+	});
+});
+
+describe("Customer order Collection", () => {
+	let db: DB;
+
+	beforeEach(async () => (db = await getRandomDb()));
+
+	it("should mark earliest unfulfilled order line as collected", async () => {
+		await addBooksToCustomer(db, 1, ["9780000000001", "9780000000001"]);
+
+		// Mark the books as received
+		await markCustomerOrderAsReceived(db, ["9780000000001"]);
+
+		// Mark as collected
+		await markCustomerOrderAsCollected(db, ["9780000000001"]);
+
+		const updatedLines = await getCustomerOrderLines(db, 1);
+		// First line should be collected
+		expect(updatedLines[0].collected).toBeInstanceOf(Date);
+		// Second line should remain uncollected
+		expect(updatedLines[1].collected).toBeUndefined();
+	});
+
+	it("should only mark as collected if book is placed and received", async () => {
+		await addBooksToCustomer(db, 1, ["9780000000001"]);
+
+		// Try to mark as collected without placing/receiving first
+		await markCustomerOrderAsCollected(db, ["9780000000001"]);
+
+		const lines = await getCustomerOrderLines(db, 1);
+		// Should not be marked as collected
+		expect(lines[0].collected).toBeUndefined();
+	});
+
+	it("should not affect books that are already collected", async () => {
+		await addBooksToCustomer(db, 1, ["9780000000001"]);
+
+		// Mark as received
+		await markCustomerOrderAsReceived(db, ["9780000000001"]);
+
+		// Mark as collected first time
+		await markCustomerOrderAsCollected(db, ["9780000000001"]);
+		const firstUpdate = await getCustomerOrderLines(db, 1);
+		const firstCollectedDate = firstUpdate[0].collected;
+
+		// Wait a moment to ensure timestamps would be different
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		// Try to mark as collected again
+		await markCustomerOrderAsCollected(db, ["9780000000001"]);
+		const secondUpdate = await getCustomerOrderLines(db, 1);
+
+		// Collection date should not have changed
+		expect(secondUpdate[0].collected).toEqual(firstCollectedDate);
 	});
 });
 
