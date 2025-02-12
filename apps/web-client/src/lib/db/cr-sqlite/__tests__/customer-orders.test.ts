@@ -22,6 +22,8 @@ import {
 	getRandomDbs,
 	syncDBs
 } from "./lib";
+import { associatePublisher, createSupplierOrder, upsertSupplier } from "../suppliers";
+import { upsertBook } from "../books";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
@@ -175,7 +177,11 @@ describe("Customer order Collection", () => {
 
 	it("should mark earliest unfulfilled order line as collected", async () => {
 		await addBooksToCustomer(db, 1, ["9780000000001", "9780000000001"]);
+		await upsertBook(db, { isbn: "9780000000001", publisher: "pub1", title: "title1", authors: "author1", price: 10 });
+		await upsertSupplier(db, { id: 1 });
+		await associatePublisher(db, 1, "pub1");
 
+		await createSupplierOrder(db, [{ isbn: "9780000000001", line_price: 10, quantity: 1, supplier_id: 1, supplier_name: "sup1" }]);
 		// Mark the books as received
 		await markCustomerOrderAsReceived(db, ["9780000000001"]);
 
