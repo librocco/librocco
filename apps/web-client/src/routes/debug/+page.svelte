@@ -152,7 +152,7 @@
 		const db = await getInitializedDB(dbName);
 
 		try {
-			queryResult = await db.db.exec(query);
+			queryResult = await db.db.execO(query);
 		} catch (error) {
 			errorMessage = error;
 		} finally {
