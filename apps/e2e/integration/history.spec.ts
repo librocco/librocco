@@ -426,7 +426,8 @@ test("history/isbn - search results", async ({ page }) => {
 
 test("history/isbn - transaction display", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
@@ -445,10 +446,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	await dashboard.content().header().getByText("2021").waitFor();
 
 	// Add some trasnactions
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
-	const txn2Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
+	const txn2Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Stock should be updated
 	await dashboard
@@ -466,10 +467,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	const dateStub = await getDateStub(page);
 	dateStub.mock(new Date(Date.now() - 2 * TIME_DAY));
 
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note -1" });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-	const txn1Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note -1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 2);
+	const txn1Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -490,10 +491,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// Reset the date
 	await dateStub.reset();
 
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 2" });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
-	const txn3Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 2" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 3);
+	const txn3Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -518,11 +519,11 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// We're stubbing the date to be 2mins into the future (to ensure the txn ordering)
 	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
 
-	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 3" });
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 4);
-	const txn4Date = await dbHandle.evaluate(async () => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createOutboundNote, { id: 4, displayName: "Note 3" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 4);
+	const txn4Date = await (await getDbHandle(page)).evaluate(async () => new Date().toISOString().slice(0, 10));
 
 	await dashboard
 		.content()
