@@ -37,7 +37,8 @@ test.beforeEach(async ({ page }) => {
 
 test("history/date - display", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
 	// Default history view (sidebar navigation) is 'history/date'
 	await dashboard.navigate("history/date");
@@ -45,10 +46,10 @@ test("history/date - display", async ({ page }) => {
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
 
 	// Add some transactions today (by way of inbound notes)
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	//  Stats should reflect the changes
 	const stats = dashboard.content().historyStats();
@@ -73,9 +74,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some txns to a different warehouse should be reflected in results (stats/table)
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 2);
 
 	// Note: Warehouse 2 has a 10% discount
 	await stats.assert({
@@ -100,9 +101,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding additional transactions to the first warehouse should not aggregate the txns
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 3);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -127,10 +128,10 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some outbound transactions should be reflected in the stats
-	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 4);
+	await (await getDbHandle(page)).evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 4);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -162,9 +163,9 @@ test("history/date - display", async ({ page }) => {
 
 	// Adding an unknown book should not break the stats (the price for the given book should be omitted)
 	// The book should be displayed with default values
-	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
-	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "3333333333", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 5);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [5, { isbn: "3333333333", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 5);
 
 	await stats.assert({
 		// 2 + 1 + 3 + 2 = 6 books in inbound notes
@@ -224,9 +225,9 @@ test("history/date - general navigation", async ({ page }) => {
 
 	const dbHandle = await getDbHandle(page);
 
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	await dashboard.content().table("history/date").row(0).field("noteName").click();
 
@@ -977,7 +978,8 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 
 test("history/warehose - navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
 	// Navigate to (default) history view
 	await dashboard.navigate("history/date");

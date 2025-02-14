@@ -49,7 +49,8 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	const inNoteList = content.entityList("inbound-list");
 
 	// Add some notes to the first (existing) warehouse
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
@@ -289,8 +290,8 @@ test("should display book count for each respective note in the list", async ({ 
 	]);
 
 	// Add two books to first note
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 
 	await content.entityList("inbound-list").assertElements([
 		{ name: "Warehouse 1 / Note 1", numBooks: 2 },
