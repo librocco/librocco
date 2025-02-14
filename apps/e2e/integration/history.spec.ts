@@ -223,7 +223,8 @@ test("history/date - general navigation", async ({ page }) => {
 	// Navigate back to date view
 	await dashboard.content().navigate("history/date");
 
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
 	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
@@ -548,7 +549,8 @@ test("history/isbn - transaction display", async ({ page }) => {
 
 test("history/isbn - navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
@@ -561,9 +563,9 @@ test("history/isbn - navigation", async ({ page }) => {
 	await dashboard.content().header().title().assert("1111111111");
 
 	// Add some trasnactions
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	// Clickiong on the note name should redirect to the (committed) note page
 	await dashboard.content().table("history/isbn").row(0).field("noteName").click();
@@ -990,9 +992,9 @@ test("history/warehose - navigation", async ({ page }) => {
 	await dashboard.content().header().title().assert("Warehouse 1 history");
 
 	// Add a transaction
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	// Clicking on note name should navigate to note page
 	await dashboard.content().table("history/warehouse").row(0).field("noteName").click();
