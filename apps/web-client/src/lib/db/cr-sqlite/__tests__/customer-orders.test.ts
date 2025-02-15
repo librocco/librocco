@@ -126,6 +126,20 @@ describe("Customer order tests", () => {
 		books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(1);
 	});
+
+	it("timestamps updates with ms precision", async () => {
+		// Insert (initial)
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		const [customer] = await getAllCustomers(db);
+		// NOTE: these operations should really be done in less than 100ms
+		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
+		// but we'll notice 9/10 times
+		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(100);
+
+		// Update
+		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
+		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(100);
+	});
 });
 
 describe("Customer order tests", () => {
