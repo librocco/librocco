@@ -98,8 +98,8 @@ describe("Reconciliation order creation", () => {
 				id: 1,
 				supplierOrderIds: [1],
 				finalized: 0,
-				created: expect.any(Number),
-				updatedAt: expect.any(Number)
+				created: expect.any(Date),
+				updatedAt: expect.any(Date)
 			}
 		]);
 
@@ -283,6 +283,38 @@ describe("Reconciliation order creation", () => {
 				authors: null
 			}
 		]);
+	});
+
+	it("timestamps reconciliation order's 'created' with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+
+		const reconOrder = await getReconciliationOrder(db, reconOrderId);
+		expect(Date.now() - reconOrder.created.getTime()).toBeLessThan(100);
+	});
+
+	it("timestamps reconciliation order's 'updatedAt' with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+
+		const reconOrder = await getReconciliationOrder(db, reconOrderId);
+		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(100);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		const reconOrderUpdated = await getReconciliationOrder(db, reconOrderId);
+		expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
 	});
 
 	describe("Reconciliation order error cases", () => {
