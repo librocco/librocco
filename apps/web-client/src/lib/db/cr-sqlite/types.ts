@@ -39,6 +39,17 @@ export type Customer = {
 	// taxId?: string;
 };
 
+/** DB entry retrieved for customer order */
+export type DBCustomerOrderListItem = DBCustomer & { status: OrderLineStatus };
+export type CustomerOrderListItem = Customer & { completed: boolean };
+
+export enum OrderLineStatus {
+	"draft",
+	"placed",
+	"received",
+	"collected"
+}
+
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
 	id: number;
