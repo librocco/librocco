@@ -16,7 +16,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	}
 
 	// TODO: Retirect to customers page perhaps
-	const [customer = {} as Customer] = await getCustomerDetails(dbCtx.db, Number(params.id));
+	const customer = (await getCustomerDetails(dbCtx.db, Number(params.id))) || ({} as Customer);
 	const customerOrderLines = await getCustomerOrderLines(dbCtx.db, Number(params.id));
 
 	return { customer, customerOrderLines };
