@@ -114,7 +114,7 @@ export type DBReconciliationOrder = {
 	created: number;
 	id?: number;
 	finalized: boolean;
-	updatedAt: Date;
+	updatedAt: number;
 };
 
 /**
@@ -123,7 +123,7 @@ export type DBReconciliationOrder = {
  */
 export type ReconciliationOrder = {
 	supplierOrderIds: number[];
-	created: number;
+	created: Date;
 	id?: number;
 	finalized: boolean;
 	updatedAt: Date;
