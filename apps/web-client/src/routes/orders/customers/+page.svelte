@@ -10,8 +10,7 @@
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
-	import { getOrderStatus } from "$lib/utils/order-status";
-	import { orderFilterStatus, type OrderFilterStatus } from "$lib/stores/order-filters";
+
 	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
@@ -26,12 +25,8 @@
 		// NOTE: dbCtx should always be defined on client
 		const { rx } = data.dbCtx;
 
-		// Reload add customer data dependants when the data changes
-		const disposer1 = rx.onRange(["customer"], () => invalidate("customer:data"));
-		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = rx.onRange(["customer_order_lines", "customer_supplier_order"], () => invalidate("customer:books"));
-
-		disposer = () => (disposer1(), disposer2());
+		// Reload all customer order/customer order line data dependants when the data changes
+		disposer = rx.onRange(["customer", "customer_order_lines"], () => invalidate("customer:list"));
 	});
 	onDestroy(() => {
 		// Unsubscribe on unmount
@@ -44,25 +39,19 @@
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	$: customers = data.customers;
-	$: customerOrderLines = data.customerOrderLines;
+	$: customerOrders = data.customerOrders;
 
-	$: ordersWithStatus = customers.map((customer) => {
-		const orders = customerOrderLines.filter((line) => line.customer_id.toString() === customer.id.toString());
-		const status = getOrderStatus(orders);
-		return {
-			...customer,
-			status
-		};
-	});
-
-	$: hasCompletedOrders = ordersWithStatus.some((order) => order.status === "completed");
-
-	$: filteredOrders = ordersWithStatus.filter((order) => order.status === $orderFilterStatus);
-
-	function setFilter(status: OrderFilterStatus) {
-		orderFilterStatus.set(status);
+	/**
+	 * Toggle between in-progress and completed orders:
+	 */
+	let orderFilterStatus: "completed" | "in_progress" = "in_progress";
+	function setFilter(status: "completed" | "in_progress") {
+		orderFilterStatus = status;
 	}
+
+	$: hasCompletedOrders = customerOrders.some(({ completed }) => completed);
+
+	$: filteredOrders = customerOrders.filter(({ completed }) => completed === (orderFilterStatus === "completed"));
 
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
@@ -97,7 +86,7 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if customers.length === 0}
+			{#if !customerOrders.length}
 				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
@@ -108,16 +97,16 @@
 			{:else}
 				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 					<button
-						class="btn-sm btn {$orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
+						class="btn-sm btn {orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
 						on:click={() => setFilter("in_progress")}
-						aria-pressed={$orderFilterStatus === "in_progress"}
+						aria-pressed={orderFilterStatus === "in_progress"}
 					>
 						In Progress
 					</button>
 					<button
-						class="btn-sm btn {$orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
+						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
 						on:click={() => setFilter("completed")}
-						aria-pressed={$orderFilterStatus === "completed"}
+						aria-pressed={orderFilterStatus === "completed"}
 						disabled={!hasCompletedOrders}
 					>
 						Completed
