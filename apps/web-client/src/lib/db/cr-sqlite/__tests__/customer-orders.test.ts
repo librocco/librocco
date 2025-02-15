@@ -12,7 +12,8 @@ import {
 	addBooksToCustomer,
 	removeBooksFromCustomer,
 	getCustomerDisplayIdSeq,
-	isDisplayIdUnique
+	isDisplayIdUnique,
+	markCustomerOrderLineAsCollected
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import {
@@ -139,6 +140,30 @@ describe("Customer order tests", () => {
 		// Update
 		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
 		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(100);
+	});
+
+	it("timestamps customer order lines' 'created' with ms precision", async () => {
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+		const [orderLine] = await getCustomerOrderLines(db, 1);
+
+		// NOTE: these operations should really be done in less than 100ms
+		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
+		// but we'll notice 9/10 times
+		expect(Date.now() - orderLine.created.getTime()).toBeLessThan(100);
+	});
+
+	it("timestamps customer order lines' 'collected' with ms precision", async () => {
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+		const [{ id: lineId }] = await getCustomerOrderLines(db, 1);
+		await markCustomerOrderLineAsCollected(db, lineId);
+
+		const [orderLine] = await getCustomerOrderLines(db, 1);
+		// NOTE: these operations should really be done in less than 100ms
+		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
+		// but we'll notice 9/10 times
+		expect(Date.now() - orderLine.collected.getTime()).toBeLessThan(100);
 	});
 });
 

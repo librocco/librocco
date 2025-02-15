@@ -198,14 +198,12 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
  * @throws {Error} If the database transaction fails
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
-	/**
-	 * @TODO the customerId is persisted with a decimal point,
-	 * converting it to a string here resulted in the book not getting persisted
-	 */
-	const params = bookIsbns.map((isbn) => [customerId, isbn]).flat();
+	const timestamp = Date.now();
+	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
 	const sql = `
-     INSERT INTO customer_order_lines (customer_id, isbn)
-     VALUES ${multiplyString("(?,?)", bookIsbns.length)};`;
+     INSERT INTO customer_order_lines (customer_id, isbn, created)
+     VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}
+	`;
 
 	await db.exec(sql, params);
 };
@@ -290,4 +288,16 @@ export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]): Prom
 			isbns
 		);
 	});
+};
+
+export const markCustomerOrderLineAsCollected = async (db: DB, lineId: number): Promise<void> => {
+	const timestamp = Date.now();
+	await db.exec(
+		`
+		UPDATE customer_order_lines
+		SET collected = ?
+		WHERE id = ?
+		`,
+		[timestamp, lineId]
+	);
 };
