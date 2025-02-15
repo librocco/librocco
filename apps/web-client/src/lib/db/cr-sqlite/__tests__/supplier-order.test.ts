@@ -476,6 +476,13 @@ describe("Placing supplier orders", () => {
 			expect(createSupplierOrder(db, 1, [])).rejects.toThrow("No order lines provided");
 		});
 
+		it("timestamp supplier order's 'created' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [{ created }] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - created).toBeLessThan(100);
+		});
+
 		it("timestamp customer order lines' 'placed' with ms precision", async () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
