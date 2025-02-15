@@ -419,6 +419,24 @@ describe("Placing supplier orders", () => {
 			expect(remainingPossibleLines.length).toBe(0);
 		});
 
+		it("include client order lines on first-come-first served basis", async () => {
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book1.isbn]);
+			await addBooksToCustomer(db, 3, [book1.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 2, supplier_id: supplier1.id }]);
+
+			expect(await getCustomerOrderLines(db, customer1.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, customer2.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: book1.isbn, placed: undefined })]);
+		});
+
 		it("throw an error if trying to add order lines with supplier id different than the one passed as a param", async () => {
 			// Add books to different customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
