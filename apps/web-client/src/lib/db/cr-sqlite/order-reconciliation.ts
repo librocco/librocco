@@ -198,6 +198,9 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	} catch (e) {
 		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
 	}
+
+	const timestamp = Date.now();
+
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
@@ -207,7 +210,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			await txDb.exec(
 				`
 				UPDATE customer_order_lines
-            	SET received = (strftime('%s', 'now') * 1000)
+            	SET received = ?
             	WHERE rowid IN (
             	    SELECT MIN(rowid)
             	    FROM customer_order_lines
@@ -216,7 +219,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
             	        AND received IS NULL
             	    GROUP BY isbn
 				);`,
-				customerOrderLines
+				[timestamp, ...customerOrderLines]
 			);
 		}
 	});

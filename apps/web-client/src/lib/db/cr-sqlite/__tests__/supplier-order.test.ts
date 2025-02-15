@@ -14,7 +14,7 @@ import {
 	createSupplierOrder,
 	getPlacedSupplierOrderLines
 } from "../suppliers";
-import { addBooksToCustomer, upsertCustomer } from "../customers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
@@ -474,6 +474,13 @@ describe("Placing supplier orders", () => {
 		// Maybe this could also be handled by the UI allowing it, but showing an error message if attempted
 		it("throw an error when trying to create a supplier order with no order lines", async () => {
 			expect(createSupplierOrder(db, 1, [])).rejects.toThrow("No order lines provided");
+		});
+
+		it("timestamp customer order lines' 'placed' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [customerOrderLine] = await getCustomerOrderLines(db, customer1.id);
+			expect(Date.now() - customerOrderLine.placed.getTime()).toBeLessThan(100);
 		});
 	});
 
