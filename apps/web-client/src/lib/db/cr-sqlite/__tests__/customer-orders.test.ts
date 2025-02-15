@@ -5,7 +5,6 @@ import type { DB, Customer } from "../types";
 import { markCustomerOrderAsReceived, getRandomDb } from "./lib";
 
 import {
-	getAllCustomers,
 	upsertCustomer,
 	getCustomerOrderLines,
 	markCustomerOrderAsCollected,
@@ -13,37 +12,101 @@ import {
 	removeBooksFromCustomer,
 	getCustomerDisplayIdSeq,
 	isDisplayIdUnique,
-	markCustomerOrderLineAsCollected
+	markCustomerOrderLineAsCollected,
+	getAllCustomers,
+	getCustomerDetails
 } from "../customers";
 import { associatePublisher, createSupplierOrder, getPlacedSupplierOrders, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
 import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
+import { getRandomDb } from "./lib";
+
+describe("New customer orders", () => {
+	describe("upsertCustomer should", () => {
+		it("throw an error if customer id not provided", async () => {
+			const db = await getRandomDb();
+			await expect(upsertCustomer(db, { fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have an id");
+		});
+
+		it("throw an error if display id not provided", async () => {
+			const db = await getRandomDb();
+			await expect(upsertCustomer(db, { id: 1, fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have a displayId");
+		});
+
+		it("create a customer order with full fields", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, {
+				fullname: "John Doe",
+				id: 1,
+				email: "john@example.com",
+				deposit: 13.2,
+				displayId: "1"
+			});
+
+			expect(await getCustomerDetails(db, 1)).toEqual({
+				fullname: "John Doe",
+				id: 1,
+				email: "john@example.com",
+				deposit: 13.2,
+				displayId: "1",
+				updatedAt: expect.any(Date)
+			});
+		});
+
+		it("using minimal fields with expected fallbacks", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, {
+				id: 1,
+				displayId: "1"
+			});
+
+			expect(await getCustomerDetails(db, 1)).toEqual({
+				id: 1,
+				fullname: "N/A",
+				email: null,
+				deposit: 0,
+				displayId: "1",
+				updatedAt: expect.any(Date)
+			});
+		});
+
+		it("update customer (if already exists)", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+			await upsertCustomer(db, { fullname: "John Doe (Updated)", id: 1, displayId: "1", deposit: 13.2 });
+			expect(await getCustomerDetails(db, 1)).toMatchObject({
+				id: 1,
+				displayId: "1",
+				fullname: "John Doe (Updated)",
+				deposit: 13.2
+			});
+		});
+
+		it("timestamp updates with ms precision", async () => {
+			const db = await getRandomDb();
+			let customer: Customer;
+
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			customer = await getCustomerDetails(db, 1);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+
+			const oldUpdatedAt = customer.updatedAt;
+			await upsertCustomer(db, { fullname: "John Doe (Updated)", id: 1, displayId: "1" });
+			customer = await getCustomerDetails(db, 1);
+
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
+		});
+	});
+});
+
 describe("Customer order tests", () => {
 	let db: DB;
 	beforeEach(async () => (db = await getRandomDb()));
-
-	it("throws if no customer id provided", async () => {
-		await expect(upsertCustomer(db, { fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have an id");
-	});
-
-	it("throws if no display id provided", async () => {
-		await expect(upsertCustomer(db, { id: 1, fullname: "John Doe" } as Customer)).rejects.toThrow("Customer must have a displayId");
-	});
-
-	it("can create and update a customer", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2, displayId: "1" });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
-		let customers = await getAllCustomers(db);
-		expect(customers.length).toBe(2);
-		expect(customers[0].fullname).toBe("John Doe");
-		expect(customers[0].email).toBe("john@example.com");
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, email: "jane@example.com", displayId: "2" });
-		expect(customers.length).toBe(2);
-		customers = await getAllCustomers(db);
-		expect(customers[0].email).toBe("john@example.com");
-		expect(customers[1].email).toBe("jane@example.com");
-	});
 
 	it("can add books to a customer", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
@@ -112,18 +175,6 @@ describe("Customer order tests", () => {
 		await removeBooksFromCustomer(db, 1, [books[0].id]);
 		books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(1);
-	});
-
-	it("timestamps updates with ms precision", async () => {
-		// Insert (initial)
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		const [customer] = await getAllCustomers(db);
-		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
-
-		// Update
-		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
-		const [customerUpdated] = await getAllCustomers(db);
-		expect(Date.now() - customerUpdated.updatedAt.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps customer order lines' 'created' with ms precision", async () => {
