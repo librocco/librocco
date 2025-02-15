@@ -16,6 +16,7 @@ import {
 	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
 describe("Reconciliation order creation", () => {

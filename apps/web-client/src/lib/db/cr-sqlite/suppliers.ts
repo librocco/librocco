@@ -376,8 +376,6 @@ export async function createSupplierOrder(
 		throw new Error(msg);
 	}
 
-	const timestamp = Date.now();
-
 	await db.tx(async (db) => {
 		const timestamp = Date.now();
 
@@ -394,7 +392,7 @@ export async function createSupplierOrder(
 					id
 				FROM customer_order_lines
 				WHERE placed IS NULL AND isbn = ?
-				ORDER BY created ASC -- TODO: test this (I noticed it visually, there should be a test)
+				ORDER BY created ASC
 				LIMIT ?
 			`;
 

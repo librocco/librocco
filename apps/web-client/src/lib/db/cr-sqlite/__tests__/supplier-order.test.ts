@@ -452,6 +452,24 @@ describe("Placing supplier orders", () => {
 			expect(remainingPossibleLines.length).toBe(0);
 		});
 
+		it("include client order lines on first-come-first served basis", async () => {
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book1.isbn]);
+			await addBooksToCustomer(db, 3, [book1.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 2, supplier_id: supplier1.id }]);
+
+			expect(await getCustomerOrderLines(db, customer1.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, customer2.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: book1.isbn, placed: undefined })]);
+		});
+
 		it("throw an error if trying to add order lines with supplier id different than the one passed as a param", async () => {
 			// Add books to different customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
@@ -472,37 +490,6 @@ describe("Placing supplier orders", () => {
 				])
 			).rejects.toThrow(wantErrMsg);
 		});
-
-		// TODO: the following is skipped as I don't see a scenario where we would be creating multiple supplier orders with a single function call
-		//
-		// 		it("create multiple supplier orders from the same batch of customer orders", async () => {
-		// 			// Associate each book with a different supplier
-		// 			await associatePublisher(db, supplier1.id, book1.publisher);
-		// 			await associatePublisher(db, supplier2.id, book2.publisher);
-		//
-		// 			// Add both books to a single customer order
-		// 			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
-		//
-		// 			// Create orders for both suppliers
-		// 			const supplier1Lines = await getPossibleSupplierOrderLines(db, supplier1.id);
-		// 			const supplier2Lines = await getPossibleSupplierOrderLines(db, supplier2.id);
-		// 			await createSupplierOrder(db, [...supplier1Lines, ...supplier2Lines]);
-		//
-		// 			// Verify two separate orders were created
-		// 			const placedOrders = await getPlacedSupplierOrders(db);
-		// 			expect(placedOrders.length).toBe(2);
-		//
-		// 			// Check specific order details
-		// 			const [order1, order2] = placedOrders;
-		// 			expect(order1.total_book_number).toBe(1);
-		// 			expect(order2.total_book_number).toBe(1);
-		//
-		// 			// Verify all customer order lines were marked as placed
-		// 			const remainingLines1 = await getPossibleSupplierOrderLines(db, supplier1.id);
-		// 			const remainingLines2 = await getPossibleSupplierOrderLines(db, supplier2.id);
-		// 			expect(remainingLines1.length).toBe(0);
-		// 			expect(remainingLines2.length).toBe(0);
-		// 		});
 
 		it("handle creating an order with missing book prices", async () => {
 			const { id: supplierId } = supplier1;
