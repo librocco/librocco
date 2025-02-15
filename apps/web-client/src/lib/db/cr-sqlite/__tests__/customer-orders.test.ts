@@ -13,13 +13,14 @@ import {
 	getCustomerDisplayIdSeq,
 	isDisplayIdUnique,
 	markCustomerOrderLineAsCollected,
-	getCustomerDetails
+	getCustomerDetails,
+	getCustomerOrderList
 } from "../customers";
 import { associatePublisher, createSupplierOrder, getPlacedSupplierOrders, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
 import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
-describe("New customer orders", () => {
+describe("Customer orders", () => {
 	describe("upsertCustomer should", () => {
 		it("throw an error if customer id not provided", async () => {
 			const db = await getRandomDb();
@@ -100,33 +101,6 @@ describe("New customer orders", () => {
 		});
 	});
 
-	describe("getCustomerDetails should", () => {
-		it("return undefined if customer not found", async () => {
-			const db = await getRandomDb();
-			expect(await getCustomerDetails(db, 1)).toBe(undefined);
-		});
-
-		// NOTE: thie is a duplicate of upsertCustomer test case (with miminal fields)
-		// but is here to stress the point and have an explicit test related COALESCEd fields
-		it("coalesce all (optional) fields except for email", async () => {
-			const db = await getRandomDb();
-
-			await upsertCustomer(db, {
-				id: 1,
-				displayId: "1"
-			});
-
-			expect(await getCustomerDetails(db, 1)).toEqual({
-				id: 1,
-				fullname: "N/A",
-				email: null,
-				deposit: 0,
-				displayId: "1",
-				updatedAt: expect.any(Date)
-			});
-		});
-	});
-
 	describe("getCustomerDisplayIdSeq should", () => {
 		it("return 1 when there are no customer orders in the DB", async () => {
 			const db = await getRandomDb();
@@ -189,6 +163,151 @@ describe("New customer orders", () => {
 			const db = await getRandomDb();
 			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 			expect(await isDisplayIdUnique(db, { id: 1, displayId: "1" })).toEqual(true);
+		});
+	});
+
+	describe("getCustomerDetails should", () => {
+		it("return undefined if customer not found", async () => {
+			const db = await getRandomDb();
+			expect(await getCustomerDetails(db, 1)).toBe(undefined);
+		});
+
+		// NOTE: thie is a duplicate of upsertCustomer test case (with miminal fields)
+		// but is here to stress the point and have an explicit test related COALESCEd fields
+		it("coalesce all (optional) fields except for email", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, {
+				id: 1,
+				displayId: "1"
+			});
+
+			expect(await getCustomerDetails(db, 1)).toEqual({
+				id: 1,
+				fullname: "N/A",
+				email: null,
+				deposit: 0,
+				displayId: "1",
+				updatedAt: expect.any(Date)
+			});
+		});
+	});
+
+	describe("getCustomerOrderList should", () => {
+		it("retrieve a list of customer orders", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+			expect(await getCustomerOrderList(db)).toEqual([
+				expect.objectContaining({ id: 1, fullname: "John Doe", displayId: "1" }),
+				expect.objectContaining({ id: 2, fullname: "Jane Doe", displayId: "2" })
+			]);
+		});
+
+		// NOTE: unlike 'getCustomerDetails', which retrieves data for a single customer - and one that will be used within customer form,
+		// the customer list gets all optional fields COALESCEd
+		it("retrieve fallbacks for all optional fields", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "2" });
+
+			expect(await getCustomerOrderList(db)).toEqual([
+				{ id: 1, fullname: "John Doe", displayId: "1", email: "N/A", deposit: 0, updatedAt: expect.any(Date), completed: false },
+				{ id: 2, fullname: "Jane Doe", displayId: "2", email: "N/A", deposit: 0, updatedAt: expect.any(Date), completed: false }
+			]);
+		});
+
+		it("mark an order as completed if all lines are collected", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+
+			// Mark the lines as collected
+			//
+			// NOTE: this is testing for implementation and is brittle with respect to data model updates,
+			// but it's a trede-off to not have to include a quite elaborate process of placing supplier orders and reconciling them
+			await db.exec("UPDATE customer_order_lines SET collected = ?", [Date.now()]);
+
+			expect(await getCustomerOrderList(db)).toEqual([expect.objectContaining({ id: 1, completed: true })]);
+		});
+
+		it("mark an order as in-progress (not completed) if at least one line is not collected", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			const [line1, line2] = await getCustomerOrderLines(db, 1);
+
+			// One line collected, other merely received from the supplier
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), line1.id]);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), line2.id]);
+
+			expect(await getCustomerOrderList(db)).toEqual([expect.objectContaining({ id: 1, completed: false })]);
+		});
+
+		it("mark an order as in-progress (not completed) for including any non-collected lines", async () => {
+			const db = await getRandomDb();
+
+			// 1 received line
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1"]);
+			const [c1line] = await getCustomerOrderLines(db, 1);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), c1line.id]);
+
+			// 1 placed line
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await addBooksToCustomer(db, 2, ["1"]);
+			const [c2line] = await getCustomerOrderLines(db, 1);
+			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE id = ?", [Date.now(), c2line.id]);
+
+			// 1 pending line
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await addBooksToCustomer(db, 3, ["1"]);
+
+			expect(await getCustomerOrderList(db)).toEqual([
+				expect.objectContaining({ id: 1, completed: false }),
+				expect.objectContaining({ id: 2, completed: false }),
+				expect.objectContaining({ id: 3, completed: false })
+			]);
+		});
+
+		it("correctly group customer order lines (to their respective customers) when calculating state", async () => {
+			const db = await getRandomDb();
+
+			// 1 received line, 1 collected line - in-progress
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			const c1lines = await getCustomerOrderLines(db, 1);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), c1lines[0].id]);
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c1lines[1].id]);
+
+			// 1 collected line - completed
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await addBooksToCustomer(db, 2, ["1"]);
+			const [c2line] = await getCustomerOrderLines(db, 2);
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c2line.id]);
+
+			// 2 collected lines - completed
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await addBooksToCustomer(db, 3, ["1", "2"]);
+			const c3lines = await getCustomerOrderLines(db, 3);
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c3lines[0].id]);
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c3lines[1].id]);
+
+			// 1 pending line, 1 collected line - in progress
+			await upsertCustomer(db, { id: 4, displayId: "3" });
+			await addBooksToCustomer(db, 4, ["1", "2"]);
+			const [c4line] = await getCustomerOrderLines(db, 4);
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE id = ?", [Date.now(), c4line.id]);
+
+			expect(await getCustomerOrderList(db)).toEqual([
+				expect.objectContaining({ id: 1, completed: false }),
+				expect.objectContaining({ id: 2, completed: true }),
+				expect.objectContaining({ id: 3, completed: true }),
+				expect.objectContaining({ id: 4, completed: false })
+			]);
 		});
 	});
 });
