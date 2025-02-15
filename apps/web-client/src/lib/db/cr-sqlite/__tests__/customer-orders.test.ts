@@ -132,38 +132,48 @@ describe("Customer order tests", () => {
 		// Insert (initial)
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const [customer] = await getAllCustomers(db);
-		// NOTE: these operations should really be done in less than 100ms
-		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
-		// but we'll notice 9/10 times
-		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(100);
+		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(200);
+
+		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
+		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		// Update
 		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
-		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(100);
+		const [customerUpdated] = await getAllCustomers(db);
+		expect(Date.now() - customerUpdated.updatedAt.getTime()).toBeLessThan(200);
 	});
 
 	it("timestamps customer order lines' 'created' with ms precision", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1"]);
-		const [orderLine] = await getCustomerOrderLines(db, 1);
 
-		// NOTE: these operations should really be done in less than 100ms
-		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
-		// but we'll notice 9/10 times
-		expect(Date.now() - orderLine.created.getTime()).toBeLessThan(100);
+		await addBooksToCustomer(db, 1, ["1"]);
+		const [orderLine1] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
+
+		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		await addBooksToCustomer(db, 1, ["2"]);
+		const [, orderLine2] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
 	});
 
 	it("timestamps customer order lines' 'collected' with ms precision", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1"]);
-		const [{ id: lineId }] = await getCustomerOrderLines(db, 1);
-		await markCustomerOrderLineAsCollected(db, lineId);
+		await addBooksToCustomer(db, 1, ["1", "2"]);
 
-		const [orderLine] = await getCustomerOrderLines(db, 1);
-		// NOTE: these operations should really be done in less than 100ms
-		// This will produce a false negative 10% of the time (if run within 100ms of a round second),
-		// but we'll notice 9/10 times
-		expect(Date.now() - orderLine.collected.getTime()).toBeLessThan(100);
+		const [{ id: line1Id }] = await getCustomerOrderLines(db, 1);
+		await markCustomerOrderLineAsCollected(db, line1Id);
+
+		const [line1] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - line1.collected.getTime()).toBeLessThan(200);
+
+		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
+		await new Promise((resolve) => setTimeout(resolve, 200));
+		const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
+		await markCustomerOrderLineAsCollected(db, line2Id);
+
+		const [line2] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - line2.collected.getTime()).toBeLessThan(200);
 	});
 });
 
