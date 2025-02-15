@@ -28,14 +28,7 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, CustomerOrderLine, CustomerOrderLineHistory } from "./types";
-
-type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "received" | "collected"> & {
-	created: number; // as milliseconds since epoch
-	placed?: number; // as milliseconds since epoch
-	received?: number; // as milliseconds since epoch
-	collected?: number; // as milliseconds since epoch
-};
+import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, DBCustomer } from "./types";
 
 /**
  * Retrieves all customers from the database.
@@ -62,7 +55,7 @@ export async function getAllCustomers(db: DB): Promise<Customer[]> {
  * @throws {Error} If customer ID is not provided
  * @see apps/e2e/helpers/cr-sqlite.ts:upsertCustomer when you make updates
  */
-export async function upsertCustomer(db: DB, customer: Customer) {
+export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
@@ -170,14 +163,29 @@ export async function getCustomerOrderLineHistory(db: DB, lineId: number): Promi
  *
  * TODO: it would probably make more sense to return Promise<Customer | undefined> (instead of a list)
  */
-export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer[]> => {
-	const result = await db.execO<Omit<Customer, "updatedAt"> & { updated_at: number }>(
-		"SELECT id, display_id AS displayId, fullname, deposit, email, updated_at FROM customer WHERE id = $customerId;",
+export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer> => {
+	const [result] = await db.execO<DBCustomer>(
+		`
+			SELECT
+				id,
+				display_id AS displayId,
+				COALESCE(fullname, 'N/A') AS fullname,
+				COALESCE(deposit, 0) AS deposit,
+
+				-- NOTE: we're not coalescing email as we need it to be null if not set
+				-- so that the form can treat it as (undefined) optional field and not an (existing) invalid email
+				email,
+				updated_at
+			FROM customer
+			WHERE id = ?
+		`,
 		[customerId]
 	);
 
-	return result.map(({ updated_at, ...row }) => ({ ...row, updatedAt: new Date(updated_at) }));
+	return unmarshallCustomerOrder(result);
 };
+
+const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Customer => ({ ...customer, updatedAt: new Date(updated_at) });
 
 /**
  * Converts a database customer order line numeric dates to Date objects for ease of use in the UI

@@ -11,15 +11,32 @@ import type { BookData } from "@librocco/shared";
 type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
 
 /* Customer orders/books */
+export type DBCustomer = {
+	id: number;
+	fullname?: string;
+	email?: string;
+	displayId: string;
+	deposit?: number;
+	updated_at?: number;
+
+	// NOTE: I've found the following properties in this type, but they don't exist in the DB schame atm
+	// TODO: Check
+	// phone?: string;
+	// taxId?: string;
+};
+
 export type Customer = {
 	id: number;
 	fullname?: string;
 	email?: string;
-	phone?: string;
-	taxId?: string;
 	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
+
+	// NOTE: I've found the following properties in this type, but they don't exist in the DB schame atm
+	// TODO: Check
+	// phone?: string;
+	// taxId?: string;
 };
 
 export type DBCustomerOrderLine = {
