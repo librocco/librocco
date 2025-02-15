@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { getDB, initializeDB } from "../db";
 import { getRandomDb, syncDBs } from "./lib";
 import type { Customer } from "../types";
-import { getAllCustomers, upsertCustomer } from "../customers";
+import { getCustomerOrderList, upsertCustomer } from "../customers";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
@@ -30,7 +30,7 @@ describe("Customer order tests", () => {
 		let db1Customers: Customer[], db2Customers: Customer[];
 		await upsertCustomer(db1, { fullname: "John Doe", id: 1, email: "john@example.com", deposit: 13.2, displayId: "1" });
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 2, displayId: "2" });
-		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
+		[db1Customers, db2Customers] = await Promise.all([getCustomerOrderList(db1), getCustomerOrderList(db2)]);
 		expect(db1Customers.length).toBe(1);
 		expect(db2Customers.length).toBe(1);
 
@@ -39,11 +39,11 @@ describe("Customer order tests", () => {
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 
 		await syncDBs(db1, db2);
-		expect((await getAllCustomers(db2)).length).toBe(2);
+		expect((await getCustomerOrderList(db2)).length).toBe(2);
 		await syncDBs(db2, db1);
 
-		expect((await getAllCustomers(db1)).length).toBe(2);
-		[db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
+		expect((await getCustomerOrderList(db1)).length).toBe(2);
+		[db1Customers, db2Customers] = await Promise.all([getCustomerOrderList(db1), getCustomerOrderList(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
 	});
 
@@ -55,7 +55,7 @@ describe("Customer order tests", () => {
 		await syncDBs(db1, db2);
 		await upsertCustomer(db2, { fullname: "Jane Doe", id: 1, email: "jane@example.com", displayId: "1" });
 		await syncDBs(db2, db1);
-		const [db1Customers, db2Customers] = await Promise.all([getAllCustomers(db1), getAllCustomers(db2)]);
+		const [db1Customers, db2Customers] = await Promise.all([getCustomerOrderList(db1), getCustomerOrderList(db2)]);
 		expect(db1Customers).toMatchObject(db2Customers);
 		expect(db1Customers).toMatchObject([{ fullname: "Jane Doe", id: 1, email: "jane@example.com", deposit: 13.2 }]);
 	});
