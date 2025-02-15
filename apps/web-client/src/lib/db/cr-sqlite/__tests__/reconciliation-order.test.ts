@@ -16,7 +16,7 @@ import {
 	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
-import { getCustomerOrderLines } from "../customers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 
 import {} from "../order-reconciliation";
 
@@ -214,6 +214,23 @@ describe("Reconciliation order creation", () => {
 			supplierOrderIds: [1],
 			finalized: 1
 		});
+	});
+
+	it("marks customer order lines' 'received' timestamp with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, reconOrderId);
+
+		const [orderLine] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine.received.getTime()).toBeLessThan(100);
 	});
 
 	it("updates existing order line quantity when adding duplicate ISBN", async () => {
