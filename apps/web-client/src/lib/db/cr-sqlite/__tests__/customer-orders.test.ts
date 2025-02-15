@@ -13,14 +13,11 @@ import {
 	getCustomerDisplayIdSeq,
 	isDisplayIdUnique,
 	markCustomerOrderLineAsCollected,
-	getAllCustomers,
 	getCustomerDetails
 } from "../customers";
 import { associatePublisher, createSupplierOrder, getPlacedSupplierOrders, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
 import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
-
-import { getRandomDb } from "./lib";
 
 describe("New customer orders", () => {
 	describe("upsertCustomer should", () => {
@@ -127,6 +124,71 @@ describe("New customer orders", () => {
 				displayId: "1",
 				updatedAt: expect.any(Date)
 			});
+		});
+	});
+
+	describe("getCustomerDisplayIdSeq should", () => {
+		it("return 1 when there are no customer orders in the DB", async () => {
+			const db = await getRandomDb();
+			const displayId = await getCustomerDisplayIdSeq(db);
+			expect(displayId).toBe(1);
+		});
+
+		it("return n + 1 when there are customers in the DB", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+			const displayId = await getCustomerDisplayIdSeq(db);
+			expect(displayId).toBe(2);
+		});
+
+		it("return n + 1 when there are customers in the DB, even when there are spaces between seq", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+			const displayId = await getCustomerDisplayIdSeq(db);
+			expect(displayId).toBe(4);
+		});
+
+		it("return n + 1 ignoring n > 10k", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "10000" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+			const displayId = await getCustomerDisplayIdSeq(db);
+			expect(displayId).toBe(4);
+		});
+
+		it("cope with invalid displayIds", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "invalid" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
+
+			const displayId = await getCustomerDisplayIdSeq(db);
+			expect(displayId).toBe(4);
+		});
+	});
+
+	describe("isDisplayIdUnique should", () => {
+		it("return true if unique", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			expect(await isDisplayIdUnique(db, { id: 1, displayId: "2" })).toEqual(true);
+		});
+
+		it("return false if one or more entries have the same value", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "1" });
+			await upsertCustomer(db, { fullname: "James Doe", id: 3, displayId: "3" });
+			expect(await isDisplayIdUnique(db, { id: 3, displayId: "1" })).toEqual(false);
+		});
+
+		it("return true if the only entry with the same value is the exact one comparing", async () => {
+			const db = await getRandomDb();
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			expect(await isDisplayIdUnique(db, { id: 1, displayId: "1" })).toEqual(true);
 		});
 	});
 });
@@ -381,70 +443,5 @@ describe("Customer order Collection", () => {
 
 		// Collection date should not have changed
 		expect(secondUpdate[0].collected).toEqual(firstCollectedDate);
-	});
-});
-
-describe("Customer display id seq", () => {
-	it("returns 1 when there are no customer orders in the DB", async () => {
-		const db = await getRandomDb();
-		const displayId = await getCustomerDisplayIdSeq(db);
-		expect(displayId).toBe(1);
-	});
-
-	it("returns n + 1 when there are customers in the DB", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-
-		const displayId = await getCustomerDisplayIdSeq(db);
-		expect(displayId).toBe(2);
-	});
-
-	it("returns n + 1 when there are customers in the DB, even when there are spaces between seq", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
-
-		const displayId = await getCustomerDisplayIdSeq(db);
-		expect(displayId).toBe(4);
-	});
-
-	it("returns n + 1 ignoring n > 10k", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "10000" });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
-
-		const displayId = await getCustomerDisplayIdSeq(db);
-		expect(displayId).toBe(4);
-	});
-
-	it("can cope with invalid displayIds", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "invalid" });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "3" });
-
-		const displayId = await getCustomerDisplayIdSeq(db);
-		expect(displayId).toBe(4);
-	});
-});
-
-describe("isDisplayIdUnique function", () => {
-	it("returns true if unique", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		expect(await isDisplayIdUnique(db, { id: 1, displayId: "2" })).toEqual(true);
-	});
-
-	it("returns false if one or more entries have the same value", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		await upsertCustomer(db, { fullname: "Jane Doe", id: 2, displayId: "1" });
-		await upsertCustomer(db, { fullname: "James Doe", id: 3, displayId: "3" });
-		expect(await isDisplayIdUnique(db, { id: 3, displayId: "1" })).toEqual(false);
-	});
-
-	it("edge case: returns true if the only entry with the same value is the exact one comparing", async () => {
-		const db = await getRandomDb();
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		expect(await isDisplayIdUnique(db, { id: 1, displayId: "1" })).toEqual(true);
 	});
 });
