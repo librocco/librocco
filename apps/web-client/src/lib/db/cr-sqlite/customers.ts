@@ -130,7 +130,7 @@ const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Custo
  * @param {DB} db - Database connection
  * @returns {Promise<CustomerOrderListItem[]>} Array of customers
  */
-export async function getCustomerOrderList(db: DB): Promise<Customer[]> {
+export async function getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
 	const orderLineStatusQuery = `
 		SELECT
 			customer_id,
@@ -167,24 +167,6 @@ const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DB
 	updatedAt: new Date(updated_at),
 	completed: status === 3
 });
-
-/**
- * Retrieves all customer order lines from the database.
- *
- * @param {DB} db - The database connection instance
- * @returns {Promise<DBCustomerOrderLine[]>} A promise that resolves to an arr of customer order lines
- * as they are stored in the database
- * A customer order line represents a single book in a customer order
- * the book meta data & timestamps to indicate when/if it has been placed, ordered with the supplier or received
- */
-export const getAllCustomerOrderLines = async (db: DB): Promise<DBCustomerOrderLine[]> => {
-	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT customer_order_lines.id, customer_id, isbn, created, placed, received, collected
-		FROM customer_order_lines`
-	);
-
-	return result;
-};
 
 /**
  * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
