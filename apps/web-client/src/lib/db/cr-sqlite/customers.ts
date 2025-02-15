@@ -182,6 +182,8 @@ export const getCustomerDetails = async (db: DB, customerId: number): Promise<Cu
 		[customerId]
 	);
 
+	if (!result) return undefined;
+
 	return unmarshallCustomerOrder(result);
 };
 

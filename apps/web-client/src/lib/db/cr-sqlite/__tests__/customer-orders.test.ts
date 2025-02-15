@@ -102,6 +102,33 @@ describe("New customer orders", () => {
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
 		});
 	});
+
+	describe("getCustomerDetails should", () => {
+		it("return undefined if customer not found", async () => {
+			const db = await getRandomDb();
+			expect(await getCustomerDetails(db, 1)).toBe(undefined);
+		});
+
+		// NOTE: thie is a duplicate of upsertCustomer test case (with miminal fields)
+		// but is here to stress the point and have an explicit test related COALESCEd fields
+		it("coalesce all (optional) fields except for email", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, {
+				id: 1,
+				displayId: "1"
+			});
+
+			expect(await getCustomerDetails(db, 1)).toEqual({
+				id: 1,
+				fullname: "N/A",
+				email: null,
+				deposit: 0,
+				displayId: "1",
+				updatedAt: expect.any(Date)
+			});
+		});
+	});
 });
 
 describe("Customer order tests", () => {
