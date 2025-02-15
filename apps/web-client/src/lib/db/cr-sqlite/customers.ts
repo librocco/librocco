@@ -28,21 +28,15 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, DBCustomerOrderLine, CustomerOrderLine, DBCustomer } from "./types";
-
-/**
- * Retrieves all customers from the database.
- * Returns basic customer information ordered by ID.
- *
- * @param {DB} db - Database connection
- * @returns {Promise<Customer[]>} Array of customers
- */
-export async function getAllCustomers(db: DB): Promise<Customer[]> {
-	const res = await db.execO<Omit<Customer, "updatedAt"> & { updated_at: number }>(
-		"SELECT id, display_id AS displayId, fullname, email, updated_at, deposit FROM customer ORDER BY id ASC;"
-	);
-	return res.map(({ updated_at, ...row }) => ({ ...row, updatedAt: new Date(updated_at) }));
-}
+import {
+	type DB,
+	type Customer,
+	type DBCustomerOrderLine,
+	type CustomerOrderLine,
+	type DBCustomer,
+	type DBCustomerOrderListItem,
+	type CustomerOrderListItem
+} from "./types";
 
 /**
  * Creates a new customer or updates an existing one.
@@ -93,6 +87,87 @@ export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt
 }
 
 /**
+ * Retrieves customer details from the database for a specific customer ID.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {number} customerId - The unique identifier of the customer
+ * @returns {Promise<Customer[]>} A promise that resolves to an array of customer details
+ *                               containing id, fullname, deposit, and email information
+ *
+ * TODO: it would probably make more sense to return Promise<Customer | undefined> (instead of a list)
+ */
+export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer> => {
+	const [result] = await db.execO<DBCustomer>(
+		`
+			SELECT
+				id,
+				display_id AS displayId,
+				COALESCE(fullname, 'N/A') AS fullname,
+				COALESCE(deposit, 0) AS deposit,
+
+				-- NOTE: we're not coalescing email as we need it to be null if not set
+				-- so that the form can treat it as (undefined) optional field and not an (existing) invalid email
+				email,
+				updated_at
+			FROM customer
+			WHERE id = ?
+		`,
+		[customerId]
+	);
+
+	if (!result) return undefined;
+
+	return unmarshallCustomerOrder(result);
+};
+
+const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Customer => ({ ...customer, updatedAt: new Date(updated_at) });
+
+/**
+ * Retrieves all customer orders from the database.
+ * Returns full customer information, along with order status.
+ *
+ * @param {DB} db - Database connection
+ * @returns {Promise<CustomerOrderListItem[]>} Array of customers
+ */
+export async function getCustomerOrderList(db: DB): Promise<Customer[]> {
+	const orderLineStatusQuery = `
+		SELECT
+			customer_id,
+			CASE
+				WHEN collected IS NOT NULL THEN 3
+				WHEN received IS NOT NULL THEN 2
+				WHEN placed IS NOT NULL THEN 1
+				ELSE 0
+			END AS status_ord
+		FROM customer_order_lines
+	`;
+
+	const query = `
+		SELECT
+			id,
+			display_id AS displayId,
+			COALESCE(fullname, 'N/A') AS fullname,
+			COALESCE(deposit, 0) AS deposit,
+			COALESCE(email, 'N/A') AS email,
+			updated_at,
+			MIN(col.status_ord) as status
+		FROM customer
+		LEFT JOIN (${orderLineStatusQuery}) AS col ON customer.id = col.customer_id
+		GROUP BY id
+		ORDER BY id ASC -- TODO: check prefered ordering
+	`;
+
+	const res = await db.execO<DBCustomerOrderListItem>(query);
+	return res.map(unmarshallCustomerOrderListItem);
+}
+
+const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DBCustomerOrderListItem): CustomerOrderListItem => ({
+	...customer,
+	updatedAt: new Date(updated_at),
+	completed: status === 3
+});
+
+/**
  * Retrieves all customer order lines from the database.
  *
  * @param {DB} db - The database connection instance
@@ -135,42 +210,6 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 	);
 	return result.map(marshallCustomerOrderLineDates);
 };
-
-/**
- * Retrieves customer details from the database for a specific customer ID.
- *
- * @param {DB} db - The database connection instance
- * @param {number} customerId - The unique identifier of the customer
- * @returns {Promise<Customer[]>} A promise that resolves to an array of customer details
- *                               containing id, fullname, deposit, and email information
- *
- * TODO: it would probably make more sense to return Promise<Customer | undefined> (instead of a list)
- */
-export const getCustomerDetails = async (db: DB, customerId: number): Promise<Customer> => {
-	const [result] = await db.execO<DBCustomer>(
-		`
-			SELECT
-				id,
-				display_id AS displayId,
-				COALESCE(fullname, 'N/A') AS fullname,
-				COALESCE(deposit, 0) AS deposit,
-
-				-- NOTE: we're not coalescing email as we need it to be null if not set
-				-- so that the form can treat it as (undefined) optional field and not an (existing) invalid email
-				email,
-				updated_at
-			FROM customer
-			WHERE id = ?
-		`,
-		[customerId]
-	);
-
-	if (!result) return undefined;
-
-	return unmarshallCustomerOrder(result);
-};
-
-const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Customer => ({ ...customer, updatedAt: new Date(updated_at) });
 
 /**
  * Converts a database customer order line numeric dates to Date objects for ease of use in the UI
