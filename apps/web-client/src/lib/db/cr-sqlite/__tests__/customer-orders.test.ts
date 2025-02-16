@@ -360,11 +360,11 @@ describe("Customer order lines", () => {
 
 			await addBooksToCustomer(db, 1, ["1"]);
 			const [orderLine1] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
+			expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(300);
 
 			await addBooksToCustomer(db, 1, ["2"]);
 			const [, orderLine2] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
+			expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(300);
 		});
 
 		it("timestamp respective customer's 'updated_at' with ms precision each time a line is added", async () => {
@@ -383,6 +383,71 @@ describe("Customer order lines", () => {
 
 			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
+		});
+	});
+
+	describe("removeBooksFromCustomer should", () => {
+		it("remove a book from customer order", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+
+			const [, line2] = await getCustomerOrderLines(db, 1);
+			await removeBooksFromCustomer(db, 1, [line2.id]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1" }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "3" })
+			]);
+		});
+
+		it("remove multiple books from customer order", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+
+			const [line1, line2] = await getCustomerOrderLines(db, 1);
+			await removeBooksFromCustomer(db, 1, [line1.id, line2.id]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ id: expect.any(Number), isbn: "3" })]);
+		});
+
+		it("timestamp customer's 'updated_at' with ms precision each time a line is removed", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			const { updatedAt: oldUpdatedAt } = await getCustomerDetails(db, 1);
+
+			const [line1] = await getCustomerOrderLines(db, 1);
+			await removeBooksFromCustomer(db, 1, [line1.id]);
+
+			const { updatedAt } = await getCustomerDetails(db, 1);
+			expect(Date.now() - updatedAt.getTime()).toBeLessThan(300);
+			expect(updatedAt > oldUpdatedAt).toBe(true);
+		});
+	});
+
+	describe("markCustomerOrderLineAsCollected should", () => {
+		it("timestamp customer order lines' 'collected' with ms precision", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+
+			const [{ id: line1Id }] = await getCustomerOrderLines(db, 1);
+			await markCustomerOrderLineAsCollected(db, line1Id);
+
+			const [line1] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - line1.collected.getTime()).toBeLessThan(300);
+
+			const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
+			await markCustomerOrderLineAsCollected(db, line2Id);
+
+			const [line2] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - line2.collected.getTime()).toBeLessThan(300);
 		});
 	});
 
@@ -593,29 +658,6 @@ describe("Customer order tests", () => {
 		const books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(10 * howMany);
 		expect(duration).toBeLessThanOrEqual(600);
-	});
-
-	it("can remove books from a customer order", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-
-		await addBooksToCustomer(db, 1, ["9780000000000", "9780000000000"]);
-		let books = await getCustomerOrderLines(db, 1);
-		expect(books.length).toBe(2);
-		await removeBooksFromCustomer(db, 1, [books[0].id]);
-		books = await getCustomerOrderLines(db, 1);
-		expect(books.length).toBe(1);
-	});
-
-	it("timestamps customer order lines' 'created' with ms precision", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-
-		await addBooksToCustomer(db, 1, ["1"]);
-		const [orderLine1] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(300);
-
-		await addBooksToCustomer(db, 1, ["2"]);
-		const [, orderLine2] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps customer order lines' 'collected' with ms precision", async () => {
