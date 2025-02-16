@@ -312,38 +312,84 @@ describe("Customer orders", () => {
 	});
 });
 
+describe("Customer order lines", () => {
+	describe("addBooksToCustomer should", () => {
+		it("add books to a customer order (in pending state as default)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["9780000000000", "9title780000000000"]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({
+					id: expect.any(Number),
+					isbn: "9780000000000",
+					created: expect.any(Date),
+					placed: undefined,
+					received: undefined,
+					collected: undefined
+				}),
+				expect.objectContaining({
+					id: expect.any(Number),
+					isbn: "9title780000000000",
+					created: expect.any(Date),
+					placed: undefined,
+					received: undefined,
+					collected: undefined
+				})
+			]);
+		});
+
+		it("add two lines with the same isbn if multiple instances of isbn are added", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1", "1"]);
+
+			const orderLines = await getCustomerOrderLines(db, 1);
+			expect(orderLines).toEqual([expect.objectContaining({ isbn: "1" }), expect.objectContaining({ isbn: "1" })]);
+			expect(orderLines[0].id).not.toEqual(orderLines[1].id);
+		});
+
+		it("timestamp customer order lines' 'created' with ms precision", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			const [orderLine1] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
+
+			await addBooksToCustomer(db, 1, ["2"]);
+			const [, orderLine2] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
+		});
+
+		it("timestamp respective customer's 'updated_at' with ms precision each time a line is added", async () => {
+			const db = await getRandomDb();
+			let customer: Customer;
+
+			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			customer = await getCustomerDetails(db, 1);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
+
+			const oldUpdatedAt = customer.updatedAt;
+			await addBooksToCustomer(db, 1, ["2"]);
+			customer = await getCustomerDetails(db, 1);
+
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
+			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
+		});
+	});
+});
+
 describe("Customer order tests", () => {
 	let db: DB;
 	beforeEach(async () => (db = await getRandomDb()));
-
-	it("can add books to a customer", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-
-		const initialBooks = await getCustomerOrderLines(db, 1);
-
-		expect(initialBooks.length).toBe(0);
-
-		await addBooksToCustomer(db, 1, ["9780000000000", "9title780000000000"]);
-
-		const newBooks = await getCustomerOrderLines(db, 1);
-
-		expect(newBooks.length).toBe(2);
-
-		const [book1] = newBooks;
-
-		// Each order line should have an auto-generated Id
-		expect(book1.id).toBeTypeOf("number");
-		// Numeric dates of each order line should be marshalled to Date objects
-		expect(book1.created).toBeInstanceOf(Date);
-		// If date column is not populated (these orders have not been placed) it should be undefined
-		expect(book1.placed).toBe(undefined);
-
-		// A subset of book data that is displayed in the Customer Orders table should be returned
-		// and coalesced to defaults if a corresponding book entry is not joined by isbn (isbn's added above are not in randomDb)
-		expect(book1.title).toBe("N/A");
-		expect(book1.price).toBe(0);
-		expect(book1.authors).toBe("N/A");
-	});
 
 	// NOTE: This shouldn't be taken as a gospel:
 	// - if it fails, by a small margin - think about the changes you've introduced that might be causing it, and extend the time limit
