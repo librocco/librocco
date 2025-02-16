@@ -228,19 +228,18 @@ describe("Customer order Collection", () => {
 
 		// Mark the books as received
 		// await markCustomerOrderAsReceived(db, orderLineIds);
-		const reconOrderId = await createReconciliationOrder(db, placedOrderLineIds);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, placedOrderLineIds);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "9780000000001", quantity: 1 },
 			{ isbn: "9780000000001", quantity: 1 }
 		]);
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		// Mark as collected
 		await markCustomerOrderAsCollected(db, customerOrderLineIds);
 
 		const updatedLines = await getCustomerOrderLines(db, 1);
 
-		console.log({ updatedLines });
 		expect(updatedLines[0].collected).toBeInstanceOf(Date);
 		expect(updatedLines[1].collected).toBeInstanceOf(Date);
 	});

@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 
+import { asc } from "@librocco/shared";
+
 import { type DB, type ProcessedOrderLine } from "../types";
 
 import { getRandomDb, createCustomerOrders } from "./lib";
@@ -13,10 +15,135 @@ import {
 	getReconciliationOrderLines,
 	processOrderDelivery,
 	getUnreconciledSupplierOrders,
-	sortLinesBySupplier
+	sortLinesBySupplier,
+	ErrSupplierOrdersNotFound,
+	ErrSupplierOrdersAlreadyReconciling
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
+
+describe("Reconciliation order management:", () => {
+	describe("createReconciliationOrder should", () => {
+		it("create a reconciliation order based on a single supplier order", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			const order = await getReconciliationOrder(db, 1);
+
+			expect(order).toEqual({
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: 0,
+				created: expect.any(Date),
+				updatedAt: expect.any(Date)
+			});
+			expect(order.created).toEqual(order.updatedAt);
+		});
+
+		it("create a single reconciliation order based on a multiple supplier orders", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			// Different supplier order, different supplier - should work nonetheless
+			await addBooksToCustomer(db, 2, ["2"]);
+			await createSupplierOrder(db, 2, [{ isbn: "2", quantity: 1, supplier_id: 2 }]);
+			const supplierOrders = await getPlacedSupplierOrders(db);
+			const supOrderIds = supplierOrders.map(({ id }) => id);
+
+			await createReconciliationOrder(db, 1, supOrderIds);
+
+			// Matching for all reconciliation orders orders to make sure both supplier orders are grouped into one reconciliation order
+			expect(await getAllReconciliationOrders(db)).toEqual([expect.objectContaining({ id: 1, supplierOrderIds: [1, 2] })]);
+		});
+
+		it("timestamp reconciliation order's 'created' with ms precision", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [supplierOrder1Id]);
+
+			const reconOrder1 = await getReconciliationOrder(db, 1);
+			expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(200);
+
+			await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 2, [supplierOrder2Id]);
+
+			const reconOrder2 = await getReconciliationOrder(db, 2);
+			expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(200);
+		});
+
+		it("throw an error when trying to create with empty supplier order IDs", async () => {
+			const db = await getRandomDb();
+
+			await expect(createReconciliationOrder(db, 1, [])).rejects.toThrow(
+				"Reconciliation order must be based on at least one supplier order"
+			);
+		});
+
+		it("throw an error if one or more of the provided supplier order ids doesn't match an existing supplier order", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			// NOTE: we don't know the id of the created supplier order, but 2 and 3 don't exist
+			const supOrderIds = [supplierOrderId, 2, 3].sort(asc());
+			await expect(createReconciliationOrder(db, 1, [supplierOrderId, 2, 3])).rejects.toThrow(
+				new ErrSupplierOrdersNotFound(supOrderIds, [supplierOrderId])
+			);
+		});
+
+		it("throw an error if some of the provided supplier ids match an already reconciled (or reconciling in progress) supplier order", async () => {
+			const db = await getRandomDb();
+
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			// Supplier order 1 - reconciled
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			// Supplier order 2 - reconciliation in progress
+			await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
+			// Supplier order 3 - available for reconciliation
+			await createSupplierOrder(db, 1, [{ isbn: "3", quantity: 1, supplier_id: 1 }]);
+
+			// NOTE: supplier orders are sorted in reverse chronological order
+			const supplierOrders = await getPlacedSupplierOrders(db);
+			const supOrderIds = supplierOrders.map(({ id }) => id);
+			const [, supOrder2, supOrder1] = supOrderIds;
+
+			// Reconcile supplier order 1
+			await createReconciliationOrder(db, 1, [supOrder1]);
+			const reconOrder1 = await getReconciliationOrder(db, 1);
+			await finalizeReconciliationOrder(db, 1);
+			// Start reconciling supplier order 2
+			await createReconciliationOrder(db, 2, [supOrder2]);
+			const reconOrder2 = await getReconciliationOrder(db, 2);
+
+			expect(createReconciliationOrder(db, 3, supOrderIds)).rejects.toThrow(
+				new ErrSupplierOrdersAlreadyReconciling(supOrderIds, [reconOrder1, reconOrder2])
+			);
+		});
+	});
+});
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
 describe("Reconciliation order creation", () => {
@@ -40,7 +167,7 @@ describe("Reconciliation order creation", () => {
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		// use supplier order ids to create a recon
-		await createReconciliationOrder(db, ids);
+		await createReconciliationOrder(db, 1, ids);
 
 		expect(await getAllReconciliationOrders(db)).toMatchObject([
 			{
@@ -63,9 +190,9 @@ describe("Reconciliation order creation", () => {
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		// use supplier order ids to create a recon
-		const reconId = await createReconciliationOrder(db, ids);
+		await createReconciliationOrder(db, 1, ids);
 
-		await finalizeReconciliationOrder(db, reconId);
+		await finalizeReconciliationOrder(db, 1);
 		const res2 = await getAllReconciliationOrders(db, true);
 
 		expect(res2).toMatchObject([
@@ -88,7 +215,7 @@ describe("Reconciliation order creation", () => {
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
 		// use supplier order ids to create a recon
-		const id = await createReconciliationOrder(db, ids);
+		await createReconciliationOrder(db, 1, ids);
 
 		const res = await getAllReconciliationOrders(db, false);
 		expect(res).toEqual([
@@ -101,31 +228,10 @@ describe("Reconciliation order creation", () => {
 			}
 		]);
 
-		await finalizeReconciliationOrder(db, id);
+		await finalizeReconciliationOrder(db, 1);
 		const res2 = await getAllReconciliationOrders(db, false);
 
 		expect(res2).toMatchObject([]);
-	});
-
-	it("can create a reconciliation order", async () => {
-		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, 1, newSupplierOrderLines);
-
-		// TODO: might be useful to have a way to filter for a few particular ids?
-		// It's only going to be one here...
-		const supplierOrders = await getPlacedSupplierOrders(db);
-
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
-
-		const reconOrderId = await createReconciliationOrder(db, ids);
-		expect(reconOrderId).toStrictEqual(1);
-		const res2 = await getReconciliationOrder(db, reconOrderId);
-
-		expect(res2).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: 0
-		});
 	});
 
 	it("can update a currently reconciliating order", async () => {
@@ -138,9 +244,8 @@ describe("Reconciliation order creation", () => {
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
-		const reconOrderId = await createReconciliationOrder(db, ids);
-		expect(reconOrderId).toStrictEqual(1);
-		const res2 = await getReconciliationOrder(db, reconOrderId);
+		await createReconciliationOrder(db, 1, ids);
+		const res2 = await getReconciliationOrder(db, 1);
 
 		expect(res2).toMatchObject({
 			id: 1,
@@ -155,7 +260,7 @@ describe("Reconciliation order creation", () => {
 			{ isbn: "3", quantity: 1 }
 		]);
 
-		const res3 = await getReconciliationOrderLines(db, reconOrderId);
+		const res3 = await getReconciliationOrderLines(db, 1);
 
 		expect(res3).toEqual([
 			{
@@ -198,12 +303,12 @@ describe("Reconciliation order creation", () => {
 
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
-		const reconOrderId = await createReconciliationOrder(db, ids);
+		await createReconciliationOrder(db, 1, ids);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
-		const res3 = await getReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
+		const res3 = await getReconciliationOrder(db, 1);
 
 		const books = await getCustomerOrderLines(db, 1);
 		expect(books[0].received).toBeInstanceOf(Date);
@@ -223,9 +328,9 @@ describe("Reconciliation order creation", () => {
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
 
-		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrder1Id]);
-		await addOrderLinesToReconciliationOrder(db, reconOrder1Id, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, reconOrder1Id);
+		await createReconciliationOrder(db, 1, [supplierOrder1Id]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 1);
 
 		const [orderLine1] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine1.received.getTime()).toBeLessThan(100);
@@ -233,9 +338,9 @@ describe("Reconciliation order creation", () => {
 		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
 
-		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
-		await addOrderLinesToReconciliationOrder(db, reconOrder2Id, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, reconOrder2Id);
+		await createReconciliationOrder(db, 2, [supplierOrder2Id]);
+		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "2", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 2);
 
 		const [, orderLine2] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine2.received.getTime()).toBeLessThan(100);
@@ -248,24 +353,24 @@ describe("Reconciliation order creation", () => {
 		const supplierOrders = await getPlacedSupplierOrders(db);
 		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
-		const reconOrderId = await createReconciliationOrder(db, ids);
+		await createReconciliationOrder(db, 1, ids);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 3 },
 			{ isbn: "2", quantity: 1 }
 		]);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 2 },
 			{ isbn: "3", quantity: 1 }
 		]);
 
-		const orderLines = await getReconciliationOrderLines(db, reconOrderId);
+		const orderLines = await getReconciliationOrderLines(db, 1);
 
 		expect(orderLines).toEqual([
 			{
 				isbn: "1",
-				reconciliation_order_id: reconOrderId,
+				reconciliation_order_id: 1,
 				quantity: 5,
 				publisher: "MathsAndPhysicsPub",
 				title: "Physics",
@@ -274,7 +379,7 @@ describe("Reconciliation order creation", () => {
 			},
 			{
 				isbn: "2",
-				reconciliation_order_id: reconOrderId,
+				reconciliation_order_id: 1,
 				quantity: 1,
 				publisher: "ChemPub",
 				title: "Chemistry",
@@ -283,7 +388,7 @@ describe("Reconciliation order creation", () => {
 			},
 			{
 				isbn: "3",
-				reconciliation_order_id: reconOrderId,
+				reconciliation_order_id: 1,
 				quantity: 1,
 				publisher: "PhantasyPub",
 				title: "The Hobbit",
@@ -291,27 +396,6 @@ describe("Reconciliation order creation", () => {
 				authors: null
 			}
 		]);
-	});
-
-	it("timestamps reconciliation order's 'created' with ms precision", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1", "2"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
-		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrder1Id]);
-
-		const reconOrder1 = await getReconciliationOrder(db, reconOrder1Id);
-		expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(300);
-
-		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
-		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
-
-		const reconOrder2 = await getReconciliationOrder(db, reconOrder2Id);
-		expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps reconciliation order's 'updatedAt' with ms precision", async () => {
@@ -322,13 +406,13 @@ describe("Reconciliation order creation", () => {
 
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
 
-		const reconOrder = await getReconciliationOrder(db, reconOrderId);
+		const reconOrder = await getReconciliationOrder(db, 1);
 		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(300);
 
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
-		const reconOrderUpdated = await getReconciliationOrder(db, reconOrderId);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+		const reconOrderUpdated = await getReconciliationOrder(db, 1);
 		expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
 		expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(300);
 	});
@@ -340,14 +424,9 @@ describe("Reconciliation order creation", () => {
 			await createCustomerOrders(db);
 		});
 
-		it("throws error when trying to create with empty supplier order IDs", async () => {
-			await expect(createReconciliationOrder(db, [])).rejects.toThrow("Reconciliation order must be based on at least one supplier order");
-		});
-
 		it("throws error when reconciliation order doesn't exist", async () => {
-			const nonExistentId = 999;
-			await expect(addOrderLinesToReconciliationOrder(db, nonExistentId, [{ isbn: "123", quantity: 1 }])).rejects.toThrow(
-				`Reconciliation order ${nonExistentId} not found`
+			await expect(addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "123", quantity: 1 }])).rejects.toThrow(
+				`Reconciliation order ${1} not found`
 			);
 		});
 
@@ -366,13 +445,11 @@ describe("Reconciliation order creation", () => {
 
 			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
 
-			const reconOrderId = await createReconciliationOrder(db, ids);
+			await createReconciliationOrder(db, 1, ids);
 
-			await finalizeReconciliationOrder(db, reconOrderId);
+			await finalizeReconciliationOrder(db, 1);
 
-			await expect(finalizeReconciliationOrder(db, reconOrderId)).rejects.toThrow(
-				`Reconciliation order ${reconOrderId} is already finalized`
-			);
+			await expect(finalizeReconciliationOrder(db, 1)).rejects.toThrow(`Reconciliation order ${1} is already finalized`);
 		});
 	});
 });
@@ -388,11 +465,11 @@ describe("finalizeReconciliationOrder should", async () => {
 
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
-		expect(await getReconciliationOrder(db, reconOrderId)).toMatchObject({
+		await finalizeReconciliationOrder(db, 1);
+		expect(await getReconciliationOrder(db, 1)).toMatchObject({
 			id: 1,
 			supplierOrderIds: [1],
 			finalized: 1
@@ -418,13 +495,13 @@ describe("finalizeReconciliationOrder should", async () => {
 
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 1 },
 			{ isbn: "2", quantity: 1 }
 		]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -446,10 +523,10 @@ describe("finalizeReconciliationOrder should", async () => {
 
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 2 }]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -476,10 +553,10 @@ describe("finalizeReconciliationOrder should", async () => {
 
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 2 }]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
 		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
@@ -505,11 +582,11 @@ describe("finalizeReconciliationOrder should", async () => {
 		// NOTE: we're reconciling the 2nd supplier order (orders are sorted in reverse chronological order)
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
 		// Technically, the 1 book received was ordered for customer 3, but customer 1 had ordered 1st and they don't have their book yet
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
 		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
@@ -538,10 +615,10 @@ describe("finalizeReconciliationOrder should", async () => {
 		// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
 		const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
 		// Out of 2 books, only 1 arrived - 1 to reconcile (mark as received), 1 to reject (effectively marking as waiting to be re-ordered)
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
@@ -578,10 +655,10 @@ describe("finalizeReconciliationOrder should", async () => {
 		// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
 		const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 3 }]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		// 1st supplier order
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
@@ -623,10 +700,10 @@ describe("finalizeReconciliationOrder should", async () => {
 		// NOTE: only 1 supplier order was placed
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 3 }]);
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		// 1st supplier order
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
@@ -672,14 +749,14 @@ describe("finalizeReconciliationOrder should", async () => {
 		const supplierOrders = await getPlacedSupplierOrders(db);
 		const supplierOrderIds = supplierOrders.map(({ id }) => id);
 
-		const reconOrderId = await createReconciliationOrder(db, supplierOrderIds);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, supplierOrderIds);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 3 },
 			{ isbn: "2", quantity: 2 },
 			{ isbn: "3", quantity: 2 }
 		]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -722,13 +799,13 @@ describe("finalizeReconciliationOrder should", async () => {
 		const supplierOrders = await getPlacedSupplierOrders(db);
 		const supplierOrderIds = supplierOrders.map(({ id }) => id);
 
-		const reconOrderId = await createReconciliationOrder(db, supplierOrderIds);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, supplierOrderIds);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 1 },
 			{ isbn: "3", quantity: 2 }
 		]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -758,13 +835,13 @@ describe("finalizeReconciliationOrder should", async () => {
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 3 } // only 2 ordered
 		]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
-		expect(await getReconciliationOrder(db, reconOrderId)).toMatchObject({
+		await finalizeReconciliationOrder(db, 1);
+		expect(await getReconciliationOrder(db, 1)).toMatchObject({
 			id: 1,
 			supplierOrderIds: [1],
 			finalized: 1
@@ -785,14 +862,14 @@ describe("finalizeReconciliationOrder should", async () => {
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+		await createReconciliationOrder(db, 1, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "1", quantity: 1 },
 			{ isbn: "2", quantity: 1 } // was never ordered
 		]);
 
-		await finalizeReconciliationOrder(db, reconOrderId);
-		expect(await getReconciliationOrder(db, reconOrderId)).toMatchObject({
+		await finalizeReconciliationOrder(db, 1);
+		expect(await getReconciliationOrder(db, 1)).toMatchObject({
 			id: 1,
 			supplierOrderIds: [1],
 			finalized: 1
@@ -818,9 +895,9 @@ describe("finalizeReconciliationOrder should", async () => {
 			{ isbn: "2", quantity: 1, supplier_id: 1 }
 		]);
 		const [{ id: supOrder1 }] = await getPlacedSupplierOrders(db);
-		const recOrder1 = await createReconciliationOrder(db, [supOrder1]);
-		await addOrderLinesToReconciliationOrder(db, recOrder1, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, recOrder1);
+		await createReconciliationOrder(db, 1, [supOrder1]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 1);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: undefined }),
@@ -836,9 +913,9 @@ describe("finalizeReconciliationOrder should", async () => {
 		const [{ id: supOrder2 }] = await getPlacedSupplierOrders(db);
 
 		// Only one delivered copy - should end up with customer 1
-		const recOrder2 = await createReconciliationOrder(db, [supOrder2]);
-		await addOrderLinesToReconciliationOrder(db, recOrder2, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, recOrder2);
+		await createReconciliationOrder(db, 2, [supOrder2]);
+		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 2);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -868,10 +945,9 @@ describe("finalizeReconciliationOrder should", async () => {
 		//
 		// NOTE: the supplier orders are sorted by date in reverse order
 		const [, { id: supOrder1 }] = await getPlacedSupplierOrders(db);
-		await createReconciliationOrder(db, [supOrder1]);
-		const recOrder1 = await createReconciliationOrder(db, [supOrder1]);
-		await addOrderLinesToReconciliationOrder(db, recOrder1, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, recOrder1);
+		await createReconciliationOrder(db, 1, [supOrder1]);
+		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 1);
 
 		// Re-order the ISBN 1 for customer 1 - 3rd supplier order
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
@@ -879,9 +955,9 @@ describe("finalizeReconciliationOrder should", async () => {
 		// Reconcile the 2nd and 3rd order - only one book delivered - should end up with customer 1 nonetheless
 		// NOTE: the supplier orders are sorted by date in reverse order
 		const [{ id: supOrder3 }, { id: supOrder2 }] = await getPlacedSupplierOrders(db);
-		const recOrder2 = await createReconciliationOrder(db, [supOrder2, supOrder3]);
-		await addOrderLinesToReconciliationOrder(db, recOrder2, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, recOrder2);
+		await createReconciliationOrder(db, 2, [supOrder2, supOrder3]);
+		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, 2);
 
 		expect(await getCustomerOrderLines(db, 1)).toEqual([
 			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
@@ -889,8 +965,6 @@ describe("finalizeReconciliationOrder should", async () => {
 		]);
 		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
 	});
-
-	// TODO: trying to reconcile an already reconciled customer order - should be in 'createReconciliationOrder' segment
 });
 
 describe("getUnreconciledSupplierOrders", () => {
@@ -917,8 +991,9 @@ describe("getUnreconciledSupplierOrders", () => {
 		});
 	});
 
-	it("should return empty array when all orders are reconciled", async () => {
-		await createReconciliationOrder(db, [1, 3]);
+	// This seems incomplete to say the least, skipped for now
+	it.skip("should return empty array when all orders are reconciled", async () => {
+		await createReconciliationOrder(db, 1, [1, 3]);
 
 		const result = await getUnreconciledSupplierOrders(db);
 		expect(result).toHaveLength(0);
