@@ -169,6 +169,33 @@ const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DB
 });
 
 /**
+ * Adds multiple books that associate with a specific customer's order a
+ * updates the customer's last modified timestamp.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {number} customerId - The unique identifier of the customer
+ * @param {string[]} bookIsbns - Array of book ISBNs to add
+ * @returns {Promise<void>} A promise that resolves when both operations complete successfully
+ * @throws {Error} If the database transaction fails
+ */
+export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
+	const timestamp = Date.now();
+
+	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
+
+	await db.tx(async (db) => {
+		// Insert book lines
+		await db.exec(
+			`INSERT INTO customer_order_lines (customer_id, isbn, created) VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}`,
+			params
+		);
+
+		// Update customer timestamp
+		await db.exec("UPDATE customer SET updated_at = ? WHERE id = ?", [timestamp, customerId]);
+	});
+};
+
+/**
  * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
  * Lines include book data that is displayed in the customer orders table: title, price, authors
  * Orders are returned sorted by ID (oldest first).
@@ -235,29 +262,6 @@ export async function getCustomerOrderLineHistory(db: DB, lineId: number): Promi
 	const res = await db.execO<CustomerOrderLineHistory>(query, [lineId]);
 	return res.map(({ placed, ...rest }) => ({ ...rest, placed: new Date(placed) }));
 }
-
-/**
- * Adds multiple books that associate with a specific customer's order a
- * updates the customer's last modified timestamp.
- *
- * @param {DB} db - The database connection instance
- * @param {number} customerId - The unique identifier of the customer
- * @param {string[]} bookIsbns - Array of book ISBNs to add
- * @returns {Promise<void>} A promise that resolves when both operations complete successfully
- * @throws {Error} If the database transaction fails
- * @see apps/e2e/helpers/cr-sqlite.ts:addBooksToCustomer
-
- */
-export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
-	const timestamp = Date.now();
-	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
-	const sql = `
-     INSERT INTO customer_order_lines (customer_id, isbn, created)
-     VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}
-	`;
-
-	await db.exec(sql, params);
-};
 
 /** Checks if there's another customer with the same display ID */
 export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
