@@ -67,7 +67,11 @@
 	};
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
-		const id = await createReconciliationOrder(db, event.detail.supplierOrderIds);
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
 		goto(appPath("reconcile", id));
 	}
 
