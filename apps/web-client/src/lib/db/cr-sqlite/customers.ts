@@ -86,6 +86,22 @@ export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt
 	);
 }
 
+/** Checks if there's another customer with the same display ID */
+export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
+	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
+		customer.displayId,
+		customer.id
+	]);
+	return !res.count;
+};
+
+export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
+	const [result] = await db.execO<{ nextId: number }>(
+		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
+	);
+	return result.nextId;
+};
+
 /**
  * Retrieves customer details from the database for a specific customer ID.
  *
@@ -178,11 +194,10 @@ const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DB
  * @throws {Error} If the database transaction fails
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
-	const timestamp = Date.now();
+	return await db.tx(async (db) => {
+		const timestamp = Date.now();
+		const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
 
-	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
-
-	await db.tx(async (db) => {
 		// Insert book lines
 		await db.exec(
 			`INSERT INTO customer_order_lines (customer_id, isbn, created) VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}`,
@@ -278,75 +293,16 @@ export const unmarshalCustomerOrderLine = (line: DBCustomerOrderLine): CustomerO
 	};
 };
 
-/** Checks if there's another customer with the same display ID */
-export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
-	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
-		customer.displayId,
-		customer.id
-	]);
-	return !res.count;
-};
-
-export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
-	const [result] = await db.execO<{ nextId: number }>(
-		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
-	);
-	return result.nextId;
-};
-
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
-
-/**
- * Marks customer order lines as received when supplier order lines are fulfilled.
- * For each supplied ISBN, it updates the earliest unfulfilled customer order line
- * (that has been placed but not received) with the current timestamp as received date.
- *
- * @param {DB} db - The database connection instance
- * @param {isbns[]} isbns - Array of supplier order line isbns that have been received
- * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
- *
- * @remarks
- * - Only updates the earliest unfulfilled order line for each ISBN
- * - Only updates order lines that have been placed but not yet received
- * - Updates are performed in a single transaction
- * - If supplierOrderLines is empty, the function returns immediately
- *
- * @example
- * await markCustomerOrderAsReceived(db, [
- *   { isbn: "123456789" },
- *   { isbn: "987654321" }
- * ]);
- */
-
-export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]): Promise<void> => {
-	if (!isbns.length) return;
-	return db.tx(async (txDb) => {
-		const placeholders = multiplyString("?", isbns.length);
-		await txDb.exec(
-			`
-		 UPDATE customer_order_lines
-            SET received = (strftime('%s', 'now') * 1000)
-            WHERE rowid IN (
-                SELECT MIN(rowid)
-                FROM customer_order_lines
-                WHERE isbn IN (${placeholders})
-                    AND placed IS NOT NULL
-                    AND received IS NULL
-                GROUP BY isbn
-);`,
-			isbns
-		);
-	});
-};
 
 export const markCustomerOrderLineAsCollected = async (db: DB, lineId: number): Promise<void> => {
 	const timestamp = Date.now();
 	await db.exec(
 		`
-		UPDATE customer_order_lines
-		SET collected = ?
-		WHERE id = ?
+			UPDATE customer_order_lines
+			SET collected = ?
+			WHERE id = ?
 		`,
 		[timestamp, lineId]
 	);
