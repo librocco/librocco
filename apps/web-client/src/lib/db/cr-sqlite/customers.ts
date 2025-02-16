@@ -195,6 +195,32 @@ export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: 
 };
 
 /**
+ * Removes books associated with a specific customer's order
+ * updates the customer's last modified timestamp.
+ * The function executes both operations in a single transaction to ensure data consistency.
+ *
+ * @param {DB} db - The database connection instance
+ * @param {number} customerId - The unique identifier of the customer
+ * @param {number[]} bookIds - Array of book order line IDs to remove
+ * @returns {Promise<void>} A promise that resolves when both the deletion and timestamp update are complete
+ * @throws {Error} If either the deletion or timestamp update fails, the entire transaction is rolled back
+ * @example
+ * await removeBooksFromCustomer(db, 123, [456, 789]); // Removes order lines 456 and 789 from customer 123
+ */
+export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]): Promise<void> => {
+	return await db.tx(async (db) => {
+		await db.exec(`DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`, [
+			customerId,
+			...bookIds
+		]);
+
+		// Update customer timestamp
+		const timestamp = Date.now();
+		await db.exec("UPDATE customer SET updated_at = ? WHERE id = ?", [timestamp, customerId]);
+	});
+};
+
+/**
  * Retrieves all book order lines for a specific customer. This includes both active and historical orders.
  * Lines include book data that is displayed in the customer orders table: title, price, authors
  * Orders are returned sorted by ID (oldest first).
@@ -270,26 +296,6 @@ export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
 
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
-
-/**
- * Removes books associated with a specific customer's order
- * updates the customer's last modified timestamp.
- * The function executes both operations in a single transaction to ensure data consistency.
- *
- * @param {DB} db - The database connection instance
- * @param {number} customerId - The unique identifier of the customer
- * @param {number[]} bookIds - Array of book order line IDs to remove
- * @returns {Promise<void>} A promise that resolves when both the deletion and timestamp update are complete
- * @throws {Error} If either the deletion or timestamp update fails, the entire transaction is rolled back
- * @example
- * await removeBooksFromCustomer(db, 123, [456, 789]); // Removes order lines 456 and 789 from customer 123
- */
-export const removeBooksFromCustomer = async (db: DB, customerId: number, bookIds: number[]): Promise<void> => {
-	const sql = `DELETE FROM customer_order_lines WHERE customer_id = ? AND id IN (${multiplyString("?", bookIds.length)})`;
-	const params = [customerId, ...bookIds];
-
-	await db.exec(sql, params);
-};
 
 /**
  * Marks customer order lines as received when supplier order lines are fulfilled.
