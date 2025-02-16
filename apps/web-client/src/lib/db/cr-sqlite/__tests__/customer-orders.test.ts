@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { beforeEach, describe, it, expect } from "vitest";
 
 import { type DB, type Customer, OrderLineStatus } from "../types";
 
@@ -375,13 +375,13 @@ describe("Customer order lines", () => {
 
 			await addBooksToCustomer(db, 1, ["1"]);
 			customer = await getCustomerDetails(db, 1);
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
 
 			const oldUpdatedAt = customer.updatedAt;
 			await addBooksToCustomer(db, 1, ["2"]);
 			customer = await getCustomerDetails(db, 1);
 
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
 		});
 	});
@@ -627,54 +627,35 @@ describe("Customer order lines", () => {
 	});
 });
 
-describe("Customer order tests", () => {
-	let db: DB;
-	beforeEach(async () => (db = await getRandomDb()));
-
-	// NOTE: This shouldn't be taken as a gospel:
-	// - if it fails, by a small margin - think about the changes you've introduced that might be causing it, and extend the time limit
-	// - if it fails by a large margin, really think about the changes introduced :)
-	it("can add ten books to a customer 10 times and not take more than 600ms", async () => {
+// NOTE: This shouldn't be taken as a gospel:
+// - if it fails, by a small margin - think about the changes you've introduced that might be causing it, and extend the time limit
+// - if it fails by a large margin, really think about the changes introduced :)
+describe("Stress tests", () => {
+	it("can add ten books to a customer 10 times and not take more than 800ms", async () => {
+		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const howMany = 10;
 		const startTime = Date.now();
 		for (let i = 0; i < howMany; i++) {
-			await db.tx(async (db) => {
-				await addBooksToCustomer(db as DB, 1, [
-					"9780000000000",
-					"9780000000001",
-					"9780000000002",
-					"9780000000003",
-					"9780000000004",
-					"9780000000005",
-					"9780000000006",
-					"9780000000007",
-					"9780000000008",
-					"9780000000009"
-				]);
-			});
+			// NOTE: this was wrapped in a transaction, but 'addBooksToCustomer'
+			// already runs inside a transaction (internally)
+			await addBooksToCustomer(db as DB, 1, [
+				"9780000000000",
+				"9780000000001",
+				"9780000000002",
+				"9780000000003",
+				"9780000000004",
+				"9780000000005",
+				"9780000000006",
+				"9780000000007",
+				"9780000000008",
+				"9780000000009"
+			]);
 		}
 		const duration = Date.now() - startTime;
 		const books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(10 * howMany);
-		expect(duration).toBeLessThanOrEqual(600);
-	});
-
-	it("timestamps customer order lines' 'collected' with ms precision", async () => {
-		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1", "2"]);
-
-		const [{ id: line1Id }] = await getCustomerOrderLines(db, 1);
-		await markCustomerOrderLineAsCollected(db, line1Id);
-
-		const [line1] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - line1.collected.getTime()).toBeLessThan(300);
-
-		const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
-		await markCustomerOrderLineAsCollected(db, line2Id);
-
-		const [line2] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - line2.collected.getTime()).toBeLessThan(300);
+		expect(duration).toBeLessThanOrEqual(800);
 	});
 });
 

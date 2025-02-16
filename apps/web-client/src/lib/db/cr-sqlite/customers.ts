@@ -87,6 +87,22 @@ export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt
 	);
 }
 
+/** Checks if there's another customer with the same display ID */
+export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
+	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
+		customer.displayId,
+		customer.id
+	]);
+	return !res.count;
+};
+
+export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
+	const [result] = await db.execO<{ nextId: number }>(
+		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
+	);
+	return result.nextId;
+};
+
 /**
  * Retrieves customer details from the database for a specific customer ID.
  *
@@ -179,11 +195,10 @@ const unmarshallCustomerOrderListItem = ({ updated_at, status, ...customer }: DB
  * @throws {Error} If the database transaction fails
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
-	const timestamp = Date.now();
+	return await db.tx(async (db) => {
+		const timestamp = Date.now();
+		const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
 
-	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
-
-	await db.tx(async (db) => {
 		// Insert book lines
 		await db.exec(
 			`INSERT INTO customer_order_lines (customer_id, isbn, created) VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}`,
@@ -296,22 +311,6 @@ export async function getCustomerOrderLineHistory(db: DB, lineId: number): Promi
 	return res.map(({ placed, ...rest }) => ({ ...rest, placed: new Date(placed) }));
 }
 
-/** Checks if there's another customer with the same display ID */
-export const isDisplayIdUnique = async (db: DB, customer: Customer) => {
-	const [res] = await db.execO<{ count: number }>("SELECT COUNT(*) as count FROM customer WHERE display_id = ? AND id != ?", [
-		customer.displayId,
-		customer.id
-	]);
-	return !res.count;
-};
-
-export const getCustomerDisplayIdSeq = async (db: DB): Promise<number> => {
-	const [result] = await db.execO<{ nextId: number }>(
-		"SELECT COALESCE(MAX(CAST(display_id AS INTEGER)) + 1, 1) as nextId FROM customer WHERE CAST(display_id AS INTEGER) < 10000;"
-	);
-	return result.nextId;
-};
-
 // Example: multiplyString("foo", 5) → "foo, foo, foo, foo, foo"
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
@@ -345,9 +344,9 @@ export const markCustomerOrderLineAsCollected = async (db: DB, lineId: number): 
 	const timestamp = Date.now();
 	await db.exec(
 		`
-		UPDATE customer_order_lines
-		SET collected = ?
-		WHERE id = ?
+			UPDATE customer_order_lines
+			SET collected = ?
+			WHERE id = ?
 		`,
 		[timestamp, lineId]
 	);
