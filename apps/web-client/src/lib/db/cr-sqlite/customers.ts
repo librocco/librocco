@@ -210,14 +210,21 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.price, 0) AS price,
-			COALESCE(book.authors, 'N/A') AS authors
+			COALESCE(book.authors, 'N/A') AS authors,
+			CASE
+				WHEN collected IS NOT NULL THEN 3
+				WHEN received IS NOT NULL THEN 2
+				WHEN placed IS NOT NULL THEN 1
+				ELSE 0
+			END AS status
 		FROM customer_order_lines col
 		LEFT JOIN book ON col.isbn = book.isbn
-		WHERE customer_id = $customerId
-		ORDER BY col.isbn ASC;`,
+		WHERE customer_id = ?
+		ORDER BY col.isbn ASC
+		`,
 		[customerId]
 	);
-	return result.map(marshallCustomerOrderLineDates);
+	return result.map(unmarshalCustomerOrderLine);
 };
 
 /**
@@ -235,7 +242,7 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
  * const appLine = marshallCustomerOrderLine(dbLine);
  * Returns: { created: Date(...), placed: Date(...) }
  */
-export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): CustomerOrderLine => {
+export const unmarshalCustomerOrderLine = (line: DBCustomerOrderLine): CustomerOrderLine => {
 	return {
 		...line,
 		created: new Date(line.created),
