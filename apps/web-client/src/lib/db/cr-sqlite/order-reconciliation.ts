@@ -1,15 +1,3 @@
-import type { BookEntry } from "@librocco/db";
-import { multiplyString } from "./customers";
-import type {
-	DB,
-	ProcessedOrderLine,
-	ReconciliationOrder,
-	ReconciliationOrderLine,
-	PlacedSupplierOrder,
-	PlacedSupplierOrderLine,
-	DBReconciliationOrder
-} from "./types";
-
 /**
  * @fileoverview Supplier order reconciliation system
  *
@@ -39,6 +27,101 @@ import type {
  * - The `reconciliation_order` table contains meta data about an in progress reconciliation order: related supplier_order ids, created, updatedAt, finalised (boolean)
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
+
+import type { BookEntry } from "@librocco/db";
+import { asc } from "@librocco/shared";
+
+import type {
+	DB,
+	ProcessedOrderLine,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine,
+	DBReconciliationOrder
+} from "./types";
+
+import { multiplyString } from "./customers";
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
+export class ErrSupplierOrdersNotFound extends Error {
+	constructor(providedIds: number[], foundIds: number[]) {
+		const msg = [
+			"some of the provided supplier order ids didn't match any existing supplier orders:",
+			`  provided ids: ${providedIds}`,
+			`  found ids: ${foundIds}`
+		].join("\n");
+		super(msg);
+	}
+}
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids are already associated with other reconciliation orders */
+export class ErrSupplierOrdersAlreadyReconciling extends Error {
+	constructor(providedIds: number[], conflicts: ReconciliationOrder[]) {
+		const msg = [
+			"some of the provided supplier order ids match supplier orders already associated with other reconciliation order(s)",
+			`  provided ids: ${providedIds}`,
+			`  conflicts:`,
+			...conflicts.map(
+				({ id, supplierOrderIds }) => `    reconciliation order id: ${id}, conflicting supplier order ids: ${supplierOrderIds.join(", ")}`
+			)
+		].join("\n");
+		super(msg);
+	}
+}
+
+/**
+ * Creates a new reconciliation order.
+ * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
+ * delivered books will be compared against
+ *
+ * @param db
+ * @param supplierOrderIds - Array of su pplier order IDs to reconcile
+ * @throws Error if supplierOrderIds array is empty
+ * @returns ID of the newly created reconciliation order
+ */
+export async function createReconciliationOrder(db: DB, id: number, _supplierOrderIds: number[]): Promise<void> {
+	if (!_supplierOrderIds.length) {
+		throw new Error("Reconciliation order must be based on at least one supplier order");
+	}
+
+	// Tidiness: make sure supplier order ids are sorted
+	const supplierOrderIds = _supplierOrderIds.sort(asc());
+
+	const timestamp = Date.now();
+
+	// Check that all provided supplier order ids match existing supplier orders
+	const foundSupOrders = await db.execO<{ id: number }>(
+		`SELECT id FROM supplier_order WHERE id IN (${multiplyString("?", supplierOrderIds.length)})`,
+		supplierOrderIds
+	);
+	if (foundSupOrders.length != supplierOrderIds.length) {
+		throw new ErrSupplierOrdersNotFound(
+			supplierOrderIds,
+			foundSupOrders.map(({ id }) => id)
+		);
+	}
+
+	// Check if one or more orders are already being reconciled
+	// TODO: This here would really benefit from having a join table instead of a JSON array
+	const existingReconOrders = await getAllReconciliationOrders(db);
+	const conflicts = existingReconOrders
+		// For each order keep only the supplier order ids that are conflicting with the current order
+		.map((order) => ({ ...order, supplierOrderIds: order.supplierOrderIds.filter((id) => supplierOrderIds.includes(id)) }))
+		// Keep only the conflicting orders
+		.filter((order) => order.supplierOrderIds.length);
+	if (conflicts.length) {
+		throw new ErrSupplierOrdersAlreadyReconciling(supplierOrderIds, conflicts);
+	}
+
+	await db.exec(
+		`
+			INSERT INTO reconciliation_order (id, supplier_order_ids, created, updatedAt)
+			VALUES (?, json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?)
+		`,
+		[id, ...supplierOrderIds, timestamp, timestamp]
+	);
+}
 
 /**
  * Retrieves all reconciliation orders from the database, ordered by ID
@@ -109,31 +192,6 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
 	);
 
 	return result;
-}
-/**
- * Creates a new reconciliation order.
- * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
- * delivered books will be compared against
- *
- * @param db
- * @param supplierOrderIds - Array of su pplier order IDs to reconcile
- * @throws Error if supplierOrderIds array is empty
- * @returns ID of the newly created reconciliation order
- * @see apps/e2e/helpers/cr-sqlite.ts:createReconciliationOrder
- */
-export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
-	if (!supplierOrderIds.length) {
-		throw new Error("Reconciliation order must be based on at least one supplier order");
-	}
-
-	const timestamp = Date.now();
-
-	const recondOrder = await db.execO<{ id: number }>(
-		`INSERT INTO reconciliation_order (supplier_order_ids, created, updatedAt)
-		VALUES (json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?) RETURNING id`,
-		[...supplierOrderIds, timestamp, timestamp]
-	);
-	return recondOrder[0].id;
 }
 
 /**
