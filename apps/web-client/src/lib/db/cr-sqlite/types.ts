@@ -59,6 +59,7 @@ export type DBCustomerOrderLine = {
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
 	collected?: number; // as milliseconds since epoch
+	status: OrderLineStatus;
 };
 
 export type CustomerOrderLine = {
@@ -69,6 +70,7 @@ export type CustomerOrderLine = {
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
+	status: OrderLineStatus;
 } & BookDataCols;
 
 export type CustomerOrderLineHistoryDB = {

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from "vitest";
 
-import type { DB, Customer } from "../types";
+import { type DB, type Customer, OrderLineStatus } from "../types";
 
 import { markCustomerOrderAsReceived, getRandomDb } from "./lib";
 
@@ -383,6 +383,181 @@ describe("Customer order lines", () => {
 
 			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThanOrEqual(200);
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
+		});
+	});
+
+	describe("getCustomerOrderLines should", () => {
+		it("retrieve a list of order lines for the customer", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1" }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "2" })
+			]);
+		});
+
+		it("not confuse lines belonging to different customer orders", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await addBooksToCustomer(db, 2, ["3", "4"]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1" }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "2" })
+			]);
+
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "3" }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "4" })
+			]);
+		});
+
+		it("retrieve book data (if available) for a particular line", async () => {
+			const db = await getRandomDb();
+
+			await upsertBook(db, { isbn: "1", title: "Book 1", authors: "Author 1", price: 10 });
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1"]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				{
+					id: expect.any(Number),
+					isbn: "1",
+					title: "Book 1",
+					authors: "Author 1",
+					price: 10,
+					created: expect.any(Date),
+					placed: undefined,
+					received: undefined,
+					collected: undefined,
+					customer_id: expect.any(Number),
+					status: expect.any(Number)
+				}
+			]);
+		});
+
+		it("coalesce unavailable book data (to default values) for customer lines", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1"]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				{
+					id: expect.any(Number),
+					isbn: "1",
+					title: "N/A",
+					authors: "N/A",
+					price: 0,
+					created: expect.any(Date),
+					placed: undefined,
+					received: undefined,
+					collected: undefined,
+					customer_id: expect.any(Number),
+					status: expect.any(Number)
+				}
+			]);
+		});
+
+		it("correctly infer order line state", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			// Add one line to customer order - pending
+			await addBooksToCustomer(db, 1, ["1"]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus["draft"] })]);
+
+			// Order the line with the supplier - placed
+			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE customer_id = 1", [Date.now()]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus["placed"] })]);
+
+			// Reconcile the order line - received
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE customer_id = 1", [Date.now()]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus["received"] })]);
+
+			// Mark the line as collected - collected
+			await db.exec("UPDATE customer_order_lines SET collected = ? WHERE customer_id = 1", [Date.now()]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus["collected"] })]);
+		});
+
+		it("consider order line received even if not placed (edge case: in case of overdelivery of previous order)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["draft"] })
+			]);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE customer_id = 1", [Date.now()]);
+		});
+
+		it("not confuse states for different order lines", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			const [line1, line2] = await getCustomerOrderLines(db, 1);
+
+			// Mark line 1 as placed and line 2 as received (line 3 is pending)
+			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE id = ?", [Date.now(), line1.id]);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), line2.id]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["placed"] }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "2", status: OrderLineStatus["received"] }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "3", status: OrderLineStatus["draft"] })
+			]);
+		});
+
+		it("not confuse states for order lines with same isbn (different customer)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1"]);
+
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await addBooksToCustomer(db, 2, ["1"]);
+
+			const [c1line] = await getCustomerOrderLines(db, 1);
+			const [c2line] = await getCustomerOrderLines(db, 2);
+
+			// Mark customer 1 line as placed and customer 2 line as received
+			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE id = ?", [Date.now(), c1line.id]);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), c2line.id]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["placed"] })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["received"] })
+			]);
+		});
+
+		it("not confuse states for order lines with same isbn (same customer)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "1"]);
+			const [line1, line2] = await getCustomerOrderLines(db, 1);
+
+			// Mark line 1 as placed and line 2 as received (line 3 is pending)
+			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE id = ?", [Date.now(), line1.id]);
+			await db.exec("UPDATE customer_order_lines SET received = ? WHERE id = ?", [Date.now(), line2.id]);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["placed"] }),
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus["received"] })
+			]);
 		});
 	});
 });
