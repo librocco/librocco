@@ -22,7 +22,11 @@ export type BookData = {
 	outOfPrint?: boolean;
 	category?: string;
 };
-
+/**
+ * E2E test helper for adding book data to the database.
+ * References the original upsertBook function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
+ */
 export async function upsertBook(db: DB, book: BookData) {
 	await db.exec(
 		`INSERT INTO book (isbn, title, authors, publisher, price, year, edited_by, out_of_print, category)
@@ -65,7 +69,11 @@ export type Warehouse = {
 	displayName?: string | null;
 	discount?: number | null;
 };
-
+/**
+ * E2E test helper for creating or updating warehouse data.
+ * References the original upsertWarehouse function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:upsertWarehouse
+ */
 export function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 	if (!data.id) {
 		throw new Error("Warehouse must have an id");
@@ -86,7 +94,11 @@ export function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 }
 
 // #region notes
-
+/**
+ * E2E test helper for creating inbound notes.
+ * References the original createInboundNote function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createInboundNote
+ */
 export function createInboundNote(db: DB, params: { id: number; warehouseId: number; displayName?: string }): Promise<void> {
 	const { warehouseId, id: noteId, displayName = "New Note" } = params;
 
@@ -95,7 +107,11 @@ export function createInboundNote(db: DB, params: { id: number; warehouseId: num
 
 	return db.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
 }
-
+/**
+ * E2E test helper for creating outbound notes.
+ * References the original createOutboundNote function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createOutboundNote
+ */
 export function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
 	const { id: noteId, displayName = "New Note" } = params;
 
@@ -105,6 +121,11 @@ export function createOutboundNote(db: DB, params: { id: number; displayName?: s
 	return db.exec(stmt, [noteId, displayName, timestamp]);
 }
 
+/**
+ * E2E test helper for updating note metadata.
+ * References the original updateNote function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:updateNote
+ */
 export async function updateNote(db: DB, payload: { id: number; displayName?: string; defaultWarehouse?: number }): Promise<void> {
 	const { id, displayName, defaultWarehouse } = payload;
 
@@ -146,7 +167,11 @@ type VolumeStock = {
 	quantity: number;
 	warehouseId?: number;
 };
-
+/**
+ * E2E test helper for adding volumes to a note.
+ * References the original addVolumesToNote function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:addVolumesToNote
+ */
 export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
 	const [noteId, volume] = params;
 
@@ -177,7 +202,11 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 }
 
 export type NoteCustomItem = { id: number; title: string; price: number };
-
+/**
+ * E2E test helper for adding or updating custom items in a note.
+ * References the original upsertNoteCustomItem function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:upsertNoteCustomItem
+ */
 export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: number, item: NoteCustomItem]): Promise<void> {
 	const [noteId, item] = params;
 	const { id, title, price } = item;
@@ -195,13 +224,21 @@ export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: num
 
 	await db.exec(query, [id, noteId, title, price, timestamp]);
 }
-
+/**
+ * E2E test helper for committing a note.
+ * References the original commitNote function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:commitNote
+ */
 export async function commitNote(db: DB, id: number): Promise<void> {
 	return db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [Date.now(), id]);
 }
 
 // #region customerOrders
-
+/**
+ * E2E test helper for creating or updating customer data.
+ * References the original upsertCustomer function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:upsertCustomer
+ */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
@@ -238,7 +275,11 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 		]
 	);
 }
-
+/**
+ * E2E test helper for adding books to a customer's order.
+ * References the original addBooksToCustomer function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:addBooksToCustomer
+ */
 export const addBooksToCustomer = async (db: DB, params: { customerId: number; bookIsbns: string[] }): Promise<void> => {
 	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 	const { customerId, bookIsbns } = params;
@@ -253,6 +294,11 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
 
 // #endregion customerOrders
 
+/**
+ * E2E test helper for creating or updating supplier data.
+ * References the original upsertSupplier function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:upsertSupplier
+ */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
@@ -267,7 +313,11 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
 	);
 }
-
+/**
+ * E2E test helper for associating a publisher with a supplier.
+ * References the original associatePublisher function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:associatePublisher
+ */
 export async function associatePublisher(db: DB, params: { supplierId: number; publisherId: string }): Promise<void> {
 	const { publisherId, supplierId } = params;
 	/* Makes sure the given publisher is associated with the given supplier id.
@@ -280,7 +330,11 @@ export async function associatePublisher(db: DB, params: { supplierId: number; p
 		[supplierId, publisherId, supplierId]
 	);
 }
-
+/**
+ * E2E test helper for creating supplier orders.
+ * References the original createSupplierOrder function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
+ */
 export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[]) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
@@ -330,6 +384,11 @@ export async function createSupplierOrder(db: DB, orderLines: SupplierOrderLine[
 		}
 	});
 }
+/**
+ * E2E test helper for creating a reconciliation order.
+ * References the original createReconciliationOrder function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:createReconciliationOrder
+ */
 export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
 	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 
@@ -346,7 +405,11 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 	);
 	return recondOrder[0].id;
 }
-
+/**
+ * E2E test helper for finalizing a reconciliation order.
+ * References the original finalizeReconciliationOrder function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:finalizeReconciliationOrder
+ */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	if (!id) {
 		throw new Error("Reconciliation order must have an id");
@@ -396,7 +459,11 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 		}
 	});
 }
-
+/**
+ * E2E test helper for retrieving placed supplier orders.
+ * References the original getPlacedSupplierOrders function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:getPlacedSupplierOrders
+ */
 export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
 	const result = await db.execO<PlacedSupplierOrder>(
 		`SELECT
@@ -416,7 +483,11 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
 	);
 	return result;
 }
-
+/**
+ * E2E test helper for adding order lines to a reconciliation order.
+ * References the original addOrderLinesToReconciliationOrder function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:addOrderLinesToReconciliationOrder
+ */
 export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
 	const { id, newLines } = params;
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);

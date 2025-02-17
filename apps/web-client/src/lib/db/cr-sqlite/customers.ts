@@ -60,7 +60,7 @@ export async function getAllCustomers(db: DB): Promise<Customer[]> {
  * @param {DB} db - Database connection
  * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
- * @returns {Promise<void>} Resolves when customer is created/updated
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertCustomer when you make updates
  */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
@@ -196,6 +196,8 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
  * @param {string[]} bookIsbns - Array of book ISBNs to add
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
+ * @see apps/e2e/helpers/cr-sqlite.ts:addBooksToCustomer
+
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
 	/**
