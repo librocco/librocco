@@ -181,7 +181,7 @@ describe("Customer order Collection", () => {
 		await upsertSupplier(db, { id: 1 });
 		await associatePublisher(db, 1, "pub1");
 
-		await createSupplierOrder(db, [{ isbn: "9780000000001", line_price: 10, quantity: 1, supplier_id: 1, supplier_name: "sup1" }]);
+		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 1, supplier_id: 1 }]);
 
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
 		console.log({ customerOrderLines });
