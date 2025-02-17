@@ -65,6 +65,7 @@ const getSeqName = async (db: DB | TXAsync) => {
  * @param {PickPartial<Warehouse, "displayName" | "discount">} data - Warehouse data with required id
  * @throws {Error} If warehouse id is not provided
  * @returns {Promise<void>} Resolves when upsert completes
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertWarehouse whe you make any updates
  */
 export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayName" | "discount">): Promise<void> {
 	if (!data.id) {

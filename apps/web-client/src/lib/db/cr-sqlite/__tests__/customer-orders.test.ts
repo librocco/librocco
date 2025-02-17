@@ -35,7 +35,7 @@ describe("Db creation tests", () => {
 	});
 });
 
-describe.skip("Customer order tests", () => {
+describe("Customer order tests", () => {
 	let db: DB;
 	beforeEach(async () => (db = await getRandomDb()));
 
@@ -131,7 +131,7 @@ describe.skip("Customer order tests", () => {
 	});
 });
 
-describe.skip("Customer order tests", () => {
+describe("Customer order tests", () => {
 	let db1: DB, db2: DB;
 
 	beforeEach(async () => ([db1, db2] = await getRandomDbs()));
@@ -239,7 +239,7 @@ describe("Customer order Collection", () => {
 	});
 });
 
-describe.skip("Customer display id seq", () => {
+describe("Customer display id seq", () => {
 	it("returns 1 when there are no customer orders in the DB", async () => {
 		const db = await getRandomDb();
 		const displayId = await getCustomerDisplayIdSeq(db);
@@ -282,7 +282,7 @@ describe.skip("Customer display id seq", () => {
 	});
 });
 
-describe.skip("isDisplayIdUnique function", () => {
+describe("isDisplayIdUnique function", () => {
 	it("returns true if unique", async () => {
 		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
