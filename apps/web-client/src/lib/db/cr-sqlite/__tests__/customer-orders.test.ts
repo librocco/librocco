@@ -184,7 +184,6 @@ describe("Customer order Collection", () => {
 		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 1, supplier_id: 1 }]);
 
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
-		console.log({ customerOrderLines });
 		const orderLineIds = customerOrderLines.map((order) => order.id);
 
 		// Mark the books as received
@@ -194,7 +193,6 @@ describe("Customer order Collection", () => {
 		await markCustomerOrderAsCollected(db, orderLineIds);
 
 		const updatedLines = await getCustomerOrderLines(db, 1);
-		console.log({ updatedLines });
 		// First line should be collected
 		expect(updatedLines[0].collected).toBeInstanceOf(Date);
 		// Second line should remain uncollected
