@@ -42,10 +42,12 @@ testOrders(
 
 		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
 
+		// Add 2 copies of first book to customer's order
 		await dbHandle.evaluate(addBooksToCustomer, {
 			customerId: customer.id,
 			bookIsbns: [books[0].isbn, books[0].isbn]
 		});
+		// Add 2 copies of third book to customer's order
 		await dbHandle.evaluate(addBooksToCustomer, {
 			customerId: customer.id,
 			bookIsbns: [books[2].isbn, books[2].isbn]
@@ -56,8 +58,9 @@ testOrders(
 
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
+		// Verify first book ISBN is visible
 		await expect(page.getByText(books[0].isbn)).toBeVisible();
-		//total book count
+		// total book count (4 books total: 2 of first book + 2 of third book)
 		await expect(page.getByText("4", { exact: true })).toBeVisible();
 		//total price
 		await expect(page.getByText("80")).toBeVisible();
@@ -81,10 +84,10 @@ testOrders(
 		//total price
 		await expect(page.getByText("80")).toHaveCount(2);
 
-		//select 1/2
+		// Click "Select 1/2" button to reduce quantity
 		await page.getByRole("button", { name: "Select 1/2" }).click();
 
-		//total book count
+		// Verify updated totals (1 book selected)
 		await expect(page.getByText("1", { exact: true })).toBeVisible();
 		//total price
 		await expect(page.getByText("20")).toHaveCount(2);
@@ -99,10 +102,12 @@ testOrders(
 
 		await page.goto(`${baseURL}orders/suppliers/orders/`);
 		page.getByRole("button", { name: "Unordered" });
+		// Start new order
 		await page.getByRole("button", { name: "Place Order" }).first().click();
 
+		// Verify remaining unordered books can be ordered separately (third book ISBN)
 		await expect(page.getByText(books[2].isbn)).toBeVisible();
-		//total book count
+		// Verify remaining totals (2 books at 30 each = 60)
 		await expect(page.getByText("2", { exact: true })).toHaveCount(2);
 		//total price
 		await expect(page.getByText("60")).toHaveCount(2);
