@@ -10,7 +10,7 @@ testOrders.beforeEach(async ({ page }) => {
 });
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
 	await expect(page.getByRole("table")).not.toBeVisible();
-	await expect(page.getByText("No supplier orders available")).toBeVisible();
+	await expect(page.getByText("No unordered supplier orders available")).toBeVisible();
 
 	const createOrderButton = page.getByRole("button", { name: "New Customer Order" });
 	await expect(createOrderButton).toBeVisible();
