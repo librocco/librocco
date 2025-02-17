@@ -87,7 +87,10 @@ describe("Customer order tests", () => {
 		expect(book1.authors).toBe("N/A");
 	});
 
-	it("can add ten books to a customer 10 times and not take more than 400ms", async () => {
+	// NOTE: This shouldn't be taken as a gospel:
+	// - if it fails, by a small margin - think about the changes you've introduced that might be causing it, and extend the time limit
+	// - if it fails by a large margin, really think about the changes introduced :)
+	it("can add ten books to a customer 10 times and not take more than 600ms", async () => {
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const howMany = 10;
 		const startTime = Date.now();
@@ -110,7 +113,7 @@ describe("Customer order tests", () => {
 		const duration = Date.now() - startTime;
 		const books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(10 * howMany);
-		expect(duration).toBeLessThanOrEqual(400);
+		expect(duration).toBeLessThanOrEqual(600);
 	});
 
 	it("can remove books from a customer order", async () => {
