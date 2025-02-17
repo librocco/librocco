@@ -112,8 +112,8 @@
 	const handleDeleteLine = async (lineId) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
-	const handleCollect = async (isbns: string[]) => {
-		await markCustomerOrderAsCollected(db, isbns);
+	const handleCollect = async (ids: number[]) => {
+		await markCustomerOrderAsCollected(db, ids);
 	};
 
 	let scanInputRef: HTMLInputElement = null;
@@ -277,10 +277,8 @@
 										{#if orderLineStatus === "collected"}
 											{collected.toLocaleDateString()}
 										{:else}
-											<button
-												disabled={orderLineStatus !== "received"}
-												on:click={() => handleCollect([isbn])}
-												class="btn-outline btn-sm btn">Collect📚</button
+											<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect([id])} class="btn-outline btn-sm btn"
+												>Collect📚</button
 											>
 										{/if}
 									</td>
