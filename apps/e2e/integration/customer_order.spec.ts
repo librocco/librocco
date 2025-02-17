@@ -31,6 +31,7 @@ testOrders("should show list of In Progress orders", async ({ page, customer }) 
 	await expect(page.getByText(customer.fullname)).toBeVisible();
 	await expect(page.getByText(customer.email)).toBeVisible();
 });
+
 testOrders("should allow navigation to a specific order", async ({ page, customer, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -61,6 +62,7 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 });
+
 testOrders("should update a customer details", async ({ page, customer }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
@@ -113,6 +115,7 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
+
 testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
