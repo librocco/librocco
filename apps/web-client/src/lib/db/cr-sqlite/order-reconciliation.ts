@@ -119,6 +119,7 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
  * @param supplierOrderIds - Array of su pplier order IDs to reconcile
  * @throws Error if supplierOrderIds array is empty
  * @returns ID of the newly created reconciliation order
+ * @see apps/e2e/helpers/cr-sqlite.ts:createReconciliationOrder
  */
 export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
 	if (!supplierOrderIds.length) {
@@ -143,6 +144,7 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
  * @param id - The ID of the reconciliation order
  * @param newLines - Array of objects containing ISBN and quantity to add/update
  * @throws Error if reconciliation order not found
+ * @see apps/e2e/helpers/cr-sqlite.ts:addOrderLinesToReconciliationOrder
  */
 export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
@@ -172,6 +174,7 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
   * - Reconciliation order not found
   * - Order is already finalized
   * - Customer order lines format is invalid
+  * @see apps/e2e/helpers/cr-sqlite.ts:finalizeReconciliationOrder
   */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	if (!id) {
