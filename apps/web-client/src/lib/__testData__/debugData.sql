@@ -1,4 +1,3 @@
-const exampleData = `
 -- Books
 INSERT INTO book (isbn, title, authors, publisher, price) VALUES
 ('9781234567897', 'The Art of Learning', 'Josh Waitzkin', 'Scholastic', 15.99),
@@ -19,16 +18,18 @@ INSERT INTO supplier_publisher (supplier_id, publisher) VALUES
 (2, 'Ace');
 
 -- Customers
-INSERT INTO customer (id, fullname, email, deposit) VALUES
-(1, 'Alice Smith', 'alice.smith@example.com', 50.00),
-(2, 'Bob Johnson', 'bob.johnson@example.com', 30.00);
+INSERT INTO customer (id, display_id, fullname, email, deposit) VALUES
+(1, '1', 'Alice Smith', 'alice.smith@example.com', 50.00),
+(2, '2', 'Bob Johnson', 'bob.johnson@example.com', 30.00);
 
 -- Customer Order Lines
 INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
 (1, 1, '9781234567897', 1, 0, 0),
 (2, 1, '9788804797142', 1, 1, 0),
-(3, 2, '9780385504201', 1, 1, 1),
-(4, 2, '9780553296983', 1, 0, 0);
+(3, 1, '9780385504201', 0, 0, 0),
+(4, 2, '9780385504201', 1, 1, 1),
+(5, 2, '9780553296983', 1, 0, 0),
+(6, 2, '9781234567897', 0, 0, 0);
 
 -- Supplier Orders
 INSERT INTO supplier_order (id, supplier_id, created) VALUES
@@ -49,6 +50,3 @@ INSERT INTO reconciliation_order (supplier_order_ids, finalized) VALUES
 INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn) VALUES
  	(1, '9781234567897'),
  	(2, '9788804797142');
-`;
-
-export default exampleData;

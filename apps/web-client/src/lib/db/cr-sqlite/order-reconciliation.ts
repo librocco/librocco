@@ -57,7 +57,7 @@ export async function getAllReconciliationOrders(db: DB, finalized?: boolean): P
 	return result.map(unmarshalReconciliationOrder);
 }
 
-const unmarshalReconciliationOrder = ({ supplier_order_ids, ...order }: DBReconciliationOrder): ReconciliationOrder => {
+const unmarshalReconciliationOrder = ({ supplier_order_ids, created, updatedAt, ...order }: DBReconciliationOrder): ReconciliationOrder => {
 	let supplierOrderIds = [];
 
 	try {
@@ -67,7 +67,7 @@ const unmarshalReconciliationOrder = ({ supplier_order_ids, ...order }: DBReconc
 		throw new Error(msg);
 	}
 
-	return { ...order, supplierOrderIds };
+	return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt) };
 };
 
 /**
@@ -125,12 +125,12 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 		throw new Error("Reconciliation order must be based on at least one supplier order");
 	}
 
+	const timestamp = Date.now();
+
 	const recondOrder = await db.execO<{ id: number }>(
-		`INSERT INTO reconciliation_order (supplier_order_ids) VALUES (json_array(${multiplyString(
-			"?",
-			supplierOrderIds.length
-		)})) RETURNING id;`,
-		supplierOrderIds
+		`INSERT INTO reconciliation_order (supplier_order_ids, created, updatedAt)
+		VALUES (json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?) RETURNING id`,
+		[...supplierOrderIds, timestamp, timestamp]
 	);
 	return recondOrder[0].id;
 }
@@ -153,14 +153,18 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
 
 	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
 
-	const sql = `
-     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn,
- quantity)
-     VALUES ${multiplyString("(?,?,?)", newLines.length)}
-     ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
-         quantity = quantity + excluded.quantity;
-     `;
-	await db.exec(sql, params);
+	const timestamp = Date.now();
+
+	await db.tx(async (txDb) => {
+		const sql = `
+			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
+			VALUES ${multiplyString("(?,?,?)", newLines.length)}
+			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+				quantity = quantity + excluded.quantity;
+		`;
+		await txDb.exec(sql, params);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
 }
 /**
   * Finalizes a reconciliation order and updates corresponding customer order
@@ -198,6 +202,9 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	} catch (e) {
 		throw new Error(`Invalid customer order lines format in reconciliation order ${id}: ${e}`);
 	}
+
+	const timestamp = Date.now();
+
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
@@ -207,7 +214,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			await txDb.exec(
 				`
 				UPDATE customer_order_lines
-            	SET received = (strftime('%s', 'now') * 1000)
+            	SET received = ?
             	WHERE rowid IN (
             	    SELECT MIN(rowid)
             	    FROM customer_order_lines
@@ -216,7 +223,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
             	        AND received IS NULL
             	    GROUP BY isbn
 				);`,
-				customerOrderLines
+				[timestamp, ...customerOrderLines]
 			);
 		}
 	});

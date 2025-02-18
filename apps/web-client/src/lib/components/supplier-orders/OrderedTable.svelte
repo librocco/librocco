@@ -27,7 +27,7 @@
 		// goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
 	function handleView(supplierOrderId: number) {
-		goto(`${base}/orders/suppliers/order/${supplierOrderId}`);
+		goto(`${base}/orders/suppliers/orders/${supplierOrderId}`);
 	}
 </script>
 
