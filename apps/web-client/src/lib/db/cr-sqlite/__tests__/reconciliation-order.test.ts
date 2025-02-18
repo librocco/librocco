@@ -16,7 +16,7 @@ import {
 	sortLinesBySupplier
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
-import { getCustomerOrderLines } from "../customers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 
 import {} from "../order-reconciliation";
 
@@ -98,8 +98,8 @@ describe("Reconciliation order creation", () => {
 				id: 1,
 				supplierOrderIds: [1],
 				finalized: 0,
-				created: expect.any(Number),
-				updatedAt: expect.any(Number)
+				created: expect.any(Date),
+				updatedAt: expect.any(Date)
 			}
 		]);
 
@@ -216,6 +216,33 @@ describe("Reconciliation order creation", () => {
 		});
 	});
 
+	it("marks customer order lines' 'received' timestamp with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1", "2"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
+
+		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrder1Id]);
+		await addOrderLinesToReconciliationOrder(db, reconOrder1Id, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, reconOrder1Id);
+
+		const [orderLine1] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine1.received.getTime()).toBeLessThan(100);
+
+		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
+
+		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
+		await addOrderLinesToReconciliationOrder(db, reconOrder2Id, [{ isbn: "2", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, reconOrder2Id);
+
+		const [, orderLine2] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine2.received.getTime()).toBeLessThan(100);
+	});
+
 	it("updates existing order line quantity when adding duplicate ISBN", async () => {
 		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
 		await createSupplierOrder(db, 1, newSupplierOrderLines);
@@ -266,6 +293,46 @@ describe("Reconciliation order creation", () => {
 				authors: null
 			}
 		]);
+	});
+
+	it("timestamps reconciliation order's 'created' with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1", "2"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
+		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrder1Id]);
+
+		const reconOrder1 = await getReconciliationOrder(db, reconOrder1Id);
+		expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(200);
+
+		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
+		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
+
+		const reconOrder2 = await getReconciliationOrder(db, reconOrder2Id);
+		expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(200);
+	});
+
+	it("timestamps reconciliation order's 'updatedAt' with ms precision", async () => {
+		const db = await getRandomDb();
+
+		await upsertCustomer(db, { id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1"]);
+
+		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+
+		const reconOrder = await getReconciliationOrder(db, reconOrderId);
+		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(200);
+
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		const reconOrderUpdated = await getReconciliationOrder(db, reconOrderId);
+		expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
+		expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(200);
 	});
 
 	describe("Reconciliation order error cases", () => {
