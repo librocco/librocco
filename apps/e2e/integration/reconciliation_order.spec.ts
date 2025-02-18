@@ -4,8 +4,6 @@ import { baseURL } from "./constants";
 
 test.beforeEach(async ({ page }) => {
 	const addr = `${baseURL}orders/suppliers/orders/`;
-	console.log("addr: ", addr);
-	console.log("base path: ", baseURL);
 	await page.goto(addr);
 
 	await page.getByLabel("CreateReconciliationOrder").waitFor();
