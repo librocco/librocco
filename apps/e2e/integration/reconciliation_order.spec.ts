@@ -3,7 +3,10 @@ import { test, expect } from "@playwright/test";
 import { baseURL } from "./constants";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders`);
+	const addr = `${baseURL}orders/suppliers/orders/`;
+	console.log("addr: ", addr);
+	console.log("base path: ", baseURL);
+	await page.goto(addr);
 
 	await page.getByLabel("CreateReconciliationOrder").waitFor();
 	page.getByLabel("CreateReconciliationOrder").click();
