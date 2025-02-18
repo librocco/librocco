@@ -528,6 +528,9 @@ describe("finalizeReconciliationOrder should", async () => {
 		await addBooksToCustomer(db, 2, ["1"]);
 		// Second supplier order
 		await addBooksToCustomer(db, 3, ["1"]);
+		// Not placed (pending) - putting this here to make sure it doesn't affect rejection:
+		// even though last 'created', it's not placed yet - the customer 3's order should be rejected
+		await addBooksToCustomer(db, 4, ["1"]);
 
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
 		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
@@ -548,6 +551,8 @@ describe("finalizeReconciliationOrder should", async () => {
 		]);
 		// Even though customer order line 3 was not placed as part of the supplier order being reconciled, it was rejected by 1 book missing from the order
 		expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
+		// Not changed - control variable
+		expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
 	});
 
 	// NOTE: In a case where the book was overdelivered (considering the respective supplier order), but there are more in-progress customer orders
