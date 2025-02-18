@@ -226,9 +226,10 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			}
 
 			// Get all in-progress customer order lines for the isbn
-			const customerOrderLines = await txDb
-				.execA<[id: number]>("SELECT id FROM customer_order_lines WHERE isbn = ? AND received IS NULL ORDER BY created ASC", [isbn])
-				.then((res) => res.map(([id]) => id));
+			const customerOrderLines = await txDb.execO<{ id: number; placed: number | null }>(
+				"SELECT id, placed FROM customer_order_lines WHERE isbn = ? AND received IS NULL ORDER BY created ASC",
+				[isbn]
+			);
 
 			// Let n be the number of lines recevied
 			// Let m be the number of lines to reject - difference of lines ordered and received
@@ -238,8 +239,12 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			//
 			// The reason we do this is that, while there should always be at least n + m in-progress lines in the DB, the difference might happen,
 			// so we're making sure we're resistant to that scenario.
-			const receivedIds = customerOrderLines.splice(0, receivedQuantity);
-			const rejectedIds = customerOrderLines.reverse().slice(0, Math.max(rejectQuantity, 0)); // min 0 to handle the case where rejectQuantity is negative (overdelivered)
+			const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({ id }) => id);
+			const rejectedIds = customerOrderLines
+				.reverse()
+				.filter(({ placed }) => Boolean(placed)) // here we're rejecting placed orders - make sure we're not rejecting non-placed orders (unwanted noop)
+				.slice(0, Math.max(rejectQuantity, 0)) // min 0 to handle the case where rejectQuantity is negative (overdelivered)
+				.map(({ id }) => id);
 
 			// Mark the received books
 			await txDb.exec(
