@@ -232,9 +232,6 @@ describe("Reconciliation order creation", () => {
 		const [orderLine1] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine1.received.getTime()).toBeLessThan(100);
 
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
-
 		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
 
@@ -311,9 +308,6 @@ describe("Reconciliation order creation", () => {
 		const reconOrder1 = await getReconciliationOrder(db, reconOrder1Id);
 		expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(200);
 
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
-
 		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
 		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
@@ -334,9 +328,6 @@ describe("Reconciliation order creation", () => {
 
 		const reconOrder = await getReconciliationOrder(db, reconOrderId);
 		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(200);
-
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
 
 		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
 		const reconOrderUpdated = await getReconciliationOrder(db, reconOrderId);

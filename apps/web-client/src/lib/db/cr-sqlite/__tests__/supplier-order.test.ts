@@ -483,8 +483,6 @@ describe("Placing supplier orders", () => {
 			const [supplierOrder1] = await getPlacedSupplierOrders(db);
 			expect(Date.now() - supplierOrder1.created).toBeLessThan(200);
 
-			// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-			await new Promise((resolve) => setTimeout(resolve, 200));
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [supplierOrder2] = await getPlacedSupplierOrders(db);
 			expect(Date.now() - supplierOrder2.created).toBeLessThan(200);
@@ -497,8 +495,6 @@ describe("Placing supplier orders", () => {
 			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
 			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(200);
 
-			// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-			await new Promise((resolve) => setTimeout(resolve, 200));
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
 			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(200);
