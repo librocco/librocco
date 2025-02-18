@@ -14,7 +14,7 @@ import {
 	createSupplierOrder,
 	getPlacedSupplierOrderLines
 } from "../suppliers";
-import { addBooksToCustomer, upsertCustomer } from "../customers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
@@ -475,6 +475,30 @@ describe("Placing supplier orders", () => {
 		it("throw an error when trying to create a supplier order with no order lines", async () => {
 			expect(createSupplierOrder(db, 1, [])).rejects.toThrow("No order lines provided");
 		});
+
+		it("timestamp supplier order's 'created' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [supplierOrder1] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - supplierOrder1.created).toBeLessThan(200);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [supplierOrder2] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - supplierOrder2.created).toBeLessThan(200);
+		});
+
+		it("timestamp customer order lines' 'placed' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
+			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(200);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
+			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(200);
+		});
 	});
 
 	describe("getPlacedSupplierOrders should", () => {
@@ -482,15 +506,19 @@ describe("Placing supplier orders", () => {
 			const { id: supplier1Id } = supplier1;
 			const { id: supplier2Id } = supplier2;
 
+			const timestamp = Date.now();
+
 			// Create orders for both suppliers
 			await db.exec(
 				`
 				INSERT INTO supplier_order (id, supplier_id, created)
 				VALUES
-				(?, ?, strftime('%s', 'now') * 1000),
-				(?, ?, strftime('%s', 'now') * 1000)
+				(?, ?, ?),
+				(?, ?, ?)
 			`,
-				[1, supplier1Id, 2, supplier2Id]
+
+				// The orders will be ordered with respect to 'created' DESC - hence the timestamp - 1 (to remove flakiness)
+				[1, supplier1Id, timestamp, 2, supplier2Id, timestamp - 1]
 			);
 
 			// Add order lines with different quantities
@@ -509,7 +537,7 @@ describe("Placing supplier orders", () => {
 			expect(orders).toHaveLength(2);
 
 			// Check first supplier order
-			expect(orders[0]).toEqual(
+			expect(orders).toEqual([
 				expect.objectContaining({
 					id: 1,
 					supplier_id: supplier1Id,
@@ -517,11 +545,8 @@ describe("Placing supplier orders", () => {
 					total_book_number: 3,
 					total_book_price: book1.price * 2 + book2.price,
 					created: expect.any(Number)
-				})
-			);
+				}),
 
-			// Check second supplier order
-			expect(orders[1]).toEqual(
 				expect.objectContaining({
 					id: 2,
 					supplier_id: supplier2Id,
@@ -530,7 +555,7 @@ describe("Placing supplier orders", () => {
 					total_book_price: book1.price * 3,
 					created: expect.any(Number)
 				})
-			);
+			]);
 		});
 
 		it("return orders sorted by creation date descending", async () => {
@@ -654,19 +679,20 @@ describe("Placing supplier orders", () => {
 				{ supplier_id: 1, isbn: "3", quantity: 3 }
 			]);
 
+			// NOTE: the orders are sorted in descending order by creation date
 			expect(await getPlacedSupplierOrders(db, 1)).toEqual([
-				expect.objectContaining({
-					id: 1,
-					supplier_id: 1,
-					supplier_name: supplier1.name,
-					total_book_number: 3, // 2 Physics + 1 Chemistry
-					created: expect.any(Number)
-				}),
 				expect.objectContaining({
 					id: 3,
 					supplier_id: 1,
 					supplier_name: supplier1.name,
 					total_book_number: 6, // 3 Physics + 3 The Hobbit
+					created: expect.any(Number)
+				}),
+				expect.objectContaining({
+					id: 1,
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 3, // 2 Physics + 1 Chemistry
 					created: expect.any(Number)
 				})
 			]);
