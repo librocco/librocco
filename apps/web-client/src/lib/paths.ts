@@ -19,8 +19,7 @@ const PATHS = {
 	"history/warehouse": `${basepath}/history/warehouse/`,
 
 	// Order mgmt
-	supplier_orders: `${basepath}/orders/suppliers/`,
-	supplier_order_status: `${basepath}/orders/suppliers/order/`,
+	supplier_orders: `${basepath}/orders/suppliers/orders/`,
 	reconcile: `${basepath}/orders/suppliers/reconcile/`
 };
 

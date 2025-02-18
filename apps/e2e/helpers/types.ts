@@ -305,3 +305,63 @@ export interface FieldConstructor<L extends Record<string, any>, K extends keyof
 	(parent: DashboardNode, view: TableView): L[K];
 }
 // #endregion asserters
+
+// #region customerOrder
+export type Customer = {
+	id?: number;
+	fullname?: string;
+	email?: string;
+	phone?: string;
+	taxId?: string;
+	displayId: string;
+	deposit?: number;
+	updatedAt?: Date;
+};
+// #endregion customerOrder
+
+export type Supplier = {
+	id?: number;
+	name?: string;
+	email?: string;
+	address?: string;
+};
+
+export type PossibleSupplierOrderLine = {
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Pick<BookData, "isbn" | "title" | "authors">;
+
+export type SupplierJoinData = {
+	supplier_id: number;
+	supplier_name: string;
+};
+
+export type BookData = {
+	isbn: string;
+	title?: string;
+	price?: number;
+	year?: string;
+	authors?: string;
+	publisher?: string;
+	editedBy?: string;
+	outOfPrint?: boolean;
+	category?: string;
+};
+
+export type SupplierOrder = {
+	supplier_id: number;
+	created: Date;
+	lines: SupplierOrderLine[];
+	id: number;
+};
+export type SupplierOrderLine = {
+	supplier_id: number;
+	supplier_name: string;
+	isbn: string;
+	title: string;
+	authors: string;
+	publisher: string;
+	quantity: number;
+	line_price: number;
+};
