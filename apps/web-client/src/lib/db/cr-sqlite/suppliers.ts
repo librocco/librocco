@@ -371,10 +371,14 @@ export async function createSupplierOrder(
 	}
 
 	await db.tx(async (db) => {
+		const timestamp = Date.now();
+
 		// Create a supplier order
 		// TODO: check how conflict - free (when syncing) this way of assigning ids is
-		const [[orderId]] = await db.execA("INSERT INTO supplier_order (supplier_id) VALUES (?) RETURNING id", [supplierId]);
-		const timestamp = Date.now();
+		const [[orderId]] = await db.execA("INSERT INTO supplier_order (supplier_id, created) VALUES (?, ?) RETURNING id", [
+			supplierId,
+			timestamp
+		]);
 
 		for (const orderLine of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line

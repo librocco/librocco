@@ -12,7 +12,8 @@ import {
 	addBooksToCustomer,
 	removeBooksFromCustomer,
 	getCustomerDisplayIdSeq,
-	isDisplayIdUnique
+	isDisplayIdUnique,
+	markCustomerOrderLineAsCollected
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import {
@@ -125,6 +126,47 @@ describe("Customer order tests", () => {
 		await removeBooksFromCustomer(db, 1, [books[0].id]);
 		books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(1);
+	});
+
+	it("timestamps updates with ms precision", async () => {
+		// Insert (initial)
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		const [customer] = await getAllCustomers(db);
+		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(200);
+
+		// Update
+		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
+		const [customerUpdated] = await getAllCustomers(db);
+		expect(Date.now() - customerUpdated.updatedAt.getTime()).toBeLessThan(200);
+	});
+
+	it("timestamps customer order lines' 'created' with ms precision", async () => {
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+
+		await addBooksToCustomer(db, 1, ["1"]);
+		const [orderLine1] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
+
+		await addBooksToCustomer(db, 1, ["2"]);
+		const [, orderLine2] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
+	});
+
+	it("timestamps customer order lines' 'collected' with ms precision", async () => {
+		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
+		await addBooksToCustomer(db, 1, ["1", "2"]);
+
+		const [{ id: line1Id }] = await getCustomerOrderLines(db, 1);
+		await markCustomerOrderLineAsCollected(db, line1Id);
+
+		const [line1] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - line1.collected.getTime()).toBeLessThan(200);
+
+		const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
+		await markCustomerOrderLineAsCollected(db, line2Id);
+
+		const [line2] = await getCustomerOrderLines(db, 1);
+		expect(Date.now() - line2.collected.getTime()).toBeLessThan(200);
 	});
 });
 
