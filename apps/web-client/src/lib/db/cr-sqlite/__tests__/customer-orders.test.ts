@@ -134,9 +134,6 @@ describe("Customer order tests", () => {
 		const [customer] = await getAllCustomers(db);
 		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(200);
 
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
-
 		// Update
 		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
 		const [customerUpdated] = await getAllCustomers(db);
@@ -150,8 +147,6 @@ describe("Customer order tests", () => {
 		const [orderLine1] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
 
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
 		await addBooksToCustomer(db, 1, ["2"]);
 		const [, orderLine2] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
@@ -167,8 +162,6 @@ describe("Customer order tests", () => {
 		const [line1] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - line1.collected.getTime()).toBeLessThan(200);
 
-		// Wait and make another assertion - making sure we're not at the start of the round second (producing false negatives)
-		await new Promise((resolve) => setTimeout(resolve, 200));
 		const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
 		await markCustomerOrderLineAsCollected(db, line2Id);
 
