@@ -51,7 +51,7 @@
 			<div class="form-control gap-y-2">
 				<FormFieldProxy {form} name="address">
 					<TextControl label="Address" let:controlAttrs>
-						<input {...controlAttrs} bind:value={$formStore.email} class="input-bordered input w-full" />
+						<input {...controlAttrs} bind:value={$formStore.address} class="input-bordered input w-full" />
 					</TextControl>
 				</FormFieldProxy>
 			</div>
