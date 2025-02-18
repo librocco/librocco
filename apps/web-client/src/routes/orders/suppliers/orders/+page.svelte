@@ -69,52 +69,53 @@
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
-						No supplier orders available. Create a customer order first to generate supplier orders.
-					</p>
-					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-						<Plus size={20} />
-						New Customer Order
-					</button>
-				</div>
-			{:else}
-				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("unordered")}
-						aria-pressed={$supplierOrderFilterStatus === "unordered"}
-					>
-						Unordered
-					</button>
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("ordered")}
-						aria-pressed={$supplierOrderFilterStatus === "ordered"}
-						disabled={!hasPlacedOrders}
-						data-testid="ordered-list"
-					>
-						Ordered
-					</button>
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("reconciling")}
-						aria-pressed={$supplierOrderFilterStatus === "reconciling"}
-						disabled={!hasReconcilingOrders}
-						data-testid="reconciling-list"
-					>
-						Reconciling
-					</button>
-					<button class="btn-outline btn-sm btn" disabled> Completed </button>
-				</div>
-				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable orders={data.possibleOrders} />
-				{:else if $supplierOrderFilterStatus === "ordered"}
-					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
+			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+				<button
+					class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => setFilter("unordered")}
+					aria-pressed={$supplierOrderFilterStatus === "unordered"}
+				>
+					Unordered
+				</button>
+				<button
+					class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => setFilter("ordered")}
+					aria-pressed={$supplierOrderFilterStatus === "ordered"}
+					disabled={!hasPlacedOrders}
+					data-testid="ordered-list"
+				>
+					Ordered
+				</button>
+				<button
+					class="btn-sm btn {$supplierOrderFilterStatus === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => setFilter("reconciling")}
+					aria-pressed={$supplierOrderFilterStatus === "reconciling"}
+					disabled={!hasReconcilingOrders}
+					data-testid="reconciling-list"
+				>
+					Reconciling
+				</button>
+				<button class="btn-outline btn-sm btn" disabled> Completed </button>
+			</div>
+
+			{#if $supplierOrderFilterStatus === "unordered"}
+				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
+					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+						<p class="text-center text-base-content/70">
+							No unordered supplier orders available. Create a customer order first to generate supplier orders.
+						</p>
+						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+							<Plus size={20} />
+							New Customer Order
+						</button>
+					</div>
 				{:else}
-					<ReconcilingTable orders={data.reconcilingOrders} />
+					<UnorderedTable orders={data.possibleOrders} />
 				{/if}
+			{:else if $supplierOrderFilterStatus === "ordered"}
+				<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
+			{:else}
+				<ReconcilingTable orders={data.reconcilingOrders} />
 			{/if}
 		</div>
 	</div>
