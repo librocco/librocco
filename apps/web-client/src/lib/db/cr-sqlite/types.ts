@@ -55,6 +55,10 @@ export type Supplier = {
 	address?: string;
 };
 
+export type SupplierExtended = Supplier & {
+	numPublishers: number;
+};
+
 /**
  * Supplier data returned through supplier order & order line joins
  * name and id are prefixed with `supplier_` to avoid conflicts
@@ -110,7 +114,7 @@ export type DBReconciliationOrder = {
 	created: number;
 	id?: number;
 	finalized: boolean;
-	updatedAt: Date;
+	updatedAt: number;
 };
 
 /**
@@ -119,7 +123,7 @@ export type DBReconciliationOrder = {
  */
 export type ReconciliationOrder = {
 	supplierOrderIds: number[];
-	created: number;
+	created: Date;
 	id?: number;
 	finalized: boolean;
 	updatedAt: Date;

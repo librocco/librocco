@@ -19,7 +19,7 @@
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
 
-	import { addBooksToCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { addBooksToCustomer, removeBooksFromCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
 	// import { createIntersectionObserver } from "$lib/actions";
@@ -102,6 +102,10 @@
 
 	// #endregion dialog
 
+	const handleDeleteLine = async (lineId) => {
+		await removeBooksFromCustomer(db, customerId, [lineId]);
+	};
+
 	let scanInputRef: HTMLInputElement = null;
 
 	// TODO: We reuse the ScannerForm and setup across a few pages => good candidate for a component...
@@ -144,8 +148,8 @@
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
 								<span class="sr-only">Last updated</span>
 								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={data?.customer.updatedAt ? new Date(data.customer.updatedAt).toISOString() : ""}
-									>{new Date(data?.customer.updatedAt).toLocaleString()}</time
+								<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
+									>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
 								>
 							</span>
 						</div>
@@ -164,14 +168,14 @@
 											<span class="sr-only">Customer name</span>
 											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{data?.customer.fullname || ""}</dd>
+										<dd class="truncate">{data?.customer?.fullname || ""}</dd>
 									</div>
 									<div class="flex gap-x-3">
 										<dt>
 											<span class="sr-only">Customer email</span>
 											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 										</dt>
-										<dd class="truncate">{data?.customer.email || ""}</dd>
+										<dd class="truncate">{data?.customer?.email || ""}</dd>
 									</div>
 								</div>
 								<div class="flex gap-x-3">
@@ -179,7 +183,7 @@
 										<span class="sr-only">Deposit</span>
 										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
 									</dt>
-									<dd>€{data?.customer.deposit || 0} deposit</dd>
+									<dd>€{data?.customer?.deposit || 0} deposit</dd>
 								</div>
 							</div>
 							<div class="w-full pr-2">
@@ -232,10 +236,11 @@
 								<th>Authors</th>
 								<th>Price</th>
 								<th>Status</th>
+								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { isbn, title, authors, price, placed, received, collected }}
+							{#each customerOrderLines as { id, isbn, title, authors, price, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -253,9 +258,14 @@
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
-											<span class="badge">Received</span>
+											<span class="badge">Draft</span>
 										{/if}
 									</td>
+									{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "draft"}
+										<td>
+											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
+										</td>
+									{/if}
 								</tr>
 							{/each}
 						</tbody>

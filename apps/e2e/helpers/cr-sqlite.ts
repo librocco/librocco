@@ -1,18 +1,7 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
+import { Customer, Supplier, PossibleSupplierOrderLine, BookData } from "./types";
 
 // #region books
-
-export type BookData = {
-	isbn: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
 
 export async function upsertBook(db: DB, book: BookData) {
 	await db.exec(
@@ -189,4 +178,151 @@ export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: num
 
 export async function commitNote(db: DB, id: number): Promise<void> {
 	return db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [Date.now(), id]);
+}
+
+// #region customerOrders
+
+export async function upsertCustomer(db: DB, customer: Customer) {
+	if (!customer.id) {
+		throw new Error("Customer must have an id");
+	}
+
+	if (!customer.displayId) {
+		throw new Error("Customer must have a displayId");
+	}
+
+	const timestamp = Date.now();
+
+	await db.exec(
+		`INSERT INTO customer (id, fullname, email, deposit, display_id, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?)
+         ON CONFLICT(id) DO UPDATE SET
+           fullname = COALESCE(?, fullname),
+           email = COALESCE(?, email),
+           deposit = COALESCE(?, deposit),
+           display_id = COALESCE(?, display_id),
+           updated_at = ?
+		   `,
+		[
+			customer.id,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null,
+			customer.displayId,
+			timestamp,
+			customer.fullname ?? null,
+			customer.email ?? null,
+			customer.deposit ?? null,
+			customer.displayId,
+			timestamp
+		]
+	);
+}
+
+export const addBooksToCustomer = async (db: DB, params: { customerId: number; bookIsbns: string[] }): Promise<void> => {
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+	const { customerId, bookIsbns } = params;
+	const sqlParams = bookIsbns.map((isbn) => [customerId, isbn]).flat();
+	const sql = `
+     INSERT INTO customer_order_lines (customer_id, isbn)
+     VALUES ${multiplyString("(?,?)", bookIsbns.length)} RETURNING customer_id;`;
+
+	const id = await db.exec(sql, sqlParams);
+	console.log({ id });
+};
+
+// #endregion customerOrders
+
+export async function upsertSupplier(db: DB, supplier: Supplier) {
+	if (!supplier.id) {
+		throw new Error("Supplier must have an id");
+	}
+	await db.exec(
+		`INSERT INTO supplier (id, name, email, address)
+          VALUES (?, ?, ?, ?)
+          ON CONFLICT(id) DO UPDATE SET
+            name = COALESCE(?, name),
+            email = COALESCE(?, email),
+            address = COALESCE(?, address);`,
+		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
+	);
+}
+
+export async function associatePublisher(db: DB, params: { supplierId: number; publisherId: string }) {
+	const { publisherId, supplierId } = params;
+	/* Makes sure the given publisher is associated with the given supplier id.
+     If necessary it disassociates a different supplier */
+	await db.exec(
+		`INSERT INTO supplier_publisher (supplier_id, publisher)
+         VALUES (?, ?)
+         ON CONFLICT(publisher) DO UPDATE SET
+           supplier_id = ?;`,
+		[supplierId, publisherId, supplierId]
+	);
+}
+
+export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
+	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
+	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
+	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
+
+	const supplierOrderMapping: { [supplierId: number]: number } = {};
+	// Collect all supplier ids involved in the order lines
+	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+
+	await db.tx(async (passedDb) => {
+		const db: DB = passedDb as DB;
+		for (const supplierId of supplierIds) {
+			// Create a new supplier order for each supplier
+			const newSupplierOrderId = (
+				await db.execA<number[]>(
+					`INSERT INTO supplier_order (supplier_id)
+			      VALUES (?) RETURNING id;`,
+					[supplierId]
+				)
+			)[0][0];
+			// Save the newly created supplier order id
+			supplierOrderMapping[supplierId] = newSupplierOrderId;
+		}
+
+		for (const orderLine of orderLines) {
+			// Find the customer order lines corresponding to this supplier order line
+			const customerOrderLines = await db.execO<any>(
+				// TODO: write tests to check the sorting by order creation
+				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
+				[orderLine.isbn]
+			);
+
+			let copiesToGo = orderLine.quantity;
+			while (copiesToGo > 0) {
+				const customerOrderLine = customerOrderLines.shift();
+				if (customerOrderLine) {
+					// The whole line can be fulfilled
+					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
+				}
+				copiesToGo--;
+			}
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+	      VALUES (?, ?, ?);`,
+				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
+			);
+		}
+	});
+}
+export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+	if (!supplierOrderIds.length) {
+		throw new Error("Reconciliation order must be based on at least one supplier order");
+	}
+
+	const recondOrder = await db.execO<{ id: number }>(
+		`INSERT INTO reconciliation_order (supplier_order_ids) VALUES (json_array(${multiplyString(
+			"?",
+			supplierOrderIds.length
+		)})) RETURNING id;`,
+		supplierOrderIds
+	);
+	return recondOrder[0].id;
 }
