@@ -1,11 +1,19 @@
 import { describe, it, expect } from "vitest";
 import { getRandomDb } from "./lib";
-import { getAllSuppliers, upsertSupplier, getPublishersFor, associatePublisher } from "../suppliers";
+
+import {
+	getAllSuppliers,
+	upsertSupplier,
+	getPublishersFor,
+	associatePublisher,
+	getSupplierDetails,
+	removePublisherFromSupplier
+} from "../suppliers";
 
 // Test fixtures
-const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St" };
-const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave" };
-const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd" };
+const supplier1 = { id: 1, name: "Science Books LTD", email: "contact@science.books", address: "123 Science St", numPublishers: 0 };
+const supplier2 = { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.books", address: "456 Fantasy Ave", numPublishers: 0 };
+const supplier3 = { id: 3, name: "History Books LTD", email: "hello@history.books", address: "789 History Rd", numPublishers: 0 };
 
 const publisher1 = "AnimalPublisher";
 const publisher2 = "FantasyPublisher";
@@ -22,8 +30,8 @@ describe("Supplier management:", () => {
 			const db = await getRandomDb();
 			await upsertSupplier(db, supplier1);
 
-			const suppliers = await getAllSuppliers(db);
-			expect(suppliers).toEqual([supplier1]);
+			const suppliers = await getSupplierDetails(db, supplier1.id);
+			expect(suppliers).toEqual(supplier1);
 		});
 
 		it("create new supplier with partial fields", async () => {
@@ -31,62 +39,60 @@ describe("Supplier management:", () => {
 			const partialSupplier = { id: 1, name: "Partial Books" };
 			await upsertSupplier(db, partialSupplier);
 
+			const suppliers = await getSupplierDetails(db, supplier1.id);
+			expect(suppliers).toEqual({
+				id: 1,
+				name: "Partial Books",
+				email: "N/A",
+				address: "N/A",
+				numPublishers: 0
+			});
+		});
+
+		it("update existing supplier fields", async () => {
+			const db = await getRandomDb();
+
+			// Create initial supplier
+			await upsertSupplier(db, supplier1);
+
+			// Update some fields
+			const updates = {
+				id: supplier1.id,
+				name: "Updated Science Books",
+				email: "new@science.books"
+			};
+			await upsertSupplier(db, updates);
+
 			const suppliers = await getAllSuppliers(db);
 			expect(suppliers).toEqual([
 				{
-					id: 1,
-					name: "Partial Books",
-					email: null,
-					address: null
+					...supplier1,
+					name: updates.name,
+					email: updates.email
 				}
 			]);
 		});
 
-		// TODO: the following upsertSupplier behaviour needs to be fixed
-		// it("update existing supplier fields", async () => {
-		// 	const db = await getRandomDb();
+		it("only update provided fields", async () => {
+			const db = await getRandomDb();
 
-		// 	// Create initial supplier
-		// 	await upsertSupplier(db, supplier1);
+			// Create initial supplier
+			await upsertSupplier(db, supplier1);
 
-		// 	// Update some fields
-		// 	const updates = {
-		// 		id: supplier1.id,
-		// 		name: "Updated Science Books",
-		// 		email: "new@science.books"
-		// 	};
-		// 	await upsertSupplier(db, updates);
+			// Update only name
+			await upsertSupplier(db, {
+				id: supplier1.id,
+				name: "Updated Name"
+			});
 
-		// 	const suppliers = await getAllSuppliers(db);
-		// 	expect(suppliers).toEqual([
-		// 		{
-		// 			...supplier1,
-		// 			name: updates.name,
-		// 			email: updates.email
-		// 		}
-		// 	]);
-		// });
-
-		// it("only update provided fields", async () => {
-		// 	const db = await getRandomDb();
-
-		// 	// Create initial supplier
-		// 	await upsertSupplier(db, supplier1);
-
-		// 	// Update only name
-		// 	await upsertSupplier(db, {
-		// 		id: supplier1.id,
-		// 		name: "Updated Name"
-		// 	});
-
-		// 	const suppliers = await getAllSuppliers(db);
-		// 	expect(suppliers).toEqual([
-		// 		{
-		// 			...supplier1,
-		// 			name: "Updated Name"
-		// 		}
-		// 	]);
-		// });
+			const suppliers = await getAllSuppliers(db);
+			expect(suppliers).toEqual([
+				{
+					...supplier1,
+					name: "Updated Name"
+				}
+			]);
+		});
 	});
 
 	describe("getAllSuppliers should", () => {
@@ -107,6 +113,34 @@ describe("Supplier management:", () => {
 			const suppliers = await getAllSuppliers(db);
 			expect(suppliers).toEqual([supplier1, supplier2, supplier3]);
 		});
+	});
+
+	it("retrieves data for single supplier by id", async () => {
+		const db = await getRandomDb();
+
+		await upsertSupplier(db, { id: 1, name: "Science Books LTD" });
+		await upsertSupplier(db, { id: 2, name: "Fantasy Books LTD", email: "info@fantasy.com", address: "123 Yellow Brick Rd" });
+		await associatePublisher(db, 1, "SciencePublisher");
+		await associatePublisher(db, 1, "PhysicsPublisher");
+
+		expect(await getSupplierDetails(db, 1)).toEqual({
+			id: 1,
+			name: "Science Books LTD",
+			address: "N/A",
+			email: "N/A",
+			numPublishers: 2
+		});
+
+		expect(await getSupplierDetails(db, 2)).toEqual({
+			id: 2,
+			name: "Fantasy Books LTD",
+			address: "123 Yellow Brick Rd",
+			email: "info@fantasy.com",
+			numPublishers: 0
+		});
+
+		// Non-existent supplier
+		expect(await getSupplierDetails(db, 3)).toEqual(undefined);
 	});
 });
 
@@ -151,6 +185,25 @@ describe("Publisher associations:", () => {
 
 			const publishers = await getPublishersFor(db, supplier1.id);
 			expect(publishers).toEqual([publisher1, publisher2]);
+		});
+	});
+
+	describe("getAllSuppliers shold", () => {
+		it("the correct 'numPublishers'", async () => {
+			const db = await getRandomDb();
+			await upsertSupplier(db, supplier1);
+
+			// NOTE: supplier1 has 'numPublishers' = 0
+			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 0 }));
+
+			await associatePublisher(db, supplier1.id, publisher1);
+			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 1 }));
+
+			await associatePublisher(db, supplier1.id, publisher2);
+			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 2 }));
+
+			await removePublisherFromSupplier(db, supplier1.id, publisher2);
+			expect(await getSupplierDetails(db, 1)).toEqual(expect.objectContaining({ numPublishers: 1 }));
 		});
 	});
 
