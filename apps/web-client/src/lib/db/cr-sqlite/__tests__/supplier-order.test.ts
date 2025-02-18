@@ -14,11 +14,11 @@ import {
 	createSupplierOrder,
 	getPlacedSupplierOrderLines
 } from "../suppliers";
-import { addBooksToCustomer, upsertCustomer } from "../customers";
+import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
-const customer2 = { fullname: "Harry Styles", id: 2, displayId: "100" };
+const customer2 = { fullname: "Harry Styles", id: 2, displayId: "200" };
 
 const book1 = { isbn: "1", publisher: "MathsAndPhysicsPub", title: "Physics", authors: "Prince Edward", price: 7 };
 const book2 = { isbn: "2", publisher: "ChemPub", title: "Chemistry", authors: "Dr. Small Hands", price: 13 };
@@ -307,26 +307,21 @@ describe("New supplier orders:", () => {
 describe("Placing supplier orders", () => {
 	describe("createSupplierOrder should", () => {
 		it("create a supplier order from multiple customer orders", async () => {
-			const { id: supplierId } = supplier1;
-
-			// Associate both books with supplier1
-			await associatePublisher(db, supplierId, book1.publisher);
-			await associatePublisher(db, supplierId, book2.publisher);
-
 			// Add books to different customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
 
-			// Get possible order lines and create the order
-			const possibleOrderLines = await getPossibleSupplierOrderLines(db, supplierId);
-			await createSupplierOrder(db, possibleOrderLines);
+			await createSupplierOrder(db, 1, [
+				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
+				{ isbn: book2.isbn, quantity: 1, supplier_id: 1 }
+			]);
 
 			// Verify the order was created correctly
 			const placedOrders = await getPlacedSupplierOrders(db);
 			expect(placedOrders.length).toBe(1);
 			expect(placedOrders[0]).toEqual(
 				expect.objectContaining({
-					supplier_id: supplierId,
+					supplier_id: 1,
 					supplier_name: supplier1.name,
 					total_book_number: 2,
 					total_book_price: book1.price + book2.price
@@ -334,38 +329,125 @@ describe("Placing supplier orders", () => {
 			);
 
 			// Verify the customer order lines were marked as placed
-			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, supplierId);
+			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, 1);
 			expect(remainingPossibleLines.length).toBe(0);
 		});
 
-		it("create multiple supplier orders from the same batch of customer orders", async () => {
-			// Associate each book with a different supplier
-			await associatePublisher(db, supplier1.id, book1.publisher);
-			await associatePublisher(db, supplier2.id, book2.publisher);
+		// NOTE: This is really an extreme edge case - being resistant to bugs in possible line selection process (both getPossibleSupplierOrderLines and the UI selection)
+		// The function also shows a warning re this
+		it("not add more quantity than available in customer orders", async () => {
+			// Add books to different customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
 
-			// Add both books to a single customer order
-			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
+				{ isbn: book2.isbn, quantity: 2, supplier_id: 1 } // More quantity than available
+			]);
 
-			// Create orders for both suppliers
-			const supplier1Lines = await getPossibleSupplierOrderLines(db, supplier1.id);
-			const supplier2Lines = await getPossibleSupplierOrderLines(db, supplier2.id);
-			await createSupplierOrder(db, [...supplier1Lines, ...supplier2Lines]);
-
-			// Verify two separate orders were created
+			// Verify the order was created correctly
 			const placedOrders = await getPlacedSupplierOrders(db);
-			expect(placedOrders.length).toBe(2);
+			expect(placedOrders.length).toBe(1);
+			expect(placedOrders[0]).toEqual(
+				expect.objectContaining({
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 2,
+					total_book_price: book1.price + book2.price
+				})
+			);
+			expect(await getPlacedSupplierOrderLines(db, [placedOrders[0].id])).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, quantity: 1 }),
+				expect.objectContaining({ isbn: book2.isbn, quantity: 1 }) // Corrected quantity
+			]);
 
-			// Check specific order details
-			const [order1, order2] = placedOrders;
-			expect(order1.total_book_number).toBe(1);
-			expect(order2.total_book_number).toBe(1);
-
-			// Verify all customer order lines were marked as placed
-			const remainingLines1 = await getPossibleSupplierOrderLines(db, supplier1.id);
-			const remainingLines2 = await getPossibleSupplierOrderLines(db, supplier2.id);
-			expect(remainingLines1.length).toBe(0);
-			expect(remainingLines2.length).toBe(0);
+			// Verify the customer order lines were marked as placed
+			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, 1);
+			expect(remainingPossibleLines.length).toBe(0);
 		});
+
+		it("not add more quantity than requested even if more available in customer orders", async () => {
+			// Add books to different customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book1.isbn, book2.isbn]);
+
+			await createSupplierOrder(db, 1, [
+				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }, // 2 are required by customer orders, but only 1 ordered
+				{ isbn: book2.isbn, quantity: 1, supplier_id: 1 }
+			]);
+
+			// Verify the order was created correctly
+			const placedOrders = await getPlacedSupplierOrders(db);
+			expect(placedOrders.length).toBe(1);
+			expect(placedOrders[0]).toEqual(
+				expect.objectContaining({
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 2,
+					total_book_price: book1.price + book2.price
+				})
+			);
+			expect(await getPlacedSupplierOrderLines(db, [placedOrders[0].id])).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, quantity: 1 }),
+				expect.objectContaining({ isbn: book2.isbn, quantity: 1 })
+			]);
+
+			// Verify the customer order lines were marked as placed
+			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, 1);
+			expect(remainingPossibleLines.length).toBe(0);
+		});
+
+		it("throw an error if trying to add order lines with supplier id different than the one passed as a param", async () => {
+			// Add books to different customer orders
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
+
+			const wantErrMsg = [
+				"All order lines must belong to the same supplier:",
+				"  supplier id: 1",
+				"  faulty lines:",
+
+				JSON.stringify({ isbn: book2.isbn, quantity: 1, supplier_id: 2 })
+			].join("\n");
+
+			expect(
+				createSupplierOrder(db, 1, [
+					{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
+					{ isbn: book2.isbn, quantity: 1, supplier_id: 2 }
+				])
+			).rejects.toThrow(wantErrMsg);
+		});
+
+		// TODO: the following is skipped as I don't see a scenario where we would be creating multiple supplier orders with a single function call
+		//
+		// 		it("create multiple supplier orders from the same batch of customer orders", async () => {
+		// 			// Associate each book with a different supplier
+		// 			await associatePublisher(db, supplier1.id, book1.publisher);
+		// 			await associatePublisher(db, supplier2.id, book2.publisher);
+		//
+		// 			// Add both books to a single customer order
+		// 			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+		//
+		// 			// Create orders for both suppliers
+		// 			const supplier1Lines = await getPossibleSupplierOrderLines(db, supplier1.id);
+		// 			const supplier2Lines = await getPossibleSupplierOrderLines(db, supplier2.id);
+		// 			await createSupplierOrder(db, [...supplier1Lines, ...supplier2Lines]);
+		//
+		// 			// Verify two separate orders were created
+		// 			const placedOrders = await getPlacedSupplierOrders(db);
+		// 			expect(placedOrders.length).toBe(2);
+		//
+		// 			// Check specific order details
+		// 			const [order1, order2] = placedOrders;
+		// 			expect(order1.total_book_number).toBe(1);
+		// 			expect(order2.total_book_number).toBe(1);
+		//
+		// 			// Verify all customer order lines were marked as placed
+		// 			const remainingLines1 = await getPossibleSupplierOrderLines(db, supplier1.id);
+		// 			const remainingLines2 = await getPossibleSupplierOrderLines(db, supplier2.id);
+		// 			expect(remainingLines1.length).toBe(0);
+		// 			expect(remainingLines2.length).toBe(0);
+		// 		});
 
 		it("handle creating an order with missing book prices", async () => {
 			const { id: supplierId } = supplier1;
@@ -380,7 +462,7 @@ describe("Placing supplier orders", () => {
 
 			// Create the order
 			const possibleOrderLines = await getPossibleSupplierOrderLines(db, supplierId);
-			await createSupplierOrder(db, possibleOrderLines);
+			await createSupplierOrder(db, supplierId, possibleOrderLines);
 
 			// Verify order was created with zero price
 			const [placedOrder] = await getPlacedSupplierOrders(db);
@@ -388,12 +470,34 @@ describe("Placing supplier orders", () => {
 			expect(placedOrder.total_book_number).toBe(1);
 		});
 
-		// TODO: should this even be possible? Also see below `getPlacedSupplierOrders` - "handle orders with no order line"
-		it("create an empty order when no order lines are provided", async () => {
-			await createSupplierOrder(db, []);
+		// NOTE: this is an edge case, and the UI probably shouldn't allow it.
+		// Maybe this could also be handled by the UI allowing it, but showing an error message if attempted
+		it("throw an error when trying to create a supplier order with no order lines", async () => {
+			expect(createSupplierOrder(db, 1, [])).rejects.toThrow("No order lines provided");
+		});
 
-			const placedOrders = await getPlacedSupplierOrders(db);
-			expect(placedOrders).toEqual([]);
+		it("timestamp supplier order's 'created' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [supplierOrder1] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - supplierOrder1.created).toBeLessThan(200);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [supplierOrder2] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - supplierOrder2.created).toBeLessThan(200);
+		});
+
+		it("timestamp customer order lines' 'placed' with ms precision", async () => {
+			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
+			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(200);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
+			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(200);
 		});
 	});
 
@@ -402,15 +506,19 @@ describe("Placing supplier orders", () => {
 			const { id: supplier1Id } = supplier1;
 			const { id: supplier2Id } = supplier2;
 
+			const timestamp = Date.now();
+
 			// Create orders for both suppliers
 			await db.exec(
 				`
 				INSERT INTO supplier_order (id, supplier_id, created)
 				VALUES
-				(?, ?, strftime('%s', 'now') * 1000),
-				(?, ?, strftime('%s', 'now') * 1000)
+				(?, ?, ?),
+				(?, ?, ?)
 			`,
-				[1, supplier1Id, 2, supplier2Id]
+
+				// The orders will be ordered with respect to 'created' DESC - hence the timestamp - 1 (to remove flakiness)
+				[1, supplier1Id, timestamp, 2, supplier2Id, timestamp - 1]
 			);
 
 			// Add order lines with different quantities
@@ -429,7 +537,7 @@ describe("Placing supplier orders", () => {
 			expect(orders).toHaveLength(2);
 
 			// Check first supplier order
-			expect(orders[0]).toEqual(
+			expect(orders).toEqual([
 				expect.objectContaining({
 					id: 1,
 					supplier_id: supplier1Id,
@@ -437,11 +545,8 @@ describe("Placing supplier orders", () => {
 					total_book_number: 3,
 					total_book_price: book1.price * 2 + book2.price,
 					created: expect.any(Number)
-				})
-			);
+				}),
 
-			// Check second supplier order
-			expect(orders[1]).toEqual(
 				expect.objectContaining({
 					id: 2,
 					supplier_id: supplier2Id,
@@ -450,7 +555,7 @@ describe("Placing supplier orders", () => {
 					total_book_price: book1.price * 3,
 					created: expect.any(Number)
 				})
-			);
+			]);
 		});
 
 		it("return orders sorted by creation date descending", async () => {
@@ -546,6 +651,52 @@ describe("Placing supplier orders", () => {
 				})
 			);
 		});
+
+		it("retrieve a list of placed supplier orders, filtered by supplier id", async () => {
+			// Setup: add enough books to customer orders to avoid createSupplierOrder truncating
+			// the quantity ordered, TODO: check for truncating functionality (might not be what we want)
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await upsertCustomer(db, { id: 4, displayId: "4" });
+			await upsertCustomer(db, { id: 5, displayId: "5" });
+			await upsertCustomer(db, { id: 6, displayId: "6" });
+
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 2, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 3, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
+
+			await createSupplierOrder(db, 1, [
+				{ supplier_id: 1, isbn: "1", quantity: 2 },
+				{ supplier_id: 1, isbn: "2", quantity: 1 }
+			]);
+
+			await createSupplierOrder(db, 2, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
+
+			await createSupplierOrder(db, 1, [
+				{ supplier_id: 1, isbn: "2", quantity: 3 },
+				{ supplier_id: 1, isbn: "3", quantity: 3 }
+			]);
+
+			// NOTE: the orders are sorted in descending order by creation date
+			expect(await getPlacedSupplierOrders(db, 1)).toEqual([
+				expect.objectContaining({
+					id: 3,
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 6, // 3 Physics + 3 The Hobbit
+					created: expect.any(Number)
+				}),
+				expect.objectContaining({
+					id: 1,
+					supplier_id: 1,
+					supplier_name: supplier1.name,
+					total_book_number: 3, // 2 Physics + 1 Chemistry
+					created: expect.any(Number)
+				})
+			]);
+		});
 	});
 
 	describe("getPlacedSupplierOrderLines should", () => {
@@ -607,7 +758,7 @@ describe("Placing supplier orders", () => {
 			// Create orders for both suppliers
 			await db.exec(
 				`INSERT INTO supplier_order (id, supplier_id, created)
-				VALUES 
+				VALUES
 				(1, ?, strftime('%s', 'now') * 1000),
 				(2, ?, strftime('%s', 'now') * 1000)`,
 				[supplier1.id, supplier2.id]
