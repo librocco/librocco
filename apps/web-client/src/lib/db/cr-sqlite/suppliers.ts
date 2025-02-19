@@ -343,7 +343,7 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  *
  * @param db - The database instance to query
  * @param orderLines - The order lines to create supplier orders from
- * @returns Promise resolving to the created supplier orders
+ * @returns Promise<void>
  * @todo Rewrite this function to accommodate for removing quantity in
  * @see apps/e2e/cr-sqlite.ts:createSupplierOrder when you make changes
 customerOrderLine
