@@ -254,7 +254,7 @@
 										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
 											<span class="badge-success badge">Collected</span>
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "received"}
-											<span class="badge-info badge">Delievered</span>
+											<span class="badge-info badge">Delivered</span>
 										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}

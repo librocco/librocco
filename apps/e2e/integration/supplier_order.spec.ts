@@ -37,19 +37,19 @@ testOrders("should show list of unordered orders", async ({ page, supplier, book
 });
 testOrders(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
-	async ({ page, supplier, books, customer }) => {
+	async ({ page, supplier, books, customers }) => {
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
 
 		// Add 2 copies of first book to customer's order
 		await dbHandle.evaluate(addBooksToCustomer, {
-			customerId: customer.id,
+			customerId: customers[0].id,
 			bookIsbns: [books[0].isbn, books[0].isbn]
 		});
 		// Add 2 copies of third book to customer's order
 		await dbHandle.evaluate(addBooksToCustomer, {
-			customerId: customer.id,
+			customerId: customers[0].id,
 			bookIsbns: [books[2].isbn, books[2].isbn]
 		});
 
