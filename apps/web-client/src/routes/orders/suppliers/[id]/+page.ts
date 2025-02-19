@@ -38,7 +38,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	// TODO: check if this is the desired behavior, or if we should only list publishers that are not assigned to any supplier
 	const unassignedPublishers = allPublishers.filter((p) => !assignedPublishers.includes(p));
 
-	const orders = await getPlacedSupplierOrders(dbCtx.db, Number(params.id));
+	const orders = await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id) });
 
 	return { supplier, assignedPublishers, unassignedPublishers, orders };
 };
