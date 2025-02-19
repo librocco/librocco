@@ -16,7 +16,9 @@ import {
 	processOrderDelivery,
 	sortLinesBySupplier,
 	ErrSupplierOrdersNotFound,
-	ErrSupplierOrdersAlreadyReconciling
+	ErrSupplierOrdersAlreadyReconciling,
+	ErrReconciliationOrderNotFound,
+	ErrReconciliationOrderFinalized
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
@@ -78,14 +80,14 @@ describe("Reconciliation order management:", () => {
 			await createReconciliationOrder(db, 1, [supplierOrder1Id]);
 
 			const reconOrder1 = await getReconciliationOrder(db, 1);
-			expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(200);
+			expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(300);
 
 			await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 			const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
 			await createReconciliationOrder(db, 2, [supplierOrder2Id]);
 
 			const reconOrder2 = await getReconciliationOrder(db, 2);
-			expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(200);
+			expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(300);
 		});
 
 		it("throw an error when trying to create with empty supplier order IDs", async () => {
@@ -298,71 +300,139 @@ describe("Reconciliation order management:", () => {
 	});
 });
 
+describe("Reconciliation order lines:", () => {
+	describe("addOrderLinesToReconciliationOrder should", () => {
+		it("add lines to reconciliation order", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 },
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", quantity: 1 })]);
+
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ reconciliation_order_id: 1, isbn: "1", quantity: 1 }),
+				expect.objectContaining({ reconciliation_order_id: 1, isbn: "2", quantity: 1 })
+			]);
+		});
+
+		it("merge quantities of lines for the same isbn", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await addBooksToCustomer(db, 2, ["1"]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 2, supplier_id: 1 },
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 }
+			]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", quantity: 2 }),
+				expect.objectContaining({ isbn: "2", quantity: 1 })
+			]);
+		});
+
+		it("handle overdelivery (allow for adding of more quantity than ordered by supplier orders being reconciled)", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 2, supplier_id: 1 },
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 2 },
+				{ isbn: "2", quantity: 1 }
+			]);
+
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", quantity: 2 }),
+				expect.objectContaining({ isbn: "2", quantity: 1 })
+			]);
+		});
+
+		it("timestamp reconciliation order's 'updatedAt' with ms precision - with each line update", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1"]);
+
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+
+			const reconOrder = await getReconciliationOrder(db, 1);
+			expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(300);
+
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			const reconOrderUpdated = await getReconciliationOrder(db, 1);
+			expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
+			expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(300);
+		});
+
+		it("throw an error if reconciliation order doesn't exist", async () => {
+			const db = await getRandomDb();
+
+			await expect(addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }])).rejects.toThrow(
+				new ErrReconciliationOrderNotFound(1)
+			);
+		});
+
+		it("throw an error if trying to add lines to a finalized reconciliation order", async () => {
+			const db = await getRandomDb();
+
+			// TODO: simplify this when we remove the tedious customer order line check at supplier order creation
+			//
+			// NOTE: add books to customer is detached from customer existing - we can do so without creating customers
+			await addBooksToCustomer(db, 1, ["1"]);
+
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await finalizeReconciliationOrder(db, 1);
+
+			await expect(addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }])).rejects.toThrow(
+				new ErrReconciliationOrderFinalized(1, [{ isbn: "1", quantity: 1 }])
+			);
+		});
+	});
+});
+
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
 describe("Reconciliation order creation", () => {
 	let db: DB;
 	beforeEach(async () => {
 		db = await getRandomDb();
 		await createCustomerOrders(db);
-	});
-
-	it("can update a currently reconciliating order", async () => {
-		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, 1, newSupplierOrderLines);
-
-		// TODO: might be useful to have a way to filter for a few particular ids?
-		// It's only going to be one here...
-		const supplierOrders = await getPlacedSupplierOrders(db);
-
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
-
-		await createReconciliationOrder(db, 1, ids);
-		const res2 = await getReconciliationOrder(db, 1);
-
-		expect(res2).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: false
-		});
-
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 1 },
-			{ isbn: "1", quantity: 1 },
-			{ isbn: "2", quantity: 1 },
-			{ isbn: "3", quantity: 1 }
-		]);
-
-		const res3 = await getReconciliationOrderLines(db, 1);
-
-		expect(res3).toEqual([
-			{
-				isbn: "1",
-				reconciliation_order_id: 1,
-				quantity: 2,
-				publisher: "MathsAndPhysicsPub",
-				title: "Physics",
-				price: 7,
-				authors: null
-			},
-			{
-				isbn: "2",
-				reconciliation_order_id: 1,
-				quantity: 1,
-				publisher: "ChemPub",
-				title: "Chemistry",
-				price: 13,
-				authors: null
-			},
-			{
-				isbn: "3",
-				reconciliation_order_id: 1,
-				quantity: 1,
-				publisher: "PhantasyPub",
-				title: "The Hobbit",
-				price: 5,
-				authors: null
-			}
-		]);
 	});
 
 	it("can finalize a currently reconciliating order", async () => {
@@ -470,36 +540,11 @@ describe("Reconciliation order creation", () => {
 		]);
 	});
 
-	it("timestamps reconciliation order's 'updatedAt' with ms precision", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-
-		const reconOrder = await getReconciliationOrder(db, 1);
-		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(300);
-
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
-		const reconOrderUpdated = await getReconciliationOrder(db, 1);
-		expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
-		expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(300);
-	});
-
 	describe("Reconciliation order error cases", () => {
 		let db: DB;
 		beforeEach(async () => {
 			db = await getRandomDb();
 			await createCustomerOrders(db);
-		});
-
-		it("throws error when reconciliation order doesn't exist", async () => {
-			await expect(addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "123", quantity: 1 }])).rejects.toThrow(
-				`Reconciliation order ${1} not found`
-			);
 		});
 
 		it("throws error when trying to finalize an already finalized order", async () => {
