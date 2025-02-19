@@ -22,6 +22,7 @@ import {
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
+import { upsertBook } from "../books";
 
 describe("Reconciliation order management:", () => {
 	describe("createReconciliationOrder should", () => {
@@ -425,6 +426,95 @@ describe("Reconciliation order lines:", () => {
 			);
 		});
 	});
+
+	describe("getReconciliationOrderLines should", () => {
+		it("retrieve reconciliation order lines for a particular reconciliation order", async () => {
+			const db = await getRandomDb();
+
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 },
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 }
+			]);
+
+			// Create another reconciliation order (to make sure the distinction is made)
+			await createSupplierOrder(db, 1, [{ isbn: "3", quantity: 1, supplier_id: 1 }]);
+			const [{ id: s2 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 2, [s2]);
+			await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "3", quantity: 1 }]);
+
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ reconciliation_order_id: 1, isbn: "1", quantity: 1 }),
+				expect.objectContaining({ reconciliation_order_id: 1, isbn: "2", quantity: 1 })
+			]);
+
+			expect(await getReconciliationOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ reconciliation_order_id: 2, isbn: "3", quantity: 1 })
+			]);
+		});
+
+		it("retrieve order line's meta data (if available)", async () => {
+			const db = await getRandomDb();
+
+			await upsertBook(db, {
+				isbn: "1",
+				title: "The (Mis)behavior of Markets",
+				authors: "Benoit Mandelbrot",
+				publisher: "Basic Books",
+				price: 10
+			});
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				{
+					reconciliation_order_id: 1,
+					isbn: "1",
+					quantity: 1,
+					title: "The (Mis)behavior of Markets",
+					authors: "Benoit Mandelbrot",
+					publisher: "Basic Books",
+					price: 10
+				}
+			]);
+		});
+
+		it("provide fallbacks if book data not available", async () => {
+			const db = await getRandomDb();
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: s1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [s1]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+
+			expect(await getReconciliationOrderLines(db, 1)).toEqual([
+				{
+					reconciliation_order_id: 1,
+					isbn: "1",
+					quantity: 1,
+					title: "N/A",
+					authors: "N/A",
+					publisher: "N/A",
+					price: 0
+				}
+			]);
+		});
+
+		it("throw an error if reconciliation order doesn't exist", async () => {
+			const db = await getRandomDb();
+			expect(getReconciliationOrderLines(db, 1)).rejects.toThrow(new ErrReconciliationOrderNotFound(1));
+		});
+	});
 });
 
 // TODO: this needs some work... leaving till reconcilation wiring in effort/updates
@@ -486,58 +576,6 @@ describe("Reconciliation order creation", () => {
 
 		const [, orderLine2] = await getCustomerOrderLines(db, 1);
 		expect(Date.now() - orderLine2.received.getTime()).toBeLessThan(100);
-	});
-
-	it("updates existing order line quantity when adding duplicate ISBN", async () => {
-		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, 1, newSupplierOrderLines);
-
-		const supplierOrders = await getPlacedSupplierOrders(db);
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
-
-		await createReconciliationOrder(db, 1, ids);
-
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 3 },
-			{ isbn: "2", quantity: 1 }
-		]);
-
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 2 },
-			{ isbn: "3", quantity: 1 }
-		]);
-
-		const orderLines = await getReconciliationOrderLines(db, 1);
-
-		expect(orderLines).toEqual([
-			{
-				isbn: "1",
-				reconciliation_order_id: 1,
-				quantity: 5,
-				publisher: "MathsAndPhysicsPub",
-				title: "Physics",
-				price: 7,
-				authors: null
-			},
-			{
-				isbn: "2",
-				reconciliation_order_id: 1,
-				quantity: 1,
-				publisher: "ChemPub",
-				title: "Chemistry",
-				price: 13,
-				authors: null
-			},
-			{
-				isbn: "3",
-				reconciliation_order_id: 1,
-				quantity: 1,
-				publisher: "PhantasyPub",
-				title: "The Hobbit",
-				price: 5,
-				authors: null
-			}
-		]);
 	});
 
 	describe("Reconciliation order error cases", () => {

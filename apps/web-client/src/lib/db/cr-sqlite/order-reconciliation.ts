@@ -250,10 +250,27 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
  * @returns array of ReconciliationOrderLine objects with book details
  */
 export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
+	// Check if the order exists
+	// TODO: do we, prehaps, want this to fail silently ??
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
 	const result = await db.execO<ReconciliationOrderLine>(
-		`SELECT rol.isbn, rol.quantity, rol.reconciliation_order_id, book.publisher, book.authors, book.title, book.price FROM reconciliation_order_lines as rol
-		LEFT JOIN book ON rol.isbn = book.isbn
-		WHERE reconciliation_order_id = ?;`,
+		`
+			SELECT
+				rol.isbn,
+				rol.quantity,
+				rol.reconciliation_order_id,
+				COALESCE(book.title, 'N/A') as title,
+				COALESCE(book.authors, 'N/A') as authors,
+				COALESCE(book.publisher, 'N/A') as publisher,
+				COALESCE(book.price, 0) as price
+			FROM reconciliation_order_lines as rol
+			LEFT JOIN book ON rol.isbn = book.isbn
+			WHERE reconciliation_order_id = ?
+		`,
 		[id]
 	);
 
