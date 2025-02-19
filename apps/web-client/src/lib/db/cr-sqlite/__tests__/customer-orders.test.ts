@@ -17,8 +17,9 @@ import {
 } from "../customers";
 // import { createSupplierOrder, getPossibleSupplierOrderLines } from "../suppliers";
 import { markCustomerOrderAsReceived, getRandomDb, getRandomDbs, syncDBs } from "./lib";
-import { associatePublisher, createSupplierOrder, upsertSupplier } from "../suppliers";
+import { associatePublisher, createSupplierOrder, getPlacedSupplierOrders, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
+import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
 describe("Db creation tests", () => {
 	it("should allow initializing a database", async () => {
@@ -219,17 +220,27 @@ describe("Customer order Collection", () => {
 
 		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
 
+		const placedSupplierOrders = await getPlacedSupplierOrders(db);
+		const placedOrderLineIds = placedSupplierOrders.map((order) => order.id);
+
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
-		const orderLineIds = customerOrderLines.map((order) => order.id);
+		const customerOrderLineIds = customerOrderLines.map((order) => order.id);
 
 		// Mark the books as received
-		await markCustomerOrderAsReceived(db, orderLineIds);
+		// await markCustomerOrderAsReceived(db, orderLineIds);
+		const reconOrderId = await createReconciliationOrder(db, placedOrderLineIds);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "9780000000001", quantity: 1 },
+			{ isbn: "9780000000001", quantity: 1 }
+		]);
+		await finalizeReconciliationOrder(db, reconOrderId);
 
 		// Mark as collected
-		await markCustomerOrderAsCollected(db, orderLineIds);
+		await markCustomerOrderAsCollected(db, customerOrderLineIds);
 
 		const updatedLines = await getCustomerOrderLines(db, 1);
 
+		console.log({ updatedLines });
 		expect(updatedLines[0].collected).toBeInstanceOf(Date);
 		expect(updatedLines[1].collected).toBeInstanceOf(Date);
 	});
