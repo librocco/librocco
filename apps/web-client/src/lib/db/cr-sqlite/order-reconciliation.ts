@@ -194,14 +194,20 @@ export class ErrReconciliationOrderNotFound extends Error {
 
 /** Thrown from `addOrderLinesToReconciliationOrder` when trying to add lines to already finalized reconciliation order */
 export class ErrReconciliationOrderFinalized extends Error {
-	constructor(id: number, lines: { isbn: string; quantity: number }[]) {
-		const msg = [
-			"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
-			`  order id: ${id}`,
-			"  order lines:",
-			...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
-		].join("\n");
-		super(msg);
+	constructor(id: number);
+	constructor(id: number, lines: { isbn: string; quantity: number }[]);
+	constructor(id: number, lines?: { isbn: string; quantity: number }[]) {
+		if (lines?.length) {
+			const msg = [
+				"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
+				`  order id: ${id}`,
+				"  order lines:",
+				...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
+			].join("\n");
+			super(msg);
+		} else {
+			super(`Reconciliation order already finalized: ${id}`);
+		}
 	}
 }
 
@@ -291,11 +297,11 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	const reconOrder = await getReconciliationOrder(db, id);
 	if (!reconOrder) {
-		throw new Error(`Reconciliation order ${id} not found`);
+		throw new ErrReconciliationOrderNotFound(id);
 	}
 
 	if (reconOrder.finalized) {
-		throw new Error(`Reconciliation order ${id} is already finalized`);
+		throw new ErrReconciliationOrderFinalized(id);
 	}
 
 	const { supplierOrderIds } = reconOrder;
