@@ -185,6 +185,62 @@ const unmarshalReconciliationOrder = ({
 	}
 };
 
+/** Thrown from `addOrderLinesToReconciliationOrder` when the respective reconciliation order is not found */
+export class ErrReconciliationOrderNotFound extends Error {
+	constructor(id: number) {
+		super(`Reconciliation order not found: trying to add lines to a non existing reconciliation order: id: ${id}`);
+	}
+}
+
+/** Thrown from `addOrderLinesToReconciliationOrder` when trying to add lines to already finalized reconciliation order */
+export class ErrReconciliationOrderFinalized extends Error {
+	constructor(id: number, lines: { isbn: string; quantity: number }[]) {
+		const msg = [
+			"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
+			`  order id: ${id}`,
+			"  order lines:",
+			...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
+		].join("\n");
+		super(msg);
+	}
+}
+
+/**
+ * Adds order lines or updates the quantity of existing isbns for an existing reconciliation order.
+ * These are the _delivered_ books that an employee is adding by scanning their isbns.
+ *
+ * @param db
+ * @param id - The ID of the reconciliation order
+ * @param newLines - Array of objects containing ISBN and quantity to add/update
+ * @throws Error if reconciliation order not found
+ */
+export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	if (reconOrder.finalized) {
+		throw new ErrReconciliationOrderFinalized(id, newLines);
+	}
+
+	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
+
+	const timestamp = Date.now();
+
+	await db.tx(async (txDb) => {
+		const sql = `
+			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
+			VALUES ${multiplyString("(?,?,?)", newLines.length)}
+			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+				quantity = quantity + excluded.quantity;
+		`;
+		await txDb.exec(sql, params);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
+}
+
 /**
  * Retrieves all order lines associated with a specific reconciliation order.
  * These are the _delivered_ books that an employee will add by scanning their isbns.
@@ -202,38 +258,6 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
 	);
 
 	return result;
-}
-
-/**
- * Adds order lines or updates the quantity of existing isbns for an existing reconciliation order.
- * These are the _delivered_ books that an employee is adding by scanning their isbns.
- *
- * @param db
- * @param id - The ID of the reconciliation order
- * @param newLines - Array of objects containing ISBN and quantity to add/update
- * @throws Error if reconciliation order not found
- */
-export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
-
-	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
-	}
-
-	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
-
-	const timestamp = Date.now();
-
-	await db.tx(async (txDb) => {
-		const sql = `
-			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
-			VALUES ${multiplyString("(?,?,?)", newLines.length)}
-			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
-				quantity = quantity + excluded.quantity;
-		`;
-		await txDb.exec(sql, params);
-		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
-	});
 }
 
 /**
