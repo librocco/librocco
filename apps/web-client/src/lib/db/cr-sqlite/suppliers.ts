@@ -257,28 +257,52 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 }
 
 /**
- * Retrieves all placed supplier orders with:
- * - order id & created timestamp
- * - supplier id & name
- * - a total book count
- *
- * Orders are returned sorted by creation date (newest first).
- *
- * @param db - The database instance to query
- * @returns Promise resolving to an array of placed supplier orders with supplier details and book counts
- */
-export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
+  * Retrieves placed supplier orders with:
+  * - order id & created timestamp
+  * - supplier id & name
+  * - a total book count
+  *
+  * Orders are returned sorted by creation date (newest first).
+  *
+  * Optionally, the results can be filtered by supplier id and reconciliation status:
+  * - if `supplierId` is provided, only orders from the specified supplier are returned
+  * - if `reconciled` is specified:
+  *   - `true` returns all orders that are part of a reconciliation order **regerdless of the order being finalized**
+  *   - `false` returns all orders that are not part of a reconciliation order
+  *
+  * @param db - The database instance to query
+  * @returns Promise resolving to an array of placed supplier orders with
+ supplier details and book counts
+  */
+export async function getPlacedSupplierOrders(
+	db: DB,
+	filters?: { supplierId?: number; reconciled?: boolean }
+): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
 	const params = [];
 
-	if (supplierId) {
+	if (filters?.supplierId) {
 		whereConditions.push("so.supplier_id = ?");
-		params.push(supplierId);
+		params.push(filters.supplierId);
+	}
+
+	if (filters?.reconciled !== undefined) {
+		const condition = filters.reconciled ? "IS NOT NULL" : "IS NULL";
+		whereConditions.push(`ro.id ${condition}`);
 	}
 
 	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
 
 	const query = `
+		-- reconciliation orders in case we want to filter with respect to orders being reconciled
+		WITH ro AS (
+			SELECT
+				reconciliation_order.id,
+				CAST (value AS INTEGER) as supplier_order_id
+			FROM reconciliation_order
+			CROSS JOIN json_each(supplier_order_ids)
+		)
+
 		SELECT
             so.id,
             so.supplier_id,
@@ -290,6 +314,7 @@ export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Prom
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
 		${whereClause}
         GROUP BY so.id, so.supplier_id, s.name, so.created
         ORDER BY so.created DESC
