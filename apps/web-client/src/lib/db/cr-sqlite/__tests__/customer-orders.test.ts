@@ -175,13 +175,13 @@ describe("Customer order Collection", () => {
 
 	beforeEach(async () => (db = await getRandomDb()));
 
-	it("should mark earliest unfulfilled order line as collected", async () => {
+	it("should mark received order lines as collected", async () => {
 		await addBooksToCustomer(db, 1, ["9780000000001", "9780000000001"]);
 		await upsertBook(db, { isbn: "9780000000001", publisher: "pub1", title: "title1", authors: "author1", price: 10 });
 		await upsertSupplier(db, { id: 1 });
 		await associatePublisher(db, 1, "pub1");
 
-		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 1, supplier_id: 1 }]);
+		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
 
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
 		const orderLineIds = customerOrderLines.map((order) => order.id);
@@ -193,10 +193,83 @@ describe("Customer order Collection", () => {
 		await markCustomerOrderAsCollected(db, orderLineIds);
 
 		const updatedLines = await getCustomerOrderLines(db, 1);
-		// First line should be collected
+
 		expect(updatedLines[0].collected).toBeInstanceOf(Date);
-		// Second line should remain uncollected
-		expect(updatedLines[1].collected).toBeUndefined();
+		expect(updatedLines[1].collected).toBeInstanceOf(Date);
+	});
+	it("should mark received order lines as collected", async () => {
+		await addBooksToCustomer(db, 1, ["9780000000001", "9780000000001"]);
+		await upsertBook(db, { isbn: "9780000000001", publisher: "pub1", title: "title1", authors: "author1", price: 10 });
+		await upsertSupplier(db, { id: 1 });
+		await associatePublisher(db, 1, "pub1");
+
+		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
+
+		const customerOrderLines = await getCustomerOrderLines(db, 1);
+		const orderLineIds = customerOrderLines.map((order) => order.id);
+
+		// Mark the books as received
+		await markCustomerOrderAsReceived(db, orderLineIds);
+
+		// Mark as collected
+		await markCustomerOrderAsCollected(db, orderLineIds);
+
+		const updatedLines = await getCustomerOrderLines(db, 1);
+
+		expect(updatedLines[0].collected).toBeInstanceOf(Date);
+		expect(updatedLines[1].collected).toBeInstanceOf(Date);
+	});
+
+	it("should allow collecting specific customer orders when multiple customers order the same book", async () => {
+		// Create two customers
+		await upsertCustomer(db, { fullname: "Customer 1", id: 1, displayId: "1" });
+		await upsertCustomer(db, { fullname: "Customer 2", id: 2, displayId: "2" });
+
+		// Both customers order the same book
+		await addBooksToCustomer(db, 1, ["9780000000001"]);
+		await addBooksToCustomer(db, 2, ["9780000000001"]);
+
+		// Set up book and supplier
+		await upsertBook(db, {
+			isbn: "9780000000001",
+			publisher: "pub1",
+			title: "title1",
+			authors: "author1",
+			price: 10
+		});
+		await upsertSupplier(db, { id: 1 });
+		await associatePublisher(db, 1, "pub1");
+
+		// Order books from supplier
+		await createSupplierOrder(db, 1, [
+			{
+				isbn: "9780000000001",
+				quantity: 2, // Order enough for both customers
+				supplier_id: 1
+			}
+		]);
+
+		// Get order lines for both customers
+		const customer1OrderLines = await getCustomerOrderLines(db, 1);
+		const customer2OrderLines = await getCustomerOrderLines(db, 2);
+
+		// Mark both orders as received
+		await markCustomerOrderAsReceived(db, [customer1OrderLines[0].id, customer2OrderLines[0].id]);
+
+		// Only mark customer 2's order as collected
+		await markCustomerOrderAsCollected(db, [customer2OrderLines[0].id]);
+
+		// Verify final state
+		const finalCustomer1Lines = await getCustomerOrderLines(db, 1);
+		const finalCustomer2Lines = await getCustomerOrderLines(db, 2);
+
+		// Customer 1's order should be received but not collected
+		expect(finalCustomer1Lines[0].received).toBeInstanceOf(Date);
+		expect(finalCustomer1Lines[0].collected).toBeUndefined();
+
+		// Customer 2's order should be both received and collected
+		expect(finalCustomer2Lines[0].received).toBeInstanceOf(Date);
+		expect(finalCustomer2Lines[0].collected).toBeInstanceOf(Date);
 	});
 
 	it("should only mark as collected if book is placed and received", async () => {
