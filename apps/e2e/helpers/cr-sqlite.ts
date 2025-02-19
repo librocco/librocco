@@ -1,5 +1,6 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import { Customer, PlacedSupplierOrder, PlacedSupplierOrderLine, Supplier, PossibleSupplierOrderLine, BookData } from "./types";
+import { Customer, PlacedSupplierOrder, PlacedSupplierOrderLine, Supplier, PossibleSupplierOrderLine } from "./types";
+import { BookData } from "@librocco/shared";
 
 // #region books
 
