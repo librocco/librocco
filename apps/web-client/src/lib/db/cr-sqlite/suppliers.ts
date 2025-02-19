@@ -409,8 +409,16 @@ export async function createSupplierOrder(
 			// The truncated list of custome order line ids - the lines we need to update to "placed"
 			const customerOrderLineIds = _customerOrderLineIds.slice(0, quantity);
 
+			// NOTE: the following two updates are a duplication and I propose we use the join table for state management
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
+
+			// Create customer order line - supplier order relations
+			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, orderId]);
+			await db.exec(
+				`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+				values.flat()
+			);
 
 			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [
 				orderId,
