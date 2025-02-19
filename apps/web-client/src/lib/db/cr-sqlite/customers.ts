@@ -200,14 +200,12 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
 
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
-	/**
-	 * @TODO the customerId is persisted with a decimal point,
-	 * converting it to a string here resulted in the book not getting persisted
-	 */
-	const params = bookIsbns.map((isbn) => [customerId, isbn]).flat();
+	const timestamp = Date.now();
+	const params = bookIsbns.map((isbn) => [customerId, isbn, timestamp]).flat();
 	const sql = `
-     INSERT INTO customer_order_lines (customer_id, isbn)
-     VALUES ${multiplyString("(?,?)", bookIsbns.length)};`;
+     INSERT INTO customer_order_lines (customer_id, isbn, created)
+     VALUES ${multiplyString("(?,?,?)", bookIsbns.length)}
+	`;
 
 	await db.exec(sql, params);
 };
@@ -252,40 +250,6 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 };
 
 /**
- * Marks customer order lines as received when supplier order lines are fulfilled.
- * For each supplied rowId, it updates the earliest unfulfilled customer order line
- * (that has been placed but not received) with the current timestamp as received date.
- *
- * @param {DB} db - The database connection instance
- * @param {ids[]} ids - Array of supplier order line ids that have been received
- * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
- *
- * @remarks
- * - Only updates the earliest unfulfilled order line for each ISBN
- * - Only updates order lines that have been placed but not yet received
- * - Updates are performed in a single transaction
- * - If supplierOrderLines is empty, the function returns immediately
- */
-
-export const markCustomerOrderAsReceived = async (db: DB, ids: number[]): Promise<void> => {
-	if (!ids.length) return;
-
-	return db.tx(async (txDb) => {
-		const timestamp = Date.now();
-		const placeholders = multiplyString("?", ids.length);
-		await txDb.exec(
-			`
-		 UPDATE customer_order_lines
-SET received = ?
-WHERE id IN (${placeholders})
-AND received IS NULL AND placed IS NOT NULL
-;`,
-			[timestamp, ...ids]
-		);
-	});
-};
-
-/**
  * Marks customer order lines as collected when customer order lines are picked up.
  * For each supplied ISBN, it updates the earliest unfulfilled customer order line
  * (that has been received but not collected) with the current timestamp as collected date.
@@ -310,4 +274,16 @@ export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promi
 			[timestamp, ...ids]
 		);
 	});
+};
+
+export const markCustomerOrderLineAsCollected = async (db: DB, lineId: number): Promise<void> => {
+	const timestamp = Date.now();
+	await db.exec(
+		`
+		UPDATE customer_order_lines
+		SET collected = ?
+		WHERE id = ?
+		`,
+		[timestamp, lineId]
+	);
 };
