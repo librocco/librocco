@@ -2,8 +2,6 @@ import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { testOrders } from "@/helpers/fixtures";
-import { createSupplierOrder } from "@/helpers/cr-sqlite";
-import { getDbHandle } from "@/helpers";
 
 // * Note: its helpful to make an assertion after each <enter> key
 // as it seems that Playwright may start running assertions before page data has fully caught up
@@ -22,7 +20,7 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Compare" }).nth(1)).not.toBeVisible();
 });
-testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, placedOrders }) => {
+testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
