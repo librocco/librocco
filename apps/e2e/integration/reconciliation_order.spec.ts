@@ -1,16 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
-import { getDashboard } from "@/helpers";
 
 test.beforeEach(async ({ page }) => {
-	await page.goto(baseURL);
-	await getDashboard(page).waitFor();
+	const addr = `${baseURL}orders/suppliers/orders/`;
+	await page.goto(addr);
 
-	page.getByLabel("Main navigation");
-	page.getByRole("listitem").last().click();
-	const nav = page.getByLabel("Main navigation");
-	await nav.waitFor();
 	await page.getByLabel("CreateReconciliationOrder").waitFor();
 	page.getByLabel("CreateReconciliationOrder").click();
 	await expect(page.getByLabel("CreateReconciliationOrder")).toBeDisabled();

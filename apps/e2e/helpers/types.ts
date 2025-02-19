@@ -3,7 +3,7 @@ import type { Locator, Page } from "@playwright/test";
 
 import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId } from "@librocco/shared";
 import { SearchFieldInterface } from "./searchField";
-import { BookData } from "./cr-sqlite";
+import { BookData } from "@librocco/shared";
 
 /** A util type used to "pick" a subset of the given (union type) */
 export type Subset<T, S extends T> = S;
@@ -328,10 +328,21 @@ export type Supplier = {
 	address?: string;
 };
 
+export type PossibleSupplierOrderLine = {
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Pick<BookData, "isbn" | "title" | "authors">;
+
+export type SupplierOrder = {
+	supplier_id: number;
+	created: Date;
+	lines: SupplierOrderLine[];
+	id: number;
+};
 export type SupplierOrderLine = {
 	supplier_id: number;
 	supplier_name: string;
-	// TODO: extend from Book type (which properties are optional?)
 	isbn: string;
 	title: string;
 	authors: string;
