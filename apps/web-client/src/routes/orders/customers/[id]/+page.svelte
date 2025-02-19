@@ -24,7 +24,6 @@
 		removeBooksFromCustomer,
 		isDisplayIdUnique,
 		upsertCustomer,
-		markCustomerOrderAsReceived,
 		markCustomerOrderAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 
