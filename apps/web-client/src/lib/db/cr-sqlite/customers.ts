@@ -257,7 +257,7 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  * (that has been placed but not received) with the current timestamp as received date.
  *
  * @param {DB} db - The database connection instance
- * @param {rowIds[]} rowIds - Array of supplier order line ids that have been received
+ * @param {ids[]} ids - Array of supplier order line ids that have been received
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
  *
  * @remarks
@@ -267,25 +267,20 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
  * - If supplierOrderLines is empty, the function returns immediately
  */
 
-export const markCustomerOrderAsReceived = async (db: DB, rowIds: number[]): Promise<void> => {
-	if (!rowIds.length) return;
+export const markCustomerOrderAsReceived = async (db: DB, ids: number[]): Promise<void> => {
+	if (!ids.length) return;
 
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
-		const placeholders = multiplyString("?", rowIds.length);
+		const placeholders = multiplyString("?", ids.length);
 		await txDb.exec(
 			`
 		 UPDATE customer_order_lines
 SET received = ?
-WHERE id IN (
-    SELECT id FROM customer_order_lines
-    WHERE id IN (${placeholders})
-        AND placed IS NOT NULL
-        AND received IS NULL
-    ORDER BY placed ASC
-    LIMIT 1
-);`,
-			[timestamp, ...rowIds]
+WHERE id IN (${placeholders})
+AND received IS NULL AND placed IS NOT NULL
+;`,
+			[timestamp, ...ids]
 		);
 	});
 };
@@ -296,30 +291,23 @@ WHERE id IN (
  * (that has been received but not collected) with the current timestamp as collected date.
  *
  * @param {DB} db - The database connection instance
- * @param {rowIds[]} rowIds - Array of supplier order line ids that have been collected
+ * @param {ids[]} ids - Array of supplier order line ids that have been collected
  * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as collected
  */
 
-export const markCustomerOrderAsCollected = async (db: DB, rowIds: number[]): Promise<void> => {
-	if (!rowIds.length) return;
+export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promise<void> => {
+	if (!ids.length) return;
 	return db.tx(async (txDb) => {
 		const timestamp = Date.now();
-		const placeholders = multiplyString("?", rowIds.length);
+		const placeholders = multiplyString("?", ids.length);
 		await txDb.exec(
 			`
 		 UPDATE customer_order_lines
             SET collected = ?
-            WHERE id IN (
-                SELECT id
-                FROM customer_order_lines
-                WHERE id IN (${placeholders})
-                    AND placed IS NOT NULL
-                    AND received IS NOT NULL
-                    AND collected IS NULL
-                ORDER BY received ASC
-                LIMIT 1
-);`,
-			[timestamp, ...rowIds]
+            WHERE id IN (${placeholders})
+            AND collected IS NULL AND received IS NOT NULL
+            ;`,
+			[timestamp, ...ids]
 		);
 	});
 };
