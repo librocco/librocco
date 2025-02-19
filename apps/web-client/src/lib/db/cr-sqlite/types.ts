@@ -123,7 +123,7 @@ export type DBReconciliationOrder = {
 	supplier_order_ids: string;
 	created: number;
 	id?: number;
-	finalized: boolean;
+	finalized: number;
 	updatedAt: number;
 };
 
