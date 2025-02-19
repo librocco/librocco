@@ -62,9 +62,11 @@ export class ErrSupplierOrdersAlreadyReconciling extends Error {
 			"some of the provided supplier order ids match supplier orders already associated with other reconciliation order(s)",
 			`  provided ids: ${providedIds}`,
 			`  conflicts:`,
-			...conflicts.map(
-				({ id, supplierOrderIds }) => `    reconciliation order id: ${id}, conflicting supplier order ids: ${supplierOrderIds.join(", ")}`
-			)
+			...conflicts
+				.sort(asc(({ id }) => id))
+				.map(
+					({ id, supplierOrderIds }) => `    reconciliation order id: ${id}, conflicting supplier order ids: ${supplierOrderIds.join(", ")}`
+				)
 		].join("\n");
 		super(msg);
 	}
@@ -131,27 +133,18 @@ ascending
  * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
-		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
-			ORDER BY id ASC;`
-	);
+export async function getAllReconciliationOrders(db: DB, filters?: { finalized?: boolean }): Promise<ReconciliationOrder[]> {
+	// Filter by finalized status if provided (return all otherwise)
+	const whereClause = filters?.finalized === undefined ? "" : `WHERE finalized = ${Number(filters.finalized)}`;
+
+	const result = await db.execO<DBReconciliationOrder>(`
+		SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${whereClause}
+		ORDER BY updatedAt DESC
+	`);
+
 	return result.map(unmarshalReconciliationOrder);
 }
-
-const unmarshalReconciliationOrder = ({ supplier_order_ids, created, updatedAt, ...order }: DBReconciliationOrder): ReconciliationOrder => {
-	let supplierOrderIds = [];
-
-	try {
-		supplierOrderIds = JSON.parse(supplier_order_ids);
-	} catch {
-		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
-		throw new Error(msg);
-	}
-
-	return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt) };
-};
 
 /**
  * Retrieves a specific reconciliation order by ID
@@ -163,17 +156,35 @@ JSON
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
 	const [result] = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created
-		FROM reconciliation_order WHERE id = ?;`,
+		`
+			SELECT id, supplier_order_ids, finalized, updatedAt, created
+			FROM reconciliation_order WHERE id = ?
+		`,
 		[id]
 	);
 
 	if (!result) {
-		throw new Error(`Reconciliation order with id ${id} not found`);
+		return undefined;
 	}
 
 	return unmarshalReconciliationOrder(result);
 }
+
+const unmarshalReconciliationOrder = ({
+	supplier_order_ids,
+	created,
+	updatedAt,
+	finalized,
+	...order
+}: DBReconciliationOrder): ReconciliationOrder => {
+	try {
+		const supplierOrderIds = JSON.parse(supplier_order_ids);
+		return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt), finalized: Boolean(finalized) };
+	} catch {
+		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
+		throw new Error(msg);
+	}
+};
 
 /**
  * Retrieves all order lines associated with a specific reconciliation order.

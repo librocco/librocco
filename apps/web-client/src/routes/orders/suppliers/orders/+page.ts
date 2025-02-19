@@ -18,7 +18,7 @@ export const load: PageLoad = async ({ depends, parent }) => {
 
 	const possibleOrders = await getPossibleSupplierOrders(dbCtx.db);
 	const placedOrders = await getUnreconciledSupplierOrders(dbCtx.db);
-	const reconcilingOrders = await getAllReconciliationOrders(db, false);
+	const reconcilingOrders = await getAllReconciliationOrders(db, { finalized: false });
 
 	return { possibleOrders, placedOrders, reconcilingOrders };
 };
