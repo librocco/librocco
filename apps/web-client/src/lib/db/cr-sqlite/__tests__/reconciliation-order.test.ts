@@ -517,603 +517,566 @@ describe("Reconciliation order lines:", () => {
 	});
 });
 
-// TODO: this needs some work... leaving till reconcilation wiring in effort/updates
-describe("Reconciliation order creation", () => {
-	let db: DB;
-	beforeEach(async () => {
-		db = await getRandomDb();
-		await createCustomerOrders(db);
-	});
+describe("Reconciliation order finalization:", () => {
+	describe("finalizeReconciliationOrder should", async () => {
+		it("finalize a reconciling order with single book (base case)", async () => {
+			const db = await getRandomDb();
 
-	it("can finalize a currently reconciliating order", async () => {
-		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-		await createSupplierOrder(db, 1, newSupplierOrderLines);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 
-		// TODO: might be useful to have a way to filter for a few particular ids?
-		// It's only going to be one here...
-		const supplierOrders = await getPlacedSupplierOrders(db);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
 
-		const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		await createReconciliationOrder(db, 1, ids);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
 
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+			expect(await getReconciliationOrder(db, 1)).toMatchObject({
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: true
+			});
 
-		await finalizeReconciliationOrder(db, 1);
-		const res3 = await getReconciliationOrder(db, 1);
-
-		const books = await getCustomerOrderLines(db, 1);
-		expect(books[0].received).toBeInstanceOf(Date);
-		expect(res3).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: true
-		});
-	});
-
-	it("marks customer order lines' 'received' timestamp with ms precision", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1", "2"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrder1Id]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 1);
-
-		const [orderLine1] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine1.received.getTime()).toBeLessThan(100);
-
-		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 2, [supplierOrder2Id]);
-		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 2);
-
-		const [, orderLine2] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine2.received.getTime()).toBeLessThan(100);
-	});
-
-	describe("Reconciliation order error cases", () => {
-		let db: DB;
-		beforeEach(async () => {
-			db = await getRandomDb();
-			await createCustomerOrders(db);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: undefined }),
+				expect.objectContaining({ isbn: "3", received: undefined })
+			]);
 		});
 
-		it("throws error when trying to finalize an already finalized order", async () => {
-			const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
-			await createSupplierOrder(db, 1, newSupplierOrderLines);
+		it("finalize a reconciling order with multiple different books (same customer/supplier order)", async () => {
+			const db = await getRandomDb();
 
-			// TODO: might be useful to have a way to filter for a few particular ids?
-			// It's only going to be one here...
-			const supplierOrders = await getPlacedSupplierOrders(db);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
 
-			const ids = supplierOrders.map((supplierOrder) => supplierOrder.id);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 },
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
 
-			await createReconciliationOrder(db, 1, ids);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 }
+			]);
 
 			await finalizeReconciliationOrder(db, 1);
 
-			await expect(finalizeReconciliationOrder(db, 1)).rejects.toThrow(`Reconciliation order ${1} is already finalized`);
-		});
-	});
-});
-
-describe("finalizeReconciliationOrder should", async () => {
-	it("finalize a reconciling order with single book (base case)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-		expect(await getReconciliationOrder(db, 1)).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: true
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "3", received: undefined })
+			]);
 		});
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: undefined }),
-			expect.objectContaining({ isbn: "3", received: undefined })
-		]);
-	});
+		it("finalize a reconciling order with multiple quantities of the same book (over multiple customer orders)", async () => {
+			const db = await getRandomDb();
 
-	it("finalize a reconciling order with multiple different books (same customer/supplier order)", async () => {
-		const db = await getRandomDb();
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
 
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 2, ["1"]);
 
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 1, supplier_id: 1 },
-			{ isbn: "2", quantity: 1, supplier_id: 1 }
-		]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
 
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 1 },
-			{ isbn: "2", quantity: 1 }
-		]);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
 
-		await finalizeReconciliationOrder(db, 1);
+			await finalizeReconciliationOrder(db, 1);
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "3", received: undefined })
-		]);
-	});
-
-	it("finalize a reconciling order with multiple quantities of the same book (over multiple customer orders)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-
-		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: undefined }),
-			expect.objectContaining({ isbn: "3", received: undefined })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-	});
-
-	it("reconcile customer order lines on first-come-first-served basis (in case only a subset of ordered books were delivered)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-
-		// First two to order should get their books
-		await addBooksToCustomer(db, 2, ["1"]);
-		await addBooksToCustomer(db, 3, ["1"]);
-		// The last one won't be delivered
-		await addBooksToCustomer(db, 1, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 3, supplier_id: 1 }]);
-
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-		expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-	});
-
-	it("reconcile customer order lines on first-come-first-served basis (even if priority orders don't belong to the supplier order being reconciled)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-		// Second supplier order
-		await addBooksToCustomer(db, 3, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-
-		// NOTE: we're reconciling the 2nd supplier order (orders are sorted in reverse chronological order)
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		// Technically, the 1 book received was ordered for customer 3, but customer 1 had ordered 1st and they don't have their book yet
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
-		expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
-	});
-
-	it("reject customer order lines starting from last created customer order line (even if not part of the supplier order being reconciled)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-		// Second supplier order
-		await addBooksToCustomer(db, 3, ["1"]);
-		// Not placed (pending) - putting this here to make sure it doesn't affect rejection:
-		// even though last 'created', it's not placed yet - the customer 3's order should be rejected
-		await addBooksToCustomer(db, 4, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-
-		// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
-		const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		// Out of 2 books, only 1 arrived - 1 to reconcile (mark as received), 1 to reject (effectively marking as waiting to be re-ordered)
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: undefined })
-		]);
-		// Even though customer order line 3 was not placed as part of the supplier order being reconciled, it was rejected by 1 book missing from the order
-		expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
-		// Not changed - control variable
-		expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
-	});
-
-	// NOTE: In a case where the book was overdelivered (considering the respective supplier order), but there are more in-progress customer orders
-	// for the same ISBN, it's ok for the overdelivered quantity to spill over to other customer order lines
-	it("reconcile more customer order lines than initially ordered (if such exist), even if not part of the current supplier order", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-		await upsertCustomer(db, { id: 4, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-		// Second supplier order (1 book will be overdelivered in supplier order 1)
-		await addBooksToCustomer(db, 3, ["1"]); // This line will be reconciled with supplier order 1 (even though ordered in supplier order 2)
-		await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - here to make sure only the overdeliver quantity spills over
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-
-		// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
-		const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		// 1st supplier order
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-
-		// 2nd supplier order
-		//
-		// Customer 3 can be served early - book was overdelivered
-		expect(await getCustomerOrderLines(db, 3)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-		// Customer 4 is waiting for their order (still pending)
-		expect(await getCustomerOrderLines(db, 4)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: undefined })
-		]);
-	});
-
-	it("reconcile pending customer order lines if overdelivered", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-		await upsertCustomer(db, { id: 4, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-		// Not part of any supplier order yet
-		await addBooksToCustomer(db, 3, ["1"]); // This line will be reconciled with supplier order 1 (even though not yet orderd)
-		await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - here to make sure only the overdeliver quantity spills over
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-
-		// NOTE: only 1 supplier order was placed
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		// 1st supplier order
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
-		]);
-
-		// Not placed with supplier
-		//
-		// Customer 3 can be served early - book was overdelivered
-		expect(await getCustomerOrderLines(db, 3)).toEqual([
-			expect.objectContaining({ isbn: "1", placed: undefined, received: expect.any(Date) })
-		]);
-		// Customer 4 is waiting for their order to be placed (and eventually delivered)
-		expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
-	});
-
-	it("be able to handle multiple supplier orders (case: orders fully filled)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-		await addBooksToCustomer(db, 2, ["1", "2"]);
-		// Second supplier order
-		await addBooksToCustomer(db, 3, ["1", "3"]);
-
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 2, supplier_id: 1 },
-			{ isbn: "2", quantity: 2, supplier_id: 1 },
-			{ isbn: "3", quantity: 1, supplier_id: 1 }
-		]);
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 1, supplier_id: 1 },
-			{ isbn: "3", quantity: 1, supplier_id: 1 }
-		]);
-
-		const supplierOrders = await getPlacedSupplierOrders(db);
-		const supplierOrderIds = supplierOrders.map(({ id }) => id);
-
-		await createReconciliationOrder(db, 1, supplierOrderIds);
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 3 },
-			{ isbn: "2", quantity: 2 },
-			{ isbn: "3", quantity: 2 }
-		]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "3", received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 3)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "3", received: expect.any(Date) })
-		]);
-	});
-
-	it("be able to handle multiple supplier orders (case: only a subset of the order filled)", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-		await upsertCustomer(db, { id: 3, displayId: "3" });
-
-		// First supplier order
-		await addBooksToCustomer(db, 1, ["1", "2", "3"]);
-		await addBooksToCustomer(db, 2, ["1", "2"]);
-		// Second supplier order
-		await addBooksToCustomer(db, 3, ["1", "3"]);
-
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 2, supplier_id: 1 },
-			{ isbn: "2", quantity: 2, supplier_id: 1 },
-			{ isbn: "3", quantity: 1, supplier_id: 1 }
-		]);
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 1, supplier_id: 1 },
-			{ isbn: "3", quantity: 1, supplier_id: 1 }
-		]);
-
-		const supplierOrders = await getPlacedSupplierOrders(db);
-		const supplierOrderIds = supplierOrders.map(({ id }) => id);
-
-		await createReconciliationOrder(db, 1, supplierOrderIds);
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 1 },
-			{ isbn: "3", quantity: 2 }
-		]);
-
-		await finalizeReconciliationOrder(db, 1);
-
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: undefined }),
-			expect.objectContaining({ isbn: "3", received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([
-			expect.objectContaining({ isbn: "1", received: undefined }),
-			expect.objectContaining({ isbn: "2", received: undefined })
-		]);
-		expect(await getCustomerOrderLines(db, 3)).toEqual([
-			expect.objectContaining({ isbn: "1", received: undefined }),
-			expect.objectContaining({ isbn: "3", received: expect.any(Date) })
-		]);
-	});
-
-	// NOTE: This is the current implementation, maybe we want it to, in fact, explode in these cases
-	it("not explode if quantity delivered exceeds quantity ordered", async () => {
-		const db = await getRandomDb();
-
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
-
-		await addBooksToCustomer(db, 1, ["1"]);
-		await addBooksToCustomer(db, 2, ["1"]);
-
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
-
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 3 } // only 2 ordered
-		]);
-
-		await finalizeReconciliationOrder(db, 1);
-		expect(await getReconciliationOrder(db, 1)).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: true
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: undefined }),
+				expect.objectContaining({ isbn: "3", received: undefined })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
 		});
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-	});
+		it("reconcile customer order lines on first-come-first-served basis (in case only a subset of ordered books were delivered)", async () => {
+			const db = await getRandomDb();
 
-	// NOTE: This is the current implementation, maybe we want it to, in fact, explode in these cases
-	it("not explode if a delivered book was never ordered", async () => {
-		const db = await getRandomDb();
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
 
-		await upsertCustomer(db, { id: 1, displayId: "1" });
+			// First two to order should get their books
+			await addBooksToCustomer(db, 2, ["1"]);
+			await addBooksToCustomer(db, 3, ["1"]);
+			// The last one won't be delivered
+			await addBooksToCustomer(db, 1, ["1"]);
 
-		await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 3, supplier_id: 1 }]);
 
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
-		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		await createReconciliationOrder(db, 1, [supplierOrderId]);
-		await addOrderLinesToReconciliationOrder(db, 1, [
-			{ isbn: "1", quantity: 1 },
-			{ isbn: "2", quantity: 1 } // was never ordered
-		]);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 2 }]);
 
-		await finalizeReconciliationOrder(db, 1);
-		expect(await getReconciliationOrder(db, 1)).toMatchObject({
-			id: 1,
-			supplierOrderIds: [1],
-			finalized: true
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
 		});
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
-	});
+		it("reconcile customer order lines on first-come-first-served basis (even if priority orders don't belong to the supplier order being reconciled)", async () => {
+			const db = await getRandomDb();
 
-	it("prefer earlier customer order line, even if ordered multiple times", async () => {
-		const db = await getRandomDb();
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
 
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await addBooksToCustomer(db, 2, ["1"]);
+			// Second supplier order
+			await addBooksToCustomer(db, 3, ["1"]);
 
-		// Ordering two books in order to be able to reconcile at least one
-		await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
 
-		// Place and reconcile the supplier order
+			// NOTE: we're reconciling the 2nd supplier order (orders are sorted in reverse chronological order)
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			// Technically, the 1 book received was ordered for customer 3, but customer 1 had ordered 1st and they don't have their book yet
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+		});
+
+		it("reject customer order lines starting from last created customer order line (even if not part of the supplier order being reconciled)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await addBooksToCustomer(db, 2, ["1"]);
+			// Second supplier order
+			await addBooksToCustomer(db, 3, ["1"]);
+			// Not placed (pending) - putting this here to make sure it doesn't affect rejection:
+			// even though last 'created', it's not placed yet - the customer 3's order should be rejected
+			await addBooksToCustomer(db, 4, ["1"]);
+
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+
+			// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
+			const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			// Out of 2 books, only 1 arrived - 1 to reconcile (mark as received), 1 to reject (effectively marking as waiting to be re-ordered)
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: undefined })
+			]);
+			// Even though customer order line 3 was not placed as part of the supplier order being reconciled, it was rejected by 1 book missing from the order
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
+			// Not changed - control variable
+			expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
+		});
+
+		// NOTE: In a case where the book was overdelivered (considering the respective supplier order), but there are more in-progress customer orders
+		// for the same ISBN, it's ok for the overdelivered quantity to spill over to other customer order lines
+		it("reconcile more customer order lines than initially ordered (if such exist), even if not part of the current supplier order", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await upsertCustomer(db, { id: 4, displayId: "3" });
+
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await addBooksToCustomer(db, 2, ["1"]);
+			// Second supplier order (1 book will be overdelivered in supplier order 1)
+			await addBooksToCustomer(db, 3, ["1"]); // This line will be reconciled with supplier order 1 (even though ordered in supplier order 2)
+			await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - here to make sure only the overdeliver quantity spills over
+
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+
+			// NOTE: we're reconciling the 1st supplier order (orders are sorted in reverse chronological order)
+			const [, { id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
+
+			await finalizeReconciliationOrder(db, 1);
+
+			// 1st supplier order
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+
+			// 2nd supplier order
+			//
+			// Customer 3 can be served early - book was overdelivered
+			expect(await getCustomerOrderLines(db, 3)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+			// Customer 4 is waiting for their order (still pending)
+			expect(await getCustomerOrderLines(db, 4)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: undefined })
+			]);
+		});
+
+		it("reconcile pending customer order lines if overdelivered", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+			await upsertCustomer(db, { id: 4, displayId: "3" });
+
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await addBooksToCustomer(db, 2, ["1"]);
+			// Not part of any supplier order yet
+			await addBooksToCustomer(db, 3, ["1"]); // This line will be reconciled with supplier order 1 (even though not yet orderd)
+			await addBooksToCustomer(db, 4, ["1"]); // Will not be reconciled - here to make sure only the overdeliver quantity spills over
+
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+
+			// NOTE: only 1 supplier order was placed
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 3 }]);
+
+			await finalizeReconciliationOrder(db, 1);
+
+			// 1st supplier order
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: expect.any(Date), received: expect.any(Date) })
+			]);
+
+			// Not placed with supplier
+			//
+			// Customer 3 can be served early - book was overdelivered
+			expect(await getCustomerOrderLines(db, 3)).toEqual([
+				expect.objectContaining({ isbn: "1", placed: undefined, received: expect.any(Date) })
+			]);
+			// Customer 4 is waiting for their order to be placed (and eventually delivered)
+			expect(await getCustomerOrderLines(db, 4)).toEqual([expect.objectContaining({ isbn: "1", placed: undefined, received: undefined })]);
+		});
+
+		it("be able to handle multiple supplier orders (case: orders fully filled)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 2, ["1", "2"]);
+			// Second supplier order
+			await addBooksToCustomer(db, 3, ["1", "3"]);
+
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 2, supplier_id: 1 },
+				{ isbn: "2", quantity: 2, supplier_id: 1 },
+				{ isbn: "3", quantity: 1, supplier_id: 1 }
+			]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 },
+				{ isbn: "3", quantity: 1, supplier_id: 1 }
+			]);
+
+			const supplierOrders = await getPlacedSupplierOrders(db);
+			const supplierOrderIds = supplierOrders.map(({ id }) => id);
+
+			await createReconciliationOrder(db, 1, supplierOrderIds);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 3 },
+				{ isbn: "2", quantity: 2 },
+				{ isbn: "3", quantity: 2 }
+			]);
+
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "3", received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "3", received: expect.any(Date) })
+			]);
+		});
+
+		it("be able to handle multiple supplier orders (case: only a subset of the order filled)", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			// First supplier order
+			await addBooksToCustomer(db, 1, ["1", "2", "3"]);
+			await addBooksToCustomer(db, 2, ["1", "2"]);
+			// Second supplier order
+			await addBooksToCustomer(db, 3, ["1", "3"]);
+
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 2, supplier_id: 1 },
+				{ isbn: "2", quantity: 2, supplier_id: 1 },
+				{ isbn: "3", quantity: 1, supplier_id: 1 }
+			]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 },
+				{ isbn: "3", quantity: 1, supplier_id: 1 }
+			]);
+
+			const supplierOrders = await getPlacedSupplierOrders(db);
+			const supplierOrderIds = supplierOrders.map(({ id }) => id);
+
+			await createReconciliationOrder(db, 1, supplierOrderIds);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "3", quantity: 2 }
+			]);
+
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: undefined }),
+				expect.objectContaining({ isbn: "3", received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([
+				expect.objectContaining({ isbn: "1", received: undefined }),
+				expect.objectContaining({ isbn: "2", received: undefined })
+			]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([
+				expect.objectContaining({ isbn: "1", received: undefined }),
+				expect.objectContaining({ isbn: "3", received: expect.any(Date) })
+			]);
+		});
+
+		// NOTE: This is the current implementation, maybe we want it to, in fact, explode in these cases
 		//
-		// ISBN 1 line was ordered here, but not delivered
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 1, supplier_id: 1 }, // Placed, but won't be delivered
-			{ isbn: "2", quantity: 1, supplier_id: 1 }
-		]);
-		const [{ id: supOrder1 }] = await getPlacedSupplierOrders(db);
-		await createReconciliationOrder(db, 1, [supOrder1]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 1);
+		// NOTE: At the time of writing, there was no early reconciliation logic (in case of overdelivery).
+		// This becomes obsolete in that case, but it might be useful as a TODO to test out (and implement) the
+		// functionality that should be in place for overdelivery without additional customer order lines to reconcile.
+		it("not explode if quantity delivered exceeds quantity ordered", async () => {
+			const db = await getRandomDb();
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: undefined }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) })
-		]);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
 
-		// Order ISBN 1 for customer 2
-		await addBooksToCustomer(db, 2, ["1"]);
+			await addBooksToCustomer(db, 1, ["1"]);
+			await addBooksToCustomer(db, 2, ["1"]);
 
-		// Place the order with the supplier again
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
-		// NOTE: the supplier orders are sorted by date in reverse order
-		const [{ id: supOrder2 }] = await getPlacedSupplierOrders(db);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		// Only one delivered copy - should end up with customer 1
-		await createReconciliationOrder(db, 2, [supOrder2]);
-		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 2);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 3 } // only 2 ordered
+			]);
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
-	});
+			await finalizeReconciliationOrder(db, 1);
+			expect(await getReconciliationOrder(db, 1)).toMatchObject({
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: true
+			});
 
-	it("prefer earlier customer order line, even if re-ordered with later supplier order", async () => {
-		const db = await getRandomDb();
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
+		});
 
-		await upsertCustomer(db, { id: 1, displayId: "1" });
-		await upsertCustomer(db, { id: 2, displayId: "2" });
+		// NOTE: This is the current implementation, maybe we want it to, in fact, explode in these cases
+		it("not explode if a delivered book was never ordered", async () => {
+			const db = await getRandomDb();
 
-		// Place an order for the first customer - 1st supplier order
-		await addBooksToCustomer(db, 1, ["1", "2"]);
-		await createSupplierOrder(db, 1, [
-			{ isbn: "1", quantity: 1, supplier_id: 1 }, // Placed, but won't be delivered
-			{ isbn: "2", quantity: 1, supplier_id: 1 }
-		]);
+			await upsertCustomer(db, { id: 1, displayId: "1" });
 
-		// Place an order for the second customer - 2nd supplier order
-		await addBooksToCustomer(db, 2, ["1"]);
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			await addBooksToCustomer(db, 1, ["1"]);
 
-		// Reconcile the 1st order - ISBN 1 for customer 1 not delivered
-		//
-		// NOTE: the supplier orders are sorted by date in reverse order
-		const [, { id: supOrder1 }] = await getPlacedSupplierOrders(db);
-		await createReconciliationOrder(db, 1, [supOrder1]);
-		await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 1);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
 
-		// Re-order the ISBN 1 for customer 1 - 3rd supplier order
-		await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [
+				{ isbn: "1", quantity: 1 },
+				{ isbn: "2", quantity: 1 } // was never ordered
+			]);
 
-		// Reconcile the 2nd and 3rd order - only one book delivered - should end up with customer 1 nonetheless
-		// NOTE: the supplier orders are sorted by date in reverse order
-		const [{ id: supOrder3 }, { id: supOrder2 }] = await getPlacedSupplierOrders(db);
-		await createReconciliationOrder(db, 2, [supOrder2, supOrder3]);
-		await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
-		await finalizeReconciliationOrder(db, 2);
+			await finalizeReconciliationOrder(db, 1);
+			expect(await getReconciliationOrder(db, 1)).toMatchObject({
+				id: 1,
+				supplierOrderIds: [1],
+				finalized: true
+			});
 
-		expect(await getCustomerOrderLines(db, 1)).toEqual([
-			expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
-			expect.objectContaining({ isbn: "2", received: expect.any(Date) })
-		]);
-		expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", received: expect.any(Date) })]);
+		});
+
+		it("prefer earlier customer order line, even if ordered multiple times", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+
+			// Ordering two books in order to be able to reconcile at least one
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+
+			// Place and reconcile the supplier order
+			//
+			// ISBN 1 line was ordered here, but not delivered
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 }, // Placed, but won't be delivered
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+			const [{ id: supOrder1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [supOrder1]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: undefined }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) })
+			]);
+
+			// Order ISBN 1 for customer 2
+			await addBooksToCustomer(db, 2, ["1"]);
+
+			// Place the order with the supplier again
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 2, supplier_id: 1 }]);
+			// NOTE: the supplier orders are sorted by date in reverse order
+			const [{ id: supOrder2 }] = await getPlacedSupplierOrders(db);
+
+			// Only one delivered copy - should end up with customer 1
+			await createReconciliationOrder(db, 2, [supOrder2]);
+			await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 2);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+		});
+
+		it("prefer earlier customer order line, even if re-ordered with later supplier order", async () => {
+			const db = await getRandomDb();
+
+			await upsertCustomer(db, { id: 1, displayId: "1" });
+			await upsertCustomer(db, { id: 2, displayId: "2" });
+
+			// Place an order for the first customer - 1st supplier order
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [
+				{ isbn: "1", quantity: 1, supplier_id: 1 }, // Placed, but won't be delivered
+				{ isbn: "2", quantity: 1, supplier_id: 1 }
+			]);
+
+			// Place an order for the second customer - 2nd supplier order
+			await addBooksToCustomer(db, 2, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+
+			// Reconcile the 1st order - ISBN 1 for customer 1 not delivered
+			//
+			// NOTE: the supplier orders are sorted by date in reverse order
+			const [, { id: supOrder1 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 1, [supOrder1]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "2", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			// Re-order the ISBN 1 for customer 1 - 3rd supplier order
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+
+			// Reconcile the 2nd and 3rd order - only one book delivered - should end up with customer 1 nonetheless
+			// NOTE: the supplier orders are sorted by date in reverse order
+			const [{ id: supOrder3 }, { id: supOrder2 }] = await getPlacedSupplierOrders(db);
+			await createReconciliationOrder(db, 2, [supOrder2, supOrder3]);
+			await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 2);
+
+			expect(await getCustomerOrderLines(db, 1)).toEqual([
+				expect.objectContaining({ isbn: "1", received: expect.any(Date) }),
+				expect.objectContaining({ isbn: "2", received: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 2)).toEqual([expect.objectContaining({ isbn: "1", received: undefined })]);
+		});
+
+		it("mark customer order lines' 'received' timestamp with ms precision", async () => {
+			const db = await getRandomDb();
+
+			await addBooksToCustomer(db, 1, ["1", "2"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrder1Id }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrder1Id]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			const [orderLine1] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - orderLine1.received.getTime()).toBeLessThan(100);
+
+			await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 2, [supplierOrder2Id]);
+			await addOrderLinesToReconciliationOrder(db, 2, [{ isbn: "2", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 2);
+
+			const [, orderLine2] = await getCustomerOrderLines(db, 1);
+			expect(Date.now() - orderLine2.received.getTime()).toBeLessThan(100);
+		});
+
+		it("throw an error if reconciliation order not found", async () => {
+			const db = await getRandomDb();
+			await expect(finalizeReconciliationOrder(db, 1)).rejects.toThrow(new ErrReconciliationOrderNotFound(1));
+		});
+
+		it("throw an error if trying to reconcile an already reconciled order", async () => {
+			const db = await getRandomDb();
+
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: "1", quantity: 1 }]);
+			await finalizeReconciliationOrder(db, 1);
+
+			await expect(finalizeReconciliationOrder(db, 1)).rejects.toThrow(new ErrReconciliationOrderFinalized(1));
+		});
 	});
 });
 
