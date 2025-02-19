@@ -327,29 +327,6 @@ export type Supplier = {
 	address?: string;
 };
 
-export type PossibleSupplierOrderLine = {
-	quantity: number;
-	line_price: number;
-} & SupplierJoinData &
-	Pick<BookData, "isbn" | "title" | "authors">;
-
-export type SupplierJoinData = {
-	supplier_id: number;
-	supplier_name: string;
-};
-
-export type BookData = {
-	isbn: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
-
 export type SupplierOrder = {
 	supplier_id: number;
 	created: Date;
