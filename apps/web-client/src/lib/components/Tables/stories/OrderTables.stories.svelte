@@ -1,20 +1,22 @@
 <script context="module" lang="ts">
 	import type { Meta } from "@storybook/svelte";
-	import { CustomerOrderTable, SupplierOrderTable } from "../OrderTables";
+	import { CustomerOrderTable, SupplierTable } from "../OrderTables";
 
 	export const meta: Meta = {
 		title: "Tables / Order tables",
-		subcomponents: { CustomerOrderTable, SupplierOrderTable }
+		subcomponents: { CustomerOrderTable, SupplierTable }
 	};
 </script>
 
 <script lang="ts">
 	import { Story } from "@storybook/addon-svelte-csf";
 
+	import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
+	import type { CustomerOrderSchema } from "$lib/forms/schemas";
+
 	import { writable } from "svelte/store";
 
 	import { createTable } from "$lib/actions";
-	import type { CustomerOrderSchema } from "$lib/forms/schemas";
 
 	const customerData: Required<CustomerOrderSchema>[] = [
 		{
@@ -39,22 +41,20 @@
 		})
 	);
 
-	const supplierData = writable([
+	const supplierData = writable<SupplierExtended[]>([
 		{
 			id: 1,
-			supplierId: 1,
-			supplierName: "Supplier 1",
-			totalBooks: 34,
-			placedAt: null,
-			actionLink: ""
+			name: "Supplier 1",
+			email: "info@sup.plier",
+			address: "1234 Main St",
+			numPublishers: 2
 		},
 		{
 			id: 2,
-			supplierId: 1,
-			supplierName: "Supplier 2",
-			totalBooks: 34,
-			placedAt: "02/01/2024 17:33pm",
-			actionLink: ""
+			name: "Supplier 2",
+			email: "contact@elm.st",
+			address: "5678 Elm St",
+			numPublishers: 0
 		}
 	]);
 </script>
@@ -64,5 +64,10 @@
 </Story>
 
 <Story name="Suppliers">
-	<SupplierOrderTable data={supplierData} />
+	<SupplierTable data={supplierData}>
+		<div slot="row-actions">
+			<button class="btn-outline btn-sm btn">Delete</button>
+			<button class="btn-outline btn-sm btn">Edit</button>
+		</div>
+	</SupplierTable>
 </Story>

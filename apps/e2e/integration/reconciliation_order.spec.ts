@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { testOrders } from "@/helpers/fixtures";
+import { PlacedSupplierOrderLine } from "@/helpers/types";
 
 // * Note: its helpful to make an assertion after each <enter> key
 // as it seems that Playwright may start running assertions before page data has fully caught up
@@ -20,7 +21,7 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Compare" }).nth(1)).not.toBeVisible();
 });
-testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, placedOrders }) => {
+testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
@@ -30,25 +31,33 @@ testOrders("should show correct comparison when quantities match ordered amounts
 	const firstRow = table.getByRole("row").nth(1);
 	const secondRow = table.getByRole("row").nth(2);
 
+	// Calculate total ordered quantity from the orders ordered from sup1
+	// we know it's sup1 bc we only selected the first two orders
+	// and orders are sorted by sup name
+	const placedOrderLinesWithSup1 = placedOrders.reduce(
+		(acc: PlacedSupplierOrderLine[], { order, lines }) => (order.supplier_name === "sup1" ? [...acc, ...lines] : acc),
+		[]
+	);
+
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn })).toBeVisible();
 
 	await isbnInput.focus();
-	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
 	// scanned quantity === delivered quantity
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: `2`, exact: true })).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Verify comparison view
 	const supplierNameRow = table.getByRole("row").nth(1);
-	supplierNameRow.getByRole("cell", { name: placedOrders[0].lines[0].supplier_name });
+	supplierNameRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].supplier_name });
 
-	firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn });
+	firstRow.getByRole("cell", { name: books[0].isbn });
 	await expect(secondRow.getByRole("checkbox")).toBeChecked();
 
 	// there shouldn't be any unmatched books
@@ -145,7 +154,7 @@ testOrders(
 
 		// Scan less quantity than ordered
 		// From fixtures we know placedOrders[0].lines[0] has quantity: 1
-		await isbnInput.fill(placedOrders[0].lines[0].isbn);
+		await isbnInput.fill(books[0].isbn);
 		await page.keyboard.press("Enter");
 
 		// Move to comparison view
@@ -167,7 +176,19 @@ testOrders(
 
 		// Verify delivery stats show under-delivery
 		await expect(page.getByText("Total delivered:")).toBeVisible();
-		await expect(page.getByText("1 / 5")).toBeVisible();
+
+		// Calculate total ordered quantity from the orders ordered from sup1
+		// we know it's sup1 bc we only selected the first two orders
+		// and orders are sorted by sup name
+		const placedOrderLinesWithSup1 = placedOrders.reduce(
+			(acc: PlacedSupplierOrderLine[], { order, lines }) => (order.supplier_name === "sup1" ? [...acc, ...lines] : acc),
+			[]
+		);
+
+		const totalOrderedLines = placedOrderLinesWithSup1.reduce((sum) => sum + 1, 0);
+
+		// We only scanned one book, so expect "1 / {totalOrdered}"
+		await expect(page.getByText(`1 / ${totalOrderedLines}`)).toBeVisible();
 	}
 );
 testOrders("should show unmatched deliveries when ordered books do not match scanned books", async ({ page, placedOrders, books }) => {
@@ -212,8 +233,8 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 	const matchedBookRow = table.getByRole("row").nth(4);
 	const secondMatchedBookRow = table.getByRole("row").nth(5);
 
-	await expect(matchedBookRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).toBeVisible();
-	await expect(secondMatchedBookRow.getByRole("cell", { name: placedOrders[0].lines[1].isbn })).toBeVisible();
+	await expect(matchedBookRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(secondMatchedBookRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
 
 	await expect(page.getByText("Total delivered:")).toBeVisible();
 	await expect(page.getByText("2 / 2")).toBeVisible();

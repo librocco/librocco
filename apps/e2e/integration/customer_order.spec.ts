@@ -45,17 +45,22 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 	await expect(page.getByText(customers[0].fullname)).toBeVisible();
 	await expect(page.getByText(customers[0].email)).toBeVisible();
 
-	await expect(page.getByText(books[0].isbn).first()).toBeVisible();
-	await expect(page.getByText(books[0].title).first()).toBeVisible();
-	await expect(page.getByText(books[0].authors).first()).toBeVisible();
-	await expect(page.getByText(`${books[0].price}`).first()).toBeVisible();
-	await expect(page.getByText(books[0].isbn).nth(1)).toBeVisible();
-	await expect(page.getByText(books[0].isbn).nth(1)).toBeVisible();
-	await expect(page.getByText(books[0].title).nth(1)).toBeVisible();
-	await expect(page.getByText(books[0].authors).nth(1)).toBeVisible();
-	await expect(page.getByText(`${books[0].price}`).nth(1)).toBeVisible();
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+	const secondRow = table.getByRole("row").nth(2);
+	const thirdRow = table.getByRole("row").nth(3);
 
-	await expect(page.getByText(books[1].isbn)).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
+
+	await expect(secondRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: books[0].title })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
+
+	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 });
 
 testOrders("should update a customer details", async ({ page, customers }) => {
@@ -79,7 +84,7 @@ testOrders("should update a customer details", async ({ page, customers }) => {
 
 	await expect(page.getByText(newCustomer.fullname)).toBeVisible();
 	await expect(page.getByText(newCustomer.email)).toBeVisible();
-	await expect(page.getByText(`€${newCustomer.deposit}`)).toBeVisible();
+	await expect(page.getByText(`€${newCustomer.deposit} deposit`)).toBeVisible();
 });
 
 testOrders("should add books to a customer order", async ({ page, customers, books }) => {
@@ -99,7 +104,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(page.getByText("Draft")).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
@@ -107,8 +112,9 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(secondRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[2].title })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: `${books[2].price}` })).toBeVisible();
-	await expect(page.getByText("Draft").nth(1)).toBeVisible();
+
+	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
 
 testOrders("should delete books from a customer order", async ({ page, books }) => {
@@ -118,10 +124,14 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 
 	await page.goto(`${baseURL}orders/customers/1/`);
 
-	await expect(page.getByText(books[0].isbn).first()).toBeVisible();
-	await expect(page.getByText(books[1].isbn).first()).toBeVisible();
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+	const secondRow = table.getByRole("row").nth(2);
 
-	await page.getByRole("button", { name: "Delete" }).first().click();
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 
-	await expect(page.getByText(books[0].isbn)).not.toBeVisible();
+	await firstRow.getByRole("button", { name: "Delete" }).click();
+
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
 });
