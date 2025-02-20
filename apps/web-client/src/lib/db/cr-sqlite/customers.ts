@@ -60,7 +60,7 @@ export async function getAllCustomers(db: DB): Promise<Customer[]> {
  * @param {DB} db - Database connection
  * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
- * @returns {Promise<void>} Resolves when customer is created/updated
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertCustomer when you make updates
  */
 export async function upsertCustomer(db: DB, customer: Customer) {
 	if (!customer.id) {
@@ -196,6 +196,8 @@ export const marshallCustomerOrderLineDates = (line: DBCustomerOrderLine): Custo
  * @param {string[]} bookIsbns - Array of book ISBNs to add
  * @returns {Promise<void>} A promise that resolves when both operations complete successfully
  * @throws {Error} If the database transaction fails
+ * @see apps/e2e/helpers/cr-sqlite.ts:addBooksToCustomer
+
  */
 export const addBooksToCustomer = async (db: DB, customerId: number, bookIsbns: string[]): Promise<void> => {
 	const timestamp = Date.now();
@@ -248,44 +250,28 @@ export const removeBooksFromCustomer = async (db: DB, customerId: number, bookId
 };
 
 /**
- * Marks customer order lines as received when supplier order lines are fulfilled.
+ * Marks customer order lines as collected when customer order lines are picked up.
  * For each supplied ISBN, it updates the earliest unfulfilled customer order line
- * (that has been placed but not received) with the current timestamp as received date.
+ * (that has been received but not collected) with the current timestamp as collected date.
  *
  * @param {DB} db - The database connection instance
- * @param {isbns[]} isbns - Array of supplier order line isbns that have been received
- * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
- *
- * @remarks
- * - Only updates the earliest unfulfilled order line for each ISBN
- * - Only updates order lines that have been placed but not yet received
- * - Updates are performed in a single transaction
- * - If supplierOrderLines is empty, the function returns immediately
- *
- * @example
- * await markCustomerOrderAsReceived(db, [
- *   { isbn: "123456789" },
- *   { isbn: "987654321" }
- * ]);
+ * @param {ids[]} ids - Array of supplier order line ids that have been collected
+ * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as collected
  */
 
-export const markCustomerOrderAsReceived = async (db: DB, isbns: string[]): Promise<void> => {
-	if (!isbns.length) return;
+export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promise<void> => {
+	if (!ids.length) return;
 	return db.tx(async (txDb) => {
-		const placeholders = multiplyString("?", isbns.length);
+		const timestamp = Date.now();
+		const placeholders = multiplyString("?", ids.length);
 		await txDb.exec(
 			`
 		 UPDATE customer_order_lines
-            SET received = (strftime('%s', 'now') * 1000)
-            WHERE rowid IN (
-                SELECT MIN(rowid)
-                FROM customer_order_lines
-                WHERE isbn IN (${placeholders})
-                    AND placed IS NOT NULL
-                    AND received IS NULL
-                GROUP BY isbn
-);`,
-			isbns
+            SET collected = ?
+            WHERE id IN (${placeholders})
+            AND collected IS NULL AND received IS NOT NULL
+            ;`,
+			[timestamp, ...ids]
 		);
 	});
 };

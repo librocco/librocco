@@ -4,7 +4,7 @@ import { baseURL } from "./constants";
 
 import { testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
-import { addBooksToCustomer } from "@/helpers/cr-sqlite";
+import { addBooksToCustomer, getCustomerOrderLineStatus } from "@/helpers/cr-sqlite";
 
 test("should create a new customer order", async ({ page }) => {
 	await page.goto(`${baseURL}orders/customers/`);
@@ -116,7 +116,6 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
-
 testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -134,4 +133,25 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 	await firstRow.getByRole("button", { name: "Delete" }).click();
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
+});
+testOrders("should mark order lines as collected", async ({ page, customers, customerOrderLines }) => {
+	await page.goto(`${baseURL}orders/customers/1/`);
+	const dbHandle = await getDbHandle(page);
+
+	const table = page.getByRole("table");
+	const firstBookRow = table.getByRole("row").nth(1);
+	const secondBookRow = table.getByRole("row").nth(2);
+
+	await expect(firstBookRow.getByRole("cell", { name: customerOrderLines[0].isbn })).toBeVisible();
+	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).toBeEnabled();
+	await expect(secondBookRow.getByRole("button", { name: "Collect📚" })).toBeDisabled();
+
+	await firstBookRow.getByRole("button", { name: "Collect📚" }).click();
+
+	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customers[0].id);
+
+	const received = new Date(lines[0].received).toLocaleDateString();
+	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).not.toBeVisible();
+	await expect(firstBookRow.getByText("Collected")).toBeVisible();
+	await expect(firstBookRow.getByText(received)).toBeVisible();
 });

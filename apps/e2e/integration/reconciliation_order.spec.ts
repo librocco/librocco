@@ -418,5 +418,5 @@ testOrders("should be able to commit reconciliation", async ({ page, placedOrder
 	// navigate to customer order view
 	await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
 	await expect(table.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
-	await expect(table.getByText("Delivered")).toBeVisible();
+	await expect(table.getByText("Delivered")).toHaveCount(3);
 });
