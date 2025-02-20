@@ -1,10 +1,10 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, expect, afterEach, vi } from "vitest";
 
 import { asc } from "@librocco/shared";
 
-import { type DB, type ProcessedOrderLine } from "../types";
+import { type ProcessedOrderLine } from "../types";
 
-import { getRandomDb, createCustomerOrders } from "./lib";
+import { getRandomDb } from "./lib";
 
 import {
 	getAllReconciliationOrders,
@@ -20,7 +20,7 @@ import {
 	ErrReconciliationOrderNotFound,
 	ErrReconciliationOrderFinalized
 } from "../order-reconciliation";
-import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
+import { createSupplierOrder, getPlacedSupplierOrders } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
 
