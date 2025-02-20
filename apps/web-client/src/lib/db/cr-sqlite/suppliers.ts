@@ -380,43 +380,23 @@ export async function createSupplierOrder(
 			timestamp
 		]);
 
-		for (const orderLine of orderLines) {
+		for (const { isbn, quantity } of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
-			const _customerOrderLineIds = await db
+			//
+			// NOTE: Currently we're allowing for ordering of any number of books for an ISBN, regardless of the number of customer orders
+			// requiring that books. This had proved to be a much simpler solution, trading off a check for an edge case of astronomical probability
+			//
+			// Keep in mind: any number of books can be ordered (placed with a supplier), but only the existing customer order lines will be marked as placed
+			const customerOrderLineIds = await db
 				.execO<{
 					id: number;
-				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC", [orderLine.isbn])
+				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
 				.then((res) => res.map(({ id }) => id));
-
-			// NOTE: this is a really defnsive check:
-			// - if there are not enough customer order lines to justify this order line, we should order (at maximum)
-			//  the number of customer order lines available
-			// - other constraint, ofc, is the number of quantity specified by the orderLines param
-			//
-			// TODO: we should really check this - potentially throw an error here and show a dialog in the UI confirming the order
-			// - kinda like with out-of-stock outbound notes
-			const quantity = Math.min(orderLine.quantity, _customerOrderLineIds.length);
-			if (quantity < orderLine.quantity) {
-				const msg = [
-					"There are fewer customer order lines than requested by the supplier order line:",
-					"  this isn't a problem as the final quantity will be truncated, but indicates a bug in calculating of possible supplier order lines:",
-					`  isbn: ${orderLine.isbn}`,
-					`  quantity requested: ${orderLine.quantity}`,
-					`  quantity required (by customer order lines): ${_customerOrderLineIds.length}`
-				];
-				console.warn(msg);
-			}
-			// The truncated list of custome order line ids - the lines we need to update to "placed"
-			const customerOrderLineIds = _customerOrderLineIds.slice(0, quantity);
 
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
 
-			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [
-				orderId,
-				orderLine.isbn,
-				quantity
-			]);
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [orderId, isbn, quantity]);
 		}
 	});
 }
