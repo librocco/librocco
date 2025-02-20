@@ -3,6 +3,7 @@ import type { PageLoad } from "./$types";
 import type { Customer, CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
 import { getCustomerOrderLines, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
+import { getBookData, getPublisherList } from "$lib/db/cr-sqlite/books";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("customer:data");
@@ -18,6 +19,18 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	// TODO: Retirect to customers page perhaps
 	const customer = (await getCustomerDetails(dbCtx.db, Number(params.id))) || ({} as Customer);
 	const customerOrderLines = await getCustomerOrderLines(dbCtx.db, Number(params.id));
+	const publisherList = await getPublisherList(dbCtx.db);
 
-	return { customer, customerOrderLines };
+	// Fetch book data for each order line
+	const bookData: Record<string, any> = {};
+	await Promise.all(
+		customerOrderLines.map(async (line) => {
+			const bookInfo = await getBookData(dbCtx.db, String(line.isbn));
+			if (bookInfo) {
+				bookData[line.isbn] = bookInfo;
+			}
+		})
+	);
+
+	return { customer, customerOrderLines, publisherList, bookData};
 };

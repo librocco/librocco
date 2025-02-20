@@ -1,20 +1,31 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { QrCode, Mail, ReceiptEuro, UserCircle, ArrowRight, ClockArrowUp, PencilLine } from "lucide-svelte";
-	import { createDialog } from "@melt-ui/svelte";
+	import { QrCode, X, Trash2, Mail, FileEdit, ReceiptEuro, UserCircle, MoreVertical, ArrowRight, ClockArrowUp, PencilLine } from "lucide-svelte";
+	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
+	import { fade, fly } from "svelte/transition";
 
 	import { stripNulls } from "@librocco/shared";
+
+	import {
+		PopoverWrapper,
+		Dialog,
+	} from "$lib/components";
 
 	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
+	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+
+	import { testId } from "@librocco/shared";
+
+	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { createCustomerOrderSchema } from "$lib/forms";
+	import { BookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
@@ -26,8 +37,14 @@
 		upsertCustomer,
 		markCustomerOrderLineAsCollected
 	} from "$lib/db/cr-sqlite/customers";
+	import type { BookEntry } from "@librocco/db";
+
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
 	import { scannerSchema } from "$lib/forms/schemas";
+
+	import { mergeBookData } from "$lib/utils/misc";
+
 	// import { createIntersectionObserver } from "$lib/actions";
 
 	export let data: PageData;
@@ -58,8 +75,13 @@
 
 	$: customer = data?.customer;
 	$: customerOrderLines = data?.customerOrderLines || [];
+	$: publisherList = data.publisherList;
+	$: bookData = data.bookData;
 
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
+
+	$: plugins = data.plugins;
+	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 
 	// #region infinite-scroll
 	// let maxResults = 20;
@@ -115,6 +137,30 @@
 		await markCustomerOrderLineAsCollected(db, id);
 	};
 
+	// #region book-form
+	let bookFormData = null;
+
+	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
+		/**
+		 * This is a quick fix for `form.data` having all optional properties
+		 *
+		 * Unforuntately, Zod will not infer the correct `data` type from our schema unless we configure `strictNullChecks: true` in our TS config.
+		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
+		 * to fix these properly.
+		 *
+		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 */
+		const data = form?.data as BookEntry;
+
+		try {
+			await upsertBook(db, data);
+			bookFormData = null;
+			open.set(false);
+		} catch (err) {
+			// toastError(`Error: ${err.message}`);
+		}
+	};
+
 	let scanInputRef: HTMLInputElement = null;
 
 	// TODO: We reuse the ScannerForm and setup across a few pages => good candidate for a component...
@@ -137,6 +183,17 @@
 			}
 		}
 	});
+
+	const dialog = createDialog({
+		forceVisible: true
+	});
+	const {
+		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
+		states: { open }
+	} = dialog;
+
+	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
+
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -273,23 +330,83 @@
 										{/if}
 									</td>
 									<td>
-										{#if orderLineStatus === "collected"}
-											<!--
-												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
-												TODO: use some more robust way to handle this (loacle time string that actually works)
-											-->
-											{collected.toISOString().slice(0, 10)}
-										{:else}
-											<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
-												>Collect📚</button
+										<PopoverWrapper
+										options={{
+											forceVisible: true,
+											positioning: {
+												placement: "left"
+											}
+										}}
+										let:trigger
+									>
+										<button
+											data-testid={testId("popover-control")}
+											{...trigger}
+											use:trigger.action
+											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+										>
+											<span class="sr-only">Edit line</span>
+											<span class="aria-hidden">
+												<MoreVertical />
+											</span>
+										</button>
+
+										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+											<button
+												use:melt={$dialogTrigger}
+												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+												data-testid={testId("edit-row")}
+												on:m-click={() => {
+													bookFormData = {isbn, title, authors, price, ...bookData[isbn]};
+													dialogContent = {
+														onConfirm: () => {},
+														title: dialogTitle.editBook(),
+														description: dialogDescription.editBook(),
+														type: "edit-row"
+													};
+												}}
+												on:m-keydown={() => {
+													bookFormData = {isbn, title, authors, price, ...bookData[isbn]};
+
+													dialogContent = {
+														onConfirm: () => {},
+														title: dialogTitle.editBook(),
+														description: dialogDescription.editBook(),
+														type: "edit-row"
+													};
+												}}
 											>
-										{/if}
+												<span class="sr-only">Edit row</span>
+												<span class="aria-hidden">
+													<FileEdit />
+												</span>
+											</button>
+
+											{#if orderLineStatus === "collected"}
+												<!--
+													NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
+													TODO: use some more robust way to handle this (loacle time string that actually works)
+												-->
+												{collected.toISOString().slice(0, 10)}
+											{:else}
+												<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
+													>Collect📚</button
+												>
+											{/if}
+											{#if orderLineStatus === "draft"}
+												<button
+													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+													data-testid={testId("delete-row")}
+													on:click={() => {handleDeleteLine(id)}}>
+													<span class="sr-only">Delete row</span>
+													<span class="aria-hidden">
+														<Trash2 />
+													</span>
+												</button>
+											{/if}
+										</div>
+									</PopoverWrapper>
 									</td>
-									{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "draft"}
-										<td>
-											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
-										</td>
-									{/if}
 								</tr>
 							{/each}
 						</tbody>
@@ -299,6 +416,78 @@
 		</div>
 	</div>
 </main>
+
+
+<div use:melt={$portalled}>
+	{#if $open}
+		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
+
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		{#if type === "edit-row"}
+			<div
+				use:melt={$content}
+				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
+				bg-white shadow-lg focus:outline-none"
+				in:fly|global={{
+					x: 350,
+					duration: 150,
+					opacity: 1
+				}}
+				out:fly|global={{
+					x: 350,
+					duration: 100
+				}}
+			>
+				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+					<div>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
+					</div>
+					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
+						<X class="square-4" />
+					</button>
+				</div>
+				<div class="px-6">
+					<!-- {$connectivity} -->
+					<BookForm
+						data={defaults(bookFormData, zod(bookSchema))}
+						{publisherList}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(bookSchema),
+							validationMethod: "submit-only",
+							onUpdated
+						}}
+						onCancel={() => open.set(false)}
+						onFetch={async (isbn, form) => {
+							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
+							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+							const bookData = mergeBookData({ isbn }, results);
+
+							// If there's no book was retrieved from any of the sources, exit early
+							if (!bookData) {
+								return;
+							}
+
+							form.update((data) => ({ ...data, ...bookData }));
+							// TODO: handle loading and errors
+						}}
+						isExtensionAvailable={$bookDataExtensionAvailable}
+					/>
+				</div>
+			</div>
+		{:else}
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<Dialog {dialog} {type} {onConfirm}>
+					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+				</Dialog>
+			</div>
+		{/if}
+	{/if}
+</div>
 
 <PageCenterDialog dialog={customerMetaDialog} title="" description="">
 	<CustomerOrderMetaForm
