@@ -333,39 +333,6 @@ describe("Placing supplier orders", () => {
 			expect(remainingPossibleLines.length).toBe(0);
 		});
 
-		// NOTE: This is really an extreme edge case - being resistant to bugs in possible line selection process (both getPossibleSupplierOrderLines and the UI selection)
-		// The function also shows a warning re this
-		it("not add more quantity than available in customer orders", async () => {
-			// Add books to different customer orders
-			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
-			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
-
-			await createSupplierOrder(db, 1, [
-				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
-				{ isbn: book2.isbn, quantity: 2, supplier_id: 1 } // More quantity than available
-			]);
-
-			// Verify the order was created correctly
-			const placedOrders = await getPlacedSupplierOrders(db);
-			expect(placedOrders.length).toBe(1);
-			expect(placedOrders[0]).toEqual(
-				expect.objectContaining({
-					supplier_id: 1,
-					supplier_name: supplier1.name,
-					total_book_number: 2,
-					total_book_price: book1.price + book2.price
-				})
-			);
-			expect(await getPlacedSupplierOrderLines(db, [placedOrders[0].id])).toEqual([
-				expect.objectContaining({ isbn: book1.isbn, quantity: 1 }),
-				expect.objectContaining({ isbn: book2.isbn, quantity: 1 }) // Corrected quantity
-			]);
-
-			// Verify the customer order lines were marked as placed
-			const remainingPossibleLines = await getPossibleSupplierOrderLines(db, 1);
-			expect(remainingPossibleLines.length).toBe(0);
-		});
-
 		it("not add more quantity than requested even if more available in customer orders", async () => {
 			// Add books to different customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);

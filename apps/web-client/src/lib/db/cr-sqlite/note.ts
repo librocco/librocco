@@ -96,6 +96,7 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
  * @param {number} warehouseId - ID of warehouse receiving books
  * @param {number} noteId - Unique identifier for the new note
  * @returns {Promise<void>} Resolves when note is created
+ * @see apps/e2e/helpers/helpers/cr-sqlite.ts:createInboundNote when you make any updates
  */
 export function createInboundNote(db: DB, warehouseId: number, noteId: number): Promise<void> {
 	const timestamp = Date.now();
@@ -114,6 +115,7 @@ export function createInboundNote(db: DB, warehouseId: number, noteId: number): 
  * @param {DB} db - Database connection
  * @param {number} noteId - Unique identifier for the new note
  * @returns {Promise<void>} Resolves when note is created
+ * @see apps/e2e/helpers/cr-sqlite.ts:createOutboundNote when you make any updates
  */
 export function createOutboundNote(db: DB, noteId: number): Promise<void> {
 	const timestamp = Date.now();
@@ -268,6 +270,7 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
  * @param {string} [payload.displayName] - New display name for the note
  * @param {number} [payload.defaultWarehouse] - New default warehouse ID for outbound notes
  * @returns {Promise<void>} Resolves when note is updated
+ * @see apps/e2e/helpers/cr-sqlite.ts:updateNote when you make updates
  */
 export async function updateNote(db: DB, id: number, payload: { displayName?: string; defaultWarehouse?: number }): Promise<void> {
 	const note = await getNoteById(db, id);
@@ -378,6 +381,7 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
  * @throws {NoWarehouseSelectedError} If any transaction lacks a warehouse
  * @throws {OutOfStockError} If outbound note requests more books than available
  * @returns {Promise<void>} Resolves when note is committed
+ * @see apps/e2e/helpers/cr-sqlite.ts:commitNote when you make updates
  */
 export async function commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
 	const note = await getNoteById(db, id);
@@ -436,6 +440,7 @@ export async function deleteNote(db: DB, id: number): Promise<void> {
  * @param {number} noteId - ID of note to modify
  * @param {VolumeStock} volume - Book data containing ISBN, warehouseId and quantity
  * @returns {Promise<void>} Resolves when volumes are added
+ * @see apps/e2e/helpers/cr-sqlite.ts:addVolumesToNote when you make updates
  */
 export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
 	const note = await getNoteById(db, noteId);
@@ -625,6 +630,7 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
  * @param {string} payload.title - Item description
  * @param {number} payload.price - Item price
  * @returns {Promise<void>} Resolves when item is added/updated
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertNoteCustomItem when you make updates
  */
 export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
 	const note = await getNoteById(db, noteId);
