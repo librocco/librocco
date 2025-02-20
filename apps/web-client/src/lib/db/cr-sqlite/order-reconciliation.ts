@@ -1,15 +1,3 @@
-import type { BookEntry } from "@librocco/db";
-import { multiplyString } from "./customers";
-import type {
-	DB,
-	ProcessedOrderLine,
-	ReconciliationOrder,
-	ReconciliationOrderLine,
-	PlacedSupplierOrder,
-	PlacedSupplierOrderLine,
-	DBReconciliationOrder
-} from "./types";
-
 /**
  * @fileoverview Supplier order reconciliation system
  *
@@ -40,6 +28,102 @@ import type {
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
+import type { BookEntry } from "@librocco/db";
+import { asc } from "@librocco/shared";
+
+import type {
+	DB,
+	ProcessedOrderLine,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	PlacedSupplierOrderLine,
+	DBReconciliationOrder
+} from "./types";
+
+import { multiplyString } from "./customers";
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
+export class ErrSupplierOrdersNotFound extends Error {
+	constructor(providedIds: number[], foundIds: number[]) {
+		const msg = [
+			"some of the provided supplier order ids didn't match any existing supplier orders:",
+			`  provided ids: ${providedIds}`,
+			`  found ids: ${foundIds}`
+		].join("\n");
+		super(msg);
+	}
+}
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids are already associated with other reconciliation orders */
+export class ErrSupplierOrdersAlreadyReconciling extends Error {
+	constructor(providedIds: number[], conflicts: ReconciliationOrder[]) {
+		const msg = [
+			"some of the provided supplier order ids match supplier orders already associated with other reconciliation order(s)",
+			`  provided ids: ${providedIds}`,
+			`  conflicts:`,
+			...conflicts
+				.sort(asc(({ id }) => id))
+				.map(
+					({ id, supplierOrderIds }) => `    reconciliation order id: ${id}, conflicting supplier order ids: ${supplierOrderIds.join(", ")}`
+				)
+		].join("\n");
+		super(msg);
+	}
+}
+
+/**
+ * Creates a new reconciliation order.
+ * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
+ * delivered books will be compared against
+ *
+ * @param db
+ * @param supplierOrderIds - Array of su pplier order IDs to reconcile
+ * @throws Error if supplierOrderIds array is empty
+ * @returns ID of the newly created reconciliation order
+ */
+export async function createReconciliationOrder(db: DB, id: number, _supplierOrderIds: number[]): Promise<void> {
+	if (!_supplierOrderIds.length) {
+		throw new Error("Reconciliation order must be based on at least one supplier order");
+	}
+
+	// Tidiness: make sure supplier order ids are sorted
+	const supplierOrderIds = _supplierOrderIds.sort(asc());
+
+	const timestamp = Date.now();
+
+	// Check that all provided supplier order ids match existing supplier orders
+	const foundSupOrders = await db.execO<{ id: number }>(
+		`SELECT id FROM supplier_order WHERE id IN (${multiplyString("?", supplierOrderIds.length)})`,
+		supplierOrderIds
+	);
+	if (foundSupOrders.length != supplierOrderIds.length) {
+		throw new ErrSupplierOrdersNotFound(
+			supplierOrderIds,
+			foundSupOrders.map(({ id }) => id)
+		);
+	}
+
+	// Check if one or more orders are already being reconciled
+	// TODO: This here would really benefit from having a join table instead of a JSON array
+	const existingReconOrders = await getAllReconciliationOrders(db);
+	const conflicts = existingReconOrders
+		// For each order keep only the supplier order ids that are conflicting with the current order
+		.map((order) => ({ ...order, supplierOrderIds: order.supplierOrderIds.filter((id) => supplierOrderIds.includes(id)) }))
+		// Keep only the conflicting orders
+		.filter((order) => order.supplierOrderIds.length);
+	if (conflicts.length) {
+		throw new ErrSupplierOrdersAlreadyReconciling(supplierOrderIds, conflicts);
+	}
+
+	await db.exec(
+		`
+			INSERT INTO reconciliation_order (id, supplier_order_ids, created, updatedAt)
+			VALUES (?, json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?)
+		`,
+		[id, ...supplierOrderIds, timestamp, timestamp]
+	);
+}
+
 /**
  * Retrieves all reconciliation orders from the database, ordered by ID
 ascending
@@ -48,27 +132,18 @@ ascending
  * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
-		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
-			ORDER BY id ASC;`
-	);
+export async function getAllReconciliationOrders(db: DB, filters?: { finalized?: boolean }): Promise<ReconciliationOrder[]> {
+	// Filter by finalized status if provided (return all otherwise)
+	const whereClause = filters?.finalized === undefined ? "" : `WHERE finalized = ${Number(filters.finalized)}`;
+
+	const result = await db.execO<DBReconciliationOrder>(`
+		SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${whereClause}
+		ORDER BY updatedAt DESC
+	`);
+
 	return result.map(unmarshalReconciliationOrder);
 }
-
-const unmarshalReconciliationOrder = ({ supplier_order_ids, created, updatedAt, ...order }: DBReconciliationOrder): ReconciliationOrder => {
-	let supplierOrderIds = [];
-
-	try {
-		supplierOrderIds = JSON.parse(supplier_order_ids);
-	} catch {
-		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
-		throw new Error(msg);
-	}
-
-	return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt) };
-};
 
 /**
  * Retrieves a specific reconciliation order by ID
@@ -80,59 +155,60 @@ JSON
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
 	const [result] = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created
-		FROM reconciliation_order WHERE id = ?;`,
+		`
+			SELECT id, supplier_order_ids, finalized, updatedAt, created
+			FROM reconciliation_order WHERE id = ?
+		`,
 		[id]
 	);
 
 	if (!result) {
-		throw new Error(`Reconciliation order with id ${id} not found`);
+		return undefined;
 	}
 
 	return unmarshalReconciliationOrder(result);
 }
 
-/**
- * Retrieves all order lines associated with a specific reconciliation order.
- * These are the _delivered_ books that an employee will add by scanning their isbns.
- *
- * @param db
- * @param id - The ID of the reconciliation order
- * @returns array of ReconciliationOrderLine objects with book details
- */
-export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
-	const result = await db.execO<ReconciliationOrderLine>(
-		`SELECT rol.isbn, rol.quantity, rol.reconciliation_order_id, book.publisher, book.authors, book.title, book.price FROM reconciliation_order_lines as rol
-		LEFT JOIN book ON rol.isbn = book.isbn
-		WHERE reconciliation_order_id = ?;`,
-		[id]
-	);
-
-	return result;
-}
-/**
- * Creates a new reconciliation order.
- * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
- * delivered books will be compared against
- *
- * @param db
- * @param supplierOrderIds - Array of su pplier order IDs to reconcile
- * @throws Error if supplierOrderIds array is empty
- * @returns ID of the newly created reconciliation order
- */
-export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
-	if (!supplierOrderIds.length) {
-		throw new Error("Reconciliation order must be based on at least one supplier order");
+const unmarshalReconciliationOrder = ({
+	supplier_order_ids,
+	created,
+	updatedAt,
+	finalized,
+	...order
+}: DBReconciliationOrder): ReconciliationOrder => {
+	try {
+		const supplierOrderIds = JSON.parse(supplier_order_ids);
+		return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt), finalized: Boolean(finalized) };
+	} catch {
+		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
+		throw new Error(msg);
 	}
+};
 
-	const timestamp = Date.now();
+/** Thrown from `addOrderLinesToReconciliationOrder` when the respective reconciliation order is not found */
+export class ErrReconciliationOrderNotFound extends Error {
+	constructor(id: number) {
+		super(`Reconciliation order not found: trying to add lines to a non existing reconciliation order: id: ${id}`);
+	}
+}
 
-	const recondOrder = await db.execO<{ id: number }>(
-		`INSERT INTO reconciliation_order (supplier_order_ids, created, updatedAt)
-		VALUES (json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?) RETURNING id`,
-		[...supplierOrderIds, timestamp, timestamp]
-	);
-	return recondOrder[0].id;
+/** Thrown from `addOrderLinesToReconciliationOrder` when trying to add lines to already finalized reconciliation order */
+export class ErrReconciliationOrderFinalized extends Error {
+	constructor(id: number);
+	constructor(id: number, lines: { isbn: string; quantity: number }[]);
+	constructor(id: number, lines?: { isbn: string; quantity: number }[]) {
+		if (lines?.length) {
+			const msg = [
+				"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
+				`  order id: ${id}`,
+				"  order lines:",
+				...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
+			].join("\n");
+			super(msg);
+		} else {
+			super(`Reconciliation order already finalized: ${id}`);
+		}
+	}
 }
 
 /**
@@ -145,10 +221,14 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
  * @throws Error if reconciliation order not found
  */
 export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
-	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	if (reconOrder.finalized) {
+		throw new ErrReconciliationOrderFinalized(id, newLines);
 	}
 
 	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
@@ -166,6 +246,43 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
 		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
 	});
 }
+
+/**
+ * Retrieves all order lines associated with a specific reconciliation order.
+ * These are the _delivered_ books that an employee will add by scanning their isbns.
+ *
+ * @param db
+ * @param id - The ID of the reconciliation order
+ * @returns array of ReconciliationOrderLine objects with book details
+ */
+export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
+	// Check if the order exists
+	// TODO: do we, prehaps, want this to fail silently ??
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	const result = await db.execO<ReconciliationOrderLine>(
+		`
+			SELECT
+				rol.isbn,
+				rol.quantity,
+				rol.reconciliation_order_id,
+				COALESCE(book.title, 'N/A') as title,
+				COALESCE(book.authors, 'N/A') as authors,
+				COALESCE(book.publisher, 'N/A') as publisher,
+				COALESCE(book.price, 0) as price
+			FROM reconciliation_order_lines as rol
+			LEFT JOIN book ON rol.isbn = book.isbn
+			WHERE reconciliation_order_id = ?
+		`,
+		[id]
+	);
+
+	return result;
+}
+
 /**
   * Finalizes a reconciliation order and updates corresponding customer order
  lines
@@ -178,94 +295,108 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
   * - Customer order lines format is invalid
   */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
-	if (!id) {
-		throw new Error("Reconciliation order must have an id");
+	const reconOrder = await getReconciliationOrder(db, id);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
 	}
 
-	const reconOrderLines = await db.execO<ReconciliationOrderLine>(
-		"SELECT * FROM reconciliation_order_lines WHERE reconciliation_order_id = ?;",
-		[id]
-	);
-
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT finalized FROM reconciliation_order WHERE id = ?;", [id]);
-	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
+	if (reconOrder.finalized) {
+		throw new ErrReconciliationOrderFinalized(id);
 	}
 
-	if (reconOrder[0].finalized) {
-		throw new Error(`Reconciliation order ${id} is already finalized`);
-	}
+	const { supplierOrderIds } = reconOrder;
 
-	let customerOrderLines: string[];
-	try {
-		customerOrderLines = reconOrderLines.map((line) => line.isbn);
-	} catch (e) {
-		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
-	}
+	const receivedLines = await db
+		.execA<
+			[isbn: string, quantity: number]
+		>("SELECT isbn, quantity FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id])
+		.then((res) => new Map(res));
 
-	const timestamp = Date.now();
+	const orderedLines = await db
+		.execA<
+			[isbn: string, quantity: number]
+		>(`SELECT isbn, SUM(quantity) FROM supplier_order_line WHERE supplier_order_id IN (${multiplyString("?", supplierOrderIds.length)}) GROUP BY isbn ORDER BY isbn ASC`, supplierOrderIds)
+		.then((res) => new Map(res));
+
+	const overdeliveredLines = new Map<string, { ordered: number; delivered: number }>();
 
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
-		const placeholders = multiplyString("?", customerOrderLines.length);
+		const timestamp = Date.now();
 
-		if (customerOrderLines.length > 0) {
+		const allISBNS = new Set([...orderedLines.keys(), ...receivedLines.keys()]);
+
+		for (const isbn of allISBNS) {
+			const orderedQuantity = orderedLines.get(isbn) || 0;
+			const receivedQuantity = receivedLines.get(isbn) || 0;
+			// The number of order lines that were ordered, but weren't delivered
+			const rejectQuantity = orderedQuantity - receivedQuantity;
+
+			// Check if some books were overdelivered
+			if (rejectQuantity < 0) {
+				overdeliveredLines.set(isbn, { ordered: orderedQuantity, delivered: receivedQuantity });
+			}
+
+			// Get all in-progress customer order lines for the isbn
+			const customerOrderLines = await txDb.execO<{ id: number; placed: number | null }>(
+				"SELECT id, placed FROM customer_order_lines WHERE isbn = ? AND received IS NULL ORDER BY created ASC",
+				[isbn]
+			);
+
+			// Let n be the number of lines recevied
+			// Let m be the number of lines to reject - difference of lines ordered and received
+			//
+			// We take the first n lines from the in-progress customer orders (and we do so by mutating the array - using splice).
+			// Afterwards we take at most the last m lines from the leftover in-progress lines.
+			//
+			// The reason we do this is that, while there should always be at least n + m in-progress lines in the DB, the difference might happen,
+			// so we're making sure we're resistant to that scenario.
+			const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({ id }) => id);
+			const rejectedIds = customerOrderLines
+				.reverse()
+				.filter(({ placed }) => Boolean(placed)) // here we're rejecting placed orders - make sure we're not rejecting non-placed orders (unwanted noop)
+				.slice(0, Math.max(rejectQuantity, 0)) // min 0 to handle the case where rejectQuantity is negative (overdelivered)
+				.map(({ id }) => id);
+
+			// Mark the received books
 			await txDb.exec(
 				`
-				UPDATE customer_order_lines
-            	SET received = ?
-            	WHERE rowid IN (
-            	    SELECT MIN(rowid)
-            	    FROM customer_order_lines
-            	    WHERE isbn IN (${placeholders})
-            	        AND placed IS NOT NULL
-            	        AND received IS NULL
-            	    GROUP BY isbn
-				);`,
-				[timestamp, ...customerOrderLines]
+					UPDATE customer_order_lines
+					SET received = ?
+					WHERE id IN (${multiplyString("?", receivedIds.length)})
+				`,
+				[timestamp, ...receivedIds]
+			);
+
+			// Mark the rejected books
+			await txDb.exec(
+				`
+					UPDATE customer_order_lines
+					SET placed = NULL
+					WHERE id IN (${multiplyString("?", rejectedIds.length)})
+				`,
+				rejectedIds
 			);
 		}
+
+		// NOTE: It might happen that the number of books delivered is greater than the number of books ordered IN THIS SUPPLIER ORDER
+		// With the current implementation we're merely warning the user of this fact, but might want to refactor so as to return the number of something
+		//
+		// NOTE: Currently, if the number delivered is greater for this supplier order, but there are additional customer order lines for a particular book,
+		// they will be reconcile early and extra stock will happen only after there are no more customer order lines to receive, but the books keep coming in.
+		if (overdeliveredLines.size > 0) {
+			const msg = [
+				"Number of books delivered is greater than the number of books ordered:",
+				`  supplier order ids: ${supplierOrderIds.join(", ")}`
+			];
+			for (const [isbn, { ordered, delivered }] of overdeliveredLines) {
+				msg.push(`  isbn: ${isbn},  ordered: ${ordered},  delivered: ${delivered}`);
+			}
+
+			console.warn(msg.join("\n"));
+		}
 	});
-}
-
-/**
- * Retrieves all supplier orders that have not been selected for reconciliation in any `reconciliation_order`.
- * @param db
- *
- * @returns {Promise<PlacedSupplierOrder[]>} Array of unreconciled supplier orders with:
- */
-export async function getUnreconciledSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		` WITH Reconciled AS (
-     SELECT CAST(value AS INTEGER) AS supplier_order_id
-     FROM reconciliation_order AS ro
-     CROSS JOIN json_each(ro.supplier_order_ids)
- )
- SELECT
-     so.id,
-     so.supplier_id,
-     s.name AS supplier_name,
-     so.created,
-     COALESCE(SUM(sol.quantity), 0) AS total_book_number
- FROM supplier_order AS so
- JOIN supplier AS s
-     ON so.supplier_id = s.id
- LEFT JOIN supplier_order_line AS sol
-     ON sol.supplier_order_id = so.id
- LEFT JOIN Reconciled AS r
-     ON r.supplier_order_id = so.id
- WHERE
-     so.created IS NOT NULL
-     AND r.supplier_order_id IS NULL
- GROUP BY
-     so.id,
-     so.supplier_id,
-     s.name,
-     so.created  `
-	);
-
-	return result;
 }
 
 /**
