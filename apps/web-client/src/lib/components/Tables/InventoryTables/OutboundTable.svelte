@@ -125,15 +125,15 @@
 					<td data-property="title" class="show-col-lg table-cell-max">
 						{title}
 					</td>
-					<td class="show-col-lg" />
+					<td class="show-col-lg"></td>
 					<td data-property="price" class="table-cell-fit">
 						<BookPriceCell data={row} />
 					</td>
-					<td class="table-cell-fit" />
-					<td class="show-col-md" />
-					<td class="show-col-lg table-cell-fit" />
-					<td />
-					<td class="show-col-md" />
+					<td class="table-cell-fit"></td>
+					<td class="show-col-md"></td>
+					<td class="show-col-lg table-cell-fit"></td>
+					<td></td>
+					<td class="show-col-md"></td>
 					{#if $$slots["row-actions"]}
 						<td class="table-cell-fit">
 							<slot name="row-actions" {row} {rowIx} />

@@ -445,7 +445,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if entries?.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}
@@ -460,7 +460,7 @@
 	{#if $open}
 		{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}

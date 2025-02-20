@@ -302,7 +302,7 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
 
 		{#if type === "create"}

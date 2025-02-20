@@ -590,7 +590,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if entries?.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}
@@ -603,7 +603,7 @@
 
 <div use:melt={$portalled}>
 	{#if $open}
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		{#if dialogContent.type === "no-warehouse-selected"}
 			<!-- No warehouse selecter dialog -->
 			{@const { invalidTransactions } = dialogContent}
@@ -619,7 +619,7 @@
 						{/each}
 					</ul>
 					<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
-					<svelte:fragment slot="confirm-button"><span /></svelte:fragment>
+					<svelte:fragment slot="confirm-button"><span></span></svelte:fragment>
 				</Dialog>
 			</div>
 			<!-- No warehouse selecter dialog end -->
