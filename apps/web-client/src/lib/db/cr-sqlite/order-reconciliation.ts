@@ -119,6 +119,7 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
  * @param supplierOrderIds - Array of su pplier order IDs to reconcile
  * @throws Error if supplierOrderIds array is empty
  * @returns ID of the newly created reconciliation order
+ * @see apps/e2e/helpers/cr-sqlite.ts:createReconciliationOrder
  */
 export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
 	if (!supplierOrderIds.length) {
@@ -143,6 +144,7 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
  * @param id - The ID of the reconciliation order
  * @param newLines - Array of objects containing ISBN and quantity to add/update
  * @throws Error if reconciliation order not found
+ * @see apps/e2e/helpers/cr-sqlite.ts:addOrderLinesToReconciliationOrder
  */
 export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
@@ -176,6 +178,7 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
   * - Reconciliation order not found
   * - Order is already finalized
   * - Customer order lines format is invalid
+  * @see apps/e2e/helpers/cr-sqlite.ts:finalizeReconciliationOrder
   */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	if (!id) {
@@ -198,7 +201,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 
 	let customerOrderLines: string[];
 	try {
-		customerOrderLines = reconOrderLines.map((line) => line.isbn);
+		customerOrderLines = reconOrderLines.flatMap(({ isbn, quantity }) => Array(quantity).fill(isbn));
 	} catch (e) {
 		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
 	}
@@ -208,22 +211,31 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
-		const placeholders = multiplyString("?", customerOrderLines.length);
-
+		console.log({ customerOrderLines });
 		if (customerOrderLines.length > 0) {
 			await txDb.exec(
 				`
-				UPDATE customer_order_lines
-            	SET received = ?
-            	WHERE rowid IN (
-            	    SELECT MIN(rowid)
-            	    FROM customer_order_lines
-            	    WHERE isbn IN (${placeholders})
-            	        AND placed IS NOT NULL
-            	        AND received IS NULL
-            	    GROUP BY isbn
-				);`,
-				[timestamp, ...customerOrderLines]
+			 UPDATE customer_order_lines
+ SET received = ?
+ WHERE rowid IN (
+     SELECT col.rowid
+     FROM customer_order_lines col
+     JOIN (
+         SELECT isbn, ROW_NUMBER() OVER () as occurrence
+         FROM json_each(?)
+     ) requested ON col.isbn = requested.isbn
+     WHERE col.placed IS NOT NULL
+     AND col.received IS NULL
+     AND (
+         SELECT COUNT(*)
+         FROM customer_order_lines col2
+         WHERE col2.isbn = col.isbn
+         AND col2.rowid <= col.rowid
+         AND col2.placed IS NOT NULL
+         AND col2.received IS NULL
+     ) = requested.occurrence
+ );  `,
+				[timestamp, JSON.stringify(customerOrderLines)]
 			);
 		}
 	});

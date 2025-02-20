@@ -1,16 +1,22 @@
 import { baseURL } from "@/integration/constants";
+
+import { PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
 import {
+	addBooksToCustomer,
+	addOrderLinesToReconciliationOrder,
 	associatePublisher,
+	createReconciliationOrder,
+	createSupplierOrder,
+	finalizeReconciliationOrder,
+	getCustomerOrderLineStatus,
+	getPlacedSupplierOrderLines,
+	getPlacedSupplierOrders,
 	upsertBook,
 	upsertCustomer,
-	addBooksToCustomer,
-	upsertSupplier,
-	createSupplierOrder,
-	getPlacedSupplierOrderLines,
-	getPlacedSupplierOrders
+	upsertSupplier
 } from "./cr-sqlite";
 import { getDbHandle } from "./db";
-import { PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
+import { DBCustomerOrderLine } from "./types";
 import test, { JSHandle } from "@playwright/test";
 import { DB } from "@vlcn.io/crsqlite-wasm";
 
@@ -21,6 +27,7 @@ type OrderTestFixture = {
 		order: PlacedSupplierOrder;
 		lines: PlacedSupplierOrderLine[];
 	}[];
+	customerOrderLines: DBCustomerOrderLine[];
 	supplier: { id: number; name: string; email: string };
 	dbHandle: JSHandle<DB>;
 };
@@ -39,6 +46,8 @@ const customers = [
 	{ id: 3, fullname: "Don Joe", email: "don@gmail.com", displayId: "3" }
 ];
 
+const customer = { id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" };
+const supplier = { id: 1, name: "sup1" };
 export const testOrders = test.extend<OrderTestFixture>({
 	customers: async ({ page }, use) => {
 		await page.goto(baseURL);
@@ -54,6 +63,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 	},
 	books: async ({ page }, use) => {
 		await page.goto(baseURL);
+
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(upsertBook, books[0]);
@@ -120,6 +130,31 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 		/** @TODO replace with supplier id when supplier_order spec is merged in */
 		await use(orderAndLines);
+	},
+	customerOrderLines: async ({ page }, use) => {
+		await page.goto(baseURL);
+
+		const supplierOrderLine = { ...books[0], supplier_id: supplier.id, supplier_name: supplier.name, quantity: 1, line_price: 10 };
+		const dbHandle = await getDbHandle(page);
+		await dbHandle.evaluate(upsertCustomer, customer);
+
+		await dbHandle.evaluate(upsertBook, books[0]);
+		await dbHandle.evaluate(upsertBook, books[1]);
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
+		await dbHandle.evaluate(upsertSupplier, supplier);
+		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
+		await dbHandle.evaluate(createSupplierOrder, [supplierOrderLine]);
+
+		const placedOrders = await dbHandle.evaluate(getPlacedSupplierOrders);
+
+		const placedOrderIds = placedOrders.map((placedOrder) => placedOrder.id);
+		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, placedOrderIds);
+		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
+		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
+
+		const customerOrderLines = await dbHandle.evaluate(getCustomerOrderLineStatus, customer.id);
+
+		await use(customerOrderLines);
 	},
 	supplier: async ({ page }, use) => {
 		await page.goto(baseURL);
