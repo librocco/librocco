@@ -190,7 +190,9 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
         RIGHT JOIN book ON sp.publisher = book.publisher
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
-        WHERE col.placed IS NULL
+
+		-- sometimes a book can be received before being placed with the supplier due to overdelivery
+        WHERE col.placed IS NULL AND col.received IS NULL
         GROUP BY supplier.id, supplier.name
         ORDER BY supplier_name ASC
 	`;
@@ -211,7 +213,11 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
-	const conditions = ["col.placed is NULL"];
+	const conditions = [
+		"col.placed is NULL",
+		// sometimes a book can be received before being placed with the supplier due to overdelivery
+		"col.received IS NULL"
+	];
 	const params = [];
 
 	if (!supplierId) {
@@ -381,12 +387,19 @@ export async function createSupplierOrder(
 		]);
 
 		for (const orderLine of orderLines) {
-			// Find the customer order lines corresponding to this supplier order line
-			const _customerOrderLineIds = await db
-				.execO<{
-					id: number;
-				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC", [orderLine.isbn])
+			const query = `
+				SELECT
+					id
+				FROM customer_order_lines
+				WHERE placed IS NULL AND isbn = ?
+				ORDER BY created ASC
+				LIMIT ?
+			`;
+
+			const customerOrderLineIds = await db
+				.execO<{ id: number }>(query, [orderLine.isbn, orderLine.quantity])
 				.then((res) => res.map(({ id }) => id));
+			const quantityToOrder = customerOrderLineIds.length;
 
 			// NOTE: this is a really defnsive check:
 			// - if there are not enough customer order lines to justify this order line, we should order (at maximum)
@@ -395,27 +408,30 @@ export async function createSupplierOrder(
 			//
 			// TODO: we should really check this - potentially throw an error here and show a dialog in the UI confirming the order
 			// - kinda like with out-of-stock outbound notes
-			const quantity = Math.min(orderLine.quantity, _customerOrderLineIds.length);
-			if (quantity < orderLine.quantity) {
+			if (quantityToOrder < orderLine.quantity) {
 				const msg = [
 					"There are fewer customer order lines than requested by the supplier order line:",
 					"  this isn't a problem as the final quantity will be truncated, but indicates a bug in calculating of possible supplier order lines:",
 					`  isbn: ${orderLine.isbn}`,
-					`  quantity requested: ${orderLine.quantity}`,
-					`  quantity required (by customer order lines): ${_customerOrderLineIds.length}`
+					`  quantity requested: ${quantityToOrder}`,
+					`  quantity required (by customer order lines): ${customerOrderLineIds.length}`
 				];
 				console.warn(msg);
 			}
-			// The truncated list of custome order line ids - the lines we need to update to "placed"
-			const customerOrderLineIds = _customerOrderLineIds.slice(0, quantity);
 
-			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
-			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
+			await db.exec(
+				`
+				UPDATE
+					customer_order_lines
+				SET placed = ?
+				WHERE id IN (${multiplyString("?", customerOrderLineIds.length)})`,
+				[timestamp, ...customerOrderLineIds]
+			);
 
 			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [
 				orderId,
 				orderLine.isbn,
-				quantity
+				quantityToOrder
 			]);
 		}
 	});
