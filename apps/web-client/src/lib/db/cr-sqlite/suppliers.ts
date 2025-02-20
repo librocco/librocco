@@ -83,6 +83,7 @@ export async function getSupplierDetails(db: DB, id: number): Promise<SupplierEx
  * @param db - The database instance to query
  * @param supplier - The supplier data to upsert
  * @throws {Error} If supplier.id is not provided
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertSupplier when you make changes
  */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
@@ -114,6 +115,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
+ * @see apps/e2e/helpers/cr-sqlite.ts:associatePublisher when you make any changes
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
 	const stmt = await db.prepare(
@@ -249,17 +251,16 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 }
 
 /**
-  * Retrieves all placed supplier orders with:
-  * - order id & created timestamp
-  * - supplier id & name
-  * - a total book count
-  *
-  * Orders are returned sorted by creation date (newest first).
-  *
-  * @param db - The database instance to query
-  * @returns Promise resolving to an array of placed supplier orders with
- supplier details and book counts
-  */
+ * Retrieves all placed supplier orders with:
+ * - order id & created timestamp
+ * - supplier id & name
+ * - a total book count
+ *
+ * Orders are returned sorted by creation date (newest first).
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of placed supplier orders with supplier details and book counts
+ */
 export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
 	const params = [];
@@ -342,8 +343,9 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  *
  * @param db - The database instance to query
  * @param orderLines - The order lines to create supplier orders from
- * @returns Promise resolving to the created supplier orders
+ * @returns Promise<void>
  * @todo Rewrite this function to accommodate for removing quantity in
+ * @see apps/e2e/cr-sqlite.ts:createSupplierOrder when you make changes
 customerOrderLine
  */
 export async function createSupplierOrder(
