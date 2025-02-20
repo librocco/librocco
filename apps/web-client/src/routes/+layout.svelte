@@ -5,9 +5,16 @@
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
 	import { pwaInfo } from "virtual:pwa-info";
+	import { browser } from "$app/environment";
 
 	import type { LayoutData } from "./$types";
-	import { browser } from "$app/environment";
+
+	import * as books from "$lib/db/cr-sqlite/books";
+	import * as customers from "$lib/db/cr-sqlite/customers";
+	import * as note from "$lib/db/cr-sqlite/note";
+	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
+	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
+	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 
 	export let data: LayoutData & { status: boolean };
 
@@ -21,7 +28,18 @@
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
+
+			// NOTE: we might want to restrict this to E2E builds, but having those handlers attached
+			// to window doesn't pose a security risk, as the db is in the user's browser anyhow.
+			// NOTE: There might be a preformance hit though
+			window["books"] = books;
+			window["customers"] = customers;
+			window["note"] = note;
+			window["reconciliation"] = reconciliation;
+			window["suppliers"] = suppliers;
+			window["warehouse"] = warehouse;
 		}
+
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
 		if (browser && !dbCtx) {
 			window["db_ready"] = false;
