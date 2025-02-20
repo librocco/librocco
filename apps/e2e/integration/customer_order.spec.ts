@@ -4,7 +4,7 @@ import { baseURL } from "./constants";
 
 import { testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
-import { addBooksToCustomer } from "@/helpers/cr-sqlite";
+import { addBooksToCustomer, getCustomerOrderLineStatus } from "@/helpers/cr-sqlite";
 
 test("should create a new customer order", async ({ page }) => {
 	await page.goto(`${baseURL}orders/customers/`);
@@ -31,7 +31,6 @@ testOrders("should show list of In Progress orders", async ({ page, customer }) 
 	await expect(page.getByText(customer.fullname)).toBeVisible();
 	await expect(page.getByText(customer.email)).toBeVisible();
 });
-
 testOrders("should allow navigation to a specific order", async ({ page, customer, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -62,8 +61,7 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 });
-
-testOrders("should update a customer details", async ({ page, customer }) => {
+testOrders("should update customer details", async ({ page, customer }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
 	const newCustomer = { fullname: "New Customer", email: "new@gmail.com", deposit: "10" };
@@ -115,7 +113,6 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
-
 testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -133,4 +130,25 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 	await firstRow.getByRole("button", { name: "Delete" }).click();
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
+});
+testOrders("should mark order lines as collected", async ({ page, customer, customerOrderLines }) => {
+	await page.goto(`${baseURL}orders/customers/1/`);
+	const dbHandle = await getDbHandle(page);
+
+	const table = page.getByRole("table");
+	const firstBookRow = table.getByRole("row").nth(1);
+	const secondBookRow = table.getByRole("row").nth(2);
+
+	await expect(firstBookRow.getByRole("cell", { name: customerOrderLines[0].isbn })).toBeVisible();
+	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).toBeEnabled();
+	await expect(secondBookRow.getByRole("button", { name: "Collect📚" })).toBeDisabled();
+
+	await firstBookRow.getByRole("button", { name: "Collect📚" }).click();
+
+	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customer.id);
+
+	const received = new Date(lines[0].received).toLocaleDateString();
+	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).not.toBeVisible();
+	await expect(firstBookRow.getByText("Collected")).toBeVisible();
+	await expect(firstBookRow.getByText(received)).toBeVisible();
 });
