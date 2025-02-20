@@ -8,7 +8,7 @@ import {
 	createReconciliationOrder,
 	createSupplierOrder,
 	finalizeReconciliationOrder,
-	getCustomerOrderLineStatus,
+	getCustomerOrderLines,
 	getPlacedSupplierOrderLines,
 	getPlacedSupplierOrders,
 	upsertBook,
@@ -16,7 +16,7 @@ import {
 	upsertSupplier
 } from "./cr-sqlite";
 import { getDbHandle } from "./db";
-import { DBCustomerOrderLine } from "./types";
+import { CustomerOrderLine } from "./types";
 import test, { JSHandle } from "@playwright/test";
 import { DB } from "@vlcn.io/crsqlite-wasm";
 
@@ -27,7 +27,7 @@ type OrderTestFixture = {
 		order: PlacedSupplierOrder;
 		lines: PlacedSupplierOrderLine[];
 	}[];
-	customerOrderLines: DBCustomerOrderLine[];
+	customerOrderLines: CustomerOrderLine[];
 	supplier: { id: number; name: string; email: string };
 	dbHandle: JSHandle<DB>;
 };
@@ -98,24 +98,33 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(upsertSupplier, { id: 1, name: "sup1" });
 		await dbHandle.evaluate(upsertSupplier, { id: 2, name: "sup2" });
 
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
-		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisherId: "pub2" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisher: "pub2" });
 
-		await dbHandle.evaluate(createSupplierOrder, [
-			{ ...books[0], supplier_id: 1, supplier_name: "sup1", quantity: 2, line_price: 20 },
-			{ ...books[2], supplier_id: 1, supplier_name: "sup1", quantity: 1, line_price: 30 }
-		]);
-		await dbHandle.evaluate(createSupplierOrder, [
-			{ ...books[2], supplier_id: 1, supplier_name: "sup1", quantity: 3, line_price: 90 },
-			{ ...books[4], supplier_id: 1, supplier_name: "sup1", quantity: 2, line_price: 100 },
-			{ ...books[6], supplier_id: 1, supplier_name: "sup1", quantity: 1, line_price: 70 }
-		]);
+		await dbHandle.evaluate(createSupplierOrder, {
+			supplierId: 1,
+			orderLines: [
+				{ ...books[0], supplier_id: 1, supplier_name: "sup1", quantity: 2, line_price: 20 },
+				{ ...books[2], supplier_id: 1, supplier_name: "sup1", quantity: 1, line_price: 30 }
+			]
+		});
+		await dbHandle.evaluate(createSupplierOrder, {
+			supplierId: 1,
+			orderLines: [
+				{ ...books[2], supplier_id: 1, supplier_name: "sup1", quantity: 3, line_price: 90 },
+				{ ...books[4], supplier_id: 1, supplier_name: "sup1", quantity: 2, line_price: 100 },
+				{ ...books[6], supplier_id: 1, supplier_name: "sup1", quantity: 1, line_price: 70 }
+			]
+		});
 
-		await dbHandle.evaluate(createSupplierOrder, [
-			{ ...books[1], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 20 },
-			{ ...books[3], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 40 },
-			{ ...books[5], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 60 }
-		]);
+		await dbHandle.evaluate(createSupplierOrder, {
+			supplierId: 2,
+			orderLines: [
+				{ ...books[1], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 20 },
+				{ ...books[3], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 40 },
+				{ ...books[5], supplier_id: 2, supplier_name: "sup2", quantity: 1, line_price: 60 }
+			]
+		});
 
 		const placedOrders = await dbHandle.evaluate(getPlacedSupplierOrders);
 
@@ -142,8 +151,8 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(upsertBook, books[1]);
 		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
 		await dbHandle.evaluate(upsertSupplier, supplier);
-		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
-		await dbHandle.evaluate(createSupplierOrder, [supplierOrderLine]);
+		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
+		await dbHandle.evaluate(createSupplierOrder, { supplierId: supplier.id, orderLines: [supplierOrderLine] });
 
 		const placedOrders = await dbHandle.evaluate(getPlacedSupplierOrders);
 
@@ -152,7 +161,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
 		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
 
-		const customerOrderLines = await dbHandle.evaluate(getCustomerOrderLineStatus, customer.id);
+		const customerOrderLines = await dbHandle.evaluate(getCustomerOrderLines, customer.id);
 
 		await use(customerOrderLines);
 	},
@@ -164,7 +173,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(upsertSupplier, supplier);
-		// await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
+		// await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
 
 		await use(supplier);
 	},

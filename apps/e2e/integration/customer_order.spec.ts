@@ -4,7 +4,7 @@ import { baseURL } from "./constants";
 
 import { testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
-import { addBooksToCustomer, getCustomerOrderLineStatus } from "@/helpers/cr-sqlite";
+import { addBooksToCustomer, getCustomerOrderLines } from "@/helpers/cr-sqlite";
 
 test("should create a new customer order", async ({ page }) => {
 	await page.goto(`${baseURL}orders/customers/`);
@@ -150,7 +150,7 @@ testOrders("should mark order lines as collected", async ({ page, customers, cus
 
 	await firstBookRow.getByRole("button", { name: "Collect📚" }).click();
 
-	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customers[0].id);
+	const lines = await dbHandle.evaluate(getCustomerOrderLines, customers[0].id);
 
 	// NOTE: using "it" locale as the app is primarily developed for an italian book store,
 	// We need to explicitly specify this to account for ambiguity in E2E, TODO: use some more robust way to handle this (in general case)
