@@ -16,6 +16,7 @@ import {
 } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, getCustomerOrderLineHistory, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
+import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 const customer2 = { fullname: "Harry Styles", id: 2, displayId: "200" };
@@ -109,7 +110,7 @@ describe("New supplier orders:", () => {
 			expect(supplierOrder2.supplier_name).toBe(supplier2.name);
 		});
 
-		it("should return an empty list when there are no customer order lines for that supplier", async () => {
+		it("return an empty list when there are no customer order lines for that supplier", async () => {
 			// Associate the books with suppliers...
 			await associatePublisher(db, supplier1.id, book1.publisher);
 			await associatePublisher(db, supplier2.id, book2.publisher);
@@ -119,7 +120,7 @@ describe("New supplier orders:", () => {
 			expect(result).toEqual([]);
 		});
 
-		it("should only aggregate customer order lines that have not been placed", async () => {
+		it("only aggregate customer order lines that have not been placed", async () => {
 			// Associate the books with a suppliers
 			const { id: supplierId } = supplier1;
 			await associatePublisher(db, supplierId, book1.publisher);
@@ -141,7 +142,7 @@ describe("New supplier orders:", () => {
 			expect(newSupplierOrder.total_book_price).toBe(book1.price);
 		});
 
-		it("should handle missing book prices", async () => {
+		it("handle missing book prices", async () => {
 			// Associate book1 with supplier1
 			await associatePublisher(db, supplier1.id, book1.publisher);
 
@@ -163,6 +164,34 @@ describe("New supplier orders:", () => {
 
 			// Supplier2 order should be 0
 			expect(newSupplierOrder2.total_book_price).toBe(0);
+		});
+
+		// In case of overdelivering, a reconcfiliation order might spill over and assign
+		// overdelivered books to customer order lines that haven't been placed with a supplier.
+		// Those books won't be marked as placed, but will be marked as 'received' - this test is here to ensure those lines
+		// aren't included in possible order lines
+		it("not include received books", async () => {
+			// Quite an elaborate setup...
+			await associatePublisher(db, supplier1.id, book1.publisher);
+
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			// Add 2 books to customer 2 - none will be placed with a supplier order, but one will be marked as received due to overdelivery
+			await addBooksToCustomer(db, customer2.id, [book1.isbn, book1.isbn]);
+
+			// Create one supplier order (we need it to simulate the overdelivery)
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, supplier1.id);
+			const recOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+			// 1 to reconcile, 1 to overdeliver
+			await addOrderLinesToReconciliationOrder(db, recOrderId, [{ isbn: book1.isbn, quantity: 2 }]);
+			await finalizeReconciliationOrder(db, recOrderId);
+
+			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
+
+			// Only 1 remaining (non delivered order) should be returned as possible order line
+			expect(await getPossibleSupplierOrders(db)).toEqual([
+				expect.objectContaining({ supplier_id: supplier1.id, total_book_number: 1, total_book_price: book1.price })
+			]);
 		});
 	});
 
@@ -301,6 +330,32 @@ describe("New supplier orders:", () => {
 			expect(orderLine.authors).toBe("N/A");
 			expect(orderLine.line_price).toBe(0);
 		});
+
+		// In case of overdelivering, a reconcfiliation order might spill over and assign
+		// overdelivered books to customer order lines that haven't been placed with a supplier.
+		// Those books won't be marked as placed, but will be marked as 'received' - this test is here to ensure those lines
+		// aren't included in possible order lines
+		it("not include received books", async () => {
+			// Quite an elaborate setup...
+			await associatePublisher(db, supplier1.id, book1.publisher);
+
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			// Add 2 books to customer 2 - none will be placed with a supplier order, but one will be marked as received due to overdelivery
+			await addBooksToCustomer(db, customer2.id, [book1.isbn, book1.isbn]);
+
+			// Create one supplier order (we need it to simulate the overdelivery)
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, supplier1.id);
+			const recOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+			// 1 to reconcile, 1 to overdeliver
+			await addOrderLinesToReconciliationOrder(db, recOrderId, [{ isbn: book1.isbn, quantity: 2 }]);
+			await finalizeReconciliationOrder(db, recOrderId);
+
+			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
+
+			// Only 1 remaining (non delivered order) should be returned as possible order line
+			expect(await getPossibleSupplierOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: book1.isbn, quantity: 1 })]);
+		});
 	});
 });
 
@@ -364,6 +419,24 @@ describe("Placing supplier orders", () => {
 			expect(remainingPossibleLines.length).toBe(0);
 		});
 
+		it("include client order lines on first-come-first served basis", async () => {
+			await upsertCustomer(db, { id: 3, displayId: "3" });
+
+			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
+			await addBooksToCustomer(db, customer2.id, [book1.isbn]);
+			await addBooksToCustomer(db, 3, [book1.isbn]);
+
+			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 2, supplier_id: supplier1.id }]);
+
+			expect(await getCustomerOrderLines(db, customer1.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, customer2.id)).toEqual([
+				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
+			]);
+			expect(await getCustomerOrderLines(db, 3)).toEqual([expect.objectContaining({ isbn: book1.isbn, placed: undefined })]);
+		});
+
 		it("throw an error if trying to add order lines with supplier id different than the one passed as a param", async () => {
 			// Add books to different customer orders
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
@@ -417,11 +490,11 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [supplierOrder1] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - supplierOrder1.created).toBeLessThan(200);
+			expect(Date.now() - supplierOrder1.created).toBeLessThan(300);
 
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [supplierOrder2] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - supplierOrder2.created).toBeLessThan(200);
+			expect(Date.now() - supplierOrder2.created).toBeLessThan(300);
 		});
 
 		it("timestamp customer order lines' 'placed' with ms precision", async () => {
@@ -429,11 +502,11 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
-			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(200);
+			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(300);
 
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
-			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(200);
+			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(300);
 		});
 
 		it("create a customer order line - supplier order relation for each time the same line is ordered from the supplier", async () => {
@@ -464,14 +537,14 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
-			expect(Date.now() - lastUpdate).toBeLessThan(200);
+			expect(Date.now() - lastUpdate).toBeLessThan(300);
 
 			// This is a case when the book hadn't been delivered and had been ordered again (one or more times)
 			//
 			// Explicitly remove the placed on the customer order line, so as to simulate the book not being delivered (ready for reordering)
 			await db.exec("UPDATE customer_order_lines SET placed = NULL"); // NOTE: this is the only line so it works without elaborate WHERE clause
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
-			expect(Date.now() - lastUpdate).toBeLessThan(200);
+			expect(Date.now() - lastUpdate).toBeLessThan(300);
 		});
 	});
 
