@@ -116,6 +116,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
+
 testOrders("should delete books from a customer order", async ({ page, books }) => {
 	const dbHandle = await getDbHandle(page);
 
@@ -134,6 +135,7 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
 });
+
 testOrders("should mark order lines as collected", async ({ page, customers, customerOrderLines }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 	const dbHandle = await getDbHandle(page);
@@ -150,7 +152,9 @@ testOrders("should mark order lines as collected", async ({ page, customers, cus
 
 	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customers[0].id);
 
-	const received = new Date(lines[0].received).toLocaleDateString();
+	// NOTE: using "it" locale as the app is primarily developed for an italian book store,
+	// We need to explicitly specify this to account for ambiguity in E2E, TODO: use some more robust way to handle this (in general case)
+	const received = new Date(lines[0].received).toISOString().slice(0, 10);
 	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).not.toBeVisible();
 	await expect(firstBookRow.getByText("Collected")).toBeVisible();
 	await expect(firstBookRow.getByText(received)).toBeVisible();
