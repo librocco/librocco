@@ -404,14 +404,13 @@ testOrders("should be able to commit reconciliation", async ({ page, placedOrder
 	await expect(table.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
 
 	// compare view
-	await page.getByRole("button", { name: "Compare" }).first().click();
+	await page.getByRole("button", { name: "Compare" }).nth(1).click();
 
 	//commit
 	await page.getByRole("button", { name: "Commit" }).nth(1).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await expect(dialog).not.toBeVisible();
-	await expect(page.getByRole("button", { name: "Commit" })).toHaveCount(2);
 
 	await page.getByRole("button", { name: "Commit" }).nth(1).click();
 	await dialog.getByRole("button", { name: "Confirm" }).click();
@@ -423,5 +422,5 @@ testOrders("should be able to commit reconciliation", async ({ page, placedOrder
 	// navigate to customer order view
 	await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
 	await expect(table.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
-	await expect(table.getByText("Delivered")).toHaveCount(3);
+	await expect(table.getByText("Delivered")).toHaveCount(1);
 });

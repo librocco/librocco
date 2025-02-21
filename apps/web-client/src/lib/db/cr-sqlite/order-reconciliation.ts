@@ -168,6 +168,7 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
 		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
 	});
 }
+
 /**
   * Finalizes a reconciliation order and updates corresponding customer order
  lines
@@ -181,62 +182,106 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
   * @see apps/e2e/helpers/cr-sqlite.ts:finalizeReconciliationOrder
   */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
-	if (!id) {
-		throw new Error("Reconciliation order must have an id");
-	}
-
-	const reconOrderLines = await db.execO<ReconciliationOrderLine>(
-		"SELECT * FROM reconciliation_order_lines WHERE reconciliation_order_id = ?;",
-		[id]
-	);
-
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT finalized FROM reconciliation_order WHERE id = ?;", [id]);
-	if (!reconOrder[0]) {
+	const reconOrder = await getReconciliationOrder(db, id);
+	if (!reconOrder) {
 		throw new Error(`Reconciliation order ${id} not found`);
 	}
 
-	if (reconOrder[0].finalized) {
+	if (reconOrder.finalized) {
 		throw new Error(`Reconciliation order ${id} is already finalized`);
 	}
 
-	let customerOrderLines: string[];
-	try {
-		customerOrderLines = reconOrderLines.flatMap(({ isbn, quantity }) => Array(quantity).fill(isbn));
-	} catch (e) {
-		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
-	}
+	const { supplierOrderIds } = reconOrder;
 
-	const timestamp = Date.now();
+	const receivedLines = await db
+		.execA<
+			[isbn: string, quantity: number]
+		>("SELECT isbn, quantity FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id])
+		.then((res) => new Map(res));
+
+	const orderedLines = await db
+		.execA<
+			[isbn: string, quantity: number]
+		>(`SELECT isbn, SUM(quantity) FROM supplier_order_line WHERE supplier_order_id IN (${multiplyString("?", supplierOrderIds.length)}) GROUP BY isbn ORDER BY isbn ASC`, supplierOrderIds)
+		.then((res) => new Map(res));
+
+	const overdeliveredLines = new Map<string, { ordered: number; delivered: number }>();
 
 	return db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
-		console.log({ customerOrderLines });
-		if (customerOrderLines.length > 0) {
+		const timestamp = Date.now();
+
+		const allISBNS = new Set([...orderedLines.keys(), ...receivedLines.keys()]);
+
+		for (const isbn of allISBNS) {
+			const orderedQuantity = orderedLines.get(isbn) || 0;
+			const receivedQuantity = receivedLines.get(isbn) || 0;
+			// The number of order lines that were ordered, but weren't delivered
+			const rejectQuantity = orderedQuantity - receivedQuantity;
+
+			// Check if some books were overdelivered
+			if (rejectQuantity < 0) {
+				overdeliveredLines.set(isbn, { ordered: orderedQuantity, delivered: receivedQuantity });
+			}
+
+			// Get all in-progress customer order lines for the isbn
+			const customerOrderLines = await txDb.execO<{ id: number; placed: number | null }>(
+				"SELECT id, placed FROM customer_order_lines WHERE isbn = ? AND received IS NULL ORDER BY created ASC",
+				[isbn]
+			);
+
+			// Let n be the number of lines recevied
+			// Let m be the number of lines to reject - difference of lines ordered and received
+			//
+			// We take the first n lines from the in-progress customer orders (and we do so by mutating the array - using splice).
+			// Afterwards we take at most the last m lines from the leftover in-progress lines.
+			//
+			// The reason we do this is that, while there should always be at least n + m in-progress lines in the DB, the difference might happen,
+			// so we're making sure we're resistant to that scenario.
+			const receivedIds = customerOrderLines.splice(0, receivedQuantity).map(({ id }) => id);
+			const rejectedIds = customerOrderLines
+				.reverse()
+				.filter(({ placed }) => Boolean(placed)) // here we're rejecting placed orders - make sure we're not rejecting non-placed orders (unwanted noop)
+				.slice(0, Math.max(rejectQuantity, 0)) // min 0 to handle the case where rejectQuantity is negative (overdelivered)
+				.map(({ id }) => id);
+
+			// Mark the received books
 			await txDb.exec(
 				`
-			 UPDATE customer_order_lines
- SET received = ?
- WHERE rowid IN (
-     SELECT col.rowid
-     FROM customer_order_lines col
-     JOIN (
-         SELECT isbn, ROW_NUMBER() OVER () as occurrence
-         FROM json_each(?)
-     ) requested ON col.isbn = requested.isbn
-     WHERE col.placed IS NOT NULL
-     AND col.received IS NULL
-     AND (
-         SELECT COUNT(*)
-         FROM customer_order_lines col2
-         WHERE col2.isbn = col.isbn
-         AND col2.rowid <= col.rowid
-         AND col2.placed IS NOT NULL
-         AND col2.received IS NULL
-     ) = requested.occurrence
- );  `,
-				[timestamp, JSON.stringify(customerOrderLines)]
+					UPDATE customer_order_lines
+					SET received = ?
+					WHERE id IN (${multiplyString("?", receivedIds.length)})
+				`,
+				[timestamp, ...receivedIds]
 			);
+
+			// Mark the rejected books
+			await txDb.exec(
+				`
+					UPDATE customer_order_lines
+					SET placed = NULL
+					WHERE id IN (${multiplyString("?", rejectedIds.length)})
+				`,
+				rejectedIds
+			);
+		}
+
+		// NOTE: It might happen that the number of books delivered is greater than the number of books ordered IN THIS SUPPLIER ORDER
+		// With the current implementation we're merely warning the user of this fact, but might want to refactor so as to return the number of something
+		//
+		// NOTE: Currently, if the number delivered is greater for this supplier order, but there are additional customer order lines for a particular book,
+		// they will be reconcile early and extra stock will happen only after there are no more customer order lines to receive, but the books keep coming in.
+		if (overdeliveredLines.size > 0) {
+			const msg = [
+				"Number of books delivered is greater than the number of books ordered:",
+				`  supplier order ids: ${supplierOrderIds.join(", ")}`
+			];
+			for (const [isbn, { ordered, delivered }] of overdeliveredLines) {
+				msg.push(`  isbn: ${isbn},  ordered: ${ordered},  delivered: ${delivered}`);
+			}
+
+			console.warn(msg.join("\n"));
 		}
 	});
 }
