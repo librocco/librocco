@@ -192,7 +192,9 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
         RIGHT JOIN book ON sp.publisher = book.publisher
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
-        WHERE col.placed IS NULL
+
+		-- sometimes a book can be received before being placed with the supplier due to overdelivery
+        WHERE col.placed IS NULL AND col.received IS NULL
         GROUP BY supplier.id, supplier.name
         ORDER BY supplier_name ASC
 	`;
@@ -213,7 +215,11 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
-	const conditions = ["col.placed is NULL"];
+	const conditions = [
+		"col.placed is NULL",
+		// sometimes a book can be received before being placed with the supplier due to overdelivery
+		"col.received IS NULL"
+	];
 	const params = [];
 
 	if (!supplierId) {
