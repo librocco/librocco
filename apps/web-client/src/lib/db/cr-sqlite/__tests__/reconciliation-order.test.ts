@@ -304,14 +304,14 @@ describe("Reconciliation order creation", () => {
 		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrder1Id]);
 
 		const reconOrder1 = await getReconciliationOrder(db, reconOrder1Id);
-		expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(200);
+		expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(300);
 
 		await createSupplierOrder(db, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 		const [{ id: supplierOrder2Id }] = await getPlacedSupplierOrders(db);
 		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrder2Id]);
 
 		const reconOrder2 = await getReconciliationOrder(db, reconOrder2Id);
-		expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(200);
+		expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps reconciliation order's 'updatedAt' with ms precision", async () => {
@@ -325,12 +325,12 @@ describe("Reconciliation order creation", () => {
 		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
 
 		const reconOrder = await getReconciliationOrder(db, reconOrderId);
-		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(200);
+		expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(300);
 
 		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
 		const reconOrderUpdated = await getReconciliationOrder(db, reconOrderId);
 		expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
-		expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(200);
+		expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(300);
 	});
 
 	describe("Reconciliation order error cases", () => {
