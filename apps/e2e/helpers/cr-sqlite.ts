@@ -59,6 +59,9 @@ export function getDbHandle(page: Page) {
 	});
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
+ */
 export async function upsertBook(db: DB, book: BookData): Promise<void> {
 	await window.books.upsertBook(db, book);
 }
@@ -71,18 +74,27 @@ export type Warehouse = {
 	discount?: number | null;
 };
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:upsertWarehouse
+ */
 export async function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 	await window.warehouse.upsertWarehouse(db, data);
 }
 
 // #region notes
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createInboundNote
+ */
 export async function createInboundNote(db: DB, params: { id: number; warehouseId: number; displayName?: string }): Promise<void> {
 	const { warehouseId, id: noteId, displayName } = params;
 	await window.note.createInboundNote(db, warehouseId, noteId);
 	if (displayName) await window.note.updateNote(db, noteId, { displayName });
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createOutboundNote
+ */
 export async function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
 	const { id, displayName } = params;
 	await window.note.createOutboundNote(db, id);
@@ -90,8 +102,6 @@ export async function createOutboundNote(db: DB, params: { id: number; displayNa
 }
 
 /**
- * E2E test helper for updating note metadata.
- * References the original updateNote function.
  * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:updateNote
  */
 export async function updateNote(db: DB, payload: { id: number; displayName?: string; defaultWarehouse?: number }): Promise<void> {
@@ -108,8 +118,6 @@ type VolumeStock = {
 };
 
 /**
- * E2E test helper for adding volumes to a note.
- * References the original addVolumesToNote function.
  * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:addVolumesToNote
  */
 export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
@@ -120,8 +128,6 @@ export async function addVolumesToNote(db: DB, params: readonly [noteId: number,
 export type NoteCustomItem = { id: number; title: string; price: number };
 
 /**
- * E2E test helper for adding or updating custom items in a note.
- * References the original upsertNoteCustomItem function.
  * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:upsertNoteCustomItem
  */
 export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: number, item: NoteCustomItem]): Promise<void> {
@@ -130,8 +136,6 @@ export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: num
 }
 
 /**
- * E2E test helper for committing a note.
- * References the original commitNote function.
  * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:commitNote
  */
 export async function commitNote(db: DB, id: number): Promise<void> {
@@ -140,9 +144,8 @@ export async function commitNote(db: DB, id: number): Promise<void> {
 }
 
 // #region customerOrders
+
 /**
- * E2E test helper for creating or updating customer data.
- * References the original upsertCustomer function.
  * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:upsertCustomer
  */
 export async function upsertCustomer(db: DB, customer: Customer) {
@@ -150,8 +153,6 @@ export async function upsertCustomer(db: DB, customer: Customer) {
 }
 
 /**
- * E2E test helper for adding books to a customer's order.
- * References the original addBooksToCustomer function.
  * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:addBooksToCustomer
  */
 export const addBooksToCustomer = async (db: DB, params: { customerId: number; bookIsbns: string[] }): Promise<void> => {
@@ -160,6 +161,7 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
 };
 
 /**
+ * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:getCustomerOrderLines
  * TODO: I would remove this as I consider direct getters indicate different bad practices in e2e tests (overly complex fixtures or implementation based assertions, instead of behaviour - UI)
  */
 export const getCustomerOrderLines = async (db: DB, customerId: number): Promise<CustomerOrderLine[]> => {
@@ -168,15 +170,24 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 
 // # region suppliers
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:upsertSupplier
+ */
 export async function upsertSupplier(db: DB, supplier: Supplier): Promise<void> {
 	await window.suppliers.upsertSupplier(db, supplier);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:associatePublisher
+ */
 export async function associatePublisher(db: DB, params: { supplierId: number; publisher: string }): Promise<void> {
 	const { supplierId, publisher } = params;
 	await window.suppliers.associatePublisher(db, supplierId, publisher);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
+ */
 export async function createSupplierOrder(
 	db: DB,
 	params: { supplierId: number; orderLines: Pick<SupplierOrderLine, "isbn" | "quantity" | "supplier_id">[] }
@@ -187,7 +198,6 @@ export async function createSupplierOrder(
 
 /**
  * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:getPlacedSupplierOrders
- *
  * TODO: I would remove this as I consider direct getters indicate different bad practices in e2e tests (overly complex fixtures or implementation based assertions, instead of behaviour - UI)
  */
 export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
@@ -213,8 +223,6 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 }
 
 /**
- * E2E test helper for finalizing a reconciliation order.
- * References the original finalizeReconciliationOrder function.
  * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:finalizeReconciliationOrder
  */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
@@ -222,8 +230,6 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 }
 
 /**
- * E2E test helper for adding order lines to a reconciliation order.
- * References the original addOrderLinesToReconciliationOrder function.
  * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:addOrderLinesToReconciliationOrder
  */
 export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
