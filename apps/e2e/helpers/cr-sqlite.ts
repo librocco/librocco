@@ -1,15 +1,17 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 import {
 	Customer,
-	DBCustomerOrderLine,
 	PlacedSupplierOrder,
-	ReconciliationOrder,
-	ReconciliationOrderLine,
+	PlacedSupplierOrderLine,
 	Supplier,
-	PossibleSupplierOrderLine
+	PossibleSupplierOrderLine,
+	ReconciliationOrderLine,
+	ReconciliationOrder,
+	DBCustomerOrderLine
 } from "./types";
 import { BookData } from "@librocco/shared";
 
+// #region books
 /**
  * E2E test helper for adding book data to the database.
  * References the original upsertBook function.
@@ -395,6 +397,7 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 	);
 	return recondOrder[0].id;
 }
+
 /**
  * E2E test helper for finalizing a reconciliation order.
  * References the original finalizeReconciliationOrder function.
@@ -473,6 +476,38 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
 	);
 	return result;
 }
+
+export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
+	if (!supplier_order_ids.length) {
+		return [];
+	}
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+	const query = `
+        SELECT
+            sol.supplier_order_id,
+            sol.isbn,
+            sol.quantity,
+			COALESCE(book.price, 0) * sol.quantity as line_price,
+			COALESCE(book.title, 'N/A') AS title,
+			COALESCE(book.authors, 'N/A') AS authors,
+            so.supplier_id,
+            so.created,
+            s.name AS supplier_name,
+            SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
+            SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
+		FROM supplier_order_line AS sol
+		LEFT JOIN book ON sol.isbn = book.isbn
+        JOIN supplier_order so ON so.id = sol.supplier_order_id
+        JOIN supplier s ON s.id = so.supplier_id
+        WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
+		GROUP BY sol.supplier_order_id, sol.isbn
+        ORDER BY sol.supplier_order_id, sol.isbn ASC;
+    `;
+
+	return db.execO<PlacedSupplierOrderLine>(query, supplier_order_ids);
+}
+
 /**
  * E2E test helper for adding order lines to a reconciliation order.
  * References the original addOrderLinesToReconciliationOrder function.
