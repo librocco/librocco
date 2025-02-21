@@ -49,9 +49,10 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	const inNoteList = content.entityList("inbound-list");
 
 	// Add some notes to the first (existing) warehouse
-	const dbHandle = await getDbHandle(page);
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
 	// Navigate to inbound list
 	await content.navigate("inbound-list");
@@ -60,8 +61,8 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	await inNoteList.assertElements([{ name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / Note 1" }]);
 
 	// Add another warehouse and a note to it
-	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 3" });
+	await (await getDbHandle(page)).evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 3" });
 
 	// All notes should be namespaced to their respective warehouses
 	await inNoteList.assertElements([{ name: "Warehouse 2 / Note 3" }, { name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / Note 1" }]);
@@ -289,8 +290,8 @@ test("should display book count for each respective note in the list", async ({ 
 	]);
 
 	// Add two books to first note
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
 
 	await content.entityList("inbound-list").assertElements([
 		{ name: "Warehouse 1 / Note 1", numBooks: 2 },

@@ -55,8 +55,15 @@
 	// #region search
 	const search = writable("");
 
-	$: entries = [] as BookData[];
-	$: $search.length > 2 ? searchBooks(db, $search).then((res) => (entries = res)) : (entries = []);
+	let entries: BookData[] = [];
+	$: entries = [];
+	$: if ($search.length > 2) {
+		searchBooks(db, $search).then((res) => {
+			entries = res;
+		});
+	} else {
+		entries = [];
+	}
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });

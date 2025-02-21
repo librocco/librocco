@@ -9,11 +9,13 @@ export const load: LayoutLoad = ({ route }) => {
 		// Use daily summary - today as default view, for both unspecified route and daily summary (witout date specified)
 		case "/history":
 		case "/history/date":
-			throw redirect(307, appPath("history/date", new Date().toISOString().slice(0, 10)));
+			redirect(307, appPath("history/date", new Date().toISOString().slice(0, 10)));
+			break;
 		// Use today as default past notes view
 		case "/history/notes":
-			throw redirect(307, appPath("history/notes/date", new Date().toISOString().slice(0, 10)));
+			redirect(307, appPath("history/notes/date", new Date().toISOString().slice(0, 10)));
+			break;
 		default:
-			return;
+			return {};
 	}
 };

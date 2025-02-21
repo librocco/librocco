@@ -27,7 +27,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const note = await getNoteById(dbCtx.db, id);
 	if (!note) {
-		throw redirect(307, appPath("outbound"));
+		redirect(307, appPath("outbound"));
 	}
 
 	const entries = await getNoteEntries(dbCtx.db, id);

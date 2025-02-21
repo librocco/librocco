@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-types */
 import type { Locator, Page } from "@playwright/test";
 
 import type { NoteState, NoteTempState, EntityListView, WebClientView, TestId, BookData } from "@librocco/shared";
@@ -13,7 +12,7 @@ export type GetByTextOpts = Parameters<Locator["getByText"]>[1];
 export type InventoryRowField = keyof InventoryFieldLookup;
 export type HistoryRowField = keyof HistoryFieldLookup;
 
-export type DashboardNode<T = {}> = T &
+export type DashboardNode<T = object> = T &
 	Locator & {
 		dashboard: () => DashboardInterface;
 	};
