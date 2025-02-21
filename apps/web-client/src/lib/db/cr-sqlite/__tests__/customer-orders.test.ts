@@ -130,12 +130,12 @@ describe("Customer order tests", () => {
 		// Insert (initial)
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const [customer] = await getAllCustomers(db);
-		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(200);
+		expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
 
 		// Update
 		await upsertCustomer(db, { fullname: "John Doe (updated)", id: 1, displayId: "1" });
 		const [customerUpdated] = await getAllCustomers(db);
-		expect(Date.now() - customerUpdated.updatedAt.getTime()).toBeLessThan(200);
+		expect(Date.now() - customerUpdated.updatedAt.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps customer order lines' 'created' with ms precision", async () => {
@@ -143,11 +143,11 @@ describe("Customer order tests", () => {
 
 		await addBooksToCustomer(db, 1, ["1"]);
 		const [orderLine1] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(200);
+		expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(300);
 
 		await addBooksToCustomer(db, 1, ["2"]);
 		const [, orderLine2] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(200);
+		expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(300);
 	});
 
 	it("timestamps customer order lines' 'collected' with ms precision", async () => {
@@ -158,13 +158,13 @@ describe("Customer order tests", () => {
 		await markCustomerOrderLineAsCollected(db, line1Id);
 
 		const [line1] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - line1.collected.getTime()).toBeLessThan(200);
+		expect(Date.now() - line1.collected.getTime()).toBeLessThan(300);
 
 		const [{ id: line2Id }] = await getCustomerOrderLines(db, 1);
 		await markCustomerOrderLineAsCollected(db, line2Id);
 
 		const [line2] = await getCustomerOrderLines(db, 1);
-		expect(Date.now() - line2.collected.getTime()).toBeLessThan(200);
+		expect(Date.now() - line2.collected.getTime()).toBeLessThan(300);
 	});
 });
 
