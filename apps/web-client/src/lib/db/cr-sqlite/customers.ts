@@ -28,7 +28,7 @@
  * - Status is derived from presence/absence of timestamps
  */
 
-import type { DB, Customer, CustomerOrderLine } from "./types";
+import type { DB, Customer, CustomerOrderLine, CustomerOrderLineHistory } from "./types";
 
 type DBCustomerOrderLine = Omit<CustomerOrderLine, "created" | "placed" | "received" | "collected"> & {
 	created: number; // as milliseconds since epoch
@@ -142,6 +142,23 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 	);
 	return result.map(marshallCustomerOrderLineDates);
 };
+
+/**
+ * Retrieves a history entries for each time a particular customer order line had been placed with a supplier.
+ * TODO: history is the best I cound come up with in terms of nomenclature, maybe revisit
+ */
+export async function getCustomerOrderLineHistory(db: DB, lineId: number): Promise<CustomerOrderLineHistory[]> {
+	const query = `
+		SELECT
+			supplier_order_id AS supplierOrderId,
+			placed
+		FROM customer_order_line_supplier_order
+		WHERE customer_order_line_id = ?
+		ORDER BY placed DESC
+	`;
+	const res = await db.execO<CustomerOrderLineHistory>(query, [lineId]);
+	return res.map(({ placed, ...rest }) => ({ ...rest, placed: new Date(placed) }));
+}
 
 /**
  * Retrieves customer details from the database for a specific customer ID.
