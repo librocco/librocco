@@ -54,6 +54,9 @@ export function getDbHandle(page: Page) {
 	});
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
+ */
 export async function upsertBook(db: DB, book: BookData): Promise<void> {
 	await window.books.upsertBook(db, book);
 }
@@ -66,18 +69,27 @@ export type Warehouse = {
 	discount?: number | null;
 };
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:upsertWarehouse
+ */
 export async function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
 	await window.warehouse.upsertWarehouse(db, data);
 }
 
 // #region notes
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createInboundNote
+ */
 export async function createInboundNote(db: DB, params: { id: number; warehouseId: number; displayName?: string }): Promise<void> {
 	const { warehouseId, id: noteId, displayName } = params;
 	await window.note.createInboundNote(db, warehouseId, noteId);
 	if (displayName) await window.note.updateNote(db, noteId, { displayName });
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createOutboundNote
+ */
 export async function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
 	const { id, displayName } = params;
 	await window.note.createOutboundNote(db, id);
@@ -127,6 +139,7 @@ export async function commitNote(db: DB, id: number): Promise<void> {
 }
 
 // #region customerOrders
+
 /**
  * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:upsertCustomer
  */
@@ -144,15 +157,24 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
 
 // # region suppliers
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:upsertSupplier
+ */
 export async function upsertSupplier(db: DB, supplier: Supplier): Promise<void> {
 	await window.suppliers.upsertSupplier(db, supplier);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:associatePublisher
+ */
 export async function associatePublisher(db: DB, params: { supplierId: number; publisher: string }): Promise<void> {
 	const { supplierId, publisher } = params;
 	await window.suppliers.associatePublisher(db, supplierId, publisher);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
+ */
 export async function createSupplierOrder(
 	db: DB,
 	params: { id: number; supplierId: number; orderLines: Pick<PossibleSupplierOrderLine, "isbn" | "supplier_id" | "quantity">[] }
