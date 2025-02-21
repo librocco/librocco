@@ -21,6 +21,7 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Compare" }).nth(1)).not.toBeVisible();
 });
+
 testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
@@ -109,6 +110,7 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 
 	await expect(secondRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
+
 testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
@@ -138,6 +140,7 @@ testOrders("should show over-delivery when scanned quantities are more than orde
 	// Verify comparison shows over-delivery
 	await expect(page.getByText("2 / 2")).toBeVisible();
 });
+
 testOrders(
 	"should show under-delivery when ordered books are not scanned or the scanned quantities are less than ordered amounts",
 	async ({ page, placedOrders, books }) => {
@@ -191,6 +194,7 @@ testOrders(
 		await expect(page.getByText(`1 / ${totalOrderedLines}`)).toBeVisible();
 	}
 );
+
 testOrders("should show unmatched deliveries when ordered books do not match scanned books", async ({ page, placedOrders, books }) => {
 	// Navigate to reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -239,6 +243,7 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 	await expect(page.getByText("Total delivered:")).toBeVisible();
 	await expect(page.getByText("2 / 2")).toBeVisible();
 });
+
 testOrders("should show correct delivery stats in commit view", async ({ page, books, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
