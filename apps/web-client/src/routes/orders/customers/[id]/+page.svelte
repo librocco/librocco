@@ -274,7 +274,11 @@
 									</td>
 									<td>
 										{#if orderLineStatus === "collected"}
-											{collected.toLocaleDateString()}
+											<!--
+												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
+												TODO: use some more robust way to handle this (loacle time string that actually works)
+											-->
+											{collected.toISOString().slice(0, 10)}
 										{:else}
 											<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
 												>Collect📚</button
