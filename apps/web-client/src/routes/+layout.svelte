@@ -9,6 +9,8 @@
 
 	import type { LayoutData } from "./$types";
 
+	import { IS_DEBUG, IS_E2E } from "$lib/constants";
+
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
 	import * as note from "$lib/db/cr-sqlite/note";
@@ -21,17 +23,14 @@
 	const { dbCtx } = data;
 
 	$: {
-		// Register (and update on each change) the db to the window object.
+		// Register (and update on each change) the db and some db handlers to the window object.
 		// This is used for e2e tests (easier setup through direct access to the db).
-		// This is not a security concern as the db is in the user's browser anyhow.
-		if (browser && dbCtx) {
+		// Additionally, we're doing this in debug mode - in case we want to interact with the DB directly (using dev console)
+		if (browser && dbCtx && (IS_E2E || IS_DEBUG)) {
 			window["db_ready"] = true;
 			window["_db"] = dbCtx.db;
 			window.dispatchEvent(new Event("db_ready"));
 
-			// NOTE: we might want to restrict this to E2E builds, but having those handlers attached
-			// to window doesn't pose a security risk, as the db is in the user's browser anyhow.
-			// NOTE: There might be a preformance hit though
 			window["books"] = books;
 			window["customers"] = customers;
 			window["note"] = note;
