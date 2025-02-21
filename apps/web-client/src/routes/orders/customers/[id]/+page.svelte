@@ -24,7 +24,7 @@
 		removeBooksFromCustomer,
 		isDisplayIdUnique,
 		upsertCustomer,
-		markCustomerOrderAsCollected
+		markCustomerOrderLineAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
@@ -111,8 +111,8 @@
 	const handleDeleteLine = async (lineId) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
-	const handleCollect = async (ids: number[]) => {
-		await markCustomerOrderAsCollected(db, ids);
+	const handleCollect = async (id: number) => {
+		await markCustomerOrderLineAsCollected(db, id);
 	};
 
 	let scanInputRef: HTMLInputElement = null;
@@ -265,7 +265,7 @@
 										{#if orderLineStatus === "collected"}
 											<span class="badge-success badge">Collected</span>
 										{:else if orderLineStatus === "received"}
-											<span class="badge-info badge">Delievered</span>
+											<span class="badge-info badge">Delivered</span>
 										{:else if orderLineStatus === "placed"}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
@@ -276,7 +276,7 @@
 										{#if orderLineStatus === "collected"}
 											{collected.toLocaleDateString()}
 										{:else}
-											<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect([id])} class="btn-outline btn-sm btn"
+											<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
 												>Collect📚</button
 											>
 										{/if}
