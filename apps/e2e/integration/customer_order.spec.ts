@@ -24,14 +24,15 @@ test("should create a new customer order", async ({ page }) => {
 	await expect(page.getByText("new@example.com")).toBeVisible();
 });
 
-testOrders("should show list of In Progress orders", async ({ page, customer }) => {
+testOrders("should show list of In Progress orders", async ({ page, customers }) => {
 	await page.goto(`${baseURL}orders/customers/`);
 	page.getByRole("button", { name: "In Progress" });
 
-	await expect(page.getByText(customer.fullname)).toBeVisible();
-	await expect(page.getByText(customer.email)).toBeVisible();
+	await expect(page.getByText(customers[0].fullname)).toBeVisible();
+	await expect(page.getByText(customers[0].email)).toBeVisible();
 });
-testOrders("should allow navigation to a specific order", async ({ page, customer, books }) => {
+
+testOrders("should allow navigation to a specific order", async ({ page, customers, books }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn] });
@@ -41,8 +42,8 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 	await updateButton.click();
 	await page.waitForURL(`${baseURL}orders/customers/1/`);
 
-	await expect(page.getByText(customer.fullname)).toBeVisible();
-	await expect(page.getByText(customer.email)).toBeVisible();
+	await expect(page.getByText(customers[0].fullname)).toBeVisible();
+	await expect(page.getByText(customers[0].email)).toBeVisible();
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
@@ -61,12 +62,13 @@ testOrders("should allow navigation to a specific order", async ({ page, custome
 
 	await expect(thirdRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 });
-testOrders("should update customer details", async ({ page, customer }) => {
+
+testOrders("should update a customer details", async ({ page, customers }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
 	const newCustomer = { fullname: "New Customer", email: "new@gmail.com", deposit: "10" };
-	await expect(page.getByText(customer.fullname)).toBeVisible();
-	await expect(page.getByText(customer.email)).toBeVisible();
+	await expect(page.getByText(customers[0].fullname)).toBeVisible();
+	await expect(page.getByText(customers[0].email)).toBeVisible();
 
 	await page.getByLabel("Edit customer order name, email or deposit").click();
 	const dialog = page.getByRole("dialog");
@@ -85,19 +87,19 @@ testOrders("should update customer details", async ({ page, customer }) => {
 	await expect(page.getByText(`€${newCustomer.deposit} deposit`)).toBeVisible();
 });
 
-testOrders("should add books to a customer order", async ({ page, customer, books }) => {
+testOrders("should add books to a customer order", async ({ page, customers, books }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
-	await expect(page.getByText(customer.fullname)).toBeVisible();
-	await expect(page.getByText(customer.email)).toBeVisible();
-
-	const isbnField = page.getByRole("textbox");
-	isbnField.fill(books[0].isbn);
-	isbnField.press("Enter");
+	await expect(page.getByText(customers[0].fullname)).toBeVisible();
+	await expect(page.getByText(customers[0].email)).toBeVisible();
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
 	const secondRow = table.getByRole("row").nth(2);
+
+	const isbnField = page.getByRole("textbox");
+	isbnField.fill(books[0].isbn);
+	isbnField.press("Enter");
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
@@ -110,6 +112,7 @@ testOrders("should add books to a customer order", async ({ page, customer, book
 	await expect(secondRow.getByRole("cell", { name: books[2].isbn })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[2].title })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
+
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
 });
@@ -131,7 +134,7 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
 });
-testOrders("should mark order lines as collected", async ({ page, customer, customerOrderLines }) => {
+testOrders("should mark order lines as collected", async ({ page, customers, customerOrderLines }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 	const dbHandle = await getDbHandle(page);
 
@@ -145,7 +148,7 @@ testOrders("should mark order lines as collected", async ({ page, customer, cust
 
 	await firstBookRow.getByRole("button", { name: "Collect📚" }).click();
 
-	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customer.id);
+	const lines = await dbHandle.evaluate(getCustomerOrderLineStatus, customers[0].id);
 
 	const received = new Date(lines[0].received).toLocaleDateString();
 	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).not.toBeVisible();
