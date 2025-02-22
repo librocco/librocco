@@ -11,6 +11,7 @@ import {
 	getCustomerOrderLines,
 	getPlacedSupplierOrderLines,
 	getPlacedSupplierOrders,
+	getUnreconciledSupplierOrders,
 	upsertBook,
 	upsertCustomer,
 	upsertSupplier
@@ -108,6 +109,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 				{ ...books[2], supplier_id: 1, supplier_name: "sup1", quantity: 1, line_price: 30 }
 			]
 		});
+
 		await dbHandle.evaluate(createSupplierOrder, {
 			supplierId: 1,
 			orderLines: [
@@ -126,7 +128,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 			]
 		});
 
-		const placedOrders = await dbHandle.evaluate(getPlacedSupplierOrders);
+		const placedOrders = await dbHandle.evaluate(getUnreconciledSupplierOrders);
 
 		const orderIds = placedOrders.map((order) => order.id);
 		const placedOrderLines = await dbHandle.evaluate(getPlacedSupplierOrderLines, orderIds);

@@ -206,6 +206,14 @@ export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrd
 
 /**
  * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:getPlacedSupplierOrders
+ * TODO: I would remove this as I consider direct getters indicate different bad practices in e2e tests (overly complex fixtures or implementation based assertions, instead of behaviour - UI)
+ */
+export async function getUnreconciledSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
+	return await window.reconciliation.getUnreconciledSupplierOrders(db);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:getPlacedSupplierOrders
  *
  * TODO: I would remove this as I consider direct getters indicate different bad practices in e2e tests (overly complex fixtures or implementation based assertions, instead of behaviour - UI)
  */
