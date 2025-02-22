@@ -188,8 +188,9 @@ export async function createSupplierOrder(
 /**
  * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:createReconciliationOrder
  */
-export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
-	return await window.reconciliation.createReconciliationOrder(db, supplierOrderIds);
+export async function createReconciliationOrder(db: DB, params: { id: number; supplierOrderIds: number[] }): Promise<void> {
+	const { id, supplierOrderIds } = params;
+	return await window.reconciliation.createReconciliationOrder(db, id, supplierOrderIds);
 }
 
 /**
