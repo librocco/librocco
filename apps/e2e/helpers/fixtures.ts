@@ -225,10 +225,10 @@ export const testOrders = test.extend<OrderTestFixture>({
 			orderLines: [supplierOrderLine]
 		});
 
-		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, [1]);
+		await dbHandle.evaluate(createReconciliationOrder, { id: 1, supplierOrderIds: [1] });
 
-		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
-		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
+		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: 1, newLines: [supplierOrderLine] });
+		await dbHandle.evaluate(finalizeReconciliationOrder, 1);
 
 		await use(customerOrderLines);
 	},

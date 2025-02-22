@@ -425,12 +425,16 @@ export async function createSupplierOrder(
 
 			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
 
-			// Create customer order line - supplier order relations - keeping track of all times a customer order line was ordered from the supplier
 			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, id]);
-			await db.exec(
-				`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
-				values.flat()
-			);
+
+			// NOTE: In most cases there WILL be customer orders corresponding to the supplier order lines, however, we're allowing to create a number of supplier
+			// order lines unrelated to existing customer orders - we utilise this to simplify tests, so it's important to check to not end up with an incomplete SQL statement
+			if (values.length) {
+				await db.exec(
+					`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+					values.flat()
+				);
+			}
 		}
 	});
 }
