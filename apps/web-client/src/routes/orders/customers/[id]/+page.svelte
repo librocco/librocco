@@ -24,7 +24,7 @@
 		removeBooksFromCustomer,
 		isDisplayIdUnique,
 		upsertCustomer,
-		markCustomerOrderLineAsCollected
+		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
@@ -108,11 +108,11 @@
 
 	// #endregion dialog
 
-	const handleDeleteLine = async (lineId) => {
+	const handleDeleteLine = async (lineId: number) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
 	const handleCollect = async (id: number) => {
-		await markCustomerOrderLineAsCollected(db, id);
+		await markCustomerOrderLinesAsCollected(db, [id]);
 	};
 
 	let scanInputRef: HTMLInputElement = null;
