@@ -299,33 +299,49 @@ export const processOrderDelivery = (
 	scannedBooks: (BookEntry & { quantity: number })[],
 	placedOrderLines: PlacedSupplierOrderLine[]
 ): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
-	const scannedLinesMap = new Map<string, BookEntry & { quantity: number }>(
-		scannedBooks.map((book) => {
-			return [book.isbn, book];
-		})
-	);
-	const result = { processedLines: [], unmatchedBooks: [] };
+	const unmatchedBooks: (BookEntry & { quantity: number })[] = [];
+	const processedLines: ProcessedOrderLine[] = [];
 
+	// Create a map of scanned books for quick lookup
+	const scannedBooksMap = new Map<string, BookEntry & { quantity: number }>();
+	scannedBooks.forEach((scannedBook) => scannedBooksMap.set(scannedBook.isbn, scannedBook));
+
+	// Process each placed order line
 	for (const placedOrderLine of placedOrderLines) {
-		if (scannedLinesMap.has(placedOrderLine.isbn)) {
-			const scannedBook = scannedLinesMap.get(placedOrderLine.isbn);
-			scannedLinesMap.delete(placedOrderLine.isbn);
-			result.processedLines.push({
+		const scannedBook = scannedBooksMap.get(placedOrderLine.isbn);
+
+		if (scannedBook) {
+			// Calculate delivered quantity
+			const deliveredQuantity = Math.min(scannedBook.quantity, placedOrderLine.quantity);
+
+			// Add to processed lines
+			processedLines.push({
 				...placedOrderLine,
-				deliveredQuantity: scannedBook.quantity,
+				deliveredQuantity,
 				orderedQuantity: placedOrderLine.quantity
 			});
+
+			// Update the remaining quantity in the scanned book
+			const remainingQuantity = scannedBook.quantity - deliveredQuantity;
+			if (remainingQuantity > 0) {
+				scannedBooksMap.set(scannedBook.isbn, { ...scannedBook, quantity: remainingQuantity });
+			} else {
+				scannedBooksMap.delete(scannedBook.isbn);
+			}
 		} else {
-			result.processedLines.push({
+			// If no matching scanned book, add to processed lines with deliveredQuantity = 0
+			processedLines.push({
 				...placedOrderLine,
 				deliveredQuantity: 0,
 				orderedQuantity: placedOrderLine.quantity
 			});
 		}
 	}
-	result.unmatchedBooks = [...result.unmatchedBooks, ...scannedLinesMap.values()];
 
-	return result;
+	// Add remaining scanned books to unmatchedBooks
+	unmatchedBooks.push(...Array.from(scannedBooksMap.values()));
+
+	return { processedLines, unmatchedBooks };
 };
 
 /**
