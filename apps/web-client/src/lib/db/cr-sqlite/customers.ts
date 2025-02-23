@@ -333,21 +333,22 @@ export const markCustomerOrderAsCollected = async (db: DB, ids: number[]): Promi
 		 UPDATE customer_order_lines
             SET collected = ?
             WHERE id IN (${placeholders})
-            AND collected IS NULL AND received IS NOT NULL
             ;`,
 			[timestamp, ...ids]
 		);
 	});
 };
 
-export const markCustomerOrderLineAsCollected = async (db: DB, lineId: number): Promise<void> => {
+export const markCustomerOrderLinesAsCollected = async (db: DB, ids: number[]): Promise<void> => {
+	if (!ids.length) return;
+
 	const timestamp = Date.now();
 	await db.exec(
 		`
 			UPDATE customer_order_lines
 			SET collected = ?
-			WHERE id = ?
+			WHERE id IN (${multiplyString("?", ids.length)})
 		`,
-		[timestamp, lineId]
+		[timestamp, ...ids]
 	);
 };
