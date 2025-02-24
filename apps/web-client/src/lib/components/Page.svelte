@@ -76,9 +76,9 @@
 		},
 		{
 			label: tNav.supplier_orders(),
-			href: appPath("suppliers"),
+			href: appPath("supplier_orders"),
 			icon: Truck,
-			linkto: "orders/suppliers"
+			linkto: "orders/suppliers/orders"
 		}
 	];
 
