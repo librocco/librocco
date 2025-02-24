@@ -21,16 +21,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	const customerOrderLines = await getCustomerOrderLines(dbCtx.db, Number(params.id));
 	const publisherList = await getPublisherList(dbCtx.db);
 
-	// Fetch book data for each order line
-	const bookData: Record<string, any> = {};
-	await Promise.all(
-		customerOrderLines.map(async (line) => {
-			const bookInfo = await getBookData(dbCtx.db, String(line.isbn));
-			if (bookInfo) {
-				bookData[line.isbn] = bookInfo;
-			}
-		})
-	);
-
-	return { customer, customerOrderLines, publisherList, bookData};
+	return { customer, customerOrderLines, publisherList };
 };

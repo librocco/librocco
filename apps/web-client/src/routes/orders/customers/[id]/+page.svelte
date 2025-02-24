@@ -1,8 +1,20 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
-	import { QrCode, X, Trash2, Mail, FileEdit, ReceiptEuro, UserCircle, MoreVertical, ArrowRight, ClockArrowUp, PencilLine } from "lucide-svelte";
+	import {
+		QrCode,
+		X,
+		Trash2,
+		Mail,
+		FileEdit,
+		ReceiptEuro,
+		UserCircle,
+		MoreVertical,
+		ArrowRight,
+		ClockArrowUp,
+		PencilLine
+	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults, superForm } from "sveltekit-superforms";
+	import { defaults, superForm, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
@@ -10,10 +22,7 @@
 
 	import { stripNulls } from "@librocco/shared";
 
-	import {
-		PopoverWrapper,
-		Dialog,
-	} from "$lib/components";
+	import { PopoverWrapper, Dialog } from "$lib/components";
 
 	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
@@ -25,7 +34,7 @@
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { BookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
+	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	import { getOrderLineStatus } from "$lib/utils/order-status";
@@ -76,7 +85,6 @@
 	$: customer = data?.customer;
 	$: customerOrderLines = data?.customerOrderLines || [];
 	$: publisherList = data.publisherList;
-	$: bookData = data.bookData;
 
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
@@ -140,6 +148,10 @@
 	// #region book-form
 	let bookFormData = null;
 
+	const refreshData = async function () {
+		console.log("Refreshing data");
+	};
+
 	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
@@ -156,6 +168,7 @@
 			await upsertBook(db, data);
 			bookFormData = null;
 			open.set(false);
+			refreshData();
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
@@ -193,7 +206,6 @@
 	} = dialog;
 
 	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
-
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -307,7 +319,7 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, price, placed, received, collected }}
+							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, placed, received, collected }}
 								{@const placedTime = placed?.getTime()}
 								{@const receivedTime = received?.getTime()}
 								{@const collectedTime = collected?.getTime()}
@@ -331,81 +343,83 @@
 									</td>
 									<td>
 										<PopoverWrapper
-										options={{
-											forceVisible: true,
-											positioning: {
-												placement: "left"
-											}
-										}}
-										let:trigger
-									>
-										<button
-											data-testid={testId("popover-control")}
-											{...trigger}
-											use:trigger.action
-											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+											options={{
+												forceVisible: true,
+												positioning: {
+													placement: "left"
+												}
+											}}
+											let:trigger
 										>
-											<span class="sr-only">Edit line</span>
-											<span class="aria-hidden">
-												<MoreVertical />
-											</span>
-										</button>
-
-										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 											<button
-												use:melt={$dialogTrigger}
-												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-												data-testid={testId("edit-row")}
-												on:m-click={() => {
-													bookFormData = {isbn, title, authors, price, ...bookData[isbn]};
-													dialogContent = {
-														onConfirm: () => {},
-														title: dialogTitle.editBook(),
-														description: dialogDescription.editBook(),
-														type: "edit-row"
-													};
-												}}
-												on:m-keydown={() => {
-													bookFormData = {isbn, title, authors, price, ...bookData[isbn]};
-
-													dialogContent = {
-														onConfirm: () => {},
-														title: dialogTitle.editBook(),
-														description: dialogDescription.editBook(),
-														type: "edit-row"
-													};
-												}}
+												data-testid={testId("popover-control")}
+												{...trigger}
+												use:trigger.action
+												class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 											>
-												<span class="sr-only">Edit row</span>
+												<span class="sr-only">Edit line</span>
 												<span class="aria-hidden">
-													<FileEdit />
+													<MoreVertical />
 												</span>
 											</button>
-
-											{#if orderLineStatus === "collected"}
-												<!--
-													NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
-													TODO: use some more robust way to handle this (loacle time string that actually works)
-												-->
-												{collected.toISOString().slice(0, 10)}
-											{:else}
-												<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
-													>Collect📚</button
-												>
-											{/if}
-											{#if orderLineStatus === "draft"}
+											<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 												<button
+													use:melt={$dialogTrigger}
 													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-													data-testid={testId("delete-row")}
-													on:click={() => {handleDeleteLine(id)}}>
-													<span class="sr-only">Delete row</span>
+													data-testid={testId("edit-row")}
+													on:m-click={() => {
+														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+														dialogContent = {
+															onConfirm: () => {},
+															title: dialogTitle.editBook(),
+															description: dialogDescription.editBook(),
+															type: "edit-row"
+														};
+													}}
+													on:m-keydown={() => {
+														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+
+														dialogContent = {
+															onConfirm: () => {},
+															title: dialogTitle.editBook(),
+															description: dialogDescription.editBook(),
+															type: "edit-row"
+														};
+													}}
+												>
+													<span class="sr-only">Edit row</span>
 													<span class="aria-hidden">
-														<Trash2 />
+														<FileEdit />
 													</span>
 												</button>
-											{/if}
-										</div>
-									</PopoverWrapper>
+
+												{#if orderLineStatus === "collected"}
+													<!--
+														NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
+														TODO: use some more robust way to handle this (loacle time string that actually works)
+													-->
+													{collected.toISOString().slice(0, 10)}
+												{:else}
+													<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
+														>Collect📚</button
+													>
+												{/if}
+												{#if orderLineStatus === "draft"}
+													<button
+														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+														data-testid={testId("delete-row")}
+														on:click={() => {
+															handleDeleteLine(id);
+														}}
+													>
+														<span class="sr-only">Delete row</span>
+														<span class="aria-hidden">
+															<Trash2 />
+														</span>
+													</button>
+												{/if}
+											</div>
+										</PopoverWrapper>
 									</td>
 								</tr>
 							{/each}
@@ -416,7 +430,6 @@
 		</div>
 	</div>
 </main>
-
 
 <div use:melt={$portalled}>
 	{#if $open}
@@ -449,7 +462,7 @@
 				</div>
 				<div class="px-6">
 					<!-- {$connectivity} -->
-					<BookForm
+					<DaisyUIBookForm
 						data={defaults(bookFormData, zod(bookSchema))}
 						{publisherList}
 						options={{
