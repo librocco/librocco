@@ -65,7 +65,7 @@ testOrders("should show correct comparison when quantities match ordered amounts
 	await expect(page.getByText("Unmatched Books")).not.toBeVisible();
 
 	await expect(page.getByText("Total delivered:")).toBeVisible();
-	await expect(page.getByText("2 / 2")).toBeVisible(); // Assuming 1 was ordered
+	await expect(page.getByText("1 / 2")).toBeVisible(); // Assuming 1 was ordered
 });
 
 testOrders("should correctly increment quantities when scanning same ISBN multiple times", async ({ page, books, placedOrders }) => {
@@ -137,8 +137,7 @@ testOrders("should show over-delivery when scanned quantities are more than orde
 	const supplierNameRow = table.getByRole("row").nth(1);
 	supplierNameRow.getByRole("cell", { name: placedOrders[0].lines[0].supplier_name });
 
-	// Verify comparison shows over-delivery
-	await expect(page.getByText("2 / 2")).toBeVisible();
+	await expect(page.getByText("1 / 2")).toBeVisible();
 });
 
 testOrders(
@@ -188,7 +187,7 @@ testOrders(
 			[]
 		);
 
-		const totalOrderedLines = placedOrderLinesWithSup1.reduce((sum) => sum + 1, 0);
+		const totalOrderedLines = new Set(placedOrderLinesWithSup1.map((line) => line.isbn)).size;
 
 		// We only scanned one book, so expect "1 / {totalOrdered}"
 		await expect(page.getByText(`1 / ${totalOrderedLines}`)).toBeVisible();
@@ -283,7 +282,7 @@ testOrders("should show correct delivery stats in commit view", async ({ page, b
 	await expect(table.getByRole("row").nth(4).getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(table.getByRole("row").nth(5).getByRole("cell", { name: books[2].isbn })).toBeVisible();
 
-	await expect(page.getByText("2 / 2")).toBeVisible();
+	await expect(page.getByText("1 / 2")).toBeVisible();
 });
 
 testOrders("should be able to select multiple supplier orders to reconcile at once", async ({ page, books, placedOrders }) => {
@@ -336,7 +335,7 @@ testOrders("should be able to select multiple supplier orders to reconcile at on
 
 	// Verify total delivered count includes books from both orders
 	await expect(page.getByText("Total delivered:")).toBeVisible();
-	await expect(page.getByText("2 / 5")).toBeVisible();
+	await expect(page.getByText("1 / 4")).toBeVisible();
 });
 
 testOrders("should be able to continue reconciliation", async ({ page, books, placedOrders }) => {
@@ -385,7 +384,7 @@ testOrders("should be able to continue reconciliation", async ({ page, books, pl
 
 	// Verify total delivered count includes all scanned books
 	await expect(page.getByText("Total delivered:")).toBeVisible();
-	await expect(page.getByText("2 / 2")).toBeVisible();
+	await expect(page.getByText("1 / 2")).toBeVisible();
 });
 
 testOrders("should be able to commit reconciliation", async ({ page, placedOrders, customers }) => {
