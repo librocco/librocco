@@ -54,22 +54,22 @@ export const getInitializedDB = async (dbname: string): Promise<DbCtx> => {
 	return await (dbCache[dbname] = getDB(dbname)
 		.then((db) => getSchemaNameAndVersion(db).then((schemaRes) => [db, schemaRes] as const))
 		.then(([db, schemaRes]) => {
-			return initializeDB(db).then(() => db);
-			// if (!schemaRes) {
-			// } else {
-			// 	// Check if schema name/version match
-			// 	const [name, version] = schemaRes;
-			// 	if (name !== schemaName || version !== schemaVersion) {
-			// 		// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
-			// 		const msg = [
-			// 			"DB name/schema mismatch:",
-			// 			`  req name: ${schemaName}, got name: ${name}`,
-			// 			`  req version: ${schemaVersion}, got version: ${version}`
-			// 		].join("\n");
-			// 		throw new Error(msg);
-			// 	}
-			// 	return db;
-			// }
+			if (!schemaRes) {
+				return initializeDB(db).then(() => db);
+			} else {
+				// Check if schema name/version match
+				const [name, version] = schemaRes;
+				if (name !== schemaName || version !== schemaVersion) {
+					// TODO: We're throwing an error here on mismatch. Should probably be handled in a more delicate manner.
+					const msg = [
+						"DB name/schema mismatch:",
+						`  req name: ${schemaName}, got name: ${name}`,
+						`  req version: ${schemaVersion}, got version: ${version}`
+					].join("\n");
+					throw new Error(msg);
+				}
+				return db;
+			}
 		})
 		.then((db) => ({ db, rx: rxtbl(db) })));
 };
