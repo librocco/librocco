@@ -24,6 +24,7 @@
 
 	import { PopoverWrapper, Dialog } from "$lib/components";
 
+	import { getCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
 	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
@@ -148,10 +149,6 @@
 	// #region book-form
 	let bookFormData = null;
 
-	const refreshData = async function () {
-		console.log("Refreshing data");
-	};
-
 	const onUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
 		/**
 		 * This is a quick fix for `form.data` having all optional properties
@@ -167,8 +164,8 @@
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
+			customerOrderLines = await getCustomerOrderLines(db, Number(customerId));
 			open.set(false);
-			refreshData();
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
