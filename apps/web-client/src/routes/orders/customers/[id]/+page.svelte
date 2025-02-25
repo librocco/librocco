@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
 	import {
+		BookUp,
 		QrCode,
 		X,
 		Trash2,
@@ -49,7 +50,7 @@
 	} from "$lib/db/cr-sqlite/customers";
 	import type { BookEntry } from "@librocco/db";
 
-	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	import { scannerSchema } from "$lib/forms/schemas";
 
@@ -311,7 +312,7 @@
 								<th>Authors</th>
 								<th>Price</th>
 								<th>Status</th>
-								<th>Collect</th>
+								<th>Collected</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
@@ -336,6 +337,15 @@
 											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
+										{/if}
+									</td>
+									<td>
+										{#if orderLineStatus === "collected"}
+											<!--
+												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
+												TODO: use some more robust way to handle this (loacle time string that actually works)
+											-->
+											{collected.toISOString().slice(0, 10)}
 										{/if}
 									</td>
 									<td>
@@ -390,24 +400,21 @@
 													</span>
 												</button>
 
-												{#if orderLineStatus === "collected"}
-													<!--
-														NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
-														TODO: use some more robust way to handle this (loacle time string that actually works)
-													-->
-													{collected.toISOString().slice(0, 10)}
-												{:else}
-													<button disabled={orderLineStatus !== "received"} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
-														>Collect📚</button
+												{#if orderLineStatus === "received"}
+													<button
+														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+														on:click={() => handleCollect(id)}
 													>
-												{/if}
-												{#if orderLineStatus === "draft"}
+														<span class="sr-only">Collect</span>
+														<span class="aria-hidden">
+															<BookUp />
+														</span>
+													</button>
+												{:else if orderLineStatus === "draft"}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														data-testid={testId("delete-row")}
-														on:click={() => {
-															handleDeleteLine(id);
-														}}
+														on:click={() => handleDeleteLine(id)}
 													>
 														<span class="sr-only">Delete row</span>
 														<span class="aria-hidden">
