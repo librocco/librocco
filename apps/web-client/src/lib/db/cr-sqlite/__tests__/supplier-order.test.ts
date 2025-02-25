@@ -180,11 +180,11 @@ describe("New supplier orders:", () => {
 
 			// Create one supplier order (we need it to simulate the overdelivery)
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
-			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, supplier1.id);
-			const recOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, { supplierId: supplier1.id });
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, recOrderId, [{ isbn: book1.isbn, quantity: 2 }]);
-			await finalizeReconciliationOrder(db, recOrderId);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
 
@@ -345,11 +345,11 @@ describe("New supplier orders:", () => {
 
 			// Create one supplier order (we need it to simulate the overdelivery)
 			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
-			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, supplier1.id);
-			const recOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, { supplierId: supplier1.id });
+			await createReconciliationOrder(db, 1, [supplierOrderId]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, recOrderId, [{ isbn: book1.isbn, quantity: 2 }]);
-			await finalizeReconciliationOrder(db, recOrderId);
+			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
 
@@ -727,7 +727,7 @@ describe("Placing supplier orders", () => {
 			]);
 
 			// NOTE: the orders are sorted in descending order by creation date
-			expect(await getPlacedSupplierOrders(db, 1)).toEqual([
+			expect(await getPlacedSupplierOrders(db, { supplierId: 1 })).toEqual([
 				expect.objectContaining({
 					id: 3,
 					supplier_id: 1,
@@ -742,6 +742,39 @@ describe("Placing supplier orders", () => {
 					total_book_number: 3, // 2 Physics + 1 Chemistry
 					created: expect.any(Number)
 				})
+			]);
+		});
+
+		it("filter supplier orders based on reconciliation status - if provided", async () => {
+			await addBooksToCustomer(db, 1, ["1", "2", "3", "4"]);
+
+			// Supplier order 1 - reconciled (finalized)
+			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "1", quantity: 1 }]);
+			// Supplier order 2 - reconciled (not finalized)
+			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "2", quantity: 1 }]);
+			// Supplier order 3 - not reconciled
+			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "3", quantity: 1 }]);
+			// Supplier order 4 - not reconciled
+			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "4", quantity: 1 }]);
+
+			const [{ id: s4 }, { id: s3 }, { id: s2 }, { id: s1 }] = await getPlacedSupplierOrders(db);
+
+			// Reconcile the orders
+			await createReconciliationOrder(db, 1, [s1]);
+			await finalizeReconciliationOrder(db, 1);
+
+			await createReconciliationOrder(db, 2, [s2]);
+
+			// Reconciled - only
+			expect(await getPlacedSupplierOrders(db, { reconciled: true })).toEqual([
+				expect.objectContaining({ id: s2 }),
+				expect.objectContaining({ id: s1 })
+			]);
+
+			// Not reconciled - only
+			expect(await getPlacedSupplierOrders(db, { reconciled: false })).toEqual([
+				expect.objectContaining({ id: s4 }),
+				expect.objectContaining({ id: s3 })
 			]);
 		});
 	});
