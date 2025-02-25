@@ -251,7 +251,7 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 			id, customer_id, created, placed, received, collected,
 			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
-			COALESCE(book.authors, '') as authors,
+			COALESCE(book.authors, 'N/A') as authors,
 			COALESCE(book.publisher, '') as publisher,
 			COALESCE(book.price, 0) AS price,
 			COALESCE(book.year, '') as year,
