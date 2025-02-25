@@ -257,7 +257,7 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 			COALESCE(book.year, '') as year,
 			COALESCE(book.edited_by, '') as editedBy,
 			COALESCE(book.out_of_print, 0) as outOfPrint,
-			COALESCE(book.category, '') as category
+			COALESCE(book.category, '') as category,
 			CASE
 				WHEN collected IS NOT NULL THEN 3
 				WHEN received IS NOT NULL THEN 2
