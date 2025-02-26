@@ -16,7 +16,7 @@ import {
 	getCustomerDetails,
 	getCustomerOrderList
 } from "../customers";
-import { associatePublisher, createSupplierOrder, getPlacedSupplierOrders, upsertSupplier } from "../suppliers";
+import { associatePublisher, createSupplierOrder, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
 import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
@@ -670,17 +670,14 @@ describe("Customer order Collection", () => {
 		await upsertSupplier(db, { id: 1 });
 		await associatePublisher(db, 1, "pub1");
 
-		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
-
-		const placedSupplierOrders = await getPlacedSupplierOrders(db);
-		const placedOrderLineIds = placedSupplierOrders.map((order) => order.id);
+		await createSupplierOrder(db, 1, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
 
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
 		const customerOrderLineIds = customerOrderLines.map((order) => order.id);
 
 		// Mark the books as received
 		// await markCustomerOrderAsReceived(db, orderLineIds);
-		await createReconciliationOrder(db, 1, placedOrderLineIds);
+		await createReconciliationOrder(db, 1, [1]);
 		await addOrderLinesToReconciliationOrder(db, 1, [
 			{ isbn: "9780000000001", quantity: 1 },
 			{ isbn: "9780000000001", quantity: 1 }
@@ -701,7 +698,7 @@ describe("Customer order Collection", () => {
 		await upsertSupplier(db, { id: 1 });
 		await associatePublisher(db, 1, "pub1");
 
-		await createSupplierOrder(db, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
+		await createSupplierOrder(db, 1, 1, [{ isbn: "9780000000001", quantity: 2, supplier_id: 1 }]);
 
 		const customerOrderLines = await getCustomerOrderLines(db, 1);
 		const orderLineIds = customerOrderLines.map((order) => order.id);
@@ -739,7 +736,7 @@ describe("Customer order Collection", () => {
 		await associatePublisher(db, 1, "pub1");
 
 		// Order books from supplier
-		await createSupplierOrder(db, 1, [
+		await createSupplierOrder(db, 1, 1, [
 			{
 				isbn: "9780000000001",
 				quantity: 2, // Order enough for both customers
