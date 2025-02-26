@@ -243,6 +243,42 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 	await expect(page.getByText("2 / 2")).toBeVisible();
 });
 
+testOrders("regression: unmatched books shouldn't affect the Total delivered count", async ({ page, placedOrders, books }) => {
+	// NOTE: this is a very dirty (but sintactically legal) way of referencing the fixtures (having them run)
+	// and silencing the unused variable warning
+	placedOrders;
+	books;
+
+	// Navigate to reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const table = page.getByRole("table");
+
+	// Scan two books that weren't ordered with this supplier order
+	await isbnInput.fill("1111111111");
+	await page.keyboard.press("Enter");
+	await table.getByText("1111111111").waitFor();
+
+	await isbnInput.fill("2222222222");
+	await page.keyboard.press("Enter");
+	await table.getByText("2222222222").waitFor();
+
+	// Move to comparison view
+	await page.getByRole("button", { name: "Compare" }).nth(1).click();
+
+	// 2 books were ordered
+	// 2 completely different books were delivered
+	// Total delivered should reflect: 0 / 2 (relevant lines filled)
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("0 / 2")).toBeVisible();
+});
+
 testOrders("should show correct delivery stats in commit view", async ({ page, books, placedOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
