@@ -1,5 +1,5 @@
 import { getDB, initializeDB, getChanges, applyChanges, getSiteId, getPeerDBVersion } from "../db";
-import { upsertCustomer, addBooksToCustomer, multiplyString } from "../customers";
+import { upsertCustomer, addBooksToCustomer } from "../customers";
 import { upsertBook } from "../books";
 import { type DB } from "../types";
 import { upsertSupplier, associatePublisher } from "../suppliers";
@@ -77,38 +77,4 @@ export const createCustomerOrders = async (db: DB) => {
 	await associatePublisher(db, 1, "MathsAndPhysicsPub");
 	await associatePublisher(db, 1, "ChemPub");
 	await associatePublisher(db, 2, "PhantasyPub");
-};
-
-/**
- * Marks customer order lines as received when supplier order lines are fulfilled.
- * For each supplied rowId, it updates the earliest unfulfilled customer order line
- * (that has been placed but not received) with the current timestamp as received date.
- *
- * @param {DB} db - The database connection instance
- * @param {ids[]} ids - Array of supplier order line ids that have been received
- * @returns {Promise<void>} A promise that resolves when all relevant customer orders are marked as received
- *
- * @remarks
- * - Only updates the earliest unfulfilled order line for each ISBN
- * - Only updates order lines that have been placed but not yet received
- * - Updates are performed in a single transaction
- * - If supplierOrderLines is empty, the function returns immediately
- */
-
-export const markCustomerOrderAsReceived = async (db: DB, ids: number[]): Promise<void> => {
-	if (!ids.length) return;
-
-	return db.tx(async (txDb) => {
-		const timestamp = Date.now();
-		const placeholders = multiplyString("?", ids.length);
-		await txDb.exec(
-			`
-		 UPDATE customer_order_lines
-SET received = ?
-WHERE id IN (${placeholders})
-AND received IS NULL AND placed IS NOT NULL
-;`,
-			[timestamp, ...ids]
-		);
-	});
 };
