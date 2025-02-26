@@ -125,8 +125,7 @@ export async function createReconciliationOrder(db: DB, id: number, _supplierOrd
 }
 
 /**
- * Retrieves all reconciliation orders from the database, ordered by ID
-ascending
+ * Retrieves all reconciliation orders from the database, ordered by ID ascending
  * @param db
  * @param finalized - an optional boolean that's used to query finalized or non finalized orders
  * if not provided, all orders are fetched
@@ -149,8 +148,7 @@ export async function getAllReconciliationOrders(db: DB, filters?: { finalized?:
  * Retrieves a specific reconciliation order by ID
  * @param db
  * @param id - The ID of the reconciliation order to retrieve
- * @throws Error if order not found or if supplier_order_ids contains invalid
-JSON
+ * @throws Error if order not found or if supplier_order_ids contains invalid JSON
  * @returns ReconciliationOrder with parsed supplier_order_ids
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
@@ -292,7 +290,6 @@ export async function getReconciliationOrderLines(db: DB, id: number): Promise<R
  * - Reconciliation order not found
  * - Order is already finalized
  * - Customer order lines format is invalid
- * @see apps/e2e/helpers/cr-sqlite.ts:finalizeReconciliationOrder
  */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	const reconOrder = await getReconciliationOrder(db, id);

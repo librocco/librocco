@@ -333,6 +333,7 @@ export type SupplierOrder = {
 	lines: SupplierOrderLine[];
 	id: number;
 };
+
 export type SupplierOrderLine = {
 	supplier_id: number;
 	supplier_name: string;

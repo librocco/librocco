@@ -48,7 +48,6 @@ import {
  * @param {DB} db - Database connection
  * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
- * @see apps/e2e/helpers/cr-sqlite.ts:upsertCustomer when you make updates
  */
 export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 	if (!customer.id) {
