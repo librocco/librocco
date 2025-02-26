@@ -10,6 +10,7 @@
 	import type { PageData } from "./$types";
 	import {
 		addOrderLinesToReconciliationOrder,
+		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
 		processOrderDelivery
 	} from "$lib/db/cr-sqlite/order-reconciliation";
@@ -71,6 +72,14 @@
 	$: placedOrderLines = data?.placedOrderLines;
 	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
 	$: totalOrdered = placedOrderLines.length;
+
+	const handleEditQuantity = async (isbn: string, quantity: number) => {
+		if (quantity === 0) {
+			await deleteOrderLineFromReconciliationOrder(db, parseInt($page.params.id), isbn);
+			return;
+		}
+		await addOrderLinesToReconciliationOrder(db, parseInt($page.params.id), [{ isbn, quantity: quantity }]);
+	};
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -209,7 +218,19 @@
 											<td>{title || "-"}</td>
 											<td>{authors || "-"}</td>
 											<td>€{price || 0}</td>
-											<td>{quantity}</td>
+											<td>
+												<button
+													on:click={() => {
+														if (quantity === 1) {
+															handleEditQuantity(isbn, 0);
+															return;
+														}
+														handleEditQuantity(isbn, -1);
+													}}>-</button
+												>
+												{quantity}
+												<button on:click={() => handleEditQuantity(isbn, 1)}>+</button>
+											</td>
 										</tr>
 									{/each}
 								</tbody>

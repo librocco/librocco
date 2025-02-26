@@ -135,6 +135,38 @@ export async function createReconciliationOrder(db: DB, supplierOrderIds: number
 	);
 	return recondOrder[0].id;
 }
+/**
+  * Deletes a reconciliation order and all its associated order lines from the
+ database.
+  * The deletion is performed as an atomic transaction to maintain data
+ consistency.
+  *
+  * @param db - The database connection
+  * @param id - The ID of the reconciliation order to delete
+  *
+  * @throws {Error} When:
+  * - The reconciliation order with the given ID is not found
+  * - The reconciliation order is already finalized
+  * - Database transaction fails
+  */
+export async function deleteReconciliationOrder(db: DB, id: number): Promise<void> {
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder[0]) {
+		throw new Error(`Reconciliation order ${id} not found`);
+	}
+
+	if (reconOrder[0].finalized) {
+		throw new Error(`Cannot delete finalized reconciliation order ${id}`);
+	}
+
+	await db.tx(async (txDb) => {
+		// Delete associated lines first
+		await txDb.exec("DELETE FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id]);
+		// Then delete the order itself
+		await txDb.exec("DELETE FROM reconciliation_order WHERE id = ?", [id]);
+	});
+}
 
 /**
  * Adds order lines or updates the quantity of existing isbns for an existing reconciliation order.
@@ -156,7 +188,6 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
 	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
 
 	const timestamp = Date.now();
-
 	await db.tx(async (txDb) => {
 		const sql = `
 			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
@@ -165,6 +196,30 @@ export async function addOrderLinesToReconciliationOrder(db: DB, id: number, new
 				quantity = quantity + excluded.quantity;
 		`;
 		await txDb.exec(sql, params);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
+}
+/**
+ * Deletes a specific book (by ISBN) from a reconciliation order and updates the order's timestamp
+ *
+ * @param db - The database connection
+ * @param id - The ID of the reconciliation order
+ * @param isbn - The ISBN of the book to remove from the order
+ * @throws {Error} When the reconciliation order with the given ID is not found or order is finalized
+ */
+export async function deleteOrderLineFromReconciliationOrder(db: DB, id: number, isbn: string) {
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder[0] || reconOrder[0].finalized) {
+		throw new Error(`Reconciliation order ${id} not found or already finalized`);
+	}
+
+	const timestamp = Date.now();
+	await db.tx(async (txDb) => {
+		const sql = `
+			DELETE FROM reconciliation_order_lines WHERE reconciliation_order_id = ? AND isbn = ?;
+		`;
+		await txDb.exec(sql, [id, isbn]);
 		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
 	});
 }
