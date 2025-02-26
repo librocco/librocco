@@ -13,7 +13,9 @@ import {
 	getReconciliationOrderLines,
 	processOrderDelivery,
 	getUnreconciledSupplierOrders,
-	sortLinesBySupplier
+	sortLinesBySupplier,
+	deleteReconciliationOrder,
+	deleteOrderLineFromReconciliationOrder
 } from "../order-reconciliation";
 import { createSupplierOrder, getPlacedSupplierOrders, getPossibleSupplierOrderLines } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, upsertCustomer } from "../customers";
@@ -1168,5 +1170,185 @@ describe("Misc helpers", () => {
 		expect(Object.keys(result)).toHaveLength(2);
 		expect(result["Supplier 1"]).toHaveLength(2);
 		expect(result["Supplier 2"]).toHaveLength(1);
+	});
+});
+
+describe("deleteReconciliationOrder", () => {
+	let db: DB;
+
+	beforeEach(async () => {
+		db = await getRandomDb();
+		await createCustomerOrders(db);
+	});
+
+	it("should delete a reconciliation order and its associated lines", async () => {
+		// Create initial supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create reconciliation order with lines
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 2 },
+			{ isbn: "2", quantity: 1 }
+		]);
+
+		// Delete the reconciliation order
+		await deleteReconciliationOrder(db, reconOrderId);
+
+		// Verify order is deleted
+		await expect(getReconciliationOrder(db, reconOrderId)).rejects.toThrow(`Reconciliation order with id ${reconOrderId} not found`);
+
+		// Verify lines are deleted
+		const remainingLines = await getReconciliationOrderLines(db, reconOrderId);
+		expect(remainingLines).toHaveLength(0);
+	});
+
+	it("should throw error when trying to delete non-existent order", async () => {
+		const nonExistentId = 999;
+		await expect(deleteReconciliationOrder(db, nonExistentId)).rejects.toThrow(`Reconciliation order ${nonExistentId} not found`);
+	});
+
+	it("should allow supplier orders to be reconciled again after deletion", async () => {
+		// Create supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create first reconciliation order
+		const reconOrder1Id = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrder1Id, [{ isbn: "1", quantity: 1 }]);
+
+		// Delete the reconciliation order
+		await deleteReconciliationOrder(db, reconOrder1Id);
+
+		// Verify we can create a new reconciliation order with the same
+		// supplier order
+		const reconOrder2Id = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrder2Id, [{ isbn: "1", quantity: 1 }]);
+
+		const newOrder = await getReconciliationOrder(db, reconOrder2Id);
+		expect(newOrder).toBeDefined();
+		expect(newOrder.supplierOrderIds).toContain(supplierOrderId);
+	});
+
+	it("should not allow deletion of finalized orders", async () => {
+		// Create supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create and finalize reconciliation order
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, reconOrderId);
+
+		// Attempt to delete finalized order
+		await expect(deleteReconciliationOrder(db, reconOrderId)).rejects.toThrow(
+			`Cannot delete finalized reconciliation order ${reconOrderId}`
+		);
+	});
+});
+describe("deleteOrderLineFromReconciliationOrder", () => {
+	let db: DB;
+
+	beforeEach(async () => {
+		db = await getRandomDb();
+		await createCustomerOrders(db);
+	});
+
+	it("should delete a specific order line from reconciliation order", async () => {
+		// Create initial supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create reconciliation order
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [
+			{ isbn: "1", quantity: 2 },
+			{ isbn: "2", quantity: 1 }
+		]);
+
+		// Get initial state
+		const initialLines = await getReconciliationOrderLines(db, reconOrderId);
+		expect(initialLines).toHaveLength(2);
+
+		// Delete one line
+		await deleteOrderLineFromReconciliationOrder(db, reconOrderId, "1");
+
+		// Verify deletion
+		const remainingLines = await getReconciliationOrderLines(db, reconOrderId);
+		expect(remainingLines).toHaveLength(1);
+		expect(remainingLines[0].isbn).toBe("2");
+	});
+
+	it("should update the reconciliation order's timestamp when deleting a line", async () => {
+		// Create initial supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create reconciliation order
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+
+		// Get initial timestamp
+		const initialOrder = await getReconciliationOrder(db, reconOrderId);
+		const initialTimestamp = initialOrder.updatedAt;
+
+		// Wait a bit to ensure timestamp difference
+		await new Promise((resolve) => setTimeout(resolve, 100));
+
+		// Delete the line
+		await deleteOrderLineFromReconciliationOrder(db, reconOrderId, "1");
+
+		// Check updated timestamp
+		const updatedOrder = await getReconciliationOrder(db, reconOrderId);
+		expect(updatedOrder.updatedAt.getTime()).toBeGreaterThan(initialTimestamp.getTime());
+	});
+
+	it("should throw error when reconciliation order doesn't exist", async () => {
+		const nonExistentId = 999;
+		await expect(deleteOrderLineFromReconciliationOrder(db, nonExistentId, "1")).rejects.toThrow(
+			`Reconciliation order ${nonExistentId} not found or already finalized`
+		);
+	});
+
+	it("should not throw when deleting non-existent ISBN from valid order", async () => {
+		// Create initial supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create reconciliation order
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+
+		// Should not throw when deleting non-existent ISBN
+		await expect(deleteOrderLineFromReconciliationOrder(db, reconOrderId, "999")).resolves.not.toThrow();
+
+		// Verify original line still exists
+		const remainingLines = await getReconciliationOrderLines(db, reconOrderId);
+		expect(remainingLines).toHaveLength(1);
+		expect(remainingLines[0].isbn).toBe("1");
+	});
+
+	it("should not allow deletion from finalized orders", async () => {
+		// Create initial supplier order
+		const newSupplierOrderLines = await getPossibleSupplierOrderLines(db, 1);
+		await createSupplierOrder(db, 1, newSupplierOrderLines);
+		const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+		// Create and finalize reconciliation order
+		const reconOrderId = await createReconciliationOrder(db, [supplierOrderId]);
+		await addOrderLinesToReconciliationOrder(db, reconOrderId, [{ isbn: "1", quantity: 1 }]);
+		await finalizeReconciliationOrder(db, reconOrderId);
+
+		// Attempt to delete from finalized order should throw
+		await expect(deleteOrderLineFromReconciliationOrder(db, reconOrderId, "1")).rejects.toThrow(
+			`Reconciliation order ${reconOrderId} not found or already finalized`
+		);
 	});
 });
