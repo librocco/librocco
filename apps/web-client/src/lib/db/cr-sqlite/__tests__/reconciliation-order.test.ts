@@ -1051,6 +1051,80 @@ describe("Misc helpers", () => {
 		});
 	});
 
+	it("should increment both order lines when two supplier orders are being reconciled containing the same isbn", () => {
+		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 2 }];
+
+		const placedOrderLines = [
+			{
+				isbn: "123",
+				title: "Book 1",
+				authors: "Author 1",
+				line_price: 10,
+				quantity: 1,
+				supplier_name: "Supplier 1",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 1,
+				total_book_price: 10,
+				created: Date.now()
+			},
+			{
+				isbn: "123",
+				title: "Book 1",
+				authors: "Author 1",
+				line_price: 10,
+				quantity: 1,
+				supplier_name: "Supplier 2",
+				id: 1,
+				supplier_id: 1,
+				total_book_number: 1,
+				supplier_order_id: 2,
+				total_book_price: 10,
+				created: Date.now()
+			}
+		];
+
+		const result = processOrderDelivery(scannedBooks, placedOrderLines);
+		expect(result).toEqual({
+			processedLines: [
+				{
+					isbn: "123",
+					title: "Book 1",
+					authors: "Author 1",
+					line_price: 10,
+					quantity: 1,
+					supplier_name: "Supplier 1",
+					id: 1,
+					supplier_id: 1,
+					total_book_number: 1,
+					supplier_order_id: 1,
+					total_book_price: 10,
+					deliveredQuantity: 1,
+					orderedQuantity: 1,
+					created: expect.any(Number)
+				},
+				{
+					isbn: "123",
+					title: "Book 1",
+					authors: "Author 1",
+					line_price: 10,
+					quantity: 1,
+					supplier_name: "Supplier 2",
+					id: 1,
+					supplier_id: 1,
+					total_book_number: 1,
+					supplier_order_id: 2,
+					total_book_price: 10,
+					deliveredQuantity: 1,
+					orderedQuantity: 1,
+					created: expect.any(Number)
+				}
+			],
+			unmatchedBooks: []
+		});
+	});
+
 	it("should handle partial delivery", () => {
 		const scannedBooks = [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }];
 
@@ -1130,12 +1204,12 @@ describe("Misc helpers", () => {
 					total_book_number: 1,
 					supplier_order_id: 1,
 					total_book_price: 10,
-					deliveredQuantity: 3,
+					deliveredQuantity: 2,
 					orderedQuantity: 2,
 					created: expect.any(Number)
 				}
 			],
-			unmatchedBooks: []
+			unmatchedBooks: [{ isbn: "123", title: "Book 1", authors: "Author 1", price: 10, quantity: 1 }]
 		});
 	});
 
