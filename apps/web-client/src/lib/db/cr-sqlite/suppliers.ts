@@ -381,6 +381,7 @@ customerOrderLine
  */
 export async function createSupplierOrder(
 	db: DB,
+	id: number,
 	supplierId: number | null,
 	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
 ) {
@@ -408,10 +409,7 @@ export async function createSupplierOrder(
 
 		// Create a supplier order
 		// TODO: check how conflict - free (when syncing) this way of assigning ids is
-		const [[orderId]] = await db.execA("INSERT INTO supplier_order (supplier_id, created) VALUES (?, ?) RETURNING id", [
-			supplierId,
-			timestamp
-		]);
+		await db.execA("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
 
 		for (const { isbn, quantity } of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
@@ -429,10 +427,10 @@ export async function createSupplierOrder(
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
 
-			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [orderId, isbn, quantity]);
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
 
 			// Create customer order line - supplier order relations - keeping track of all times a customer order line was ordered from the supplier
-			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, orderId]);
+			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, id]);
 			await db.exec(
 				`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
 				values.flat()
