@@ -69,8 +69,8 @@
 	});
 
 	$: placedOrderLines = data?.placedOrderLines;
-	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
-	$: totalOrdered = placedOrderLines.length;
+	$: totalDelivered = new Set(data?.reconciliationOrderLines.map((book) => book.isbn)).size;
+	$: totalOrdered = new Set(placedOrderLines.map((pol) => pol.isbn)).size;
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
