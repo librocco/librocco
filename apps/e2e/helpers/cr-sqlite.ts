@@ -327,7 +327,7 @@ export async function associatePublisher(db: DB, params: { supplierId: number; p
  * References the original createSupplierOrder function.
  * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
  */
-export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
+export async function createSupplierOrder(db: DB, orderLines: Pick<PossibleSupplierOrderLine, "isbn" | "supplier_id" | "quantity">[]) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
 	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
