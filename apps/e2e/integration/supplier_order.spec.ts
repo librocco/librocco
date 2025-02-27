@@ -19,7 +19,7 @@ testOrders("should show empty state when no customer orders exist", async ({ pag
 
 	await expect(page.getByRole("dialog")).toBeVisible();
 });
-testOrders("should show list of unordered orders", async ({ page, supplier, books }) => {
+testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
@@ -37,7 +37,7 @@ testOrders("should show list of unordered orders", async ({ page, supplier, book
 });
 testOrders(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
-	async ({ page, supplier, books, customers }) => {
+	async ({ page, suppliers: [supplier], books, customers }) => {
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
@@ -114,7 +114,7 @@ testOrders(
 	}
 );
 
-testOrders("should show a placed supplier order with the correct details", async ({ page, supplier, books }) => {
+testOrders("should show a placed supplier order with the correct details", async ({ page, suppliers: [supplier], books }) => {
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(createSupplierOrder, [
