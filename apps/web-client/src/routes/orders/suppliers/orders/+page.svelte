@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Plus } from "lucide-svelte";
+	import { Settings, Plus } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
@@ -39,7 +39,11 @@
 	}
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
-		const id = await createReconciliationOrder(db, event.detail.supplierOrderIds);
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
 		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 
@@ -66,6 +70,10 @@
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
 			<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
+			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
+				Suppliers
+				<Settings size={20} />
+			</button>
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
