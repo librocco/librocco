@@ -424,3 +424,121 @@ testOrders("should be able to commit reconciliation", async ({ page, placedOrder
 	await expect(table.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(1);
 });
+
+testOrders("should handle quantity adjustments correctly", async ({ page, placedOrders }) => {
+	// Navigate and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Add multiple quantities of same book
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+
+	// Verify initial quantity
+	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).toBeVisible();
+
+	// Increase quantity
+	await firstRow.getByRole("button").nth(1).click();
+	await expect(firstRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
+});
+
+testOrders("should remove line when quantity reaches zero", async ({ page, placedOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Add single quantity
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+
+	// Verify initial quantity
+	await expect(firstRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
+
+	// Decrease quantity to zero
+	await page.getByLabel("Decrease quantity").click();
+
+	// Verify line is removed
+	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).not.toBeVisible();
+});
+
+testOrders("should handle multiple quantity adjustments", async ({ page, placedOrders, books }) => {
+	placedOrders;
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+	const secondRow = table.getByRole("row").nth(2);
+
+	// Add multiple books with different quantities
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn, exact: true })).toBeVisible();
+
+	await isbnInput.fill(books[2].isbn);
+	await page.keyboard.press("Enter");
+	await expect(secondRow.getByRole("cell", { name: books[2].isbn, exact: true })).toBeVisible();
+
+	// Adjust quantities for both books
+	await firstRow.getByRole("button", { name: "Increase quantity" }).dblclick();
+	await secondRow.getByRole("button", { name: "Increase quantity" }).click();
+
+	// Verify updated quantities
+	await expect(firstRow.getByRole("cell", { name: "3", exact: true })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
+});
+
+testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, placedOrders, books }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+
+	await expect(page.getByText(books[0].isbn)).toBeVisible();
+	await isbnInput.fill(books[2].isbn);
+	await page.keyboard.press("Enter");
+	await expect(page.getByText(books[2].isbn)).toBeVisible();
+
+	// Move to compare view
+	await page.getByRole("button", { name: "Compare" }).first().click();
+
+	// Initial total
+	await expect(page.getByText(`2 / ${placedOrders[0].lines.length}`)).toBeVisible();
+
+	await page.getByRole("button", { name: "Populate" }).first().click();
+
+	// Adjust quantities for all books
+	const rows = await page.getByRole("table").getByRole("row").all();
+	for (const row of rows.slice(1)) {
+		// Skip header row
+		await row.getByLabel("Decrease quantity").click();
+	}
+
+	await page.getByRole("button", { name: "Compare" }).first().click();
+
+	// Verify updated total
+	await expect(page.getByText(`0 / ${placedOrders[0].lines.length}`)).toBeVisible();
+});
