@@ -532,13 +532,17 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 
 	// Adjust quantities for all books
 	const rows = await page.getByRole("table").getByRole("row").all();
-	for (const row of rows.slice(1)) {
-		// Skip header row
-		await row.getByLabel("Decrease quantity").click();
-	}
+
+	const table = page.getByRole("table");
+	const firstRow = table.getByRole("row").nth(1);
+	const secondRow = table.getByRole("row").nth(2);
+
+	await firstRow.getByLabel("Increase quantity").dblclick();
+
+	await secondRow.getByLabel("Decrease quantity").click();
 
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Verify updated total
-	await expect(page.getByText(`0 / ${placedOrders[0].lines.length}`)).toBeVisible();
+	await expect(page.getByText(`3 / ${placedOrders[0].lines.length}`)).toBeVisible();
 });
