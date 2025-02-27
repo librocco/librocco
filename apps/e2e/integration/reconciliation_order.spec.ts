@@ -24,7 +24,9 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByText("Reconcile").first().click();
 
 	const table = page.getByRole("table");
@@ -112,7 +114,8 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByText("Reconcile").first().click();
 
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
@@ -146,8 +149,10 @@ testOrders(
 		await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 		await page.getByText("Ordered").nth(1).click();
-		await page.getByRole("checkbox").nth(1).click();
+
+		// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
 		await page.getByRole("checkbox").nth(2).click();
+		await page.getByRole("checkbox").nth(3).click();
 
 		await page.getByText("Reconcile").first().click();
 
@@ -197,7 +202,9 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 
 	await page.getByText("Reconcile").first().click();
 
@@ -243,8 +250,11 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 
 testOrders("should show correct delivery stats in commit view", async ({ page, books, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByText("Reconcile").first().click();
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
 
@@ -288,8 +298,8 @@ testOrders("should be able to select multiple supplier orders to reconcile at on
 
 	await page.getByText("Ordered").nth(1).click();
 
-	// Select multiple orders via checkboxes
-	await page.getByRole("checkbox").nth(1).click();
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByRole("checkbox").nth(2).click();
 
 	await page.getByText("Reconcile").first().click();
@@ -340,7 +350,9 @@ testOrders("should be able to continue reconciliation", async ({ page, books, su
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByText("Reconcile").first().click();
 
 	// Scan some books
@@ -389,7 +401,9 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
+	await page.getByRole("checkbox").nth(3).click();
 	await page.getByText("Reconcile").first().click();
 
 	// scan ordered book
