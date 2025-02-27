@@ -48,7 +48,7 @@
 
 	onDestroy(() => {
 		// Unsubscribe on unmount
-		disposer();
+		disposer?.();
 	});
 	// #endregion reactivity
 
@@ -56,8 +56,8 @@
 
 	$: db = data.dbCtx?.db;
 
-	$: customer = data.customer;
-	$: customerOrderLines = data.customerOrderLines;
+	$: customer = data?.customer;
+	$: customerOrderLines = data?.customerOrderLines || [];
 
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
