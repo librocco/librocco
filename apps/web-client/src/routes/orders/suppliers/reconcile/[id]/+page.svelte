@@ -68,9 +68,11 @@
 		}
 	});
 
+	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	$: placedOrderLines = data?.placedOrderLines;
-	$: totalDelivered = new Set(data?.reconciliationOrderLines.map((book) => book.isbn)).size;
-	$: totalOrdered = new Set(placedOrderLines.map((pol) => pol.isbn)).size;
+
+	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalOrdered = placedOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
@@ -217,8 +219,6 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					{@const processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines)}
-
 					<ComparisonTable reconciledBooks={processedOrderDelivery} />
 				{/if}
 
