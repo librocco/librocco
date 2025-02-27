@@ -269,7 +269,7 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
      INSERT INTO customer_order_lines (customer_id, isbn)
      VALUES ${multiplyString("(?,?)", bookIsbns.length)} RETURNING customer_id;`;
 
-	const id = await db.exec(sql, sqlParams);
+	await db.exec(sql, sqlParams);
 };
 
 // #endregion customerOrders
