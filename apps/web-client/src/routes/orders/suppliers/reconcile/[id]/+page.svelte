@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
+	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -208,7 +208,9 @@
 										<th>Title</th>
 										<th>Authors</th>
 										<th>Price</th>
-										<th>Quantity</th>
+										<th class="w-0"></th>
+										<th class="w-2 px-0">Quantity</th>
+										<th class="w-0"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -226,10 +228,17 @@
 															return;
 														}
 														handleEditQuantity(isbn, -1);
-													}}>-</button
+													}}
+													aria-label="Decrease quantity"
 												>
+													<MinusCircle /></button
+												>
+											</td>
+											<td>
 												{quantity}
-												<button on:click={() => handleEditQuantity(isbn, 1)}>+</button>
+											</td>
+											<td>
+												<button aria-label="Increase quantity" on:click={() => handleEditQuantity(isbn, 1)}><PlusCircle /></button>
 											</td>
 										</tr>
 									{/each}
