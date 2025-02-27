@@ -531,7 +531,7 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	await page.getByRole("button", { name: "Populate" }).first().click();
 
 	// Adjust quantities for all books
-	const rows = await page.getByRole("table").getByRole("row").all();
+	await page.getByRole("table").getByRole("row").all();
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
