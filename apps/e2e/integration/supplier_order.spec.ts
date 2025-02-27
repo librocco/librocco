@@ -117,17 +117,21 @@ testOrders(
 testOrders("should show a placed supplier order with the correct details", async ({ page, suppliers: [supplier], books }) => {
 	const dbHandle = await getDbHandle(page);
 
-	await dbHandle.evaluate(createSupplierOrder, [
-		{
-			supplier_id: supplier.id,
-			supplier_name: supplier.name,
-			isbn: books[0].isbn,
-			line_price: books[0].price,
-			quantity: 1,
-			title: books[0].title,
-			authors: books[0].authors
-		}
-	]);
+	await dbHandle.evaluate(createSupplierOrder, {
+		id: 1,
+		supplierId: supplier.id,
+		orderLines: [
+			{
+				supplier_id: supplier.id,
+				supplier_name: supplier.name,
+				isbn: books[0].isbn,
+				line_price: books[0].price,
+				quantity: 1,
+				title: books[0].title,
+				authors: books[0].authors
+			}
+		]
+	});
 
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	page.getByRole("button", { name: "Ordered" }).nth(1).click();

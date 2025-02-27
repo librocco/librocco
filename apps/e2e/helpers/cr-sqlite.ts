@@ -1,14 +1,5 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
-import {
-	Customer,
-	PlacedSupplierOrder,
-	PlacedSupplierOrderLine,
-	Supplier,
-	PossibleSupplierOrderLine,
-	ReconciliationOrderLine,
-	ReconciliationOrder,
-	DBCustomerOrderLine
-} from "./types";
+import { Customer, Supplier, PossibleSupplierOrderLine, ReconciliationOrderLine, ReconciliationOrder } from "./types";
 import { BookData } from "@librocco/shared";
 
 // #region books
@@ -279,7 +270,6 @@ export const addBooksToCustomer = async (db: DB, params: { customerId: number; b
      VALUES ${multiplyString("(?,?)", bookIsbns.length)} RETURNING customer_id;`;
 
 	const id = await db.exec(sql, sqlParams);
-	console.log({ id });
 };
 
 // #endregion customerOrders
@@ -322,57 +312,62 @@ export async function associatePublisher(db: DB, params: { supplierId: number; p
 	);
 }
 
+type CreateSupplierOrderPayload = {
+	id: number;
+	supplierId: number;
+	orderLines: Pick<PossibleSupplierOrderLine, "isbn" | "supplier_id" | "quantity">[];
+};
+
 /**
  * E2E test helper for creating supplier orders.
  * References the original createSupplierOrder function.
  * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
  */
-export async function createSupplierOrder(db: DB, orderLines: Pick<PossibleSupplierOrderLine, "isbn" | "supplier_id" | "quantity">[]) {
+export async function createSupplierOrder(db: DB, { id, supplierId, orderLines }: CreateSupplierOrderPayload) {
+	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
-	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
-	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
 
-	const supplierOrderMapping: { [supplierId: number]: number } = {};
-	// Collect all supplier ids involved in the order lines
-	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+	if (!orderLines.length) {
+		throw new Error("No order lines provided");
+	}
 
-	await db.tx(async (passedDb) => {
-		const db: DB = passedDb as DB;
-		for (const supplierId of supplierIds) {
-			// Create a new supplier order for each supplier
-			const newSupplierOrderId = (
-				await db.execA<number[]>(
-					`INSERT INTO supplier_order (supplier_id)
-			      VALUES (?) RETURNING id;`,
-					[supplierId]
-				)
-			)[0][0];
-			// Save the newly created supplier order id
-			supplierOrderMapping[supplierId] = newSupplierOrderId;
-		}
+	// Check if all order lines belong to the provided supplier
+	// NOTE: This is really conservative/defensive - sholdn't really happen
+	const faultyLines = orderLines.filter((line) => line.supplier_id !== supplierId);
+	if (faultyLines.length) {
+		const msg = [
+			"All order lines must belong to the same supplier:",
+			`  supplier id: ${supplierId}`,
+			"  faulty lines:",
+			...faultyLines.map((line) => JSON.stringify(line))
+		].join("\n");
+		throw new Error(msg);
+	}
 
-		for (const orderLine of orderLines) {
+	await db.tx(async (db) => {
+		const timestamp = Date.now();
+
+		// Create a supplier order
+		// TODO: check how conflict - free (when syncing) this way of assigning ids is
+		await db.execA("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
+
+		for (const { isbn, quantity } of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
-			const customerOrderLines = await db.execO<any>(
-				// TODO: write tests to check the sorting by order creation
-				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
-				[orderLine.isbn]
-			);
+			//
+			// NOTE: Currently we're allowing for ordering of any number of books for an ISBN, regardless of the number of customer orders
+			// requiring that books. This had proved to be a much simpler solution, trading off a check for an edge case of astronomical probability
+			//
+			// Keep in mind: any number of books can be ordered (placed with a supplier), but only the existing customer order lines will be marked as placed
+			const customerOrderLineIds = await db
+				.execO<{
+					id: number;
+				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
+				.then((res) => res.map(({ id }) => id));
 
-			let copiesToGo = orderLine.quantity;
-			while (copiesToGo > 0) {
-				const customerOrderLine = customerOrderLines.shift();
-				if (customerOrderLine) {
-					// The whole line can be fulfilled
-					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
-				}
-				copiesToGo--;
-			}
-			await db.exec(
-				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-	      VALUES (?, ?, ?);`,
-				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
-			);
+			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
+			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
+
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
 		}
 	});
 }
@@ -429,7 +424,8 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 	} catch (e) {
 		throw new Error(`Invalid customer order lines format in reconciliation order ${id}`);
 	}
-	return db.tx(async (txDb) => {
+
+	await db.tx(async (txDb) => {
 		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
 
 		const placeholders = multiplyString("?", customerOrderLines.length);
@@ -438,7 +434,7 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 			await txDb.exec(
 				`
 				UPDATE customer_order_lines
-            	SET received = (strftime('%s', 'now') * 1000)
+            	SET received = ?
             	WHERE rowid IN (
             	    SELECT MIN(rowid)
             	    FROM customer_order_lines
@@ -447,65 +443,10 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
             	        AND received IS NULL
             	    GROUP BY isbn
 				);`,
-				customerOrderLines
+				[Date.now(), ...customerOrderLines]
 			);
 		}
 	});
-}
-/**
- * E2E test helper for retrieving placed supplier orders.
- * References the original getPlacedSupplierOrders function.
- * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:getPlacedSupplierOrders
- */
-export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		`SELECT
-            so.id,
-            so.supplier_id,
-            s.name as supplier_name,
-            so.created,
-            COALESCE(SUM(sol.quantity), 0) as total_book_number,
-			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
-        FROM supplier_order so
-        JOIN supplier s ON s.id = so.supplier_id
-		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
-		LEFT JOIN book ON sol.isbn = book.isbn
-        WHERE so.created IS NOT NULL
-        GROUP BY so.id, so.supplier_id, s.name, so.created
-        ORDER BY so.created DESC;`
-	);
-	return result;
-}
-
-export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
-	if (!supplier_order_ids.length) {
-		return [];
-	}
-	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
-
-	const query = `
-        SELECT
-            sol.supplier_order_id,
-            sol.isbn,
-            sol.quantity,
-			COALESCE(book.price, 0) * sol.quantity as line_price,
-			COALESCE(book.title, 'N/A') AS title,
-			COALESCE(book.authors, 'N/A') AS authors,
-            so.supplier_id,
-            so.created,
-            s.name AS supplier_name,
-            SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
-            SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
-		FROM supplier_order_line AS sol
-		LEFT JOIN book ON sol.isbn = book.isbn
-        JOIN supplier_order so ON so.id = sol.supplier_order_id
-        JOIN supplier s ON s.id = so.supplier_id
-        WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
-		GROUP BY sol.supplier_order_id, sol.isbn
-        ORDER BY sol.supplier_order_id, sol.isbn ASC;
-    `;
-
-	return db.execO<PlacedSupplierOrderLine>(query, supplier_order_ids);
 }
 
 /**
@@ -533,16 +474,3 @@ export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: n
      `;
 	await db.exec(sql, sqlParams);
 }
-
-export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
-	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT
-			id, customer_id, created, placed, received, collected,
-			col.isbn
-			FROM customer_order_lines col
-		WHERE customer_id = $customerId
-		ORDER BY col.isbn ASC;`,
-		[customerId]
-	);
-	return result;
-};
