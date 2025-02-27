@@ -310,11 +310,9 @@ export interface FieldConstructor<L extends Record<string, any>, K extends keyof
 // #region customerOrder
 export type Customer = {
 	id?: number;
+	displayId: string;
 	fullname?: string;
 	email?: string;
-	phone?: string;
-	taxId?: string;
-	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
 };
