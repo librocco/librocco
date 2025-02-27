@@ -8,7 +8,6 @@ import {
 	createReconciliationOrder,
 	createSupplierOrder,
 	finalizeReconciliationOrder,
-	getPlacedSupplierOrders,
 	upsertBook,
 	upsertCustomer,
 	upsertSupplier
@@ -55,6 +54,7 @@ type FixtureSupplierOrderLine = {
 
 type FixtureSupplierOrder = {
 	order: {
+		id: number;
 		supplier_id: number;
 		supplier_name: string;
 	};
@@ -63,14 +63,14 @@ type FixtureSupplierOrder = {
 
 const supplierOrders: FixtureSupplierOrder[] = [
 	{
-		order: { supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 1, supplier_id: 1, supplier_name: "sup1" },
 		lines: [
 			{ isbn: "1234", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
 		]
 	},
 	{
-		order: { supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 2, supplier_id: 1, supplier_name: "sup1" },
 		lines: [
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
 			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
@@ -78,7 +78,7 @@ const supplierOrders: FixtureSupplierOrder[] = [
 		]
 	},
 	{
-		order: { supplier_id: 2, supplier_name: "sup2" },
+		order: { id: 3, supplier_id: 2, supplier_name: "sup2" },
 		lines: [
 			{ isbn: "4321", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
 			{ isbn: "8765", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
@@ -146,16 +146,16 @@ type OrderTestFixture = {
 	 *  id: 2, name: "sup2"
 	 *
 	 * Supplier orders:
-	 *  ID: unknown, supplier id: 1
+	 *  ID: 1, supplier id: 1
 	 * 	 isbn: "1234", quantity: 2
 	 * 	 isbn: "5678", quantity: 1
 	 *
-	 *  ID: unknown, supplier id: 1
+	 *  ID: 2, supplier id: 1
 	 * 	 isbn: "5678", quantity: 3
 	 * 	 isbn: "9999", quantity: 2
 	 * 	 isbn: "7777", quantity: 1
 	 *
-	 *  ID: unknown, supplier id: 2
+	 *  ID: 3, supplier id: 2
 	 * 	 isbn: "4321", quantity: 1
 	 * 	 isbn: "8765", quantity: 1
 	 * 	 isbn: "8888", quantity: 1
@@ -216,12 +216,13 @@ export const testOrders = test.extend<OrderTestFixture>({
 		// NOTE: Alternative would be to move this to a separate fixture. In that case we would need to be careful about the order of fixture execution
 		// so as to not create circular dependencies
 		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
-		await dbHandle.evaluate(createSupplierOrder, [supplierOrderLine]);
+		await dbHandle.evaluate(createSupplierOrder, {
+			id: 1,
+			supplierId: 1,
+			orderLines: [supplierOrderLine]
+		});
 
-		const placedOrders = await dbHandle.evaluate(getPlacedSupplierOrders);
-
-		const placedOrderIds = placedOrders.map((placedOrder) => placedOrder.id);
-		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, placedOrderIds);
+		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, [1]);
 
 		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
 		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
@@ -245,8 +246,11 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
 		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisherId: "pub2" });
 
-		for (const { lines } of supplierOrders) {
-			await dbHandle.evaluate(createSupplierOrder, lines);
+		for (const {
+			order: { id, supplier_id },
+			lines
+		} of supplierOrders) {
+			await dbHandle.evaluate(createSupplierOrder, { id, supplierId: supplier_id, orderLines: lines });
 		}
 
 		await use(supplierOrders);
