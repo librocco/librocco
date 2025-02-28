@@ -9,7 +9,8 @@
 
 		"strictNullChecks": false,
 		"noEmit": true,
-		"module": "esnext",
+		"target": "ESNext",
+		"module": "ESNext",
 		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"ignoreDeprecations": "5.0"
 	},
