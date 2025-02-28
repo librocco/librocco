@@ -3,7 +3,7 @@ import { baseURL } from "@/integration/constants";
 import { PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
 import {
 	addBooksToCustomer,
-	addOrderLinesToReconciliationOrder,
+	upsertReconciliationOrderLines,
 	associatePublisher,
 	createReconciliationOrder,
 	createSupplierOrder,
@@ -149,7 +149,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 		const placedOrderIds = placedOrders.map((placedOrder) => placedOrder.id);
 		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, placedOrderIds);
-		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
+		await dbHandle.evaluate(upsertReconciliationOrderLines, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
 		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
 
 		const customerOrderLines = await dbHandle.evaluate(getCustomerOrderLineStatus, customer.id);

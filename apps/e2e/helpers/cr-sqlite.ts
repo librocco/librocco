@@ -9,7 +9,7 @@ import {
 	ReconciliationOrder,
 	DBCustomerOrderLine
 } from "./types";
-import { BookData } from "@librocco/shared";
+import { asc, BookData } from "@librocco/shared";
 
 // #region books
 /**
@@ -509,29 +509,45 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
 }
 
 /**
- * E2E test helper for adding order lines to a reconciliation order.
- * References the original addOrderLinesToReconciliationOrder function.
- * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:addOrderLinesToReconciliationOrder
+ * E2E test helper for upserting order lines to a reconciliation order.
+ * References the original upsertReconciliationOrderLines function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:upsertReconciliationOrderLines
  */
-export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
+export async function upsertReconciliationOrderLines(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
 	const { id, newLines } = params;
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
-	const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
-	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	if (reconOrder.finalized) {
+		throw new ErrReconciliationOrderFinalized(id, newLines);
 	}
 
 	const sqlParams = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
 
-	const sql = `
-     INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn,
- quantity)
-     VALUES ${multiplyString("(?,?,?)", newLines.length)}
-     ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
-         quantity = quantity + excluded.quantity;
-     `;
-	await db.exec(sql, sqlParams);
+	const timestamp = Date.now();
+	await db.tx(async (txDb) => {
+		const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+
+		const sql = `
+			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
+			VALUES ${multiplyString("(?,?,?)", newLines.length)}
+			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+				quantity = quantity + excluded.quantity;
+		`;
+		// Clean up any lines that ended up with quantity <= 0
+		await txDb.exec(
+			`
+        DELETE FROM reconciliation_order_lines
+        WHERE reconciliation_order_id = ? AND quantity <= 0
+      `,
+			[id]
+		);
+		await txDb.exec(sql, sqlParams);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
 }
 
 export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
@@ -546,3 +562,29 @@ export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Pr
 	);
 	return result;
 };
+
+/** Thrown from `upsertReconciliationOrderLines` when the respective reconciliation order is not found */
+export class ErrReconciliationOrderNotFound extends Error {
+	constructor(id: number) {
+		super(`Reconciliation order not found: trying to add lines to a non existing reconciliation order: id: ${id}`);
+	}
+}
+
+/** Thrown from `upsertReconciliationOrderLines` when trying to upsert lines to already finalized reconciliation order */
+export class ErrReconciliationOrderFinalized extends Error {
+	constructor(id: number);
+	constructor(id: number, lines: { isbn: string; quantity: number }[]);
+	constructor(id: number, lines?: { isbn: string; quantity: number }[]) {
+		if (lines?.length) {
+			const msg = [
+				"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
+				`  order id: ${id}`,
+				"  order lines:",
+				...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
+			].join("\n");
+			super(msg);
+		} else {
+			super(`Reconciliation order already finalized: ${id}`);
+		}
+	}
+}
