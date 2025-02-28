@@ -1,6 +1,12 @@
-import { baseURL } from "@/integration/constants";
+import { DB } from "@vlcn.io/crsqlite-wasm";
+import test, { JSHandle } from "@playwright/test";
+
+import { BookData } from "@librocco/shared";
 
 import { Customer, Supplier } from "./types";
+
+import { baseURL } from "@/integration/constants";
+
 import {
 	addBooksToCustomer,
 	addOrderLinesToReconciliationOrder,
@@ -13,9 +19,6 @@ import {
 	upsertSupplier
 } from "./cr-sqlite";
 import { getDbHandle } from "./db";
-import test, { JSHandle } from "@playwright/test";
-import { DB } from "@vlcn.io/crsqlite-wasm";
-import { BookData } from "@librocco/shared";
 
 const books = [
 	{ isbn: "1234", authors: "author1", title: "title1", publisher: "pub1", price: 10 },
@@ -215,17 +218,17 @@ export const testOrders = test.extend<OrderTestFixture>({
 		//
 		// NOTE: Alternative would be to move this to a separate fixture. In that case we would need to be careful about the order of fixture execution
 		// so as to not create circular dependencies
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
 		await dbHandle.evaluate(createSupplierOrder, {
 			id: 1,
 			supplierId: 1,
 			orderLines: [supplierOrderLine]
 		});
 
-		const reconciliationOrderId = await dbHandle.evaluate(createReconciliationOrder, [1]);
+		await dbHandle.evaluate(createReconciliationOrder, { id: 1, supplierOrderIds: [1] });
 
-		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: reconciliationOrderId, newLines: [supplierOrderLine] });
-		await dbHandle.evaluate(finalizeReconciliationOrder, reconciliationOrderId);
+		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: 1, newLines: [supplierOrderLine] });
+		await dbHandle.evaluate(finalizeReconciliationOrder, 1);
 
 		await use(customerOrderLines);
 	},
@@ -243,8 +246,8 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(upsertSupplier, { id: 1, name: "sup1" });
 		await dbHandle.evaluate(upsertSupplier, { id: 2, name: "sup2" });
 
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisherId: "pub1" });
-		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisherId: "pub2" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisher: "pub2" });
 
 		for (const {
 			order: { id, supplier_id },
