@@ -111,31 +111,41 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 	await expect(secondRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
 
-testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, placedOrders }) => {
+testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, placedOrders, books }) => {
+	books;
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
+
+	// Calculate total ordered quantity from the orders ordered from sup1
+	// we know it's sup1 bc we only selected the first two orders
+	// and orders are sorted by sup name
+	const placedOrderLinesWithSup1 = placedOrders.reduce(
+		(acc: PlacedSupplierOrderLine[], { order, lines }) => (order.supplier_name === "sup1" ? [...acc, ...lines] : acc),
+		[]
+	);
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByText("Reconcile").first().click();
 
+	// Add some scanned books
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Scan more than ordered
-	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
 
 	const table = page.getByRole("table");
-	const firstRow = table.getByRole("row").nth(1);
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn }).first()).toBeVisible();
+	expect(table.getByText(placedOrderLinesWithSup1[0].isbn)).toBeVisible();
 
-	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	const firstRow = table.getByRole("row").nth(1);
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn }).first()).toBeVisible();
+
+	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
 
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn }).first()).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn }).first()).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).nth(1).click();
 
 	const supplierNameRow = table.getByRole("row").nth(1);
-	supplierNameRow.getByRole("cell", { name: placedOrders[0].lines[0].supplier_name });
+	supplierNameRow.getByRole("cell", { name: "sup1" });
 
 	// Verify comparison shows over-delivery
 	await expect(page.getByText("2 / 2")).toBeVisible();
