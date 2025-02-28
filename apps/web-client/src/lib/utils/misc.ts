@@ -4,8 +4,6 @@ import { wrapIter, debug } from "@librocco/shared";
 import type { BookData, BookFetchResultEntry } from "@librocco/shared";
 import type { WarehouseDataMap } from "@librocco/db";
 
-import type { DailySummaryStore } from "$lib/types/inventory";
-
 /**
  * A util used to compare two paths. It trims the paths and removes the leading and trailing slashes
  * for clean comparison.
@@ -32,7 +30,7 @@ export const compareNotes = <N extends { updatedAt?: string | Date | null }>({ u
 
 export const mapMergeBookWarehouseData =
 	(ctx: debug.DebugCtx, entries: Iterable<any>, warehouseListStream: Observable<WarehouseDataMap>) =>
-	(books: Observable<Iterable<BookData | undefined>>): Observable<DailySummaryStore> =>
+	(books: Observable<Iterable<BookData | undefined>>): Observable<unknown> =>
 		combineLatest([books, warehouseListStream]).pipe(
 			map(([booksData, warehouseData]) => {
 				const books = wrapIter(entries)
