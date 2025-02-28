@@ -229,11 +229,11 @@ export async function deleteReconciliationOrder(db: DB, id: number): Promise<voi
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
 	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
+		throw new ErrReconciliationOrderNotFound(id);
 	}
 
 	if (reconOrder[0].finalized) {
-		throw new Error(`Cannot delete finalized reconciliation order ${id}`);
+		throw new ErrReconciliationOrderFinalized(id);
 	}
 
 	await db.tx(async (txDb) => {
@@ -301,8 +301,11 @@ export async function upsertReconciliationOrderLines(db: DB, id: number, newLine
 export async function deleteOrderLineFromReconciliationOrder(db: DB, id: number, isbn: string) {
 	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
 
-	if (!reconOrder[0] || reconOrder[0].finalized) {
-		throw new Error(`Reconciliation order ${id} not found or already finalized`);
+	if (!reconOrder[0]) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+	if (reconOrder[0].finalized) {
+		throw new ErrReconciliationOrderFinalized(id);
 	}
 
 	const timestamp = Date.now();

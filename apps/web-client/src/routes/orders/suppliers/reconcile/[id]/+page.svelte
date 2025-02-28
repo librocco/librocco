@@ -17,12 +17,13 @@
 	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
-	import { goto, invalidate } from "$app/navigation";
+	import { invalidate } from "$app/navigation";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import { appPath } from "$lib/paths";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -42,6 +43,8 @@
 		disposer();
 	});
 	//#endregion reactivity
+
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
 
@@ -114,8 +117,8 @@
 	async function handleDelete() {
 		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
-		await deleteReconciliationOrder(db, parseInt($page.params.id));
 		await goto(appPath("supplier_orders"));
+		await deleteReconciliationOrder(db, parseInt($page.params.id));
 	}
 </script>
 

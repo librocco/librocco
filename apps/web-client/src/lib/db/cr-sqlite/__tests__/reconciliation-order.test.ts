@@ -1423,9 +1423,8 @@ describe("Reconciliation order deletion", () => {
 			const db = await getRandomDb();
 
 			const nonExistentId = 999;
-			await expect(deleteReconciliationOrder(db, nonExistentId)).rejects.toThrow(`Reconciliation order ${nonExistentId} not found`);
+			await expect(deleteReconciliationOrder(db, nonExistentId)).rejects.toThrow(new ErrReconciliationOrderNotFound(nonExistentId));
 		});
-
 		it("should allow supplier orders to be reconciled again after deletion", async () => {
 			const db = await getRandomDb();
 
@@ -1487,7 +1486,7 @@ describe("Reconciliation order deletion", () => {
 
 			// Attempt to delete finalized order
 			await expect(deleteReconciliationOrder(db, reconciliationOrderId)).rejects.toThrow(
-				`Cannot delete finalized reconciliation order ${reconciliationOrderId}`
+				new ErrReconciliationOrderFinalized(reconciliationOrderId)
 			);
 		});
 	});
@@ -1556,7 +1555,7 @@ describe("Reconciliation order deletion", () => {
 
 			const nonExistentId = 999;
 			await expect(deleteOrderLineFromReconciliationOrder(db, nonExistentId, "1")).rejects.toThrow(
-				`Reconciliation order ${nonExistentId} not found or already finalized`
+				new ErrReconciliationOrderNotFound(nonExistentId)
 			);
 		});
 
@@ -1600,7 +1599,7 @@ describe("Reconciliation order deletion", () => {
 
 			// Attempt to delete from finalized order should throw
 			await expect(deleteOrderLineFromReconciliationOrder(db, reconciliationOrderId, "1")).rejects.toThrow(
-				`Reconciliation order ${reconciliationOrderId} not found or already finalized`
+				new ErrReconciliationOrderFinalized(reconciliationOrderId)
 			);
 		});
 	});
