@@ -1,9 +1,6 @@
 import path from "path";
-import { searchForWorkspaceRoot } from "vite";
 import { sveltekit } from "@sveltejs/kit/vite";
 import { SvelteKitPWA } from "@vite-pwa/sveltekit";
-
-import RollupNodePolyfill from "rollup-plugin-node-polyfills";
 
 import pkg from "./package.json";
 
@@ -69,13 +66,6 @@ const config = {
 			}
 		}
 	],
-	resolve: {
-		alias: {
-			// Alias events module to use rollup-plugin-node-polyfills as node modules (such as 'events' get externalized by vite build)
-			// and we need 'events' for PouchDB to work.
-			events: "rollup-plugin-node-polyfills/polyfills/events"
-		}
-	},
 	optimizeDeps: {
 		esbuildOptions: {
 			// Define global variable for node modules required for PouchDB
@@ -93,15 +83,7 @@ const config = {
 		}
 	},
 	build: {
-		sourcemap: true,
-		rollupOptions: {
-			// This is the node modules polyfill (namely 'events') for PouchDB purposes, in production
-			plugins: [
-				RollupNodePolyfill({
-					include: ["events"]
-				})
-			]
-		}
+		sourcemap: true
 	},
 	test: {
 		include: ["./src/**/*.(test|spec).ts"],

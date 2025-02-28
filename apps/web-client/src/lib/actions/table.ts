@@ -1,6 +1,6 @@
-import { v4 as uuidv4 } from "uuid";
 import type { Action } from "svelte/action";
 import { derived, writable, type Writable } from "svelte/store";
+import { nanoid } from "nanoid";
 
 /**
  * Table factory options
@@ -34,7 +34,7 @@ export function createTable<T = object>(options: Options<T>) {
 	// const _data = writable(setRowKeys(rows));
 	const data = derived(optionsStore, ($options) => {
 		const { data = [] } = $options;
-		return data.map((row, ix) => ({ ...row, key: uuidv4(), rowIx: ix }));
+		return data.map((row, ix) => ({ ...row, key: nanoid(), rowIx: ix }));
 	});
 
 	/**
