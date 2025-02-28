@@ -43,13 +43,13 @@ testOrders("should show correct comparison when quantities match ordered amounts
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
 	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
-	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn, exact: true })).toBeVisible();
 
 	await isbnInput.focus();
 	await isbnInput.fill(placedOrderLinesWithSup1[0].isbn);
 	await page.keyboard.press("Enter");
 	// scanned quantity === delivered quantity
-	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrderLinesWithSup1[0].isbn, exact: true })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: `2`, exact: true })).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).first().click();
@@ -104,9 +104,9 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 	await page.keyboard.press("Enter");
 
 	// Check the 111111 row quantity is updated
-	await expect(firstRow.getByRole("cell", { name: "1111111111" })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "1111111111", exact: true })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: "3" })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: books[0].isbn, exact: true })).toBeVisible();
 
 	await expect(secondRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
@@ -374,7 +374,7 @@ testOrders("should be able to continue reconciliation", async ({ page, books, pl
 	// Verify previously scanned books are still present
 	await expect(firstRow.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
 	// Verify quantity has increased
-	await expect(firstRow.getByRole("cell", { name: "2" })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
@@ -442,7 +442,7 @@ testOrders("should handle quantity adjustments correctly", async ({ page, placed
 	const firstRow = table.getByRole("row").nth(1);
 
 	// Verify initial quantity
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn, exact: true })).toBeVisible();
 
 	// Increase quantity
 	await firstRow.getByRole("button").nth(1).click();
@@ -471,7 +471,7 @@ testOrders("should remove line when quantity reaches zero", async ({ page, place
 	await page.getByLabel("Decrease quantity").click();
 
 	// Verify line is removed
-	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn })).not.toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: placedOrders[0].lines[0].isbn, exact: true })).not.toBeVisible();
 });
 
 testOrders("should handle multiple quantity adjustments", async ({ page, placedOrders, books }) => {
