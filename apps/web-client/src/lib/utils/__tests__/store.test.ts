@@ -3,8 +3,6 @@ import { writable } from "svelte/store";
 
 import { controlledStore, debouncedStore } from "../stores";
 
-import { wait } from "../../__testUtils__/misc";
-
 afterEach(() => {
 	vi.clearAllMocks();
 });
@@ -118,3 +116,5 @@ describe("Controlled store wrapper", () => {
 		expect(notify).toHaveBeenCalledWith("transformed: foobar");
 	});
 });
+
+const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
