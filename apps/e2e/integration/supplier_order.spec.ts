@@ -8,6 +8,7 @@ import { testOrders } from "@/helpers/fixtures";
 testOrders.beforeEach(async ({ page }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 });
+
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
 	await expect(page.getByRole("table")).not.toBeVisible();
 	await expect(page.getByText("No unordered supplier orders available")).toBeVisible();
@@ -23,7 +24,7 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
-	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
+	await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
 
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	page.getByRole("button", { name: "Unordered" });
@@ -35,12 +36,13 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 	// assert for quantity cell with a value of "1"
 	await expect(firstRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
+
 testOrders(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
 	async ({ page, suppliers: [supplier], books, customers }) => {
 		const dbHandle = await getDbHandle(page);
 
-		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisherId: "pub1" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
 
 		// Add 2 copies of first book to customer's order
 		await dbHandle.evaluate(addBooksToCustomer, {
@@ -120,17 +122,7 @@ testOrders("should show a placed supplier order with the correct details", async
 	await dbHandle.evaluate(createSupplierOrder, {
 		id: 1,
 		supplierId: supplier.id,
-		orderLines: [
-			{
-				supplier_id: supplier.id,
-				supplier_name: supplier.name,
-				isbn: books[0].isbn,
-				line_price: books[0].price,
-				quantity: 1,
-				title: books[0].title,
-				authors: books[0].authors
-			}
-		]
+		orderLines: [{ supplier_id: supplier.id, isbn: books[0].isbn, quantity: 1 }]
 	});
 
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
