@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle } from "lucide-svelte";
+	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -9,17 +9,20 @@
 	import Page from "$lib/components/Page.svelte";
 	import type { PageData } from "./$types";
 	import {
-		addOrderLinesToReconciliationOrder,
+		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
-		processOrderDelivery
+		processOrderDelivery,
+		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
-	import { invalidate } from "$app/navigation";
+	import { goto, invalidate } from "$app/navigation";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { appPath } from "$lib/paths";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -47,7 +50,7 @@
 	async function handleIsbnSubmit(isbn: string) {
 		if (!isbn) return;
 
-		await addOrderLinesToReconciliationOrder(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
 	let scanInputRef: HTMLInputElement = null;
@@ -78,7 +81,7 @@
 			await deleteOrderLineFromReconciliationOrder(db, parseInt($page.params.id), isbn);
 			return;
 		}
-		await addOrderLinesToReconciliationOrder(db, parseInt($page.params.id), [{ isbn, quantity: quantity }]);
+		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: quantity }]);
 	};
 
 	let currentStep = 1;
@@ -87,12 +90,32 @@
 		states: { open: commitDialogOpen }
 	} = commitDialog;
 
+	const deleteDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: deleteDialogOpen }
+	} = deleteDialog;
+
 	$: canCompare = books.length > 0;
 
 	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+	}
+
+	const confirmDeleteDialogHeading = "Delete Reconciliation Order";
+	const confirmDeleteDialogDescription =
+		"Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.";
+
+	const handleConfirmDeleteDialog = () => {
+		deleteDialogOpen.set(true);
+	};
+
+	async function handleDelete() {
+		// TODO: Implement actual commit logic
+		deleteDialogOpen.set(false);
+		await deleteReconciliationOrder(db, parseInt($page.params.id));
+		await goto(appPath("supplier_orders"));
 	}
 </script>
 
@@ -138,6 +161,16 @@
 									</dd>
 								{/each}
 							</div>
+						</div>
+						<div class="w-full pr-2">
+							<button
+								class="btn-secondary btn-outline btn-xs btn w-full"
+								type="button"
+								aria-label="Delete reconciliatoin order"
+								on:click={handleConfirmDeleteDialog}
+							>
+								<Delete aria-hidden size={16} />
+							</button>
 						</div>
 					</dl>
 				</div>
@@ -229,7 +262,7 @@
 														}
 														handleEditQuantity(isbn, -1);
 													}}
-													aria-label="Decrease quantity"
+													aria-label="Decrease quantity for isbn: {isbn}"
 												>
 													<MinusCircle /></button
 												>
@@ -238,7 +271,9 @@
 												{quantity}
 											</td>
 											<td>
-												<button aria-label="Increase quantity" on:click={() => handleEditQuantity(isbn, 1)}><PlusCircle /></button>
+												<button aria-label="Increase quantity for isbn: {isbn}" on:click={() => handleEditQuantity(isbn, 1)}
+													><PlusCircle /></button
+												>
 											</td>
 										</tr>
 									{/each}
@@ -288,4 +323,14 @@
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+</PageCenterDialog>
+
+<PageCenterDialog dialog={deleteDialog} title="" description="">
+	<ConfirmDialog
+		on:confirm={handleDelete}
+		on:cancel={() => deleteDialogOpen.set(false)}
+		heading={confirmDeleteDialogHeading}
+		description={confirmDeleteDialogDescription}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+	/>
 </PageCenterDialog>
