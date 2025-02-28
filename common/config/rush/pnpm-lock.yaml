@@ -55,9 +55,6 @@ importers:
 
   ../../apps/web-client:
     dependencies:
-      '@librocco/db':
-        specifier: workspace:*
-        version: link:../../pkg/db
       '@vlcn.io/crsqlite-wasm':
         specifier: 0.16.0
         version: 0.16.0
@@ -15270,7 +15267,7 @@ packages:
         optional: true
     dependencies:
       '@types/node': 20.4.10
-      '@vitest/browser': 2.1.4(@types/node@20.4.10)(playwright@1.47.2)(typescript@5.6.3)(vite@5.4.10)(vitest@2.1.4)(webdriverio@8.40.6)
+      '@vitest/browser': 2.1.4(@types/node@20.4.10)(playwright@1.48.2)(typescript@5.6.3)(vite@5.4.10)(vitest@2.1.4)
       '@vitest/expect': 2.1.4
       '@vitest/mocker': 2.1.4(msw@2.6.0)(vite@5.4.10)
       '@vitest/pretty-format': 2.1.4
