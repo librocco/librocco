@@ -160,11 +160,36 @@ jobs:
       run: cd apps/e2e && npx playwright install
     - name: Run Playwright tests
       run: cd apps/e2e && rushx test:ci
+    - name: Install lftp
+      if: always()
+      run: |
+        [ -d apps/e2e/playwright-report ] || exit 0
+        sudo apt-get update
+        sudo apt-get install lftp
+    - name: Copy playwright test result to bunny storage zone
+      if: always()
+      run: |
+        [ -d apps/e2e/playwright-report ] || exit 0
+        lftp -u librocco,"${BUNNY_STORAGE_PASSWORD}" storage.bunnycdn.com <<EOF
+        set ftp:ssl-allow no
+        set mirror:parallel-transfer-count 10
+        mirror -R apps/e2e/playwright-report/ ${{ github.head_ref || github.ref_name }}/tests
+        EOF
+        echo Uploaded to https://test.libroc.co/${{ github.head_ref || github.ref_name }}/tests
+      env:
+        BUNNY_STORAGE_PASSWORD: ${{ secrets.BUNNY_STORAGE_PASSWORD }}
+    - name: Purge bunny cache
+      if: always()
+      run: |
+        [ -d apps/e2e/playwright-report ] || exit 0
+        curl --request POST --url https://api.bunny.net/pullzone/1306302/purgeCache --header "content-type: application/json" --header "AccessKey: $BUNNY_API_KEY"
+      env:
+        BUNNY_API_KEY: ${{ secrets.BUNNY_API_KEY }}
     - uses: actions/upload-artifact@v4
       if: always()
       with:
         name: playwright-test-results
-        path: apps/e2e/test-results
+        path: apps/e2e/playwright-report
         retention-days: 30
   lint-and-typecheck:
     runs-on: ubuntu-latest
