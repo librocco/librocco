@@ -2,16 +2,16 @@
 	import { sortLinesBySupplier } from "$lib/db/cr-sqlite/order-reconciliation";
 	import type { ProcessedOrderLine } from "$lib/db/cr-sqlite/types";
 
-	import type { BookEntry } from "@librocco/db";
+	import type { BookData } from "@librocco/shared";
 
-	export let reconciledBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
+	export let reconciledBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookData & { quantity: number })[] } = {
 		processedLines: [],
 		unmatchedBooks: []
 	};
 
 	$: sortedSupplierBooks = sortLinesBySupplier(reconciledBooks.processedLines);
 
-	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
+	$: getSupplierSummary = (books: (BookData & { delivered: boolean })[]) => {
 		const delivered = books.filter((b) => b.delivered).length;
 		return `${delivered} / ${books.length}`;
 	};

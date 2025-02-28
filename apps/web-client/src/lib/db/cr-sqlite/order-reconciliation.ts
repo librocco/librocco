@@ -28,8 +28,7 @@
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
-import type { BookEntry } from "@librocco/db";
-import { asc } from "@librocco/shared";
+import { asc, type BookData } from "@librocco/shared";
 
 import type {
 	DB,
@@ -490,14 +489,14 @@ quantities
 *    - Were delivered but not in original order
 */
 export const processOrderDelivery = (
-	scannedBooks: (BookEntry & { quantity: number })[],
+	scannedBooks: (BookData & { quantity: number })[],
 	placedOrderLines: PlacedSupplierOrderLine[]
-): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
-	const unmatchedBooks: (BookEntry & { quantity: number })[] = [];
+): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookData & { quantity: number })[] } => {
+	const unmatchedBooks: (BookData & { quantity: number })[] = [];
 	const processedLines: ProcessedOrderLine[] = [];
 
 	// Create a map of scanned books for quick lookup
-	const scannedBooksMap = new Map<string, BookEntry & { quantity: number }>();
+	const scannedBooksMap = new Map<string, BookData & { quantity: number }>();
 	scannedBooks.forEach((scannedBook) => scannedBooksMap.set(scannedBook.isbn, scannedBook));
 
 	// Process each placed order line
