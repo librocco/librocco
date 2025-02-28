@@ -18,7 +18,7 @@ import {
 } from "../customers";
 import { associatePublisher, createSupplierOrder, upsertSupplier } from "../suppliers";
 import { upsertBook } from "../books";
-import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
+import { upsertReconciliationOrderLines, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
 describe("Customer orders", () => {
 	describe("upsertCustomer should", () => {
@@ -678,7 +678,7 @@ describe("Customer order Collection", () => {
 		// Mark the books as received
 		// await markCustomerOrderAsReceived(db, orderLineIds);
 		await createReconciliationOrder(db, 1, [1]);
-		await addOrderLinesToReconciliationOrder(db, 1, [
+		await upsertReconciliationOrderLines(db, 1, [
 			{ isbn: "9780000000001", quantity: 1 },
 			{ isbn: "9780000000001", quantity: 1 }
 		]);

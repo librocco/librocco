@@ -16,7 +16,7 @@ import {
 } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, getCustomerOrderLineHistory, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
-import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
+import { upsertReconciliationOrderLines, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 const customer2 = { fullname: "Harry Styles", id: 2, displayId: "200" };
@@ -182,7 +182,7 @@ describe("New supplier orders:", () => {
 			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			await createReconciliationOrder(db, 1, [1]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
 			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
@@ -346,7 +346,7 @@ describe("New supplier orders:", () => {
 			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			await createReconciliationOrder(db, 1, [1]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
 			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
