@@ -546,3 +546,127 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	// Verify updated total
 	await expect(page.getByText(`3 / ${placedOrders[0].lines.length}`)).toBeVisible();
 });
+
+testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, books, placedOrders }) => {
+	books;
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+
+	// Select multiple orders
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByRole("checkbox").nth(2).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Add scanned books
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+
+	// Delete and verify all supplier orders can be reconciled again
+	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Confirm" }).click();
+
+	await expect(page.getByRole("dialog")).toBeHidden();
+	expect(page.url()).toContain("orders/suppliers/orders");
+
+	await expect(page.getByRole("dialog")).toBeHidden();
+
+	// Verify back at supplier orders
+
+	expect(page.url()).toContain("orders/suppliers/orders");
+	await page.reload();
+
+	// Should be able to start new reconciliation with same orders
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByRole("checkbox").nth(2).click();
+	await page.getByText("Reconcile").first().click();
+});
+
+testOrders("should not delete reconciliation order when canceling deletion", async ({ page, placedOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Add some scanned books
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+
+	// Try to delete but cancel
+	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Cancel" }).click();
+
+	// Verify we're still on reconciliation page
+	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
+	// Verify scanned books still present
+	await expect(page.getByText(placedOrders[0].lines[0].isbn)).toBeVisible();
+});
+
+testOrders("should allow deletion after comparing books", async ({ page, placedOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Add books and go to compare view
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	await page.getByRole("button", { name: "Compare" }).click();
+
+	// Delete from compare view
+	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Confirm" }).click();
+
+	await expect(page.getByRole("dialog")).toBeHidden();
+
+	// Verify back at supplier orders
+
+	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
+	expect(page.url()).toContain("orders/suppliers/orders");
+});
+
+testOrders("should allow deletion of empty reconciliation order", async ({ page, placedOrders, books }) => {
+	books;
+	placedOrders;
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Delete without scanning any books
+	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Confirm" }).click();
+
+	await expect(page.getByRole("dialog")).toBeHidden();
+
+	// Verify back at supplier orders
+	expect(page.url()).toContain("orders/suppliers/orders");
+});
+
+testOrders("should navigate correctly after deletion", async ({ page, placedOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Add some books
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	await isbnInput.fill(placedOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+
+	// Delete and verify navigation
+	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Confirm" }).click();
+
+	await expect(page.getByRole("dialog")).toBeHidden();
+
+	// Should be at supplier orders page
+	expect(page.url()).toContain("orders/suppliers/orders");
+
+	// Verify supplier orders are shown correctly
+	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
+	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
+});
