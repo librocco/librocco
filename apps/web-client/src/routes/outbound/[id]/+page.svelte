@@ -58,6 +58,7 @@
 		addVolumesToNote,
 		commitNote,
 		createAndCommitReconciliationNote,
+		createOutboundNote,
 		deleteNote,
 		getNoteIdSeq,
 		getReceiptForNote,
@@ -67,6 +68,9 @@
 		upsertNoteCustomItem
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+
+	import { racefreeGoto } from "$lib/utils/navigation";
+	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
 
@@ -86,6 +90,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
@@ -362,9 +367,19 @@
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="outbound-note" loaded={!loading}>
+<Page {handleCreateOutboundNote} view="outbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
