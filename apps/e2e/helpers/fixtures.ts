@@ -249,6 +249,32 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
 		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisher: "pub2" });
 
+		[
+			{
+				order: { id: 1, supplier_id: 1, supplier_name: "sup1" },
+				lines: [
+					{ isbn: "1234", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
+					{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
+				]
+			},
+			{
+				order: { id: 2, supplier_id: 1, supplier_name: "sup1" },
+				lines: [
+					{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
+					{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
+					{ isbn: "7777", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
+				]
+			},
+			{
+				order: { id: 3, supplier_id: 2, supplier_name: "sup2" },
+				lines: [
+					{ isbn: "4321", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
+					{ isbn: "8765", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
+					{ isbn: "8888", supplier_id: 2, supplier_name: "sup2", quantity: 1 }
+				]
+			}
+		];
+
 		for (const {
 			order: { id, supplier_id },
 			lines

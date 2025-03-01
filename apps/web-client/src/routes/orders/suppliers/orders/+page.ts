@@ -16,9 +16,18 @@ export const load: PageLoad = async ({ depends, parent }) => {
 
 	const { db } = dbCtx;
 
+	const allSupplierOrders = await getPlacedSupplierOrders(db);
 	const possibleOrders = await getPossibleSupplierOrders(dbCtx.db);
 	const placedOrders = await getPlacedSupplierOrders(dbCtx.db, { reconciled: false });
 	const reconcilingOrders = await getAllReconciliationOrders(db, { finalized: false });
+
+	// TEMP
+	console.log("all supplier orders:");
+	console.log(JSON.stringify(allSupplierOrders, null, 2));
+	console.log("possible orders:");
+	console.log(JSON.stringify(possibleOrders, null, 2));
+	console.log("placed orders:");
+	console.log(JSON.stringify(placedOrders, null, 2));
 
 	return { possibleOrders, placedOrders, reconcilingOrders };
 };

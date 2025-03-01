@@ -381,6 +381,8 @@ export async function createSupplierOrder(
 	supplierId: number | null,
 	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
 ) {
+	console.log(`creating supplier order: id: ${id}, supplierId: ${supplierId}`);
+	console.log("order lines:", JSON.stringify(orderLines, null, 2));
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
 
 	if (!orderLines.length) {
@@ -420,6 +422,9 @@ export async function createSupplierOrder(
 				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
 				.then((res) => res.map(({ id }) => id));
 
+			console.log("got lines to place:");
+			console.log(JSON.stringify(customerOrderLineIds, null, 2));
+
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
 
@@ -437,6 +442,16 @@ export async function createSupplierOrder(
 			}
 		}
 	});
+
+	console.log("supplier order created, checking state...");
+
+	const placedOrders = await db.execO("SELECT * FROM supplier_order");
+	console.log("placed supplier orders:");
+	console.log(JSON.stringify(placedOrders, null, 2));
+
+	const customerOrderLines = await db.execO("SELECT * FROM customer_order_lines");
+	console.log("customer order lines:");
+	console.log(JSON.stringify(customerOrderLines, null, 2));
 }
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
