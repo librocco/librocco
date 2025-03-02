@@ -25,7 +25,7 @@
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	import type { PageData } from "./$types";
-	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createInboundNote, createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 
 	export let data: PageData;
@@ -76,12 +76,9 @@
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateNote = (warehouseId: number) => async () => {
+	const handleCreateInboundNote = (warehouseId: number) => async () => {
 		const id = await getNoteIdSeq(db);
 		await createInboundNote(db, warehouseId, id);
-
-		// Unsubscribe from db changes to prevent invalidate and page load race
-		disposer?.();
 		await goto(appPath("inbound", id));
 	};
 
@@ -97,9 +94,19 @@
 
 	let initialized = false;
 	$: initialized = Boolean(db);
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<InventoryManagementPage {plugins} {handleCreateWarehouse}>
+<InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -147,7 +154,7 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateNote(id)} class="button button-green">
+							<button on:click={handleCreateInboundNote(id)} class="button button-green">
 								<span class="button-text"> New note </span>
 							</button>
 
