@@ -5,7 +5,9 @@ import type { PlacedSupplierOrder, PossibleSupplierOrder } from "$lib/db/cr-sqli
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ depends, parent }) => {
+	depends("books:data");
 	depends("suppliers:data");
+	depends("customers:order_lines");
 
 	const { dbCtx } = await parent();
 
