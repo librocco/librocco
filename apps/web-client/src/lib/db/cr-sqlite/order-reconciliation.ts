@@ -308,6 +308,13 @@ export async function deleteOrderLineFromReconciliationOrder(db: DB, id: number,
 
 	const timestamp = Date.now();
 	await db.tx(async (txDb) => {
+		const exists = await txDb.execO<{ id: number }>(
+			"SELECT 1 FROM reconciliation_order_lines WHERE reconciliation_order_id = ? AND isbn = ?",
+			[id, isbn]
+		);
+		if (!exists.length) {
+			throw new Error("No matching order line found");
+		}
 		const sql = `
 			DELETE FROM reconciliation_order_lines WHERE reconciliation_order_id = ? AND isbn = ?;
 		`;
