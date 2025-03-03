@@ -169,6 +169,20 @@ type OrderTestFixture = {
 // NOTE: In order to order to avoid circular depenedencies within fixtures, the best prectice is
 // for each fixture to depend only on the fixtures that are declared before it.
 export const testOrders = test.extend<OrderTestFixture>({
+	page: async ({ page }, use) => {
+		// Override `goto` to wait for IndexedDB transactions before navigating
+		const originalGoto = page.goto;
+		page.goto = async function (...args) {
+			// Wait for 100ms, for ongoing IndexedDB transactions to finish
+			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
+			// don't get interrupted on navigation - causing flaky-as-hell tests
+			await new Promise((res) => setTimeout(res, 100));
+			return originalGoto.apply(page, args);
+		};
+
+		await use(page);
+	},
+
 	dbHandle: async ({ page }, use) => {
 		await page.goto(baseURL);
 

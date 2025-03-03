@@ -1,9 +1,11 @@
 <script lang="ts">
+	import { onDestroy, onMount } from "svelte";
+	import { invalidate } from "$app/navigation";
 	import { Settings, Plus } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
@@ -20,9 +22,25 @@
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
+
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		const disposer1 = rx.onRange(["book"], () => invalidate("books:data"));
+		const disposer2 = rx.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
+		const disposer3 = rx.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
+
+		disposer = () => (disposer1(), disposer2(), disposer3());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
 
