@@ -92,7 +92,7 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 
 	const secondRow = table.getByRole("row").nth(2);
 
-	await expect(firstRow.getByRole("cell", { name: "2" })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
 
 	await isbnInput.fill(books[0].isbn);
 	await page.keyboard.press("Enter");
@@ -287,7 +287,7 @@ testOrders("should show correct delivery stats in commit view", async ({ page, b
 	await page.keyboard.press("Enter");
 
 	// Check the quantity is updated before...
-	await expect(firstRow.getByRole("cell", { name: "2" }).first()).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "2", exact: true }).first()).toBeVisible();
 
 	// ... moving to compare
 	await page.getByRole("button", { name: "Compare" }).first().click();
