@@ -1574,9 +1574,11 @@ describe("Reconciliation order deletion", () => {
 			await upsertReconciliationOrderLines(db, reconciliationOrderId, [{ isbn: "1", quantity: 1 }]);
 
 			// Should not throw when deleting non-existent ISBN
-			await expect(deleteOrderLineFromReconciliationOrder(db, reconciliationOrderId, "999")).resolves.not.toThrow();
+			await expect(deleteOrderLineFromReconciliationOrder(db, reconciliationOrderId, "999")).rejects.toThrow(
+				"No matching order line found"
+			);
 
-			// Verify original line still exists
+			// Verify original line does not exist
 			const remainingLines = await getReconciliationOrderLines(db, reconciliationOrderId);
 			expect(remainingLines).toHaveLength(1);
 			expect(remainingLines[0].isbn).toBe("1");
