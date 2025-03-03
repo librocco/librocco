@@ -452,7 +452,7 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 });
 
 testOrders("should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
-	supplierOrders;
+	depends(supplierOrders);
 	// Navigate and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
@@ -477,7 +477,7 @@ testOrders("should handle quantity adjustments correctly", async ({ page, suppli
 });
 
 testOrders("should remove line when quantity reaches zero", async ({ page, supplierOrders }) => {
-	supplierOrders;
+	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
@@ -503,7 +503,7 @@ testOrders("should remove line when quantity reaches zero", async ({ page, suppl
 });
 
 testOrders("should handle multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
-	supplierOrders;
+	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
@@ -576,14 +576,15 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	await expect(page.getByText(`3 / 3`)).toBeVisible();
 });
 
-testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, books, supplierOrders }) => {
-	books;
+testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 
 	// Select multiple orders
-	await page.getByRole("checkbox").nth(1).click();
-	await page.getByRole("checkbox").nth(2).click();
+	const items = await page.getByRole("checkbox").all();
+	const beforeLast = items[items.length - 2];
+	await beforeLast.click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 
 	// Add scanned books
