@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
-import { testOrders } from "@/helpers/fixtures";
+import { depends, testOrders } from "@/helpers/fixtures";
 
 // * Note: its helpful to make an assertion after each <enter> key
 // as it seems that Playwright may start running assertions before page data has fully caught up
@@ -26,7 +26,7 @@ testOrders("should show correct comparison when quantities match ordered amounts
 	await page.getByText("Ordered").nth(1).click();
 
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 
 	const table = page.getByRole("table");
@@ -111,11 +111,11 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 	await expect(secondRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
 
-testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, supplierOrders }) => {
+testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, books, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 
 	// Add some scanned books
@@ -127,12 +127,20 @@ testOrders("should show over-delivery when scanned quantities are more than orde
 
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
-	await expect(firstRow.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }).first()).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn }).first()).toBeVisible();
 
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn }).first()).toBeVisible();
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn }).first()).toBeVisible();
+
+	await isbnInput.fill(books[0].isbn);
 	await page.keyboard.press("Enter");
 
-	await expect(firstRow.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }).first()).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: books[0].isbn }).first()).toBeVisible();
 
 	await page.getByRole("button", { name: "Compare" }).nth(1).click();
 
@@ -141,7 +149,7 @@ testOrders("should show over-delivery when scanned quantities are more than orde
 	supplierNameRow.getByRole("cell", { name: supplierOrders[0].lines[0].supplier_name });
 
 	// Verify comparison shows over-delivery
-	await expect(page.getByText("2 / 2")).toBeVisible();
+	await expect(page.getByText(`3 / 2`)).toBeVisible();
 });
 
 testOrders(
@@ -152,9 +160,11 @@ testOrders(
 
 		await page.getByText("Ordered").nth(1).click();
 
+		const items = await page.getByRole("checkbox").all();
+		const beforeLast = items[items.length - 2];
 		// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-		await page.getByRole("checkbox").nth(2).click();
-		await page.getByRole("checkbox").nth(3).click();
+		await beforeLast.click();
+		await page.getByRole("checkbox").last().click();
 
 		await page.getByText("Reconcile").first().click();
 
@@ -206,7 +216,7 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 	await page.getByText("Ordered").nth(1).click();
 
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 
 	await page.getByText("Reconcile").first().click();
 
@@ -251,12 +261,13 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 });
 
 testOrders("should show correct delivery stats in commit view", async ({ page, books, supplierOrders }) => {
+	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	await page.getByText("Ordered").nth(1).click();
 
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
 
@@ -264,7 +275,7 @@ testOrders("should show correct delivery stats in commit view", async ({ page, b
 	const table = page.getByRole("table");
 	const firstRow = table.getByRole("row").nth(1);
 
-	firstRow.getByRole("cell", { name: supplierOrders[0].lines[0].isbn });
+	firstRow.getByRole("cell", { name: books[0].isbn });
 
 	await isbnInput.fill(books[1].isbn);
 	await page.keyboard.press("Enter");
@@ -300,9 +311,11 @@ testOrders("should be able to select multiple supplier orders to reconcile at on
 
 	await page.getByText("Ordered").nth(1).click();
 
+	const items = await page.getByRole("checkbox").all();
+	const beforeLast = items[items.length - 2];
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
-	await page.getByRole("checkbox").nth(2).click();
+	await page.getByRole("checkbox").last().click();
+	await beforeLast.click();
 
 	await page.getByText("Reconcile").first().click();
 
@@ -354,7 +367,7 @@ testOrders("should be able to continue reconciliation", async ({ page, books, su
 	await page.getByText("Ordered").nth(1).click();
 
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 
 	// Scan some books
@@ -405,7 +418,7 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	await page.getByText("Ordered").nth(1).click();
 
 	// NOTE: supplier orders are sorted by 'created' in descending order: order 1 = last one in the list (idk why the 1 offset for the whole lies)
-	await page.getByRole("checkbox").nth(3).click();
+	await page.getByRole("checkbox").last().click();
 	await page.getByText("Reconcile").first().click();
 
 	// scan ordered book
@@ -522,6 +535,7 @@ testOrders("should handle multiple quantity adjustments", async ({ page, supplie
 });
 
 testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
+	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
@@ -541,7 +555,7 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Initial total
-	await expect(page.getByText(`2 / ${supplierOrders[0].lines.length}`)).toBeVisible();
+	await expect(page.getByText(`2 / 3`)).toBeVisible();
 
 	await page.getByRole("button", { name: "Populate" }).first().click();
 
@@ -559,7 +573,7 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Verify updated total
-	await expect(page.getByText(`3 / ${supplierOrders[0].lines.length}`)).toBeVisible();
+	await expect(page.getByText(`3 / 3`)).toBeVisible();
 });
 
 testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, books, supplierOrders }) => {
