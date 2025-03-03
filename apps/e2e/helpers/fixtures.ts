@@ -9,7 +9,7 @@ import { baseURL } from "@/integration/constants";
 
 import {
 	addBooksToCustomer,
-	addOrderLinesToReconciliationOrder,
+	upsertReconciliationOrderLines,
 	associatePublisher,
 	createReconciliationOrder,
 	createSupplierOrder,
@@ -241,7 +241,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 		await dbHandle.evaluate(createReconciliationOrder, { id: 1, supplierOrderIds: [1] });
 
-		await dbHandle.evaluate(addOrderLinesToReconciliationOrder, { id: 1, newLines: [supplierOrderLine] });
+		await dbHandle.evaluate(upsertReconciliationOrderLines, { id: 1, newLines: [supplierOrderLine] });
 		await dbHandle.evaluate(finalizeReconciliationOrder, 1);
 
 		await use(customerOrderLines);

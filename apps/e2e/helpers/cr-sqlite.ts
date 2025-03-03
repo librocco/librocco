@@ -1,7 +1,8 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
+
 import { Page } from "@playwright/test";
 
-import { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
+import { Customer, Supplier, PossibleSupplierOrderLine, DBCustomerOrderLine } from "./types";
 
 import { BookData } from "@librocco/shared";
 
@@ -201,9 +202,24 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 }
 
 /**
- * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:addOrderLinesToReconciliationOrder
+ * E2E test helper for upserting order lines to a reconciliation order.
+ * References the original upsertReconciliationOrderLines function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:upsertReconciliationOrderLines
  */
-export async function addOrderLinesToReconciliationOrder(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
+export async function upsertReconciliationOrderLines(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
 	const { id, newLines } = params;
-	await window.reconciliation.addOrderLinesToReconciliationOrder(db, id, newLines);
+	await window.reconciliation.upsertReconciliationOrderLines(db, id, newLines);
 }
+
+export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
+	const result = await db.execO<DBCustomerOrderLine>(
+		`SELECT
+			id, customer_id, created, placed, received, collected,
+			col.isbn
+			FROM customer_order_lines col
+		WHERE customer_id = $customerId
+		ORDER BY col.isbn ASC;`,
+		[customerId]
+	);
+	return result;
+};
