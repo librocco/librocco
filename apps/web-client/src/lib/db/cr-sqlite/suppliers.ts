@@ -83,7 +83,6 @@ export async function getSupplierDetails(db: DB, id: number): Promise<SupplierEx
  * @param db - The database instance to query
  * @param supplier - The supplier data to upsert
  * @throws {Error} If supplier.id is not provided
- * @see apps/e2e/helpers/cr-sqlite.ts:upsertSupplier when you make changes
  */
 export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
@@ -115,7 +114,6 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
- * @see apps/e2e/helpers/cr-sqlite.ts:associatePublisher when you make any changes
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
 	const stmt = await db.prepare(
@@ -377,9 +375,7 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * @param supplierId - The id of the supplier to create the order for
  * @param orderLines - The order lines to create supplier orders from
  * @returns Promise<void>
- * @todo Rewrite this function to accommodate for removing quantity in
- * @see apps/e2e/cr-sqlite.ts:createSupplierOrder when you make changes
-customerOrderLine
+ * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
 export async function createSupplierOrder(
 	db: DB,
@@ -431,12 +427,16 @@ export async function createSupplierOrder(
 
 			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
 
-			// Create customer order line - supplier order relations - keeping track of all times a customer order line was ordered from the supplier
 			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, id]);
-			await db.exec(
-				`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
-				values.flat()
-			);
+
+			// NOTE: In most cases there WILL be customer orders corresponding to the supplier order lines, however, we're allowing to create a number of supplier
+			// order lines unrelated to existing customer orders - we utilise this to simplify tests, so it's important to check to not end up with an incomplete SQL statement
+			if (values.length) {
+				await db.exec(
+					`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+					values.flat()
+				);
+			}
 		}
 	});
 }
