@@ -180,7 +180,7 @@ testOrders(
 		});
 
 		// Navigate to supplier's orders view
-		await page.goto(`${baseURL}orders/suppliers/${supplier.id}`);
+		await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
 
 		// Get the table rows for both orders
 		const table = page.getByRole("table").nth(2);
@@ -250,7 +250,7 @@ testOrders(
 			supplierOrderIds: [1]
 		});
 
-		await page.goto(`${baseURL}orders/suppliers/${supplier.id}`);
+		await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
 
 		// Select the two non-reconciled orders
 		const table = page.getByRole("table").nth(2);
