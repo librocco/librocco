@@ -15,7 +15,6 @@
 	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
 	import { createCustomerOrderSchema } from "$lib/forms";
 
-	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
 	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
@@ -52,9 +51,7 @@
 	$: hasReconcilingOrders = data.reconcilingOrders.length;
 	$: hasPlacedOrders = data.placedOrders.length;
 
-	function setFilter(status: SupplierOrderFilterStatus) {
-		supplierOrderFilterStatus.set(status);
-	}
+	let orderStatusFilter: "unordered" | "ordered" | "reconciling" = "unordered";
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
 		/**@TODO replace randomId with incremented id */
@@ -97,25 +94,25 @@
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
 				<button
-					class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("unordered")}
-					aria-pressed={$supplierOrderFilterStatus === "unordered"}
+					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "unordered")}
+					aria-pressed={orderStatusFilter === "unordered"}
 				>
 					Unordered
 				</button>
 				<button
-					class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("ordered")}
-					aria-pressed={$supplierOrderFilterStatus === "ordered"}
+					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "ordered")}
+					aria-pressed={orderStatusFilter === "ordered"}
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
 				>
 					Ordered
 				</button>
 				<button
-					class="btn-sm btn {$supplierOrderFilterStatus === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-					on:click={() => setFilter("reconciling")}
-					aria-pressed={$supplierOrderFilterStatus === "reconciling"}
+					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "reconciling")}
+					aria-pressed={orderStatusFilter === "reconciling"}
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
 				>
@@ -124,7 +121,7 @@
 				<button class="btn-outline btn-sm btn" disabled> Completed </button>
 			</div>
 
-			{#if $supplierOrderFilterStatus === "unordered"}
+			{#if orderStatusFilter === "unordered"}
 				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 						<p class="text-center text-base-content/70">
@@ -138,7 +135,7 @@
 				{:else}
 					<UnorderedTable orders={data.possibleOrders} />
 				{/if}
-			{:else if $supplierOrderFilterStatus === "ordered"}
+			{:else if orderStatusFilter === "ordered"}
 				<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
 			{:else}
 				<ReconcilingTable orders={data.reconcilingOrders} />
