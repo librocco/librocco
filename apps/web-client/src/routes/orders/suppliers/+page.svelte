@@ -1,169 +1,110 @@
 <script lang="ts">
-	import { Plus } from "lucide-svelte";
+	import { onMount, onDestroy } from "svelte";
 	import { createDialog } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { goto } from "$lib/utils/navigation";
-	import { base } from "$app/paths";
+	import { racefreeGoto } from "$lib/utils/navigation";
+	import { invalidate } from "$app/navigation";
 
-	import type { LayoutData } from "./$types";
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import type { PageData } from "./$types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
-	import CustomerOrderMetaForm from "$lib/forms/CustomerOrderMetaForm.svelte";
-	import { createCustomerOrderSchema } from "$lib/forms";
+	import { supplierSchema } from "$lib/forms";
 
-	import { supplierOrderFilterStatus, type SupplierOrderFilterStatus } from "$lib/stores/supplier-order-filters";
-	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
-	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
-	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import { upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { SupplierTable } from "$lib/components";
+	import { writable } from "svelte/store";
+	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
+	import type { Supplier } from "$lib/db/cr-sqlite/types";
+	import { base } from "$app/paths";
+	import { Plus } from "lucide-svelte";
+	import { appPath } from "$lib/paths";
 
-	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
-	import { associatePublisher, createSupplierOrder, getPossibleSupplierOrderLines, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
-	import { addBooksToCustomer, getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	export let data: PageData;
 
-	export let data: LayoutData;
+	// #region reactivity
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		// Reload when note
+		// Reload when entries (book/custom item) change
+		disposer = rx.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:list"));
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
 
-	let publisherSupplierCreated = false;
+	$: suppliers = data?.suppliers;
 
-	const newOrderDialog = createDialog(defaultDialogConfig);
+	// #region table
+	const suppliersStore = writable(suppliers);
+	$: suppliersStore.set(suppliers);
+	// #endregion table
+
+	const dialog = createDialog(defaultDialogConfig);
 	const {
-		states: { open: newOrderDialogOpen }
-	} = newOrderDialog;
+		states: { open: dialogOpen }
+	} = dialog;
 
-	$: hasReconcilingOrders = data.reconcilingOrders.length;
-	$: hasPlacedOrders = data.placedOrders.length;
-
-	function setFilter(status: SupplierOrderFilterStatus) {
-		supplierOrderFilterStatus.set(status);
-	}
-
-	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
-		const id = await createReconciliationOrder(db, event.detail.supplierOrderIds);
-		goto(`${base}/orders/suppliers/reconcile/${id}`);
-	}
-
-	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
+	const createSupplier = async (supplier: Omit<Supplier, "id">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
-
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
-		const displayId = await getCustomerDisplayIdSeq(db).then(String);
 
-		await upsertCustomer(db, { ...customer, id, displayId });
+		await upsertSupplier(db, { ...supplier, id });
 
-		newOrderDialogOpen.set(false);
+		dialogOpen.set(false);
 
-		await goto(`${base}/orders/customers/${id}`);
+		await goto(`${base}/orders/suppliers/${id}`);
 	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
-
-	<button
-		class="bg-white"
-		disabled={publisherSupplierCreated}
-		aria-label="CreateReconciliationOrder"
-		on:click={async () => {
-			await upsertBook(db, {
-				isbn: "123456789",
-				title: "Book 1",
-				authors: "Author 1",
-				price: 10,
-				publisher: "abcPub"
-			});
-
-			await upsertCustomer(db, { id: 1, displayId: "1", email: "cus@tom.er", fullname: "cus tomer", deposit: 100 });
-			await addBooksToCustomer(db, 1, ["123456789"]);
-			await upsertSupplier(db, { id: 123, name: "abcSup" });
-			await associatePublisher(db, 123, "abcPub");
-
-			const possibleLines = await getPossibleSupplierOrderLines(db, 123);
-
-			await createSupplierOrder(db, possibleLines);
-
-			publisherSupplierCreated = true;
-		}}>Create publisher/supplier</button
-	>
 </header>
 
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
+			<h1 class="prose mt-2 text-2xl font-bold">Suppliers</h1>
+			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
+				New supplier
+				<Plus size={20} />
+			</button>
 		</div>
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
-						No supplier orders available. Create a customer order first to generate supplier orders.
-					</p>
-					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-						<Plus size={20} />
-						New Customer Order
-					</button>
+			<SupplierTable data={suppliersStore}>
+				<div class="flex gap-x-2" slot="row-actions" let:row>
+					<button class="btn-outline btn-sm btn">Delete</button>
+					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">Edit</a>
 				</div>
-			{:else}
-				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("unordered")}
-						aria-pressed={$supplierOrderFilterStatus === "unordered"}
-					>
-						Unordered
-					</button>
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("ordered")}
-						aria-pressed={$supplierOrderFilterStatus === "ordered"}
-						disabled={!hasPlacedOrders}
-						data-testid="ordered-list"
-					>
-						Ordered
-					</button>
-					<button
-						class="btn-sm btn {$supplierOrderFilterStatus === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-						on:click={() => setFilter("reconciling")}
-						aria-pressed={$supplierOrderFilterStatus === "reconciling"}
-						disabled={!hasReconcilingOrders}
-						data-testid="reconciling-list"
-					>
-						Reconciling
-					</button>
-					<button class="btn-outline btn-sm btn" disabled> Completed </button>
-				</div>
-				{#if $supplierOrderFilterStatus === "unordered"}
-					<UnorderedTable orders={data.possibleOrders} />
-				{:else if $supplierOrderFilterStatus === "ordered"}
-					<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
-				{:else}
-					<ReconcilingTable orders={data.reconcilingOrders} />
-				{/if}
-			{/if}
+			</SupplierTable>
 		</div>
 	</div>
 </main>
 
-<PageCenterDialog dialog={newOrderDialog} title="" description="">
-	<CustomerOrderMetaForm
-		heading="Create new order"
+<PageCenterDialog {dialog} title="" description="">
+	<SupplierMetaForm
+		heading="Create new supplier"
 		saveLabel="Create"
-		kind="create"
-		data={defaults(zod(createCustomerOrderSchema("create")))}
+		data={defaults(zod(supplierSchema))}
 		options={{
 			SPA: true,
-			validators: zod(createCustomerOrderSchema("create")),
+			validators: zod(supplierSchema),
 			onUpdate: ({ form }) => {
 				if (form.valid) {
-					createCustomer(form.data);
+					createSupplier(form.data);
 				}
 			}
 		}}
-		onCancel={() => newOrderDialogOpen.set(false)}
+		onCancel={() => dialogOpen.set(false)}
 	/>
 </PageCenterDialog>

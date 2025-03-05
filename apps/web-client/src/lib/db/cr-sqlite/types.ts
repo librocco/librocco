@@ -11,16 +11,44 @@ import type { BookData } from "@librocco/shared";
 type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
 
 /* Customer orders/books */
+export type DBCustomer = {
+	id: number;
+	fullname?: string;
+	email?: string;
+	displayId: string;
+	deposit?: number;
+	updated_at?: number;
+
+	// NOTE: I've found the following properties in this type, but they don't exist in the DB schame atm
+	// TODO: Check
+	// phone?: string;
+	// taxId?: string;
+};
+
 export type Customer = {
 	id: number;
 	fullname?: string;
 	email?: string;
-	phone?: string;
-	taxId?: string;
 	displayId: string;
 	deposit?: number;
 	updatedAt?: Date;
+
+	// NOTE: I've found the following properties in this type, but they don't exist in the DB schame atm
+	// TODO: Check
+	// phone?: string;
+	// taxId?: string;
 };
+
+/** DB entry retrieved for customer order */
+export type DBCustomerOrderListItem = DBCustomer & { status: OrderLineStatus };
+export type CustomerOrderListItem = Customer & { completed: boolean };
+
+export enum OrderLineStatus {
+	Draft,
+	Placed,
+	Received,
+	Collected
+}
 
 export type DBCustomerOrderLine = {
 	// A customer order line as it is stored in the database
@@ -31,6 +59,7 @@ export type DBCustomerOrderLine = {
 	placed?: number; // as milliseconds since epoch
 	received?: number; // as milliseconds since epoch
 	collected?: number; // as milliseconds since epoch
+	status: OrderLineStatus;
 };
 
 export type CustomerOrderLine = {
@@ -41,7 +70,18 @@ export type CustomerOrderLine = {
 	placed?: Date; // Last date when the book order was placed to the supplier
 	received?: Date; // Date when the book order was received from the supplier
 	collected?: Date; // Date when the book order was collected by the customer
+	status: OrderLineStatus;
 } & BookDataCols;
+
+export type CustomerOrderLineHistoryDB = {
+	supplierOrderId: number;
+	placed: number;
+};
+
+export type CustomerOrderLineHistory = {
+	supplierOrderId: number;
+	placed: Date;
+};
 
 /* Suppliers */
 
@@ -53,6 +93,10 @@ export type Supplier = {
 	name?: string;
 	email?: string;
 	address?: string;
+};
+
+export type SupplierExtended = Supplier & {
+	numPublishers: number;
 };
 
 /**
@@ -109,8 +153,8 @@ export type DBReconciliationOrder = {
 	supplier_order_ids: string;
 	created: number;
 	id?: number;
-	finalized: boolean;
-	updatedAt: Date;
+	finalized: number;
+	updatedAt: number;
 };
 
 /**
@@ -119,7 +163,7 @@ export type DBReconciliationOrder = {
  */
 export type ReconciliationOrder = {
 	supplierOrderIds: number[];
-	created: number;
+	created: Date;
 	id?: number;
 	finalized: boolean;
 	updatedAt: Date;

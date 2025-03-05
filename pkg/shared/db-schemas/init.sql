@@ -93,6 +93,14 @@ CREATE TABLE reconciliation_order_lines (
 );
 SELECT crsql_as_crr('reconciliation_order_lines');
 
+CREATE TABLE customer_order_line_supplier_order (
+	customer_order_line_id INTEGER NOT NULL,
+	supplier_order_id INTEGER NOT NULL,
+	placed INTEGER DEFAULT 0,
+	PRIMARY KEY (customer_order_line_id, supplier_order_id)
+);
+SELECT crsql_as_crr('customer_order_line_supplier_order');
+
 CREATE TABLE warehouse (
 	-- 0 id is reserved -- when warehouse id is unassigned (in a book txn for ex.) we're defaulting to 0
 	-- using 0 instead of NULL as 0 = 0 and NULL != NULL

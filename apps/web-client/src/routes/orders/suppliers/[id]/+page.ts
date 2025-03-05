@@ -1,29 +1,50 @@
 import { redirect } from "@sveltejs/kit";
 
-import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
+import type { PlacedSupplierOrder, Supplier } from "$lib/db/cr-sqlite/types";
 
-import { getPossibleSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
 
-import { base } from "$app/paths";
+import { appPath } from "$lib/paths";
+import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ parent, params }) => {
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	depends("supplier:data");
+	depends("supplier:orders");
+
 	const { dbCtx } = await parent();
 
 	// We're not in browser, no need for further processing
 	if (!dbCtx) {
-		return { orderLines: [] as PossibleSupplierOrderLine[] };
+		return {
+			supplier: {} as Supplier,
+			assignedPublishers: [] as string[],
+			unassignedPublishers: [] as string[],
+			orders: [] as PlacedSupplierOrder[]
+		};
 	}
 
-	const orderLines = await getPossibleSupplierOrderLines(dbCtx.db, parseInt(params.id));
+	const id = Number(params.id);
 
-	// TODO: when we update the routing, this will move to something like `/suppliers/[id]/new-order`
-	// so if there are no possible order lines, we should redirect to `/suppliers/[id]`
-	if (!orderLines.length) {
-		redirect(303, `${base}/orders/suppliers`);
+	const supplier = await getSupplierDetails(dbCtx.db, id);
+	if (!supplier) {
+		console.warn(`supplier with id '${params.id}' not found. redirecting to supplier list page...`);
+		throw redirect(307, appPath("suppliers"));
 	}
 
-	return { orderLines };
+	const [assignedPublishers, allPublishers] = await Promise.all([getPublishersFor(dbCtx.db, id), getPublisherList(dbCtx.db)]);
+
+	// NOTE: the list of unassigned publishers will contain all publishers not assigned to the supplier
+	// TODO: check if this is the desired behavior, or if we should only list publishers that are not assigned to any supplier
+	const unassignedPublishers = allPublishers.filter((p) => !assignedPublishers.includes(p));
+
+	const unreconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: false })).map(
+		(order) => ({ ...order, reconciled: false })
+	);
+	const reconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: true })).map((order) => ({
+		...order,
+		reconciled: true
+	}));
+
+	return { supplier, assignedPublishers, unassignedPublishers, orders: [...unreconciledOrders, ...reconciledOrders] };
 };
-
-export const ssr = false;

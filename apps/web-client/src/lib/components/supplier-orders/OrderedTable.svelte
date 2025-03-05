@@ -5,7 +5,7 @@
 	import { base } from "$app/paths";
 	import { createEventDispatcher } from "svelte";
 
-	export let orders: Array<PlacedSupplierOrder>;
+	export let orders: Array<PlacedSupplierOrder & { reconciled?: boolean }>;
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
@@ -27,7 +27,7 @@
 		// goto(`${base}/orders/suppliers/reconcile?ids=${supplierId}`);
 	}
 	function handleView(supplierOrderId: number) {
-		goto(`${base}/orders/suppliers/order/${supplierOrderId}`);
+		goto(`${base}/orders/suppliers/orders/${supplierOrderId}`);
 	}
 </script>
 
@@ -67,10 +67,16 @@
 					</td>
 				</tr>
 			{/if}
-			{#each orders as { supplier_name, total_book_number, created, id }}
+			{#each orders as { supplier_name, total_book_number, created, id, reconciled = false }}
 				<tr class="hover focus-within:bg-base-200">
 					<td>
-						<input type="checkbox" class="checkbox" checked={selectedOrders.includes(id)} on:change={() => toggleOrderSelection(id)} />
+						<input
+							disabled={reconciled}
+							type="checkbox"
+							class="checkbox"
+							checked={selectedOrders.includes(id)}
+							on:change={() => toggleOrderSelection(id)}
+						/>
 					</td>
 					<td>{supplier_name}</td>
 					<td>{total_book_number}</td>
@@ -82,7 +88,7 @@
 					<td class="flex items-center justify-evenly text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
 						{#if !hasSelectedOrders}
-							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
+							<button disabled={reconciled} class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
 								<ListTodo aria-hidden focusable="false" size={20} />
 								Reconcile
 							</button>

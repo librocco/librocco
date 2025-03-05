@@ -1,52 +1,65 @@
 import type { DB } from "@vlcn.io/crsqlite-wasm";
 
-// #region books
+import { Page } from "@playwright/test";
 
-export type BookData = {
-	isbn: string;
-	title?: string;
-	price?: number;
-	year?: string;
-	authors?: string;
-	publisher?: string;
-	editedBy?: string;
-	outOfPrint?: boolean;
-	category?: string;
-};
+import { Customer, Supplier, PossibleSupplierOrderLine, DBCustomerOrderLine } from "./types";
 
-export async function upsertBook(db: DB, book: BookData) {
-	await db.exec(
-		`INSERT INTO book (isbn, title, authors, publisher, price, year, edited_by, out_of_print, category)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(isbn) DO UPDATE SET
-            title = COALESCE(?, title),
-            authors = COALESCE(?, authors),
-            publisher = COALESCE(?, publisher),
-            price = COALESCE(?, price),
-            year = COALESCE(?, year),
-            edited_by = COALESCE(?, edited_by),
-            out_of_print = COALESCE(?, out_of_print),
-            category = COALESCE(?, category);`,
-		[
-			book.isbn,
-			book.title,
-			book.authors,
-			book.publisher,
-			book.price,
-			book.year,
-			book.editedBy,
-			Number(book.outOfPrint),
-			book.category,
-			book.title,
-			book.authors,
-			book.publisher,
-			book.price,
-			book.year,
-			book.editedBy,
-			Number(book.outOfPrint),
-			book.category
-		]
-	);
+import { BookData } from "@librocco/shared";
+
+// Extend the window object with the db
+declare global {
+	interface Window {
+		_db: DB;
+		db_ready: boolean;
+
+		books: Record<string, any>;
+		customers: Record<string, any>;
+		note: Record<string, any>;
+		reconciliation: Record<string, any>;
+		suppliers: Record<string, any>;
+		warehouse: Record<string, any>;
+	}
+}
+
+/**
+ * Returns the database handle from the db interface registered in the window object
+ * of the app. We can run `hadle.evaluate` to run queries/mutations against the database.
+ * @example
+ * ```ts
+ * const dbHandle = await getDbHandle(page);
+ *
+ * // Use the handle to create a warehouse in the db
+ * await dbHandle.evaluate(async (db) => {
+ *   await db.warehouse("foo-wh").create()
+ * })
+ * ```
+ */
+export function getDbHandle(page: Page) {
+	return page.evaluateHandle(async () => {
+		const w = window as { [key: string]: any };
+
+		// Wait for the db to become initialised
+		await new Promise<void>((res) => {
+			if (w["db_ready"]) {
+				return res();
+			} else {
+				// Creating a separate function, as we want to run the listener only once and then remove it
+				const finalise = () => {
+					window.removeEventListener("db_ready", finalise), res();
+				};
+				window.addEventListener("db_ready", finalise);
+			}
+		});
+
+		return w["_db"] as DB;
+	});
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/books.ts:upsertBook
+ */
+export async function upsertBook(db: DB, book: BookData): Promise<void> {
+	await window.books.upsertBook(db, book);
 }
 
 // #region warehouse
@@ -57,77 +70,39 @@ export type Warehouse = {
 	discount?: number | null;
 };
 
-export function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
-	if (!data.id) {
-		throw new Error("Warehouse must have an id");
-	}
-
-	return db.tx(async (txDb) => {
-		const { id, displayName = null, discount = null } = data;
-
-		const query = `
-        INSERT INTO warehouse (id, display_name, discount)
-        VALUES (?, ?, ?)
-        ON CONFLICT(id) DO UPDATE SET
-            display_name = COALESCE(?, display_name),
-            discount = COALESCE(?, discount);
-    `;
-		await txDb.exec(query, [id, displayName, discount, displayName, discount]);
-	});
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/warehouse.ts:upsertWarehouse
+ */
+export async function upsertWarehouse(db: DB, data: Warehouse): Promise<void> {
+	await window.warehouse.upsertWarehouse(db, data);
 }
 
 // #region notes
 
-export function createInboundNote(db: DB, params: { id: number; warehouseId: number; displayName?: string }): Promise<void> {
-	const { warehouseId, id: noteId, displayName = "New Note" } = params;
-
-	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, warehouse_id, updated_at) VALUES (?, ?, ?, ?)";
-
-	return db.exec(stmt, [noteId, displayName, warehouseId, timestamp]);
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createInboundNote
+ */
+export async function createInboundNote(db: DB, params: { id: number; warehouseId: number; displayName?: string }): Promise<void> {
+	const { warehouseId, id: noteId, displayName } = params;
+	await window.note.createInboundNote(db, warehouseId, noteId);
+	if (displayName) await window.note.updateNote(db, noteId, { displayName });
 }
 
-export function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
-	const { id: noteId, displayName = "New Note" } = params;
-
-	const timestamp = Date.now();
-	const stmt = "INSERT INTO note (id, display_name, updated_at) VALUES (?, ?, ?)";
-
-	return db.exec(stmt, [noteId, displayName, timestamp]);
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:createOutboundNote
+ */
+export async function createOutboundNote(db: DB, params: { id: number; displayName?: string }): Promise<void> {
+	const { id, displayName } = params;
+	await window.note.createOutboundNote(db, id);
+	if (displayName) await window.note.updateNote(db, id, { displayName });
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:updateNote
+ */
 export async function updateNote(db: DB, payload: { id: number; displayName?: string; defaultWarehouse?: number }): Promise<void> {
-	const { id, displayName, defaultWarehouse } = payload;
-
-	const updateFields = [];
-	const updateValues: (string | number)[] = [];
-
-	if (displayName !== undefined) {
-		updateFields.push("display_name = ?");
-		updateValues.push(displayName);
-	}
-
-	if (defaultWarehouse !== undefined) {
-		updateFields.push("default_warehouse = ?");
-		updateValues.push(defaultWarehouse);
-	}
-
-	if (updateFields.length === 0) {
-		return;
-	}
-
-	updateFields.push("updated_at = ?");
-	updateValues.push(Date.now());
-
-	const updateQuery = `
-		UPDATE note
-		SET ${updateFields.join(", ")}
-		WHERE id = ?
-	`;
-
-	updateValues.push(id);
-
-	return db.exec(updateQuery, updateValues);
+	const { id, ...rest } = payload;
+	await window.note.updateNote(db, id, rest);
 }
 
 // #region note-txns
@@ -138,55 +113,113 @@ type VolumeStock = {
 	warehouseId?: number;
 };
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:addVolumesToNote
+ */
 export async function addVolumesToNote(db: DB, params: readonly [noteId: number, volume: VolumeStock]): Promise<void> {
-	const [noteId, volume] = params;
-
-	const { isbn, quantity, warehouseId } = volume;
-
-	const timestamp = Date.now();
-
-	const keys = ["note_id", "isbn", "quantity", "updated_at"];
-	const values = [noteId, isbn, quantity, timestamp];
-
-	if (warehouseId) {
-		keys.push("warehouse_id");
-		values.push(warehouseId);
-	}
-
-	const insertOrUpdateTxnQuery = `
-		INSERT INTO book_transaction (${keys.join(", ")})
-		VALUES (${keys.map(() => "?").join(", ")})
-		ON CONFLICT(isbn, note_id, warehouse_id) DO UPDATE SET
-			quantity = book_transaction.quantity + excluded.quantity,
-			updated_at = excluded.updated_at
-	`;
-
-	await db.tx(async (txDb) => {
-		await txDb.exec(insertOrUpdateTxnQuery, values);
-		await txDb.exec(`UPDATE note SET updated_at = ? WHERE id = ?`, [timestamp, noteId]);
-	});
+	const [id, volume] = params;
+	await window.note.addVolumesToNote(db, id, volume);
 }
 
 export type NoteCustomItem = { id: number; title: string; price: number };
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:upsertNoteCustomItem
+ */
 export async function upsertNoteCustomItem(db: DB, params: readonly [noteId: number, item: NoteCustomItem]): Promise<void> {
 	const [noteId, item] = params;
-	const { id, title, price } = item;
-
-	const timestamp = Date.now();
-
-	const query = `
-		INSERT INTO custom_item(id, note_id, title, price, updated_at)
-		VALUES(?, ?, ?, ?, ?)
-		ON CONFLICT(id, note_id) DO UPDATE SET
-			title = excluded.title,
-			price = excluded.price,
-			updated_at = excluded.updated_at
-	`;
-
-	await db.exec(query, [id, noteId, title, price, timestamp]);
+	await window.note.upsertNoteCustomItem(db, noteId, item);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/note.ts:commitNote
+ */
 export async function commitNote(db: DB, id: number): Promise<void> {
-	return db.exec("UPDATE note SET committed = 1, committed_at = ? WHERE id = ?", [Date.now(), id]);
+	// Force is used precisely for test setups, and we don't want additional checks when doing test setup
+	await window.note.commitNote(db, id, { force: true });
 }
+
+// #region customerOrders
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:upsertCustomer
+ */
+export async function upsertCustomer(db: DB, customer: Customer) {
+	await window.customers.upsertCustomer(db, customer);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/customers.ts:addBooksToCustomer
+ */
+export const addBooksToCustomer = async (db: DB, params: { customerId: number; bookIsbns: string[] }): Promise<void> => {
+	const { customerId, bookIsbns } = params;
+	await window.customers.addBooksToCustomer(db, customerId, bookIsbns);
+};
+
+// # region suppliers
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:upsertSupplier
+ */
+export async function upsertSupplier(db: DB, supplier: Supplier): Promise<void> {
+	await window.suppliers.upsertSupplier(db, supplier);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:associatePublisher
+ */
+export async function associatePublisher(db: DB, params: { supplierId: number; publisher: string }): Promise<void> {
+	const { supplierId, publisher } = params;
+	await window.suppliers.associatePublisher(db, supplierId, publisher);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:createSupplierOrder
+ */
+export async function createSupplierOrder(
+	db: DB,
+	params: { id: number; supplierId: number; orderLines: Pick<PossibleSupplierOrderLine, "isbn" | "supplier_id" | "quantity">[] }
+): Promise<void> {
+	const { id, supplierId, orderLines } = params;
+	await window.suppliers.createSupplierOrder(db, id, supplierId, orderLines);
+}
+
+// #region reconciliation
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:createReconciliationOrder
+ */
+export async function createReconciliationOrder(db: DB, params: { id: number; supplierOrderIds: number[] }): Promise<void> {
+	const { id, supplierOrderIds } = params;
+	return await window.reconciliation.createReconciliationOrder(db, id, supplierOrderIds);
+}
+
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:finalizeReconciliationOrder
+ */
+export async function finalizeReconciliationOrder(db: DB, id: number) {
+	await window.reconciliation.finalizeReconciliationOrder(db, id);
+}
+
+/**
+ * E2E test helper for upserting order lines to a reconciliation order.
+ * References the original upsertReconciliationOrderLines function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:upsertReconciliationOrderLines
+ */
+export async function upsertReconciliationOrderLines(db: DB, params: { id: number; newLines: { isbn: string; quantity: number }[] }) {
+	const { id, newLines } = params;
+	await window.reconciliation.upsertReconciliationOrderLines(db, id, newLines);
+}
+
+export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
+	const result = await db.execO<DBCustomerOrderLine>(
+		`SELECT
+			id, customer_id, created, placed, received, collected,
+			col.isbn
+			FROM customer_order_lines col
+		WHERE customer_id = $customerId
+		ORDER BY col.isbn ASC;`,
+		[customerId]
+	);
+	return result;
+};

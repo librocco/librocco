@@ -11,7 +11,6 @@ const PATHS = {
 	inbound: `${basepath}/inventory/inbound/`,
 	outbound: `${basepath}/outbound/`,
 	settings: `${basepath}/settings/`,
-	customers: `${basepath}/orders/customers/`,
 	"history/date": `${basepath}/history/date/`,
 	"history/isbn": `${basepath}/history/isbn/`,
 	"history/notes/date": `${basepath}/history/notes/`,
@@ -19,8 +18,9 @@ const PATHS = {
 	"history/warehouse": `${basepath}/history/warehouse/`,
 
 	// Order mgmt
-	supplier_orders: `${basepath}/orders/suppliers/`,
-	supplier_order_status: `${basepath}/orders/suppliers/order/`,
+	customers: `${basepath}/orders/customers/`,
+	suppliers: `${basepath}/orders/suppliers/`,
+	supplier_orders: `${basepath}/orders/suppliers/orders/`,
 	reconcile: `${basepath}/orders/suppliers/reconcile/`
 };
 

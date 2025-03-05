@@ -74,3 +74,11 @@ export const createCustomerOrderSchema = (kind: "create" | "update") => {
 		deposit: z.number().default(0)
 	});
 };
+
+export type SupplierSchema = Infer<typeof supplierSchema>;
+export const supplierSchema = z.object({
+	id: z.number(),
+	name: z.string(),
+	email: z.string().optional(),
+	address: z.string().optional()
+});

@@ -1,62 +1,87 @@
 <script lang="ts">
-	import { Truck } from "lucide-svelte";
+	import { onDestroy, onMount } from "svelte";
+	import { Mail, UserCircle, PencilLine, Plus } from "lucide-svelte";
+	import { createDialog } from "@melt-ui/svelte";
+	import { defaults } from "sveltekit-superforms";
+	import { zod } from "sveltekit-superforms/adapters";
 	import { invalidate } from "$app/navigation";
+	import { page } from "$app/stores";
 
-	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
+	import { stripNulls } from "@librocco/shared";
 
-	import { goto } from "$lib/utils/navigation";
-
+	import type { Supplier } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
-	import { base } from "$app/paths";
+
+	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
+
+	import { supplierSchema } from "$lib/forms/schemas";
+	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import { racefreeGoto } from "$lib/utils/navigation";
+	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+	import { appPath } from "$lib/paths";
+	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
 
 	export let data: PageData;
 
-	$: db = data?.dbCtx?.db;
+	// #region reactivity
+	let disposer: () => void;
 
-	$: ({ orderLines } = data);
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
 
-	// Supplier meta data is returned per row. We just need one copy of it
-	$: [orderLine] = orderLines;
-	$: ({
-		supplier_id,
-		supplier_name
-		// last_updated_at // TODO: re-introduce this
-	} = orderLine);
+		// Reload add supplier data dependants when the data changes
+		const disposer1 = rx.onPoint("supplier", BigInt($page.params.id), () => invalidate("supplier:data"));
+		// Changes to supplier orders, supplier publishers
+		const disposer2 = rx.onRange(["supplier_publisher", "supplier_order"], () => invalidate("supplier:orders"));
+		disposer = () => (disposer1(), disposer2());
+	});
 
-	// $: lastUpdatedAtDate = new Date(last_updated_at)
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	// #endregion reactivity
 
-	let selectedBooks = orderLines ?? [];
-	$: selectedIsbns = selectedBooks.map(({ isbn }) => isbn);
-	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
+	$: goto = racefreeGoto(disposer);
 
-	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
-	$: totalBooks = orderLines.length;
+	$: db = data.dbCtx?.db;
 
-	$: canPlaceOrder = selectedBooks.length > 0;
+	$: supplier = data?.supplier;
 
-	async function handlePlaceOrder() {
-		if (!canPlaceOrder) {
-			return;
-		}
+	$: assignedPublishers = data?.assignedPublishers;
+	$: unassignedPublishers = data?.unassignedPublishers;
 
-		const selection = orderLines.filter(({ isbn }) => selectedIsbns.includes(isbn));
+	// #region dialog
+	const dialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: dialogOpen }
+	} = dialog;
+	// #endregion dialog
 
-		await createSupplierOrder(db, selection);
-		await invalidate("suppliers:data");
-		// TODO: We could either go to the new supplier order "placed" view when it's created
-		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
-		await goto(`${base}/orders/suppliers/`);
+	const handleUpdateSupplier = async (_data: Partial<Supplier>) => {
+		const data = { ...stripNulls(supplier), ..._data };
+		await upsertSupplier(db, data);
+		dialogOpen.set(false);
+	};
+
+	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		await createReconciliationOrder(db, id, event.detail.supplierOrderIds);
+		goto(appPath("reconcile", id));
 	}
 
-	function selectPortion(portion: number) {
-		const numToSelect = Math.floor(orderLines.length * portion);
+	const handleAssignPublisher = (publisher: string) => async () => {
+		await associatePublisher(db, supplier.id, publisher);
+	};
 
-		if (portion === 1 && selectedBooks.length === orderLines.length) {
-			selectedBooks = [];
-		} else {
-			selectedBooks = orderLines.slice(0, numToSelect);
-		}
-	}
+	const handleUnassignPublisher = (publisher: string) => async () => {
+		await removePublisherFromSupplier(db, supplier.id, publisher);
+	};
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -66,116 +91,158 @@
 <main class="h-screen">
 	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-			<div class="card">
+			<div class="card h-full">
 				<div class="card-body gap-y-2 p-0">
-					<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
-						<h1 class="prose card-title">{supplier_name}</h1>
+					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
+						<h1 class="prose card-title">Supplier page</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{supplier_id}</h2>
+							<h2 class="prose">#{supplier?.id}</h2>
 						</div>
 					</div>
+
 					<dl class="flex flex-col">
-						<div class="stats md:stats-vertical">
-							<div class="stat md:px-1">
-								<dt class="stat-title">Total books</dt>
-								<dd class="stat-value text-2xl">{totalBooks}</dd>
+						<div class="flex w-full flex-col gap-y-4 py-6">
+							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
+								<div class="max-w-96 flex flex-col gap-y-4">
+									<div class="flex gap-x-3">
+										<dt>
+											<span class="sr-only">Supplier name</span>
+											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+										</dt>
+										<dd class="truncate">{supplier?.name}</dd>
+									</div>
+
+									<div class="flex gap-x-3">
+										<dt>
+											<span class="sr-only">Supplier email</span>
+											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+										</dt>
+										<dd class="truncate">{supplier?.email || ""}</dd>
+									</div>
+
+									<div class="flex gap-x-3">
+										<dt>
+											<span class="sr-only">Supplier address</span>
+											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+										</dt>
+										<dd class="truncate">{supplier?.address || ""}</dd>
+									</div>
+								</div>
 							</div>
-							<div class="stat md:px-1">
-								<dt class="stat-title">Total value</dt>
-								<dd class="stat-value text-2xl">€{totalAmount}</dd>
+
+							<div class="w-full pr-2">
+								<button
+									class="btn-secondary btn-outline btn-xs btn w-full"
+									type="button"
+									aria-label="Edit customer order name, email or deposit"
+									on:click={() => dialogOpen.set(true)}
+								>
+									<PencilLine aria-hidden size={16} />
+								</button>
 							</div>
-							<!-- TODO: re-introduce last_updated_at -->
-							<!-- <div class="stat md:px-1">
-								<dt class="stat-title">Last updated</dt>
-								<dd class="stat-value text-2xl">
-									<time dateTime={lastUpdatedAtDate.toISOString()}>{lastUpdatedAtDate.toLocaleDateString()}</time>
-								</dd>
-							</div> -->
 						</div>
 					</dl>
+
+					<div class="card-actions border-t py-6 md:mb-20">
+						<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
+							Create new order
+							<Plus aria-hidden size={20} />
+						</a>
+					</div>
 				</div>
 			</div>
 		</div>
 
-		<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
-			<div class="prose flex w-full max-w-full flex-col gap-y-3">
-				<h3 class="max-md:divider-start max-md:divider">Books</h3>
-				<div class="flex flex-wrap items-center gap-4">
-					<div class="flex flex-wrap gap-2">
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>Select 1/4</button>
-						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>Select 1/2</button>
-						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>Select 3/4</button>
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>Select All</button>
+		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
+			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
+				<div class="w-full">
+					<h2 class="text-lg">Assigned publishers</h2>
+					<div class="w-full rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-hidden">
+							<thead>
+								<tr>
+									<th scope="col" class="px-2 py-2">Publisher name</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each assignedPublishers as publisher}
+									<tr class="hover focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+												>Remove publisher</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="w-full">
+					<h2 class="text-lg">Unassigned publishers</h2>
+					<div class="w-full rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-hidden">
+							<thead>
+								<tr>
+									<th scope="col" class="px-2 py-2">Publisher name</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each unassignedPublishers as publisher}
+									<tr class="hover focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+												>Add to supplier</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
 
-			<div class="relative h-full overflow-x-auto">
-				<table class="table-pin-rows table pb-20">
-					<thead>
-						<tr>
-							<th class="w-16">
-								<span class="sr-only">Select</span>
-							</th>
-							<th>ISBN</th>
-							<th>Title</th>
-							<th>Authors</th>
-							<th>Quantity</th>
-							<th>Total Price</th>
-						</tr>
-					</thead>
-					<tbody>
-						{#each orderLines as orderLine}
-							{@const { isbn, title, authors, line_price, quantity } = orderLine}
-							<tr>
-								<td>
-									<input
-										type="checkbox"
-										class="checkbox"
-										checked={selectedIsbns.includes(isbn)}
-										on:change={() => {
-											if (selectedIsbns.includes(isbn)) {
-												selectedBooks = selectedBooks.filter((book) => book.isbn !== isbn);
-											} else {
-												selectedBooks = [...selectedBooks, orderLine];
-											}
-										}}
-									/>
-								</td>
-								<th>{isbn}</th>
-								<td>{title}</td>
-								<td>{authors}</td>
-								<td>€{line_price}</td>
-								<td>{quantity}</td>
-							</tr>
-						{/each}
-					</tbody>
-				</table>
-			</div>
-			{#if canPlaceOrder}
-				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
-						<dl class="stats flex">
-							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<div class="stat-title">Selected books:</div>
-								<div class="stat-value text-lg">
-									{selectedBooks.length}
-								</div>
-							</div>
-							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<div class="stat-title sr-only">Total</div>
-								<div class="stat-value text-lg">€{selectedAmout.toFixed(2)}</div>
-							</div>
-						</dl>
-
-						<button class="btn-primary btn" on:click={handlePlaceOrder}>
-							Place Order
-							<Truck aria-hidden size={20} class="hidden md:block" />
-						</button>
-					</div>
+			<div class="h-full overflow-x-auto">
+				<div class="h-full">
+					<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
 				</div>
-			{/if}
+			</div>
 		</div>
 	</div>
 </main>
+
+<PageCenterDialog {dialog} title="" description="">
+	<SupplierMetaForm
+		heading="Update supplier"
+		saveLabel="Save"
+		data={defaults(stripNulls(supplier), zod(supplierSchema))}
+		options={{
+			SPA: true,
+			validators: zod(supplierSchema),
+			onUpdate: ({ form }) => {
+				if (form.valid) {
+					handleUpdateSupplier(form.data);
+				}
+			}
+		}}
+		onCancel={() => dialogOpen.set(false)}
+	/>
+</PageCenterDialog>
+
+<style global>
+	:global(html) {
+		overflow-x: hidden;
+		height: 100%;
+		margin-right: calc(-1 * (100vw - 100%));
+	}
+
+	:global(body) {
+		height: 100%;
+		padding: 0;
+	}
+</style>

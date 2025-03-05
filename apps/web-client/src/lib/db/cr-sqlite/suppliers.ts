@@ -1,4 +1,12 @@
-import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, PlacedSupplierOrder, PlacedSupplierOrderLine } from "./types";
+import type {
+	DB,
+	Supplier,
+	PossibleSupplierOrder,
+	PossibleSupplierOrderLine,
+	PlacedSupplierOrder,
+	PlacedSupplierOrderLine,
+	SupplierExtended
+} from "./types";
 
 /**
  * @fileoverview Supplier order management system
@@ -20,15 +28,53 @@ import type { DB, Supplier, PossibleSupplierOrder, PossibleSupplierOrderLine, Pl
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
+/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
+async function _getSuppliers(db: DB, id?: number) {
+	const conditions = [];
+	const params = [];
+
+	if (id) {
+		conditions.push("supplier.id = ?");
+		params.push(id);
+	}
+
+	const whereClause = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+	const query = `
+		SELECT
+			supplier.id,
+			name,
+			COALESCE(email, 'N/A') as email,
+			COALESCE(address, 'N/A') as address,
+			COUNT(publisher) as numPublishers
+		FROM supplier
+		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		${whereClause}
+		GROUP BY supplier.id
+		ORDER BY supplier.id ASC
+	`;
+
+	return await db.execO<SupplierExtended>(query, params);
+}
+
 /**
- * Retrieves all suppliers from the database. This include their name, email & address.
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
  *
  * @param db - The database instance to query
  * @returns Promise resolving to an array of suppliers with their basic info
  */
-export async function getAllSuppliers(db: DB): Promise<Supplier[]> {
-	const result = await db.execO<Supplier>("SELECT id, name, email, address FROM supplier ORDER BY id ASC;");
-	return result;
+export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	return _getSuppliers(db);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+	const [res] = await _getSuppliers(db, id);
+	return res || undefined;
 }
 
 /**
@@ -42,6 +88,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
 	}
+
 	await db.exec(
 		`INSERT INTO supplier (id, name, email, address)
         VALUES (?, ?, ?, ?)
@@ -49,23 +96,37 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
         	name = COALESCE(?, name),
             email = COALESCE(?, email),
             address = COALESCE(?, address);`,
-		[supplier.id, supplier.name ?? null, supplier.email ?? null, supplier.address ?? null]
+		[
+			supplier.id,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null,
+			supplier.name ?? null,
+			supplier.email ?? null,
+			supplier.address ?? null
+		]
 	);
 }
 
 /**
- * Retrieves all publishers associated with a specific supplier.
+ * Retrieves all publishers associated with a specific supplier ordered alphabetically
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
 export async function getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
-	const result = await db.execA("SELECT publisher FROM supplier_publisher WHERE supplier_id = ?;", [supplierId]);
-	if (result.length > 0) {
-		return result[0];
-	}
-	return [];
+	const stmt = await db.prepare(
+		`SELECT publisher
+		FROM supplier_publisher
+		WHERE supplier_id = ?
+		ORDER BY publisher ASC;`
+	);
+
+	// For some reason `stmt.all` does not accept a type arg. Docs say it should
+	const result = (await stmt.all(null, supplierId)) as unknown as { publisher: string }[];
+
+	return result.map(({ publisher }) => publisher);
 }
 
 /**
@@ -74,19 +135,31 @@ export async function getPublishersFor(db: DB, supplierId: number): Promise<stri
  *
  * @param db - The database instance to query
  * @param supplierId - The id of the supplier to associate to
- * @param publisherId - The id of the publisher to associate
+ * @param publisher - The id of the publisher to associate
  */
-export async function associatePublisher(db: DB, supplierId: number, publisherId: string) {
+export async function associatePublisher(db: DB, supplierId: number, publisher: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
 	await db.exec(
-		`INSERT INTO supplier_publisher (supplier_id, publisher)
-        VALUES (?, ?)
-        ON CONFLICT(publisher) DO UPDATE SET
-        supplier_id = ?;`,
-		[supplierId, publisherId, supplierId]
+		`
+			INSERT INTO supplier_publisher (supplier_id, publisher)
+			VALUES (?, ?)
+			ON CONFLICT(publisher) DO UPDATE SET
+			supplier_id = ?
+		`,
+		[supplierId, publisher, supplierId]
 	);
 }
+
+/** Removes a publisher from the list of publishers for a supplier */
+export async function removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
+	await db.exec("DELETE FROM supplier_publisher WHERE supplier_id = ? AND publisher = ?", [supplierId, publisher]);
+}
+
+/**
+ * A default group for books whose publishers are not associated with a supplier
+ */
+export const DEFAULT_SUPPLIER_NAME = "General";
 
 /**
  * Retrieves summaries of all supplies that have possible orders. This is based on unplaced customer order lines.
@@ -97,6 +170,9 @@ export async function associatePublisher(db: DB, supplierId: number, publisherId
  * [{ supplier_name: "Phantasy Books LTD", supplier_id: 2, total_book_number: 2, total_book_price: 10 },
  * { supplier_name: "Science Books LTD", supplier_id: 1, total_book_number: 2, total_book_price: 20 }]
  *```
+ * There is a fallback category "General" for books that are not explicitly linked to any supplier,
+ * ensuring all unplaced customer orders are accounted for, even if the supplier relationship is missing.
+ *
  * @param db - The database instance to query
  * @returns Promise resolving to an array of supplier order summaries with supplier information
  */
@@ -105,7 +181,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
 		SELECT
             supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
             COUNT(*) as total_book_number,
@@ -114,9 +190,11 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
         RIGHT JOIN book ON sp.publisher = book.publisher
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
-        WHERE col.placed IS NULL
+
+		-- sometimes a book can be received before being placed with the supplier due to overdelivery
+        WHERE col.placed IS NULL AND col.received IS NULL
         GROUP BY supplier.id, supplier.name
-        ORDER BY supplier.name ASC
+        ORDER BY supplier_name ASC
 	`;
 
 	return db.execO<PossibleSupplierOrder>(query);
@@ -135,7 +213,11 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
-	const conditions = ["col.placed is NULL"];
+	const conditions = [
+		"col.placed is NULL",
+		// sometimes a book can be received before being placed with the supplier due to overdelivery
+		"col.received IS NULL"
+	];
 	const params = [];
 
 	if (!supplierId) {
@@ -151,7 +233,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 		SELECT
 			supplier_id,
 			CASE WHEN supplier.id IS NULL
-				THEN 'General'
+				THEN '${DEFAULT_SUPPLIER_NAME}'
 				ELSE supplier.name
 			END as supplier_name,
 			col.isbn,
@@ -173,35 +255,70 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 }
 
 /**
-  * Retrieves all placed supplier orders with:
+  * Retrieves placed supplier orders with:
   * - order id & created timestamp
   * - supplier id & name
   * - a total book count
   *
   * Orders are returned sorted by creation date (newest first).
   *
+  * Optionally, the results can be filtered by supplier id and reconciliation status:
+  * - if `supplierId` is provided, only orders from the specified supplier are returned
+  * - if `reconciled` is specified:
+  *   - `true` returns all orders that are part of a reconciliation order **regerdless of the order being finalized**
+  *   - `false` returns all orders that are not part of a reconciliation order
+  *
   * @param db - The database instance to query
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		`SELECT
+export async function getPlacedSupplierOrders(
+	db: DB,
+	filters?: { supplierId?: number; reconciled?: boolean }
+): Promise<PlacedSupplierOrder[]> {
+	const whereConditions = ["so.created IS NOT NULL"];
+	const params = [];
+
+	if (filters?.supplierId) {
+		whereConditions.push("so.supplier_id = ?");
+		params.push(filters.supplierId);
+	}
+
+	if (filters?.reconciled !== undefined) {
+		const condition = filters.reconciled ? "IS NOT NULL" : "IS NULL";
+		whereConditions.push(`ro.id ${condition}`);
+	}
+
+	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
+
+	const query = `
+		-- reconciliation orders in case we want to filter with respect to orders being reconciled
+		WITH ro AS (
+			SELECT
+				reconciliation_order.id,
+				CAST (value AS INTEGER) as supplier_order_id
+			FROM reconciliation_order
+			CROSS JOIN json_each(supplier_order_ids)
+		)
+
+		SELECT
             so.id,
             so.supplier_id,
             s.name as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
-			SUM(COALESCE(book.price, 0)) as total_book_price
+			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
         FROM supplier_order so
-        JOIN supplier s ON s.id = so.supplier_id
+		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
-        WHERE so.created IS NOT NULL
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
+		${whereClause}
         GROUP BY so.id, so.supplier_id, s.name, so.created
-        ORDER BY so.created DESC;`
-	);
-	return result;
+        ORDER BY so.created DESC
+	`;
+
+	return await db.execO<PlacedSupplierOrder>(query, params);
 }
 
 /**
@@ -254,57 +371,72 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * Creates supplier orders based on provided order lines and updates related customer orders.
  *
  * @param db - The database instance to query
+ * @param id - supplier Order Id
+ * @param supplierId - The id of the supplier to create the order for
  * @param orderLines - The order lines to create supplier orders from
- * @returns Promise resolving to the created supplier orders
- * @todo Rewrite this function to accommodate for removing quantity in
-customerOrderLine
+ * @returns Promise<void>
+ * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
-export async function createSupplierOrder(db: DB, orderLines: PossibleSupplierOrderLine[]) {
+export async function createSupplierOrder(
+	db: DB,
+	id: number,
+	supplierId: number | null,
+	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
+) {
 	/** @TODO Rewrite this function to accomodate for removing quantity in customerOrderLine */
-	// Creates one or more supplier orders with the given order lines. Updates customer order lines to reflect the order.
-	// Returns one or more `SupplierOrder` as they would be returned by `getSupplierOrder`
 
-	const supplierOrderMapping = {};
-	// Collect all supplier ids involved in the order lines
-	const supplierIds = Array.from(new Set(orderLines.map((item) => item.supplier_id)));
+	if (!orderLines.length) {
+		throw new Error("No order lines provided");
+	}
 
-	await db.tx(async (passedDb) => {
-		const db: DB = passedDb as DB;
-		for (const supplierId of supplierIds) {
-			// Create a new supplier order for each supplier
-			const newSupplierOrderId = (
-				await db.execA(
-					`INSERT INTO supplier_order (supplier_id)
-			      VALUES (?) RETURNING id;`,
-					[supplierId]
-				)
-			)[0][0];
-			// Save the newly created supplier order id
-			supplierOrderMapping[supplierId] = newSupplierOrderId;
-		}
+	// Check if all order lines belong to the provided supplier
+	// NOTE: This is really conservative/defensive - sholdn't really happen
+	const faultyLines = orderLines.filter((line) => line.supplier_id !== supplierId);
+	if (faultyLines.length) {
+		const msg = [
+			"All order lines must belong to the same supplier:",
+			`  supplier id: ${supplierId}`,
+			"  faulty lines:",
+			...faultyLines.map((line) => JSON.stringify(line))
+		].join("\n");
+		throw new Error(msg);
+	}
 
-		for (const orderLine of orderLines) {
+	await db.tx(async (db) => {
+		const timestamp = Date.now();
+
+		// Create a supplier order
+		// TODO: check how conflict - free (when syncing) this way of assigning ids is
+		await db.execA("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
+
+		for (const { isbn, quantity } of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
-			const customerOrderLines = await db.execO<any>(
-				// TODO: write tests to check the sorting by order creation
-				`SELECT id, isbn FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC;`,
-				[orderLine.isbn]
-			);
+			//
+			// NOTE: Currently we're allowing for ordering of any number of books for an ISBN, regardless of the number of customer orders
+			// requiring that books. This had proved to be a much simpler solution, trading off a check for an edge case of astronomical probability
+			//
+			// Keep in mind: any number of books can be ordered (placed with a supplier), but only the existing customer order lines will be marked as placed
+			const customerOrderLineIds = await db
+				.execO<{
+					id: number;
+				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
+				.then((res) => res.map(({ id }) => id));
 
-			let copiesToGo = orderLine.quantity;
-			while (copiesToGo > 0) {
-				const customerOrderLine = customerOrderLines.shift();
-				if (customerOrderLine) {
-					// The whole line can be fulfilled
-					await db.exec(`UPDATE customer_order_lines SET placed = (strftime('%s', 'now') * 1000) WHERE id = ?;`, [customerOrderLine.id]);
-				}
-				copiesToGo--;
+			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
+			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
+
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
+
+			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, id]);
+
+			// NOTE: In most cases there WILL be customer orders corresponding to the supplier order lines, however, we're allowing to create a number of supplier
+			// order lines unrelated to existing customer orders - we utilise this to simplify tests, so it's important to check to not end up with an incomplete SQL statement
+			if (values.length) {
+				await db.exec(
+					`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+					values.flat()
+				);
 			}
-			await db.exec(
-				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
-	      VALUES (?, ?, ?);`,
-				[supplierOrderMapping[orderLine.supplier_id], orderLine.isbn, orderLine.quantity]
-			);
 		}
 	});
 }
