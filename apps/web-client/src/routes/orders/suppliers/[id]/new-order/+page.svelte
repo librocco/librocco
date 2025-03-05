@@ -35,13 +35,17 @@
 	$: canPlaceOrder = selectedBooks.length > 0;
 
 	async function handlePlaceOrder() {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+
 		if (!canPlaceOrder) {
 			return;
 		}
 
 		const selection = orderLines.filter(({ isbn }) => selectedIsbns.includes(isbn));
 
-		await createSupplierOrder(db, supplier_id, selection);
+		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
+		await createSupplierOrder(db, id, supplier_id, selection);
 		await invalidate("suppliers:data");
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
