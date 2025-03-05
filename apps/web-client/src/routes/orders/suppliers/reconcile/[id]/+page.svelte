@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
+	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Trash } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -151,6 +151,15 @@
 									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
 								>
 							</span>
+							{#if data?.reconciliationOrder.finalized}
+								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+									<span class="sr-only">Finalized At</span>
+									<ClockArrowUp size={16} aria-hidden />
+									<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
+										>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
+									>
+								</span>
+							{/if}
 						</div>
 					</div>
 					<dl class="prose flex flex-col">
@@ -165,14 +174,15 @@
 								{/each}
 							</div>
 						</div>
-						<div class="w-full pr-2">
+						<div class="mt-2 w-full pr-2">
 							<button
-								class="btn-secondary btn-outline btn-xs btn w-full"
+								class={`btn-secondary btn-outline btn-xs btn w-full ${data?.reconciliationOrder.finalized ? "cursor-default text-gray-400" : ""}`}
 								type="button"
 								aria-label="Delete reconciliatoin order"
 								on:click={handleConfirmDeleteDialog}
+								disabled={data?.reconciliationOrder.finalized}
 							>
-								<Delete aria-hidden size={16} />
+								<Trash aria-hidden size={16} />
 							</button>
 						</div>
 					</dl>
@@ -191,10 +201,11 @@
 
 							<li class="flex-grow">
 								<button
-									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
+									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {data?.reconciliationOrder.finalized &&
+										'cursor-default'} {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
 									disabled={isCurrent || step === 3}
 									on:click={async () => {
-										currentStep = step;
+										!data?.reconciliationOrder.finalized ? (currentStep = step) : null;
 									}}
 								>
 									{#if isCompleted}
@@ -258,6 +269,7 @@
 											<td>€{price || 0}</td>
 											<td>
 												<button
+													class={`${data?.reconciliationOrder.finalized ? "cursor-default text-gray-400" : ""}`}
 													on:click={() => {
 														if (quantity === 1) {
 															handleEditQuantity(isbn, 0);
@@ -266,6 +278,7 @@
 														handleEditQuantity(isbn, -1);
 													}}
 													aria-label="Decrease quantity for isbn: {isbn}"
+													disabled={data?.reconciliationOrder.finalized}
 												>
 													<MinusCircle /></button
 												>
@@ -274,8 +287,11 @@
 												{quantity}
 											</td>
 											<td>
-												<button aria-label="Increase quantity for isbn: {isbn}" on:click={() => handleEditQuantity(isbn, 1)}
-													><PlusCircle /></button
+												<button
+													class={`${data?.reconciliationOrder.finalized ? "cursor-default text-gray-400" : ""}`}
+													disabled={data?.reconciliationOrder.finalized}
+													aria-label="Increase quantity for isbn: {isbn}"
+													on:click={() => handleEditQuantity(isbn, 1)}><PlusCircle /></button
 												>
 											</td>
 										</tr>
@@ -304,11 +320,12 @@
 								</dl>
 							{/if}
 							<button
+								disabled={data.reconciliationOrder.finalized}
 								class="btn-primary btn ml-auto"
 								on:click={async () => {
-									if (currentStep === 1) {
+									if (currentStep === 1 && !data.reconciliationOrder.finalized) {
 										currentStep = 2;
-									} else {
+									} else if (!data.reconciliationOrder.finalized) {
 										commitDialogOpen.set(true);
 									}
 								}}
