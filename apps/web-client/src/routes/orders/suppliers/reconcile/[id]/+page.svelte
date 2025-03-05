@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check } from "lucide-svelte";
+	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -9,9 +9,11 @@
 	import Page from "$lib/components/Page.svelte";
 	import type { PageData } from "./$types";
 	import {
-		addOrderLinesToReconciliationOrder,
+		upsertReconciliationOrderLines,
+		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
-		processOrderDelivery
+		processOrderDelivery,
+		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
 	import { onDestroy, onMount } from "svelte";
@@ -19,6 +21,9 @@
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import { appPath } from "$lib/paths";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -39,6 +44,8 @@
 	});
 	//#endregion reactivity
 
+	$: goto = racefreeGoto(disposer);
+
 	$: db = data?.dbCtx?.db;
 
 	$: books = data?.reconciliationOrderLines || [];
@@ -46,7 +53,7 @@
 	async function handleIsbnSubmit(isbn: string) {
 		if (!isbn) return;
 
-		await addOrderLinesToReconciliationOrder(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 	}
 
 	let scanInputRef: HTMLInputElement = null;
@@ -74,11 +81,24 @@
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = placedOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
+	const handleEditQuantity = async (isbn: string, quantity: number) => {
+		if (quantity === 0) {
+			await deleteOrderLineFromReconciliationOrder(db, parseInt($page.params.id), isbn);
+			return;
+		}
+		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: quantity }]);
+	};
+
 	let currentStep = 1;
 	const commitDialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: commitDialogOpen }
 	} = commitDialog;
+
+	const deleteDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: deleteDialogOpen }
+	} = deleteDialog;
 
 	$: canCompare = books.length > 0;
 
@@ -86,6 +106,21 @@
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+	}
+
+	const confirmDeleteDialogHeading = "Delete Reconciliation Order";
+	const confirmDeleteDialogDescription =
+		"Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines.";
+
+	const handleConfirmDeleteDialog = () => {
+		deleteDialogOpen.set(true);
+	};
+
+	async function handleDelete() {
+		// TODO: Implement actual commit logic
+		deleteDialogOpen.set(false);
+		await goto(appPath("supplier_orders"));
+		await deleteReconciliationOrder(db, parseInt($page.params.id));
 	}
 </script>
 
@@ -131,6 +166,16 @@
 									</dd>
 								{/each}
 							</div>
+						</div>
+						<div class="w-full pr-2">
+							<button
+								class="btn-secondary btn-outline btn-xs btn w-full"
+								type="button"
+								aria-label="Delete reconciliatoin order"
+								on:click={handleConfirmDeleteDialog}
+							>
+								<Delete aria-hidden size={16} />
+							</button>
 						</div>
 					</dl>
 				</div>
@@ -201,7 +246,9 @@
 										<th>Title</th>
 										<th>Authors</th>
 										<th>Price</th>
-										<th>Quantity</th>
+										<th class="w-0"></th>
+										<th class="w-2 px-0">Quantity</th>
+										<th class="w-0"></th>
 									</tr>
 								</thead>
 								<tbody>
@@ -211,7 +258,28 @@
 											<td>{title || "-"}</td>
 											<td>{authors || "-"}</td>
 											<td>€{price || 0}</td>
-											<td>{quantity}</td>
+											<td>
+												<button
+													on:click={() => {
+														if (quantity === 1) {
+															handleEditQuantity(isbn, 0);
+															return;
+														}
+														handleEditQuantity(isbn, -1);
+													}}
+													aria-label="Decrease quantity for isbn: {isbn}"
+												>
+													<MinusCircle /></button
+												>
+											</td>
+											<td>
+												{quantity}
+											</td>
+											<td>
+												<button aria-label="Increase quantity for isbn: {isbn}" on:click={() => handleEditQuantity(isbn, 1)}
+													><PlusCircle /></button
+												>
+											</td>
 										</tr>
 									{/each}
 								</tbody>
@@ -258,4 +326,14 @@
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
 	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+</PageCenterDialog>
+
+<PageCenterDialog dialog={deleteDialog} title="" description="">
+	<ConfirmDialog
+		on:confirm={handleDelete}
+		on:cancel={() => deleteDialogOpen.set(false)}
+		heading={confirmDeleteDialogHeading}
+		description={confirmDeleteDialogDescription}
+		labels={{ confirm: "Confirm", cancel: "Cancel" }}
+	/>
 </PageCenterDialog>

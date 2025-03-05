@@ -19,7 +19,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { deleteNote } from "$lib/db/cr-sqlite/note";
+	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 
 	export let data: PageData;
@@ -65,9 +65,19 @@
 	} = dialog;
 
 	let dialogContent: DialogContent;
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<InventoryManagementPage {plugins} {handleCreateWarehouse}>
+<InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />

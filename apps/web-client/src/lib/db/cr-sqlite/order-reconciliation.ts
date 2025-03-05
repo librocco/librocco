@@ -1,15 +1,3 @@
-import type { BookEntry } from "@librocco/db";
-import { multiplyString } from "./customers";
-import type {
-	DB,
-	ProcessedOrderLine,
-	ReconciliationOrder,
-	ReconciliationOrderLine,
-	PlacedSupplierOrder,
-	PlacedSupplierOrderLine,
-	DBReconciliationOrder
-} from "./types";
-
 /**
  * @fileoverview Supplier order reconciliation system
  *
@@ -40,56 +28,299 @@ import type {
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
+import type { BookEntry } from "@librocco/db";
+import { asc } from "@librocco/shared";
+
+import type {
+	DB,
+	ProcessedOrderLine,
+	ReconciliationOrder,
+	ReconciliationOrderLine,
+	PlacedSupplierOrderLine,
+	DBReconciliationOrder
+} from "./types";
+
+import { multiplyString } from "./customers";
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids don't match any existing supplier orders */
+export class ErrSupplierOrdersNotFound extends Error {
+	constructor(providedIds: number[], foundIds: number[]) {
+		const msg = [
+			"some of the provided supplier order ids didn't match any existing supplier orders:",
+			`  provided ids: ${providedIds}`,
+			`  found ids: ${foundIds}`
+		].join("\n");
+		super(msg);
+	}
+}
+
+/** Thrown from `createReconciliationOrder` when some of the provided supplier order ids are already associated with other reconciliation orders */
+export class ErrSupplierOrdersAlreadyReconciling extends Error {
+	constructor(providedIds: number[], conflicts: ReconciliationOrder[]) {
+		const msg = [
+			"some of the provided supplier order ids match supplier orders already associated with other reconciliation order(s)",
+			`  provided ids: ${providedIds}`,
+			`  conflicts:`,
+			...conflicts
+				.sort(asc(({ id }) => id))
+				.map(
+					({ id, supplierOrderIds }) => `    reconciliation order id: ${id}, conflicting supplier order ids: ${supplierOrderIds.join(", ")}`
+				)
+		].join("\n");
+		super(msg);
+	}
+}
+
 /**
- * Retrieves all reconciliation orders from the database, ordered by ID
-ascending
+ * Creates a new reconciliation order.
+ * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
+ * delivered books will be compared against
+ *
+ * @param db
+ * @param id - ID of the reconciliation order
+ * @param supplierOrderIds - Array of su pplier order IDs to reconcile
+ * @throws Error if supplierOrderIds array is empty
+ * @returns ID of the newly created reconciliation order
+ */
+export async function createReconciliationOrder(db: DB, id: number, _supplierOrderIds: number[]): Promise<void> {
+	if (!_supplierOrderIds.length) {
+		throw new Error("Reconciliation order must be based on at least one supplier order");
+	}
+
+	// Tidiness: make sure supplier order ids are sorted
+	const supplierOrderIds = _supplierOrderIds.sort(asc());
+
+	const timestamp = Date.now();
+
+	// Check that all provided supplier order ids match existing supplier orders
+	const foundSupOrders = await db.execO<{ id: number }>(
+		`SELECT id FROM supplier_order WHERE id IN (${multiplyString("?", supplierOrderIds.length)})`,
+		supplierOrderIds
+	);
+	if (foundSupOrders.length != supplierOrderIds.length) {
+		throw new ErrSupplierOrdersNotFound(
+			supplierOrderIds,
+			foundSupOrders.map(({ id }) => id)
+		);
+	}
+
+	// Check if one or more orders are already being reconciled
+	// TODO: This here would really benefit from having a join table instead of a JSON array
+	const existingReconOrders = await getAllReconciliationOrders(db);
+	const conflicts = existingReconOrders
+		// For each order keep only the supplier order ids that are conflicting with the current order
+		.map((order) => ({ ...order, supplierOrderIds: order.supplierOrderIds.filter((id) => supplierOrderIds.includes(id)) }))
+		// Keep only the conflicting orders
+		.filter((order) => order.supplierOrderIds.length);
+	if (conflicts.length) {
+		throw new ErrSupplierOrdersAlreadyReconciling(supplierOrderIds, conflicts);
+	}
+
+	await db.exec(
+		`
+			INSERT INTO reconciliation_order (id, supplier_order_ids, created, updatedAt)
+			VALUES (?, json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?)
+		`,
+		[id, ...supplierOrderIds, timestamp, timestamp]
+	);
+}
+
+/**
+ * Retrieves all reconciliation orders from the database, ordered by ID ascending
  * @param db
  * @param finalized - an optional boolean that's used to query finalized or non finalized orders
  * if not provided, all orders are fetched
  * @returns ReconciliationOrder array
  */
-export async function getAllReconciliationOrders(db: DB, finalized?: boolean): Promise<ReconciliationOrder[]> {
-	const result = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
-		${finalized !== undefined && `WHERE finalized = ${finalized ? 1 : 0}`}
-			ORDER BY id ASC;`
-	);
+export async function getAllReconciliationOrders(db: DB, filters?: { finalized?: boolean }): Promise<ReconciliationOrder[]> {
+	// Filter by finalized status if provided (return all otherwise)
+	const whereClause = filters?.finalized === undefined ? "" : `WHERE finalized = ${Number(filters.finalized)}`;
+
+	const result = await db.execO<DBReconciliationOrder>(`
+		SELECT id, supplier_order_ids, finalized, updatedAt, created FROM reconciliation_order
+		${whereClause}
+		ORDER BY updatedAt DESC
+	`);
+
 	return result.map(unmarshalReconciliationOrder);
 }
-
-const unmarshalReconciliationOrder = ({ supplier_order_ids, created, updatedAt, ...order }: DBReconciliationOrder): ReconciliationOrder => {
-	let supplierOrderIds = [];
-
-	try {
-		supplierOrderIds = JSON.parse(supplier_order_ids);
-	} catch {
-		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
-		throw new Error(msg);
-	}
-
-	return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt) };
-};
 
 /**
  * Retrieves a specific reconciliation order by ID
  * @param db
  * @param id - The ID of the reconciliation order to retrieve
- * @throws Error if order not found or if supplier_order_ids contains invalid
-JSON
+ * @throws Error if order not found or if supplier_order_ids contains invalid JSON
  * @returns ReconciliationOrder with parsed supplier_order_ids
  */
 export async function getReconciliationOrder(db: DB, id: number): Promise<ReconciliationOrder & { supplierOrderIds: number[] }> {
 	const [result] = await db.execO<DBReconciliationOrder>(
-		`SELECT id, supplier_order_ids, finalized, updatedAt, created
-		FROM reconciliation_order WHERE id = ?;`,
+		`
+			SELECT id, supplier_order_ids, finalized, updatedAt, created
+			FROM reconciliation_order WHERE id = ?
+		`,
 		[id]
 	);
 
 	if (!result) {
-		throw new Error(`Reconciliation order with id ${id} not found`);
+		return undefined;
 	}
 
 	return unmarshalReconciliationOrder(result);
+}
+
+const unmarshalReconciliationOrder = ({
+	supplier_order_ids,
+	created,
+	updatedAt,
+	finalized,
+	...order
+}: DBReconciliationOrder): ReconciliationOrder => {
+	try {
+		const supplierOrderIds = JSON.parse(supplier_order_ids);
+		return { ...order, supplierOrderIds, created: new Date(created), updatedAt: new Date(updatedAt), finalized: Boolean(finalized) };
+	} catch {
+		const msg = [`Reconciliation order, id: ${order.id}: invalid json:`, `	supplier_order_ids: ${supplier_order_ids}`].join("\n");
+		throw new Error(msg);
+	}
+};
+
+/** Thrown from `upsertReconciliationOrderLines` when the respective reconciliation order is not found */
+export class ErrReconciliationOrderNotFound extends Error {
+	constructor(id: number) {
+		super(`Reconciliation order not found: trying to add lines to a non existing reconciliation order: id: ${id}`);
+	}
+}
+
+/** Thrown from `upsertReconciliationOrderLines` when trying to add lines to already finalized reconciliation order */
+export class ErrReconciliationOrderFinalized extends Error {
+	constructor(id: number);
+	constructor(id: number, lines: { isbn: string; quantity: number }[]);
+	constructor(id: number, lines?: { isbn: string; quantity: number }[]) {
+		if (lines?.length) {
+			const msg = [
+				"Reconciliation order already finalized: trying to add lines to an already finalized reconciliation order:",
+				`  order id: ${id}`,
+				"  order lines:",
+				...lines.sort(asc(({ isbn }) => isbn)).map(({ isbn, quantity }) => `    isbn: ${isbn}, quantity: ${quantity}`)
+			].join("\n");
+			super(msg);
+		} else {
+			super(`Reconciliation order already finalized: ${id}`);
+		}
+	}
+}
+/**
+  * Deletes a reconciliation order and all its associated order lines from the
+ database.
+  * The deletion is performed as an atomic transaction to maintain data
+ consistency.
+  *
+  * @param db - The database connection
+  * @param id - The ID of the reconciliation order to delete
+  *
+  * @throws {Error} When:
+  * - The reconciliation order with the given ID is not found
+  * - The reconciliation order is already finalized
+  * - Database transaction fails
+  */
+export async function deleteReconciliationOrder(db: DB, id: number): Promise<void> {
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder[0]) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	if (reconOrder[0].finalized) {
+		throw new ErrReconciliationOrderFinalized(id);
+	}
+
+	await db.tx(async (txDb) => {
+		// Delete associated lines first
+		await txDb.exec("DELETE FROM reconciliation_order_lines WHERE reconciliation_order_id = ?", [id]);
+		// Then delete the order itself
+		await txDb.exec("DELETE FROM reconciliation_order WHERE id = ?", [id]);
+	});
+}
+
+/**
+  * Adds new order lines or updates quantities of existing lines for a
+ reconciliation order.
+  * For existing lines, the quantity is added to the current value (can be
+ negative to decrease).
+  *
+  * @param db
+  * @param id - The ID of the reconciliation order
+  * @param lines - Array of objects containing ISBN and quantity to add/update
+  * @throws Error if:
+  * - Reconciliation order not found
+  * - Order is already finalized
+  */
+export async function upsertReconciliationOrderLines(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
+	if (reconOrder.finalized) {
+		throw new ErrReconciliationOrderFinalized(id, newLines);
+	}
+
+	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
+
+	const timestamp = Date.now();
+	await db.tx(async (txDb) => {
+		const sql = `
+			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
+			VALUES ${multiplyString("(?,?,?)", newLines.length)}
+			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
+				quantity = quantity + excluded.quantity;
+		`;
+		await txDb.exec(sql, params);
+		// Clean up any lines that ended up with quantity <= 0
+		await txDb.exec(
+			`
+       DELETE FROM reconciliation_order_lines
+       WHERE reconciliation_order_id = ? AND quantity <= 0
+     `,
+			[id]
+		);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
+}
+/**
+ * Deletes a specific book (by ISBN) from a reconciliation order and updates the order's timestamp
+ *
+ * @param db - The database connection
+ * @param id - The ID of the reconciliation order
+ * @param isbn - The ISBN of the book to remove from the order
+ * @throws {Error} When the reconciliation order with the given ID is not found or order is finalized
+ */
+export async function deleteOrderLineFromReconciliationOrder(db: DB, id: number, isbn: string) {
+	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+
+	if (!reconOrder[0]) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+	if (reconOrder[0].finalized) {
+		throw new ErrReconciliationOrderFinalized(id);
+	}
+
+	const timestamp = Date.now();
+	await db.tx(async (txDb) => {
+		const exists = await txDb.execO<{ id: number }>(
+			"SELECT 1 FROM reconciliation_order_lines WHERE reconciliation_order_id = ? AND isbn = ?",
+			[id, isbn]
+		);
+		if (!exists.length) {
+			throw new Error("No matching order line found");
+		}
+		const sql = `
+			DELETE FROM reconciliation_order_lines WHERE reconciliation_order_id = ? AND isbn = ?;
+		`;
+		await txDb.exec(sql, [id, isbn]);
+		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
+	});
 }
 
 /**
@@ -101,94 +332,51 @@ export async function getReconciliationOrder(db: DB, id: number): Promise<Reconc
  * @returns array of ReconciliationOrderLine objects with book details
  */
 export async function getReconciliationOrderLines(db: DB, id: number): Promise<ReconciliationOrderLine[]> {
+	// Check if the order exists
+	// TODO: do we, prehaps, want this to fail silently ??
+	const [reconOrder] = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
+	if (!reconOrder) {
+		throw new ErrReconciliationOrderNotFound(id);
+	}
+
 	const result = await db.execO<ReconciliationOrderLine>(
-		`SELECT rol.isbn, rol.quantity, rol.reconciliation_order_id, book.publisher, book.authors, book.title, book.price FROM reconciliation_order_lines as rol
-		LEFT JOIN book ON rol.isbn = book.isbn
-		WHERE reconciliation_order_id = ?;`,
+		`
+			SELECT
+				rol.isbn,
+				rol.quantity,
+				rol.reconciliation_order_id,
+				COALESCE(book.title, 'N/A') as title,
+				COALESCE(book.authors, 'N/A') as authors,
+				COALESCE(book.publisher, 'N/A') as publisher,
+				COALESCE(book.price, 0) as price
+			FROM reconciliation_order_lines as rol
+			LEFT JOIN book ON rol.isbn = book.isbn
+			WHERE reconciliation_order_id = ?
+		`,
 		[id]
 	);
 
 	return result;
 }
+
 /**
- * Creates a new reconciliation order.
- * The array of supplier_order ids will be used to get the _ordered_ `supplier_order_lines` which the
- * delivered books will be compared against
- *
+ * Finalizes a reconciliation order and updates corresponding customer order lines
  * @param db
- * @param supplierOrderIds - Array of su pplier order IDs to reconcile
- * @throws Error if supplierOrderIds array is empty
- * @returns ID of the newly created reconciliation order
- * @see apps/e2e/helpers/cr-sqlite.ts:createReconciliationOrder
+ * @param id - The ID of the reconciliation order to finalize
+ * @throws Error if:
+ * - ID is 0 or undefined
+ * - Reconciliation order not found
+ * - Order is already finalized
+ * - Customer order lines format is invalid
  */
-export async function createReconciliationOrder(db: DB, supplierOrderIds: number[]): Promise<number> {
-	if (!supplierOrderIds.length) {
-		throw new Error("Reconciliation order must be based on at least one supplier order");
-	}
-
-	const timestamp = Date.now();
-
-	const recondOrder = await db.execO<{ id: number }>(
-		`INSERT INTO reconciliation_order (supplier_order_ids, created, updatedAt)
-		VALUES (json_array(${multiplyString("?", supplierOrderIds.length)}), ?, ?) RETURNING id`,
-		[...supplierOrderIds, timestamp, timestamp]
-	);
-	return recondOrder[0].id;
-}
-
-/**
- * Adds order lines or updates the quantity of existing isbns for an existing reconciliation order.
- * These are the _delivered_ books that an employee is adding by scanning their isbns.
- *
- * @param db
- * @param id - The ID of the reconciliation order
- * @param newLines - Array of objects containing ISBN and quantity to add/update
- * @throws Error if reconciliation order not found
- * @see apps/e2e/helpers/cr-sqlite.ts:addOrderLinesToReconciliationOrder
- */
-export async function addOrderLinesToReconciliationOrder(db: DB, id: number, newLines: { isbn: string; quantity: number }[]) {
-	const reconOrder = await db.execO<ReconciliationOrder>("SELECT * FROM reconciliation_order WHERE id = ?;", [id]);
-
-	if (!reconOrder[0]) {
-		throw new Error(`Reconciliation order ${id} not found`);
-	}
-
-	const params = newLines.map(({ isbn, quantity }) => [id, isbn, quantity]).flat();
-
-	const timestamp = Date.now();
-
-	await db.tx(async (txDb) => {
-		const sql = `
-			INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn, quantity)
-			VALUES ${multiplyString("(?,?,?)", newLines.length)}
-			ON CONFLICT(reconciliation_order_id, isbn) DO UPDATE SET
-				quantity = quantity + excluded.quantity;
-		`;
-		await txDb.exec(sql, params);
-		await txDb.exec("UPDATE reconciliation_order SET updatedAt = ? WHERE id = ?", [timestamp, id]);
-	});
-}
-
-/**
-  * Finalizes a reconciliation order and updates corresponding customer order
- lines
-  * @param db
-  * @param id - The ID of the reconciliation order to finalize
-  * @throws Error if:
-  * - ID is 0 or undefined
-  * - Reconciliation order not found
-  * - Order is already finalized
-  * - Customer order lines format is invalid
-  * @see apps/e2e/helpers/cr-sqlite.ts:finalizeReconciliationOrder
-  */
 export async function finalizeReconciliationOrder(db: DB, id: number) {
 	const reconOrder = await getReconciliationOrder(db, id);
 	if (!reconOrder) {
-		throw new Error(`Reconciliation order ${id} not found`);
+		throw new ErrReconciliationOrderNotFound(id);
 	}
 
 	if (reconOrder.finalized) {
-		throw new Error(`Reconciliation order ${id} is already finalized`);
+		throw new ErrReconciliationOrderFinalized(id);
 	}
 
 	const { supplierOrderIds } = reconOrder;
@@ -287,45 +475,6 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 }
 
 /**
- * Retrieves all supplier orders that have not been selected for reconciliation in any `reconciliation_order`.
- * @param db
- *
- * @returns {Promise<PlacedSupplierOrder[]>} Array of unreconciled supplier orders with:
- */
-export async function getUnreconciledSupplierOrders(db: DB): Promise<PlacedSupplierOrder[]> {
-	const result = await db.execO<PlacedSupplierOrder>(
-		` WITH Reconciled AS (
-     SELECT CAST(value AS INTEGER) AS supplier_order_id
-     FROM reconciliation_order AS ro
-     CROSS JOIN json_each(ro.supplier_order_ids)
- )
- SELECT
-     so.id,
-     so.supplier_id,
-     s.name AS supplier_name,
-     so.created,
-     COALESCE(SUM(sol.quantity), 0) AS total_book_number
- FROM supplier_order AS so
- JOIN supplier AS s
-     ON so.supplier_id = s.id
- LEFT JOIN supplier_order_line AS sol
-     ON sol.supplier_order_id = so.id
- LEFT JOIN Reconciled AS r
-     ON r.supplier_order_id = so.id
- WHERE
-     so.created IS NOT NULL
-     AND r.supplier_order_id IS NULL
- GROUP BY
-     so.id,
-     so.supplier_id,
-     s.name,
-     so.created  `
-	);
-
-	return result;
-}
-
-/**
 * Processes delivered books against placed order lines to identify matches an
 discrepancies
 *
@@ -344,33 +493,49 @@ export const processOrderDelivery = (
 	scannedBooks: (BookEntry & { quantity: number })[],
 	placedOrderLines: PlacedSupplierOrderLine[]
 ): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
-	const scannedLinesMap = new Map<string, BookEntry & { quantity: number }>(
-		scannedBooks.map((book) => {
-			return [book.isbn, book];
-		})
-	);
-	const result = { processedLines: [], unmatchedBooks: [] };
+	const unmatchedBooks: (BookEntry & { quantity: number })[] = [];
+	const processedLines: ProcessedOrderLine[] = [];
 
+	// Create a map of scanned books for quick lookup
+	const scannedBooksMap = new Map<string, BookEntry & { quantity: number }>();
+	scannedBooks.forEach((scannedBook) => scannedBooksMap.set(scannedBook.isbn, scannedBook));
+
+	// Process each placed order line
 	for (const placedOrderLine of placedOrderLines) {
-		if (scannedLinesMap.has(placedOrderLine.isbn)) {
-			const scannedBook = scannedLinesMap.get(placedOrderLine.isbn);
-			scannedLinesMap.delete(placedOrderLine.isbn);
-			result.processedLines.push({
+		const scannedBook = scannedBooksMap.get(placedOrderLine.isbn);
+
+		if (scannedBook) {
+			// Calculate delivered quantity
+			const deliveredQuantity = Math.min(scannedBook.quantity, placedOrderLine.quantity);
+
+			// Add to processed lines
+			processedLines.push({
 				...placedOrderLine,
-				deliveredQuantity: scannedBook.quantity,
+				deliveredQuantity,
 				orderedQuantity: placedOrderLine.quantity
 			});
+
+			// Update the remaining quantity in the scanned book
+			const remainingQuantity = scannedBook.quantity - deliveredQuantity;
+			if (remainingQuantity > 0) {
+				scannedBooksMap.set(scannedBook.isbn, { ...scannedBook, quantity: remainingQuantity });
+			} else {
+				scannedBooksMap.delete(scannedBook.isbn);
+			}
 		} else {
-			result.processedLines.push({
+			// If no matching scanned book, add to processed lines with deliveredQuantity = 0
+			processedLines.push({
 				...placedOrderLine,
 				deliveredQuantity: 0,
 				orderedQuantity: placedOrderLine.quantity
 			});
 		}
 	}
-	result.unmatchedBooks = [...result.unmatchedBooks, ...scannedLinesMap.values()];
 
-	return result;
+	// Add remaining scanned books to unmatchedBooks
+	unmatchedBooks.push(...Array.from(scannedBooksMap.values()));
+
+	return { processedLines, unmatchedBooks };
 };
 
 /**
