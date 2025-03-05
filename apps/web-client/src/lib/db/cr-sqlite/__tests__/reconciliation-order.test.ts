@@ -1550,6 +1550,35 @@ describe("Reconciliation order deletion", () => {
 			expect(updatedOrder.updatedAt.getTime()).toBeGreaterThan(initialTimestamp.getTime());
 		});
 
+		it("should update the reconciliation order's timestamp on finalization", async () => {
+			const db = await getRandomDb();
+
+			// Create supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			// Create reconciliation order
+			const reconciliationOrderId = 123;
+
+			await createReconciliationOrder(db, reconciliationOrderId, [supplierOrderId]);
+			await upsertReconciliationOrderLines(db, reconciliationOrderId, [{ isbn: "1", quantity: 1 }]);
+
+			// Get initial timestamp
+			const initialOrder = await getReconciliationOrder(db, reconciliationOrderId);
+			const initialTimestamp = initialOrder.updatedAt;
+
+			// Wait a bit to ensure timestamp difference
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Finalize the order
+			await finalizeReconciliationOrder(db, reconciliationOrderId);
+
+			// Check updated timestamp
+			const updatedOrder = await getReconciliationOrder(db, reconciliationOrderId);
+			expect(updatedOrder.updatedAt.getTime()).toBeGreaterThan(initialTimestamp.getTime());
+		});
+
 		it("should throw error when reconciliation order doesn't exist", async () => {
 			const db = await getRandomDb();
 
