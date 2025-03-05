@@ -371,6 +371,8 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * Creates supplier orders based on provided order lines and updates related customer orders.
  *
  * @param db - The database instance to query
+ * @param id - supplier Order Id
+ * @param supplierId - The id of the supplier to create the order for
  * @param orderLines - The order lines to create supplier orders from
  * @returns Promise<void>
  * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
