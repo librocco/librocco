@@ -8,8 +8,13 @@
 	$: ({ orderLines } = data);
 
 	// Supplier order meta data is returned per row. We just need one copy of it
-	$: [orderLine] = orderLines;
-	$: ({ supplier_order_id, supplier_name, total_book_number, total_book_price, created } = orderLine);
+	$: ({ supplier_order_id, supplier_name, total_book_number, total_book_price, created } = orderLines?.[0] ?? {
+		supplier_order_id: 0,
+		supplier_name: "",
+		total_book_number: 0,
+		total_book_price: 0,
+		created: 0
+	});
 
 	$: createdDate = new Date(created);
 
