@@ -581,10 +581,8 @@ testOrders("should allow supplier orders to be reconciled again after deletion",
 	await page.getByText("Ordered").nth(1).click();
 
 	// Select multiple orders
-	const items = await page.getByRole("checkbox").all();
-	const beforeLast = items[items.length - 2];
-	await beforeLast.click();
-	await page.getByRole("checkbox").last().click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByRole("checkbox").nth(2).click();
 	await page.getByText("Reconcile").first().click();
 
 	// Add scanned books
@@ -601,7 +599,7 @@ testOrders("should allow supplier orders to be reconciled again after deletion",
 	// Verify back at supplier orders
 
 	await page.reload();
-
+	page.getByText("sup1");
 	// Should be able to start new reconciliation with same orders
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
