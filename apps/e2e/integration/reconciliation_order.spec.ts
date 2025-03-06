@@ -467,9 +467,6 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await expect(dialog).not.toBeVisible();
 
-	await page.getByRole("button", { name: "Commit" }).nth(1).click();
-	await dialog.getByRole("button", { name: "Confirm" }).click();
-	await expect(dialog).not.toBeVisible();
 	await page.reload();
 
 	//more assertions to give time for the line to be updated to delivered
@@ -628,8 +625,7 @@ testOrders.skip("should allow supplier orders to be reconciled again after delet
 	await expect(page.getByRole("dialog")).toBeHidden();
 
 	// Verify back at supplier orders
-
-	await page.reload();
+	await page.waitForTimeout(1000);
 
 	// Should be able to start new reconciliation with same orders
 	await page.getByText("Ordered").nth(1).click();
@@ -723,4 +719,31 @@ testOrders.skip("should navigate correctly after deletion", async ({ page, suppl
 	// Verify supplier orders are shown correctly
 	await page.getByText("Ordered", { exact: true }).click();
 	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
+});
+testOrders("should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
+	depends(supplierOrders);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Simulate finalizing the order
+	const dialog = page.getByRole("dialog");
+	await page.getByRole("button", { name: "Compare" }).first().click();
+	await page.getByRole("button", { name: "Commit" }).nth(1).click();
+
+	await dialog.getByRole("button", { name: "Confirm" }).click();
+	await expect(dialog).not.toBeVisible();
+
+	// Verify all action buttons are disabled
+	const populate = await page.getByRole("button", { name: "populate" }).all();
+	for (const button of populate) {
+		await expect(button).toBeDisabled();
+	}
+	const commit = await page.getByRole("button", { name: "commit" }).all();
+	for (const button of commit) {
+		await expect(button).toBeDisabled();
+	}
+	const deleteButton = page.getByLabel("Delete reconciliatoin order");
+	await expect(deleteButton).toBeDisabled();
 });
