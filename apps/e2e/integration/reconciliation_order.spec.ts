@@ -694,6 +694,7 @@ testOrders("should navigate correctly after deletion", async ({ page, supplierOr
 	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
 });
 testOrders("should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
+	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
 	await page.getByRole("checkbox").nth(1).click();
