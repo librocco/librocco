@@ -3,8 +3,6 @@ import { expect } from "@playwright/test";
 import { baseURL } from "./constants";
 import { depends, testOrders } from "@/helpers/fixtures";
 
-// * Note: its helpful to make an assertion after each <enter> key
-// as it seems that Playwright may start running assertions before page data has fully caught up
 testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -773,7 +771,7 @@ testOrders("should handle multiple quantity adjustments", async ({ page, supplie
 		.waitFor();
 });
 
-testOrders.skip("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
+testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
 	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -835,13 +833,14 @@ testOrders.skip("should maintain correct totals after multiple quantity adjustme
 	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Verify updated total
-	// TODO: Check this, it seems fishy -- decreasing line 2 should result in 0 quantity,
-	// hence: book 1 x 2 (delivered - out of 2 ordered) + book 2 x 0 (delivered) = 2 / book1 x 2 (ordered) + book 2 x 1 (ordered) = 3
-	// overdelivered book 1 shouldn't make the delivered count - at most 2 of book 1 (delivered quantity) should make the delivered count
-	await expect(page.getByText("3 / 3")).toBeVisible();
+	// book 1 - ordered 2, scanned 3 = contributes 2 to total delivered (out of quantity ordered)
+	//   - 3rd is overdelivery and doesn't count
+	// book 2 - ordered 1, scanned 0
+	// Total: 2 + 0 = 2 (delivered) / 2 + 1 = 3 (ordered)
+	await expect(page.getByText("2 / 3")).toBeVisible();
 });
 
-testOrders.skip("should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
+testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -970,7 +969,7 @@ testOrders("should allow deletion after comparing books", async ({ page, supplie
 		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
 		.waitFor();
 
-	await page.getByRole("button", { name: "Compare" }).click();
+	await page.getByRole("button", { name: "Compare" }).first().click();
 
 	// Delete from compare view
 	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
@@ -1016,9 +1015,8 @@ testOrders("should allow deletion of empty reconciliation order", async ({ page,
 	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 });
 
-// TODO: Skipped this so as to not fail in 'main' with refactor under way
 // NOTE: This test seems a bit redundant, considering the above tests
-testOrders.skip("should navigate correctly after deletion", async ({ page, supplierOrders }) => {
+testOrders("should navigate correctly after deletion", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
