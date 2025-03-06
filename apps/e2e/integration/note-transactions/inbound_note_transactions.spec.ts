@@ -14,7 +14,8 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	// TODO: should improve accessible markup and target as "role=tab"
 	await dashboard.content().navigate("inbound-list");
 
 	// We create a warehouse and a note for all tests
