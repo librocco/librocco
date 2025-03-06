@@ -281,7 +281,7 @@
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green xs:block hidden"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -316,7 +316,7 @@
 								type: "commit"
 							};
 						}}
-						class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
