@@ -171,7 +171,7 @@
 							<button
 								class="btn-secondary btn-outline btn-xs btn w-full"
 								type="button"
-								aria-label="Delete reconciliatoin order"
+								aria-label="Delete reconciliation order"
 								on:click={handleConfirmDeleteDialog}
 							>
 								<Delete aria-hidden size={16} />
