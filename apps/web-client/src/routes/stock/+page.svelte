@@ -245,8 +245,8 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
@@ -298,5 +298,5 @@
 				</div>
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}

@@ -418,7 +418,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -453,7 +453,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -601,8 +601,8 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		{#if dialogContent.type === "no-warehouse-selected"}
 			<!-- No warehouse selecter dialog -->
@@ -751,5 +751,5 @@
 				</Dialog>
 			</div>
 		{/if}
-	{/if}
-</div>
+	</div>
+{/if}
