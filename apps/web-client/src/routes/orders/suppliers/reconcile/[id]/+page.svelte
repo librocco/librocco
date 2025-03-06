@@ -75,9 +75,11 @@
 		}
 	});
 
+	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	$: placedOrderLines = data?.placedOrderLines;
-	$: totalDelivered = data?.reconciliationOrderLines.map((book) => book.quantity).reduce((acc, curr) => acc + curr, 0);
-	$: totalOrdered = placedOrderLines.length;
+
+	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalOrdered = placedOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
 		if (quantity === 0) {
@@ -285,8 +287,6 @@
 						</div>
 					{/if}
 				{:else if currentStep > 1}
-					{@const processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines)}
-
 					<ComparisonTable reconciledBooks={processedOrderDelivery} />
 				{/if}
 
