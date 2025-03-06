@@ -63,6 +63,9 @@
 	let availabilitySubscription: Subscription;
 
 	onMount(async () => {
+		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
+		document.body.setAttribute("hydrated", "true");
+
 		// TODO: revisit
 		// if (!status) {
 		// 	await goto(appPath("settings"));

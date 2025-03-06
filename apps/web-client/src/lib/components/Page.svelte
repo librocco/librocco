@@ -119,6 +119,7 @@
 							<li {...trigger} use:trigger.action>
 								<a
 									data-linkto={linkto}
+									aria-label={label}
 									{href}
 									class="inline-block rounded-sm p-4 text-gray-400 {$page.url.pathname.startsWith(href)
 										? 'bg-gray-900'
@@ -162,7 +163,7 @@
 		<!-- Topbar container end -->
 
 		<!-- Heading section -->
-		<header class="w-full px-4 pt-5 pb-6 xs:px-8">
+		<header class="xs:px-8 w-full px-4 pb-6 pt-5">
 			<slot name="heading" />
 		</header>
 		<!-- Heading section end -->
@@ -187,7 +188,7 @@
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
-				class="fixed left-0 top-0 bottom-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto bg-gray-900"
+				class="fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto bg-gray-900"
 				transition:fly|global={{
 					x: -350,
 					duration: 300,
