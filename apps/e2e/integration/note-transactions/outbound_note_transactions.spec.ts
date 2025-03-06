@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await dashboard.content().entityList("outbound-list").waitFor();
 
 	// We create a warehouse and a note for all tests
