@@ -16,8 +16,6 @@ jobs:
 
   book-data-extension-test: #@ test_job("Book data extension Tests", "plugins/book-data-extension")
 
-  db-test: #@ test_job("DB Tests", "pkg/db")
-
   web-client-test: #@ test_job("Web Client Tests", "apps/web-client")
 
   e2e-test:

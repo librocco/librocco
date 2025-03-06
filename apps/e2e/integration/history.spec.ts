@@ -1,13 +1,13 @@
 import { test, expect } from "@playwright/test";
 
-import { BookEntry } from "@librocco/db";
+import type { BookData } from "@librocco/shared";
 
 import { baseURL } from "@/constants";
 import { getDashboard, getDbHandle } from "@/helpers";
 import { upsertWarehouse, createInboundNote, createOutboundNote, addVolumesToNote, commitNote, upsertBook } from "../helpers/cr-sqlite";
 import { getDateStub } from "@/helpers/dateStub";
 
-const books: BookEntry[] = [
+const books: BookData[] = [
 	{ isbn: "1111111111", title: "Book 1", authors: "Author 1", publisher: "Publisher 1", year: "2021", price: 10 },
 	{ isbn: "2222222222", title: "Book 2", authors: "Author 2", publisher: "Publisher 2", year: "2022", price: 20 }
 ];

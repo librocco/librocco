@@ -5,7 +5,6 @@
 	import { Check, ChevronsUpDown, RefreshCcwDot } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
-	import type { NavEntry } from "@librocco/db";
 
 	import type { WarehouseChangeDetail } from "./types";
 	import type { Warehouse } from "$lib/db/cr-sqlite/types";

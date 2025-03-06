@@ -15,8 +15,7 @@
  * - book_transaction table: Records book "line-item" movements
  */
 
-import type { PickPartial } from "@librocco/db";
-import type { DB, TXAsync, Warehouse } from "./types";
+import type { DB, PickPartial, TXAsync, Warehouse } from "./types";
 
 export async function getWarehouseIdSeq(db: DB) {
 	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM warehouse;`;
