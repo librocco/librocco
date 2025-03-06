@@ -203,7 +203,7 @@
 								<button
 									class="flex w-full items-center gap-x-2 px-4 py-2 text-sm {data?.reconciliationOrder.finalized &&
 										'cursor-default'} {!isCompleted && !isCurrent ? 'text-base-content/50' : ''}"
-									disabled={isCurrent || step === 3}
+									disabled={isCurrent || step === 3 || data?.reconciliationOrder.finalized}
 									on:click={async () => {
 										!data?.reconciliationOrder.finalized ? (currentStep = step) : null;
 									}}
