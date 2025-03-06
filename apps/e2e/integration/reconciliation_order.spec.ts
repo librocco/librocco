@@ -693,3 +693,29 @@ testOrders("should navigate correctly after deletion", async ({ page, supplierOr
 	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
 });
+testOrders("should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("checkbox").nth(1).click();
+	await page.getByText("Reconcile").first().click();
+
+	// Simulate finalizing the order
+	const dialog = page.getByRole("dialog");
+	await page.getByRole("button", { name: "Compare" }).first().click();
+	await page.getByRole("button", { name: "Commit" }).nth(1).click();
+
+	await dialog.getByRole("button", { name: "Confirm" }).click();
+	await expect(dialog).not.toBeVisible();
+
+	// Verify all action buttons are disabled
+	const populate = await page.getByRole("button", { name: "populate" }).all();
+	for (const button of populate) {
+		await expect(button).toBeDisabled();
+	}
+	const commit = await page.getByRole("button", { name: "commit" }).all();
+	for (const button of commit) {
+		await expect(button).toBeDisabled();
+	}
+	const deleteButton = page.getByLabel("Delete reconciliatoin order");
+	await expect(deleteButton).toBeDisabled();
+});
