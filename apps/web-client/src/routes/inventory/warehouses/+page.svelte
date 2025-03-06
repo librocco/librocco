@@ -120,7 +120,7 @@
 				{#each warehouses as { id, displayName, totalBooks, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 

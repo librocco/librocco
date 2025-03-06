@@ -118,7 +118,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="entity-list-row group">
+						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
