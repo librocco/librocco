@@ -55,7 +55,6 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 
 	// Navigate to inbound list
 	// TODO: should improve accessible markup and target as "role=tab"
-	// TODO: should improve accessible markup and target as "role=tab"
 	await content.navigate("inbound-list");
 
 	// The notes should appear in the list
