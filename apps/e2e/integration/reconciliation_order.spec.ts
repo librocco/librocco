@@ -8,7 +8,7 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: checking for initial state using all 3 supplier orders
 	for (const order of supplierOrders) {
@@ -45,7 +45,7 @@ testOrders("should show correct comparison when quantities match ordered amounts
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -107,7 +107,7 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -169,7 +169,7 @@ testOrders("should show over-delivery when scanned quantities are more than orde
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -219,7 +219,7 @@ testOrders(
 
 		const table = page.getByRole("table");
 
-		await page.getByText("Ordered").nth(1).click();
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 		// NOTE: using the first two orders (from the fixture)
 		// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -273,7 +273,7 @@ testOrders("should show unmatched deliveries when ordered books do not match sca
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -348,7 +348,7 @@ testOrders("regression: unmatched books shouldn't affect the Total delivered cou
 	// Navigate to reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 	await page.getByRole("checkbox").nth(1).click();
 
 	await page.getByText("Reconcile").first().click();
@@ -380,7 +380,7 @@ testOrders("should show correct delivery stats in commit view", async ({ page, b
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -446,7 +446,7 @@ testOrders("should be able to select multiple supplier orders to reconcile at on
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first two orders (from the fixture)
 	// NOTE: At the time of this writing, first two orders belonged to the same supplier
@@ -503,7 +503,7 @@ testOrders("should be able to continue reconciliation", async ({ page, books, su
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -566,7 +566,7 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	const { order } = supplierOrders[0];
@@ -617,7 +617,7 @@ testOrders("should handle quantity adjustments correctly", async ({ page, suppli
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -662,7 +662,7 @@ testOrders("should remove line when quantity reaches zero", async ({ page, suppl
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -706,7 +706,7 @@ testOrders("should handle multiple quantity adjustments", async ({ page, supplie
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -772,7 +772,7 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -840,7 +840,7 @@ testOrders("should allow supplier orders to be reconciled again after deletion",
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// Select multiple orders
 	// NOTE: using the first two orders (from the fixture)
@@ -881,7 +881,7 @@ testOrders("should allow supplier orders to be reconciled again after deletion",
 	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 
 	// Should be able to start new reconciliation with same orders
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	await relevantOrders.nth(0).getByRole("checkbox").click();
 	await relevantOrders.nth(1).getByRole("checkbox").click();
@@ -895,7 +895,7 @@ testOrders("should not delete reconciliation order when canceling deletion", asy
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -939,7 +939,7 @@ testOrders("should allow deletion after comparing books", async ({ page, supplie
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -982,7 +982,7 @@ testOrders("should allow deletion of empty reconciliation order", async ({ page,
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
@@ -1013,7 +1013,7 @@ testOrders("should navigate correctly after deletion", async ({ page, supplierOr
 
 	const table = page.getByRole("table");
 
-	await page.getByText("Ordered").nth(1).click();
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	// NOTE: using the first order (from the fixture) for the test
 	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
