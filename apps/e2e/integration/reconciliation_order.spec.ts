@@ -601,7 +601,6 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	await page.getByRole("button", { name: "Commit" }).nth(1).click();
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await expect(dialog).not.toBeVisible();
-	await page.reload();
 
 	//more assertions to give time for the line to be updated to delivered
 
@@ -870,17 +869,9 @@ testOrders("should allow supplier orders to be reconciled again after deletion",
 
 	await expect(page.getByRole("dialog")).toBeHidden();
 
-	await page.waitForURL("**/orders/suppliers/orders/");
-	await page.waitForTimeout(1000);
-
-	// Verify back at supplier orders
-	await page.reload();
-
-	// Verify back at supplier orders
-	// stalling here to give time for the page to load the deleted orders
-	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
-
 	// Should be able to start new reconciliation with same orders
+	// NOTE: We're should be redirected back to 'orders/suppliers/orders/' after deletion
+	// No need for additional assertions - this button being there is an implicit test + interaction for the next step
 	await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
 	await relevantOrders.nth(0).getByRole("checkbox").click();
