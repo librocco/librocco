@@ -8,6 +8,7 @@ export const load: PageLoad = async ({ depends, parent }) => {
 	depends("books:data");
 	depends("suppliers:data");
 	depends("customers:order_lines");
+	depends("reconciliation:orders");
 
 	const { dbCtx } = await parent();
 
