@@ -1,7 +1,7 @@
 import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
-import { depends, testOrders } from "@/helpers/fixtures";
+import { testOrders } from "@/helpers/fixtures";
 
 testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -164,7 +164,7 @@ testOrders("should correctly increment quantities when scanning same ISBN multip
 		.waitFor();
 });
 
-testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, books, supplierOrders }) => {
+testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -376,7 +376,6 @@ testOrders("regression: unmatched books shouldn't affect the Total delivered cou
 });
 
 testOrders("should show correct delivery stats in commit view", async ({ page, books, supplierOrders }) => {
-	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -613,7 +612,6 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 });
 
 testOrders("should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
-	depends(supplierOrders);
 	// Navigate and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -660,7 +658,6 @@ testOrders("should handle quantity adjustments correctly", async ({ page, suppli
 });
 
 testOrders("should remove line when quantity reaches zero", async ({ page, supplierOrders }) => {
-	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -704,8 +701,7 @@ testOrders("should remove line when quantity reaches zero", async ({ page, suppl
 		.waitFor({ state: "detached" });
 });
 
-testOrders("should handle multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
-	depends(supplierOrders);
+testOrders("should handle multiple quantity adjustments", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -771,8 +767,7 @@ testOrders("should handle multiple quantity adjustments", async ({ page, supplie
 		.waitFor();
 });
 
-testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
-	depends(supplierOrders);
+testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -982,10 +977,7 @@ testOrders("should allow deletion after comparing books", async ({ page, supplie
 	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 });
 
-testOrders("should allow deletion of empty reconciliation order", async ({ page, supplierOrders, books }) => {
-	books;
-	supplierOrders;
-
+testOrders("should allow deletion of empty reconciliation order", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
