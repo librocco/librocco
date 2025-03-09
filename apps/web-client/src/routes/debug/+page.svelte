@@ -10,6 +10,18 @@
 	import { dbNamePersisted } from "$lib/db";
 
 	import debugData from "$lib/__testData__/debugData.sql?raw";
+	import { debugData as dd } from "$lib/__testData__/debugData";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		associatePublishers,
+		createReconciliationOrders,
+		createSupplierOrders,
+		upsertBooks,
+		upsertCustomers,
+		upsertMultipleReconciliationOrderLines,
+		upsertSuppliers
+	} from "$lib/__testData__/debugHandlers";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -89,11 +101,26 @@
 	$: dbName = $dbNamePersisted;
 
 	const populateDatabase = async function () {
-		const db = await getInitializedDB(dbName);
+		const { db } = await getInitializedDB(dbName);
 		errorMessage = null;
 		console.log("Populating database");
 		try {
-			await db.db.exec(debugData);
+			await upsertBooks(db, dd.books);
+			await upsertCustomers(db, dd.customers);
+			await upsertSuppliers(db, dd.suppliers);
+			await associatePublishers(db, dd.supplierPublishers);
+
+			await createSupplierOrders(db, [
+				{ id: 1, supplierId: 1, orderLines: [dd.supplierOrderLines[0]] },
+				{ id: 2, supplierId: 2, orderLines: [dd.supplierOrderLines[1]] }
+			]);
+
+			await createReconciliationOrders(db, [
+				{ id: 1, supplierOrderIds: [1] },
+				{ id: 2, supplierOrderIds: [2] }
+			]);
+
+			await upsertMultipleReconciliationOrderLines(db, { 1: [dd.reconciliationOrderLines[0]], 2: [dd.reconciliationOrderLines[1]] });
 			console.log("Finished populating database.");
 		} catch (error) {
 			errorMessage = error;
