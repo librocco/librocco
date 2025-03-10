@@ -1,8 +1,7 @@
 import { upsertBook } from "$lib/db/cr-sqlite/books";
 import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
-import type { DbCtx } from "$lib/db/cr-sqlite/db";
 import { createReconciliationOrder, upsertReconciliationOrderLines } from "$lib/db/cr-sqlite/order-reconciliation";
-import { createSupplierOrder, multiplyString } from "$lib/db/cr-sqlite/suppliers";
+import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 import type { Customer, DB, PossibleSupplierOrderLine, Supplier } from "$lib/db/cr-sqlite/types";
 import type { BookData } from "@librocco/shared";
 
