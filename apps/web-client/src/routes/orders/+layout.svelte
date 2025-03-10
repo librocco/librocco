@@ -7,15 +7,19 @@
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import { WITH_SYNC } from "$lib/constants";
 
+	import type { LayoutData } from "../$types";
+
 	import { LL } from "$i18n/i18n-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
 	import { WS_URL } from "$lib/constants";
 
 	import { page } from "$app/stores";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+
+	export let data: LayoutData;
 
 	// #region reactivity
 	const dbid = "librocco-current-db";
@@ -33,6 +37,8 @@
 		// Stop wkr sync
 		wkr?.stopSync(dbid);
 	});
+
+	$: db = data.dbCtx?.db;
 
 	interface Link {
 		label: string;
@@ -76,7 +82,7 @@
 		},
 		{
 			label: tNav.supplier_orders(),
-			href: appPath("suppliers"),
+			href: appPath("supplier_orders"),
 			icon: Truck
 		}
 	];
@@ -93,8 +99,10 @@
 	 * _(and navigate to the newly created note page)_.
 	 */
 	const handleCreateNote = async () => {
-		const note = await getDB().db?.warehouse().note().create();
-		await goto(appPath("outbound", note.id));
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+
+		await goto(appPath("outbound", id));
 	};
 </script>
 

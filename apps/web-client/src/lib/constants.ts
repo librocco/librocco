@@ -5,6 +5,7 @@ import {
 	PUBLIC_COUCHDB_USER,
 	PUBLIC_COUCHDB_PASSWORD,
 	PUBLIC_IS_E2E,
+	PUBLIC_IS_DEBUG,
 	PUBLIC_LOG_LEVEL,
 	PUBLIC_WS_URL,
 	PUBLIC_WITH_SYNC
@@ -19,6 +20,7 @@ export const LOCAL_STORAGE_APP_SETTINGS = "librocco:app_settings";
 export const LOCAL_POUCH_DB_NAME = "librocco-client";
 
 export const IS_E2E = PUBLIC_IS_E2E === "true";
+export const IS_DEBUG = PUBLIC_IS_DEBUG === "true";
 
 export const LOG_LEVEL = PUBLIC_LOG_LEVEL;
 
