@@ -196,7 +196,9 @@ test("should delete the transaction from the note when when selected for deletio
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
 	// Delete the second transaction
-	await entries.row(1).delete();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await entries.row(1).getByRole("button").click();
+	await page.getByTestId("delete-row").click();
 
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
@@ -412,11 +414,17 @@ test("should allow for editing of custom items using the custom item form", asyn
 	const content = getDashboard(page).content();
 
 	// Edit custom items using custom item form
-	await content.table("outbound-note").row(1).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("outbound-note").row(1).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
+
 	await getDashboard(page).customItemForm().fillData({ title: "Custom item 1 - updated" });
 	await getDashboard(page).customItemForm().submit();
 
-	await content.table("outbound-note").row(0).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("outbound-note").row(0).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
+
 	await getDashboard(page).customItemForm().fillData({ title: "Custom item 2 - updated", price: 12 });
 	await getDashboard(page).customItemForm().submit();
 
