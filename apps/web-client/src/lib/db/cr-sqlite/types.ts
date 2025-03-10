@@ -124,6 +124,7 @@ export type PossibleSupplierOrder = {
 export type PlacedSupplierOrder = {
 	id: number;
 	created: number;
+	reconciliation_order_id: number | null;
 } & PossibleSupplierOrder;
 
 /**

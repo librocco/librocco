@@ -622,17 +622,23 @@ testOrders.skip("should allow supplier orders to be reconciled again after delet
 	await page.keyboard.press("Enter");
 
 	// Delete and verify all supplier orders can be reconciled again
-	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
 	await page.getByRole("button", { name: "Confirm" }).click();
 
 	await expect(page.getByRole("dialog")).toBeHidden();
 
-	// Verify back at supplier orders
-
+	await page.waitForURL("**/orders/suppliers/orders/");
+	await page.waitForTimeout(1000);
 	await page.reload();
+
+	// Verify back at supplier orders
+	// stalling here to give time for the page to load the deleted orders
+	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 
 	// Should be able to start new reconciliation with same orders
 	await page.getByText("Ordered").nth(1).click();
+	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
+
 	await page.getByRole("checkbox").nth(1).click();
 	await page.getByRole("checkbox").nth(2).click();
 	await page.getByText("Reconcile").first().click();
@@ -650,7 +656,7 @@ testOrders("should not delete reconciliation order when canceling deletion", asy
 	await page.keyboard.press("Enter");
 
 	// Try to delete but cancel
-	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
 	await page.getByRole("button", { name: "Cancel" }).click();
 
 	// Verify we're still on reconciliation page
@@ -672,7 +678,7 @@ testOrders("should allow deletion after comparing books", async ({ page, supplie
 	await page.getByRole("button", { name: "Compare" }).click();
 
 	// Delete from compare view
-	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
 	await page.getByRole("button", { name: "Confirm" }).click();
 
 	await expect(page.getByRole("dialog")).toBeHidden();
@@ -691,7 +697,7 @@ testOrders("should allow deletion of empty reconciliation order", async ({ page,
 	await page.getByText("Reconcile").first().click();
 
 	// Delete without scanning any books
-	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
 	await page.getByRole("button", { name: "Confirm" }).click();
 
 	await expect(page.getByRole("dialog")).toBeHidden();
@@ -713,7 +719,7 @@ testOrders.skip("should navigate correctly after deletion", async ({ page, suppl
 	await page.keyboard.press("Enter");
 
 	// Delete and verify navigation
-	await page.getByRole("button", { name: "Delete reconciliatoin order" }).click();
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
 	await page.getByRole("button", { name: "Confirm" }).click();
 
 	await expect(page.getByRole("dialog")).toBeHidden();
