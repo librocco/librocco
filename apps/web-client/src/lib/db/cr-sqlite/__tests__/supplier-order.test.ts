@@ -16,7 +16,7 @@ import {
 } from "../suppliers";
 import { addBooksToCustomer, getCustomerOrderLines, getCustomerOrderLineHistory, upsertCustomer } from "../customers";
 import { upsertBook } from "../books";
-import { addOrderLinesToReconciliationOrder, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
+import { upsertReconciliationOrderLines, createReconciliationOrder, finalizeReconciliationOrder } from "../order-reconciliation";
 
 const customer1 = { fullname: "John Doe", id: 1, displayId: "100" };
 const customer2 = { fullname: "Harry Styles", id: 2, displayId: "200" };
@@ -179,11 +179,10 @@ describe("New supplier orders:", () => {
 			await addBooksToCustomer(db, customer2.id, [book1.isbn, book1.isbn]);
 
 			// Create one supplier order (we need it to simulate the overdelivery)
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
-			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, { supplierId: supplier1.id });
-			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createReconciliationOrder(db, 1, [1]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
 			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
@@ -344,11 +343,10 @@ describe("New supplier orders:", () => {
 			await addBooksToCustomer(db, customer2.id, [book1.isbn, book1.isbn]);
 
 			// Create one supplier order (we need it to simulate the overdelivery)
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
-			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db, { supplierId: supplier1.id });
-			await createReconciliationOrder(db, 1, [supplierOrderId]);
+			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createReconciliationOrder(db, 1, [1]);
 			// 1 to reconcile, 1 to overdeliver
-			await addOrderLinesToReconciliationOrder(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
+			await upsertReconciliationOrderLines(db, 1, [{ isbn: book1.isbn, quantity: 2 }]);
 			await finalizeReconciliationOrder(db, 1);
 
 			await db.execO("SELECT * FROM customer_order_lines").then(console.log);
@@ -366,7 +364,7 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			await addBooksToCustomer(db, customer2.id, [book2.isbn]);
 
-			await createSupplierOrder(db, 1, [
+			await createSupplierOrder(db, 1, 1, [
 				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
 				{ isbn: book2.isbn, quantity: 1, supplier_id: 1 }
 			]);
@@ -393,7 +391,7 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			await addBooksToCustomer(db, customer2.id, [book1.isbn, book2.isbn]);
 
-			await createSupplierOrder(db, 1, [
+			await createSupplierOrder(db, 1, 1, [
 				{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }, // 2 are required by customer orders, but only 1 ordered
 				{ isbn: book2.isbn, quantity: 1, supplier_id: 1 }
 			]);
@@ -426,7 +424,7 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, customer2.id, [book1.isbn]);
 			await addBooksToCustomer(db, 3, [book1.isbn]);
 
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 2, supplier_id: supplier1.id }]);
+			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 2, supplier_id: supplier1.id }]);
 
 			expect(await getCustomerOrderLines(db, customer1.id)).toEqual([
 				expect.objectContaining({ isbn: book1.isbn, placed: expect.any(Date) })
@@ -451,7 +449,7 @@ describe("Placing supplier orders", () => {
 			].join("\n");
 
 			expect(
-				createSupplierOrder(db, 1, [
+				createSupplierOrder(db, 1, 1, [
 					{ isbn: book1.isbn, quantity: 1, supplier_id: 1 },
 					{ isbn: book2.isbn, quantity: 1, supplier_id: 2 }
 				])
@@ -471,7 +469,7 @@ describe("Placing supplier orders", () => {
 
 			// Create the order
 			const possibleOrderLines = await getPossibleSupplierOrderLines(db, supplierId);
-			await createSupplierOrder(db, supplierId, possibleOrderLines);
+			await createSupplierOrder(db, 1, supplierId, possibleOrderLines);
 
 			// Verify order was created with zero price
 			const [placedOrder] = await getPlacedSupplierOrders(db);
@@ -482,29 +480,29 @@ describe("Placing supplier orders", () => {
 		// NOTE: this is an edge case, and the UI probably shouldn't allow it.
 		// Maybe this could also be handled by the UI allowing it, but showing an error message if attempted
 		it("throw an error when trying to create a supplier order with no order lines", async () => {
-			expect(createSupplierOrder(db, 1, [])).rejects.toThrow("No order lines provided");
+			expect(createSupplierOrder(db, 1, 1, [])).rejects.toThrow("No order lines provided");
 		});
 
 		it("timestamp supplier order's 'created' with ms precision", async () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
 
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
-			const [supplierOrder1] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - supplierOrder1.created).toBeLessThan(300);
+			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [s1] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - s1.created).toBeLessThan(300);
 
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
-			const [supplierOrder2] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - supplierOrder2.created).toBeLessThan(300);
+			await createSupplierOrder(db, 2, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			const [s2] = await getPlacedSupplierOrders(db);
+			expect(Date.now() - s2.created).toBeLessThan(300);
 		});
 
 		it("timestamp customer order lines' 'placed' with ms precision", async () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn, book2.isbn]);
 
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
 			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(300);
 
-			await createSupplierOrder(db, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
+			await createSupplierOrder(db, 2, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
 			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(300);
 		});
@@ -512,7 +510,7 @@ describe("Placing supplier orders", () => {
 		it("create a customer order line - supplier order relation for each time the same line is ordered from the supplier", async () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 
-			await createSupplierOrder(db, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			expect(await getCustomerOrderLineHistory(db, customer1.id)).toHaveLength(1);
 
 			// This is a case when the book hadn't been delivered and had been ordered again (one or more times)
@@ -521,13 +519,13 @@ describe("Placing supplier orders", () => {
 			await db.exec("UPDATE customer_order_lines SET placed = NULL"); // NOTE: this is the only line so it works without elaborate WHERE clause
 
 			// Order again
-			await createSupplierOrder(db, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createSupplierOrder(db, 2, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			expect(await getCustomerOrderLineHistory(db, customer1.id)).toHaveLength(2);
 
 			// Explicitly remove the placed on the customer order line, so as to simulate the book not being delivered (ready for reordering)
 			await db.exec("UPDATE customer_order_lines SET placed = NULL"); // NOTE: this is the only line so it works without elaborate WHERE clause
 
-			await createSupplierOrder(db, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createSupplierOrder(db, 3, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			expect(await getCustomerOrderLineHistory(db, customer1.id)).toHaveLength(3);
 		});
 
@@ -535,7 +533,7 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, customer1.id, [book1.isbn]);
 			let lastUpdate: number;
 
-			await createSupplierOrder(db, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
 			expect(Date.now() - lastUpdate).toBeLessThan(300);
 
@@ -714,14 +712,14 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
 			await addBooksToCustomer(db, 4, ["1", "2", "3"]);
 
-			await createSupplierOrder(db, 1, [
+			await createSupplierOrder(db, 1, 1, [
 				{ supplier_id: 1, isbn: "1", quantity: 2 },
 				{ supplier_id: 1, isbn: "2", quantity: 1 }
 			]);
 
-			await createSupplierOrder(db, 2, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
+			await createSupplierOrder(db, 2, 2, [{ supplier_id: 2, isbn: "3", quantity: 3 }]);
 
-			await createSupplierOrder(db, 1, [
+			await createSupplierOrder(db, 3, 1, [
 				{ supplier_id: 1, isbn: "2", quantity: 3 },
 				{ supplier_id: 1, isbn: "3", quantity: 3 }
 			]);
@@ -749,13 +747,13 @@ describe("Placing supplier orders", () => {
 			await addBooksToCustomer(db, 1, ["1", "2", "3", "4"]);
 
 			// Supplier order 1 - reconciled (finalized)
-			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "1", quantity: 1 }]);
+			await createSupplierOrder(db, 2, 1, [{ supplier_id: 1, isbn: "1", quantity: 1 }]);
 			// Supplier order 2 - reconciled (not finalized)
-			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "2", quantity: 1 }]);
+			await createSupplierOrder(db, 3, 1, [{ supplier_id: 1, isbn: "2", quantity: 1 }]);
 			// Supplier order 3 - not reconciled
-			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "3", quantity: 1 }]);
+			await createSupplierOrder(db, 4, 1, [{ supplier_id: 1, isbn: "3", quantity: 1 }]);
 			// Supplier order 4 - not reconciled
-			await createSupplierOrder(db, 1, [{ supplier_id: 1, isbn: "4", quantity: 1 }]);
+			await createSupplierOrder(db, 5, 1, [{ supplier_id: 1, isbn: "4", quantity: 1 }]);
 
 			const [{ id: s4 }, { id: s3 }, { id: s2 }, { id: s1 }] = await getPlacedSupplierOrders(db);
 

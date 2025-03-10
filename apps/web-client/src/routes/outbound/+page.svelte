@@ -58,9 +58,6 @@
 	const handleCreateNote = async () => {
 		const id = await getNoteIdSeq(db);
 		await createOutboundNote(db, id);
-
-		// Unsubscribe from db changes to prevent invalidate and page load race
-		disposer?.();
 		await goto(appPath("outbound", id));
 	};
 
@@ -73,7 +70,7 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page view="outbound" loaded={initialized}>
+<Page handleCreateOutboundNote={handleCreateNote} view="outbound" loaded={initialized}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />

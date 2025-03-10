@@ -19,10 +19,8 @@
 
 	import { LL } from "$i18n/i18n-svelte";
 
-	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";
-	import { getDB } from "$lib/db";
 
 	import { page } from "$app/stores";
 
@@ -76,9 +74,9 @@
 		},
 		{
 			label: tNav.supplier_orders(),
-			href: appPath("suppliers"),
+			href: appPath("supplier_orders"),
 			icon: Truck,
-			linkto: "orders/suppliers"
+			linkto: "orders/suppliers/orders"
 		}
 	];
 
@@ -92,14 +90,7 @@
 		forceVisible: true
 	});
 
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateNote = async () => {
-		const note = await getDB().db?.warehouse().note().create();
-		await goto(appPath("outbound", note.id));
-	};
+	export let handleCreateOutboundNote: () => (void | Promise<void>) | undefined = undefined;
 </script>
 
 <div id={testId("page-container")} data-view={view} data-loaded={loaded} class="flex h-screen w-screen overflow-hidden">
@@ -229,15 +220,17 @@
 						{/each}
 					</ul>
 
-					<button on:click={handleCreateNote} class="flex gap-3 p-2 pr-3">
-						<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-50">
-							<QrCode size={24} class="text-black" />
-						</div>
-						<div>
-							<p class="text-sm font-medium leading-5 text-gray-50">Checkout</p>
-							<p class="text-xs font-normal leading-4 text-gray-400">Create a new outbound note</p>
-						</div>
-					</button>
+					{#if handleCreateOutboundNote}
+						<button on:click={handleCreateOutboundNote} class="flex gap-3 p-2 pr-3">
+							<div class="flex h-10 w-10 items-center justify-center rounded-md bg-gray-50">
+								<QrCode size={24} class="text-black" />
+							</div>
+							<div>
+								<p class="text-sm font-medium leading-5 text-gray-50">Checkout</p>
+								<p class="text-xs font-normal leading-4 text-gray-400">Create a new outbound note</p>
+							</div>
+						</button>
+					{/if}
 				</nav>
 				<!-- Nav end -->
 			</div>

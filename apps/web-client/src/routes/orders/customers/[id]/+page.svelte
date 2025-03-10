@@ -23,10 +23,10 @@
 
 	import { stripNulls } from "@librocco/shared";
 
+	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { PopoverWrapper, Dialog } from "$lib/components";
 
 	import { getCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
-	import type { Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -39,14 +39,12 @@
 	import { DaisyUIBookForm, bookSchema, createCustomerOrderSchema, type BookFormSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
-	import { getOrderLineStatus } from "$lib/utils/order-status";
-
 	import {
 		addBooksToCustomer,
 		removeBooksFromCustomer,
 		isDisplayIdUnique,
 		upsertCustomer,
-		markCustomerOrderLineAsCollected
+		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 	import type { BookEntry } from "@librocco/db";
 
@@ -140,11 +138,11 @@
 
 	// #endregion dialog
 
-	const handleDeleteLine = async (lineId) => {
+	const handleDeleteLine = async (lineId: number) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
 	const handleCollect = async (id: number) => {
-		await markCustomerOrderLineAsCollected(db, id);
+		await markCustomerOrderLinesAsCollected(db, [id]);
 	};
 
 	// #region book-form
@@ -317,30 +315,25 @@
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, placed, received, collected }}
-								{@const placedTime = placed?.getTime()}
-								{@const receivedTime = received?.getTime()}
-								{@const collectedTime = collected?.getTime()}
-								{@const orderLineStatus = getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime })}
-
+							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status }}
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
 									<td>
-										{#if orderLineStatus === "collected"}
+										{#if status === OrderLineStatus.Collected}
 											<span class="badge-success badge">Collected</span>
-										{:else if orderLineStatus === "received"}
+										{:else if status === OrderLineStatus.Received}
 											<span class="badge-info badge">Delivered</span>
-										{:else if orderLineStatus === "placed"}
+										{:else if status === OrderLineStatus.Placed}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
 										{/if}
 									</td>
 									<td>
-										{#if orderLineStatus === "collected"}
+										{#if status === OrderLineStatus.Collected}
 											<!--
 												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
 												TODO: use some more robust way to handle this (loacle time string that actually works)
@@ -400,7 +393,7 @@
 													</span>
 												</button>
 
-												{#if orderLineStatus === "received"}
+												{#if status < OrderLineStatus.Received}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														on:click={() => handleCollect(id)}
@@ -410,7 +403,7 @@
 															<BookUp />
 														</span>
 													</button>
-												{:else if orderLineStatus === "draft"}
+												{:else if status === OrderLineStatus.Draft}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														data-testid={testId("delete-row")}
