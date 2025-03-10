@@ -163,7 +163,7 @@
 		<!-- Topbar container end -->
 
 		<!-- Heading section -->
-		<header class="w-full px-4 pb-6 pt-5 xs:px-8">
+		<header class="xs:px-8 w-full px-4 pb-6 pt-5">
 			<slot name="heading" />
 		</header>
 		<!-- Heading section end -->
@@ -182,9 +182,9 @@
 	</div>
 </div>
 
-<!-- Mobile menu overlay -->
-<div use:melt={$portalled}>
-	{#if $mobilMenuOpen}
+{#if $mobilMenuOpen}
+	<!-- Mobile menu overlay -->
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
@@ -236,6 +236,7 @@
 				<!-- Nav end -->
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
+
 <!-- Mobile menu overlay end -->
