@@ -40,7 +40,8 @@ test("history/date - display", async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 
 	// Default history view (sidebar navigation) is 'history/date'
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Default view is today
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
 
@@ -198,9 +199,14 @@ test("history/date - display", async ({ page }) => {
 test("history/date - general navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	await dashboard.navigate("history/date");
-	await dashboard.content().navigate("history/isbn"); // This is our "previous" view
-	await dashboard.content().navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
+
+	await page.getByRole("link", { name: "By ISBN" }).click(); // This is our "previous" view
+	await page.waitForURL("**/history/isbn/**/");
+
+	await page.getByRole("link", { name: "By Date", exact: true }).click();
+	await page.waitForURL("**/history/date/**/");
 
 	// Navigating between dates is shallow - going back should go to previous route altogether
 	const t_minus_1 = new Date(Date.now() - 1 * TIME_DAY).toISOString().slice(0, 10);
@@ -220,7 +226,8 @@ test("history/date - general navigation", async ({ page }) => {
 	// Clicking on txn's note name shold redirect to committed note page
 	//
 	// Navigate back to date view
-	await dashboard.content().navigate("history/date");
+	await page.getByRole("link", { name: "By Date", exact: true }).click();
+	await page.waitForURL("**/history/date/**/");
 
 	const dbHandle = await getDbHandle(page);
 
@@ -236,9 +243,14 @@ test("history/date - general navigation", async ({ page }) => {
 	// Navigating to history/notes should preserve the selected date
 	//
 	// Go back to history/date
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
+
 	await dashboard.content().calendar().select(t_minus_3);
-	await dashboard.content().navigate("history/notes");
+
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
+
 	expect(page.url().includes(`history/notes/${t_minus_3}`));
 });
 
@@ -276,7 +288,8 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluate(commitNote, 4);
 
 	// Navigate to history/date page for assertions
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 
 	// Verify that the date had been reset successfully
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
@@ -339,9 +352,11 @@ test("history/isbn - base functionality", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
 
 	// Without selected isbn, a message (to select an isbn) should be shown
 	await dashboard.content().getByText("No book selected").waitFor();
@@ -363,9 +378,11 @@ test("history/isbn - search results", async ({ page }) => {
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
 
 	// Searching for a book that exists in two warehouses should display only one result
 	//
@@ -430,9 +447,12 @@ test("history/isbn - transaction display", async ({ page }) => {
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
+
 	// Navigate to the page for 1111111111
 	await search.type("1111111111");
 	await search.completions().n(0).click();
@@ -550,9 +570,12 @@ test("history/isbn - navigation", async ({ page }) => {
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
+
 	// Navigate to the page for 1111111111
 	await search.type("1111111111");
 	await search.completions().n(0).click();
@@ -572,9 +595,11 @@ test("history/notes - base", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/notes' subview
-	await dashboard.content().navigate("history/notes");
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
 
 	// Should use today as default date
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
@@ -589,9 +614,11 @@ test("history/notes - date display", async ({ page }) => {
 	const dateStub = await getDateStub(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/notes' subview
-	await dashboard.content().navigate("history/notes");
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
 
 	// Add some notes to work with
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
@@ -753,9 +780,11 @@ test("history/warehose - base", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await dashboard.content().navigate("history/warehouse");
+	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.waitForURL("**/history/warehouse/**/");
 
 	// The list should show two existing warehouses
 	await dashboard
@@ -841,7 +870,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 7);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
 	// Navigate to 'history/warehouse' subview
 	await dashboard.content().navigate("history/warehouse");
 	// Navigate to Warehouse 1
@@ -979,9 +1008,12 @@ test("history/warehose - navigation", async ({ page }) => {
 	const dbHandle = await getDbHandle(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await dashboard.content().navigate("history/warehouse");
+	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.waitForURL("**/history/warehouse/**/");
+
 	// Navigate to the page for Warehouse 1 - should default to toady - today range
 	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
 	await dashboard.content().header().title().assert("Warehouse 1 history");
