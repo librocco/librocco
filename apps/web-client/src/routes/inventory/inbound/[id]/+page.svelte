@@ -41,8 +41,19 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { mergeBookData } from "$lib/utils/misc";
 
-	import { addVolumesToNote, commitNote, deleteNote, getReceiptForNote, removeNoteTxn, updateNoteTxn } from "$lib/db/cr-sqlite/note";
+	import {
+		addVolumesToNote,
+		commitNote,
+		createOutboundNote,
+		deleteNote,
+		getNoteIdSeq,
+		getReceiptForNote,
+		removeNoteTxn,
+		updateNoteTxn
+	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
+	import { appPath } from "$lib/paths";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
 
@@ -62,6 +73,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
 
@@ -207,9 +219,19 @@
 	} = dialog;
 
 	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="inbound-note" loaded={!loading}>
+<Page {handleCreateOutboundNote} view="inbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm

@@ -9,7 +9,7 @@
 
 	import { stripNulls } from "@librocco/shared";
 
-	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import type { PageData } from "./$types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -17,9 +17,13 @@
 	import { createCustomerOrderSchema } from "$lib/forms";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
-	import { getOrderLineStatus } from "$lib/utils/order-status";
-
-	import { addBooksToCustomer, removeBooksFromCustomer, isDisplayIdUnique, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import {
+		addBooksToCustomer,
+		removeBooksFromCustomer,
+		isDisplayIdUnique,
+		upsertCustomer,
+		markCustomerOrderLinesAsCollected
+	} from "$lib/db/cr-sqlite/customers";
 
 	import { scannerSchema } from "$lib/forms/schemas";
 	// import { createIntersectionObserver } from "$lib/actions";
@@ -42,7 +46,7 @@
 
 	onDestroy(() => {
 		// Unsubscribe on unmount
-		disposer();
+		disposer?.();
 	});
 	// #endregion reactivity
 
@@ -50,8 +54,8 @@
 
 	$: db = data.dbCtx?.db;
 
-	$: customer = data.customer;
-	$: customerOrderLines = data.customerOrderLines;
+	$: customer = data?.customer;
+	$: customerOrderLines = data?.customerOrderLines || [];
 
 	$: totalAmount = customerOrderLines?.reduce((acc, cur) => acc + cur.price, 0) || 0;
 
@@ -102,8 +106,11 @@
 
 	// #endregion dialog
 
-	const handleDeleteLine = async (lineId) => {
+	const handleDeleteLine = async (lineId: number) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
+	};
+	const handleCollect = async (id: number) => {
+		await markCustomerOrderLinesAsCollected(db, [id]);
 	};
 
 	let scanInputRef: HTMLInputElement = null;
@@ -236,32 +243,42 @@
 								<th>Authors</th>
 								<th>Price</th>
 								<th>Status</th>
+								<th>Collect</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
 						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, price, placed, received, collected }}
-								{@const placedTime = placed?.getTime()}
-								{@const receivedTime = received?.getTime()}
-								{@const collectedTime = collected?.getTime()}
-
+							{#each customerOrderLines as { id, isbn, title, authors, price, placed, received, collected, status }}
 								<tr>
 									<th>{isbn}</th>
 									<td>{title}</td>
 									<td>{authors}</td>
 									<td>{price}</td>
 									<td>
-										{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "collected"}
+										{#if status === OrderLineStatus.Collected}
 											<span class="badge-success badge">Collected</span>
-										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "received"}
-											<span class="badge-info badge">Delievered</span>
-										{:else if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "placed"}
+										{:else if status === OrderLineStatus.Received}
+											<span class="badge-info badge">Delivered</span>
+										{:else if status === OrderLineStatus.Placed}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
 											<span class="badge">Draft</span>
 										{/if}
 									</td>
-									{#if getOrderLineStatus({ placed: placedTime, received: receivedTime, collected: collectedTime }) === "draft"}
+									<td>
+										{#if status === OrderLineStatus.Collected}
+											<!--
+												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
+												TODO: use some more robust way to handle this (loacle time string that actually works)
+											-->
+											{collected.toISOString().slice(0, 10)}
+										{:else}
+											<button disabled={status < OrderLineStatus.Received} on:click={() => handleCollect(id)} class="btn-outline btn-sm btn"
+												>Collect📚</button
+											>
+										{/if}
+									</td>
+									{#if status === OrderLineStatus.Draft}
 										<td>
 											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
 										</td>

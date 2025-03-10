@@ -12,7 +12,7 @@
 
 	import { appPath } from "$lib/paths";
 
-	import { dbName, dbNamePersisted, resetDB } from "$lib/db";
+	import { dbName, dbNamePersisted } from "$lib/db";
 
 	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { settingsSchema } from "$lib/forms/schemas";
@@ -24,8 +24,11 @@
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
 	import { settingsStore } from "$lib/stores/app";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
+
+	$: db = data.dbCtx?.db;
 
 	$: plugins = data.plugins;
 
@@ -94,11 +97,12 @@
 	// #region select db control
 	let selectionOn = false;
 	const toggleSelection = () => (selectionOn = !selectionOn);
+	// TODO: This used the old functionality and currently doesn't work, revisit
 	const handleSelect = (name: string) => async () => {
 		// Persist the selection
 		dbNamePersisted.set(name);
 		// Reset the db (allowing the root load function to reinstantiate the db)
-		resetDB();
+		// resetDB();
 		// Recalculate the data from root load down
 		await invalidateAll();
 		// Close the modal
@@ -148,9 +152,19 @@
 	let deleteDatabase = { name: "" };
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="settings" loaded={true}>
+<Page {handleCreateOutboundNote} view="settings" loaded={true}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />

@@ -16,6 +16,7 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
 
@@ -34,6 +35,8 @@
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
+
+	$: db = data?.dbCtx?.db;
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
@@ -61,9 +64,19 @@
 	const table = createTable(tableOptions);
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="outbound-note" loaded={!loading}>
+<Page {handleCreateOutboundNote} view="outbound-note" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />

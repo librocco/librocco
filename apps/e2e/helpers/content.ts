@@ -34,7 +34,9 @@ export function getContent(_parent: DashboardNode): ContentInterface {
 	const table = <V extends TableView>(view: V): V extends InventoryTableView ? InventoryTableInterface : HistoryTableInterface => {
 		const isInventoryView = (view: TableView): view is InventoryTableView =>
 			["inbound-note", "outbound-note", "stock", "warehouse"].includes(view);
-		return isInventoryView(view) ? getInventoryTable(container, view) : (getHistoryTable(container, view) as any);
+		// NOTE: this started failing at some point for no apparent reason (the types were correctly inferred before)
+		// This 'as any' cast is slightly dirty, but it's apparent from the code that this is correct (and the inferrence when using this should be correct)
+		return isInventoryView(view) ? (getInventoryTable(container, view) as any) : (getHistoryTable(container, view) as any);
 	};
 
 	const navigate = (
