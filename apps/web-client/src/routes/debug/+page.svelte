@@ -12,7 +12,7 @@
 	import debugData from "$lib/__testData__/debugData.sql?raw";
 	import { debugData as dd } from "$lib/__testData__/debugData";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import { upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import {
 		associatePublishers,
 		createReconciliationOrders,
@@ -109,6 +109,9 @@
 			await upsertCustomers(db, dd.customers);
 			await upsertSuppliers(db, dd.suppliers);
 			await associatePublishers(db, dd.supplierPublishers);
+			// possible order lines
+			const isbns = dd.customerOrderLines.map((line) => line.isbn);
+			await addBooksToCustomer(db, dd.customers[0].id, isbns);
 
 			await createSupplierOrders(db, [
 				{ id: 1, supplierId: 1, orderLines: [dd.supplierOrderLines[0]] },
