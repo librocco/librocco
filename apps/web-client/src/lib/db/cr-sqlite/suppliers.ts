@@ -190,7 +190,9 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
     	RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
         RIGHT JOIN book ON sp.publisher = book.publisher
         RIGHT JOIN customer_order_lines col ON book.isbn = col.isbn
-        WHERE col.placed IS NULL
+
+		-- sometimes a book can be received before being placed with the supplier due to overdelivery
+        WHERE col.placed IS NULL AND col.received IS NULL
         GROUP BY supplier.id, supplier.name
         ORDER BY supplier_name ASC
 	`;
@@ -211,7 +213,11 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
 export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
-	const conditions = ["col.placed is NULL"];
+	const conditions = [
+		"col.placed is NULL",
+		// sometimes a book can be received before being placed with the supplier due to overdelivery
+		"col.received IS NULL"
+	];
 	const params = [];
 
 	if (!supplierId) {
@@ -249,42 +255,67 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
 }
 
 /**
-  * Retrieves all placed supplier orders with:
+  * Retrieves placed supplier orders with:
   * - order id & created timestamp
   * - supplier id & name
   * - a total book count
   *
   * Orders are returned sorted by creation date (newest first).
   *
+  * Optionally, the results can be filtered by supplier id and reconciliation status:
+  * - if `supplierId` is provided, only orders from the specified supplier are returned
+  * - if `reconciled` is specified:
+  *   - `true` returns all orders that are part of a reconciliation order **regerdless of the order being finalized**
+  *   - `false` returns all orders that are not part of a reconciliation order
+  *
   * @param db - The database instance to query
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(db: DB, supplierId?: number): Promise<PlacedSupplierOrder[]> {
+export async function getPlacedSupplierOrders(
+	db: DB,
+	filters?: { supplierId?: number; reconciled?: boolean }
+): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
 	const params = [];
 
-	if (supplierId) {
+	if (filters?.supplierId) {
 		whereConditions.push("so.supplier_id = ?");
-		params.push(supplierId);
+		params.push(filters.supplierId);
+	}
+
+	if (filters?.reconciled !== undefined) {
+		const condition = filters.reconciled ? "IS NOT NULL" : "IS NULL";
+		whereConditions.push(`ro.id ${condition}`);
 	}
 
 	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
 
 	const query = `
+		-- reconciliation orders in case we want to filter with respect to orders being reconciled
+		WITH ro AS (
+			SELECT
+				reconciliation_order.id,
+				CAST (value AS INTEGER) as supplier_order_id
+			FROM reconciliation_order
+			CROSS JOIN json_each(supplier_order_ids)
+		)
+
 		SELECT
             so.id,
             so.supplier_id,
             s.name as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
-			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price
+			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
+			ro.id as reconciliation_order_id
         FROM supplier_order so
 		LEFT JOIN supplier s ON s.id = so.supplier_id
 		LEFT JOIN supplier_order_line sol ON sol.supplier_order_id = so.id
 		LEFT JOIN book ON sol.isbn = book.isbn
+		LEFT JOIN ro ON so.id = ro.supplier_order_id
 		${whereClause}
-        GROUP BY so.id, so.supplier_id, s.name, so.created
+        GROUP BY so.id, so.supplier_id, s.name, so.created, ro.id
         ORDER BY so.created DESC
 	`;
 
@@ -341,13 +372,15 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * Creates supplier orders based on provided order lines and updates related customer orders.
  *
  * @param db - The database instance to query
+ * @param id - supplier Order Id
+ * @param supplierId - The id of the supplier to create the order for
  * @param orderLines - The order lines to create supplier orders from
- * @returns Promise resolving to the created supplier orders
- * @todo Rewrite this function to accommodate for removing quantity in
-customerOrderLine
+ * @returns Promise<void>
+ * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
 export async function createSupplierOrder(
 	db: DB,
+	id: number,
 	supplierId: number | null,
 	orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[]
 ) {
@@ -375,48 +408,36 @@ export async function createSupplierOrder(
 
 		// Create a supplier order
 		// TODO: check how conflict - free (when syncing) this way of assigning ids is
-		const [[orderId]] = await db.execA("INSERT INTO supplier_order (supplier_id, created) VALUES (?, ?) RETURNING id", [
-			supplierId,
-			timestamp
-		]);
+		await db.execA("INSERT INTO supplier_order (id, supplier_id, created) VALUES (?, ?, ?)", [id, supplierId, timestamp]);
 
-		for (const orderLine of orderLines) {
+		for (const { isbn, quantity } of orderLines) {
 			// Find the customer order lines corresponding to this supplier order line
-			const _customerOrderLineIds = await db
+			//
+			// NOTE: Currently we're allowing for ordering of any number of books for an ISBN, regardless of the number of customer orders
+			// requiring that books. This had proved to be a much simpler solution, trading off a check for an edge case of astronomical probability
+			//
+			// Keep in mind: any number of books can be ordered (placed with a supplier), but only the existing customer order lines will be marked as placed
+			const customerOrderLineIds = await db
 				.execO<{
 					id: number;
-				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC", [orderLine.isbn])
+				}>("SELECT id FROM customer_order_lines WHERE isbn = ? AND placed is NULL ORDER BY created ASC LIMIT ?", [isbn, quantity])
 				.then((res) => res.map(({ id }) => id));
-
-			// NOTE: this is a really defnsive check:
-			// - if there are not enough customer order lines to justify this order line, we should order (at maximum)
-			//  the number of customer order lines available
-			// - other constraint, ofc, is the number of quantity specified by the orderLines param
-			//
-			// TODO: we should really check this - potentially throw an error here and show a dialog in the UI confirming the order
-			// - kinda like with out-of-stock outbound notes
-			const quantity = Math.min(orderLine.quantity, _customerOrderLineIds.length);
-			if (quantity < orderLine.quantity) {
-				const msg = [
-					"There are fewer customer order lines than requested by the supplier order line:",
-					"  this isn't a problem as the final quantity will be truncated, but indicates a bug in calculating of possible supplier order lines:",
-					`  isbn: ${orderLine.isbn}`,
-					`  quantity requested: ${orderLine.quantity}`,
-					`  quantity required (by customer order lines): ${_customerOrderLineIds.length}`
-				];
-				console.warn(msg);
-			}
-			// The truncated list of custome order line ids - the lines we need to update to "placed"
-			const customerOrderLineIds = _customerOrderLineIds.slice(0, quantity);
 
 			const idsPlaceholder = `(${multiplyString("?", customerOrderLineIds.length)})`;
 			await db.exec(`UPDATE customer_order_lines SET placed = ? WHERE id IN ${idsPlaceholder}`, [timestamp, ...customerOrderLineIds]);
 
-			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [
-				orderId,
-				orderLine.isbn,
-				quantity
-			]);
+			await db.exec("INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity) VALUES (?, ?, ?)", [id, isbn, quantity]);
+
+			const values = customerOrderLineIds.map((cLineId) => [cLineId, timestamp, id]);
+
+			// NOTE: In most cases there WILL be customer orders corresponding to the supplier order lines, however, we're allowing to create a number of supplier
+			// order lines unrelated to existing customer orders - we utilise this to simplify tests, so it's important to check to not end up with an incomplete SQL statement
+			if (values.length) {
+				await db.exec(
+					`INSERT INTO customer_order_line_supplier_order (customer_order_line_id, placed, supplier_order_id) VALUES ${multiplyString("(?, ?, ?)", values.length)}`,
+					values.flat()
+				);
+			}
 		}
 	});
 }

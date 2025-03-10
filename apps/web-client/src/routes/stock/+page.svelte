@@ -31,6 +31,9 @@
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { appPath } from "$lib/paths";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
 	$: db = data?.dbCtx?.db;
@@ -46,6 +49,7 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+	$: goto = racefreeGoto(disposer);
 
 	$: publisherList = data?.publisherList;
 
@@ -123,9 +127,19 @@
 	});
 
 	$: ({ search: tSearch } = $LL);
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="stock" loaded={Boolean(db)}>
+<Page {handleCreateOutboundNote} view="stock" loaded={Boolean(db)}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
