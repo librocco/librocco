@@ -30,7 +30,7 @@ import { type DB } from "./types";
  * @param {DB} db - Database connection
  * @param {BookData} book - Book metadata
  * @throws {Error} If ISBN is not provided
- * @returns {Promise<void>} Resolves when book is created/updated
+ * @see apps/e2e/helpers/cr-sqlite.ts:upsertBook whe you make any updates
  */
 export async function upsertBook(db: DB, book: BookData) {
 	if (!book.isbn) {

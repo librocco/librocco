@@ -38,7 +38,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createInboundNote, createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
@@ -104,7 +104,7 @@
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateNote = () => async () => {
+	const handleCreateInboundNote = () => async () => {
 		const noteId = await getNoteIdSeq(db);
 		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
 		await goto(appPath("inbound", noteId));
@@ -168,9 +168,19 @@
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 	// #endregion printing
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
 </script>
 
-<Page view="warehouse" loaded={!loading}>
+<Page {handleCreateOutboundNote} view="warehouse" loaded={!loading}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input placeholder="Search" {...inputProps} />
@@ -195,7 +205,7 @@
 			</div>
 		{:else if !entries?.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
+				<button on:click={handleCreateInboundNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">

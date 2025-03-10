@@ -5,7 +5,7 @@
 	import { base } from "$app/paths";
 	import { createEventDispatcher } from "svelte";
 
-	export let orders: Array<PlacedSupplierOrder>;
+	export let orders: Array<PlacedSupplierOrder & { reconciled?: boolean }>;
 
 	let selectedOrders: Array<number>;
 	$: selectedOrders = [];
@@ -28,6 +28,9 @@
 	}
 	function handleView(supplierOrderId: number) {
 		goto(`${base}/orders/suppliers/orders/${supplierOrderId}`);
+	}
+	function handleViewReconcileOrder(id: number) {
+		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 </script>
 
@@ -67,10 +70,16 @@
 					</td>
 				</tr>
 			{/if}
-			{#each orders as { supplier_name, total_book_number, created, id }}
+			{#each orders as { supplier_name, total_book_number, created, id, reconciled = false, reconciliation_order_id }}
 				<tr class="hover focus-within:bg-base-200">
 					<td>
-						<input type="checkbox" class="checkbox" checked={selectedOrders.includes(id)} on:change={() => toggleOrderSelection(id)} />
+						<input
+							disabled={reconciled}
+							type="checkbox"
+							class="checkbox"
+							checked={selectedOrders.includes(id)}
+							on:change={() => toggleOrderSelection(id)}
+						/>
 					</td>
 					<td>{supplier_name}</td>
 					<td>{total_book_number}</td>
@@ -81,10 +90,19 @@
 					</td>
 					<td class="flex items-center justify-evenly text-right">
 						<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleView(id)}> View Order </button>
-						{#if !hasSelectedOrders}
+						{#if !hasSelectedOrders && !reconciled}
 							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={() => handleReconcile([id])}>
 								<ListTodo aria-hidden focusable="false" size={20} />
 								Reconcile
+							</button>
+						{/if}
+						{#if !hasSelectedOrders && reconciled}
+							<button
+								class="btn-primary btn-sm btn flex-nowrap gap-x-2.5"
+								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
+							>
+								<ListTodo aria-hidden focusable="false" size={20} />
+								View Reconciliation
 							</button>
 						{/if}
 					</td>
