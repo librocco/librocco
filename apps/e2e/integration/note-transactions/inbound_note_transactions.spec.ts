@@ -14,7 +14,8 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	// TODO: should improve accessible markup and target as "role=tab"
 	await dashboard.content().navigate("inbound-list");
 
 	// We create a warehouse and a note for all tests
@@ -187,7 +188,9 @@ test("should delete the transaction from the note on delete button click", async
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
 	// Delete the second transaction
-	await entries.row(1).delete();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await entries.row(1).getByRole("button").click();
+	await page.getByTestId("delete-row").click();
 
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);

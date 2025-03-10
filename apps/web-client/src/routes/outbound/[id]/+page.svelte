@@ -616,8 +616,8 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 		{#if dialogContent.type === "no-warehouse-selected"}
 			<!-- No warehouse selecter dialog -->
@@ -766,5 +766,5 @@
 				</Dialog>
 			</div>
 		{/if}
-	{/if}
-</div>
+	</div>
+{/if}

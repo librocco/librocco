@@ -12,8 +12,9 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	// Navigate to the inventory page
-	await dashboard.navigate("stock");
+	// Navigate to the stock/search page
+	await page.getByRole("link", { name: "Search stock" }).click();
+
 	await page.getByText("Search for stock").waitFor();
 	await new Promise((res) => setTimeout(res, 100));
 });

@@ -18,7 +18,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await content.entityList("warehouse-list").waitFor();
 
 	const dbHandle = await getDbHandle(page);
@@ -38,7 +38,9 @@ test("update is reflected in table view - stock", async ({ page }) => {
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
-	await content.table("warehouse").row(0).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("warehouse").row(0).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();
 	await bookForm.fillData(book1);
@@ -53,8 +55,10 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+	// TODO: should improve accessible markup and target as "role=tab"
 	await content.navigate("inbound-list");
+	await content.entityList("inbound-list").waitFor();
 
 	// Setup
 	//
@@ -70,7 +74,9 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
-	await content.table("inbound-note").row(0).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("inbound-note").row(0).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();
 	await bookForm.fillData(book1);
@@ -85,7 +91,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await content.entityList("outbound-list").waitFor();
 
 	// Setup
@@ -101,7 +107,9 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
-	await content.table("outbound-note").row(0).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("outbound-note").row(0).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();
 	await bookForm.fillData(book1);
@@ -116,7 +124,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	const content = dashboard.content();
 
 	// Wait for the app to become responsive
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await content.entityList("outbound-list").waitFor();
 
 	// Setup
@@ -132,7 +140,9 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
-	await content.table("outbound-note").row(0).edit();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await content.table("outbound-note").row(0).getByRole("button").click();
+	await page.getByTestId("edit-row").click();
 
 	const bookForm = dashboard.bookForm();
 	await bookForm.fillData(book1);
