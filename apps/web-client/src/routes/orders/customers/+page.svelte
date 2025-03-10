@@ -71,7 +71,7 @@
 	};
 </script>
 
-<header class="navbar mb-4 bg-neutral">
+<header class="navbar bg-neutral mb-4">
 	<input type="checkbox" value="forest" class="theme-controller toggle" />
 </header>
 
@@ -87,8 +87,8 @@
 
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			{#if !customerOrders.length}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
+				<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
+					<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
 						New Order
@@ -134,7 +134,7 @@
 									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/#/orders/customers/{id}" class="btn-outline btn-sm btn">Update</a>
+									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">Update</a>
 								</td>
 							</tr>
 						{/each}
