@@ -188,7 +188,9 @@ test("should delete the transaction from the note on delete button click", async
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
 	// Delete the second transaction
-	await entries.row(1).delete();
+	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
+	await entries.row(1).getByRole("button").click();
+	await page.getByTestId("delete-row").click();
 
 	// Check that the second transaction was deleted
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
