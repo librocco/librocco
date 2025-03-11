@@ -25,12 +25,12 @@ INSERT INTO customer (id, display_id, fullname, email, deposit) VALUES
 
 -- Customer Order Lines
 INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
-(1, 1, '9781234567897', 1, 0, 0),
-(2, 1, '9788804797142', 1, 1, 0),
-(3, 1, '9780385504201', 0, 0, 0),
+(1, 1, '9781234567897', 1, null, null),
+(2, 1, '9788804797142', 1, 1, null),
+(3, 1, '9780385504201', null, null, null),
 (4, 2, '9780385504201', 1, 1, 1),
-(5, 2, '9780553296983', 1, 0, 0),
-(6, 2, '9781234567897', 0, 0, 0);
+(5, 2, '9780553296983', 1, null, null),
+(6, 2, '9781234567897', null, null, null);
 
 -- Supplier Orders
 INSERT INTO supplier_order (id, supplier_id, created) VALUES
