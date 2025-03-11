@@ -3,6 +3,119 @@ import { expect } from "@playwright/test";
 import { baseURL } from "./constants";
 import { testOrders } from "@/helpers/fixtures";
 
+testOrders("create: single order: on row button click", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("button", { name: "Reconcile" })
+		.click();
+
+	// Check that we're at the reconciliation page
+	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+});
+
+testOrders("create: multiple orders: using checkboxes and a global 'Reconcile' button", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByRole("button", { name: "Reconcile" }).first().click();
+
+	// Check that we're at the reconciliation page
+	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+});
+
+testOrders("create: adds the created reconciliation order to (active) 'Reconciling' tab", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	// 'Reconiling' tab is disabled - no acrive reconciliation orders
+	const reconcilingBtn = page.getByRole("button", { name: "Reconciling", exact: true });
+	await expect(reconcilingBtn).toBeDisabled();
+
+	// Create an order
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("button", { name: "Reconcile" })
+		.click();
+
+	// Check that we're at the reconciliation page
+	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+
+	// Navigate back to supplier orders
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	// Navigate to reconiling view
+	await reconcilingBtn.click();
+
+	// There should be one row - active reconciliation order (containing 'Continue' button)
+	await table.getByRole("row").getByRole("button", { name: "Continue" }).waitFor();
+});
+
+testOrders("create: doesn't allow for reconciling same supplier order(s) twice", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	// 'Reconiling' tab is disabled - no acrive reconciliation orders
+	const reconcilingBtn = page.getByRole("button", { name: "Reconciling", exact: true });
+	await expect(reconcilingBtn).toBeDisabled();
+
+	// Create an order
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByRole("button", { name: "Reconcile" }).first().click();
+
+	// Check that we're at the reconciliation page
+	await page.getByPlaceholder("Enter ISBN of delivered books").waitFor();
+
+	// Navigate back to supplier orders
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// The orders being reconciled are currently not displayed in the table
+	await relevantOrders.waitFor({ state: "detached" });
+});
+
 testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
