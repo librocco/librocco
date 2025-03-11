@@ -574,6 +574,341 @@ testOrders(
 	}
 );
 
+testOrders(
+	"compare: empty state: shows all lines for the respective order, case: single order",
+	async ({ page, books, supplierOrders }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// NOTE: using the first order (from the fixture) for the test
+		const { order } = supplierOrders[0];
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+			.getByRole("checkbox")
+			.click();
+
+		await page.getByText("Reconcile").first().click();
+
+		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
+		await page.getByRole("button", { name: "Compare" }).click();
+
+		// NOTE: the lines we're interested in will be either:
+		//   - the subheader - supplier name
+		//   - the scanned lines
+		//
+		// Build a regex to match
+		// NOTE: we're always matching for all books and all headings - this implicitly checks that no unexpected rows are shown
+		const headerText = [...new Set(["Unmatched Books", ...supplierOrders.map(({ order }) => order.supplier_name)])].join("|");
+		const isbnText = [...new Set(books.map(({ isbn }) => isbn))].join("|");
+		const matchRegex = new RegExp(`(${headerText}|${isbnText})`);
+
+		const rows = table.getByRole("row").filter({ hasText: matchRegex });
+
+		// Wait for the rows to be displayed
+		// NOTE: At the time of this writing there is 1 header (supplier name) + 2 order lines = 3 lines
+		await expect(rows).toHaveCount(3);
+
+		// Check the ordering (NOTE: This is the state at the time of this writing)
+		// NOTE: the lines should indicate the number of books ordered for each isbn
+		//
+		// header: sup1
+		// line: 5678, quantity (ordered): 3 -- supplierOrders[0].lines[0]
+		// line: 7777, quantity (ordered): 1 -- supplierOrders[0].lines[2]
+		// line: 9999, quantity (ordered): 2 -- supplierOrders[0].lines[1]
+		await rows.nth(0).getByText(supplierOrders[0].order.supplier_name).waitFor();
+
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		// Check stats: 0 delivered / 3 ordered
+		await expect(page.getByText("Total delivered:")).toBeVisible();
+		await expect(page.getByText("0 / 3")).toBeVisible();
+	}
+);
+
+testOrders(
+	"compare: empty state: shows all lines for the respective order, case: multiple orders, same supplier",
+	async ({ page, books, supplierOrders }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// NOTE: using the first two orders (from the fixture)
+		// NOTE: At the time of this writing, first two orders belonged to the same supplier
+		const relevantOrders = table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+		await relevantOrders.nth(0).getByRole("checkbox").click();
+		await relevantOrders.nth(1).getByRole("checkbox").click();
+
+		await page.getByText("Reconcile").first().click();
+
+		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
+		await page.getByRole("button", { name: "Compare" }).click();
+
+		// NOTE: the lines we're interested in will be either:
+		//   - the subheader - supplier name
+		//   - the scanned lines
+		//
+		// Build a regex to match
+		// NOTE: we're always matching for all books and all headings - this implicitly checks that no unexpected rows are shown
+		const headerText = [...new Set(["Unmatched Books", ...supplierOrders.map(({ order }) => order.supplier_name)])].join("|");
+		const isbnText = [...new Set(books.map(({ isbn }) => isbn))].join("|");
+		const matchRegex = new RegExp(`(${headerText}|${isbnText})`);
+
+		const rows = table.getByRole("row").filter({ hasText: matchRegex });
+
+		// Wait for the rows to be displayed
+		// NOTE: At the time of this writing there is 1 header (supplier 1) + 5 order lines (2 for order 1 and 3 for order 2) = 6 lines
+		await expect(rows).toHaveCount(6);
+
+		// Check the ordering (NOTE: This is the state at the time of this writing)
+		// NOTE: the lines should indicate the number of books ordered for each isbn
+		//
+		// header: sup1
+		// line: 1234, quantity (ordered): 2 -- supplierOrders[0].lines[0]
+		// line: 5678, quantity (ordered): 1 -- supplierOrders[0].lines[1]
+		// line: 5678, quantity (ordered): 3 -- supplierOrders[1].lines[0]
+		// line: 7777, quantity (ordered): 1 -- supplierOrders[1].lines[2]
+		// line: 9999, quantity (ordered): 2 -- supplierOrders[1].lines[1]
+		await rows.nth(0).getByText(supplierOrders[0].order.supplier_name).waitFor();
+
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(3).getByRole("cell", { name: supplierOrders[1].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(3).getByRole("cell", { name: supplierOrders[1].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(4).getByRole("cell", { name: supplierOrders[1].lines[2].isbn, exact: true }).waitFor();
+		await rows.nth(4).getByRole("cell", { name: supplierOrders[1].lines[2].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(5).getByRole("cell", { name: supplierOrders[1].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(5).getByRole("cell", { name: supplierOrders[1].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+	}
+);
+
+testOrders(
+	"compare: empty state: shows all lines for the respective order, case: multiple orders, muliple suppliers",
+	async ({ page, books, supplierOrders }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// Check all of the boxes (reconcile all 3 at once)
+		await table.getByRole("row").getByRole("checkbox").nth(0).click();
+		await table.getByRole("row").getByRole("checkbox").nth(1).click();
+		await table.getByRole("row").getByRole("checkbox").nth(2).click();
+
+		await page.getByText("Reconcile").first().click();
+
+		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
+		await page.getByRole("button", { name: "Compare" }).click();
+
+		// NOTE: the lines we're interested in will be either:
+		//   - the subheader - supplier name
+		//   - the scanned lines
+		//
+		// Build a regex to match
+		// NOTE: we're always matching for all books and all headings - this implicitly checks that no unexpected rows are shown
+		const headerText = [...new Set(["Unmatched Books", ...supplierOrders.map(({ order }) => order.supplier_name)])].join("|");
+		const isbnText = [...new Set(books.map(({ isbn }) => isbn))].join("|");
+		const matchRegex = new RegExp(`(${headerText}|${isbnText})`);
+
+		const rows = table.getByRole("row").filter({ hasText: matchRegex });
+
+		// Wait for the rows to be displayed
+		// NOTE: At the time of this writing there are 2 header (supplier 1 and 2) + 8 order lines in total = 10 lines
+		await expect(rows).toHaveCount(10);
+
+		// Check the ordering (NOTE: This is the state at the time of this writing)
+		// NOTE: the lines should indicate the number of books ordered for each isbn
+		//
+		// header: sup1
+		// line: 1234, quantity (ordered): 2 -- supplierOrders[0].lines[0]
+		// line: 5678, quantity (ordered): 1 -- supplierOrders[0].lines[1]
+		// line: 5678, quantity (ordered): 3 -- supplierOrders[1].lines[0]
+		// line: 7777, quantity (ordered): 1 -- supplierOrders[1].lines[2]
+		// line: 9999, quantity (ordered): 2 -- supplierOrders[1].lines[1]
+		//
+		// header: sup2
+		// line: 4321, quantity (ordered): 1 -- supplierOrders[2].lines[0]
+		// line: 8765, quantity (ordered): 1 -- supplierOrders[2].lines[1]
+		// line: 8888, quantity (ordered): 1 -- supplierOrders[2].lines[2]
+		await rows.nth(0).getByText(supplierOrders[0].order.supplier_name).waitFor();
+
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(2).getByRole("cell", { name: supplierOrders[0].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(3).getByRole("cell", { name: supplierOrders[1].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(3).getByRole("cell", { name: supplierOrders[1].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(4).getByRole("cell", { name: supplierOrders[1].lines[2].isbn, exact: true }).waitFor();
+		await rows.nth(4).getByRole("cell", { name: supplierOrders[1].lines[2].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(5).getByRole("cell", { name: supplierOrders[1].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(5).getByRole("cell", { name: supplierOrders[1].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(6).getByText(supplierOrders[2].order.supplier_name).waitFor();
+
+		await rows.nth(7).getByRole("cell", { name: supplierOrders[2].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(7).getByRole("cell", { name: supplierOrders[2].lines[0].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(8).getByRole("cell", { name: supplierOrders[2].lines[1].isbn, exact: true }).waitFor();
+		await rows.nth(8).getByRole("cell", { name: supplierOrders[2].lines[1].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+
+		await rows.nth(9).getByRole("cell", { name: supplierOrders[2].lines[2].isbn, exact: true }).waitFor();
+		await rows.nth(9).getByRole("cell", { name: supplierOrders[2].lines[2].quantity.toString(), exact: true }).waitFor(); // ordered quantity
+	}
+);
+
+testOrders(
+	"compare: unmatched orders are shown at the top of the list (namespaced as 'Unmatched')",
+	async ({ page, books, supplierOrders }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// NOTE: using the first order (from the fixture) for the test
+		const { order } = supplierOrders[0];
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+			.getByRole("checkbox")
+			.click();
+
+		await page.getByText("Reconcile").first().click();
+
+		// Scan 1 book not belonging to the order (NOTE: at the time of this wrigint, books[4] is not part of the order)
+		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+		await isbnInput.fill(books[4].isbn);
+		await page.keyboard.press("Enter");
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: books[4].isbn }) })
+			.waitFor();
+
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+		// NOTE: the lines we're interested in will be either:
+		//   - the subheader - supplier name
+		//   - the scanned lines
+		//
+		// Build a regex to match
+		// NOTE: we're always matching for all books and all headings - this implicitly checks that no unexpected rows are shown
+		const headerText = [...new Set(["Unmatched Books", ...supplierOrders.map(({ order }) => order.supplier_name)])].join("|");
+		const isbnText = [...new Set(books.map(({ isbn }) => isbn))].join("|");
+		const matchRegex = new RegExp(`(${headerText}|${isbnText})`);
+
+		const rows = table.getByRole("row").filter({ hasText: matchRegex });
+
+		// Wait for the rows to be displayed
+		// NOTE: At the time of this writing there are 2 headers (unmatched and supplier 1) + 3 order lines in total = 5 lines
+		await expect(rows).toHaveCount(5);
+
+		// Check the ordering (NOTE: This is the state at the time of this writing)
+		// NOTE: the lines should indicate the number of books ordered for each isbn
+		//
+		// header: Unmatched Books
+		// line: 9999 -- books[4]
+		//
+		// header: sup1
+		// line: 1234 -- supplierOrders[0].lines[0]
+		// line: 5678 -- supplierOrders[0].lines[1]
+		await rows.nth(0).getByText("Unmatched Books").waitFor();
+		await rows.nth(1).getByRole("cell", { name: books[4].isbn, exact: true }).waitFor();
+		await rows.nth(2).getByText(supplierOrders[0].order.supplier_name).waitFor();
+		await rows.nth(3).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+		await rows.nth(4).getByRole("cell", { name: supplierOrders[0].lines[1].isbn, exact: true }).waitFor();
+	}
+);
+
+testOrders("compare: overdelivered books should be shown in the 'Unmatched' section", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Add 1 more line 1 than ordered
+	// NOTE: At the time of this wrting, order 1 - line 1 had ordered quantity of 2
+	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	// Wait for the line to appear
+	const lineRow = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+	await lineRow.getByRole("cell", { name: "1", exact: true }).waitFor();
+
+	// Add 2 more
+	await lineRow.getByRole("button", { name: "Increase quantity" }).click();
+	await lineRow.getByRole("button", { name: "Increase quantity" }).click();
+
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// NOTE: the lines we're interested in will be either:
+	//   - the subheader - supplier name
+	//   - the scanned lines
+	//
+	// Build a regex to match
+	// NOTE: we're always matching for all books and all headings - this implicitly checks that no unexpected rows are shown
+	const headerText = [...new Set(["Unmatched Books", ...supplierOrders.map(({ order }) => order.supplier_name)])].join("|");
+	const isbnText = [...new Set(books.map(({ isbn }) => isbn))].join("|");
+	const matchRegex = new RegExp(`(${headerText}|${isbnText})`);
+
+	const rows = table.getByRole("row").filter({ hasText: matchRegex });
+
+	// Wait for the rows to be displayed
+	// NOTE: At the time of this writing there are 2 headers (unmatched and supplier 1) + 3 order lines in total (1 overdelivered, 2 from the order) = 5 lines
+	await expect(rows).toHaveCount(5);
+
+	// Check the ordering (NOTE: This is the state at the time of this writing)
+	// NOTE: the lines should indicate the number of books ordered for each isbn
+	//
+	// header: Unmatched Books
+	// line: 1234 -- supplierOrders[0].lines[0] (overdelivered)
+	//
+	// header: sup1
+	// line: 1234 -- supplierOrders[0].lines[0]
+	// line: 5678 -- supplierOrders[0].lines[1]
+	await rows.nth(0).getByText("Unmatched Books").waitFor();
+	await rows.nth(1).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+	await rows.nth(2).getByText(supplierOrders[0].order.supplier_name).waitFor();
+	await rows.nth(3).getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }).waitFor();
+	await rows.nth(4).getByRole("cell", { name: supplierOrders[0].lines[1].isbn, exact: true }).waitFor();
+});
+
 testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -911,62 +1246,6 @@ testOrders("should show correct delivery stats in commit view", async ({ page, b
 		.waitFor();
 
 	await expect(page.getByText("0 / 3")).toBeVisible();
-});
-
-testOrders("should be able to select multiple supplier orders to reconcile at once", async ({ page, books, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first two orders (from the fixture)
-	// NOTE: At the time of this writing, first two orders belonged to the same supplier
-	const relevantOrders = table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
-	await relevantOrders.nth(0).getByRole("checkbox").click();
-	await relevantOrders.nth(1).getByRole("checkbox").click();
-
-	await page.getByText("Reconcile").first().click();
-
-	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Scan books from orders
-	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
-
-	await isbnInput.fill(books[0].isbn); // Scanning the same isbn, but a differnt variable, for some reason...
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-
-	// Move to comparison view
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	const lines = supplierOrders.slice(0, 2).flatMap(({ lines }) => lines);
-	for (const line of lines) {
-		await table.getByRole("row").getByRole("cell", { name: line.supplier_name }).waitFor();
-	}
-
-	// there shouldn't be any unmatched books
-	await expect(page.getByText("Unmatched Books")).not.toBeVisible();
-
-	// Verify total delivered count includes books from both orders
-	await expect(page.getByText("Total delivered:")).toBeVisible();
-	await expect(page.getByText("2 / 9")).toBeVisible();
 });
 
 testOrders("should be able to commit reconciliation", async ({ page, customers, supplierOrders }) => {
