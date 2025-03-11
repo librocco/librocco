@@ -116,6 +116,141 @@ testOrders("create: doesn't allow for reconciling same supplier order(s) twice",
 	await relevantOrders.waitFor({ state: "detached" });
 });
 
+testOrders("delete: doesn't delete the reconciliation order on cancel", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+	const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
+
+	// Scan each line once
+	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.waitFor();
+
+	await isbnInput.fill(supplierOrders[0].lines[1].isbn);
+	await page.keyboard.press("Enter");
+	await l2.waitFor();
+
+	// Open delete dialog and cancel it
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
+
+	const dialog = page.getByRole("dialog");
+	await dialog.getByRole("button", { name: "Cancel" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	// Reload the page and check if the reconciliation order is still there
+	await page.reload();
+
+	await l1.waitFor();
+	await l2.waitFor();
+});
+
+testOrders("delete: deletes the order (and navigates back to supplier orders) on confirm", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+	const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
+
+	// Scan each line once
+	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.waitFor();
+
+	await isbnInput.fill(supplierOrders[0].lines[1].isbn);
+	await page.keyboard.press("Enter");
+	await l2.waitFor();
+
+	// Delete the order
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
+
+	const dialog = page.getByRole("dialog");
+	await dialog.getByRole("button", { name: "Confirm" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	// Should navigate to supplier orders
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	// Check that all supplier orders are there (including the reconciliation-attempted one)
+	const allSuppliers = [...new Set(supplierOrders.map(({ order: { supplier_name } }) => supplier_name))];
+	const orderRow = table.getByRole("row").filter({ hasText: new RegExp(`(${allSuppliers.join("|")})`) });
+	// 3 supplier orders
+	await expect(orderRow).toHaveCount(3);
+
+	// Check that 'Reconciling' tab button is disabled - no active reconciliation orders
+	await expect(page.getByRole("button", { name: "Reconciling", exact: true })).toBeDisabled();
+});
+
+testOrders("delete: allows deletion of an empty reconciliation order", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	// No scanning, just delete the order
+	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
+
+	const dialog = page.getByRole("dialog");
+	await dialog.getByRole("button", { name: "Confirm" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	// Should navigate to supplier orders
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+	// Check that all supplier orders are there (including the reconciliation-attempted one)
+	const allSuppliers = [...new Set(supplierOrders.map(({ order: { supplier_name } }) => supplier_name))];
+	const orderRow = table.getByRole("row").filter({ hasText: new RegExp(`(${allSuppliers.join("|")})`) });
+	// 3 supplier orders
+	await expect(orderRow).toHaveCount(3);
+
+	// Check that 'Reconciling' tab button is disabled - no active reconciliation orders
+	await expect(page.getByRole("button", { name: "Reconciling", exact: true })).toBeDisabled();
+});
+
 testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -945,214 +1080,4 @@ testOrders("should maintain correct totals after multiple quantity adjustments",
 	// book 2 - ordered 1, scanned 0
 	// Total: 2 + 0 = 2 (delivered) / 2 + 1 = 3 (ordered)
 	await expect(page.getByText("2 / 3")).toBeVisible();
-});
-
-testOrders("should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// Select multiple orders
-	// NOTE: using the first two orders (from the fixture)
-	// NOTE: At the time of this writing, first two orders belonged to the same supplier
-	const relevantOrders = table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
-	await relevantOrders.nth(0).getByRole("checkbox").click();
-	await relevantOrders.nth(1).getByRole("checkbox").click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add a book
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Delete and verify all supplier orders can be reconciled again
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Confirm" }).click();
-
-	await expect(page.getByRole("dialog")).toBeHidden();
-
-	// Should be able to start new reconciliation with same orders
-	// NOTE: We're should be redirected back to 'orders/suppliers/orders/' after deletion
-	// No need for additional assertions - this button being there is an implicit test + interaction for the next step
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	await relevantOrders.nth(0).getByRole("checkbox").click();
-	await relevantOrders.nth(1).getByRole("checkbox").click();
-
-	// TODO: This doesn't seem complete
-	await page.getByText("Reconcile").first().click();
-});
-
-testOrders("should not delete reconciliation order when canceling deletion", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Scan some books
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Try to delete but cancel
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Cancel" }).click();
-
-	// Verify we're still on reconciliation page
-	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-	// Verify scanned books still present
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-});
-
-testOrders("should allow deletion after comparing books", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add books and go to compare view
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	// Delete from compare view
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Confirm" }).click();
-
-	await expect(page.getByRole("dialog")).toBeHidden();
-
-	// Verify back at supplier orders
-	// TODO: This seems incomplete
-	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
-});
-
-testOrders("should allow deletion of empty reconciliation order", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	// Delete without scanning any books
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Confirm" }).click();
-
-	await expect(page.getByRole("dialog")).toBeHidden();
-
-	// Verify back at supplier orders
-	// TODO: This seems incomplete
-	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
-});
-
-// NOTE: This test seems a bit redundant, considering the above tests
-testOrders("should navigate correctly after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add some books
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Delete and verify navigation
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Confirm" }).click();
-
-	await expect(page.getByRole("dialog")).toBeHidden();
-
-	// Should be at supplier orders page
-
-	// Verify supplier orders are shown correctly
-	// TODO: This seems incomplete
-	await page.getByText("Ordered", { exact: true }).click();
-	// TODO: This is incredibly generic and might result in false negatives
-	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
 });
