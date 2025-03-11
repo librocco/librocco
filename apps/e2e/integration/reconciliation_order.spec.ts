@@ -2,6 +2,7 @@ import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { depends, testOrders } from "@/helpers/fixtures";
+import { getDashboard } from "@/helpers";
 
 // * Note: its helpful to make an assertion after each <enter> key
 // as it seems that Playwright may start running assertions before page data has fully caught up
@@ -467,12 +468,13 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await expect(dialog).not.toBeVisible();
 
-	await page.reload();
-
 	//more assertions to give time for the line to be updated to delivered
 
 	// navigate to customer order view
-	await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
+	await page.getByRole("navigation").getByRole("listitem").nth(5).click();
+	('a[href$="ends-with"]');
+	await page.locator(`a[href$='orders/customers/${customers[0].id}']`).click();
+	// await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(1);
 });
@@ -751,6 +753,6 @@ testOrders("should disable all action buttons when an order is finalized", async
 	for (const button of commit) {
 		await expect(button).toBeDisabled();
 	}
-	const deleteButton = page.getByLabel("Delete reconciliatoin order");
+	const deleteButton = page.getByLabel("Delete reconciliation order");
 	await expect(deleteButton).toBeDisabled();
 });
