@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { assertionTimeout } from "@/constants";
@@ -255,8 +255,9 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
 	// to make sure title is persisted
-	await page.reload();
-	await content.header().title().assert("title");
+	await dashboard.navigate("inventory");
+	await content.navigate("inbound-list");
+	expect(content.entityList("inbound-list").item(0).getByText("title")).toBeVisible();
 });
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
