@@ -1567,73 +1567,9 @@ testOrders(
 	}
 );
 
-testOrders("should show correct delivery stats in commit view", async ({ page, books, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	await isbnInput.fill(books[1].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[1].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill(books[1].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[1].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-
-	// ... moving to compare
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	await expect(page.getByText("Total delivered:")).toBeVisible();
-
-	// unmatched book => book[1]
-	await expect(table.getByRole("row").getByText("Unmatched Books")).toBeVisible();
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[1].isbn }) })
-		.filter({ hasNot: page.getByRole("checkbox") }) // Unmatched rows don't have a delivery-filled checkbox
-		.waitFor();
-
-	// placed supplier order books => book[0] book[2]
-	await expect(table.getByRole("row").getByRole("cell", { name: "sup1" })).toBeVisible();
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("checkbox") }) // Matched books have a checkbox indicating delivery fill status
-		.waitFor();
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.filter({ has: page.getByRole("checkbox") }) // Matched books have a checkbox indicating delivery fill status
-		.waitFor();
-
-	await expect(page.getByText("0 / 3")).toBeVisible();
-});
-
-testOrders("should be able to commit reconciliation", async ({ page, customers, supplierOrders }) => {
+// TODO: We should probably extend the whole (finalized) reconciliation (and its effects to the customer orders),
+// but should probably move it its own test suite
+testOrders("commit: applies delivery updates to customer order lines", async ({ page, books, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -1652,33 +1588,86 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 
 	await page.getByText("Reconcile").first().click();
 
-	// scan ordered book
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
 
-	// compare view
-	await page.getByRole("button", { name: "Compare" }).nth(1).click();
+	// Scan all books belonging to the order
+	for (const line of supplierOrders[0].lines) {
+		await isbnInput.fill(line.isbn);
+		await page.keyboard.press("Enter");
 
-	//commit
-	await page.getByRole("button", { name: "Commit" }).nth(1).click();
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		const row = table.getByRole("row").filter({ hasText: line.isbn });
+		await row.getByRole("cell", { name: "1", exact: true }).waitFor();
+
+		// Add enough quantity (using the + button)
+		// NOTE: upper bound: quantity - 1 -- as we've already added 1 (by scanning)
+		for (let i = 0; i < line.quantity - 1; i++) {
+			await row.getByRole("button", { name: "Increase quantity" }).click();
+		}
+	}
+
+	// Compare and commit
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+	await page.getByRole("button", { name: "Commit", exact: true }).click();
 	const dialog = page.getByRole("dialog");
 	await dialog.getByRole("button", { name: "Confirm" }).click();
-	await expect(dialog).not.toBeVisible();
+	await dialog.waitFor({ state: "detached" });
 
-	await page.getByRole("button", { name: "Commit" }).nth(1).click();
-	await dialog.getByRole("button", { name: "Confirm" }).click();
-	await expect(dialog).not.toBeVisible();
+	// Navigate to customers page and check customers
+	//
+	// NOTE: At the time of this writing, this is the state
+	// Supplier order 1 (the one we just reconciled):
+	//   - line 1: ISBN: 1234, quantity: 2 (fully filled)
+	//   - line 1: ISBN: 5678, quantity: 1 (fully filled)
+	//
+	// Relvant customer order lines (in order of creation -- placed by the customer)
+	// - customer 1 - ISBN: 1234 (filled by supplier order 1 - line 1)
+	// - customer 1 - ISBN: 5678 (filled by supplier order 1 - line 2)
+	// - customer 2 - ISBN: 5678 (not filled - only 1 delivered for now)
+	// - customer 3 - ISBN: 1234 (filled by supplier order 1 - line 1)
+	//
+	// NOTE: The following lines are part of the supplier order and are matched by ISBN and
+	// used to inspect different customer orders affected by the reconciliation
+	const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+	const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
+	// NOTE: The not-affected line is a catch-all for all lines with ISBNs not affected by the order
+	const irrelevantISBNS = books.map(({ isbn }) => isbn).filter((isbn) => !supplierOrders[0].lines.find((l) => l.isbn === isbn));
+	const irrelevantISBNSRegex = new RegExp(`(${irrelevantISBNS.join("|")})`);
+	const lNotAffected = table.getByRole("row").filter({ hasText: irrelevantISBNSRegex });
 
-	//more assertions to give time for the line to be updated to delivered
+	// Check customer 1
+	//
+	// NOTE: at the time for this writing, the customer order 1 had the following lines
+	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
+	// - ISBN: 5678, quantity: 1 (filled by supplier order 1 - line 2)
+	// - ISBN: 8888, quantity: 1 (not affected by this order -- still placed)
+	await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
+	await l1.getByRole("cell", { name: "Delivered" }).waitFor();
+	await l2.getByRole("cell", { name: "Delivered" }).waitFor();
+	await expect(lNotAffected).toHaveCount(1);
+	await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
 
-	// navigate to customer order view
-	await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
-	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
-	await expect(table.getByText("Delivered")).toHaveCount(1);
+	// Check customer 2
+	//
+	// NOTE: at the time for this writing, the customer order 2 had the following lines
+	// - ISBN: 5678, quantity: 1 (corresponds to order 1 - line 2 -- not filled)
+	// - ISBN: 4321, quantity: 1 (not affected by this order -- still placed)
+	// - ISBN: 7777, quantity: 1 (not affected by this order -- still placed)
+	// - ISBN: 8765, quantity: 1 (not affected by this order -- still placed)
+	await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
+	await l2.getByRole("cell", { name: "Placed" }).waitFor(); // Not enough quantity delivered to fill
+	await expect(lNotAffected).toHaveCount(3);
+	await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
+	await lNotAffected.nth(1).getByRole("cell", { name: "Placed" }).waitFor();
+	await lNotAffected.nth(2).getByRole("cell", { name: "Placed" }).waitFor();
+
+	// Check customer 3
+	//
+	// NOTE: at the time for this writing, the customer order 3 had the following lines
+	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
+	// - ISBN: 9999, quantity: 1 (not affected by this order -- still placed)
+	await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
+	await l1.getByRole("cell", { name: "Delivered" }).waitFor();
+	await expect(lNotAffected).toHaveCount(1);
+	await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
 });
