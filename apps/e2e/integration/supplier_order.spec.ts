@@ -140,64 +140,61 @@ testOrders("should show a placed supplier order with the correct details", async
 	await expect(firstRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
 });
 
-testOrders(
-	"should disable reconciliation controls for orders already in  reconciliation",
-	async ({ page, suppliers: [supplier], books }) => {
-		const dbHandle = await getDbHandle(page);
+testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books }) => {
+	const dbHandle = await getDbHandle(page);
 
-		// Create a supplier order that will be part of reconciliation
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 1,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[0].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
+	// Create a supplier order that will be part of reconciliation
+	await dbHandle.evaluate(createSupplierOrder, {
+		id: 1,
+		supplierId: supplier.id,
+		orderLines: [
+			{
+				supplier_id: supplier.id,
+				isbn: books[0].isbn,
+				quantity: 1,
+				supplier_name: supplier.name
+			}
+		]
+	});
 
-		// Create another order that won't be in reconciliation (for comparison)
-		await dbHandle.evaluate(createSupplierOrder, {
-			id: 2,
-			supplierId: supplier.id,
-			orderLines: [
-				{
-					supplier_id: supplier.id,
-					isbn: books[1].isbn,
-					quantity: 1,
-					supplier_name: supplier.name
-				}
-			]
-		});
+	// Create another order that won't be in reconciliation (for comparison)
+	await dbHandle.evaluate(createSupplierOrder, {
+		id: 2,
+		supplierId: supplier.id,
+		orderLines: [
+			{
+				supplier_id: supplier.id,
+				isbn: books[1].isbn,
+				quantity: 1,
+				supplier_name: supplier.name
+			}
+		]
+	});
 
-		// Add first order to reconciliation
-		await dbHandle.evaluate(createReconciliationOrder, {
-			id: 1,
-			supplierOrderIds: [1]
-		});
+	// Add first order to reconciliation
+	await dbHandle.evaluate(createReconciliationOrder, {
+		id: 1,
+		supplierOrderIds: [1]
+	});
 
-		// Navigate to supplier's orders view
-		await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
+	// Navigate to supplier's orders view
+	await page.goto(`${baseURL}orders/suppliers/${supplier.id}/`);
 
-		// Get the table rows for both orders
-		const table = page.getByRole("table").nth(2);
-		const rows = table.getByRole("row");
+	// Get the table rows for both orders
+	const table = page.getByRole("table").nth(2);
+	const rows = table.getByRole("row");
 
-		// First order (in reconciliation) should have disabled controls
-		const reconciledRow = rows.nth(2);
+	// First order (in reconciliation) should have disabled controls
+	const reconciledRow = rows.nth(2);
 
-		await expect(reconciledRow.getByRole("button", { name: "Reconcile" })).toBeDisabled();
-		await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
+	await expect(reconciledRow.getByRole("button", { name: "View Reconciliation" })).toBeVisible();
+	await expect(reconciledRow.getByRole("checkbox")).toBeDisabled();
 
-		// Second order (not in reconciliation) should have enabled controls
-		const normalRow = rows.nth(1);
-		await expect(normalRow.getByRole("checkbox")).toBeEnabled();
-		await expect(normalRow.getByRole("button", { name: "Reconcile" })).toBeEnabled();
-	}
-);
+	// Second order (not in reconciliation) should have enabled controls
+	const normalRow = rows.nth(1);
+	await expect(normalRow.getByRole("checkbox")).toBeEnabled();
+	await expect(normalRow.getByRole("button", { name: "Reconcile" })).toBeEnabled();
+});
 
 testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
