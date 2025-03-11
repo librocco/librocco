@@ -7,6 +7,7 @@
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
 	import type { PageData } from "./$types";
+
 	import {
 		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
@@ -23,6 +24,7 @@
 	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
+	import { asc } from "@librocco/shared";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -75,10 +77,13 @@
 	});
 
 	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
-	$: placedOrderLines = data?.placedOrderLines;
+	// Extract different orders from placedOrderLines
+	$: placedOrders = [...new Map(data.placedOrderLines?.map((l) => [l.supplier_order_id, l.supplier_name])).entries()].sort(
+		asc(([, supplier_name]) => supplier_name)
+	);
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
-	$: totalOrdered = placedOrderLines.reduce((acc, { quantity }) => acc + quantity, 0);
+	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
 		if (quantity === 0) {
@@ -154,18 +159,20 @@
 							</span>
 						</div>
 					</div>
+
 					<dl class="prose flex flex-col">
 						<div class="md:px-1">
 							<dt class="mt-0">Includes supplier orders:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
-								{#each data?.placedOrderLines as placedOrderLine, i}
+								{#each placedOrders as [order_id, supplier_name]}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
-										#{placedOrderLine.supplier_order_id}
-										<span class="text-sm font-light">({placedOrderLine.supplier_name})</span>
+										#{order_id}
+										<span class="text-sm font-light">({supplier_name})</span>
 									</dd>
 								{/each}
 							</div>
 						</div>
+
 						<div class="w-full pr-2">
 							<button
 								class="btn-secondary btn-outline btn-xs btn w-full"
