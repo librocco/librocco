@@ -393,9 +393,10 @@
 													</span>
 												</button>
 
-												{#if status < OrderLineStatus.Received}
+												{#if status === OrderLineStatus.Received}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+														data-testid={testId("collect-row")}
 														on:click={() => handleCollect(id)}
 													>
 														<span class="sr-only">Collect</span>
@@ -403,7 +404,8 @@
 															<BookUp />
 														</span>
 													</button>
-												{:else if status === OrderLineStatus.Draft}
+												{/if}
+												{#if status === OrderLineStatus.Draft}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														data-testid={testId("delete-row")}
