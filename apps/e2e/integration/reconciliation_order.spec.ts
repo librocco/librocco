@@ -1149,18 +1149,367 @@ testOrders("compare: single order: partial delivery: 1 unmatched book", async ({
 	await expect(page.getByText("2 / 3")).toBeVisible();
 });
 
+testOrders("compare: multiple orders: fully filled", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const [o1, o2] = supplierOrders;
+
+	// Aggregate the lines (quantity) for both orders
+	//
+	// NOTE: This creates some opacity, I know...but it's the easiest way to scann all of the books,
+	// in a situation where one or more ISBNs are shared between orders and avoid errors when matching displayed quantity
+	const aggLines = [o1, o2]
+		.flatMap(({ lines }) => lines)
+		.reduce((acc, { isbn, quantity }) => (acc.set(isbn, (acc.get(isbn) || 0) + quantity), acc), new Map<string, number>());
+
+	for (const [isbn, quantity] of aggLines.entries()) {
+		// Add enough quantity
+		await isbnInput.fill(isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		const row = table.getByRole("row").filter({ hasText: isbn });
+		await row.getByRole("cell", { name: "1", exact: true }).waitFor();
+
+		// Add enough quantity (using the + button)
+		// NOTE: upper bound: quantity - 1 -- as we've already added 1 (by scanning)
+		for (let i = 0; i < quantity - 1; i++) {
+			await row.getByRole("button", { name: "Increase quantity" }).click();
+		}
+	}
+
+	// Verify compare view
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// Check that all lines have been checked
+	const lines = [o1, o2].flatMap(({ lines }) => lines);
+	for (const { isbn, quantity } of lines) {
+		const line = table
+			.getByRole("row")
+			.filter({ hasText: isbn })
+			.filter({ has: page.getByRole("cell", { name: quantity.toString(), exact: true }) });
+		await expect(line.getByRole("checkbox")).toBeChecked();
+	}
+
+	// Fully delivered:
+	//   - order 1: 2 + 1
+	//   - order 2: 3 + 2 + 1
+	//   - total = 9
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("9 / 9")).toBeVisible();
+});
+
+testOrders("compare: multiple orders: overdelivery", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const [o1, o2] = supplierOrders;
+
+	// Aggregate the lines (quantity) for both orders
+	//
+	// NOTE: This creates some opacity, I know...but it's the easiest way to scann all of the books,
+	// in a situation where one or more ISBNs are shared between orders and avoid errors when matching displayed quantity
+	const aggLines = [o1, o2]
+		.flatMap(({ lines }) => lines)
+		.reduce((acc, { isbn, quantity }) => (acc.set(isbn, (acc.get(isbn) || 0) + quantity), acc), new Map<string, number>());
+
+	for (const [isbn, quantity] of aggLines.entries()) {
+		await isbnInput.fill(isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		const row = table.getByRole("row").filter({ hasText: isbn });
+		await row.getByRole("cell", { name: "1", exact: true }).waitFor();
+
+		// Add enough quantity (using the + button)
+		// NOTE: upper bound: quantity - 1 -- as we've already added 1 (by scanning)
+		for (let i = 0; i < quantity - 1; i++) {
+			await row.getByRole("button", { name: "Increase quantity" }).click();
+		}
+	}
+
+	// Add one more book from the first order (overdelivery)
+	await table.getByRole("row").filter({ hasText: o1.lines[0].isbn }).getByRole("button", { name: "Increase quantity" }).click();
+
+	// Verify compare view
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// Check that all lines have been checked
+	const lines = [o1, o2].flatMap(({ lines }) => lines);
+	for (const { isbn, quantity } of lines) {
+		const line = table
+			.getByRole("row")
+			.filter({ hasText: isbn })
+			.filter({ has: page.getByRole("cell", { name: quantity.toString(), exact: true }) });
+		await expect(line.getByRole("checkbox")).toBeChecked();
+	}
+	// There should be one line without the checkbox (overdelivered)
+	await expect(table.getByRole("row").filter({ hasText: o1.lines[0].isbn, hasNot: page.getByRole("checkbox") })).toHaveCount(1);
+
+	// Fully delivered:
+	//   - order 1: 2 + 1
+	//   - order 2: 3 + 2 + 1
+	//   - total = 9
+	// (The overdelivery doesn't affect the total comparision count)
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("9 / 9")).toBeVisible();
+});
+
+testOrders("compare: multiple orders: partial delivery: no additional books", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const [o1, o2] = supplierOrders;
+
+	// Scan every book once
+	const isbns = new Set([o1, o2].flatMap(({ lines }) => lines.map(({ isbn }) => isbn)));
+	for (const isbn of isbns) {
+		await isbnInput.fill(isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		await table.getByRole("row").filter({ hasText: isbn }).waitFor();
+	}
+
+	// Verify compare view
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// Expected state (at the time of this writing):
+	//  - order 1:
+	//    - line 1: 1 / 2
+	//    - line 2: 1 / 1
+	//  - order 2:
+	//    - line 1: 0 / 3 (same as order 1 line 2 -- the quantity used to fill the former)
+	//    - line 2: 1 / 2
+	//    - line 3: 1 / 1
+	const o1l1 = table.getByRole("row").filter({ hasText: o1.lines[0].isbn });
+	// NOTE: This line has the same ISBN as o2l1
+	// Using 'hasNot' - as this line will have '1' for ordered and '1' for delivered
+	// We can't use 'has' for '1' as the o2l1 will also has '1' for ordered
+	const o1l2 = table.getByRole("row").filter({ hasText: o1.lines[1].isbn, hasNot: page.getByRole("cell", { name: "0", exact: true }) });
+
+	const o2l1 = table.getByRole("row").filter({ hasText: o2.lines[0].isbn, has: page.getByRole("cell", { name: "0", exact: true }) });
+	const o2l2 = table.getByRole("row").filter({ hasText: o2.lines[1].isbn });
+	const o2l3 = table.getByRole("row").filter({ hasText: o2.lines[2].isbn });
+
+	expect(o1l1.getByRole("checkbox")).not.toBeChecked();
+	expect(o1l2.getByRole("checkbox")).toBeChecked();
+	expect(o2l1.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l2.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l3.getByRole("checkbox")).toBeChecked();
+
+	// Partial delivery:
+	//   - order 1: ordered: 3, delivered: 2
+	//   - order 2: ordered: 6, delivered: 2 (the shared ISBN line's quantity is used for order 1)
+	//   - total = 4 / 9
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("4 / 9")).toBeVisible();
+});
+
+testOrders("compare: multiple orders: partial delivery: 1 line overdelivered", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const [o1, o2] = supplierOrders;
+
+	// Scan every book once
+	const isbns = new Set([o1, o2].flatMap(({ lines }) => lines.map(({ isbn }) => isbn)));
+	for (const isbn of isbns) {
+		await isbnInput.fill(isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		await table.getByRole("row").filter({ hasText: isbn }).waitFor();
+	}
+
+	// Add two more books for order 1, line 1 - 1 to fill, 1 overdelivered
+	const l1Row = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+	await l1Row.getByRole("button", { name: "Increase quantity" }).click();
+	await l1Row.getByRole("button", { name: "Increase quantity" }).click();
+
+	// Verify compare view
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// Expected state (at the time of this writing):
+	//  - order 1:
+	//    - line 1: 2 / 2
+	//    - line 2: 1 / 1
+	//  - order 2:
+	//    - line 1: 0 / 3 (same as order 1 line 2 -- the quantity used to fill the former)
+	//    - line 2: 1 / 2
+	//    - line 3: 1 / 1
+	const o1l1 = table.getByRole("row").filter({ hasText: o1.lines[0].isbn });
+	// NOTE: This line has the same ISBN as o2l1
+	// Using 'hasNot' - as this line will have '1' for ordered and '1' for delivered
+	// We can't use 'has' for '1' as the o2l1 will also has '1' for ordered
+	const o1l2 = table.getByRole("row").filter({ hasText: o1.lines[1].isbn, hasNot: page.getByRole("cell", { name: "0", exact: true }) });
+
+	const o2l1 = table.getByRole("row").filter({ hasText: o2.lines[0].isbn, has: page.getByRole("cell", { name: "0", exact: true }) });
+	const o2l2 = table.getByRole("row").filter({ hasText: o2.lines[1].isbn });
+	const o2l3 = table.getByRole("row").filter({ hasText: o2.lines[2].isbn });
+
+	// There should be 1 overdelivered line with this ISBN (no checkbox)
+	await o1l1.filter({ hasNot: page.getByRole("checkbox") }).waitFor();
+
+	expect(o1l1.getByRole("checkbox")).toBeChecked();
+	expect(o1l2.getByRole("checkbox")).toBeChecked();
+	expect(o2l1.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l2.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l3.getByRole("checkbox")).toBeChecked();
+
+	// Partial delivery:
+	//   - order 1: ordered: 3, delivered: 3
+	//   - order 2: ordered: 6, delivered: 2 (the shared ISBN line's quantity is used for order 1)
+	//   - total = 5 / 9
+	// (The overdelivery doesn't affect the total comparision count)
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("5 / 9")).toBeVisible();
+});
+
+testOrders("compare: multiple orders: partial delivery: 1 unmatched book", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	const [o1, o2] = supplierOrders;
+
+	// Scan every book once
+	const isbns = new Set([o1, o2].flatMap(({ lines }) => lines.map(({ isbn }) => isbn)));
+	for (const isbn of isbns) {
+		await isbnInput.fill(isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		await table.getByRole("row").filter({ hasText: isbn }).waitFor();
+	}
+
+	// Add 1 unmatched book (NOTE: at the time for this writing, books[1] didn't belong to the orders used for this test)
+	await isbnInput.fill(books[1].isbn);
+	await page.keyboard.press("Enter");
+	await table.getByRole("row").filter({ hasText: books[1].isbn }).getByRole("cell", { name: "1", exact: true }).waitFor();
+
+	// Verify compare view
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+	// Expected state (at the time of this writing):
+	//  - order 1:
+	//    - line 1: 1 / 2
+	//    - line 2: 1 / 1
+	//  - order 2:
+	//    - line 1: 0 / 3 (same as order 1 line 2 -- the quantity used to fill the former)
+	//    - line 2: 1 / 2
+	//    - line 3: 1 / 1
+	const o1l1 = table.getByRole("row").filter({ hasText: o1.lines[0].isbn });
+	// NOTE: This line has the same ISBN as o2l1
+	// Using 'hasNot' - as this line will have '1' for ordered and '1' for delivered
+	// We can't use 'has' for '1' as the o2l1 will also has '1' for ordered
+	const o1l2 = table.getByRole("row").filter({ hasText: o1.lines[1].isbn, hasNot: page.getByRole("cell", { name: "0", exact: true }) });
+
+	const o2l1 = table.getByRole("row").filter({ hasText: o2.lines[0].isbn, has: page.getByRole("cell", { name: "0", exact: true }) });
+	const o2l2 = table.getByRole("row").filter({ hasText: o2.lines[1].isbn });
+	const o2l3 = table.getByRole("row").filter({ hasText: o2.lines[2].isbn });
+
+	// There should be 1 unmatched line with this ISBN (no checkbox)
+	await table
+		.getByRole("row")
+		.filter({ hasText: books[1].isbn, hasNot: page.getByRole("checkbox") })
+		.waitFor();
+
+	expect(o1l1.getByRole("checkbox")).not.toBeChecked();
+	expect(o1l2.getByRole("checkbox")).toBeChecked();
+	expect(o2l1.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l2.getByRole("checkbox")).not.toBeChecked();
+	expect(o2l3.getByRole("checkbox")).toBeChecked();
+
+	// Partial delivery:
+	//   - order 1: ordered: 3, delivered: 2
+	//   - order 2: ordered: 6, delivered: 2 (the shared ISBN line's quantity is used for order 1)
+	//   - total = 5 / 9
+	// (The overdelivery doesn't affect the total comparision count)
+	await expect(page.getByText("Total delivered:")).toBeVisible();
+	await expect(page.getByText("4 / 9")).toBeVisible();
+});
+
 testOrders(
-	"should show under-delivery when ordered books are not scanned or the scanned quantities are less than ordered amounts",
-	async ({ page, supplierOrders, books }) => {
-		supplierOrders;
-		// Navigate to reconciliation
+	"compare: multiple orders: partial delivery: shared ISBN - filled for order 1, not for order 2",
+	async ({ page, supplierOrders }) => {
 		await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 		const table = page.getByRole("table");
 
 		await page.getByRole("button", { name: "Ordered", exact: true }).click();
 
-		// NOTE: using the first two orders (from the fixture)
+		// NOTE: Using the first two orders (from the fixture)
 		// NOTE: At the time of this writing, first two orders belonged to the same supplier
 		const relevantOrders = table
 			.getByRole("row")
@@ -1172,35 +1521,49 @@ testOrders(
 
 		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
 
-		// Scan less quantity than ordered
-		// From fixtures we know supplierOrders[0].lines[0] has quantity: 1
-		await isbnInput.fill(books[0].isbn);
+		// Use the shared ISBN for the test
+		// NOTE: At the time of this writing the following lines shared the same ISBN:
+		// - order 1, line 2 - ordered: 1
+		// - order 2, line 1 - ordered: 3
+		// Total ordered: 4
+		//
+		// Add 3 books for partial delivery
+		await isbnInput.fill(supplierOrders[0].lines[1].isbn);
 		await page.keyboard.press("Enter");
-		await table
+
+		const line = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
+
+		// Wait for line to appear
+		await line.waitFor();
+		// Add 2 more
+		await line.getByRole("button", { name: "Increase quantity" }).click();
+		await line.getByRole("button", { name: "Increase quantity" }).click();
+
+		// Verify compare view
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
+
+		// Expected state (at the time of this writing):
+		//  - order 1:
+		//    - line 2: 1 / 1
+		//  - order 2:
+		//    - line 1: 2 / 3
+		//  NOTE: There are other lines which are irrelevant for this test
+		const o1Line = table
 			.getByRole("row")
-			.filter({ has: page.getByRole("cell", { name: books[0].isbn }) })
-			.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-			.waitFor();
+			.filter({ hasText: supplierOrders[0].lines[1].isbn })
+			.filter({ has: page.getByRole("cell", { name: "1", exact: true }) });
+		const o2Line = table
+			.getByRole("row")
+			.filter({ hasText: supplierOrders[0].lines[1].isbn })
+			.filter({ has: page.getByRole("cell", { name: "2", exact: true }) });
 
-		// Move to comparison view
-		await page.getByRole("button", { name: "Compare" }).first().click();
+		await expect(o1Line.getByRole("checkbox")).toBeChecked();
+		await expect(o2Line.getByRole("checkbox")).not.toBeChecked();
 
-		// Verify comparison table structure
-
-		// Check supplier name row
-		await expect(table.getByRole("row").getByRole("cell", { name: "sup1" })).toBeVisible();
-
-		// Check book details row
-		await table.getByRole("row").getByRole("cell", { name: books[0].isbn }).waitFor();
-
-		// there shouldn't be any unmatched books
-		await expect(page.getByText("Unmatched Books")).not.toBeVisible();
-
-		// Verify delivery stats show under-delivery
+		// Ordered: 9 (accounting for the total of 2 orders)
+		// Delivered: 3
 		await expect(page.getByText("Total delivered:")).toBeVisible();
-
-		// We only scanned one book, so expect "1 / {totalOrdered}"
-		await expect(page.getByText(`1 / 9`)).toBeVisible();
+		await expect(page.getByText("3 / 9")).toBeVisible();
 	}
 );
 
