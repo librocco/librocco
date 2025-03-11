@@ -251,7 +251,7 @@ testOrders("delete: allows deletion of an empty reconciliation order", async ({ 
 	await expect(page.getByRole("button", { name: "Reconciling", exact: true })).toBeDisabled();
 });
 
-testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
+testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const table = page.getByRole("table");
@@ -285,8 +285,294 @@ testOrders("should show correct initial state of reconciliation page", async ({ 
 
 	await expect(page.getByRole("button", { name: "Commit" })).toBeDisabled();
 	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
-	await expect(page.getByRole("button", { name: "Compare" }).nth(1)).not.toBeVisible();
+
+	// The table shouldn't be there as intial state
+	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
 });
+
+testOrders("populate: aggregates the quantity for scanned books", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: Using the first two orders (from the fixture)
+	// NOTE: At the time of this writing, first two orders belonged to the same supplier
+	// NOTE: At the time of this writing, the orders shared a book with ISBN "5678" (book[2]), this is here
+	// to ensure ALL lines get aggregated at this stage (the difference isn't made until the 'compare' stage)
+	const relevantOrders = table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].order.supplier_name, exact: true }) });
+	await relevantOrders.nth(0).getByRole("checkbox").click();
+	await relevantOrders.nth(1).getByRole("checkbox").click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Scan three books with the same isbn
+	//
+	// NOTE: The l1 and l2 order is arbitraty and doesn't repreesent some expected ordering in the UI
+	const l1 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[0].isbn, exact: true }) });
+	// NOTE: At the time of this writing, this book was present in both supplier orders
+	const l2 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[2].isbn, exact: true }) });
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.getByRole("cell", { name: "1", exact: true }).waitFor(); // Check the quantity
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.getByRole("cell", { name: "2", exact: true }).waitFor(); // Check the quantity
+
+	await isbnInput.fill(books[2].isbn);
+	await page.keyboard.press("Enter");
+	await l2.getByRole("cell", { name: "1", exact: true }).waitFor(); // Check the quantity
+
+	await isbnInput.fill(books[2].isbn);
+	await page.keyboard.press("Enter");
+	await l2.getByRole("cell", { name: "2", exact: true }).waitFor(); // Check the quantity
+
+	await isbnInput.fill(books[2].isbn);
+	await page.keyboard.press("Enter");
+	await l2.getByRole("cell", { name: "3", exact: true }).waitFor(); // Check the quantity
+
+	// Verify the final state, just to make sure
+	await l1.getByRole("cell", { name: "2", exact: true }).waitFor();
+	await l2.getByRole("cell", { name: "3", exact: true }).waitFor();
+});
+
+testOrders("populate: adjusts quantity using the +/- buttons", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Scan some lines to work with
+	//
+	// NOTE: the following 1 and 2 are arbitrary and don't represent any expected order in which they appear in the UI
+	const l1 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[0].isbn }) });
+	const l2 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[1].isbn }) });
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.waitFor();
+
+	await isbnInput.fill(books[1].isbn);
+	await page.keyboard.press("Enter");
+	await l2.waitFor();
+
+	// Increase quantity
+	await l1.getByRole("button", { name: "Increase quantity" }).click();
+	await l1.getByRole("button", { name: "Increase quantity" }).click();
+	await l1.getByRole("button", { name: "Increase quantity" }).click();
+
+	await l2.getByRole("button", { name: "Increase quantity" }).click();
+	await l2.getByRole("button", { name: "Increase quantity" }).click();
+
+	// Verify the quantities
+	await l1.getByRole("cell", { name: "4", exact: true }).waitFor();
+	await l2.getByRole("cell", { name: "3", exact: true }).waitFor();
+
+	// Decrease the quantity
+	await l1.getByRole("button", { name: "Decrease quantity" }).click();
+
+	await l2.getByRole("button", { name: "Decrease quantity" }).click();
+	await l2.getByRole("button", { name: "Decrease quantity" }).click();
+
+	// Verify the quantities
+	await l1.getByRole("cell", { name: "3", exact: true }).waitFor();
+	await l2.getByRole("cell", { name: "1", exact: true }).waitFor();
+});
+
+testOrders("populate: removes a line when quantity drops to 0", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Scan some lines to work with
+	//
+	// NOTE: the following 1 and 2 are arbitrary and don't represent any expected order in which they appear in the UI
+	const l1 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[0].isbn }) });
+	const l2 = table.getByRole("row").filter({ has: page.getByRole("cell", { name: books[1].isbn }) });
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	await l1.waitFor();
+
+	await isbnInput.fill(books[1].isbn);
+	await page.keyboard.press("Enter");
+	await l2.waitFor();
+
+	// Decrease line 1 to 0
+	await l1.getByRole("button", { name: "Decrease quantity" }).click();
+
+	// Verify the state
+	await l1.waitFor({ state: "detached" });
+	await l2.getByRole("cell", { name: "1", exact: true }).waitFor();
+});
+
+testOrders("populate: sorts books by ISBN", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Scan book 1 (at the time of this writing - alphabetically first ISBN)
+	// Scan three books with the same isbn
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: books[0].isbn, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
+		.waitFor();
+
+	// Scan book 2
+	await isbnInput.fill(books[1].isbn);
+	await page.keyboard.press("Enter");
+	// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: books[1].isbn, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
+		.waitFor();
+
+	// Matcher for rows with isbn of book 1 or book 2 - to save some typing
+	const isbnRegex = new RegExp(`(${books[0].isbn}|${books[1].isbn})`);
+	const scannedRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+	// Check the ordering
+	await expect(scannedRow).toHaveCount(2);
+	await scannedRow.nth(0).getByRole("cell", { name: books[0].isbn, exact: true }).waitFor();
+	await scannedRow.nth(1).getByRole("cell", { name: books[1].isbn, exact: true }).waitFor();
+
+	// Add one more of each book, in reverse order (ordering shouldn't change)
+	await isbnInput.fill(books[1].isbn);
+	await page.keyboard.press("Enter");
+	// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: books[1].isbn, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
+		.waitFor();
+
+	await isbnInput.fill(books[0].isbn);
+	await page.keyboard.press("Enter");
+	// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: books[1].isbn, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
+		.waitFor();
+
+	// Check the ordering
+	await expect(scannedRow).toHaveCount(2);
+	await scannedRow.nth(0).getByRole("cell", { name: books[0].isbn, exact: true }).waitFor();
+	await scannedRow.nth(1).getByRole("cell", { name: books[1].isbn, exact: true }).waitFor();
+});
+
+testOrders(
+	"populate: persists the state (reconciliation can be continued after navigating away and back)",
+	async ({ page, supplierOrders }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// NOTE: using the first order (from the fixture) for the test
+		// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
+		const { order } = supplierOrders[0];
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+			.getByRole("checkbox")
+			.click();
+
+		await page.getByText("Reconcile").first().click();
+
+		const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+		// Scan one book
+		await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+		await page.keyboard.press("Enter");
+		// Wait for each scanned line to appear so as to not dispatch updates too fast for the UI to handle
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }) })
+			.getByRole("cell", { name: "1", exact: true })
+			.waitFor();
+
+		// Navigate away from the page
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		// Navigate to the existing reconciliation order
+		await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+		// NOTE: there's only one reconciliation note in progress - no need for fine grained matching
+		await page.getByRole("button", { name: "Continue", exact: true }).click();
+
+		// Scan one more of the existing line
+		await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+		await page.keyboard.press("Enter");
+
+		// Verify final state (the line should have scanned quantity: 2 - 1 on first go, 1 added just now)
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
+			.waitFor();
+	}
+);
 
 testOrders("should show correct comparison when quantities match ordered amounts", async ({ page, books, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -348,68 +634,6 @@ testOrders("should show correct comparison when quantities match ordered amounts
 
 	await expect(page.getByText("Total delivered:")).toBeVisible();
 	await expect(page.getByText("2 / 3")).toBeVisible(); // Assuming 1 was ordered
-});
-
-testOrders("should correctly increment quantities when scanning same ISBN multiple times", async ({ page, books, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	await isbnInput.fill("1111111111");
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: "1111111111" }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill("1111111111");
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: "1111111111" }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill(books[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill("1111111111");
-	await page.keyboard.press("Enter");
-
-	// Check final quantities
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: "1111111111" }) })
-		.filter({ has: page.getByRole("cell", { name: "3", exact: true }) })
-		.waitFor();
-
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: books[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
 });
 
 testOrders("should show over-delivery when scanned quantities are more than ordered amounts", async ({ page, supplierOrders }) => {
@@ -745,69 +969,6 @@ testOrders("should be able to select multiple supplier orders to reconcile at on
 	await expect(page.getByText("2 / 9")).toBeVisible();
 });
 
-testOrders("should be able to continue reconciliation", async ({ page, books, supplierOrders }) => {
-	// Navigate to supplier orders and start reconciliation
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	// Scan some books
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Navigate away from the page
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	// Find and click on the "Continue" button for the in-progress reconciliation
-	await page.getByRole("button", { name: "Reconciling" }).click();
-
-	await page.getByRole("button", { name: "Continue" }).first().click();
-
-	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
-
-	// Verify we can continue scanning
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-
-	// Verify quantity has increased
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	await expect(table.getByText(books[2].isbn)).toBeVisible();
-
-	// there shouldn't be any unmatched books
-	await expect(page.getByText("Unmatched Books")).not.toBeVisible();
-
-	// Verify total delivered count includes all scanned books
-	await expect(page.getByText("Total delivered:")).toBeVisible();
-	await expect(page.getByText("2 / 3")).toBeVisible();
-});
-
 testOrders("should be able to commit reconciliation", async ({ page, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -856,228 +1017,4 @@ testOrders("should be able to commit reconciliation", async ({ page, customers, 
 	await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(1);
-});
-
-testOrders("should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
-	// Navigate and start reconciliation
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add a book
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Increase the quantity
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.getByRole("button", { name: "Increase quantity" })
-		.click();
-
-	// Check quantity update
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-});
-
-testOrders("should remove line when quantity reaches zero", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add single quantity
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Decrease the quantity
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.getByRole("button", { name: "Decrease quantity" })
-		.click();
-
-	// Check quantity update
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.waitFor({ state: "detached" });
-});
-
-testOrders("should handle multiple quantity adjustments", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add multiple books with different quantities
-	// NOTE: This only adds 1 quantity per each book (TODO: check what the author wanted here...)
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill(supplierOrders[0].lines[1].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Adjust quantities for both books
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.getByRole("button", { name: "Increase quantity" })
-		.click();
-
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.getByRole("button", { name: "Increase quantity" })
-		.click();
-
-	// Verify updated quantities
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "2", exact: true }) })
-		.waitFor();
-});
-
-testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const table = page.getByRole("table");
-
-	await page.getByRole("button", { name: "Ordered", exact: true }).click();
-
-	// NOTE: using the first order (from the fixture) for the test
-	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
-	const { order } = supplierOrders[0];
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
-		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
-		.getByRole("checkbox")
-		.click();
-
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	// Add initial quantity
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	await isbnInput.fill(supplierOrders[0].lines[1].isbn);
-	await page.keyboard.press("Enter");
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.filter({ has: page.getByRole("cell", { name: "1", exact: true }) })
-		.waitFor();
-
-	// Move to compare view
-	await page.getByRole("button", { name: "Compare" }).first().click();
-	// Initial total
-	await expect(page.getByText("2 / 3")).toBeVisible();
-
-	// Move back to 'Populate' step
-	await page.getByRole("button", { name: "Populate" }).first().click();
-
-	// Adjust quantities for all books
-	const book1Line = table.getByRole("row").filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[0].isbn }) });
-	// Click twice to increase quantity to 3 (not double click as that is a different action)
-	await book1Line.getByRole("button", { name: "Increase quantity" }).click();
-	await book1Line.getByRole("button", { name: "Increase quantity" }).click();
-
-	await table
-		.getByRole("row")
-		.filter({ has: page.getByRole("cell", { name: supplierOrders[0].lines[1].isbn }) })
-		.getByRole("button", { name: "Decrease quantity" })
-		.click();
-
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	// Verify updated total
-	// book 1 - ordered 2, scanned 3 = contributes 2 to total delivered (out of quantity ordered)
-	//   - 3rd is overdelivery and doesn't count
-	// book 2 - ordered 1, scanned 0
-	// Total: 2 + 0 = 2 (delivered) / 2 + 1 = 3 (ordered)
-	await expect(page.getByText("2 / 3")).toBeVisible();
 });
