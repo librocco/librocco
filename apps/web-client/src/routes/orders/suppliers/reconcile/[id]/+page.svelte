@@ -6,13 +6,11 @@
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
 
-	import Page from "$lib/components/Page.svelte";
 	import type { PageData } from "./$types";
 	import {
 		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
-		processOrderDelivery,
 		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { page } from "$app/stores";
@@ -20,10 +18,11 @@
 	import { invalidate } from "$app/navigation";
 	import { defaults, superForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { scannerSchema, bookSchema } from "$lib/forms/schemas";
+	import { scannerSchema } from "$lib/forms/schemas";
 	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
+	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -231,6 +230,7 @@
 					</form>
 				{/if}
 			</div>
+
 			<div class="relative h-full overflow-x-auto">
 				{#if currentStep === 1}
 					{#if books.length === 0}
@@ -251,6 +251,7 @@
 										<th class="w-0"></th>
 									</tr>
 								</thead>
+
 								<tbody>
 									{#each books as { isbn, title, authors, price, quantity }}
 										<tr>
