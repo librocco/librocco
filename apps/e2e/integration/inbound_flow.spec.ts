@@ -238,6 +238,26 @@ test("should continue the naming sequence from the highest sequenced note name (
 		]);
 });
 
+test("should be able to edit note title", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.navigate("inbound-list");
+
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
+	await content.entityList("inbound-list").item(0).edit();
+	// Check title
+	await dashboard.view("inbound-note").waitFor();
+	await content.header().title().assert("New Note");
+
+	await dashboard.textEditableField().fillData("title");
+	await dashboard.textEditableField().submit();
+	// to make sure title is persisted
+	await page.reload();
+	await content.header().title().assert("title");
+});
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
