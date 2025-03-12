@@ -3,6 +3,7 @@
 	import { PencilLine } from "lucide-svelte";
 	import { clickOutside } from "$lib/actions";
 	import { createEventDispatcher } from "svelte";
+	import { testId } from "@librocco/shared";
 
 	export let name: string;
 	export let id: string = name;
@@ -55,6 +56,7 @@
 </script>
 
 <div
+	id={testId("text-editable-form")}
 	class="relative block w-full rounded border-2 border-transparent bg-transparent p-2 delay-75 focus-within:border-gray-500 focus-within:bg-gray-50 hover:border-gray-500"
 	use:clickOutside
 	on:clickoutside={save}

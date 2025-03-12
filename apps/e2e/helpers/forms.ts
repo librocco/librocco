@@ -2,7 +2,14 @@ import type { Locator } from "@playwright/test";
 
 import { TestId } from "@librocco/shared";
 
-import type { BookFormValues, FormInterface, BookFormFieldInterface, DashboardNode } from "./types";
+import type {
+	BookFormValues,
+	FormInterface,
+	BookFormFieldInterface,
+	DashboardNode,
+	TextEditableFieldInterface,
+	TextEditableInterface
+} from "./types";
 
 import { idSelector, selector } from "./utils";
 
@@ -51,10 +58,42 @@ function constructForm<F extends keyof BookFormValues>(id: TestId): (parent: Das
 		return Object.assign(container, { dashboard, field, submit, cancel, fillData });
 	};
 }
+function constructTextEditableForm(id: TestId): (parent: DashboardNode) => TextEditableInterface {
+	return (parent: DashboardNode) => {
+		const dashboard = parent.dashboard;
+		const page = parent.page();
+		const container = page.locator(selector(idSelector(id)));
 
+		const field = (): TextEditableFieldInterface<string> => {
+			return textEditableConstructor["title"](container);
+		};
+		const submit = async (kind: "click" | "keyboard" = "keyboard") => {
+			if (kind === "keyboard") {
+				await container.press("Enter");
+			} else {
+				/** @TODO find a way to click outside properly */
+				await container.click();
+			}
+			// await container.waitFor({ state: "detached" });
+		};
+
+		const cancel = async () => {
+			await container.press("Escape");
+
+			// await container.waitFor({ state: "detached" });
+		};
+
+		const fillData = async (title: string) => {
+			await field().set(title);
+		};
+		return Object.assign(container, { dashboard, field, submit, cancel, fillData });
+	};
+}
 export const getBookForm = constructForm<keyof BookFormValues>("book-form");
 
 export const getCustomItemForm = constructForm<"title" | "price">("custom-item-form");
+
+export const getTextEditableForm = constructTextEditableForm("text-editable-form");
 
 type BookFieldContstructors = {
 	[N in keyof BookFormValues]: (form: Locator) => BookFormFieldInterface<BookFormValues[N]>;
@@ -71,6 +110,10 @@ const bookFieldContstructors: BookFieldContstructors = {
 	editedBy: getStringField("editedBy"),
 	category: getStringField("category"),
 	outOfPrint: getOutOfPrintField
+};
+
+const textEditableConstructor = {
+	title: getTextEditableField
 };
 
 function getStringField(name: string) {
@@ -91,4 +134,11 @@ function getOutOfPrintField(form: Locator): BookFormFieldInterface<boolean> {
 	const container = form.getByLabel("Out of print");
 	const set = (value: boolean) => (value ? container.check() : container.uncheck());
 	return Object.assign(container, { set });
+}
+
+function getTextEditableField(form: Locator): TextEditableFieldInterface<string> {
+	form.locator("h1").click();
+	const input = form.locator("input");
+	const set = (value: string) => (value ? input.fill(value) : input.clear());
+	return Object.assign(input, { set });
 }
