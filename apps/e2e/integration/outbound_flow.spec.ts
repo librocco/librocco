@@ -254,7 +254,7 @@ test("should display book original price and discounted price as well as the war
 		.table("warehouse")
 		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
-// TODO: Test renaming using the editable title
+
 test("should update default warehouse for outbound note using dropdown", async ({ page }) => {
 	await page.goto(baseURL);
 
@@ -309,4 +309,23 @@ test("should update default warehouse for outbound note using dropdown", async (
 
 	// Verify the default warehouse selection was persisted
 	await expect(defaultWarehouseDropdown).toHaveValue("2");
+});
+
+test("should be able to edit note title", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
+	await content.entityList("outbound-list").item(0).edit();
+	// Check title
+	await dashboard.view("outbound-note").waitFor();
+	await content.header().title().assert("New Note");
+
+	await dashboard.textEditableField().fillData("title");
+	await dashboard.textEditableField().submit();
+	// to make sure title is persisted
+	await dashboard.navigate("outbound");
+	expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });

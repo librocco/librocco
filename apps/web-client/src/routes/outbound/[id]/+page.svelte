@@ -413,7 +413,7 @@
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Note"
 					value={displayName}
-					on:change={(e) => console.log(e)}
+					on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
 				/>
 
 				<div class="w-fit">
