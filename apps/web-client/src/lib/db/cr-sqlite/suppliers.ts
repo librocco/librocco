@@ -310,7 +310,10 @@ export async function getPlacedSupplierOrders(
 		SELECT
             so.id,
             so.supplier_id,
-            s.name as supplier_name,
+			CASE WHEN so.supplier_id IS NULL
+				THEN '${DEFAULT_SUPPLIER_NAME}'
+				ELSE s.name
+			END as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
