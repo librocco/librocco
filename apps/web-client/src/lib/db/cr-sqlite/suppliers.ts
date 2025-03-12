@@ -367,14 +367,18 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
 			COALESCE(book.category, '') as category,
 
             so.supplier_id,
+			CASE WHEN s.id IS NULL
+				THEN '${DEFAULT_SUPPLIER_NAME}'
+				ELSE s.name
+			END as supplier_name,
             so.created,
-            s.name AS supplier_name,
+
             SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
             SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
 		FROM supplier_order_line AS sol
 		LEFT JOIN book ON sol.isbn = book.isbn
-        JOIN supplier_order so ON so.id = sol.supplier_order_id
-        JOIN supplier s ON s.id = so.supplier_id
+        LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+        LEFT JOIN supplier s ON s.id = so.supplier_id
         WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
 		GROUP BY sol.supplier_order_id, sol.isbn
         ORDER BY sol.supplier_order_id, sol.isbn ASC;
