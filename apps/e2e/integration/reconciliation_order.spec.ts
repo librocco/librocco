@@ -2,7 +2,6 @@ import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { depends, testOrders } from "@/helpers/fixtures";
-import { getDashboard } from "@/helpers";
 
 // * Note: its helpful to make an assertion after each <enter> key
 // as it seems that Playwright may start running assertions before page data has fully caught up
