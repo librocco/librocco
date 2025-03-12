@@ -104,7 +104,7 @@
 	 * Handle create note is an `on:click` handler used to create a new inbound note in the provided warehouse.
 	 * _(and navigate to the newly created note page)_.
 	 */
-	const handleCreateInboundNote = () => async () => {
+	const handleCreateInboundNote = async () => {
 		const noteId = await getNoteIdSeq(db);
 		await createInboundNote(db, id, noteId); // Id here is warehouseId ^^^
 		await goto(appPath("inbound", noteId));
