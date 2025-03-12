@@ -2,11 +2,37 @@ import { expect } from "@playwright/test";
 
 import { baseURL } from "./constants";
 import { getDbHandle } from "@/helpers";
-import { addBooksToCustomer, associatePublisher, createReconciliationOrder, createSupplierOrder } from "@/helpers/cr-sqlite";
+import {
+	addBooksToCustomer,
+	associatePublisher,
+	createReconciliationOrder,
+	createSupplierOrder,
+	finalizeReconciliationOrder
+} from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";
 
+// NOTE: this won't work with fixtures...we should do it per test basis
 testOrders.beforeEach(async ({ page }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
+});
+
+testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const dbHandle = await getDbHandle(page);
+
+	// The tab should be disabled - no completed orders
+	await expect(page.getByRole("button", { name: "Completed", exact: true })).toBeDisabled();
+
+	// Complete two orders - create a reconciliation order and finalize it
+	const [o1, o2] = supplierOrders;
+	await dbHandle.evaluate(createReconciliationOrder, { id: 1, supplierOrderIds: [o1.order.id, o2.order.id] });
+	await dbHandle.evaluate(finalizeReconciliationOrder, 1);
+
+	// Check the 'Completed' view
+	await page.getByRole("button", { name: "Completed", exact: true }).click();
+
+	await page.getByRole("table").getByRole("row").nth(2).waitFor();
 });
 
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
@@ -20,6 +46,7 @@ testOrders("should show empty state when no customer orders exist", async ({ pag
 
 	await expect(page.getByRole("dialog")).toBeVisible();
 });
+
 testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books }) => {
 	const dbHandle = await getDbHandle(page);
 
