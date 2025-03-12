@@ -64,6 +64,7 @@
 		getReceiptForNote,
 		removeNoteCustomItem,
 		removeNoteTxn,
+		updateNote,
 		updateNoteTxn,
 		upsertNoteCustomItem
 	} from "$lib/db/cr-sqlite/note";
@@ -377,6 +378,10 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	const handleUpdateNoteWarehouse = async (warehouseId: number) => {
+		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
+	};
 </script>
 
 <Page {handleCreateOutboundNote} view="outbound-note" loaded={!loading}>
@@ -425,7 +430,7 @@
 						name="defaultWarehouse"
 						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
 						value={defaultWarehouse}
-						on:change={(e) => console.log(e)}
+						on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
 					>
 						{#each warehouses as warehouse}
 							<option value={warehouse.id}>{warehouse.displayName}</option>
