@@ -156,7 +156,15 @@ testOrders("delete: doesn't delete the reconciliation order on cancel", async ({
 	await dialog.waitFor({ state: "detached" });
 
 	// Reload the page and check if the reconciliation order is still there
-	await page.reload();
+	//
+	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+	// so we have to go to a static page (no dynamic params) and navigate from there
+	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+	//
+	// await page.reload();
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByRole("button", { name: "Reconciling" }).click();
+	await page.getByRole("button", { name: "Continue" }).click(); // NOTE: only active order (no need for fine grained matching)
 
 	await l1.waitFor();
 	await l2.waitFor();
@@ -1641,7 +1649,16 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
 	// - ISBN: 5678, quantity: 1 (filled by supplier order 1 - line 2)
 	// - ISBN: 8888, quantity: 1 (not affected by this order -- still placed)
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
+	//
+	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+	// so we have to go to a static page (no dynamic params) and navigate from there
+	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+	//
+	// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByText(customers[0].fullname).waitFor();
+	await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+
 	await l1.getByRole("cell", { name: "Delivered" }).waitFor();
 	await l2.getByRole("cell", { name: "Delivered" }).waitFor();
 	await expect(lNotAffected).toHaveCount(1);
@@ -1654,7 +1671,16 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	// - ISBN: 4321, quantity: 1 (not affected by this order -- still placed)
 	// - ISBN: 7777, quantity: 1 (not affected by this order -- still placed)
 	// - ISBN: 8765, quantity: 1 (not affected by this order -- still placed)
-	await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
+	//
+	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+	// so we have to go to a static page (no dynamic params) and navigate from there
+	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+	//
+	// await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByText(customers[1].fullname).waitFor();
+	await table.getByRole("row").filter({ hasText: customers[1].fullname }).getByRole("link", { name: "Update" }).click();
+
 	await l2.getByRole("cell", { name: "Placed" }).waitFor(); // Not enough quantity delivered to fill
 	await expect(lNotAffected).toHaveCount(3);
 	await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
@@ -1666,7 +1692,16 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	// NOTE: at the time for this writing, the customer order 3 had the following lines
 	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
 	// - ISBN: 9999, quantity: 1 (not affected by this order -- still placed)
-	await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
+	//
+	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+	// so we have to go to a static page (no dynamic params) and navigate from there
+	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+	//
+	// await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByText(customers[2].fullname).waitFor();
+	await table.getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
+
 	await l1.getByRole("cell", { name: "Delivered" }).waitFor();
 	await expect(lNotAffected).toHaveCount(1);
 	await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
