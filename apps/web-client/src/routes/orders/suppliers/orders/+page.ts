@@ -1,7 +1,7 @@
 import { getAllReconciliationOrders } from "$lib/db/cr-sqlite/order-reconciliation";
 import { getPlacedSupplierOrders, getPossibleSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 
-import type { PlacedSupplierOrder, PossibleSupplierOrder } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrder, PossibleSupplierOrder, ReconciliationOrder } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ depends, parent }) => {
@@ -13,7 +13,12 @@ export const load: PageLoad = async ({ depends, parent }) => {
 
 	// We're not in browser, no need for further processing
 	if (!dbCtx) {
-		return { placedOrders: [] as PlacedSupplierOrder[], possibleOrders: [] as PossibleSupplierOrder[] };
+		return {
+			possibleOrders: [] as PossibleSupplierOrder[],
+			placedOrders: [] as PlacedSupplierOrder[],
+			reconcilingOrders: [] as ReconciliationOrder[],
+			completedOrders: [] as PlacedSupplierOrder[]
+		};
 	}
 
 	const { db } = dbCtx;
@@ -21,8 +26,9 @@ export const load: PageLoad = async ({ depends, parent }) => {
 	const possibleOrders = await getPossibleSupplierOrders(dbCtx.db);
 	const placedOrders = await getPlacedSupplierOrders(dbCtx.db, { reconciled: false });
 	const reconcilingOrders = await getAllReconciliationOrders(db, { finalized: false });
+	const completedOrders = await getPlacedSupplierOrders(db, { finalized: true });
 
-	return { possibleOrders, placedOrders, reconcilingOrders };
+	return { possibleOrders, placedOrders, reconcilingOrders, completedOrders };
 };
 
 export const ssr = false;
