@@ -48,6 +48,7 @@ export interface DashboardInterface extends Locator {
 	content(): ContentInterface;
 	dialog(): DialogInterface;
 	bookForm(): BookFormInterface;
+	textEditableField(): TextEditableInterface;
 	customItemForm(): CustomItemFormInterface;
 }
 
@@ -186,6 +187,19 @@ export interface BookFormFieldInterface<T extends string | number | boolean> ext
 }
 // #endregion book form
 
+// #region texteditable
+
+export type TextEditableInterface = {
+	field(): TextEditableFieldInterface<string>;
+	fillData(title: string): Promise<void>;
+	submit(kind?: "keyboard" | "click"): Promise<void>;
+	cancel(kind?: "keyboard" | "click"): Promise<void>;
+};
+
+export interface TextEditableFieldInterface<T extends string> extends Locator {
+	set: (value: T) => Promise<void>;
+}
+// #endregion texteditable
 // #region inventory table
 export type InventoryTableView = Subset<WebClientView, "inbound-note" | "outbound-note" | "warehouse" | "stock">;
 export type HistoryTableView = Subset<WebClientView, "history/date" | "history/isbn" | "history/warehouse">;
