@@ -1043,3 +1043,48 @@ testOrders("should navigate correctly after deletion", async ({ page, supplierOr
 	// TODO: This is incredibly generic and might result in false negatives
 	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
 });
+
+testOrders("commit: navigates back to suppliers/orders after the order is finalized", async ({ page, supplierOrders }) => {
+	// Navigate to supplier orders and start reconciliation
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	// (not really relevant for this test, but we want to make sure it's, in fact, an order row, not a header)
+	const { order } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		// TODO: replace nth(0) with the following line after merging the entire reconciliation related work
+		// .filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.nth(0)
+		.getByRole("checkbox")
+		.click();
+
+	await page.getByText("Reconcile").first().click();
+
+	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
+
+	// Scan one book (so that we can commit)
+	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	await table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn }).waitFor();
+
+	// Compare and commit
+	await page.getByRole("button", { name: "Compare", exact: true }).click();
+	await page.getByRole("button", { name: "Commit", exact: true }).click();
+	const dialog = page.getByRole("dialog");
+	await dialog.getByRole("button", { name: "Confirm" }).click();
+	await dialog.waitFor({ state: "detached" });
+
+	// Should have navigated back to supplier orders
+	//
+	// These buttons should be enough to conclude we're back at the supplier orders page
+	await page.getByRole("button", { name: "Unordered", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Ordered", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Reconciling", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Completed", exact: true }).waitFor();
+});
