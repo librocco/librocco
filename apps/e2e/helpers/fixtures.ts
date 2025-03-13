@@ -130,7 +130,8 @@ type OrderTestFixture = {
 	/**
 	 * Data:
 	 *
-	 * id: 1, name: "Sup1", email: "sup1@gmail.com"
+	 * id: 1, name: "sup1", email: "sup1@gmail.com"
+	 * id: 2, name: "sup2", email: "sup2@gmail.com"
 	 */
 	suppliers: Supplier[];
 
