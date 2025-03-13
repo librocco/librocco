@@ -4,12 +4,33 @@
 
 	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 
-	import { goto } from "$lib/utils/navigation";
+	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 	import { base } from "$app/paths";
+	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
+
+	// depends("books:data");
+	// depends("supplier:data");
+	// depends("customers:order_lines");
+	let disposer: () => void;
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		const disposer1 = rx.onRange(["book"], () => invalidate("books:data"));
+		const disposer2 = rx.onRange(["supplier", "supplier_publisher"], () => invalidate("suppliers:data"));
+		const disposer3 = rx.onRange(["customer_order_lines"], () => invalidate("customers:order_lines"));
+
+		disposer = () => (disposer1(), disposer2(), disposer3());
+	});
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer();
+	});
+	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
 
