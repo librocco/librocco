@@ -7,15 +7,36 @@ import { depends, testOrders } from "@/helpers/fixtures";
 // as it seems that Playwright may start running assertions before page data has fully caught up
 testOrders("should show correct initial state of reconciliation page", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
 	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
+
+	// NOTE: checking for initial state using all 3 supplier orders
+	for (const order of supplierOrders) {
+		const totalBooks = order.lines.reduce((acc, { quantity }) => acc + quantity, 0);
+		await table
+			.getByRole("row")
+			.filter({ hasText: order.order.supplier_name })
+			.filter({ has: page.getByRole("cell", { name: totalBooks.toString(), exact: true }) })
+			.getByRole("checkbox")
+			.click();
+	}
+
 	await page.getByText("Reconcile").first().click();
 
 	// Verify initial UI elements
 	await expect(page.getByText("Reconcile Deliveries")).toBeVisible();
 	await expect(page.getByPlaceholder("Enter ISBN of delivered books")).toBeVisible();
 	await expect(page.getByText("Scan or enter the ISBNs of the delivered books to begin reconciliation.")).toBeVisible();
+
+	// Check the list of associated orders
+	const supplierNames = [...new Set(supplierOrders.map(({ order: { supplier_name } }) => supplier_name))].join("|");
+	const associatedOrdersRegex = new RegExp(`#[0-9]* \\((${supplierNames})\\)`);
+	await expect(page.getByText(associatedOrdersRegex, { exact: true })).toHaveCount(3);
+
 	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
+
 	await expect(page.getByRole("button", { name: "Commit" })).toBeDisabled();
 	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
 	await expect(page.getByRole("button", { name: "Compare" }).nth(1)).not.toBeVisible();

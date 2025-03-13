@@ -1,20 +1,15 @@
 <script lang="ts">
-	import { sortLinesBySupplier } from "$lib/db/cr-sqlite/order-reconciliation";
-	import type { ProcessedOrderLine } from "$lib/db/cr-sqlite/types";
+	import { _group, wrapIter } from "@librocco/shared";
 
-	import type { BookEntry } from "@librocco/db";
+	import type { ReconciliationUnmatchedBookLine, ReconciliationProcessedLine } from "./utils";
 
-	export let reconciledBooks: { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } = {
+	export let reconciledBooks: { processedLines: ReconciliationProcessedLine[]; unmatchedBooks: ReconciliationUnmatchedBookLine[] } = {
 		processedLines: [],
 		unmatchedBooks: []
 	};
 
-	$: sortedSupplierBooks = sortLinesBySupplier(reconciledBooks.processedLines);
-
-	$: getSupplierSummary = (books: (BookEntry & { delivered: boolean })[]) => {
-		const delivered = books.filter((b) => b.delivered).length;
-		return `${delivered} / ${books.length}`;
-	};
+	// NOTE: potential conflicts if two suppliers have the same name (quite unlikely though)
+	$: groupedSupplierBooks = wrapIter(reconciledBooks.processedLines)._groupIntoMap(({ supplier_name, ...rest }) => [supplier_name, rest]);
 </script>
 
 <div class="overflow-x-auto">
@@ -32,6 +27,7 @@
 				</th> -->
 			</tr>
 		</thead>
+
 		{#if reconciledBooks.unmatchedBooks.length}
 			<thead>
 				<tr class="bg-base-200/50">
@@ -39,17 +35,20 @@
 				</tr>
 			</thead>
 			<tbody>
-				{#each reconciledBooks.unmatchedBooks as { isbn, title, authors, price }}
+				{#each reconciledBooks.unmatchedBooks as line}
 					<tr>
-						<td>{isbn}</td>
-						<td>{title}</td>
-						<td>{authors}</td>
-						<td>€{price}</td>
+						<td>{line.isbn}</td>
+						<td>{line.title}</td>
+						<td>{line.authors}</td>
+						<td>€{line.price}</td>
+						<td></td>
+						<td class="text-center">{line.deliveredQuantity}</td>
 					</tr>
 				{/each}
 			</tbody>
 		{/if}
-		{#each Object.entries(sortedSupplierBooks) as [supplier_name, reconciledBooksList]}
+
+		{#each groupedSupplierBooks.entries() as [supplier_name, reconciledBooksList]}
 			<thead>
 				<tr class="bg-base-200/50">
 					<th colspan="7" class="text-left">
@@ -62,6 +61,7 @@
 					</th> -->
 				</tr>
 			</thead>
+
 			<tbody>
 				{#each reconciledBooksList as { isbn, title, authors, price, deliveredQuantity, orderedQuantity }}
 					<tr>
