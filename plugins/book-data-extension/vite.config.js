@@ -21,17 +21,16 @@ const config = {
 				{
 					dir: "dist",
 					entryFileNames: "[name].cjs",
-					format: "cjs",
-					sourcemap: true
+					format: "cjs"
 				},
 				{
 					dir: "dist",
 					entryFileNames: "[name].es.js",
-					format: "esm",
-					sourcemap: true
+					format: "esm"
 				}
 			]
-		}
+		},
+		sourcemap: true
 	},
 	test: {
 		globals: true,

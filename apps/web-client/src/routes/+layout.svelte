@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import "./global.css";
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
@@ -21,6 +22,19 @@
 	export let data: LayoutData & { status: boolean };
 
 	const { dbCtx } = data;
+
+	import { afterNavigate } from "$app/navigation";
+
+	afterNavigate((nav) => {
+		// Painful workaround: for some reasons sometimes navigating to a different route
+		// yields a blank page. This is the lamest of possible workarounds
+		const minimumDivs = 10; // Magic number empirically chosen: if there are at least 10 divs the
+		// page did render
+		if (document.getElementsByTagName("div").length < minimumDivs) {
+			// eslint-disable-next-line no-self-assign
+			location.href = location.href;
+		}
+	});
 
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.
@@ -59,10 +73,11 @@
 			registerSW({
 				immediate: true,
 				onRegistered(r) {
-					r &&
+					if (r) {
 						setInterval(() => {
 							r.update();
 						}, 20000);
+					}
 				},
 				onRegisterError() {
 					/**
@@ -74,7 +89,9 @@
 	});
 
 	export function onDestroy() {
-		availabilitySubscription && availabilitySubscription.unsubscribe();
+		if (availabilitySubscription) {
+			availabilitySubscription.unsubscribe();
+		}
 	}
 
 	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
@@ -85,12 +102,3 @@
 </svelte:head>
 
 <slot />
-
-<style global>
-	:global(body) {
-		height: 100%;
-		padding: 0;
-		margin: 0;
-		overflow-y: hidden;
-	}
-</style>

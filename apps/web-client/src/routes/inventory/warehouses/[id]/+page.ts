@@ -23,7 +23,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	const warehouse = await getWarehouseById(dbCtx.db, id);
 	if (!warehouse) {
-		throw redirect(307, appPath("inventory"));
+		redirect(307, appPath("inventory"));
 	}
 
 	const entries = await getStock(dbCtx.db, { warehouseId: id });

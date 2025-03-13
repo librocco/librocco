@@ -1,7 +1,7 @@
 import path from "path";
 import { defineConfig } from "vite";
 
-module.exports = defineConfig({
+export default defineConfig({
   build: {
     sourcemap: true,
     lib: {
