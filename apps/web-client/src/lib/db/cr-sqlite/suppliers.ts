@@ -5,7 +5,8 @@ import type {
 	PossibleSupplierOrderLine,
 	PlacedSupplierOrder,
 	PlacedSupplierOrderLine,
-	SupplierExtended
+	SupplierExtended,
+	DBPlacedSupplierOrderLine
 } from "./types";
 
 /**
@@ -343,11 +344,20 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
 	const query = `
         SELECT
             sol.supplier_order_id,
+
             sol.isbn,
             sol.quantity,
 			COALESCE(book.price, 0) * sol.quantity as line_price,
+
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.authors, 'N/A') AS authors,
+			COALESCE(book.publisher, '') as publisher,
+			COALESCE(book.price, 0) as price,
+			COALESCE(book.year, '') as year,
+			COALESCE(book.edited_by, '') as editedBy,
+			book.out_of_print,
+			COALESCE(book.category, '') as category,
+
             so.supplier_id,
             so.created,
             s.name AS supplier_name,
@@ -362,7 +372,8 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
         ORDER BY sol.supplier_order_id, sol.isbn ASC;
     `;
 
-	return db.execO<PlacedSupplierOrderLine>(query, supplier_order_ids);
+	const res = await db.execO<DBPlacedSupplierOrderLine>(query, supplier_order_ids);
+	return res.map(({ out_of_print, ...rest }) => ({ ...rest, outOfPrint: Boolean(out_of_print) }));
 }
 
 /**
