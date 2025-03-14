@@ -16,8 +16,9 @@
 	import { createCustomerOrderSchema } from "$lib/forms";
 
 	import UnorderedTable from "$lib/components/supplier-orders/UnorderedTable.svelte";
-	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
 	import OrderedTable from "$lib/components/supplier-orders/OrderedTable.svelte";
+	import ReconcilingTable from "$lib/components/supplier-orders/ReconcilingTable.svelte";
+	import CompletedTable from "$lib/components/supplier-orders/CompletedTable.svelte";
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
@@ -48,10 +49,11 @@
 		states: { open: newOrderDialogOpen }
 	} = newOrderDialog;
 
-	$: hasReconcilingOrders = data.reconcilingOrders.length;
-	$: hasPlacedOrders = data.placedOrders.length;
+	$: hasPlacedOrders = data.placedOrders?.length;
+	$: hasReconcilingOrders = data.reconcilingOrders?.length;
+	$: hasCompletedOrders = data.completedOrders?.length;
 
-	let orderStatusFilter: "unordered" | "ordered" | "reconciling" = "unordered";
+	let orderStatusFilter: "unordered" | "ordered" | "reconciling" | "completed" = "unordered";
 
 	async function handleReconcile(event: CustomEvent<{ supplierOrderIds: number[] }>) {
 		/**@TODO replace randomId with incremented id */
@@ -100,6 +102,7 @@
 				>
 					Unordered
 				</button>
+
 				<button
 					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
 					on:click={() => (orderStatusFilter = "ordered")}
@@ -109,6 +112,7 @@
 				>
 					Ordered
 				</button>
+
 				<button
 					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
 					on:click={() => (orderStatusFilter = "reconciling")}
@@ -118,7 +122,16 @@
 				>
 					Reconciling
 				</button>
-				<button class="btn-outline btn-sm btn" disabled> Completed </button>
+
+				<button
+					class="btn-sm btn {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "completed")}
+					aria-pressed={orderStatusFilter === "completed"}
+					disabled={!hasCompletedOrders}
+					data-testid="reconciling-list"
+				>
+					Completed
+				</button>
 			</div>
 
 			{#if orderStatusFilter === "unordered"}
@@ -137,8 +150,10 @@
 				{/if}
 			{:else if orderStatusFilter === "ordered"}
 				<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
-			{:else}
+			{:else if orderStatusFilter === "reconciling"}
 				<ReconcilingTable orders={data.reconcilingOrders} />
+			{:else}
+				<CompletedTable orders={data.completedOrders} />
 			{/if}
 		</div>
 	</div>
