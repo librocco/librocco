@@ -63,20 +63,21 @@ type FixtureSupplierOrder = {
 		id: number;
 		supplier_id: number;
 		supplier_name: string;
+		totalBooks: number;
 	};
 	lines: FixtureSupplierOrderLine[];
 };
 
 const supplierOrders: FixtureSupplierOrder[] = [
 	{
-		order: { id: 1, supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 1, supplier_id: 1, supplier_name: "sup1", totalBooks: 3 },
 		lines: [
 			{ isbn: "1234", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
 		]
 	},
 	{
-		order: { id: 2, supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 2, supplier_id: 1, supplier_name: "sup1", totalBooks: 6 },
 		lines: [
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
 			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
@@ -84,7 +85,7 @@ const supplierOrders: FixtureSupplierOrder[] = [
 		]
 	},
 	{
-		order: { id: 3, supplier_id: 2, supplier_name: "sup2" },
+		order: { id: 3, supplier_id: 2, supplier_name: "sup2", totalBooks: 3 },
 		lines: [
 			{ isbn: "4321", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
 			{ isbn: "8765", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
