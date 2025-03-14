@@ -253,6 +253,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 	supplierOrders: async ({ page, books, customers, suppliers }, use) => {
 		depends(books);
+		depends(customers);
 
 		await page.goto(baseURL);
 		const dbHandle = await getDbHandle(page);
