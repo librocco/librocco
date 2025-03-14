@@ -79,6 +79,6 @@ export type SupplierSchema = Infer<typeof supplierSchema>;
 export const supplierSchema = z.object({
 	id: z.number(),
 	name: z.string(),
-	email: z.string().optional(),
+	email: z.string().email().optional(),
 	address: z.string().optional()
 });
