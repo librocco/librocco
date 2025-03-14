@@ -57,7 +57,7 @@ export function getInventoryTable(parent: DashboardNode, view: InventoryTableVie
 
 const defaultInventoryRowValues: InventoryRowValues = {
 	isbn: "",
-	price: "N/A",
+	price: "€0.00",
 	quantity: 1,
 	title: "N/A",
 	year: "N/A",

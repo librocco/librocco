@@ -21,7 +21,7 @@
 
 	const { form: formStore, constraints, enhance } = form;
 
-	const priceProxy = numberProxy(formStore, "price", { empty: "undefined" });
+	const priceProxy = numberProxy(formStore, "price", { empty: "zero" });
 </script>
 
 <form
