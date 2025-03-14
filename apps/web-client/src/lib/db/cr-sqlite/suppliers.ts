@@ -275,7 +275,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   */
 export async function getPlacedSupplierOrders(
 	db: DB,
-	filters?: { supplierId?: number; reconciled?: boolean }
+	filters?: { supplierId?: number; reconciled?: boolean; finalized?: boolean }
 ): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
 	const params = [];
@@ -290,6 +290,10 @@ export async function getPlacedSupplierOrders(
 		whereConditions.push(`ro.id ${condition}`);
 	}
 
+	if (filters?.finalized !== undefined) {
+		whereConditions.push(`COALESCE(ro.finalized, 0) = ${Number(filters.finalized)}`);
+	}
+
 	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
 
 	const query = `
@@ -297,7 +301,8 @@ export async function getPlacedSupplierOrders(
 		WITH ro AS (
 			SELECT
 				reconciliation_order.id,
-				CAST (value AS INTEGER) as supplier_order_id
+				CAST (value AS INTEGER) as supplier_order_id,
+				reconciliation_order.finalized
 			FROM reconciliation_order
 			CROSS JOIN json_each(supplier_order_ids)
 		)
