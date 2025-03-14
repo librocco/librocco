@@ -43,8 +43,6 @@
 		// Unsubscribe on unmount
 		disposer();
 	});
-	//#endregion reactivity
-
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data?.dbCtx?.db;
@@ -110,6 +108,7 @@
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
 		await finalizeReconciliationOrder(db, parseInt($page.params.id));
+		await goto(appPath("supplier_orders"));
 	}
 
 	const confirmDeleteDialogHeading = "Delete Reconciliation Order";
