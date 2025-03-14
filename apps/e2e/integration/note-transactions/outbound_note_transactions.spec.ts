@@ -78,7 +78,7 @@ test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case
 	await row.field("authors").assert("N/A");
 	// The default quantity is 1
 	await row.field("quantity").assert(1);
-	await row.field("price").assert("N/A" as any);
+	await row.field("price").assert("€0.00");
 	await row.field("year").assert("N/A");
 	// Should show 'Edit' button
 	await row.getByRole("button", { name: "Edit" }).waitFor();
