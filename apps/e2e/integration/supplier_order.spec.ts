@@ -56,27 +56,58 @@ testOrders(
 		});
 
 		await page.goto(`${baseURL}orders/suppliers/orders/`);
-		page.getByRole("button", { name: "Unordered" });
-
-		await page.getByRole("button", { name: "Place Order" }).first().click();
-
-		// Verify first book ISBN is visible
-		await expect(page.getByText(books[0].isbn)).toBeVisible();
-		// total book count (4 books total: 2 of first book + 2 of third book)
-		await expect(page.getByText("4", { exact: true })).toBeVisible();
-		//total price
-		await expect(page.getByText("80")).toBeVisible();
 
 		const table = page.getByRole("table");
-		const firstRow = table.getByRole("row").nth(1);
-		await expect(firstRow.getByRole("cell", { name: "€" })).toHaveText("€20");
-		await expect(page.getByRole("button", { name: "Place Order" }).first()).toBeHidden();
+
+		await page.getByRole("button", { name: "Unordered" }).waitFor();
+
+		// Go to new-order view
+		await table.getByRole("row").filter({ hasText: supplier.name }).getByRole("button", { name: "Place Order" }).click();
+
+		// Verify rows
+		const allIsbns = books.map((book) => book.isbn);
+		const isbnRegex = new RegExp(`(${allIsbns.join("|")})`);
+		// NOTE: we're matching all ISBNs used in fixtures to make sure no additional rows creep into the view
+		const bookRows = table.getByRole("row").filter({ hasText: isbnRegex });
+
+		await expect(bookRows).toHaveCount(2);
+
+		// Check first row - books[0] ISBN comes first alphabetically
+		//
+		// Verify the row first
+		await bookRows.nth(0).getByText(books[0].isbn).waitFor();
+		// Verify cell order: (no name - select checkbox) | ISBN | Title | Authors | Quantity | Total Price
+		await bookRows.nth(0).getByRole("cell").nth(0).getByRole("checkbox").waitFor();
+		await bookRows.nth(0).getByRole("cell").nth(1).getByText(books[0].isbn, { exact: true }).waitFor();
+		await bookRows.nth(0).getByRole("cell").nth(2).getByText(books[0].title, { exact: true }).waitFor();
+		await bookRows.nth(0).getByRole("cell").nth(3).getByText(books[0].authors, { exact: true }).waitFor();
+		await bookRows.nth(0).getByRole("cell").nth(4).getByText("2", { exact: true }).waitFor();
+		const l1TotalPrice = (2 * books[0].price).toString();
+		await bookRows.nth(0).getByRole("cell").nth(5).getByText(`€${l1TotalPrice}`, { exact: true }).waitFor();
+
+		// Check second row
+		//
+		// Verify the row first
+		await bookRows.nth(1).getByText(books[2].isbn).waitFor();
+		// Verify cell order: (no name - select checkbox) | ISBN | Title | Authors | Quantity | Total Price
+		await bookRows.nth(1).getByRole("cell").nth(0).getByRole("checkbox").waitFor();
+		await bookRows.nth(1).getByRole("cell").nth(1).getByText(books[2].isbn, { exact: true }).waitFor();
+		await bookRows.nth(1).getByRole("cell").nth(2).getByText(books[2].title, { exact: true }).waitFor();
+		await bookRows.nth(1).getByRole("cell").nth(3).getByText(books[2].authors, { exact: true }).waitFor();
+		await bookRows.nth(1).getByRole("cell").nth(4).getByText("2", { exact: true }).waitFor();
+		const l2TotalPrice = (2 * books[2].price).toString();
+		await bookRows.nth(1).getByRole("cell").nth(5).getByText(`€${l2TotalPrice}`, { exact: true }).waitFor();
+
+		// total book count (4 books total: 2 of first book + 2 of third book)
+		await expect(page.getByText("4", { exact: true })).toBeVisible();
+		// total price
+		await expect(page.getByText("80")).toBeVisible();
 
 		await page.getByRole("checkbox").nth(1).click();
 
-		//total book count
+		// total book count
 		await expect(page.getByText("2", { exact: true }).nth(1)).toBeVisible();
-		//total price
+		// total price
 		await expect(page.getByText("20")).toHaveCount(2);
 
 		await page.getByRole("checkbox").nth(2).click();
