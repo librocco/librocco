@@ -7,7 +7,11 @@ import { base } from "$app/paths";
 import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ parent, params }) => {
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	depends("books:data");
+	depends("suppliers:data");
+	depends("customers:order_lines");
+
 	const { dbCtx } = await parent();
 
 	// We're not in browser, no need for further processing
