@@ -38,7 +38,7 @@ const suppliers = [
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
 	{ id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2" },
-	{ id: 3, fullname: "Don Joe", email: "don@gmail.com", displayId: "3" }
+	{ id: 3, fullname: "Don Joe", displayId: "3" }
 ];
 
 type FixtureCustomerOrderLine = {
@@ -115,7 +115,7 @@ type OrderTestFixture = {
 	 *
 	 * id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1"
 	 * id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2"
-	 * id: 3, fullname: "Don Joe",  email: "don@gmail.com",  displayId: "3"
+	 * id: 3, fullname: "Don Joe",  displayId: "3"
 	 */
 	customers: Customer[];
 
@@ -210,7 +210,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 	customers: async ({ dbHandle }, use) => {
 		for (const customer of customers) {
-			await dbHandle.evaluate(upsertCustomer, customer);
+			await dbHandle.evaluate(upsertCustomer, customer as Customer);
 		}
 		await use(customers);
 	},
