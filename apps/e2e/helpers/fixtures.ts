@@ -32,7 +32,7 @@ const books = [
 
 const suppliers = [
 	{ id: 1, name: "sup1", email: "sup1@gmail.com" },
-	{ id: 2, name: "sup2", email: "sup2@gmail.com" }
+	{ id: 2, name: "sup2" }
 ];
 
 const customers = [
@@ -203,7 +203,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 	suppliers: async ({ dbHandle }, use) => {
 		for (const supplier of suppliers) {
-			await dbHandle.evaluate(upsertSupplier, supplier);
+			await dbHandle.evaluate(upsertSupplier, supplier as Supplier);
 		}
 		await use(suppliers);
 	},
