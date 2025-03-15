@@ -1,7 +1,7 @@
 import { DB } from "@vlcn.io/crsqlite-wasm";
 import test, { JSHandle } from "@playwright/test";
 
-import { BookData } from "@librocco/shared";
+import { BookData, wrapIter } from "@librocco/shared";
 
 import { Customer, Supplier } from "./types";
 
@@ -35,21 +35,37 @@ const suppliers = [
 	{ id: 2, name: "sup2", email: "sup2@gmail.com" }
 ];
 
+const suppliersWithPublishers = [
+	{ ...suppliers[0], publishers: ["pub1"] },
+	{ ...suppliers[1], publishers: ["pub2"] }
+];
+
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
 	{ id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2" },
 	{ id: 3, fullname: "Don Joe", email: "don@gmail.com", displayId: "3" }
 ];
 
-type FixtureCustomerOrderLine = {
-	isbn: string;
-	customerId: number;
-};
-
 const customerOrderLines = [
-	{ isbn: "1234", customerId: 1 },
-	{ isbn: "4321", customerId: 1 }
+	{ customerId: 1, isbn: "1234" },
+	{ customerId: 1, isbn: "5678" },
+	{ customerId: 1, isbn: "8888" },
+	{ customerId: 2, isbn: "5678" },
+	{ customerId: 2, isbn: "8765" },
+	{ customerId: 2, isbn: "4321" },
+	{ customerId: 2, isbn: "7777" },
+	{ customerId: 3, isbn: "1234" },
+	{ customerId: 3, isbn: "9999" }
 ];
+
+type FixtureCustomerOrderLines = {
+	/** Record of { isbn => total quantity } */
+	byIsbn: Record<string, number>;
+	/** A groupped list of { customerId, isbns } for each order */
+	byOrder: { customerId: number; isbns: string[] }[];
+	/** A raw list of customer order lines */
+	lines: { isbn: string; customerId: number }[];
+};
 
 type FixtureSupplierOrderLine = {
 	isbn: string;
@@ -120,52 +136,78 @@ type OrderTestFixture = {
 	customers: Customer[];
 
 	/**
+	 * Depends: books
+	 * Depends: customers
+	 * Depends: suppliers
+	 * Depedns: suppliersWithPublishers
+	 *
 	 * Data:
 	 *
 	 * isbn: "1234", customerId: 1, status: delivered
 	 * isbn: "4321", customerId: 1, status: placed
+	 *
+	 * NOTE: This fixture is used in only one test - TODO: replace with more modular approach
 	 */
-	customerOrderLines: FixtureCustomerOrderLine[];
+	collectCustomerOrderLine: FixtureCustomerOrderLines["lines"];
+
+	/**
+	 * Depends: books
+	 * Depedns: customers
+	 *
+	 * Data:
+	 *
+	 * customerId: 1, isbn: "1234"
+	 * customerId: 1, isbn: "5678"
+	 * customerId: 1, isbn: "8888"
+	 * customerId: 2, isbn: "5678"
+	 * customerId: 2, isbn: "8765"
+	 * customerId: 2, isbn: "4321"
+	 * customerId: 2, isbn: "7777"
+	 * customerId: 3, isbn: "1234"
+	 * customerId: 3, isbn: "9999"
+	 */
+	customerOrderLines: FixtureCustomerOrderLines;
 
 	/**
 	 * Data:
 	 *
-	 * id: 1, name: "Sup1", email: "sup1@gmail.com"
+	 * id: 1, name: "sup1", email: "sup1@gmail.com"
+	 * id: 2, name: "sup2", email: "sup2@gmail.com"
 	 */
 	suppliers: Supplier[];
 
 	/**
+	 * Depends: suppliers
+	 *
 	 * Data:
 	 *
-	 * Customer order lines:
-	 *	customerId: 1, isbn: "1234"
-	 * 	customerId: 1, isbn: "5678"
-	 * 	customerId: 1, isbn: "8888"
-	 * 	customerId: 2, isbn: "5678"
-	 * 	customerId: 2, isbn: "8765"
-	 * 	customerId: 2, isbn: "4321"
-	 * 	customerId: 2, isbn: "7777"
-	 * 	customerId: 3, isbn: "1234"
-	 * 	customerId: 3, isbn: "9999"
+	 * id: 1, name: "sup1", email: "sup1@gmail.com", publishers: ["pub1"]
+	 * id: 2, name: "sup2", email: "sup2@gmail.com", publishers: ["pub2"]
+	 */
+	suppliersWithPublishers: Array<Supplier & { publishers: string[] }>;
+
+	/**
+	 * Depends: books
+	 * Depends: suppliers
+	 * Depends: suppliersWithPublishers
+	 * Depends: customers
+	 * Depends: customerOrderLines
 	 *
-	 * Suppliers:
-	 *  id: 1, name: "sup1"
-	 *  id: 2, name: "sup2"
+	 * Data:
 	 *
-	 * Supplier orders:
-	 *  ID: 1, supplier id: 1
-	 * 	 isbn: "1234", quantity: 2
-	 * 	 isbn: "5678", quantity: 1
+	 * ID: 1, supplier id: 1
+	 *  isbn: "1234", quantity: 2
+	 *  isbn: "5678", quantity: 1
 	 *
-	 *  ID: 2, supplier id: 1
-	 * 	 isbn: "5678", quantity: 3
-	 * 	 isbn: "9999", quantity: 2
-	 * 	 isbn: "7777", quantity: 1
+	 * ID: 2, supplier id: 1
+	 *  isbn: "5678", quantity: 3
+	 *  isbn: "9999", quantity: 2
+	 *  isbn: "7777", quantity: 1
 	 *
-	 *  ID: 3, supplier id: 2
-	 * 	 isbn: "4321", quantity: 1
-	 * 	 isbn: "8765", quantity: 1
-	 * 	 isbn: "8888", quantity: 1
+	 * ID: 3, supplier id: 2
+	 *  isbn: "4321", quantity: 1
+	 *  isbn: "8765", quantity: 1
+	 *  isbn: "8888", quantity: 1
 	 */
 	supplierOrders: FixtureSupplierOrder[];
 };
@@ -208,6 +250,18 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await use(suppliers);
 	},
 
+	suppliersWithPublishers: async ({ dbHandle, suppliers }, use) => {
+		depends(suppliers);
+
+		for (const { publishers, ...supplier } of suppliersWithPublishers) {
+			for (const publisher of publishers) {
+				await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher });
+			}
+		}
+
+		await use(suppliersWithPublishers);
+	},
+
 	customers: async ({ dbHandle }, use) => {
 		for (const customer of customers) {
 			await dbHandle.evaluate(upsertCustomer, customer);
@@ -215,9 +269,14 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await use(customers);
 	},
 
-	customerOrderLines: async ({ dbHandle, books, customers, suppliers }, use) => {
+	collectCustomerOrderLine: async ({ dbHandle, books, customers, suppliersWithPublishers }, use) => {
 		depends(customers);
-		depends(suppliers);
+		depends(suppliersWithPublishers);
+
+		const customerOrderLines = [
+			{ isbn: "1234", customerId: 1 },
+			{ isbn: "4321", customerId: 1 }
+		];
 
 		const supplierOrderLine = {
 			...books[0],
@@ -236,7 +295,6 @@ export const testOrders = test.extend<OrderTestFixture>({
 		//
 		// NOTE: Alternative would be to move this to a separate fixture. In that case we would need to be careful about the order of fixture execution
 		// so as to not create circular dependencies
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
 		await dbHandle.evaluate(createSupplierOrder, {
 			id: 1,
 			supplierId: 1,
@@ -251,19 +309,36 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await use(customerOrderLines);
 	},
 
-	supplierOrders: async ({ page, books, customers, suppliers }, use) => {
+	customerOrderLines: async ({ dbHandle, books, customers }, use) => {
 		depends(books);
 		depends(customers);
 
+		const byOrder = [
+			...wrapIter(customerOrderLines)
+				._group(({ customerId, isbn }) => [customerId, isbn])
+				.map(([customerId, isbns]) => ({ customerId, isbns: [...isbns] }))
+		];
+
+		const byIsbn = Object.fromEntries(
+			wrapIter(customerOrderLines)
+				._group(({ isbn }) => [isbn, 1])
+				.map(([isbn, lines]) => [isbn, [...lines].length])
+		);
+
+		for (const { customerId, isbns: bookIsbns } of byOrder) {
+			await dbHandle.evaluate(addBooksToCustomer, { customerId, bookIsbns });
+		}
+
+		await use({ byOrder, byIsbn, lines: customerOrderLines });
+	},
+
+	supplierOrders: async ({ page, books, customerOrderLines, suppliersWithPublishers }, use) => {
+		depends(books);
+		depends(customerOrderLines);
+		depends(suppliersWithPublishers);
+
 		await page.goto(baseURL);
 		const dbHandle = await getDbHandle(page);
-
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[0].id, bookIsbns: ["1234", "5678", "8888"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[1].id, bookIsbns: ["5678", "8765", "4321", "7777"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[2].id, bookIsbns: ["1234", "9999"] });
-
-		await dbHandle.evaluate(associatePublisher, { supplierId: suppliers[0].id, publisher: "pub1" });
-		await dbHandle.evaluate(associatePublisher, { supplierId: suppliers[1].id, publisher: "pub2" });
 
 		for (const {
 			order: { id, supplier_id },
