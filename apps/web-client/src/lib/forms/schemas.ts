@@ -78,7 +78,7 @@ export const createCustomerOrderSchema = (kind: "create" | "update") => {
 export type SupplierSchema = Infer<typeof supplierSchema>;
 export const supplierSchema = z.object({
 	id: z.number(),
-	name: z.string(),
-	email: z.string().email().optional(),
+	name: z.string().min(1),
+	email: z.string().max(0).optional().or(z.string().email().optional()),
 	address: z.string().optional()
 });

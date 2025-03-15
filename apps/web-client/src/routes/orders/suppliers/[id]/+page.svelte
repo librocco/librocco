@@ -104,38 +104,40 @@
 					<dl class="flex flex-col">
 						<div class="flex w-full flex-col gap-y-4 py-6">
 							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-								<div class="max-w-96 flex flex-col gap-y-4">
-									<div class="flex gap-x-3">
-										<dt>
-											<span class="sr-only">Supplier name</span>
-											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
-										</dt>
-										<dd class="truncate">{supplier?.name}</dd>
-									</div>
+								{#if supplier}
+									<div class="max-w-96 flex flex-col gap-y-4">
+										<div class="flex gap-x-3">
+											<dt>
+												<span class="sr-only">Supplier name</span>
+												<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+											</dt>
+											<dd class="truncate">{supplier.name}</dd>
+										</div>
 
-									<div class="flex gap-x-3">
-										<dt>
-											<span class="sr-only">Supplier email</span>
-											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-										</dt>
-										<dd class="truncate">{supplier?.email || ""}</dd>
-									</div>
+										<div class="flex gap-x-3">
+											<dt>
+												<span class="sr-only">Supplier email</span>
+												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+											</dt>
+											<dd class="truncate">{supplier.email || "N/A"}</dd>
+										</div>
 
-									<div class="flex gap-x-3">
-										<dt>
-											<span class="sr-only">Supplier address</span>
-											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-										</dt>
-										<dd class="truncate">{supplier?.address || ""}</dd>
+										<div class="flex gap-x-3">
+											<dt>
+												<span class="sr-only">Supplier address</span>
+												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+											</dt>
+											<dd class="truncate">{supplier.address || "N/A"}</dd>
+										</div>
 									</div>
-								</div>
+								{/if}
 							</div>
 
 							<div class="w-full pr-2">
 								<button
 									class="btn-secondary btn-outline btn-xs btn w-full"
 									type="button"
-									aria-label="Edit customer order name, email or deposit"
+									aria-label="Edit supplier name, email or address"
 									on:click={() => dialogOpen.set(true)}
 								>
 									<PencilLine aria-hidden size={16} />
@@ -218,7 +220,7 @@
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm
-		heading="Update supplier"
+		heading="Update supplier details"
 		saveLabel="Save"
 		data={defaults(stripNulls(supplier), zod(supplierSchema))}
 		options={{
