@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	// We're not in browser, no need for further processing
 	if (!dbCtx) {
 		return {
-			supplier: {} as Supplier,
+			supplier: null,
 			assignedPublishers: [] as string[],
 			unassignedPublishers: [] as string[],
 			orders: [] as PlacedSupplierOrder[]
