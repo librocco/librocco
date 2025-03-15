@@ -145,73 +145,79 @@
 	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card h-full">
-				<div class="card-body gap-y-2 p-0">
-					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">Customer Order</h1>
+				{#if customer}
+					<div class="card-body gap-y-2 p-0">
+						<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
+							<h1 class="prose card-title">Customer Order</h1>
 
-						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{customer.displayId}</h2>
+							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
+								<h2 class="prose">#{customer.displayId}</h2>
 
-							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-								<span class="sr-only">Last updated</span>
-								<ClockArrowUp size={16} aria-hidden />
-								<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
-									>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
-								>
-							</span>
-						</div>
-					</div>
-					<dl class="flex flex-col">
-						<div class="border-b py-4 font-bold">
-							<dt class="max-md:sr-only">Total amount</dt>
-							<dd class="mt-1">€{totalAmount}</dd>
-						</div>
-
-						<div class="flex w-full flex-col gap-y-4 py-6">
-							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-								<div class="max-w-96 flex flex-col gap-y-4">
-									<div class="flex gap-x-3">
-										<dt>
-											<span class="sr-only">Customer name</span>
-											<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
-										</dt>
-										<dd class="truncate">{data?.customer?.fullname || ""}</dd>
-									</div>
-									<div class="flex gap-x-3">
-										<dt>
-											<span class="sr-only">Customer email</span>
-											<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-										</dt>
-										<dd class="truncate">{data?.customer?.email || ""}</dd>
-									</div>
-								</div>
-								<div class="flex gap-x-3">
-									<dt>
-										<span class="sr-only">Deposit</span>
-										<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
-									</dt>
-									<dd>€{data?.customer?.deposit || 0} deposit</dd>
-								</div>
-							</div>
-							<div class="w-full pr-2">
-								<button
-									class="btn-secondary btn-outline btn-xs btn w-full"
-									type="button"
-									aria-label="Edit customer order name, email or deposit"
-									on:click={() => customerMetaDialogOpen.set(true)}
-								>
-									<PencilLine aria-hidden size={16} />
-								</button>
+								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+									<span class="sr-only">Last updated</span>
+									<ClockArrowUp size={16} aria-hidden />
+									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
+										>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
+									>
+								</span>
 							</div>
 						</div>
-					</dl>
-					<div class="card-actions border-t py-6 md:mb-20">
-						<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
-							Print receipt
-							<ArrowRight aria-hidden size={20} />
-						</button>
+						<dl class="flex flex-col">
+							<div class="border-b py-4 font-bold">
+								<dt class="max-md:sr-only">Total amount</dt>
+								<dd class="mt-1">€{totalAmount}</dd>
+							</div>
+
+							<div class="flex w-full flex-col gap-y-4 py-6">
+								{#if data?.customer}
+									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
+										<div class="max-w-96 flex flex-col gap-y-4">
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">Customer name</span>
+													<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{data?.customer?.fullname || ""}</dd>
+											</div>
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">Customer email</span>
+													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{data?.customer?.email || ""}</dd>
+											</div>
+										</div>
+										<div class="flex gap-x-3">
+											<dt>
+												<span class="sr-only">Deposit</span>
+												<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
+											</dt>
+											<dd>€{data?.customer?.deposit || 0} deposit</dd>
+										</div>
+									</div>
+
+									<div class="w-full pr-2">
+										<button
+											class="btn-secondary btn-outline btn-xs btn w-full"
+											type="button"
+											aria-label="Edit customer order name, email or deposit"
+											on:click={() => customerMetaDialogOpen.set(true)}
+											disabled={!data?.customer}
+										>
+											<PencilLine aria-hidden size={16} />
+										</button>
+									</div>
+								{/if}
+							</div>
+						</dl>
+						<div class="card-actions border-t py-6 md:mb-20">
+							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
+								Print receipt
+								<ArrowRight aria-hidden size={20} />
+							</button>
+						</div>
 					</div>
-				</div>
+				{/if}
 			</div>
 		</div>
 

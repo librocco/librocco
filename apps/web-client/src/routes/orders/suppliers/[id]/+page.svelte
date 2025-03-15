@@ -101,10 +101,10 @@
 						</div>
 					</div>
 
-					<dl class="flex flex-col">
-						<div class="flex w-full flex-col gap-y-4 py-6">
-							<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-								{#if supplier}
+					{#if supplier}
+						<dl class="flex flex-col">
+							<div class="flex w-full flex-col gap-y-4 py-6">
+								<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
 									<div class="max-w-96 flex flex-col gap-y-4">
 										<div class="flex gap-x-3">
 											<dt>
@@ -130,28 +130,28 @@
 											<dd class="truncate">{supplier.address || "N/A"}</dd>
 										</div>
 									</div>
-								{/if}
-							</div>
+								</div>
 
-							<div class="w-full pr-2">
-								<button
-									class="btn-secondary btn-outline btn-xs btn w-full"
-									type="button"
-									aria-label="Edit supplier name, email or address"
-									on:click={() => dialogOpen.set(true)}
-								>
-									<PencilLine aria-hidden size={16} />
-								</button>
+								<div class="w-full pr-2">
+									<button
+										class="btn-secondary btn-outline btn-xs btn w-full"
+										type="button"
+										aria-label="Edit supplier name, email or address"
+										on:click={() => dialogOpen.set(true)}
+									>
+										<PencilLine aria-hidden size={16} />
+									</button>
+								</div>
 							</div>
+						</dl>
+
+						<div class="card-actions border-t py-6 md:mb-20">
+							<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
+								Create new order
+								<Plus aria-hidden size={20} />
+							</a>
 						</div>
-					</dl>
-
-					<div class="card-actions border-t py-6 md:mb-20">
-						<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
-							Create new order
-							<Plus aria-hidden size={20} />
-						</a>
-					</div>
+					{/if}
 				</div>
 			</div>
 		</div>
