@@ -241,6 +241,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
     		COALESCE(book.title, 'N/A') AS title,
     		COALESCE(book.authors, 'N/A') AS authors,
 			COUNT(*) as quantity,
+			COALESCE(book.price, 0) as price,
 			SUM(COALESCE(book.price, 0)) as line_price
        	FROM supplier
         RIGHT JOIN supplier_publisher sp ON supplier.id = sp.supplier_id
