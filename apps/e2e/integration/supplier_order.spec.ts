@@ -9,7 +9,7 @@ import {
 	createSupplierOrder,
 	finalizeReconciliationOrder
 } from "@/helpers/cr-sqlite";
-import { testOrders } from "@/helpers/fixtures";
+import { depends, testOrders } from "@/helpers/fixtures";
 
 // NOTE: this won't work with fixtures...we should do it per test basis
 testOrders.beforeEach(async ({ page }) => {
@@ -64,7 +64,8 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 	await expect(firstRow.getByRole("cell", { name: "1", exact: true })).toBeVisible();
 });
 
-// TODO: the table layout has changed, skipped until the test is updated accordingly
+// NOTE: the functionality tested here is changed somewhat and portion of it is tested below, but this is left (skipped)
+// as a TODO / reminder for (future) full e2e test refactor
 testOrders.skip(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
 	async ({ page, suppliers: [supplier], books, customers }) => {
@@ -327,5 +328,290 @@ testOrders(
 
 		// Verify the selection summary shows correct count (2, not 3)
 		await expect(page.getByText("2 orders selected")).toBeVisible();
+	}
+);
+
+testOrders("new order: empty state", async ({ page, books, suppliersWithPublishers, customerOrderLines }) => {
+	const suppliers = suppliersWithPublishers;
+
+	const table = page.getByRole("table");
+
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	// NOTE: this should be unnecessary once the reactivity fix is in
+	await page.reload();
+	await page.waitForTimeout(500);
+
+	// Use supplier 1 for the test
+	await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: "Place Order" }).click();
+
+	// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
+	const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+	const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+	// NOTE: at the time of this writing, this is the state
+	//
+	// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
+	// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
+	// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
+	// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
+	await expect(possibleOrderRow).toHaveCount(4);
+
+	// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
+	//
+	// NOTE: cells are offset by 1 - checkbox
+	await expect(possibleOrderRow.nth(0).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(1)).toHaveText(books[0].isbn);
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(2)).toHaveText(books[0].title);
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(3)).toHaveText(books[0].authors);
+	// Possible (ordered) quantity
+	const book1OrderedQuantity = customerOrderLines.byIsbn[books[0].isbn];
+	const book1OrderedPrice = book1OrderedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(4)).toHaveText(book1OrderedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(5)).toHaveText(`€${book1OrderedPrice}`);
+	// Selected quantity
+	const book1SelectedQuantity = 0;
+	const book1SelectedPrice = book1SelectedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
+
+	// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
+	//
+	// NOTE: cells are offset by 1 - checkbox
+	await expect(possibleOrderRow.nth(1).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(1)).toHaveText(books[2].isbn);
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(2)).toHaveText(books[2].title);
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(3)).toHaveText(books[2].authors);
+	// Possible (ordered) quantity
+	const book2OrderedQuantity = customerOrderLines.byIsbn[books[2].isbn];
+	const book2OrderedPrice = book2OrderedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(4)).toHaveText(book2OrderedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(5)).toHaveText(`€${book2OrderedPrice}`);
+	// Selected quantity
+	const book2SelectedQuantity = 0;
+	const book2SelectedPrice = book2SelectedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
+
+	// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
+	//
+	// NOTE: cells are offset by 1 - checkbox
+	await expect(possibleOrderRow.nth(2).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(1)).toHaveText(books[6].isbn);
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(2)).toHaveText(books[6].title);
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(3)).toHaveText(books[6].authors);
+	// Possible (ordered) quantity
+	const book3OrderedQuantity = customerOrderLines.byIsbn[books[6].isbn];
+	const book3OrderedPrice = book3OrderedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(4)).toHaveText(book3OrderedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(5)).toHaveText(`€${book3OrderedPrice}`);
+	// Selected quantity
+	const book3SelectedQuantity = 0;
+	const book3SelectedPrice = book3SelectedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
+
+	// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
+	//
+	// NOTE: cells are offset by 1 - checkbox
+	await expect(possibleOrderRow.nth(3).getByRole("checkbox")).not.toBeChecked();
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(1)).toHaveText(books[4].isbn);
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(2)).toHaveText(books[4].title);
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(3)).toHaveText(books[4].authors);
+	// Possible (ordered) quantity
+	const book4OrderedQuantity = customerOrderLines.byIsbn[books[4].isbn];
+	const book4OrderedPrice = book4OrderedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(4)).toHaveText(book4OrderedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(5)).toHaveText(`€${book4OrderedPrice}`);
+	// Selected quantity
+	const book4SelectedQuantity = 0;
+	const book4SelectedPrice = book4SelectedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
+});
+
+testOrders("new order: selects fractions based on book number", async ({ page, books, suppliersWithPublishers, customerOrderLines }) => {
+	depends(customerOrderLines);
+
+	const suppliers = suppliersWithPublishers;
+
+	const table = page.getByRole("table");
+
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	// NOTE: this should be unnecessary once the reactivity fix is in
+	await page.reload();
+	await page.waitForTimeout(500);
+
+	// Use supplier 1 for the test
+	await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: "Place Order" }).click();
+
+	// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
+	const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+	const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+	// NOTE: at the time of this writing, this is the state
+	//
+	// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
+	// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
+	// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
+	// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
+	await expect(possibleOrderRow).toHaveCount(4);
+
+	// Select 1/4 = total books (2 + 2 + 1 + 1 = 6) / 4 = 1 / 6
+	await page.getByText("Select 1/4").click();
+
+	// books[0] - isbn: "1234", ordered: 2, selected: 1
+	let book1SelectedQuantity = 1;
+	let book1SelectedPrice = book1SelectedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
+
+	// books[2] - isbn: "5678", ordered: 2 selected: 0
+	let book2SelectedQuantity = 0;
+	let book2SelectedPrice = book2SelectedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
+
+	// books[6] - isbn: "7777", ordered: 1, selected: 0
+	let book3SelectedQuantity = 0;
+	let book3SelectedPrice = book3SelectedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
+
+	// books[4] - isbn: "9999", ordered: 1, selected 0
+	let book4SelectedQuantity = 0;
+	let book4SelectedPrice = book4SelectedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
+
+	// Select 1/2 = total books (2 + 2 + 1 + 1 = 6) / 2 = 3 / 6
+	await page.getByText("Select 1/2").click();
+
+	// books[0] - isbn: "1234", ordered: 2, selected: 2
+	book1SelectedQuantity = 2;
+	book1SelectedPrice = book1SelectedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
+
+	// books[2] - isbn: "5678", ordered: 2 selected: 1
+	book2SelectedQuantity = 1;
+	book2SelectedPrice = book2SelectedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
+
+	// books[6] - isbn: "7777", ordered: 1, selected: 0
+	book3SelectedQuantity = 0;
+	book3SelectedPrice = book3SelectedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
+
+	// books[4] - isbn: "9999", ordered: 1, selected 0
+	book4SelectedQuantity = 0;
+	book4SelectedPrice = book4SelectedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
+
+	// Select 3/4 = total books (2 + 2 + 1 + 1 = 6) * 3 / 4 = 4 / 6
+	await page.getByText("Select 3/4").click();
+
+	// books[0] - isbn: "1234", ordered: 2, selected: 2
+	book1SelectedQuantity = 2;
+	book1SelectedPrice = book1SelectedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
+
+	// books[2] - isbn: "5678", ordered: 2 selected: 2
+	book2SelectedQuantity = 2;
+	book2SelectedPrice = book2SelectedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
+
+	// books[6] - isbn: "7777", ordered: 1, selected: 0
+	book3SelectedQuantity = 0;
+	book3SelectedPrice = book3SelectedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
+
+	// books[4] - isbn: "9999", ordered: 1, selected 0
+	book4SelectedQuantity = 0;
+	book4SelectedPrice = book4SelectedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
+
+	// Select All = total books (2 + 2 + 1 + 1 = 6) = 6
+	await page.getByText("Select All").click();
+
+	// books[0] - isbn: "1234", ordered: 2, selected: 2
+	book1SelectedQuantity = 2;
+	book1SelectedPrice = book1SelectedQuantity * books[0].price;
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText(book1SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(0).getByRole("cell").nth(7)).toHaveText(`€${book1SelectedPrice}`);
+
+	// books[2] - isbn: "5678", ordered: 2 selected: 2
+	book2SelectedQuantity = 2;
+	book2SelectedPrice = book2SelectedQuantity * books[2].price;
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText(book2SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(1).getByRole("cell").nth(7)).toHaveText(`€${book2SelectedPrice}`);
+
+	// books[6] - isbn: "7777", ordered: 1, selected: 1
+	book3SelectedQuantity = 1;
+	book3SelectedPrice = book3SelectedQuantity * books[6].price;
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(6)).toHaveText(book3SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(2).getByRole("cell").nth(7)).toHaveText(`€${book3SelectedPrice}`);
+
+	// books[4] - isbn: "9999", ordered: 1, selected 1
+	book4SelectedQuantity = 1;
+	book4SelectedPrice = book4SelectedQuantity * books[4].price;
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(6)).toHaveText(book4SelectedQuantity.toString());
+	await expect(possibleOrderRow.nth(3).getByRole("cell").nth(7)).toHaveText(`€${book4SelectedPrice}`);
+});
+
+testOrders(
+	"new order: checkbox toggles between full ordered quantity (for the line) and 0",
+	async ({ page, books, suppliersWithPublishers, customerOrderLines }) => {
+		depends(customerOrderLines);
+
+		const suppliers = suppliersWithPublishers;
+
+		const table = page.getByRole("table");
+
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		// NOTE: this should be unnecessary once the reactivity fix is in
+		await page.reload();
+		await page.waitForTimeout(500);
+
+		// Use supplier 1 for the test
+		await table.getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("button", { name: "Place Order" }).click();
+
+		// The state should show all possible order lines, with ordered quantity/total price and selected quantity/total price (currently 0)
+		const isbnRegex = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+		const possibleOrderRow = table.getByRole("row").filter({ hasText: isbnRegex });
+
+		// NOTE: at the time of this writing, this is the state
+		//
+		// books[0] - isbn: "1234", title: "title1", authors: "author1", price: 10, quantity: 2
+		// books[2] - isbn: "5678", title: "title3", authors: "author3", price: 30, quantity: 2
+		// books[6] - isbn: "7777", title: "title7", authors: "author7", price: 70, quantity: 1
+		// books[4] - isbn: "9999", title: "title5", authors: "author5", price: 50, quantity: 1
+		await expect(possibleOrderRow).toHaveCount(4);
+
+		// Select 1/4 = total books (2 + 2 + 1 + 1 = 6) / 4 = 1 / 6
+		await page.getByText("Select 1/4").click();
+
+		// books[0] - isbn: "1234", ordered: 2, selected: 1
+		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText("1");
+
+		// Ordered: 2, selected: 1 -- checkbox should not be checked
+		await expect(possibleOrderRow.nth(0).getByRole("checkbox")).not.toBeChecked();
+
+		// Toggle checkbox -- should select full ordered quantity
+		await possibleOrderRow.nth(0).getByRole("checkbox").click();
+		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText("2");
+
+		// Toggle checkbox -- should select 0
+		await possibleOrderRow.nth(0).getByRole("checkbox").click();
+		await expect(possibleOrderRow.nth(0).getByRole("cell").nth(6)).toHaveText("0");
 	}
 );
