@@ -23,7 +23,7 @@
 
 	export let data: Writable<SupplierOrderData[]>;
 
-	export let isDraft = (x: SupplierOrderData) => !x.placedAt;
+	export let isPending = (x: SupplierOrderData) => !x.placedAt;
 </script>
 
 <table id="supplier-orders" class="order-table">
@@ -46,7 +46,7 @@
 	<tbody>
 		{#each $data as row (row.id)}
 			{@const { supplierName, id, placedAt, totalBooks, actionLink } = row}
-			{@const draft = isDraft(row)}
+			{@const pending = isPending(row)}
 			<tr>
 				<th scope="row" data-property="supplier">
 					<BodyHead borderStyle={placedAt ? "yellow" : "gray"}>
@@ -65,7 +65,7 @@
 				</td>
 				<td data-property="id">{id}</td>
 				<td data-property="action">
-					<BodyLink link={actionLink} label={draft ? "Edit" : "Manage"} style={draft ? "gray" : "yellow"} />
+					<BodyLink link={actionLink} label={pending ? "Edit" : "Manage"} style={pending ? "gray" : "yellow"} />
 				</td>
 			</tr>
 		{/each}
