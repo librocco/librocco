@@ -117,7 +117,8 @@ testOrders("supplier list: new: doesn't allow for submission with invalid email 
 });
 
 testOrders("supplier page: update: doesn't submit the form without any changes made", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -131,7 +132,8 @@ testOrders("supplier page: update: doesn't submit the form without any changes m
 });
 
 testOrders("supplier page: update: submits the form with all fields changed", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedSupplier = {
 		Name: "John Doe",
@@ -156,7 +158,8 @@ testOrders("supplier page: update: submits the form with all fields changed", as
 });
 
 testOrders("supplier page: update: submits the form with only name updated", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedSupplier = {
 		Name: "John Doe (Updated)"
@@ -180,7 +183,8 @@ testOrders("supplier page: update: submits the form with only name updated", asy
 });
 
 testOrders("supplier page: update: submits the form with only email updated", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const updatedSupplier = {
 		Email: "new-email@gmail.com"
@@ -204,7 +208,8 @@ testOrders("supplier page: update: submits the form with only email updated", as
 });
 
 testOrders("supplier page: update: doesn't allow for blank name field update", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -220,7 +225,8 @@ testOrders("supplier page: update: doesn't allow for blank name field update", a
 });
 
 testOrders("supplier page: update: doesn't allow for submission with invalid email field", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const supplier = {
 		Email: "not-an-email-string"
@@ -270,7 +276,8 @@ testOrders("supplier page: update: allows updates to a supplier without an email
 });
 
 testOrders("supplier page: update: allows for blank email string", async ({ page, suppliers }) => {
-	await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}`);
+	await page.goto(`${baseURL}orders/suppliers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByRole("link", { name: "Edit" }).click();
 
 	const supplier = {
 		Email: ""
