@@ -162,6 +162,7 @@
 										checked={isChecked}
 										on:change={() => {
 											selectedBooksLookup[isbn] = isChecked ? 0 : quantity;
+											// eslint-disable-next-line no-self-assign
 											selectedBooksLookup = selectedBooksLookup;
 										}}
 									/>
