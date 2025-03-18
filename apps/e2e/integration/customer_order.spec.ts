@@ -104,7 +104,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
 	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: "Draft" })).toBeVisible();
+	await expect(firstRow.getByRole("cell", { name: "Pending" })).toBeVisible();
 
 	isbnField.fill(books[2].isbn);
 	isbnField.press("Enter");
@@ -114,7 +114,7 @@ testOrders("should add books to a customer order", async ({ page, customers, boo
 	await expect(secondRow.getByRole("cell", { name: books[2].authors })).toBeVisible();
 
 	await expect(secondRow.getByRole("cell", { name: `${books[2].price}`, exact: true })).toBeVisible();
-	await expect(secondRow.getByRole("cell", { name: "Draft" })).toBeVisible();
+	await expect(secondRow.getByRole("cell", { name: "Pending" })).toBeVisible();
 });
 
 testOrders("should delete books from a customer order", async ({ page, books }) => {

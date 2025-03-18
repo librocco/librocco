@@ -196,7 +196,7 @@ class CustomerOrder implements CustomerOrderInterface {
 
 	addBooks(ctx: debug.DebugCtx, ...isbns: string[]): Promise<CustomerOrderInterface> {
 		return this.update(ctx, (data) => {
-			const updates = isbns.map((isbn) => ({ isbn, status: OrderItemStatus.Draft }));
+			const updates = isbns.map((isbn) => ({ isbn, status: OrderItemStatus.Pending }));
 			const books = data.books.concat(updates);
 			return { books };
 		});
