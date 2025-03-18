@@ -44,7 +44,7 @@ export type DBCustomerOrderListItem = DBCustomer & { status: OrderLineStatus };
 export type CustomerOrderListItem = Customer & { completed: boolean };
 
 export enum OrderLineStatus {
-	Draft,
+	Pending,
 	Placed,
 	Received,
 	Collected
@@ -124,6 +124,7 @@ export type PossibleSupplierOrder = {
 export type PlacedSupplierOrder = {
 	id: number;
 	created: number;
+	reconciliation_order_id: number | null;
 } & PossibleSupplierOrder;
 
 /**
@@ -140,12 +141,25 @@ export type PossibleSupplierOrderLine = {
  * Order lines of a placed supplier order
  * Book price is multiplied by line => `line_price`
  */
+export type DBPlacedSupplierOrderLine = {
+	supplier_order_id: number;
+	created: number;
+	total_book_number: number;
+	total_book_price: number;
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Omit<BookData, "outOfPrint"> & { out_of_print: number };
+
 export type PlacedSupplierOrderLine = {
 	supplier_order_id: number;
 	created: number;
 	total_book_number: number;
 	total_book_price: number;
-} & PossibleSupplierOrderLine;
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	BookData;
 
 /** Raw reconciliation order, returned from DB, before parsing supplier order ids JSON string */
 export type DBReconciliationOrder = {

@@ -30,7 +30,10 @@ const books = [
 	{ isbn: "7777", authors: "author7", title: "title7", publisher: "pub1", price: 70 }
 ];
 
-const suppliers = [{ id: 1, name: "Sup1", email: "sup1@gmail.com" }];
+const suppliers = [
+	{ id: 1, name: "sup1", email: "sup1@gmail.com" },
+	{ id: 2, name: "sup2", email: "sup2@gmail.com" }
+];
 
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
@@ -60,20 +63,21 @@ type FixtureSupplierOrder = {
 		id: number;
 		supplier_id: number;
 		supplier_name: string;
+		totalBooks: number;
 	};
 	lines: FixtureSupplierOrderLine[];
 };
 
 const supplierOrders: FixtureSupplierOrder[] = [
 	{
-		order: { id: 1, supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 1, supplier_id: 1, supplier_name: "sup1", totalBooks: 3 },
 		lines: [
 			{ isbn: "1234", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 1 }
 		]
 	},
 	{
-		order: { id: 2, supplier_id: 1, supplier_name: "sup1" },
+		order: { id: 2, supplier_id: 1, supplier_name: "sup1", totalBooks: 6 },
 		lines: [
 			{ isbn: "5678", supplier_id: 1, supplier_name: "sup1", quantity: 3 },
 			{ isbn: "9999", supplier_id: 1, supplier_name: "sup1", quantity: 2 },
@@ -81,7 +85,7 @@ const supplierOrders: FixtureSupplierOrder[] = [
 		]
 	},
 	{
-		order: { id: 3, supplier_id: 2, supplier_name: "sup2" },
+		order: { id: 3, supplier_id: 2, supplier_name: "sup2", totalBooks: 3 },
 		lines: [
 			{ isbn: "4321", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
 			{ isbn: "8765", supplier_id: 2, supplier_name: "sup2", quantity: 1 },
@@ -247,21 +251,19 @@ export const testOrders = test.extend<OrderTestFixture>({
 		await use(customerOrderLines);
 	},
 
-	supplierOrders: async ({ page, books }, use) => {
+	supplierOrders: async ({ page, books, customers, suppliers }, use) => {
 		depends(books);
+		depends(customers);
 
 		await page.goto(baseURL);
 		const dbHandle = await getDbHandle(page);
 
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: ["1234", "5678", "8888"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 2, bookIsbns: ["5678", "8765", "4321", "7777"] });
-		await dbHandle.evaluate(addBooksToCustomer, { customerId: 3, bookIsbns: ["1234", "9999"] });
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[0].id, bookIsbns: ["1234", "5678", "8888"] });
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[1].id, bookIsbns: ["5678", "8765", "4321", "7777"] });
+		await dbHandle.evaluate(addBooksToCustomer, { customerId: customers[2].id, bookIsbns: ["1234", "9999"] });
 
-		await dbHandle.evaluate(upsertSupplier, { id: 1, name: "sup1" });
-		await dbHandle.evaluate(upsertSupplier, { id: 2, name: "sup2" });
-
-		await dbHandle.evaluate(associatePublisher, { supplierId: 1, publisher: "pub1" });
-		await dbHandle.evaluate(associatePublisher, { supplierId: 2, publisher: "pub2" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: suppliers[0].id, publisher: "pub1" });
+		await dbHandle.evaluate(associatePublisher, { supplierId: suppliers[1].id, publisher: "pub2" });
 
 		for (const {
 			order: { id, supplier_id },

@@ -328,9 +328,10 @@
 										{:else if status === OrderLineStatus.Placed}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
-											<span class="badge">Draft</span>
+											<span class="badge">Pending</span>
 										{/if}
 									</td>
+
 									<td>
 										{#if status === OrderLineStatus.Collected}
 											<!--
@@ -340,6 +341,7 @@
 											{collected.toISOString().slice(0, 10)}
 										{/if}
 									</td>
+
 									<td>
 										<PopoverWrapper
 											options={{
@@ -419,6 +421,12 @@
 											</div>
 										</PopoverWrapper>
 									</td>
+
+									{#if status === OrderLineStatus.Pending}
+										<td>
+											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
+										</td>
+									{/if}
 								</tr>
 							{/each}
 						</tbody>
