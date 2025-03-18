@@ -114,7 +114,6 @@
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
-	$: zeroPriceEntries = entries.some((e) => e.price === 0);
 
 	// #region infinite-scroll
 	let maxResults = 20;
