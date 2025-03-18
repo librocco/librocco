@@ -1,3 +1,4 @@
+import { expect } from "@playwright/test";
 import { testBase as test } from "@/helpers/fixtures";
 
 import { baseURL } from "./constants";
@@ -254,4 +255,78 @@ test("should display book original price and discounted price as well as the war
 		.table("warehouse")
 		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
-// TODO: Test renaming using the editable title
+
+test("should update default warehouse for outbound note using dropdown", async ({ page }) => {
+	await page.goto(baseURL);
+
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	const dbHandle = await getDbHandle(page);
+
+	// Create multiple warehouses for testing
+	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1", discount: 10 });
+	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2", discount: 15 });
+
+	// Create an outbound note
+	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Default Warehouse Test" });
+
+	// Navigate to outbound page
+	await dashboard.navigate("outbound");
+
+	await dashboard.content().entityList("outbound-list").item(0).edit();
+
+	// Verify we're on the note page
+	await dashboard.view("outbound-note").waitFor();
+	await dashboard.content().header().title().assert("Default Warehouse Test");
+
+	const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
+	await defaultWarehouseDropdown.waitFor();
+
+	// Verify initial default warehouse
+	await expect(defaultWarehouseDropdown).toHaveValue("");
+
+	// Change the default warehouse to Warehouse 2
+	await defaultWarehouseDropdown.selectOption({ label: "Warehouse 2" });
+
+	// Wait for the update to be processed
+	await page.waitForTimeout(500);
+
+	// Add a book to the note - it should use the new default warehouse
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1 }] as const);
+
+	// Verify the book was added with Warehouse 2 as the default
+	const table = dashboard.content().table("warehouse");
+	await table.assertRows([
+		{
+			isbn: "1234567890",
+			warehouseName: "Warehouse 2"
+		}
+	]);
+
+	// Navigate away and back to ensure the default warehouse setting persists
+	await dashboard.navigate("outbound");
+	await dashboard.content().entityList("outbound-list").item(0).edit();
+
+	// Verify the default warehouse selection was persisted
+	await expect(defaultWarehouseDropdown).toHaveValue("2");
+});
+
+test("should be able to edit note title", async ({ page }) => {
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
+	await content.entityList("outbound-list").item(0).edit();
+	// Check title
+	await dashboard.view("outbound-note").waitFor();
+	await content.header().title().assert("New Note");
+
+	await dashboard.textEditableField().fillData("title");
+	await dashboard.textEditableField().submit();
+	// to make sure title is persisted
+	await dashboard.navigate("outbound");
+	expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
+});
