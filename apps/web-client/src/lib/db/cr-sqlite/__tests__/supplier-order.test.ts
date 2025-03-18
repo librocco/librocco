@@ -908,13 +908,23 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: null,
 				supplier_name: "General",
+
 				isbn: book1.isbn,
 				title: book1.title,
 				authors: book1.authors,
+				outOfPrint: false,
+				price: book1.price,
+				publisher: book1.publisher,
+				category: "",
+				editedBy: "",
+				year: "",
+
 				quantity: 2,
 				line_price: book1.price * 2,
+
 				total_book_number: 3,
 				total_book_price: book1.price * 2 + book2.price,
+
 				created: expect.any(Number)
 			});
 
@@ -923,11 +933,20 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: null,
 				supplier_name: "General",
+
 				isbn: book2.isbn,
 				title: book2.title,
 				authors: book2.authors,
+				outOfPrint: false,
+				price: book2.price,
+				publisher: book2.publisher,
+				category: "",
+				editedBy: "",
+				year: "",
+
 				quantity: 1,
 				line_price: book2.price,
+
 				total_book_number: 3,
 				total_book_price: book1.price * 2 + book2.price,
 				created: expect.any(Number)
