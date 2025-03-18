@@ -314,10 +314,11 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
 
 		{#if type === "create"}
 			<div
@@ -359,5 +360,5 @@
 		{:else}
 			<!---->
 		{/if}
-	{/if}
-</div>
+	</div>
+{/if}
