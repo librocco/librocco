@@ -4,10 +4,10 @@
  * Customer Orders Overview:
  * - A customer order in the DB is some customer information (email, id, deposit)
  * - Conceptually, customer orders are implicit groupings of order lines, associated with the customer information
- * - Order lines are created in "draft" state and transition through states based on timestamps
+ * - Order lines are created in "pending" state and transition through states based on timestamps
  *
  * Order Line States:
- * - Draft: Has created timestamp (inital state)
+ * - Pending: Has created timestamp (inital state)
  * - Placed: Has placed timestamp (order sent to supplier)
  * - Received: Has received timestamp (books arrived from supplier)
  * - Collected: Has collected timestamp (customer picked up books)

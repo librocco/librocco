@@ -8,7 +8,7 @@ export interface OrderData {
 	name: string;
 	email: string;
 	id: string;
-	draft: boolean;
+	pending: boolean;
 	lastUpdated: string;
 	actionLink: string;
 }
