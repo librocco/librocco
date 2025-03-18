@@ -150,8 +150,8 @@
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
-								<td>€{line_price}</td>
 								<td>{quantity}</td>
+								<td>€{line_price}</td>
 							</tr>
 						{/each}
 					</tbody>

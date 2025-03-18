@@ -74,9 +74,9 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 		await order.addBooks({}, "11111111", "0123456789", "11111111");
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ isbn: "0123456789", status: OrderItemStatus.Draft },
-				{ isbn: "11111111", status: OrderItemStatus.Draft },
-				{ isbn: "11111111", status: OrderItemStatus.Draft }
+				{ isbn: "0123456789", status: OrderItemStatus.Pending },
+				{ isbn: "11111111", status: OrderItemStatus.Pending },
+				{ isbn: "11111111", status: OrderItemStatus.Pending }
 			]);
 		});
 
@@ -84,8 +84,8 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 		await order.removeBooks({}, "0123456789");
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ isbn: "11111111", status: OrderItemStatus.Draft },
-				{ isbn: "11111111", status: OrderItemStatus.Draft }
+				{ isbn: "11111111", status: OrderItemStatus.Pending },
+				{ isbn: "11111111", status: OrderItemStatus.Pending }
 			]);
 		});
 
@@ -93,8 +93,8 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 		await order.removeBooks({}, "12345678", "1234567890");
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ isbn: "11111111", status: OrderItemStatus.Draft },
-				{ isbn: "11111111", status: OrderItemStatus.Draft }
+				{ isbn: "11111111", status: OrderItemStatus.Pending },
+				{ isbn: "11111111", status: OrderItemStatus.Pending }
 			]);
 		});
 
@@ -102,12 +102,12 @@ describe.each(schema)("Orders unit tests: $version", ({ getDB }) => {
 		await order.addBooks({}, "1234567890", "12345678", "1234567890", "1234567890");
 		await waitFor(() => {
 			expect(entries).toEqual([
-				{ isbn: "11111111", status: OrderItemStatus.Draft },
-				{ isbn: "11111111", status: OrderItemStatus.Draft },
-				{ isbn: "12345678", status: OrderItemStatus.Draft },
-				{ isbn: "1234567890", status: OrderItemStatus.Draft },
-				{ isbn: "1234567890", status: OrderItemStatus.Draft },
-				{ isbn: "1234567890", status: OrderItemStatus.Draft }
+				{ isbn: "11111111", status: OrderItemStatus.Pending },
+				{ isbn: "11111111", status: OrderItemStatus.Pending },
+				{ isbn: "12345678", status: OrderItemStatus.Pending },
+				{ isbn: "1234567890", status: OrderItemStatus.Pending },
+				{ isbn: "1234567890", status: OrderItemStatus.Pending },
+				{ isbn: "1234567890", status: OrderItemStatus.Pending }
 			]);
 		});
 
