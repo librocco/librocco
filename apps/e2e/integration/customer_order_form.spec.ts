@@ -119,7 +119,8 @@ testOrders("customer list: new: doesn't allow for submission with invalid email 
 });
 
 testOrders("customer page: update: doesn't submit the form without any changes made", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -133,7 +134,8 @@ testOrders("customer page: update: doesn't submit the form without any changes m
 });
 
 testOrders("customer page: update: submits the form with all fields changed", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
 		"Display ID": "John's Id",
@@ -160,7 +162,8 @@ testOrders("customer page: update: submits the form with all fields changed", as
 });
 
 testOrders("customer page: update: submits the form with only name updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
 		Name: "John Doe (Updated)"
@@ -184,7 +187,8 @@ testOrders("customer page: update: submits the form with only name updated", asy
 });
 
 testOrders("customer page: update: submits the form with only displayId updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
 		"Display ID": "John's Id"
@@ -208,7 +212,8 @@ testOrders("customer page: update: submits the form with only displayId updated"
 });
 
 testOrders("customer page: update: submits the form with only email updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
 		Email: "new-email@gmail.com"
@@ -232,7 +237,8 @@ testOrders("customer page: update: submits the form with only email updated", as
 });
 
 testOrders("customer page: update: submits the form with only deposit updated", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const updatedCustomer = {
 		Deposit: "12"
@@ -256,7 +262,8 @@ testOrders("customer page: update: submits the form with only deposit updated", 
 });
 
 testOrders("customer page: update: doesn't allow for blank name field update", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -272,7 +279,8 @@ testOrders("customer page: update: doesn't allow for blank name field update", a
 });
 
 testOrders("customer page: update: doesn't allow for blank displayId field update", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const dialog = page.getByRole("dialog");
 
@@ -288,7 +296,8 @@ testOrders("customer page: update: doesn't allow for blank displayId field updat
 });
 
 testOrders("customer page: update: doesn't allow for submission with invalid email field", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const customer = {
 		Email: "not-an-email-string"
@@ -313,7 +322,8 @@ testOrders("customer page: update: allows updates to customer an email (previous
 	// NOTE: This also tests for the returned custoemr data compatibility with the no-email form (should catch incompatible fallbacks and such)
 
 	// NOTE: At the time of this writing, customers[2] doesn't have an assigned email
-	await page.goto(`${baseURL}orders/customers/${customers[2].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const customer = {
 		Name: "Updated Customer Guy (or Girl)"
@@ -337,7 +347,8 @@ testOrders("customer page: update: allows updates to customer an email (previous
 });
 
 testOrders("customer page: update: allows for blank email string", async ({ page, customers }) => {
-	await page.goto(`${baseURL}orders/customers/${customers[0].id}`);
+	await page.goto(`${baseURL}orders/customers/`);
+	await page.getByRole("table").getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
 
 	const customer = {
 		Email: ""
@@ -361,7 +372,7 @@ testOrders("customer page: update: allows for blank email string", async ({ page
 });
 
 testOrders("supplier order list: new: submits the form with all fields", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const customer = {
 		Name: "John Doe",
@@ -387,7 +398,7 @@ testOrders("supplier order list: new: submits the form with all fields", async (
 });
 
 testOrders("supplier order list: new: submits the form with only name provided", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const customer = {
 		Name: "John Doe"
@@ -411,7 +422,7 @@ testOrders("supplier order list: new: submits the form with only name provided",
 });
 
 testOrders("supplier order list: new: doesn't allow for submission without the name field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	// NOTE: filling in non-required fields ensures the focus moves away from the name field (asserted to return back in failed validation)
 	const customer = {
@@ -435,7 +446,7 @@ testOrders("supplier order list: new: doesn't allow for submission without the n
 });
 
 testOrders("supplier order list: new: doesn't allow for submission with invalid email field", async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders`);
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
 	const customer = {
 		Name: "John Doe",
