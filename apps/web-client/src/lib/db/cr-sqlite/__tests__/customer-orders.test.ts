@@ -607,7 +607,7 @@ describe("Customer order lines", () => {
 
 			// Add one line to customer order - pending
 			await addBooksToCustomer(db, 1, ["1"]);
-			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus.Draft })]);
+			expect(await getCustomerOrderLines(db, 1)).toEqual([expect.objectContaining({ isbn: "1", status: OrderLineStatus.Pending })]);
 
 			// Order the line with the supplier - placed
 			await db.exec("UPDATE customer_order_lines SET placed = ? WHERE customer_id = 1", [Date.now()]);
@@ -629,7 +629,7 @@ describe("Customer order lines", () => {
 
 			await addBooksToCustomer(db, 1, ["1"]);
 			expect(await getCustomerOrderLines(db, 1)).toEqual([
-				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus.Draft })
+				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus.Pending })
 			]);
 			await db.exec("UPDATE customer_order_lines SET received = ? WHERE customer_id = 1", [Date.now()]);
 		});
@@ -648,7 +648,7 @@ describe("Customer order lines", () => {
 			expect(await getCustomerOrderLines(db, 1)).toEqual([
 				expect.objectContaining({ id: expect.any(Number), isbn: "1", status: OrderLineStatus.Placed }),
 				expect.objectContaining({ id: expect.any(Number), isbn: "2", status: OrderLineStatus.Received }),
-				expect.objectContaining({ id: expect.any(Number), isbn: "3", status: OrderLineStatus.Draft })
+				expect.objectContaining({ id: expect.any(Number), isbn: "3", status: OrderLineStatus.Pending })
 			]);
 		});
 

@@ -775,6 +775,35 @@ describe("Placing supplier orders", () => {
 				expect.objectContaining({ id: s3 })
 			]);
 		});
+
+		it("filter supplier orders based on finalized status - if provided", async () => {
+			await addBooksToCustomer(db, 1, ["1", "2", "3", "4"]);
+
+			// Supplier order 1 - reconciled (finalized)
+			await createSupplierOrder(db, 2, 1, [{ supplier_id: 1, isbn: "1", quantity: 1 }]);
+			// Supplier order 2 - reconciled (not finalized)
+			await createSupplierOrder(db, 3, 1, [{ supplier_id: 1, isbn: "2", quantity: 1 }]);
+			// Supplier order 3 - not reconciled
+			await createSupplierOrder(db, 4, 1, [{ supplier_id: 1, isbn: "3", quantity: 1 }]);
+			// Supplier order 4 - not reconciled
+			await createSupplierOrder(db, 5, 1, [{ supplier_id: 1, isbn: "4", quantity: 1 }]);
+
+			// Reconcile the orders
+			await createReconciliationOrder(db, 1, [2]);
+			await finalizeReconciliationOrder(db, 1);
+
+			await createReconciliationOrder(db, 2, [3]);
+
+			// Finalized - only
+			expect(await getPlacedSupplierOrders(db, { finalized: true })).toEqual([expect.objectContaining({ id: 2 })]);
+
+			// Not finalized - only
+			expect(await getPlacedSupplierOrders(db, { finalized: false })).toEqual([
+				expect.objectContaining({ id: 5 }),
+				expect.objectContaining({ id: 4 }),
+				expect.objectContaining({ id: 3 })
+			]);
+		});
 	});
 
 	describe("getPlacedSupplierOrderLines should", () => {
@@ -806,9 +835,17 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: supplierId,
 				supplier_name: supplierName,
+
 				isbn: book1.isbn,
 				title: book1.title,
 				authors: book1.authors,
+				price: book1.price,
+				category: "",
+				publisher: book1.publisher,
+				year: "",
+				editedBy: "",
+				outOfPrint: false,
+
 				quantity: 2,
 				line_price: book1.price * 2,
 				total_book_number: 3,
@@ -821,9 +858,17 @@ describe("Placing supplier orders", () => {
 				supplier_order_id: 1,
 				supplier_id: supplierId,
 				supplier_name: supplierName,
+
 				isbn: book2.isbn,
 				title: book2.title,
 				authors: book2.authors,
+				price: book2.price,
+				category: "",
+				publisher: book2.publisher,
+				year: "",
+				editedBy: "",
+				outOfPrint: false,
+
 				quantity: 1,
 				line_price: book2.price,
 				total_book_number: 3,

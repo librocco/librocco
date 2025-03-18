@@ -44,6 +44,7 @@
 	};
 	const defaultDateValue = data.dateValue;
 	const onDateValueChange = ({ next }) => {
+		if (!next) return;
 		// Redirect only in browser, if data value is different then the one in route param
 		if (browser && !isEqualDateValue(data.dateValue, next)) {
 			// The replaceState part allows us to have the date as part of the route (for sharing/reaload),

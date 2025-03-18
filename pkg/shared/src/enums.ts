@@ -21,7 +21,7 @@ export enum CustomerOrderState {
  * ints, so it's easier to order them, take a subset, etc.
  */
 export enum OrderItemStatus {
-	Draft,
+	Pending,
 	Placed,
 	Delivered
 	// TODO: ...rest of the statuses
