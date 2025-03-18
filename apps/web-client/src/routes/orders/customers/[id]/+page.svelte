@@ -68,7 +68,7 @@
 		// Reload add customer data dependants when the data changes
 		const disposer1 = rx.onPoint("customer", BigInt(customerId), () => invalidate("customer:data"));
 		// Reload all customer order line/book data dependants when the data changes
-		const disposer2 = rx.onRange(["customer_order_lines"], () => invalidate("customer:books"));
+		const disposer2 = rx.onRange(["customer_order_lines", "book"], () => invalidate("customer:books"));
 		disposer = () => (disposer1(), disposer2());
 	});
 
@@ -163,7 +163,6 @@
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
-			customerOrderLines = await getCustomerOrderLines(db, Number(customerId));
 			open.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
