@@ -262,7 +262,7 @@
 										{:else if status === OrderLineStatus.Placed}
 											<span class="badge-warning badge">Placed</span>
 										{:else}
-											<span class="badge">Draft</span>
+											<span class="badge">Pending</span>
 										{/if}
 									</td>
 									<td>
@@ -278,7 +278,7 @@
 											>
 										{/if}
 									</td>
-									{#if status === OrderLineStatus.Draft}
+									{#if status === OrderLineStatus.Pending}
 										<td>
 											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
 										</td>

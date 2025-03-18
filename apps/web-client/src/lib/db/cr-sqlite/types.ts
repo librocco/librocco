@@ -44,7 +44,7 @@ export type DBCustomerOrderListItem = DBCustomer & { status: OrderLineStatus };
 export type CustomerOrderListItem = Customer & { completed: boolean };
 
 export enum OrderLineStatus {
-	Draft,
+	Pending,
 	Placed,
 	Received,
 	Collected
