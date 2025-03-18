@@ -877,6 +877,82 @@ describe("Placing supplier orders", () => {
 			});
 		});
 
+		it("retrieve order lines from a single supplier order, case: null supplier", async () => {
+			const supplier_order_id = 1;
+
+			// Remove all publisher associations so as to not affect the test
+			await db.exec("DELETE FROM supplier_publisher");
+			await db.execO("SELECT * FROM supplier_publisher").then(console.log);
+
+			// Create supplier order
+			await db.exec(
+				`INSERT INTO supplier_order (id, supplier_id, created)
+				VALUES (?, ?, strftime('%s', 'now') * 1000)`,
+				[supplier_order_id, null]
+			);
+
+			// Add multiple books with different quantities
+			await db.exec(
+				`INSERT INTO supplier_order_line (supplier_order_id, isbn, quantity)
+				VALUES
+				(1, ?, 2),  -- 2 copies of book1
+				(1, ?, 1)   -- 1 copy of book2`,
+				[book1.isbn, book2.isbn]
+			);
+
+			const orderLines = await getPlacedSupplierOrderLines(db, [supplier_order_id]);
+			expect(orderLines).toHaveLength(2);
+
+			// Verify first line details
+			expect(orderLines[0]).toEqual({
+				supplier_order_id: 1,
+				supplier_id: null,
+				supplier_name: "General",
+
+				isbn: book1.isbn,
+				title: book1.title,
+				authors: book1.authors,
+				outOfPrint: false,
+				price: book1.price,
+				publisher: book1.publisher,
+				category: "",
+				editedBy: "",
+				year: "",
+
+				quantity: 2,
+				line_price: book1.price * 2,
+
+				total_book_number: 3,
+				total_book_price: book1.price * 2 + book2.price,
+
+				created: expect.any(Number)
+			});
+
+			// Verify second line details
+			expect(orderLines[1]).toEqual({
+				supplier_order_id: 1,
+				supplier_id: null,
+				supplier_name: "General",
+
+				isbn: book2.isbn,
+				title: book2.title,
+				authors: book2.authors,
+				outOfPrint: false,
+				price: book2.price,
+				publisher: book2.publisher,
+				category: "",
+				editedBy: "",
+				year: "",
+
+				quantity: 1,
+				line_price: book2.price,
+
+				total_book_number: 3,
+				total_book_price: book1.price * 2 + book2.price,
+				created: expect.any(Number)
+			});
+		});
+
 		it("retrieve order lines from multiple supplier orders", async () => {
 			// Create orders for both suppliers
 			await db.exec(
