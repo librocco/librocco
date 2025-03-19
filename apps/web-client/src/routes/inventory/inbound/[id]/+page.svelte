@@ -11,7 +11,7 @@
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
-	import type { BookEntry } from "@librocco/db";
+	import type { BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
@@ -184,9 +184,9 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
-		const data = form?.data as BookEntry;
+		const data = form?.data as BookData;
 
 		try {
 			await upsertBook(db, data);
@@ -203,7 +203,7 @@
 	$: handlePrintReceipt = async () => {
 		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
-	$: handlePrintLabel = (book: BookEntry) => async () => {
+	$: handlePrintLabel = async (book: BookData) => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 	// #endregion book-form
@@ -249,7 +249,7 @@
 
 					if ($autoPrintLabels) {
 						try {
-							getBookData(db, isbn).then((b) => handlePrintLabel({ ...b, updatedAt: b.updatedAt.toISOString() })());
+							getBookData(db, isbn).then(handlePrintLabel);
 							// Success
 						} catch (err) {
 							// Show error
@@ -442,7 +442,7 @@
 									<button
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("print-book-label")}
-										on:click={handlePrintLabel(row)}
+										on:click={() => handlePrintLabel(row)}
 									>
 										<span class="sr-only">Print book label {rowIx}</span>
 										<span class="aria-hidden">

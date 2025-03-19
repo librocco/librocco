@@ -25,7 +25,6 @@
 		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"dependencies": {
-		"@librocco/db": "workspace:*",
 		"pouchdb": "~8.0.1",
 		"@vlcn.io/crsqlite-wasm": "0.16.0",
 		"@vlcn.io/ws-browserdb": "~0.2.0",
