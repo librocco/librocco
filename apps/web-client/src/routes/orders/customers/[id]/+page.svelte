@@ -406,7 +406,8 @@
 														</span>
 													</button>
 												{/if}
-												{#if status === OrderLineStatus.Draft}
+
+												{#if status === OrderLineStatus.Pending}
 													<button
 														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 														data-testid={testId("delete-row")}
