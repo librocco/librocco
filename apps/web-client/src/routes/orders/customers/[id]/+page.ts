@@ -13,7 +13,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	// We're not in browser, no need for further processing
 	if (!dbCtx) {
-		return { customer: {} as Customer, possibleOrders: [] as CustomerOrderLine[] };
+		return { customer: null, possibleOrders: [] as CustomerOrderLine[] };
 	}
 
 	// TODO: Retirect to customers page perhaps

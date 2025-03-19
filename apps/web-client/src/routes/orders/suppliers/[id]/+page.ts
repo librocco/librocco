@@ -1,7 +1,7 @@
 import { redirect } from "@sveltejs/kit";
 
 import type { PageLoad } from "./$types";
-import type { PlacedSupplierOrder, Supplier } from "$lib/db/cr-sqlite/types";
+import type { PlacedSupplierOrder } from "$lib/db/cr-sqlite/types";
 
 import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$lib/db/cr-sqlite/suppliers";
 
@@ -17,7 +17,7 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	// We're not in browser, no need for further processing
 	if (!dbCtx) {
 		return {
-			supplier: {} as Supplier,
+			supplier: null,
 			assignedPublishers: [] as string[],
 			unassignedPublishers: [] as string[],
 			orders: [] as PlacedSupplierOrder[]

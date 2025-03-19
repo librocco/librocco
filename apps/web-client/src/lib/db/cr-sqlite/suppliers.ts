@@ -29,8 +29,39 @@ import type {
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
-/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
-async function _getSuppliers(db: DB, id?: number) {
+/**
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of suppliers with their basic info
+ */
+export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	const query = `
+		SELECT
+			supplier.id,
+			name,
+			COALESCE(email, 'N/A') as email,
+			COALESCE(address, 'N/A') as address,
+			COUNT(publisher) as numPublishers
+		FROM supplier
+		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		GROUP BY supplier.id
+		ORDER BY supplier.id ASC
+	`;
+
+	return await db.execO<SupplierExtended>(query);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * NOTE: Due to update form compatibility, this function doesn't provide fallbacks for optional fields and
+ * such need to be handled by the consumer.
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
 	const conditions = [];
 	const params = [];
 
@@ -44,8 +75,8 @@ async function _getSuppliers(db: DB, id?: number) {
 		SELECT
 			supplier.id,
 			name,
-			COALESCE(email, 'N/A') as email,
-			COALESCE(address, 'N/A') as address,
+			email,
+			address,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -54,27 +85,7 @@ async function _getSuppliers(db: DB, id?: number) {
 		ORDER BY supplier.id ASC
 	`;
 
-	return await db.execO<SupplierExtended>(query, params);
-}
-
-/**
- * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
- *
- * @param db - The database instance to query
- * @returns Promise resolving to an array of suppliers with their basic info
- */
-export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
-	return _getSuppliers(db);
-}
-
-/**
- * Retrieves supplier data from the database. This include their name, email address & assigned publishers
- *
- * @param db - The database instance to query
- * @param id - supplier id
- */
-export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
-	const [res] = await _getSuppliers(db, id);
+	const [res] = await db.execO<SupplierExtended>(query, params);
 	return res || undefined;
 }
 
