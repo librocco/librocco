@@ -136,7 +136,7 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
 });
 
-testOrders("should mark order lines as collected", async ({ page, customerOrderLines }) => {
+testOrders("should mark order lines as collected", async ({ page, collectCustomerOrderLine: customerOrderLines }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
 	const table = page.getByRole("table");
