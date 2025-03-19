@@ -32,7 +32,7 @@ const books = [
 
 const suppliers = [
 	{ id: 1, name: "sup1", email: "sup1@gmail.com" },
-	{ id: 2, name: "sup2", email: "sup2@gmail.com" }
+	{ id: 2, name: "sup2" }
 ];
 
 const suppliersWithPublishers = [
@@ -43,7 +43,7 @@ const suppliersWithPublishers = [
 const customers = [
 	{ id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1" },
 	{ id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2" },
-	{ id: 3, fullname: "Don Joe", email: "don@gmail.com", displayId: "3" }
+	{ id: 3, fullname: "Don Joe", displayId: "3" }
 ];
 
 const customerOrderLines = [
@@ -131,7 +131,7 @@ type OrderTestFixture = {
 	 *
 	 * id: 1, fullname: "John Doe", email: "john@gmail.com", displayId: "1"
 	 * id: 2, fullname: "Jane Doe", email: "jane@gmail.com", displayId: "2"
-	 * id: 3, fullname: "Don Joe",  email: "don@gmail.com",  displayId: "3"
+	 * id: 3, fullname: "Don Joe",  displayId: "3"
 	 */
 	customers: Customer[];
 
@@ -245,7 +245,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 	suppliers: async ({ dbHandle }, use) => {
 		for (const supplier of suppliers) {
-			await dbHandle.evaluate(upsertSupplier, supplier);
+			await dbHandle.evaluate(upsertSupplier, supplier as Supplier);
 		}
 		await use(suppliers);
 	},
@@ -264,7 +264,7 @@ export const testOrders = test.extend<OrderTestFixture>({
 
 	customers: async ({ dbHandle }, use) => {
 		for (const customer of customers) {
-			await dbHandle.evaluate(upsertCustomer, customer);
+			await dbHandle.evaluate(upsertCustomer, customer as Customer);
 		}
 		await use(customers);
 	},
