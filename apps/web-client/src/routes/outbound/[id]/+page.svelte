@@ -11,7 +11,7 @@
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { desc, testId } from "@librocco/shared";
-	import { type BookEntry } from "@librocco/db";
+	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
@@ -305,9 +305,9 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
-		const data = form?.data as BookEntry;
+		const data = form?.data as BookData;
 
 		try {
 			await upsertBook(db, data);
@@ -328,7 +328,7 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
 		const data = form?.data as NoteCustomItem;
 
@@ -349,7 +349,7 @@
 	$: handlePrintReceipt = async () => {
 		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
-	$: handlePrintLabel = (book: Omit<BookEntry, "updatedAt">) => async () => {
+	$: handlePrintLabel = (book: Omit<BookData, "updatedAt">) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 

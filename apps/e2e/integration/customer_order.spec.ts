@@ -131,12 +131,14 @@ testOrders("should delete books from a customer order", async ({ page, books }) 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
 	await expect(secondRow.getByRole("cell", { name: books[1].isbn })).toBeVisible();
 
-	await firstRow.getByRole("button", { name: "Delete" }).click();
+	await firstRow.getByTestId("popover-control").click();
+	await expect(page.getByTestId("delete-row")).toBeVisible();
+	await page.getByTestId("delete-row").click();
 
 	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).not.toBeVisible();
 });
 
-testOrders("should mark order lines as collected", async ({ page, customerOrderLines }) => {
+testOrders("should mark order lines as collected", async ({ page, collectCustomerOrderLine: customerOrderLines }) => {
 	await page.goto(`${baseURL}orders/customers/1/`);
 
 	const table = page.getByRole("table");
@@ -144,11 +146,14 @@ testOrders("should mark order lines as collected", async ({ page, customerOrderL
 	const secondBookRow = table.getByRole("row").nth(2);
 
 	await expect(firstBookRow.getByRole("cell", { name: customerOrderLines[0].isbn })).toBeVisible();
-	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).toBeEnabled();
-	await expect(secondBookRow.getByRole("button", { name: "Collect📚" })).toBeDisabled();
 
-	await firstBookRow.getByRole("button", { name: "Collect📚" }).click();
-
-	await expect(firstBookRow.getByRole("button", { name: "Collect📚" })).not.toBeVisible();
+	await firstBookRow.getByTestId("popover-control").click();
+	await expect(page.getByTestId("collect-row")).toBeVisible();
+	await page.getByTestId("collect-row").click();
+	await firstBookRow.getByTestId("popover-control").click();
+	await expect(page.getByTestId("collect-row")).not.toBeVisible();
 	await expect(firstBookRow.getByText("Collected")).toBeVisible();
+
+	await secondBookRow.getByTestId("popover-control").click();
+	await expect(page.getByTestId("collect-row")).not.toBeVisible();
 });

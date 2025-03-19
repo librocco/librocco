@@ -43,8 +43,8 @@ describe("Supplier management:", () => {
 			expect(suppliers).toEqual({
 				id: 1,
 				name: "Partial Books",
-				email: "N/A",
-				address: "N/A",
+				email: null,
+				address: null,
 				numPublishers: 0
 			});
 		});
@@ -126,8 +126,8 @@ describe("Supplier management:", () => {
 		expect(await getSupplierDetails(db, 1)).toEqual({
 			id: 1,
 			name: "Science Books LTD",
-			address: "N/A",
-			email: "N/A",
+			address: null,
+			email: null,
 			numPublishers: 2
 		});
 

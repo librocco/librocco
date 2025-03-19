@@ -43,8 +43,5 @@
 		"@testing-library/jest-dom": "~6.6.3",
 		"@testing-library/user-event": "~14.4.3"
 	},
-	"peerDependencies": {
-		"@librocco/db": "workspace:*"
-	},
 	"type": "module"
 }

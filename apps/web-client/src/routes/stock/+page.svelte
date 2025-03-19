@@ -9,7 +9,7 @@
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
-	import type { BookEntry } from "@librocco/db";
+	import type { BookData } from "@librocco/shared";
 	import { testId } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
@@ -99,9 +99,9 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
-		const data = form?.data as BookEntry;
+		const data = form?.data as BookData;
 
 		try {
 			await upsertBook(db, data);
@@ -115,7 +115,7 @@
 	$: bookDataExtensionAvailable = createExtensionAvailabilityStore(plugins);
 	// #endregion book-form
 
-	$: handlePrintLabel = (book: BookEntry) => async () => {
+	$: handlePrintLabel = (book: BookData) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 

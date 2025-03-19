@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	import { type BookEntry, type NavEntry } from "@librocco/db";
+	import { type BookData } from "@librocco/shared";
 
 	import type { createTable } from "$lib/actions";
 
@@ -12,7 +12,7 @@
 
 	import type { CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 
-	export let table: ReturnType<typeof createTable<CustomerOrderLine & BookEntry>>;
+	export let table: ReturnType<typeof createTable<CustomerOrderLine & BookData>>;
 
 	const { table: tableAction } = table;
 	$: ({ rows } = $table);
