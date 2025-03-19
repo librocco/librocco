@@ -11,11 +11,6 @@ import {
 } from "@/helpers/cr-sqlite";
 import { testOrders } from "@/helpers/fixtures";
 
-// NOTE: this won't work with fixtures...we should do it per test basis
-testOrders.beforeEach(async ({ page }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-});
-
 testOrders("order tabs (filters): shows completed orders under 'completed' tab", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -36,6 +31,8 @@ testOrders("order tabs (filters): shows completed orders under 'completed' tab",
 });
 
 testOrders("should show empty state when no customer orders exist", async ({ page }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 	await expect(page.getByRole("table")).not.toBeVisible();
 	await expect(page.getByText("No unordered supplier orders available")).toBeVisible();
 
@@ -48,6 +45,8 @@ testOrders("should show empty state when no customer orders exist", async ({ pag
 });
 
 testOrders("should show list of unordered orders", async ({ page, suppliers: [supplier], books }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(addBooksToCustomer, { customerId: 1, bookIsbns: [books[0].isbn, books[1].isbn] });
@@ -67,6 +66,8 @@ testOrders("should show list of unordered orders", async ({ page, suppliers: [su
 testOrders(
 	"should allow a new supplier order to be placed from a batch of possible customer order lines",
 	async ({ page, suppliers: [supplier], books, customers }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 		const dbHandle = await getDbHandle(page);
 
 		await dbHandle.evaluate(associatePublisher, { supplierId: supplier.id, publisher: "pub1" });
@@ -174,7 +175,9 @@ testOrders(
 	}
 );
 
-testOrders("should show a placed supplier order with the correct details", async ({ page, suppliers: [supplier], books }) => {
+testOrders("should show a placed supplier order with the correct details", async ({ page, books, suppliers: [supplier] }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(createSupplierOrder, {
@@ -184,7 +187,7 @@ testOrders("should show a placed supplier order with the correct details", async
 	});
 
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
-	page.getByRole("button", { name: "Ordered" }).nth(1).click();
+	await page.getByRole("button", { name: "Ordered" }).nth(1).click();
 
 	const updateButton = page.getByRole("button", { name: "View Order" }).first();
 	await updateButton.click();
@@ -199,6 +202,8 @@ testOrders("should show a placed supplier order with the correct details", async
 });
 
 testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 	const dbHandle = await getDbHandle(page);
 
 	// Create a supplier order that will be part of reconciliation
@@ -257,6 +262,8 @@ testOrders("should view reconciliation controls for orders already in reconcilia
 testOrders(
 	"should show correct batch reconciliation state with mixed reconciliation status",
 	async ({ page, suppliers: [supplier], books }) => {
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
 		const dbHandle = await getDbHandle(page);
 
 		// Create three orders: two normal, one already in reconciliation

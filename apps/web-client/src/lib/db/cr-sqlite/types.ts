@@ -8,7 +8,7 @@ import type { BookData } from "@librocco/shared";
 /**
  * Order tables only show a slice of book data => our order lines only need to return relevant cols
  */
-type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
+type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "publisher" | "price" | "year" | "editedBy" | "outOfPrint" | "category">;
 
 /* Customer orders/books */
 export type DBCustomer = {
@@ -330,3 +330,6 @@ export type Change = readonly [
 	CausalLength,
 	number // seq
 ];
+
+/* Utils */
+export type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
