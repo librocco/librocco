@@ -193,4 +193,22 @@ test("should delete the transaction from the note on delete button click", async
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567890" }]);
 });
 
-// TODO: Should not allow committing of an empty note ??
+test("should display book count for all book quantities in the commit message", async ({ page }) => {
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	const dbHandle = await getDbHandle(page);
+
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
+	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+
+	// Wait for the books to appear
+	await page.getByText("1234567890").waitFor();
+	await page.getByText("1111111111").waitFor();
+
+	await content.getByRole("button", { name: "Commit" }).click();
+
+	await page.getByRole("dialog").waitFor();
+	await page.getByRole("dialog").getByText(`8 books will be added to`).waitFor();
+});
