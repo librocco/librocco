@@ -25,6 +25,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
 	import { asc } from "@librocco/shared";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -51,31 +52,6 @@
 
 	$: books = data?.reconciliationOrderLines || [];
 
-	async function handleIsbnSubmit(isbn: string) {
-		if (!isbn) return;
-
-		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
-	}
-
-	let scanInputRef: HTMLInputElement = null;
-	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
-		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdate: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-				handleIsbnSubmit(isbn);
-			}
-		},
-		onUpdated: ({ form: { valid } }) => {
-			if (valid) {
-				scanInputRef?.focus();
-			}
-		}
-	});
-
 	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	// Extract different orders from placedOrderLines
 	$: placedOrders = [...new Map(data.placedOrderLines?.map((l) => [l.supplier_order_id, l.supplier_name])).entries()].sort(
@@ -84,6 +60,8 @@
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
+
+	const handleScanIsbn = (isbn: string) => upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
 		if (quantity === 0) {
@@ -229,12 +207,7 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form use:enhance method="POST" class="flex w-full gap-2">
-						<label class="input-bordered input flex flex-1 items-center gap-2">
-							<QrCode />
-							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
-						</label>
-					</form>
+					<DaisyUiScannerForm onSubmit={handleScanIsbn} />
 				{/if}
 			</div>
 
