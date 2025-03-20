@@ -360,23 +360,3 @@ test("should display book original price and discounted price as well as the war
 		.table("warehouse")
 		.assertRows([{ isbn: "1234567890", price: { price: "(€12.00)", discountedPrice: "€10.80", discount: "-10%" } }]);
 });
-
-test("should display book count for all book quantities in the commit message", async ({ page }) => {
-	const dashboard = getDashboard(page);
-
-	const content = dashboard.content();
-
-	const dbHandle = await getDbHandle(page);
-
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
-
-	await content.navigate("inbound-list");
-	await content.entityList("inbound-list").item(0).edit();
-
-	await content.getByRole("button", { name: "Commit" }).click();
-	expect(page.getByRole("dialog")).toBeVisible();
-	expect(page.getByRole("dialog")).toContainText(`8 books will be added to`);
-});

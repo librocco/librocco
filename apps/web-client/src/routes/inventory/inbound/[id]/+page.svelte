@@ -90,6 +90,7 @@
 
 	$: updatedAt = data.updatedAt;
 	$: entries = data.entries as NoteEntriesItem[];
+	$: totalBookCount = entries.reduce((acc, { quantity }) => acc + quantity, 0);
 	$: publisherList = data.publisherList;
 
 	$: plugins = data.plugins;
@@ -289,10 +290,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(
-								entries.reduce((acc, val) => acc + val.quantity, 0),
-								warehouseName
-							),
+							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
 							type: "commit"
 						};
 					}}
@@ -300,10 +298,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(
-								entries.reduce((acc, val) => acc + val.quantity, 0),
-								warehouseName
-							),
+							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
 							type: "commit"
 						};
 					}}
@@ -320,7 +315,7 @@
 							dialogContent = {
 								onConfirm: handleCommitSelf,
 								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(entries.reduce((acc, val) => acc + val.quantity, 0)),
+								description: dialogDescription.commitOutbound(totalBookCount),
 								type: "commit"
 							};
 						}}
