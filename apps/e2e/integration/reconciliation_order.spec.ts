@@ -1621,6 +1621,14 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await dialog.waitFor({ state: "detached" });
 
+	// Should have navigated back to supplier orders
+	//
+	// These buttons should be enough to conclude we're back at the supplier orders page
+	await page.getByRole("button", { name: "Unordered", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Ordered", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Reconciling", exact: true }).waitFor();
+	await page.getByRole("button", { name: "Completed", exact: true }).waitFor();
+
 	// Navigate to customers page and check customers
 	//
 	// NOTE: At the time of this writing, this is the state
