@@ -69,6 +69,34 @@ describe("getPastNotes", () => {
 			})
 		]);
 	});
+
+	it("falls back to 0 for price calculation if no book data available", async () => {
+		const db = await getRandomDb();
+
+		// Set up warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+
+		// Create and commit notes
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		// NOTE: explicit SQL update -- I know, dirty, but making it easier to make assertions
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-02T10:00:00') * 1000 WHERE id = 1");
+
+		const [note] = await getPastNotes(db, "2024-01-02");
+
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				noteType: "inbound",
+				totalBooks: 5,
+				warehouseName: "Warehouse 1",
+				totalCoverPrice: 0,
+				totalDiscountedPrice: 0
+			})
+		);
+	});
 });
 
 describe("getPastTransactions", async () => {
