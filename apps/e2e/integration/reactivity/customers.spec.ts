@@ -49,13 +49,14 @@ testOrders("customer list: updates the list as customer orders get completed", a
 	// Wait for the page to load
 	await expect(customerRow).toHaveCount(customers.length);
 
-	// Mark all customer order lines as collected
-	// NOTE: At the time of this writing, this affected only the customer order 1 (only one with lines),
-	// thus making it 'Completed'
+	// Mark customers[0]'s lines as collected
 	//
 	// Using explicit SQL to do this -- not the most future proof way, but cost/benefit said this is the way to go
 	// (considering potential changes we'd need to make just for this one test)
-	await dbHandle.evaluate((db) => db.exec("UPDATE customer_order_lines SET collected = ?", [Date.now()]));
+	await dbHandle.evaluate(
+		(db, c1Id) => db.exec("UPDATE customer_order_lines SET collected = ? WHERE customer_id = ?", [Date.now(), c1Id]),
+		customers[0].id
+	);
 
 	// Verify
 	await expect(customerRow).toHaveCount(customers.length - 1);
