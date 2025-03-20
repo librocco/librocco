@@ -26,7 +26,6 @@
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { PopoverWrapper, Dialog } from "$lib/components";
 
-	import { getCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
 	import type { PageData } from "./$types";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
@@ -53,6 +52,7 @@
 	import { scannerSchema } from "$lib/forms/schemas";
 
 	import { mergeBookData } from "$lib/utils/misc";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -169,28 +169,7 @@
 		}
 	};
 
-	let scanInputRef: HTMLInputElement = null;
-
-	// TODO: We reuse the ScannerForm and setup across a few pages => good candidate for a component...
-	// It already exists as one but not with the new skin
-	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
-		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdate: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-
-				await addBooksToCustomer(db, customerId, [isbn]);
-			}
-		},
-		onUpdated: ({ form: { valid } }) => {
-			if (valid) {
-				scanInputRef?.focus();
-			}
-		}
-	});
+	const handleScanIsbn = (isbn: string) => addBooksToCustomer(db, customerId, [isbn]);
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -290,19 +269,8 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
 				<h3 class="max-md:divider-start max-md:divider">Books</h3>
-				<form class="flex w-full gap-2" use:enhance method="POST">
-					<label class="input-bordered input flex flex-1 items-center gap-2">
-						<QrCode />
-						<input
-							type="text"
-							class="grow"
-							bind:value={$formStore.isbn}
-							placeholder="Enter ISBN of delivered books"
-							required
-							bind:this={scanInputRef}
-						/>
-					</label>
-				</form>
+
+				<DaisyUiScannerForm onSubmit={handleScanIsbn} />
 			</div>
 
 			<div class="h-full overflow-x-auto">
