@@ -495,6 +495,11 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	// Try to commit the note
 	await dashboard.content().header().commit();
+	// Regression: check the commit message (book count was broken -- this tests the fix)
+	//
+	// 1 + 2 + 5 + 3 + 3 = 14
+	await page.getByRole("dialog").getByText("14 books will be removed from your stock").waitFor();
+	// Commit
 	await dialog.confirm();
 
 	// Dialog should show the out-of-stock error
