@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from "svelte";
 
-	export let bookCount: number;
+	export let deliveredBookCount: number;
+	export let rejectedBookCount: number;
 
 	const dispatch = createEventDispatcher<{
 		confirm: void;
@@ -10,8 +11,14 @@
 </script>
 
 <div class="prose flex max-w-none flex-col gap-y-2 p-6">
-	<h3>{bookCount} books will be marked as delivered.</h3>
-	<p>Customer orders will be updated to reflect that the book is ready to be collected.</p>
+	<h3>Finalize reconciliation order</h3>
+	{#if deliveredBookCount > 0}
+		<p>{deliveredBookCount} books will be marked as delivered (and ready to be collected)</p>
+	{/if}
+
+	{#if rejectedBookCount > 0}
+		<p>{rejectedBookCount} books will be marked as rejected (waiting for reordering)</p>
+	{/if}
 
 	<div class="stretch flex w-full gap-x-4">
 		<div class="basis-fit">
