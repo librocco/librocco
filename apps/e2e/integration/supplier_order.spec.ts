@@ -7,6 +7,7 @@ import {
 	associatePublisher,
 	createReconciliationOrder,
 	createSupplierOrder,
+	deleteReconciliationOrder,
 	finalizeReconciliationOrder
 } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
@@ -176,32 +177,6 @@ testOrders.skip(
 		await expect(page.getByText("60")).toHaveCount(2);
 	}
 );
-
-testOrders("should show a placed supplier order with the correct details", async ({ page, books, suppliers: [supplier] }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-
-	const dbHandle = await getDbHandle(page);
-
-	await dbHandle.evaluate(createSupplierOrder, {
-		id: 1,
-		supplierId: supplier.id,
-		orderLines: [{ supplier_id: supplier.id, isbn: books[0].isbn, quantity: 1 }]
-	});
-
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-	await page.getByRole("button", { name: "Ordered" }).nth(1).click();
-
-	const updateButton = page.getByRole("button", { name: "View Order" }).first();
-	await updateButton.click();
-
-	await expect(page.getByText(supplier.name)).toBeVisible();
-	const table = page.getByRole("table");
-	const firstRow = table.getByRole("row").nth(1);
-	await expect(firstRow.getByRole("cell", { name: books[0].isbn })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: books[0].authors })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: books[0].title })).toBeVisible();
-	await expect(firstRow.getByRole("cell", { name: `${books[0].price}` })).toBeVisible();
-});
 
 testOrders("should view reconciliation controls for orders already in reconciliation", async ({ page, suppliers: [supplier], books }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -615,3 +590,91 @@ testOrders(
 		await expect(possibleOrderRow.nth(1).getByRole("cell").nth(6)).toHaveText("0");
 	}
 );
+
+testOrders("supplier order page: view + reactivity", async ({ page, books, supplierOrders }) => {
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+	const table = page.getByRole("table");
+
+	await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+	// NOTE: using the first order (from the fixture) for the test
+	const { order, lines } = supplierOrders[0];
+	await table
+		.getByRole("row")
+		.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+		.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+		.getByRole("button", { name: "View Order" })
+		.click();
+
+	// Wait for navigation
+	await page.waitForURL(`${baseURL}orders/suppliers/orders/${order.id}/`);
+
+	// Displays supplier name
+	await page.getByText(order.supplier_name).waitFor();
+
+	// Check for order lines
+	const isbnMatch = new RegExp(`(${books.map(({ isbn }) => isbn).join("|")})`);
+	const orderLineRow = page.getByRole("table").getByRole("row").filter({ hasText: isbnMatch });
+
+	// The state at the time of this writing
+	//
+	// isbn: "1234", quantity: 2
+	// isbn: "5678", quantity: 1
+	await expect(orderLineRow).toHaveCount(2);
+
+	const line1 = { ...lines[0], ...books.find(({ isbn }) => lines[0].isbn === isbn) };
+	await orderLineRow.nth(0).getByRole("cell").nth(0).getByText(line1.isbn).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(1).getByText(line1.title).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(2).getByText(line1.authors).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(3).getByText(line1.quantity.toString()).waitFor();
+	const l1Price = `€${line1.quantity * line1.price}`;
+	await orderLineRow.nth(0).getByRole("cell").nth(4).getByText(l1Price).waitFor();
+
+	const line2 = { ...lines[1], ...books.find(({ isbn }) => lines[1].isbn === isbn) };
+	await orderLineRow.nth(1).getByRole("cell").nth(0).getByText(line2.isbn).waitFor();
+	await orderLineRow.nth(1).getByRole("cell").nth(1).getByText(line2.title).waitFor();
+	await orderLineRow.nth(1).getByRole("cell").nth(2).getByText(line2.authors).waitFor();
+	await orderLineRow.nth(1).getByRole("cell").nth(3).getByText(line2.quantity.toString()).waitFor();
+	const l2Price = `€${line2.quantity * line2.price}`;
+	await orderLineRow.nth(1).getByRole("cell").nth(4).getByText(l2Price).waitFor();
+
+	// The reconciliation button reads "Reconcile" -- not yet reconciled
+	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: "Reconcile", exact: true }).click();
+
+	// The reconciliation order should be created
+	await page.waitForURL(`${baseURL}orders/suppliers/reconcile/**`);
+	const reconOrderId = page.url().split("/").filter(Boolean).pop();
+
+	// Navigate back to the order (now the reconciliation order had been created)
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+	await page.getByText(`#${order.id}`).click();
+	await page.waitForURL(`${baseURL}orders/suppliers/orders/${order.id}/`);
+
+	// The reconciliation button now reads 'View Reconciliation'
+	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: "View Reconciliation", exact: true }).click();
+
+	// Should navigate to (existing) reconciliation order
+	await page.waitForURL(`${baseURL}orders/suppliers/reconcile/${reconOrderId}/`);
+
+	// Check reconciliation order reactivity
+	//
+	// Go back to the supplier order
+	await page.goto(`${baseURL}orders/suppliers/orders/`);
+	await page.getByRole("button", { name: "Reconciling", exact: true }).click();
+	await page.getByText(`#${order.id}`).click();
+
+	// The reconciliation button reads 'View Reconciliation' (reconciliation order exists)
+	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor({ state: "detached" });
+	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor();
+
+	// Delete the reconciliation order (programatically, testing db reactivity)
+	await (await getDbHandle(page)).evaluate(deleteReconciliationOrder, Number(reconOrderId));
+
+	// The reconciliation button reads 'Reconcile' (reconciliation was removed)
+	await page.getByRole("button", { name: "Reconcile", exact: true }).waitFor();
+	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor({ state: "detached" });
+});
