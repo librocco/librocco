@@ -55,6 +55,7 @@
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
+	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
 
@@ -88,7 +89,8 @@
 	$: displayName = data.displayName;
 
 	$: updatedAt = data.updatedAt;
-	$: entries = data.entries;
+	$: entries = data.entries as NoteEntriesItem[];
+	$: totalBookCount = entries.reduce((acc, { quantity }) => acc + quantity, 0);
 	$: publisherList = data.publisherList;
 
 	$: plugins = data.plugins;
@@ -288,7 +290,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(entries.length, warehouseName),
+							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
 							type: "commit"
 						};
 					}}
@@ -296,7 +298,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(entries.length, warehouseName),
+							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
 							type: "commit"
 						};
 					}}
@@ -313,7 +315,7 @@
 							dialogContent = {
 								onConfirm: handleCommitSelf,
 								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(entries.length),
+								description: dialogDescription.commitOutbound(totalBookCount),
 								type: "commit"
 							};
 						}}
