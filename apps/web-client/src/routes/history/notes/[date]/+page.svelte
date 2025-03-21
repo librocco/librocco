@@ -84,6 +84,8 @@
 					{@const displayName = `${note.warehouseName} / ${note.displayName}`}
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("history/notes/archive", note.id)}
+					{console.log(note.totalCoverPrice)}
+					{console.log(note.totalDiscountedPrice)}
 
 					<div class="group entity-list-row">
 						<div class="block w-full">
