@@ -82,11 +82,14 @@ describe("getPastTransactions", async () => {
 		// Set up books
 		await upsertBook(db, { isbn: "1111111111", price: 10 });
 		await upsertBook(db, { isbn: "2222222222", price: 20 });
+		await upsertBook(db, { isbn: "4444444444", price: null });
 
 		// Create and commit notes
 		await createInboundNote(db, 1, 1);
 		await updateNote(db, 1, { displayName: "Note 1" });
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "4444444444", quantity: 4, warehouseId: 1 });
+
 		await commitNote(db, 1);
 		// This note should appear second - 10:00:00
 		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-01T10:00:00') * 1000 WHERE id = 1");
@@ -143,6 +146,11 @@ describe("getPastTransactions", async () => {
 				noteId: 1
 			},
 			{
+				isbn: "4444444444",
+				warehouseId: 1,
+				noteId: 1
+			},
+			{
 				isbn: "1111111111",
 				warehouseId: 1,
 				noteId: 3
@@ -180,6 +188,19 @@ describe("getPastTransactions", async () => {
 				isbn: "1111111111",
 				quantity: 5,
 				price: 10,
+				// Using any(date) as new Date(<isostring>) automatically takes the TZ into account and we don't want flakiness,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 1,
+				noteName: "Note 1",
+				noteType: "inbound"
+			}),
+			expect.objectContaining({
+				isbn: "4444444444",
+				quantity: 4,
+				price: 0,
 				// Using any(date) as new Date(<isostring>) automatically takes the TZ into account and we don't want flakiness,
 				committedAt: expect.any(Date),
 				warehouseId: 1,
