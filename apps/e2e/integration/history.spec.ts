@@ -431,6 +431,13 @@ test("history/isbn - search results", async ({ page }) => {
 			authors: "Author 2",
 			publisher: "Publisher 2",
 			year: "2022"
+		},
+		{
+			isbn: "3333333333",
+			title: "Book 3",
+			authors: "Author 3",
+			publisher: "Publisher 3",
+			year: "2023"
 		}
 	]);
 });
