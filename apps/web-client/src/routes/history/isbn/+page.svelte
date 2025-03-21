@@ -26,7 +26,6 @@
 	const search = writable("");
 
 	let entries: BookData[] = [];
-	$: entries = [];
 	$: if ($search.length > 2) {
 		searchBooks(db, $search).then((res) => {
 			entries = res;
