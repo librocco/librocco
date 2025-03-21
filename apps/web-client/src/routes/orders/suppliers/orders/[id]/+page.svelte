@@ -1,10 +1,38 @@
 <script lang="ts">
-	import { ArrowRight } from "lucide-svelte";
+	import { onDestroy, onMount } from "svelte";
+	import { ArrowRight, ListTodo } from "lucide-svelte";
+	import { base } from "$app/paths";
 
 	import type { PageData } from "./$types";
 
+	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
+
+	import { racefreeGoto } from "$lib/utils/navigation";
+	import { invalidate } from "$app/navigation";
+
 	export let data: PageData;
 
+	// #region reactivity
+	let disposer: () => void;
+
+	onMount(() => {
+		// NOTE: dbCtx should always be defined on client
+		const { rx } = data.dbCtx;
+
+		const disposer1 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
+		disposer = () => disposer1();
+	});
+
+	onDestroy(() => {
+		// Unsubscribe on unmount
+		disposer?.();
+	});
+	// #endregion reactivity
+	$: goto = racefreeGoto(disposer);
+
+	$: db = data?.dbCtx?.db;
+
+	$: id = data?.id;
 	$: ({ orderLines } = data);
 
 	// Supplier order meta data is returned per row. We just need one copy of it
@@ -17,9 +45,24 @@
 	});
 
 	$: createdDate = new Date(created);
+	$: reconciliation_order_id = data.reconciliation_order_id;
+	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
 
 	async function handlePrintOrder() {
 		/**@TODO implement print functionality */
+	}
+
+	async function handleReconcileSelf() {
+		/**@TODO replace randomId with incremented id */
+		// get latest/biggest id and increment by 1
+		const reconOrderId = Math.floor(Math.random() * 1000000); // Temporary ID generation
+
+		await createReconciliationOrder(db, reconOrderId, [id]);
+		goto(`${base}/orders/suppliers/reconcile/${reconOrderId}`);
+	}
+
+	function handleViewReconcileOrder(id: number) {
+		goto(`${base}/orders/suppliers/reconcile/${id}`);
 	}
 </script>
 
@@ -34,6 +77,21 @@
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex gap-2 bg-base-100 pb-3 md:flex-col">
 						<h1 class="prose card-title">{supplier_order_id}</h1>
+
+						{#if reconciled}
+							<button
+								class="btn-outline btn-sm btn flex-nowrap gap-x-2.5"
+								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
+							>
+								<ListTodo aria-hidden focusable="false" size={20} />
+								View Reconciliation
+							</button>
+						{:else}
+							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={handleReconcileSelf}>
+								<ListTodo aria-hidden focusable="false" size={20} />
+								Reconcile
+							</button>
+						{/if}
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{supplier_name}</h2>
