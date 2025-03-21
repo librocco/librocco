@@ -63,6 +63,7 @@ export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]
 		committed_at: number;
 	}>(query, [date]);
 
+	console.log(res[0]);
 	return res.map(({ committed_at, ...note }) => ({ ...note, committedAt: new Date(committed_at) }));
 }
 
@@ -125,7 +126,7 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
             b.title,
             b.authors,
             bt.quantity,
-            COALESCE(b.price, 0),
+            COALESCE(b.price, 0) AS price,
             n.committed_at,
             bt.warehouse_id AS warehouseId,
             w.display_name AS warehouseName,

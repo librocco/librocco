@@ -515,6 +515,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		category: string;
 	}>(query, [id]);
 
+	console.log(result[0]);
 	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
 		...res,
 		updatedAt: new Date(updated_at),
@@ -665,7 +666,7 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: Note
  */
 export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
-		SELECT id, title, COALESCE(price, 0), updated_at
+		SELECT id, title, COALESCE(price, 0) AS price, updated_at
 		FROM custom_item
 		WHERE note_id = ?
 		ORDER BY updated_at DESC
@@ -673,6 +674,7 @@ export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCu
 
 	const res = await db.execO<{ id: number; title: string; price: number; updated_at: number }>(query, [noteId]);
 
+	console.log(res[0]);
 	return res.map(({ updated_at, ...item }) => ({ ...item, updatedAt: new Date(updated_at) }));
 }
 
@@ -718,7 +720,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 			bt.isbn,
 			bt.quantity,
 			COALESCE(b.title, '') AS title,
-			COALESCE(b.price, 0),
+			COALESCE(b.price, 0) AS price,
 			w.discount
 		FROM book_transaction bt
 		LEFT JOIN book b ON bt.isbn = b.isbn
@@ -727,7 +729,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 	`;
 
 	const customItemQuery = `
-		SELECT title, COALESCE(price, 0)
+		SELECT title, COALESCE(price, 0) AS price
 		FROM custom_item
 		WHERE note_id = ?
 	`;
@@ -750,7 +752,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 			discount: 0
 		}))
 	);
-
+	console.log(bookEntries.concat(customItems));
 	return {
 		items: bookEntries.concat(customItems),
 		timestamp: Date.now()
