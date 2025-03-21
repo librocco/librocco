@@ -1,9 +1,11 @@
-import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
+import { getPlacedSupplierOrderLines, getPlacedSupplierOrders } from "$lib/db/cr-sqlite/suppliers";
 
 import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ parent, params }) => {
+export const load: PageLoad = async ({ parent, params, depends }) => {
+	depends("reconciliation:orders");
+
 	const { dbCtx } = await parent();
 
 	// We're not in browser, no need for further processing
@@ -11,9 +13,16 @@ export const load: PageLoad = async ({ parent, params }) => {
 		return { orderLines: [] as PlacedSupplierOrderLine[] };
 	}
 
-	const orderLines = await getPlacedSupplierOrderLines(dbCtx.db, [parseInt(params.id)]);
+	const id = parseInt(params.id);
 
-	return { orderLines };
+	// TODO: replace this with a specific query (get order by id)
+	const supplierOrders = await getPlacedSupplierOrders(dbCtx.db);
+	const order = supplierOrders.find((o) => o.id === id);
+	// TODO: redirect if order doesn't exist
+
+	const orderLines = await getPlacedSupplierOrderLines(dbCtx.db, [id]);
+
+	return { ...order, orderLines };
 };
 
 export const ssr = false;

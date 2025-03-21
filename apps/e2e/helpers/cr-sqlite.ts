@@ -211,6 +211,13 @@ export async function upsertReconciliationOrderLines(db: DB, params: { id: numbe
 	await window.reconciliation.upsertReconciliationOrderLines(db, id, newLines);
 }
 
+/**
+ * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:deleteReconciliationOrder
+ */
+export async function deleteReconciliationOrder(db: DB, id: number): Promise<void> {
+	return await window.reconciliation.deleteReconciliationOrder(db, id);
+}
+
 export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
