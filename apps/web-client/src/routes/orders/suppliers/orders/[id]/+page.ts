@@ -4,6 +4,9 @@ import type { PlacedSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
+	// Reactive on book data displayed in the table
+	depends("book:data");
+	// Reactive on reconciled state -- calculated from existing reconciliation orders
 	depends("reconciliation:orders");
 
 	const { dbCtx } = await parent();

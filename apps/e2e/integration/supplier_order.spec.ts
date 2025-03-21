@@ -8,7 +8,8 @@ import {
 	createReconciliationOrder,
 	createSupplierOrder,
 	deleteReconciliationOrder,
-	finalizeReconciliationOrder
+	finalizeReconciliationOrder,
+	upsertBook
 } from "@/helpers/cr-sqlite";
 import { depends, testOrders } from "@/helpers/fixtures";
 
@@ -638,6 +639,18 @@ testOrders("supplier order page: view + reactivity", async ({ page, books, suppl
 	await orderLineRow.nth(1).getByRole("cell").nth(3).getByText(line2.quantity.toString()).waitFor();
 	const l2Price = `€${line2.quantity * line2.price}`;
 	await orderLineRow.nth(1).getByRole("cell").nth(4).getByText(l2Price).waitFor();
+
+	// Test for reactivity to changes in book data
+	// NOTE: At the time of this writing, the first book corresponds to the first order line of the first order
+	const updatedBook1 = { isbn: books[0].isbn, title: "Updated Title", authors: "Updated Author", price: 50 };
+	await (await getDbHandle(page)).evaluate(upsertBook, updatedBook1);
+
+	await orderLineRow.nth(0).getByRole("cell").nth(0).getByText(updatedBook1.isbn).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(1).getByText(updatedBook1.title).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(2).getByText(updatedBook1.authors).waitFor();
+	await orderLineRow.nth(0).getByRole("cell").nth(3).getByText(line1.quantity.toString()).waitFor();
+	const l1PriceUpdated = `€${line1.quantity * updatedBook1.price}`;
+	await orderLineRow.nth(0).getByRole("cell").nth(4).getByText(l1PriceUpdated).waitFor();
 
 	// The reconciliation button reads "Reconcile" -- not yet reconciled
 	await page.getByRole("button", { name: "View Reconciliation", exact: true }).waitFor({ state: "detached" });
