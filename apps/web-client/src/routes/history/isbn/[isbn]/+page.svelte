@@ -56,7 +56,6 @@
 	const search = writable("");
 
 	let entries: BookData[] = [];
-	$: entries = [];
 	$: if ($search.length > 2) {
 		searchBooks(db, $search).then((res) => {
 			entries = res;
@@ -82,7 +81,7 @@
 	<svelte:fragment slot="heading">
 		<div class="w-full text-gray-700">
 			<!--text-2xl font-bold leading-7 text-gray-900-->
-			<h1 class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
+			<h1 class="mb-1 mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
 			{#if bookData}
 				<p class="mb-1 min-h-[32px] text-2xl">
 					{#if bookData.title}<span class="font-bold">{bookData.title}, </span>{/if}
@@ -117,7 +116,7 @@
 									<span data-property="warehouse" class="entity-list-text-sm mr-4">{s.warehouseName}</span>
 								</p>
 
-								<p data-property="quantity" class="rounded border border-gray-500 bg-gray-100 py-0.5 px-2">{s.quantity}</p>
+								<p data-property="quantity" class="rounded border border-gray-500 bg-gray-100 px-2 py-0.5">{s.quantity}</p>
 							</div>
 						{/each}
 					</div>
