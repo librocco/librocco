@@ -20,7 +20,8 @@
 		const { rx } = data.dbCtx;
 
 		const disposer1 = rx.onRange(["reconciliation_order"], () => invalidate("reconciliation:orders"));
-		disposer = () => disposer1();
+		const disposer2 = rx.onRange(["book"], () => invalidate("book:data"));
+		disposer = () => (disposer1(), disposer2());
 	});
 
 	onDestroy(() => {
