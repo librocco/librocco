@@ -22,5 +22,5 @@
 {:else}
 	<!-- Price only is shown regardless of the row being a book row without discount applied, or a custom item row -->
 	{@const { price } = data}
-	<span data-property="full-price">{price ? `€${price?.toFixed(2)}` : "N/A"} </span>
+	<span data-property="full-price">{price || price === 0 ? `€${price?.toFixed(2)}` : "N/A"} </span>
 {/if}
