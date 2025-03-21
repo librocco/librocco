@@ -83,6 +83,7 @@
 	);
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
@@ -121,7 +122,6 @@
 	};
 
 	async function handleDelete() {
-		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
 		await goto(appPath("supplier_orders"));
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
@@ -331,7 +331,12 @@
 </main>
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
-	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+	<CommitDialog
+		deliveredBookCount={totalDelivered + totalUnmatched}
+		rejectedBookCount={totalOrdered - totalDelivered}
+		on:cancel={() => commitDialogOpen.set(false)}
+		on:confirm={handleCommit}
+	/>
 </PageCenterDialog>
 
 <PageCenterDialog dialog={deleteDialog} title="" description="">
