@@ -515,7 +515,6 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
 		category: string;
 	}>(query, [id]);
 
-	console.log(result[0]);
 	return result.map(({ warehouseId, out_of_print, updated_at, ...res }) => ({
 		...res,
 		updatedAt: new Date(updated_at),
@@ -674,7 +673,6 @@ export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCu
 
 	const res = await db.execO<{ id: number; title: string; price: number; updated_at: number }>(query, [noteId]);
 
-	console.log(res[0]);
 	return res.map(({ updated_at, ...item }) => ({ ...item, updatedAt: new Date(updated_at) }));
 }
 
@@ -752,7 +750,6 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
 			discount: 0
 		}))
 	);
-	console.log(bookEntries.concat(customItems));
 	return {
 		items: bookEntries.concat(customItems),
 		timestamp: Date.now()

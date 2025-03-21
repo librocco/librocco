@@ -63,7 +63,6 @@ export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]
 		committed_at: number;
 	}>(query, [date]);
 
-	console.log(res[0]);
 	return res.map(({ committed_at, ...note }) => ({ ...note, committedAt: new Date(committed_at) }));
 }
 
