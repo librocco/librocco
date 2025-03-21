@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Truck } from "lucide-svelte";
-	import { invalidate } from "$app/navigation";
 
 	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 
@@ -46,14 +45,22 @@
 
 	// $: lastUpdatedAtDate = new Date(last_updated_at)
 
-	let selectedBooks = orderLines ?? [];
-	$: selectedIsbns = selectedBooks.map(({ isbn }) => isbn);
-	$: selectedAmout = selectedBooks.reduce((acc, { line_price }) => acc + line_price, 0);
+	// NOTE: might go out of sync, we don't care
+	let selectedBooksLookup: { [isbn: string]: number } = {};
 
-	$: totalAmount = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
-	$: totalBooks = orderLines.reduce((acc, { quantity }) => acc + quantity, 0);
+	$: linesWithSelection = orderLines.map((line) => ({
+		...line,
+		selectedQuantity: selectedBooksLookup[line.isbn] || 0,
+		selected_line_price: line.price * (selectedBooksLookup[line.isbn] || 0)
+	}));
 
-	$: canPlaceOrder = selectedBooks.length > 0;
+	$: totalPossiblePrice = orderLines.reduce((acc, { line_price }) => acc + line_price, 0);
+	$: totalSelectedPrice = linesWithSelection.reduce((acc, { selected_line_price }) => acc + selected_line_price, 0);
+
+	$: totalPossibleBooks = orderLines.reduce((acc, { quantity }) => acc + quantity, 0);
+	$: totalSelectedBooks = linesWithSelection.reduce((acc, { selectedQuantity }) => acc + selectedQuantity, 0);
+
+	$: canPlaceOrder = totalSelectedBooks > 0;
 
 	async function handlePlaceOrder() {
 		/**@TODO replace randomId with incremented id */
@@ -63,24 +70,32 @@
 			return;
 		}
 
-		const selection = orderLines.filter(({ isbn }) => selectedIsbns.includes(isbn));
+		const selection = linesWithSelection
+			.filter(({ selectedQuantity }) => Boolean(selectedQuantity))
+			.map(({ isbn, selectedQuantity }) => ({ isbn, quantity: selectedQuantity, supplier_id }));
 
 		const id = Math.floor(Math.random() * 1000000); // Temporary ID generation
 		await createSupplierOrder(db, id, supplier_id, selection);
-		await invalidate("suppliers:data");
+
 		// TODO: We could either go to the new supplier order "placed" view when it's created
 		// or we could make sure we go to the "placed" list on the suppliers view "/suppliers?s=placed"
 		await goto(`${base}/orders/suppliers/orders/`);
 	}
 
 	function selectPortion(portion: number) {
-		const numToSelect = Math.floor(orderLines.length * portion);
+		// NOTE: selecting based on count, not the price (we might want to select based on price)
+		let numToSelect = Math.floor(totalPossibleBooks * portion);
+		const selected: { [isbn: string]: number } = {};
 
-		if (portion === 1 && selectedBooks.length === orderLines.length) {
-			selectedBooks = [];
-		} else {
-			selectedBooks = orderLines.slice(0, numToSelect);
+		for (const line of orderLines) {
+			if (numToSelect === 0) break;
+
+			const selectedQuantity = Math.min(line.quantity, numToSelect);
+			selected[line.isbn] = selectedQuantity;
+			numToSelect -= selectedQuantity;
 		}
+
+		selectedBooksLookup = selected;
 	}
 </script>
 
@@ -100,15 +115,16 @@
 							<h2 class="prose">#{supplier_id}</h2>
 						</div>
 					</div>
+
 					<dl class="flex flex-col">
 						<div class="stats md:stats-vertical">
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total books</dt>
-								<dd class="stat-value text-2xl">{totalBooks}</dd>
+								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
 							</div>
 							<div class="stat md:px-1">
 								<dt class="stat-title">Total value</dt>
-								<dd class="stat-value text-2xl">€{totalAmount}</dd>
+								<dd class="stat-value text-2xl">€{totalPossiblePrice}</dd>
 							</div>
 							<!-- TODO: re-introduce last_updated_at -->
 							<!-- <div class="stat md:px-1">
@@ -146,38 +162,49 @@
 							<th>ISBN</th>
 							<th>Title</th>
 							<th>Authors</th>
-							<th>Quantity</th>
-							<th>Total Price</th>
+
+							<th>Ordered quantity</th>
+							<th>Total</th>
+
+							<th class="bg-gray-100">Selected quantity</th>
+							<th class="bg-gray-100">Total</th>
 						</tr>
 					</thead>
+
 					<tbody>
-						{#each orderLines as orderLine}
-							{@const { isbn, title, authors, line_price, quantity } = orderLine}
+						{#each linesWithSelection as orderLine}
+							{@const { isbn, title, authors, line_price, quantity, selectedQuantity, selected_line_price } = orderLine}
+							{@const isChecked = quantity === selectedQuantity}
 							<tr>
 								<td>
 									<input
 										type="checkbox"
 										class="checkbox"
-										checked={selectedIsbns.includes(isbn)}
+										checked={isChecked}
 										on:change={() => {
-											if (selectedIsbns.includes(isbn)) {
-												selectedBooks = selectedBooks.filter((book) => book.isbn !== isbn);
-											} else {
-												selectedBooks = [...selectedBooks, orderLine];
-											}
+											selectedBooksLookup[isbn] = isChecked ? 0 : quantity;
+											// eslint-disable-next-line no-self-assign
+											selectedBooksLookup = selectedBooksLookup;
 										}}
 									/>
 								</td>
 								<th>{isbn}</th>
 								<td>{title}</td>
 								<td>{authors}</td>
+
+								<!-- Ordered quantity / total -->
 								<td>{quantity}</td>
 								<td>€{line_price}</td>
+
+								<!-- Selected quantity / total -->
+								<td class="bg-gray-100">{selectedQuantity}</td>
+								<td class="bg-gray-100">€{selected_line_price}</td>
 							</tr>
 						{/each}
 					</tbody>
 				</table>
 			</div>
+
 			{#if canPlaceOrder}
 				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
 					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
@@ -185,12 +212,12 @@
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
 								<div class="stat-title">Selected books:</div>
 								<div class="stat-value text-lg">
-									{selectedBooks.length}
+									{totalSelectedBooks}
 								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
 								<div class="stat-title sr-only">Total</div>
-								<div class="stat-value text-lg">€{selectedAmout.toFixed(2)}</div>
+								<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 							</div>
 						</dl>
 

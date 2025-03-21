@@ -135,7 +135,7 @@ export type PossibleSupplierOrderLine = {
 	quantity: number;
 	line_price: number;
 } & SupplierJoinData &
-	Pick<BookData, "isbn" | "title" | "authors">;
+	Pick<BookData, "isbn" | "title" | "authors" | "price">;
 
 /**
  * Order lines of a placed supplier order
