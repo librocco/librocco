@@ -44,7 +44,9 @@
 	/**
 	 * If the warehouse is already selected (warehouseId and warehouseName are not undefined), then set the value
 	 */
-	$: warehouseName && selected.set({ value: warehouseId, label: warehouseName });
+	$: if (warehouseName) {
+		selected.set({ value: warehouseId, label: warehouseName });
+	}
 
 	// We're allowing all warehouses for selection.
 	// Out of stock situations are handled in the row (painting it red) or
@@ -62,7 +64,7 @@
 	use:trigger
 	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}" />
+	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
 			{$selectedLabel}

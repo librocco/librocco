@@ -153,18 +153,18 @@
 		</ul>
 		<!-- End entity list contaier -->
 	{/if}
+</InventoryManagementPage>
+
+{#if $open}
+	{@const { onConfirm, title, description } = dialogContent};
 
 	<div use:melt={$portalled}>
-		{#if $open}
-			{@const { onConfirm, title, description } = dialogContent};
-
-			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-			<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" {onConfirm}>
-					<svelte:fragment slot="title">{title}</svelte:fragment>
-					<svelte:fragment slot="description">{description}</svelte:fragment>
-				</Dialog>
-			</div>
-		{/if}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+			<Dialog {dialog} type="delete" {onConfirm}>
+				<svelte:fragment slot="title">{title}</svelte:fragment>
+				<svelte:fragment slot="description">{description}</svelte:fragment>
+			</Dialog>
+		</div>
 	</div>
-</InventoryManagementPage>
+{/if}

@@ -8,6 +8,6 @@
 </script>
 
 <div class="flex h-full items-center gap-x-2">
-	<div class="w-2 self-stretch rounded-md {className[borderStyle]}" />
+	<div class="w-2 self-stretch rounded-md {className[borderStyle]}"></div>
 	<slot />
 </div>

@@ -50,13 +50,13 @@
 		<tbody>
 			{#if hasSelectedOrders}
 				<tr aria-live="polite" aria-atomic="true" class="bg-base-200">
-					<td role="cell" />
+					<td role="cell"></td>
 					<th role="columnheader" scope="row">
 						<span class="sr-only">Selected orders summary: </span>
 						{selectedOrders.length} orders selected
 					</th>
-					<td role="cell" />
-					<td role="cell" />
+					<td role="cell"></td>
+					<td role="cell"></td>
 					<td role="cell" class="text-right">
 						<button
 							class="btn-primary btn-sm btn flex-nowrap gap-x-2"

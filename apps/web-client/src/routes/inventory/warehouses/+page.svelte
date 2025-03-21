@@ -187,7 +187,7 @@
 									<span class="text-gray-700">Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="h-[1px] bg-gray-200" />
+								<div {...separator} use:separator.action class="h-[1px] bg-gray-200"></div>
 
 								<a
 									{href}
@@ -235,55 +235,55 @@
 		</ul>
 		<!-- End entity list contaier -->
 	{/if}
+</InventoryManagementPage>
+
+{#if $open}
+	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
 
 	<div use:melt={$portalled}>
-		{#if $open}
-			{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
-
-			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-			{#if type === "edit"}
-				<div
-					class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white py-6 px-4"
-					use:melt={$content}
-				>
-					<h2 class="sr-only" use:melt={$title}>
-						{dialogTitle}
-					</h2>
-					<p class="sr-only" use:melt={$description}>
-						{dialogDescription}
-					</p>
-					<WarehouseForm
-						data={defaults(warehouseToEdit, zod(warehouseSchema))}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(warehouseSchema),
-							validationMethod: "submit-only",
-							onUpdated: async ({ form }) => {
-								const { id, name: displayName, discount } = form?.data;
-								await upsertWarehouse(db, { id, displayName, discount });
-								open.set(false);
-							}
-						}}
-						onCancel={() => open.set(false)}
-					/>
-				</div>
-			{:else}
-				<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-					<WarehouseDeleteForm
-						{dialog}
-						{dialogTitle}
-						{dialogDescription}
-						{...warehouseToDelete}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validationMethod: "submit-only",
-							onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
-						}}
-					/>
-				</div>
-			{/if}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		{#if type === "edit"}
+			<div
+				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white px-4 py-6"
+				use:melt={$content}
+			>
+				<h2 class="sr-only" use:melt={$title}>
+					{dialogTitle}
+				</h2>
+				<p class="sr-only" use:melt={$description}>
+					{dialogDescription}
+				</p>
+				<WarehouseForm
+					data={defaults(warehouseToEdit, zod(warehouseSchema))}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(warehouseSchema),
+						validationMethod: "submit-only",
+						onUpdated: async ({ form }) => {
+							const { id, name: displayName, discount } = form?.data;
+							await upsertWarehouse(db, { id, displayName, discount });
+							open.set(false);
+						}
+					}}
+					onCancel={() => open.set(false)}
+				/>
+			</div>
+		{:else}
+			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+				<WarehouseDeleteForm
+					{dialog}
+					{dialogTitle}
+					{dialogDescription}
+					{...warehouseToDelete}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validationMethod: "submit-only",
+						onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
+					}}
+				/>
+			</div>
 		{/if}
 	</div>
-</InventoryManagementPage>
+{/if}

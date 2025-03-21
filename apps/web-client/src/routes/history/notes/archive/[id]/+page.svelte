@@ -126,7 +126,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if entries?.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}

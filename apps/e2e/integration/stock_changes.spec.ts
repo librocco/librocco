@@ -14,7 +14,9 @@ test.beforeEach(async ({ page }) => {
 	const dashboard = getDashboard(page);
 	await dashboard.waitFor();
 
-	await dashboard.navigate("inventory");
+	// Navigate to the stock/search page
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await dashboard.content().entityList("warehouse-list").waitFor();
 
 	// We're creating one warehouse (for each test) and are using its stock view as default view
@@ -46,6 +48,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
+	// TODO: should improve accessible markup and target as "role=tab"
 	await content.getByText("Inbound").click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
@@ -56,6 +59,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
+	// TODO: should improve accessible markup and target as "role=tab"
 	await content.navigate("warehouse-list");
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
@@ -92,6 +96,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
+	// TODO: should improve accessible markup and target as "role=tab"
 	await content.navigate("inbound-list");
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
@@ -102,6 +107,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
+	// TODO: should improve accessible markup and target as "role=tab"
 	await content.navigate("warehouse-list");
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
@@ -165,14 +171,14 @@ test("committing an outbound note should decrement the stock by the quantities i
 	]);
 
 	// Navigate to the note and commit it
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Navigate back to "Warehouse 1" page and check the updated stock
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([
 		{ isbn: "1234567890", quantity: 1 },
@@ -205,14 +211,14 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 	]);
 
 	// Commit the outbound note
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	//  Check the updated stock
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567891", quantity: 5 }]);
 });
@@ -243,14 +249,14 @@ test("committing an outbound note with transactions in two warehouses should dec
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 
 	// Navigate to the note and commit it
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 	await content.entityList("outbound-list").item(0).edit();
 	await dashboard.view("outbound-note").waitFor();
 	await content.header().commit();
 	await dashboard.dialog().confirm();
 
 	// Check the updated stock - warehouse 1
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 

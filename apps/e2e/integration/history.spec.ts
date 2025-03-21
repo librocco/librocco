@@ -37,18 +37,20 @@ test.beforeEach(async ({ page }) => {
 
 test("history/date - display", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
 	// Default history view (sidebar navigation) is 'history/date'
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Default view is today
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
 
 	// Add some transactions today (by way of inbound notes)
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "2222222222", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	//  Stats should reflect the changes
 	const stats = dashboard.content().historyStats();
@@ -73,9 +75,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some txns to a different warehouse should be reflected in results (stats/table)
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 2, displayName: "Note 2" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 2);
 
 	// Note: Warehouse 2 has a 10% discount
 	await stats.assert({
@@ -100,9 +102,9 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding additional transactions to the first warehouse should not aggregate the txns
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 3, warehouseId: 1, displayName: "Note 3" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 3);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -127,10 +129,10 @@ test("history/date - display", async ({ page }) => {
 		]);
 
 	// Adding some outbound transactions should be reflected in the stats
-	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 4);
+	await (await getDbHandle(page)).evaluate(createOutboundNote, { id: 4, displayName: "Note 4" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 4);
 
 	await stats.assert({
 		// 1 + 3 + 2 = 6 books in inbound notes
@@ -162,9 +164,9 @@ test("history/date - display", async ({ page }) => {
 
 	// Adding an unknown book should not break the stats (the price for the given book should be omitted)
 	// The book should be displayed with default values
-	await dbHandle.evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
-	await dbHandle.evaluate(addVolumesToNote, [5, { isbn: "3333333333", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 5);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 5, warehouseId: 1, displayName: "Note 5" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [5, { isbn: "3333333333", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 5);
 
 	await stats.assert({
 		// 2 + 1 + 3 + 2 = 6 books in inbound notes
@@ -198,9 +200,14 @@ test("history/date - display", async ({ page }) => {
 test("history/date - general navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
-	await dashboard.navigate("history/date");
-	await dashboard.content().navigate("history/isbn"); // This is our "previous" view
-	await dashboard.content().navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
+
+	await page.getByRole("link", { name: "By ISBN" }).click(); // This is our "previous" view
+	await page.waitForURL("**/history/isbn/**/");
+
+	await page.getByRole("link", { name: "By Date", exact: true }).click();
+	await page.waitForURL("**/history/date/**/");
 
 	// Navigating between dates is shallow - going back should go to previous route altogether
 	const t_minus_1 = new Date(Date.now() - 1 * TIME_DAY).toISOString().slice(0, 10);
@@ -220,13 +227,15 @@ test("history/date - general navigation", async ({ page }) => {
 	// Clicking on txn's note name shold redirect to committed note page
 	//
 	// Navigate back to date view
-	await dashboard.content().navigate("history/date");
+	await page.getByRole("link", { name: "By Date", exact: true }).click();
+	await page.waitForURL("**/history/date/**/");
 
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 1, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	await dashboard.content().table("history/date").row(0).field("noteName").click();
 
@@ -236,9 +245,14 @@ test("history/date - general navigation", async ({ page }) => {
 	// Navigating to history/notes should preserve the selected date
 	//
 	// Go back to history/date
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
+
 	await dashboard.content().calendar().select(t_minus_3);
-	await dashboard.content().navigate("history/notes");
+
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
+
 	expect(page.url().includes(`history/notes/${t_minus_3}`));
 });
 
@@ -276,7 +290,8 @@ test("history/date - displaying of different date summaries", async ({ page }) =
 	await dbHandle.evaluate(commitNote, 4);
 
 	// Navigate to history/date page for assertions
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 
 	// Verify that the date had been reset successfully
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
@@ -339,9 +354,11 @@ test("history/isbn - base functionality", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
 
 	// Without selected isbn, a message (to select an isbn) should be shown
 	await dashboard.content().getByText("No book selected").waitFor();
@@ -363,9 +380,11 @@ test("history/isbn - search results", async ({ page }) => {
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
 
 	// Searching for a book that exists in two warehouses should display only one result
 	//
@@ -426,13 +445,17 @@ test("history/isbn - search results", async ({ page }) => {
 
 test("history/isbn - transaction display", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
+
 	// Navigate to the page for 1111111111
 	await search.type("1111111111");
 	await search.completions().n(0).click();
@@ -445,10 +468,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	await dashboard.content().header().getByText("2021").waitFor();
 
 	// Add some trasnactions
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
-	const txn2Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
+	const txn2Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Stock should be updated
 	await dashboard
@@ -466,10 +489,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	const dateStub = await getDateStub(page);
 	dateStub.mock(new Date(Date.now() - 2 * TIME_DAY));
 
-	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note -1" });
-	await dbHandle.evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 2);
-	const txn1Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note -1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [2, { isbn: "1111111111", quantity: 3, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 2);
+	const txn1Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -490,10 +513,10 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// Reset the date
 	await dateStub.reset();
 
-	await dbHandle.evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 2" });
-	await dbHandle.evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 3);
-	const txn3Date = await dbHandle.evaluate(() => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 3, warehouseId: 2, displayName: "Note 2" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [3, { isbn: "1111111111", quantity: 2, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 3);
+	const txn3Date = await (await getDbHandle(page)).evaluate(() => new Date().toISOString().slice(0, 10));
 
 	// Check stock and transactions
 	await dashboard
@@ -518,11 +541,11 @@ test("history/isbn - transaction display", async ({ page }) => {
 	// We're stubbing the date to be 2mins into the future (to ensure the txn ordering)
 	await dateStub.mock(new Date(Date.now() + 2 * TIME_MIN));
 
-	await dbHandle.evaluate(createOutboundNote, { id: 4, displayName: "Note 3" });
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
-	await dbHandle.evaluate(commitNote, 4);
-	const txn4Date = await dbHandle.evaluate(async () => new Date().toISOString().slice(0, 10));
+	await (await getDbHandle(page)).evaluate(createOutboundNote, { id: 4, displayName: "Note 3" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [4, { isbn: "1111111111", quantity: 1, warehouseId: 2 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 4);
+	const txn4Date = await (await getDbHandle(page)).evaluate(async () => new Date().toISOString().slice(0, 10));
 
 	await dashboard
 		.content()
@@ -546,22 +569,26 @@ test("history/isbn - transaction display", async ({ page }) => {
 
 test("history/isbn - navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 	const search = dashboard.content().searchField();
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/isbn' subview
-	await dashboard.content().navigate("history/isbn");
+	await page.getByRole("link", { name: "By ISBN" }).click();
+	await page.waitForURL("**/history/isbn/**/");
+
 	// Navigate to the page for 1111111111
 	await search.type("1111111111");
 	await search.completions().n(0).click();
 	await dashboard.content().header().title().assert("1111111111");
 
 	// Add some trasnactions
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	// Clickiong on the note name should redirect to the (committed) note page
 	await dashboard.content().table("history/isbn").row(0).field("noteName").click();
@@ -572,9 +599,11 @@ test("history/notes - base", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/notes' subview
-	await dashboard.content().navigate("history/notes");
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
 
 	// Should use today as default date
 	expect(page.url().includes(new Date().toISOString().slice(0, 10))).toEqual(true);
@@ -589,9 +618,11 @@ test("history/notes - date display", async ({ page }) => {
 	const dateStub = await getDateStub(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/notes' subview
-	await dashboard.content().navigate("history/notes");
+	await page.getByRole("link", { name: "Notes by Date" }).click();
+	await page.waitForURL("**/history/notes/**/");
 
 	// Add some notes to work with
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
@@ -753,9 +784,11 @@ test("history/warehose - base", async ({ page }) => {
 	const dashboard = getDashboard(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await dashboard.content().navigate("history/warehouse");
+	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.waitForURL("**/history/warehouse/**/");
 
 	// The list should show two existing warehouses
 	await dashboard
@@ -841,7 +874,7 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 	await dbHandle.evaluate(commitNote, 7);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
 	// Navigate to 'history/warehouse' subview
 	await dashboard.content().navigate("history/warehouse");
 	// Navigate to Warehouse 1
@@ -976,20 +1009,24 @@ test("history/warehouse - date ranges and filters", async ({ page }) => {
 
 test("history/warehose - navigation", async ({ page }) => {
 	const dashboard = getDashboard(page);
-	const dbHandle = await getDbHandle(page);
+	// Instead of `dbHandle` this test uses `(await getDbHandle(page))` so it works after a page reload
+	// const dbHandle = await getDbHandle(page);
 
 	// Navigate to (default) history view
-	await dashboard.navigate("history/date");
+	await page.getByRole("link", { name: "History" }).click();
+	await page.waitForURL("**/history/date/**/");
 	// Navigate to 'history/warehouse' subview
-	await dashboard.content().navigate("history/warehouse");
+	await page.getByRole("link", { name: "By Warehouse" }).click();
+	await page.waitForURL("**/history/warehouse/**/");
+
 	// Navigate to the page for Warehouse 1 - should default to toady - today range
 	await dashboard.content().entityList("warehouse-list").item(0).getByText("Warehouse 1").click();
 	await dashboard.content().header().title().assert("Warehouse 1 history");
 
 	// Add a transaction
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
-	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
-	await dbHandle.evaluate(commitNote, 1);
+	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
+	await (await getDbHandle(page)).evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 2, warehouseId: 1 }] as const);
+	await (await getDbHandle(page)).evaluate(commitNote, 1);
 
 	// Clicking on note name should navigate to note page
 	await dashboard.content().table("history/warehouse").row(0).field("noteName").click();
