@@ -107,6 +107,7 @@
 
 	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
+	$: totalBookCount = bookEntries.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0);
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
@@ -444,7 +445,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(entries.length),
+							description: dialogDescription.commitOutbound(totalBookCount),
 							type: "commit"
 						};
 					}}
@@ -452,7 +453,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(entries.length),
+							description: dialogDescription.commitOutbound(totalBookCount),
 							type: "commit"
 						};
 					}}
@@ -469,7 +470,7 @@
 							dialogContent = {
 								onConfirm: handleCommitSelf,
 								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(entries.length),
+								description: dialogDescription.commitOutbound(totalBookCount),
 								type: "commit"
 							};
 						}}
