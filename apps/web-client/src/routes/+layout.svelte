@@ -13,6 +13,7 @@
 
 	import { IS_DEBUG, IS_E2E, WITH_SYNC, WS_URL } from "$lib/constants";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
+	import { sync } from "$lib/sync";
 
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -55,19 +56,27 @@
 
 	// #region sync
 
-	// TODO: replace this logic with store
-	let wkr: WorkerInterface;
+	// Update sync on each change to settings
+	//
+	// NOTE: This is safe even on server side as it will be a noop until
+	// the worker is initialized
+	$: WITH_SYNC && sync.sync({ url: WS_URL, dbid: $dbNamePersisted });
+
 	onMount(() => {
 		// Start the sync worker
 		if (WITH_SYNC) {
-			wkr = new WorkerInterface(new SyncWorker());
-			const name = get(dbNamePersisted);
-			wkr.startSync(get(dbNamePersisted), { url: WS_URL, room: name });
+			// Init worker and sync interface
+			const wkr = new WorkerInterface(new SyncWorker());
+			sync.init(wkr);
+
+			// Start the sync
+			const dbid = get(dbNamePersisted);
+			const url = WS_URL;
+			sync.sync({ url, dbid });
 		}
 	});
 	onDestroy(() => {
-		// Stop wkr sync
-		wkr?.stopSync(get(dbNamePersisted));
+		sync.stop(); // Safe and idempotent
 	});
 
 	// #endregion sync
