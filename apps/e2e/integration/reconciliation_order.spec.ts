@@ -292,7 +292,7 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
 
 	await expect(page.getByRole("button", { name: "Commit" })).toBeDisabled();
-	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
+	await expect(page.getByRole("button", { name: "Compare", exact: true })).toHaveCount(1);
 
 	// The table shouldn't be there as intial state
 	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
@@ -603,7 +603,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
@@ -662,7 +662,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
@@ -725,7 +725,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
