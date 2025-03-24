@@ -1,11 +1,7 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, ArrowLeftToLine, QrCode, Book, Truck } from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { WorkerInterface } from "@vlcn.io/ws-client";
-	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
-	import { WITH_SYNC } from "$lib/constants";
 
 	import type { LayoutData } from "../$types";
 
@@ -14,7 +10,6 @@
 	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";
-	import { WS_URL } from "$lib/constants";
 
 	import { page } from "$app/stores";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
@@ -22,21 +17,6 @@
 	export let data: LayoutData;
 
 	// #region reactivity
-	const dbid = "librocco-current-db";
-	let wkr: WorkerInterface;
-
-	onMount(() => {
-		// Start the sync worker
-		if (WITH_SYNC) {
-			wkr = new WorkerInterface(new SyncWorker());
-			wkr.startSync(dbid, { url: WS_URL, room: dbid });
-		}
-	});
-
-	onDestroy(() => {
-		// Stop wkr sync
-		wkr?.stopSync(dbid);
-	});
 
 	$: db = data.dbCtx?.db;
 
