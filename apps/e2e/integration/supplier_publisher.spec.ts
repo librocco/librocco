@@ -1,11 +1,13 @@
 import { baseURL } from "./constants";
 import { test, expect } from "@playwright/test";
-import { associatePublisher, removePublisherFromSupplier, upsertBook, upsertSupplier } from "@/helpers/cr-sqlite";
-import { testOrders } from "@/helpers/fixtures";
+import { associatePublisher, removePublisherFromSupplier, upsertBook } from "@/helpers/cr-sqlite";
+import { depends, testOrders } from "@/helpers/fixtures";
 import { getDbHandle } from "@/helpers";
 
 test.describe("Supplier publisher lists", () => {
 	testOrders("displays three different lists of publishers correctly", async ({ page, suppliers, books, suppliersWithPublishers }) => {
+		depends(books);
+		depends(suppliersWithPublishers);
 		await page.goto(`${baseURL}`);
 
 		const dbHandle = await getDbHandle(page);
