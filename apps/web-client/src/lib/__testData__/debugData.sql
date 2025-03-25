@@ -3,7 +3,8 @@ INSERT INTO book (isbn, title, authors, publisher, price) VALUES
 ('9781234567897', 'The Art of Learning', 'Josh Waitzkin', 'Scholastic', 15.99),
 ('9788804797142', 'Lord of the Flies', 'William Golding', 'Mondadori', 18.0),
 ('9780385504201', 'The Da Vinci Code', 'Dan Brown', 'Doubleday', 19.95),
-('9780553296983', 'Dune', 'Frank Herbert', 'Ace', 24.50);
+('9780553296983', 'Dune', 'Frank Herbert', 'Ace', 24.50),
+('9780590353427', 'Harry Potter and the Sorcerer''s Stone', 'J.K. Rowling', 'Scholastic', 12.50);
 
 -- Suppliers
 INSERT INTO supplier (id, name, email, address) VALUES
@@ -24,12 +25,12 @@ INSERT INTO customer (id, display_id, fullname, email, deposit) VALUES
 
 -- Customer Order Lines
 INSERT INTO customer_order_lines (id, customer_id, isbn, placed, received, collected) VALUES
-(1, 1, '9781234567897', 1, 0, 0),
-(2, 1, '9788804797142', 1, 1, 0),
-(3, 1, '9780385504201', 0, 0, 0),
+(1, 1, '9781234567897', 1, null, null),
+(2, 1, '9788804797142', 1, 1, null),
+(3, 1, '9780385504201', null, null, null),
 (4, 2, '9780385504201', 1, 1, 1),
-(5, 2, '9780553296983', 1, 0, 0),
-(6, 2, '9781234567897', 0, 0, 0);
+(5, 2, '9780553296983', 1, null, null),
+(6, 2, '9781234567897', null, null, null);
 
 -- Supplier Orders
 INSERT INTO supplier_order (id, supplier_id, created) VALUES
@@ -48,5 +49,5 @@ INSERT INTO reconciliation_order (supplier_order_ids, finalized) VALUES
 
 -- Reconciliation Order Lines
 INSERT INTO reconciliation_order_lines (reconciliation_order_id, isbn) VALUES
- 	(1, '9781234567897'),
- 	(2, '9788804797142');
+(1, '9781234567897'),
+(2, '9788804797142');

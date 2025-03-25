@@ -28,17 +28,9 @@
  * - The `reconciliation_order_lines` table contains the book data lines for a scanned _delivered_ books
  */
 
-import type { BookEntry } from "@librocco/db";
 import { asc } from "@librocco/shared";
 
-import type {
-	DB,
-	ProcessedOrderLine,
-	ReconciliationOrder,
-	ReconciliationOrderLine,
-	PlacedSupplierOrderLine,
-	DBReconciliationOrder
-} from "./types";
+import type { DB, ReconciliationOrder, ReconciliationOrderLine, DBReconciliationOrder } from "./types";
 
 import { multiplyString } from "./customers";
 
@@ -209,6 +201,7 @@ export class ErrReconciliationOrderFinalized extends Error {
 		}
 	}
 }
+
 /**
   * Deletes a reconciliation order and all its associated order lines from the
  database.
@@ -472,81 +465,3 @@ export async function finalizeReconciliationOrder(db: DB, id: number) {
 		}
 	});
 }
-
-/**
-* Processes delivered books against placed order lines to identify matches an
-discrepancies
-*
-* @param scannedBooks - Array of scanned books with their quantities
-* @param placedOrderLines - Array of originally placed order lines from
-supplier
-*
-* @returns Object containing:
-*  - processedLines: Array of matched books with both ordered and delivered
-quantities
-*  - unmatchedBooks: Array of books that either:
-*    - Were ordered but not delivered
-*    - Were delivered but not in original order
-*/
-export const processOrderDelivery = (
-	scannedBooks: (BookEntry & { quantity: number })[],
-	placedOrderLines: PlacedSupplierOrderLine[]
-): { processedLines: ProcessedOrderLine[]; unmatchedBooks: (BookEntry & { quantity: number })[] } => {
-	const unmatchedBooks: (BookEntry & { quantity: number })[] = [];
-	const processedLines: ProcessedOrderLine[] = [];
-
-	// Create a map of scanned books for quick lookup
-	const scannedBooksMap = new Map<string, BookEntry & { quantity: number }>();
-	scannedBooks.forEach((scannedBook) => scannedBooksMap.set(scannedBook.isbn, scannedBook));
-
-	// Process each placed order line
-	for (const placedOrderLine of placedOrderLines) {
-		const scannedBook = scannedBooksMap.get(placedOrderLine.isbn);
-
-		if (scannedBook) {
-			// Calculate delivered quantity
-			const deliveredQuantity = Math.min(scannedBook.quantity, placedOrderLine.quantity);
-
-			// Add to processed lines
-			processedLines.push({
-				...placedOrderLine,
-				deliveredQuantity,
-				orderedQuantity: placedOrderLine.quantity
-			});
-
-			// Update the remaining quantity in the scanned book
-			const remainingQuantity = scannedBook.quantity - deliveredQuantity;
-			if (remainingQuantity > 0) {
-				scannedBooksMap.set(scannedBook.isbn, { ...scannedBook, quantity: remainingQuantity });
-			} else {
-				scannedBooksMap.delete(scannedBook.isbn);
-			}
-		} else {
-			// If no matching scanned book, add to processed lines with deliveredQuantity = 0
-			processedLines.push({
-				...placedOrderLine,
-				deliveredQuantity: 0,
-				orderedQuantity: placedOrderLine.quantity
-			});
-		}
-	}
-
-	// Add remaining scanned books to unmatchedBooks
-	unmatchedBooks.push(...Array.from(scannedBooksMap.values()));
-
-	return { processedLines, unmatchedBooks };
-};
-
-/**
- * Groups processed order lines by supplier name
- *
- * @param orderLines - Array of processed order lines containing supplier information
- * @returns Object with supplier names as keys and arrays of their respective order lines as values
- */
-export const sortLinesBySupplier = (orderLines: ProcessedOrderLine[]): { [supplier_name: string]: ProcessedOrderLine[] } => {
-	return orderLines.reduce((acc, curr) => {
-		return acc[curr.supplier_name]
-			? { ...acc, [curr.supplier_name]: [...acc[curr.supplier_name], curr] }
-			: { ...acc, [curr.supplier_name || "Supplier"]: [curr] };
-	}, {});
-};
