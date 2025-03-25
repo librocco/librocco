@@ -5,7 +5,8 @@ import type {
 	PossibleSupplierOrderLine,
 	PlacedSupplierOrder,
 	PlacedSupplierOrderLine,
-	SupplierExtended
+	SupplierExtended,
+	DBPlacedSupplierOrderLine
 } from "./types";
 
 /**
@@ -28,8 +29,39 @@ import type {
  * - The `supplier` table contains data about a supplier (name, email & address)
  */
 
-/** Internal query function: if id provided, filters by id, if not, returns data for all suppliers */
-async function _getSuppliers(db: DB, id?: number) {
+/**
+ * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
+ *
+ * @param db - The database instance to query
+ * @returns Promise resolving to an array of suppliers with their basic info
+ */
+export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+	const query = `
+		SELECT
+			supplier.id,
+			name,
+			COALESCE(email, 'N/A') as email,
+			COALESCE(address, 'N/A') as address,
+			COUNT(publisher) as numPublishers
+		FROM supplier
+		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
+		GROUP BY supplier.id
+		ORDER BY supplier.id ASC
+	`;
+
+	return await db.execO<SupplierExtended>(query);
+}
+
+/**
+ * Retrieves supplier data from the database. This include their name, email address & assigned publishers
+ *
+ * NOTE: Due to update form compatibility, this function doesn't provide fallbacks for optional fields and
+ * such need to be handled by the consumer.
+ *
+ * @param db - The database instance to query
+ * @param id - supplier id
+ */
+export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
 	const conditions = [];
 	const params = [];
 
@@ -43,8 +75,8 @@ async function _getSuppliers(db: DB, id?: number) {
 		SELECT
 			supplier.id,
 			name,
-			COALESCE(email, 'N/A') as email,
-			COALESCE(address, 'N/A') as address,
+			email,
+			address,
 			COUNT(publisher) as numPublishers
 		FROM supplier
 		LEFT JOIN supplier_publisher ON supplier.id = supplier_publisher.supplier_id
@@ -53,27 +85,7 @@ async function _getSuppliers(db: DB, id?: number) {
 		ORDER BY supplier.id ASC
 	`;
 
-	return await db.execO<SupplierExtended>(query, params);
-}
-
-/**
- * Retrieves all suppliers from the database. This include their name, email, address & assigned publishers
- *
- * @param db - The database instance to query
- * @returns Promise resolving to an array of suppliers with their basic info
- */
-export function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
-	return _getSuppliers(db);
-}
-
-/**
- * Retrieves supplier data from the database. This include their name, email address & assigned publishers
- *
- * @param db - The database instance to query
- * @param id - supplier id
- */
-export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
-	const [res] = await _getSuppliers(db, id);
+	const [res] = await db.execO<SupplierExtended>(query, params);
 	return res || undefined;
 }
 
@@ -274,7 +286,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   */
 export async function getPlacedSupplierOrders(
 	db: DB,
-	filters?: { supplierId?: number; reconciled?: boolean }
+	filters?: { supplierId?: number; reconciled?: boolean; finalized?: boolean }
 ): Promise<PlacedSupplierOrder[]> {
 	const whereConditions = ["so.created IS NOT NULL"];
 	const params = [];
@@ -289,6 +301,10 @@ export async function getPlacedSupplierOrders(
 		whereConditions.push(`ro.id ${condition}`);
 	}
 
+	if (filters?.finalized !== undefined) {
+		whereConditions.push(`COALESCE(ro.finalized, 0) = ${Number(filters.finalized)}`);
+	}
+
 	const whereClause = `WHERE ${whereConditions.join(" AND ")}`;
 
 	const query = `
@@ -296,7 +312,8 @@ export async function getPlacedSupplierOrders(
 		WITH ro AS (
 			SELECT
 				reconciliation_order.id,
-				CAST (value AS INTEGER) as supplier_order_id
+				CAST (value AS INTEGER) as supplier_order_id,
+				reconciliation_order.finalized
 			FROM reconciliation_order
 			CROSS JOIN json_each(supplier_order_ids)
 		)
@@ -304,7 +321,10 @@ export async function getPlacedSupplierOrders(
 		SELECT
             so.id,
             so.supplier_id,
-            s.name as supplier_name,
+			CASE WHEN so.supplier_id IS NULL
+				THEN '${DEFAULT_SUPPLIER_NAME}'
+				ELSE s.name
+			END as supplier_name,
             so.created,
             COALESCE(SUM(sol.quantity), 0) as total_book_number,
 			SUM(COALESCE(book.price, 0) * sol.quantity) as total_book_price,
@@ -343,26 +363,40 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
 	const query = `
         SELECT
             sol.supplier_order_id,
+
             sol.isbn,
             sol.quantity,
 			COALESCE(book.price, 0) * sol.quantity as line_price,
+
 			COALESCE(book.title, 'N/A') AS title,
 			COALESCE(book.authors, 'N/A') AS authors,
+			COALESCE(book.publisher, '') as publisher,
+			COALESCE(book.price, 0) as price,
+			COALESCE(book.year, '') as year,
+			COALESCE(book.edited_by, '') as editedBy,
+			book.out_of_print,
+			COALESCE(book.category, '') as category,
+
             so.supplier_id,
+			CASE WHEN s.id IS NULL
+				THEN '${DEFAULT_SUPPLIER_NAME}'
+				ELSE s.name
+			END as supplier_name,
             so.created,
-            s.name AS supplier_name,
+
             SUM(sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_number,
             SUM(COALESCE(book.price, 0) * sol.quantity) OVER (PARTITION BY sol.supplier_order_id) AS total_book_price
 		FROM supplier_order_line AS sol
 		LEFT JOIN book ON sol.isbn = book.isbn
-        JOIN supplier_order so ON so.id = sol.supplier_order_id
-        JOIN supplier s ON s.id = so.supplier_id
+        LEFT JOIN supplier_order so ON so.id = sol.supplier_order_id
+        LEFT JOIN supplier s ON s.id = so.supplier_id
         WHERE sol.supplier_order_id IN (${multiplyString("?", supplier_order_ids.length)})
 		GROUP BY sol.supplier_order_id, sol.isbn
         ORDER BY sol.supplier_order_id, sol.isbn ASC;
     `;
 
-	return db.execO<PlacedSupplierOrderLine>(query, supplier_order_ids);
+	const res = await db.execO<DBPlacedSupplierOrderLine>(query, supplier_order_ids);
+	return res.map(({ out_of_print, ...rest }) => ({ ...rest, outOfPrint: Boolean(out_of_print) }));
 }
 
 /**

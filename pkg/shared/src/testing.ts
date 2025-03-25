@@ -50,8 +50,9 @@ export type TestId =
 	| "popover-control"
 	| "popover-container"
 	| "edit-row"
-	| "print-book-label"
+	| "collect-row"
 	| "delete-row"
+	| "print-book-label"
 	| "book-form"
 	| "custom-item-form"
 	| "calendar-picker-control"
@@ -66,7 +67,8 @@ export type TestId =
 	| "database-management-container"
 	| "database-management-list"
 	| "db-action-export"
-	| "db-action-delete";
+	| "db-action-delete"
+	| "text-editable-form";
 
 /** A typesafe identity function (preventing typos) used to assign the value for the [data-testid] or plain HTML 'id' to the appropriate element */
 export const testId = (name: TestId) => name;
