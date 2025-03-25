@@ -21,17 +21,14 @@
 	import { invalidate } from "$app/navigation";
 	import { fade, fly } from "svelte/transition";
 
-	import { stripNulls } from "@librocco/shared";
+	import { testId, stripNulls, type BookData } from "@librocco/shared";
 
 	import { OrderLineStatus, type Customer } from "$lib/db/cr-sqlite/types";
 	import { PopoverWrapper, Dialog } from "$lib/components";
 
-	import { getCustomerOrderLines } from "$lib/db/cr-sqlite/customers";
 	import type { PageData } from "./$types";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
-
-	import { testId } from "@librocco/shared";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -46,7 +43,6 @@
 		upsertCustomer,
 		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
-	import type { BookData } from "@librocco/shared";
 
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
