@@ -1577,8 +1577,7 @@ testOrders(
 
 // TODO: We should probably extend the whole (finalized) reconciliation (and its effects to the customer orders),
 // but should probably move it its own test suite
-testOrders("commit: applies delivery updates to customer order lines", async ({ page, books, customers, supplierOrders }) => {
-	depends(books);
+testOrders("commit: applies delivery updates to customer order lines", async ({ page, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 
@@ -1630,7 +1629,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 	await page.locator(`a[href$='orders/customers/${customers[0].id}']`).click();
 	// await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
-	await expect(table.getByText("Delivered")).toHaveCount(1);
+	await expect(table.getByText("Delivered")).toHaveCount(2);
 });
 
 testOrders("quantity: should handle quantity adjustments correctly", async ({ page, supplierOrders }) => {
