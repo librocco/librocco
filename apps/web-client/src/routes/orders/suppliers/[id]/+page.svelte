@@ -51,7 +51,9 @@
 	$: supplier = data?.supplier;
 
 	$: assignedPublishers = data?.assignedPublishers;
-	$: unassignedPublishers = data?.unassignedPublishers;
+	$: publishersUnassignedToSuppliers = data?.publishersUnassignedToSuppliers;
+
+	$: publishersAssignedToOtherSuppliers = data?.publishersAssignedToOtherSuppliers;
 
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
@@ -193,7 +195,32 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each unassignedPublishers as publisher}
+								{#each publishersUnassignedToSuppliers as publisher}
+									<tr class="hover focus-within:bg-base-200">
+										<td class="px-2">{publisher}</td>
+										<td class="px-2 text-end"
+											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+												>Add to supplier</button
+											></td
+										>
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<div class="w-full">
+					<h2 class="text-lg">Other Supplier Publishers</h2>
+					<div class="w-full rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-hidden">
+							<thead>
+								<tr>
+									<th scope="col" class="px-2 py-2">Publisher name</th>
+								</tr>
+							</thead>
+							<tbody>
+								{#each publishersAssignedToOtherSuppliers as publisher}
 									<tr class="hover focus-within:bg-base-200">
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
