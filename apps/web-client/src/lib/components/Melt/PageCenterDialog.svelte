@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fade } from "svelte/transition";
 	import { expoInOut } from "svelte/easing";
+	import { X } from "lucide-svelte";
 
 	import { melt } from "@melt-ui/svelte";
 	import type { Dialog } from "@melt-ui/svelte";
@@ -9,7 +10,7 @@
 	export let dialog: Dialog;
 
 	const {
-		elements: { portalled, overlay, content, title: titleStore, description: desciptionStore },
+		elements: { portalled, overlay, content, title: titleStore, description: desciptionStore, close },
 		states: { open }
 	} = dialog;
 </script>
@@ -28,7 +29,10 @@
 		>
 			<div class="overflow-clip rounded-lg bg-white md:shadow-2xl">
 				<h2 class="sr-only" use:melt={$titleStore}>{title}</h2>
+
 				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
+
+				<button use:melt={$close} class="absolute top-4 right-6" aria-label="Close"><X class="square-4" /></button>
 
 				<slot />
 			</div>

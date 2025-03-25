@@ -11,7 +11,7 @@
 	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
 
 	import { desc, testId } from "@librocco/shared";
-	import { type BookEntry } from "@librocco/db";
+	import { type BookData } from "@librocco/shared";
 
 	import type { PageData } from "./$types";
 	import type { VolumeStock, OutOfStockTransaction, NoteCustomItem } from "$lib/db/cr-sqlite/types";
@@ -64,6 +64,7 @@
 		getReceiptForNote,
 		removeNoteCustomItem,
 		removeNoteTxn,
+		updateNote,
 		updateNoteTxn,
 		upsertNoteCustomItem
 	} from "$lib/db/cr-sqlite/note";
@@ -106,6 +107,7 @@
 
 	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
+	$: totalBookCount = bookEntries.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0);
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
 
@@ -304,9 +306,9 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
-		const data = form?.data as BookEntry;
+		const data = form?.data as BookData;
 
 		try {
 			await upsertBook(db, data);
@@ -327,7 +329,7 @@
 		 * Doing so however raises a mountain of "... potentially undefined" type errors throughout the codebase. It will take a significant amount of work
 		 * to fix these properly.
 		 *
-		 * It is still safe to assume that the required properties of BookEntry are there, as the relative form controls are required
+		 * It is still safe to assume that the required properties of BookData are there, as the relative form controls are required
 		 */
 		const data = form?.data as NoteCustomItem;
 
@@ -348,7 +350,7 @@
 	$: handlePrintReceipt = async () => {
 		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
-	$: handlePrintLabel = (book: Omit<BookEntry, "updatedAt">) => async () => {
+	$: handlePrintLabel = (book: Omit<BookData, "updatedAt">) => async () => {
 		await printBookLabel($settingsStore.labelPrinterUrl, book);
 	};
 
@@ -376,6 +378,10 @@
 		const id = await getNoteIdSeq(db);
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
+	};
+
+	const handleUpdateNoteWarehouse = async (warehouseId: number) => {
+		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
 	};
 </script>
 
@@ -408,7 +414,7 @@
 					textClassName="text-2xl font-bold leading-7 text-gray-900"
 					placeholder="Note"
 					value={displayName}
-					on:change={(e) => console.log(e)}
+					on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
 				/>
 
 				<div class="w-fit">
@@ -425,7 +431,7 @@
 						name="defaultWarehouse"
 						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
 						value={defaultWarehouse}
-						on:change={(e) => console.log(e)}
+						on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
 					>
 						{#each warehouses as warehouse}
 							<option value={warehouse.id}>{warehouse.displayName}</option>
@@ -439,7 +445,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(entries.length),
+							description: dialogDescription.commitOutbound(totalBookCount),
 							type: "commit"
 						};
 					}}
@@ -447,7 +453,7 @@
 						dialogContent = {
 							onConfirm: handleCommitSelf,
 							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(entries.length),
+							description: dialogDescription.commitOutbound(totalBookCount),
 							type: "commit"
 						};
 					}}
@@ -464,7 +470,7 @@
 							dialogContent = {
 								onConfirm: handleCommitSelf,
 								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(entries.length),
+								description: dialogDescription.commitOutbound(totalBookCount),
 								type: "commit"
 							};
 						}}

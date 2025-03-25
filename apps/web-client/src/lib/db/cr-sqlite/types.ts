@@ -8,7 +8,7 @@ import type { BookData } from "@librocco/shared";
 /**
  * Order tables only show a slice of book data => our order lines only need to return relevant cols
  */
-type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "price">;
+type BookDataCols = Pick<BookData, "isbn" | "title" | "authors" | "publisher" | "price" | "year" | "editedBy" | "outOfPrint" | "category">;
 
 /* Customer orders/books */
 export type DBCustomer = {
@@ -44,7 +44,7 @@ export type DBCustomerOrderListItem = DBCustomer & { status: OrderLineStatus };
 export type CustomerOrderListItem = Customer & { completed: boolean };
 
 export enum OrderLineStatus {
-	Draft,
+	Pending,
 	Placed,
 	Received,
 	Collected
@@ -141,12 +141,25 @@ export type PossibleSupplierOrderLine = {
  * Order lines of a placed supplier order
  * Book price is multiplied by line => `line_price`
  */
+export type DBPlacedSupplierOrderLine = {
+	supplier_order_id: number;
+	created: number;
+	total_book_number: number;
+	total_book_price: number;
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	Omit<BookData, "outOfPrint"> & { out_of_print: number };
+
 export type PlacedSupplierOrderLine = {
 	supplier_order_id: number;
 	created: number;
 	total_book_number: number;
 	total_book_price: number;
-} & PossibleSupplierOrderLine;
+	quantity: number;
+	line_price: number;
+} & SupplierJoinData &
+	BookData;
 
 /** Raw reconciliation order, returned from DB, before parsing supplier order ids JSON string */
 export type DBReconciliationOrder = {
@@ -317,3 +330,6 @@ export type Change = readonly [
 	CausalLength,
 	number // seq
 ];
+
+/* Utils */
+export type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;

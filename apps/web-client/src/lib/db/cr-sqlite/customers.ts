@@ -4,10 +4,10 @@
  * Customer Orders Overview:
  * - A customer order in the DB is some customer information (email, id, deposit)
  * - Conceptually, customer orders are implicit groupings of order lines, associated with the customer information
- * - Order lines are created in "draft" state and transition through states based on timestamps
+ * - Order lines are created in "pending" state and transition through states based on timestamps
  *
  * Order Line States:
- * - Draft: Has created timestamp (inital state)
+ * - Pending: Has created timestamp (inital state)
  * - Placed: Has placed timestamp (order sent to supplier)
  * - Received: Has received timestamp (books arrived from supplier)
  * - Collected: Has collected timestamp (customer picked up books)
@@ -250,8 +250,13 @@ export const getCustomerOrderLines = async (db: DB, customerId: number): Promise
 			id, customer_id, created, placed, received, collected,
 			col.isbn,
 			COALESCE(book.title, 'N/A') AS title,
+			COALESCE(book.authors, 'N/A') as authors,
+			COALESCE(book.publisher, '') as publisher,
 			COALESCE(book.price, 0) AS price,
-			COALESCE(book.authors, 'N/A') AS authors,
+			COALESCE(book.year, '') as year,
+			COALESCE(book.edited_by, '') as editedBy,
+			COALESCE(book.out_of_print, 0) as outOfPrint,
+			COALESCE(book.category, '') as category,
 			CASE
 				WHEN collected IS NOT NULL THEN 3
 				WHEN received IS NOT NULL THEN 2
