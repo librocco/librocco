@@ -160,7 +160,7 @@
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
 					<h2 class="text-lg">Assigned publishers</h2>
-					<div class="w-full rounded border border-gray-200">
+					<div class="h-[164px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-hidden">
 							<thead>
 								<tr>
@@ -185,7 +185,7 @@
 
 				<div class="w-full">
 					<h2 class="text-lg">Unassigned publishers</h2>
-					<div class="w-full rounded border border-gray-200">
+					<div class="h-[164px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-hidden">
 							<thead>
 								<tr>
