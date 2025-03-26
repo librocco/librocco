@@ -21,6 +21,7 @@
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { appPath } from "$lib/paths";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
 
 	export let data: PageData;
 
@@ -55,11 +56,18 @@
 
 	$: publishersAssignedToOtherSuppliers = data?.publishersAssignedToOtherSuppliers;
 
+	let confirmationPublisher = "";
+
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: dialogOpen }
 	} = dialog;
+
+	const confirmationDialog = createDialog(defaultDialogConfig);
+	const {
+		states: { open: confirmationDialogOpen }
+	} = confirmationDialog;
 	// #endregion dialog
 
 	const handleUpdateSupplier = async (_data: Partial<Supplier>) => {
@@ -219,18 +227,24 @@
 									<th scope="col" class="px-2 py-2">Publisher name</th>
 								</tr>
 							</thead>
-							<tbody>
-								{#each publishersAssignedToOtherSuppliers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Add to supplier</button
-											></td
-										>
-									</tr>
-								{/each}
-							</tbody>
+							<div class="h-max-[164px] w-full overflow-y-auto">
+								<tbody>
+									{#each publishersAssignedToOtherSuppliers as publisher}
+										<tr class="hover focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button
+													on:click={() => {
+														confirmationPublisher = publisher;
+														confirmationDialogOpen.set(true);
+													}}
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Re-assign to supplier</button
+												></td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</div>
 						</table>
 					</div>
 				</div>
@@ -260,6 +274,22 @@
 			}
 		}}
 		onCancel={() => dialogOpen.set(false)}
+	/>
+</PageCenterDialog>
+
+<PageCenterDialog dialog={confirmationDialog} title="" description="">
+	<ConfirmDialog
+		labels={{
+			confirm: "Confirm",
+			cancel: "Cancel"
+		}}
+		on:confirm={() => {
+			handleAssignPublisher(confirmationPublisher)();
+			confirmationDialogOpen.set(false);
+		}}
+		on:cancel={() => confirmationDialogOpen.set(false)}
+		heading="Re-assign publisher"
+		description="Are you sure you want to remove {confirmationPublisher} from its previous supplier and assign it to {supplier.name}?"
 	/>
 </PageCenterDialog>
 
