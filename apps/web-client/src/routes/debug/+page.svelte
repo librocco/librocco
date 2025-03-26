@@ -2,22 +2,28 @@
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
 	import { Plus, RotateCcw, Play } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
-	import { appPath } from "$lib/paths";
-	import { TooltipWrapper } from "$lib/components";
 	import { onMount } from "svelte";
+
+	import { wrapIter } from "@librocco/shared";
+
 	import { page } from "$app/stores";
-	import { getInitializedDB } from "$lib/db/cr-sqlite";
+
+	import { TooltipWrapper } from "$lib/components";
+
 	import { dbNamePersisted } from "$lib/db";
 
-	import debugData from "$lib/__testData__/debugData.sql?raw";
-	import { debugData as dd } from "$lib/__testData__/debugData";
+	import { getInitializedDB } from "$lib/db/cr-sqlite";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-
-	import { createReconciliationOrder, upsertReconciliationOrderLines } from "$lib/db/cr-sqlite/order-reconciliation";
+	import {
+		createReconciliationOrder,
+		finalizeReconciliationOrder,
+		upsertReconciliationOrderLines
+	} from "$lib/db/cr-sqlite/order-reconciliation";
 	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
-	import type { Customer, DB, PossibleSupplierOrderLine, Supplier } from "$lib/db/cr-sqlite/types";
-	import type { BookData } from "@librocco/shared";
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+
+	import { appPath } from "$lib/paths";
+	import { debugData as dd } from "$lib/__testData__/debugData";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -96,97 +102,73 @@
 
 	$: dbName = $dbNamePersisted;
 
-	export async function upsertCustomers(db: DB, customers: Array<Omit<Customer, "updatedAt">>): Promise<void> {
-		for (const customer of customers) {
-			await upsertCustomer(db, customer);
-		}
-	}
-
-	export async function upsertBooks(db: DB, books: BookData[]): Promise<void> {
-		for (const book of books) {
-			await upsertBook(db, book);
-		}
-	}
-
-	export async function upsertSuppliers(db: DB, suppliers: Supplier[]): Promise<void> {
-		for (const supplier of suppliers) {
-			await upsertSupplier(db, supplier);
-		}
-	}
-
-	export async function associatePublishers(db: DB, associations: Array<{ supplierId: number; publisher: string }>): Promise<void> {
-		for (const { supplierId, publisher } of associations) {
-			associatePublisher(db, supplierId, publisher);
-		}
-	}
-
-	export async function createSupplierOrders(
-		db: DB,
-		orders: Array<{
-			id: number;
-			supplierId: number | null;
-			orderLines: Pick<PossibleSupplierOrderLine, "supplier_id" | "isbn" | "quantity">[];
-		}>
-	): Promise<void> {
-		// Process each order sequentially to avoid potential conflicts
-		for (const order of orders) {
-			await createSupplierOrder(db, order.id, order.supplierId, order.orderLines);
-		}
-	}
-
-	export async function createReconciliationOrders(
-		db: DB,
-		orders: Array<{
-			id: number;
-			supplierOrderIds: number[];
-		}>
-	): Promise<void> {
-		// Process each reconciliation order sequentially to ensure proper validatio
-		for (const order of orders) {
-			await createReconciliationOrder(db, order.id, order.supplierOrderIds);
-		}
-	}
-
-	export async function upsertMultipleReconciliationOrderLines(
-		db: DB,
-		orderLinesMap: Record<number, Array<{ isbn: string; quantity: number }>>
-	): Promise<void> {
-		// Process each reconciliation order's lines
-		for (const [reconciliationOrderId, orderLines] of Object.entries(orderLinesMap)) {
-			// Convert string key back to number
-			const orderId = parseInt(reconciliationOrderId, 10);
-
-			if (orderLines.length > 0) {
-				// Upsert all lines for this reconciliation order
-				await upsertReconciliationOrderLines(db, orderId, orderLines);
-			}
-		}
-	}
-
 	const populateDatabase = async function () {
 		const { db } = await getInitializedDB(dbName);
+
 		errorMessage = null;
 		console.log("Populating database");
+
 		try {
-			await upsertBooks(db, dd.books);
-			await upsertCustomers(db, dd.customers);
-			await upsertSuppliers(db, dd.suppliers);
-			await associatePublishers(db, dd.supplierPublishers);
-			// possible order lines
-			const isbns = dd.customerOrderLines.map((line) => line.isbn);
-			await addBooksToCustomer(db, dd.customers[0].id, isbns);
+			// Books
+			for (const book of dd.books) {
+				await upsertBook(db, book);
+			}
 
-			await createSupplierOrders(db, [
-				{ id: 1, supplierId: 1, orderLines: [dd.supplierOrderLines[0]] },
-				{ id: 2, supplierId: 2, orderLines: [dd.supplierOrderLines[1]] }
+			// Customers
+			for (const customer of dd.customers) {
+				await upsertCustomer(db, customer);
+			}
+
+			// Group order lines by customer_id for quicker (batched) updates
+			const customerOrderLines = wrapIter(dd.customerOrderLines)._groupIntoMap(({ customer_id, isbn }) => [customer_id, isbn]);
+			// Add supplier order lines to their respective customer orders
+			for (const [customer_id, isbns] of customerOrderLines.entries()) {
+				await addBooksToCustomer(db, customer_id, [...isbns]);
+			}
+
+			// Suppliers
+			for (const supplier of dd.suppliers) {
+				await upsertSupplier(db, supplier);
+			}
+
+			for (const { supplierId, publisher } of dd.supplierPublishers) {
+				await associatePublisher(db, supplierId, publisher);
+			}
+
+			// Group supplier order lines by supplier orders
+			const supplierOrderMap = wrapIter(dd.supplierOrderLines)._groupIntoMap((line) => [line.supplier_order_id, line]);
+			// Create supplier orders
+			for (const [supplierOrderId, orderLines] of supplierOrderMap.entries()) {
+				const lines = [...orderLines];
+
+				// NOTE: supplier id should be the same for every line in the order if this is not the case, the handler will throw
+				const [{ supplier_id }] = lines;
+
+				await createSupplierOrder(db, supplierOrderId, supplier_id, lines);
+			}
+
+			// Group reconciliation order lines by reconciliation orders
+			const reconOrderLineMap = wrapIter(dd.reconciliationOrderLines)._groupIntoMap(({ reconciliation_order_id, ...line }) => [
+				reconciliation_order_id,
+				line
 			]);
 
-			await createReconciliationOrders(db, [
-				{ id: 1, supplierOrderIds: [1] },
-				{ id: 2, supplierOrderIds: [2] }
-			]);
+			// Add reconciliation orders and lines
+			for (const order of dd.reconciliationOrders) {
+				await createReconciliationOrder(db, order.id, order.supplier_order_ids);
 
-			await upsertMultipleReconciliationOrderLines(db, { 1: [dd.reconciliationOrderLines[0]], 2: [dd.reconciliationOrderLines[1]] });
+				// Add lines (if any)
+				const lines = reconOrderLineMap.get(order.id);
+				if (lines) {
+					await upsertReconciliationOrderLines(db, order.id, [...lines]);
+				}
+
+				// Finalize order if so specified in the test data
+				if (order.finalized) {
+					await finalizeReconciliationOrder(db, order.id);
+				}
+			}
+
 			console.log("Finished populating database.");
 		} catch (error) {
 			errorMessage = error;
