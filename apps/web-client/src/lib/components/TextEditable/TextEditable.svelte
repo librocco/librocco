@@ -100,7 +100,7 @@
 			{text === "" ? placeholder : text}
 		</svelte:element>
 		{#if !disabled}
-			<span class="text-gray-500" aria-hidden>
+			<span class="text-gray-500" aria-hidden="true">
 				<PencilLine size={20} />
 			</span>
 		{/if}

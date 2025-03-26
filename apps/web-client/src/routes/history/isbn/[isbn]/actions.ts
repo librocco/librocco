@@ -75,8 +75,13 @@ export const createSearchDropdown = ({
 
 	open.subscribe((isOpen) => {
 		if (browser) {
-			isOpen ? document.addEventListener("click", closeOnOutsideClick) : document.removeEventListener("click", closeOnOutsideClick);
-			isOpen ? document.addEventListener("keydown", closeOnEsc) : document.removeEventListener("keydown", closeOnEsc);
+			if (isOpen) {
+				document.addEventListener("click", closeOnOutsideClick);
+				document.addEventListener("keydown", closeOnEsc);
+			} else {
+				document.removeEventListener("click", closeOnOutsideClick);
+				document.removeEventListener("keydown", closeOnEsc);
+			}
 		}
 	});
 
