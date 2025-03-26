@@ -4,7 +4,6 @@
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
-	import { pwaInfo } from "virtual:pwa-info";
 	import { browser } from "$app/environment";
 
 	import type { LayoutData } from "./$types";
@@ -53,36 +52,14 @@
 		// if (!status) {
 		// 	await goto(appPath("settings"));
 		// }
-
-		if (pwaInfo) {
-			const { registerSW } = await import("virtual:pwa-register");
-			registerSW({
-				immediate: true,
-				onRegistered(r) {
-					r &&
-						setInterval(() => {
-							r.update();
-						}, 20000);
-				},
-				onRegisterError() {
-					/**
-					 * @TODO maybe display a toast
-					 */
-				}
-			});
-		}
 	});
 
 	export function onDestroy() {
 		availabilitySubscription && availabilitySubscription.unsubscribe();
 	}
-
-	$: webManifest = pwaInfo ? pwaInfo.webManifest.linkTag : "";
 </script>
 
-<svelte:head>
-	{@html webManifest}
-</svelte:head>
+<svelte:head></svelte:head>
 
 <slot />
 
