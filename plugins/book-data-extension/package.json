@@ -5,12 +5,12 @@
 	"exports": {
 		".": {
 			"import": {
-				"default": "./dist/plugin/index.es.js",
-				"types": "./dist/plugin/index.d.ts"
+				"types": "./dist/plugin/index.d.ts",
+				"default": "./dist/plugin/index.es.js"
 			},
 			"require": {
-				"default": "./dist/plugin/index.js",
-				"types": "./dist/plugin/index.d.ts"
+				"types": "./dist/plugin/index.d.ts",
+				"default": "./dist/plugin/index.js"
 			}
 		}
 	},
@@ -27,7 +27,7 @@
 		"@librocco/shared": "workspace:*",
 		"@types/chrome": "^0.0.241",
 		"@types/node": "16",
-		"@types/testing-library__jest-dom": "~5.14.5",
+		"@types/testing-library__jest-dom": "~6.0.0",
 		"@typescript-eslint/eslint-plugin": "^7.17.1",
 		"@typescript-eslint/parser": "^7.17.1",
 		"eslint": "^8.13.0",
@@ -35,12 +35,12 @@
 		"prettier": "^3.3.3",
 		"rxjs": "^7.8.1",
 		"tslib": "^2.3.1",
-		"typescript": "^4.8.4",
-		"vite": "~4.0.0",
-		"vitest": "~0.21.1",
-		"jsdom": "~21.1.1",
-		"@testing-library/dom": "~8.20.0",
-		"@testing-library/jest-dom": "~5.16.5",
+		"typescript": "^5.7.3",
+		"vite": "~6.0.11",
+		"vitest": "~3.0.4",
+		"jsdom": "~26.0.0",
+		"@testing-library/dom": "~10.4.0",
+		"@testing-library/jest-dom": "~6.6.3",
 		"@testing-library/user-event": "~14.4.3"
 	},
 	"type": "module"

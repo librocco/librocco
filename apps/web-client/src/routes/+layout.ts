@@ -69,5 +69,6 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, status: false, plugins };
 };
+
 export const prerender = true;
 export const trailingSlash = "always";

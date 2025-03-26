@@ -1,6 +1,7 @@
 <script lang="ts">
 	// Import main.css in order to generate tailwind classes used in the app
 	import "$lib/main.css";
+	import "./global.css";
 
 	import { onMount } from "svelte";
 	import { Subscription } from "rxjs";
@@ -48,6 +49,9 @@
 	let availabilitySubscription: Subscription;
 
 	onMount(async () => {
+		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
+		document.body.setAttribute("hydrated", "true");
+
 		// TODO: revisit
 		// if (!status) {
 		// 	await goto(appPath("settings"));
@@ -55,19 +59,12 @@
 	});
 
 	export function onDestroy() {
-		availabilitySubscription && availabilitySubscription.unsubscribe();
+		if (availabilitySubscription) {
+			availabilitySubscription.unsubscribe();
+		}
 	}
 </script>
 
 <svelte:head></svelte:head>
 
 <slot />
-
-<style global>
-	:global(body) {
-		height: 100%;
-		padding: 0;
-		margin: 0;
-		overflow-y: hidden;
-	}
-</style>

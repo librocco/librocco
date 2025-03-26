@@ -121,8 +121,10 @@
 	async function handleDelete() {
 		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
-		await goto(appPath("supplier_orders"));
+
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
+
+		await goto(appPath("supplier_orders"));
 	}
 </script>
 
