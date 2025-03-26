@@ -72,8 +72,17 @@ test.describe("Supplier publisher lists", () => {
 		await otherSuppliersPublishersTable
 			.getByRole("row")
 			.filter({ hasText: "pub2" })
-			.getByRole("button", { name: "Add to supplier" })
+			.getByRole("button", { name: "Re-assign to supplier" })
 			.click();
+
+		const dialog = page.getByRole("dialog");
+		await expect(dialog).toBeVisible();
+		await expect(dialog).toContainText(
+			`Are you sure you want to remove pub2 from its previous supplier and assign it to ${suppliers[0].name}?`
+		);
+
+		await dialog.getByRole("button", { name: "Confirm" }).click();
+		await expect(dialog).not.toBeVisible();
 
 		// Publisher E should now be in the assigned list
 		await expect(assignedPublishersTable.getByText("pub2")).toBeVisible();
