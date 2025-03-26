@@ -1,6 +1,6 @@
 import type { WorkerInterface } from "@vlcn.io/ws-client";
 
-type SyncConfig = {
+export type SyncConfig = {
 	dbid?: string;
 	url?: string;
 };
@@ -63,7 +63,11 @@ const newSyncInterface = () => {
 		url = undefined;
 	};
 
-	return { init, sync, stop, reset };
+	const debug = () => {
+		console.log({ worker, dbid, url });
+	};
+
+	return { init, sync, stop, reset, debug, worker: () => worker };
 };
 
 export const sync = newSyncInterface();

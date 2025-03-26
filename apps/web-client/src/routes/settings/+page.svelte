@@ -12,10 +12,10 @@
 
 	import { appPath } from "$lib/paths";
 
-	import { dbName, dbNamePersisted } from "$lib/db";
+	import { dbid, syncConfig, syncActive } from "$lib/db";
 
-	import { DeviceSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
-	import { deviceSettingsSchema } from "$lib/forms/schemas";
+	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
@@ -100,7 +100,7 @@
 	// TODO: This used the old functionality and currently doesn't work, revisit
 	const handleSelect = (name: string) => async () => {
 		// Persist the selection
-		dbNamePersisted.set(name);
+		dbid.set(name);
 		// Reset the db (allowing the root load function to reinstantiate the db)
 		// resetDB();
 		// Recalculate the data from root load down
@@ -135,7 +135,7 @@
 		files = await getFiles();
 
 		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(addSQLite3Suffix(get(dbNamePersisted)))) {
+		if (!files.includes(addSQLite3Suffix(get(dbid)))) {
 			await handleSelect(files[0] || "dev")(); // If this was the last file, create a new (default) db
 		}
 
@@ -177,16 +177,44 @@
 
 	<svelte:fragment slot="main">
 		<div class="space-y-12 p-6">
+			<div class="flex flex-col gap-6 px-4 md:flex-row">
+				<div class="basis-1/3">
+					<h2 class="text-base font-semibold leading-7 text-gray-900">Sync settings</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">
+						Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future
+					</p>
+				</div>
+
+				<div class="w-full basis-2/3">
+					<SyncSettingsForm
+						active={syncActive}
+						data={data.syncSettingsForm}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(syncSettingsSchema),
+							validationMethod: "submit-only",
+							onUpdated: ({ form: { data, valid } }) => {
+								if (valid) {
+									syncConfig.set(data);
+								}
+							}
+						}}
+					/>
+				</div>
+			</div>
+
 			<div data-testid={testId("database-management-container")} class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
 					<h2 class="text-base font-semibold leading-7 text-gray-900">Database management</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">Use this section to create, select, import, export or delete a database</p>
 				</div>
+
 				<div class="w-full basis-2/3">
 					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
 						{#if !importOn}
 							{#each files as file (file)}
-								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
+								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
 								{#if selectionOn}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<li
@@ -252,6 +280,7 @@
 							</div>
 						{/if}
 					</ul>
+
 					<div class="flex justify-end gap-x-2 px-4 py-6">
 						<button on:click={toggleImport} type="button" class="button button-white">
 							{importOn ? "Cancel" : "Import"}

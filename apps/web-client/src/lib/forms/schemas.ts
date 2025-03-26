@@ -7,6 +7,12 @@ export const deviceSettingsSchema = z.object({
 	receiptPrinterUrl: z.string()
 });
 
+export type SyncSettingsSchema = Infer<typeof syncSettingsSchema>;
+export const syncSettingsSchema = z.object({
+	dbid: z.string().min(1),
+	url: z.string()
+});
+
 export type WarehouseFormSchema = Infer<typeof warehouseSchema>;
 export const warehouseSchema = z.object({
 	id: z.number(),
@@ -23,9 +29,9 @@ export const warehouseDeleteSchema = (matchConfirmation: string) => {
 };
 
 export type DatabaseCreateFormSchema = Infer<typeof databaseCreateSchema>;
-const dbNameRegex = /^[a-zA-Z0-9._]+$/;
+const dbidRegex = /^[a-zA-Z0-9._]+$/;
 export const databaseCreateSchema = z.object({
-	name: z.string().regex(dbNameRegex, "Invalid name, please use the combination of alphanumeric characters or '_', '/', '.'")
+	name: z.string().regex(dbidRegex, "Invalid name, please use the combination of alphanumeric characters or '_', '/', '.'")
 });
 
 export type DatabaseDeleteFormSchema = Infer<ReturnType<typeof databaseDeleteSchema>>;
