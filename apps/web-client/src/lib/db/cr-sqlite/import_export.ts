@@ -23,3 +23,28 @@ export async function dumpData(db: DB): Promise<DatabaseDump> {
 
 	return Object.fromEntries(tableNames.zip(tableDumps)) as DatabaseDump;
 }
+
+export async function loadData(db: DB, data: DatabaseDump): Promise<void> {
+	for (const [table, rows] of Object.entries(data)) {
+		// Skip if empty
+		if (!rows.length) continue;
+
+		// Get column values
+		const keys = Object.keys(rows[0]);
+
+		const placeholderLine = `(${multiplyString("?", keys.length)})`;
+
+		const stmt = [
+			`INSERT INTO ${table} (${keys.join(", ")}) VALUES`,
+			Array(rows.length).fill(placeholderLine).join(",\n"),
+			`ON CONFLICT SET ${keys.map((key) => `${key} = EXCLUDED.${key}`).join(", ")}`
+		].join("\n");
+
+		await db.exec(
+			stmt,
+			rows.flatMap((row: any) => Object.values(row) as any[])
+		);
+	}
+}
+
+export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
