@@ -96,8 +96,8 @@ const supplierOrderLines = [
 
 // Reconciliation Orders
 const reconciliationOrders = [
-	{ supplier_order_ids: "[1]", finalized: 0 },
-	{ supplier_order_ids: "[2]", finalized: 1 }
+	{ id: 1, supplier_order_ids: [1], finalized: 0 },
+	{ id: 2, supplier_order_ids: [2], finalized: 1 }
 ];
 
 // Reconciliation Order Lines
