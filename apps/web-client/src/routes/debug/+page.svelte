@@ -2,14 +2,28 @@
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
 	import { Plus, RotateCcw, Play } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
-	import { appPath } from "$lib/paths";
-	import { TooltipWrapper } from "$lib/components";
 	import { onMount } from "svelte";
+
+	import { wrapIter } from "@librocco/shared";
+
 	import { page } from "$app/stores";
-	import { getInitializedDB } from "$lib/db/cr-sqlite";
+
+	import { TooltipWrapper } from "$lib/components";
+
 	import { dbNamePersisted } from "$lib/db";
 
-	import debugData from "$lib/__testData__/debugData.sql?raw";
+	import { getInitializedDB } from "$lib/db/cr-sqlite";
+	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import {
+		createReconciliationOrder,
+		finalizeReconciliationOrder,
+		upsertReconciliationOrderLines
+	} from "$lib/db/cr-sqlite/order-reconciliation";
+	import { associatePublisher, createSupplierOrder, upsertSupplier } from "$lib/db/cr-sqlite/suppliers";
+	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+
+	import { appPath } from "$lib/paths";
+	import { debugData as dd } from "$lib/__testData__/debugData";
 
 	$: ({ nav: tNav } = $LL);
 
@@ -89,11 +103,72 @@
 	$: dbName = $dbNamePersisted;
 
 	const populateDatabase = async function () {
-		const db = await getInitializedDB(dbName);
+		const { db } = await getInitializedDB(dbName);
+
 		errorMessage = null;
 		console.log("Populating database");
+
 		try {
-			await db.db.exec(debugData);
+			// Books
+			for (const book of dd.books) {
+				await upsertBook(db, book);
+			}
+
+			// Customers
+			for (const customer of dd.customers) {
+				await upsertCustomer(db, customer);
+			}
+
+			// Group order lines by customer_id for quicker (batched) updates
+			const customerOrderLines = wrapIter(dd.customerOrderLines)._groupIntoMap(({ customer_id, isbn }) => [customer_id, isbn]);
+			// Add supplier order lines to their respective customer orders
+			for (const [customer_id, isbns] of customerOrderLines.entries()) {
+				await addBooksToCustomer(db, customer_id, [...isbns]);
+			}
+
+			// Suppliers
+			for (const supplier of dd.suppliers) {
+				await upsertSupplier(db, supplier);
+			}
+
+			for (const { supplierId, publisher } of dd.supplierPublishers) {
+				await associatePublisher(db, supplierId, publisher);
+			}
+
+			// Group supplier order lines by supplier orders
+			const supplierOrderMap = wrapIter(dd.supplierOrderLines)._groupIntoMap((line) => [line.supplier_order_id, line]);
+			// Create supplier orders
+			for (const [supplierOrderId, orderLines] of supplierOrderMap.entries()) {
+				const lines = [...orderLines];
+
+				// NOTE: supplier id should be the same for every line in the order if this is not the case, the handler will throw
+				const [{ supplier_id }] = lines;
+
+				await createSupplierOrder(db, supplierOrderId, supplier_id, lines);
+			}
+
+			// Group reconciliation order lines by reconciliation orders
+			const reconOrderLineMap = wrapIter(dd.reconciliationOrderLines)._groupIntoMap(({ reconciliation_order_id, ...line }) => [
+				reconciliation_order_id,
+				line
+			]);
+
+			// Add reconciliation orders and lines
+			for (const order of dd.reconciliationOrders) {
+				await createReconciliationOrder(db, order.id, order.supplier_order_ids);
+
+				// Add lines (if any)
+				const lines = reconOrderLineMap.get(order.id);
+				if (lines) {
+					await upsertReconciliationOrderLines(db, order.id, [...lines]);
+				}
+
+				// Finalize order if so specified in the test data
+				if (order.finalized) {
+					await finalizeReconciliationOrder(db, order.id);
+				}
+			}
+
 			console.log("Finished populating database.");
 		} catch (error) {
 			errorMessage = error;
