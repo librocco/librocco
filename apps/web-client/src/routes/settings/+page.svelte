@@ -14,8 +14,8 @@
 
 	import { dbName, dbNamePersisted } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
-	import { settingsSchema } from "$lib/forms/schemas";
+	import { DeviceSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { deviceSettingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
@@ -23,7 +23,7 @@
 	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
@@ -284,22 +284,20 @@
 
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Connection settings</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">Manage connections to services and devices</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">Device settings</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">Manage connections to external devices</p>
 				</div>
 				<div class="w-full basis-2/3">
-					<SettingsForm
-						data={data.form}
+					<DeviceSettingsForm
+						data={data.deviceSettingsForm}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: zod(settingsSchema),
+							validators: zod(deviceSettingsSchema),
 							validationMethod: "submit-only",
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
-									settingsStore.set(data);
-									// Force reload the layout. A simple "invalidation" will not suffice as the existing DB reference will still exist
-									window.location.reload();
+									deviceSettingsStore.set(data);
 								}
 							}
 						}}

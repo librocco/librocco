@@ -44,7 +44,7 @@
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -348,10 +348,10 @@
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
-		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
+		await printReceipt($deviceSettingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = (book: Omit<BookData, "updatedAt">) => async () => {
-		await printBookLabel($settingsStore.labelPrinterUrl, book);
+		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
 	const dialog = createDialog({
