@@ -61,7 +61,9 @@
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
 	// Reset max results when search string changes
-	$: $search.length && resetMaxResults();
+	$: if ($search.length > 0) {
+		resetMaxResults();
+	}
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	const seeMore = () => (maxResults += 20);
 	// We're using in intersection observer to create an infinite scroll effect
@@ -246,7 +248,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $table.rows?.length === maxResults && entries.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}
@@ -257,8 +259,8 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
@@ -310,5 +312,5 @@
 				</div>
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}

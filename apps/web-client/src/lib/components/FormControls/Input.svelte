@@ -9,6 +9,7 @@
 		errorText?: string;
 		inputRef?: HTMLInputElement | null;
 		inputAction?: Action<HTMLElement, any> | (() => void);
+		class?: string;
 	}
 
 	let className = "";

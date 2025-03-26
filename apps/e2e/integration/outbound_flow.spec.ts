@@ -1,4 +1,5 @@
-import { expect, test } from "@playwright/test";
+import { expect } from "@playwright/test";
+import { testBase as test } from "@/helpers/fixtures";
 
 import { baseURL } from "./constants";
 import { assertionTimeout } from "@/constants";
@@ -15,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the outbound note page
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 });
 
 test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
@@ -91,7 +92,7 @@ test("should assign default name to notes in sequential order", async ({ page })
 	await header.title().assert("New Note");
 	const note1UpdatedAt = await header.updatedAt().value();
 
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 
 	// Second note
 	await header.createNote();
@@ -99,7 +100,7 @@ test("should assign default name to notes in sequential order", async ({ page })
 	const note2UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the outbound note list
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 
 	const entityList = content.entityList("outbound-list");
 
@@ -127,7 +128,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content.header().title().assert("New Note (3)");
 
 	// Verify names
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content.entityList("outbound-list").assertElements([{ name: "New Note (3)" }, { name: "New Note (2)" }, { name: "New Note" }]);
 
 	// Rename the first two notes
@@ -142,7 +143,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content.header().title().assert("New Note (4)");
 
 	// Verify names
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "New Note (4)" }, { name: "Note 2" }, { name: "Note 1" }, { name: "New Note (3)" }]);
@@ -159,7 +160,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content.header().title().assert("New Note");
 
 	// Verify names
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content
 		.entityList("outbound-list")
 		.assertElements([{ name: "New Note" }, { name: "Note 4" }, { name: "Note 3" }, { name: "Note 2" }, { name: "Note 1" }]);
@@ -184,7 +185,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	await content.header().title().assert("Note 1");
 
 	// Navigate back to outbound page and to note 2
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 	await content.entityList("outbound-list").item(0).edit();
 
 	// Check title
