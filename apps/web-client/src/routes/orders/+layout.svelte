@@ -160,13 +160,13 @@
 	</div>
 </div>
 
-<!-- Mobile menu overlay -->
-<div use:melt={$portalled}>
-	{#if $mobilMenuOpen}
+{#if $mobilMenuOpen}
+	<!-- Mobile menu overlay -->
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
-				class="fixed left-0 top-0 bottom-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto"
+				class="fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto"
 				transition:fly|global={{
 					x: -350,
 					duration: 300,
@@ -207,6 +207,7 @@
 				<!-- Nav end -->
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
+
 <!-- Mobile menu overlay end -->

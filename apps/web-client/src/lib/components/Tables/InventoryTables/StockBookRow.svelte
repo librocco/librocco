@@ -72,14 +72,14 @@
 	<td data-property="title" class="show-col-lg table-cell-max">
 		{title}
 	</td>
-	<td />
+	<td></td>
 	<td data-property="price" class="table-cell-fit">
 		<BookPriceCell data={row} />
 	</td>
-	<td />
-	<td />
-	<td />
-	<td />
+	<td></td>
+	<td></td>
+	<td></td>
+	<td></td>
 
 	{#if $$slots["row-actions"]}
 		<td class="table-cell-fit">

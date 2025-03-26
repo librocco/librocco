@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the settings page
-	await dashboard.navigate("settings");
+	await page.getByRole("link", { name: "Settings" }).click();
 });
 
 // TODO: Unskip these when we manage to fix issues with COOP/COEP
@@ -38,7 +38,7 @@ test.skip("selecting a db should be reflected in app data", async ({ page }) => 
 	//
 	// Select the first db and create a warehouse
 	await getDBSelection(dashboard).select("db_1.sqlite3");
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await dashboard.content().header().getByRole("button", { name: "New warehouse" }).click();
 	await dashboard.view("warehouse").waitFor();
 	await dashboard.content().header().breadcrumbs().getByText("Warehouses").click();
@@ -51,10 +51,10 @@ test.skip("selecting a db should be reflected in app data", async ({ page }) => 
 	await dialog.waitFor({ state: "detached" });
 
 	// Select the second db and create a warehouse
-	await dashboard.navigate("settings");
+	await page.getByRole("link", { name: "Settings" }).click();
 
 	await getDBSelection(dashboard).select("db_2.sqlite3");
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await dashboard.content().header().getByRole("button", { name: "New warehouse" }).click();
 	await dashboard.view("warehouse").waitFor();
 	await dashboard.content().header().breadcrumbs().getByText("Warehouses").click();
@@ -67,7 +67,7 @@ test.skip("selecting a db should be reflected in app data", async ({ page }) => 
 	await dialog.waitFor({ state: "detached" });
 
 	// Switch back to the first db and check if the warehouse is still there
-	await dashboard.navigate("settings");
+	await page.getByRole("link", { name: "Settings" }).click();
 
 	await getDBSelection(dashboard).select("db_1.sqlite3");
 	await dashboard.navigate("inventory");
