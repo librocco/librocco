@@ -160,7 +160,7 @@
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
 					<h2 class="text-lg">Assigned publishers</h2>
-					<div class="h-[164px] w-full overflow-y-auto rounded border border-gray-200">
+					<div class="w-full rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-hidden">
 							<thead>
 								<tr>
@@ -168,16 +168,19 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each assignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Remove publisher</button
-											></td
-										>
-									</tr>
-								{/each}
+								<div class="max-h-[164px] w-full overflow-y-auto">
+									{#each assignedPublishers as publisher}
+										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button
+													on:click={handleUnassignPublisher(publisher)}
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Remove publisher</button
+												></td
+											>
+										</tr>
+									{/each}
+								</div>
 							</tbody>
 						</table>
 					</div>
@@ -185,7 +188,7 @@
 
 				<div class="w-full">
 					<h2 class="text-lg">Unassigned publishers</h2>
-					<div class="h-[164px] w-full overflow-y-auto rounded border border-gray-200">
+					<div class="w-full rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-hidden">
 							<thead>
 								<tr>
@@ -193,16 +196,18 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each unassignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Add to supplier</button
-											></td
-										>
-									</tr>
-								{/each}
+								<div class="max-h-[164px] overflow-y-auto">
+									{#each unassignedPublishers as publisher}
+										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+													>Add to supplier</button
+												></td
+											>
+										</tr>
+									{/each}
+								</div>
 							</tbody>
 						</table>
 					</div>
