@@ -217,6 +217,11 @@ export const testBase = test.extend({
 		const goto = page.goto;
 
 		page.goto = async function (url, opts) {
+			// Wait for 100ms, for ongoing IndexedDB transactions to finish
+			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
+			// don't get interrupted on navigation - causing flaky-as-hell tests
+			await new Promise((res) => setTimeout(res, 100));
+
 			const res = await goto.call(page, url, opts);
 
 			// https://github.com/sveltejs/kit/pull/6484
