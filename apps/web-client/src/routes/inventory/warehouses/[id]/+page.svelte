@@ -25,7 +25,7 @@
 	} from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -165,7 +165,7 @@
 
 	// #region printing
 	$: handlePrintLabel = (book: BookData) => async () => {
-		await printBookLabel($settingsStore.labelPrinterUrl, book);
+		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 	// #endregion printing
 

@@ -4,10 +4,10 @@
 	import compare from "just-compare";
 
 	import { Input } from "$lib/components";
-	import type { SettingsSchema } from "./schemas";
+	import type { DeviceSettingsSchema } from "./schemas";
 
-	export let data: SuperValidated<SettingsSchema>;
-	export let options: FormOptions<SettingsSchema>;
+	export let data: SuperValidated<DeviceSettingsSchema>;
+	export let options: FormOptions<DeviceSettingsSchema>;
 
 	const _form = superForm(data, options);
 
