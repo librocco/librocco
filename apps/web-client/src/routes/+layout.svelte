@@ -60,7 +60,11 @@
 	//
 	// NOTE: This is safe even on server side as it will be a noop until
 	// the worker is initialized
-	$: $syncActive ? sync.sync($syncConfig) : sync.stop();
+	$: if ($syncActive) {
+		sync.sync($syncConfig);
+	} else {
+		sync.stop();
+	}
 
 	onMount(() => {
 		// Start the sync worker
@@ -91,7 +95,7 @@
 	});
 
 	onDestroy(() => {
-		availabilitySubscription && availabilitySubscription.unsubscribe();
+		availabilitySubscription?.unsubscribe();
 	});
 </script>
 
