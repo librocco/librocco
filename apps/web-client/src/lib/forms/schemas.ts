@@ -1,9 +1,8 @@
 import { z } from "zod";
 import type { Infer } from "sveltekit-superforms";
 
-export type SettingsSchema = Infer<typeof settingsSchema>;
-export const settingsSchema = z.object({
-	couchUrl: z.string(),
+export type DeviceSettingsSchema = Infer<typeof deviceSettingsSchema>;
+export const deviceSettingsSchema = z.object({
 	labelPrinterUrl: z.string(),
 	receiptPrinterUrl: z.string()
 });
