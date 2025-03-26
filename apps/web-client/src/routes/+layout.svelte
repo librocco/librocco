@@ -11,9 +11,9 @@
 
 	import type { LayoutData } from "./$types";
 
-	import { IS_DEBUG, IS_E2E, WITH_SYNC, WS_URL } from "$lib/constants";
+	import { IS_DEBUG, IS_E2E } from "$lib/constants";
 	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
-	import { sync } from "$lib/sync";
+	import { sync, syncConfig, syncActive } from "$lib/db";
 
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -21,8 +21,6 @@
 	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
-
-	import { dbNamePersisted } from "$lib/db";
 
 	export let data: LayoutData & { status: boolean };
 
@@ -43,6 +41,8 @@
 			window["reconciliation"] = reconciliation;
 			window["suppliers"] = suppliers;
 			window["warehouse"] = warehouse;
+
+			window["sync"] = sync;
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
@@ -60,19 +60,18 @@
 	//
 	// NOTE: This is safe even on server side as it will be a noop until
 	// the worker is initialized
-	$: WITH_SYNC && sync.sync({ url: WS_URL, dbid: $dbNamePersisted });
+	$: $syncActive ? sync.sync($syncConfig) : sync.stop();
 
 	onMount(() => {
 		// Start the sync worker
-		if (WITH_SYNC) {
-			// Init worker and sync interface
-			const wkr = new WorkerInterface(new SyncWorker());
-			sync.init(wkr);
+		//
+		// Init worker and sync interface
+		const wkr = new WorkerInterface(new SyncWorker());
+		sync.init(wkr);
 
-			// Start the sync
-			const dbid = get(dbNamePersisted);
-			const url = WS_URL;
-			sync.sync({ url, dbid });
+		// Start the sync
+		if (get(syncActive)) {
+			sync.sync(get(syncConfig));
 		}
 	});
 	onDestroy(() => {
