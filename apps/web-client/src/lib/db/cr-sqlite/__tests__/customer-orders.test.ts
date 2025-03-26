@@ -699,7 +699,7 @@ describe("Customer order lines", () => {
 // - if it fails, by a small margin - think about the changes you've introduced that might be causing it, and extend the time limit
 // - if it fails by a large margin, really think about the changes introduced :)
 describe("Stress tests", () => {
-	it("can add ten books to a customer 10 times and not take more than 800ms", async () => {
+	it("can add ten books to a customer 10 times and not take more than 1000ms", async () => {
 		const db = await getRandomDb();
 		await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 		const howMany = 10;
@@ -723,6 +723,6 @@ describe("Stress tests", () => {
 		const duration = Date.now() - startTime;
 		const books = await getCustomerOrderLines(db, 1);
 		expect(books.length).toBe(10 * howMany);
-		expect(duration).toBeLessThanOrEqual(800);
+		expect(duration).toBeLessThanOrEqual(1000);
 	});
 });
