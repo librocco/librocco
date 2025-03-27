@@ -74,16 +74,14 @@ const getSeqName = async (db: DB, kind: "inbound" | "outbound") => {
 `;
 	const result = await db.execO<{ displayName?: string }>(sequenceQuery);
 	const displayName = result[0]?.displayName;
-
-	if (!displayName) {
+	const maxSequence = Number(displayName.replace("New Note", "").replace("(", "").replace(")", "").trim()) + 1;
+	if (!displayName || isNaN(maxSequence)) {
 		return "New Note";
 	}
 
 	if (displayName === "New Note") {
 		return "New Note (2)";
 	}
-
-	const maxSequence = Number(displayName.replace("New Note", "").replace("(", "").replace(")", "").trim()) + 1;
 
 	return `New Note (${maxSequence})`;
 };
