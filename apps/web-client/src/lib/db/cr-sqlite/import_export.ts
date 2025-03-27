@@ -37,7 +37,7 @@ export async function loadData(db: DB, data: DatabaseDump): Promise<void> {
 		const stmt = [
 			`INSERT INTO ${table} (${keys.join(", ")}) VALUES`,
 			Array(rows.length).fill(placeholderLine).join(",\n"),
-			`ON CONFLICT SET ${keys.map((key) => `${key} = EXCLUDED.${key}`).join(", ")}`
+			`ON CONFLICT DO UPDATE SET ${keys.map((key) => `${key} = EXCLUDED.${key}`).join(", ")}`
 		].join("\n");
 
 		await db.exec(
