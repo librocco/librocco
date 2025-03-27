@@ -1,7 +1,7 @@
 import { wrapIter } from "@librocco/shared";
 import type { DB, DatabaseDump } from "./types";
 
-export async function dumpData(db: DB): Promise<DatabaseDump> {
+export async function dumpJSONData(db: DB): Promise<DatabaseDump> {
 	const tableNames = wrapIter([
 		"customer",
 		"customer_order_lines",
@@ -24,7 +24,7 @@ export async function dumpData(db: DB): Promise<DatabaseDump> {
 	return Object.fromEntries(tableNames.zip(tableDumps)) as DatabaseDump;
 }
 
-export async function loadData(db: DB, data: DatabaseDump): Promise<void> {
+export async function loadJSONData(db: DB, data: DatabaseDump): Promise<void> {
 	for (const [table, rows] of Object.entries(data)) {
 		// Skip if empty
 		if (!rows.length) continue;

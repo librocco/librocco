@@ -21,7 +21,7 @@
 	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { dumpData, loadData } from "$lib/db/cr-sqlite/import_export";
+	import { dumpJSONData, loadJSONData } from "$lib/db/cr-sqlite/import_export";
 
 	export let data: PageData;
 
@@ -65,12 +65,12 @@
 
 	const handleImportData = async (file: File) => {
 		const data = JSON.parse(await file.text());
-		await loadData(db, data);
+		await loadJSONData(db, data);
 	};
 
 	const handleExportDatabase = (name: string) => async () => {
 		// Create a blob of JSON data
-		const data = await dumpData(db);
+		const data = await dumpJSONData(db);
 		const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
 
 		const url = URL.createObjectURL(blob);
