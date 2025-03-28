@@ -56,6 +56,7 @@
 	);
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
 
 	const handleScanIsbn = (isbn: string) => upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
@@ -97,7 +98,6 @@
 	};
 
 	async function handleDelete() {
-		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
 
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
@@ -271,42 +271,45 @@
 					<ComparisonTable reconciledBooks={processedOrderDelivery} />
 				{/if}
 
-				{#if canCompare || currentStep > 1}
-					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-						<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
-							{#if currentStep > 1}
-								<dl class="stats flex">
-									<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-										<dt class="stat-title">Total delivered:</dt>
-										<dd class="stat-value text-lg">
-											{totalDelivered} / {totalOrdered}
-										</dd>
-									</div>
-								</dl>
-							{/if}
-							<button
-								class="btn-primary btn ml-auto"
-								on:click={async () => {
-									if (currentStep === 1) {
-										currentStep = 2;
-									} else {
-										commitDialogOpen.set(true);
-									}
-								}}
-							>
-								{currentStep === 1 ? "Compare" : "Commit"}
-								<ArrowRight aria-hidden size={20} class="hidden md:block" />
-							</button>
-						</div>
+				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
+						{#if currentStep > 1}
+							<dl class="stats flex">
+								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
+									<dt class="stat-title">Total delivered:</dt>
+									<dd class="stat-value text-lg">
+										{totalDelivered} / {totalOrdered}
+									</dd>
+								</div>
+							</dl>
+						{/if}
+						<button
+							class="btn-primary btn ml-auto"
+							on:click={async () => {
+								if (currentStep === 1) {
+									currentStep = 2;
+								} else {
+									commitDialogOpen.set(true);
+								}
+							}}
+						>
+							{currentStep === 1 ? "Compare" : "Commit"}
+							<ArrowRight aria-hidden size={20} class="hidden md:block" />
+						</button>
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 	</div>
 </main>
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
-	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+	<CommitDialog
+		deliveredBookCount={totalDelivered + totalUnmatched}
+		rejectedBookCount={totalOrdered - totalDelivered}
+		on:cancel={() => commitDialogOpen.set(false)}
+		on:confirm={handleCommit}
+	/>
 </PageCenterDialog>
 
 <PageCenterDialog dialog={deleteDialog} title="" description="">
