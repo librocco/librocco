@@ -9,67 +9,75 @@ type SQLiteTableData = {
 	type: "table";
 };
 
-async function getTables(db: DB, as?: "full"): Promise<SQLiteTableData[]>;
-async function getTables(db: DB, as: "name_only"): Promise<string[]>;
-async function getTables(db: DB, as: "name_only" | "full" = "full"): Promise<SQLiteTableData[] | string[]> {
-	const cols = {
-		full: "*",
-		name_only: "name"
-	}[as];
+type TableJSONData = {
+	tbl_name: string;
+	sql: string;
+	rows: Record<string, any>[];
+};
+
+async function getTables(db: DB, which: "user_only" | "full" = "full"): Promise<SQLiteTableData[]> {
+	const filter = {
+		all: "",
+		data_only: "name NOT LIKE '%crsql%'",
+		schema_only: "name LIKE '%crsql%'"
+	}[which];
 
 	const query = `
-		SELECT ${cols} FROM sqlite_master WHERE type = 'table' AND name NOT LIKE '%crsql%'
+		SELECT * FROM sqlite_master
+		WHERE type = 'table' ${filter && `AND ${filter}`}
 	`;
 
 	const res = await db.execO<SQLiteTableData>(query);
 
-	if (as === "name_only") {
-		return res.map(({ name }) => name);
-	}
-
 	return res;
 }
 
-async function getTableData(db: DB, tableName: string): Promise<any[]> {
+async function getTableRows(db: DB, tableName: string): Promise<any[]> {
 	const query = `SELECT * FROM ${tableName}`;
 	const data = await db.execO(query);
 	return data;
 }
 
-async function getTablesData<T extends Record<string, Record<string, any>[]>>(db: DB, tableNames: string[]): Promise<T> {
-	const tables = wrapIter(tableNames);
-	const data = await Promise.all(tables.map((table) => getTableData(db, table)));
-	return Object.fromEntries(tables.zip(data)) as T;
+async function sqlFromJSON(dump: TableJSONData[], mode: "full" | "schema_only" | "data_only"): Promise<string> {
+	const schema = dump.filter(({ sql }) => sql).join("\n");
+
+	const data = dump
+		.map(({ tbl_name, rows }) => {
+			const keys = Object.keys(rows[0]);
+			const placeholderLine = `(${multiplyString("?", keys.length)})`;
+
+			return [
+				`INSERT INTO ${tbl_name} (${keys.join(", ")}) VALUES`,
+				Array(rows.length).fill(placeholderLine).join(",\n"),
+				`ON CONFLICT DO UPDATE SET ${keys.map((key) => `${key} = excluded.${key}`).join(", ")}`
+			].join("\n");
+		})
+		.join("\n\n");
+
+	switch (mode) {
+		case "full":
+			return [schema, data].join("\n");
+		case "schema_only":
+			return schema;
+		case "data_only":
+			return data;
+	}
 }
 
-async function sqlFromJSON(data: DatabaseDump): Promise<string> {
-	const tables = Object.entries(data);
-	const sql = tables.map(([table, rows]) => {
-		const keys = Object.keys(rows[0]);
-		const placeholderLine = `(${multiplyString("?", keys.length)})`;
-
-		return [
-			`INSERT INTO ${table} (${keys.join(", ")}) VALUES`,
-			Array(rows.length).fill(placeholderLine).join(",\n"),
-			`ON CONFLICT DO UPDATE SET ${keys.map((key) => `${key} = excluded.${key}`).join(", ")}`
-		].join("\n");
-	});
-
-	return sql.join("\n");
+export async function dumpJSONData(db: DB, which: "user_only" | "full"): Promise<TableJSONData[]> {
+	const tables = await getTables(db, which).then(wrapIter);
+	const allRows = await Promise.all(tables.map(({ tbl_name }) => getTableRows(db, tbl_name)));
+	const merged = tables.zip(allRows).map(([{ tbl_name, sql }, rows]) => ({ tbl_name, sql, rows }));
+	return Array.from(merged);
 }
 
-export async function dumpJSONData(db: DB): Promise<DatabaseDump> {
-	const tableNames = await getTables(db, "name_only");
-	return getTablesData(db, tableNames);
+export async function dumpSQLData(db: DB, which: "user_only" | "full", mode: "full" | "schema_only" | "data_only"): Promise<string> {
+	const data = await dumpJSONData(db, which);
+	return sqlFromJSON(data, mode);
 }
 
-export async function dumpSQLData(db: DB): Promise<string> {
-	const data = await dumpJSONData(db);
-	return sqlFromJSON(data);
-}
-
-export async function loadJSONData(db: DB, data: DatabaseDump): Promise<void> {
-	const sql = await sqlFromJSON(data);
+export async function loadJSONData(db: DB, data: TableJSONData[], mode: "full" | "schema_only" | "data_only"): Promise<void> {
+	const sql = await sqlFromJSON(data, mode);
 	await db.exec(sql);
 }
 

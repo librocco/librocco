@@ -65,12 +65,12 @@
 
 	const handleImportData = async (file: File) => {
 		const data = JSON.parse(await file.text());
-		await loadJSONData(db, data);
+		await loadJSONData(db, data, "data_only");
 	};
 
 	const handleExportDatabase = (name: string) => async () => {
 		// Create a blob of JSON data
-		const data = await dumpJSONData(db);
+		const data = await dumpJSONData(db, "user_only");
 		const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
 
 		const url = URL.createObjectURL(blob);
