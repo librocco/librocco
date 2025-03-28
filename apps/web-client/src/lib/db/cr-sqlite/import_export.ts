@@ -1,5 +1,5 @@
 import { wrapIter } from "@librocco/shared";
-import type { DB, DatabaseDump } from "./types";
+import type { DB } from "./types";
 
 type SQLiteTableData = {
 	name: string;

@@ -21,7 +21,7 @@
 	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { dumpJSONData, loadJSONData } from "$lib/db/cr-sqlite/import_export";
+	import { dumpJSONData, dumpSQLData, loadJSONData } from "$lib/db/cr-sqlite/import_export";
 
 	export let data: PageData;
 
@@ -43,35 +43,40 @@
 	const handleDrop = async (event: DragEvent) => {
 		event.preventDefault();
 		if (event.dataTransfer?.items) {
-			for (let i = 0; i < event.dataTransfer.items.length; i++) {
-				const item = event.dataTransfer.items[i];
-				if (item.kind === "file") {
+			for (const item of event.dataTransfer.items) {
+				if (item && item.kind === "file") {
 					const file = item.getAsFile();
-					if (file && file.name.endsWith(".json")) {
-						await handleImportData(file);
-					}
+					if (file) await handleImportData(file);
 				}
 			}
 		} else if (event.dataTransfer?.files) {
-			for (let i = 0; i < event.dataTransfer.files.length; i++) {
-				const file = event.dataTransfer.files[i];
-				if (file && file.name.endsWith(".json")) {
-					await handleImportData(file);
-				}
+			for (const file of event.dataTransfer.files) {
+				if (file) await handleImportData(file);
 			}
 		}
 		importOn = false;
 	};
 
 	const handleImportData = async (file: File) => {
-		const data = JSON.parse(await file.text());
-		await loadJSONData(db, data, "data_only");
+		if (file.name.endsWith(".sql")) {
+			const sql = await file.text();
+			await db.exec(sql);
+		} else if (file.name.endsWith(".json")) {
+			const data = JSON.parse(await file.text());
+			await loadJSONData(db, data, "data_only");
+		}
 	};
 
-	const handleExportDatabase = (name: string) => async () => {
+	const handleExportDatabase = (name: string, format: "json" | "sql") => async () => {
 		// Create a blob of JSON data
-		const data = await dumpJSONData(db, "user_only");
-		const blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+		let blob: Blob;
+		if (format === "json") {
+			const data = await dumpJSONData(db, "user_only");
+			blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+		} else {
+			const data = await dumpSQLData(db, "user_only", "data_only");
+			blob = new Blob([data], { type: "application/sql" });
+		}
 
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
@@ -151,12 +156,18 @@
 									class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-gray-100' : ''}"
 								>
 									<span>{file}</span>
-									<div class="hidden gap-x-2 group-hover:flex">
+									<div class="flex gap-x-2">
 										<button
 											data-testid={testId("db-action-export")}
-											on:click={handleExportDatabase(file)}
+											on:click={handleExportDatabase(file, "json")}
 											type="button"
-											class="button cursor-pointer"><Download /></button
+											class="button cursor-pointer"><Download /> JSON</button
+										>
+										<button
+											data-testid={testId("db-action-export")}
+											on:click={handleExportDatabase(file, "sql")}
+											type="button"
+											class="button cursor-pointer"><Download /> SQL</button
 										>
 									</div>
 								</li>
