@@ -40,12 +40,12 @@ export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]
                     WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN w.display_name
                     ELSE 'Outbound'
 				END AS warehouseName,
-                SUM(bt.quantity * b.price) AS totalCoverPrice,
-                SUM(bt.quantity * b.price * (1 - COALESCE(w.discount, 0) / 100.0)) AS totalDiscountedPrice,
+                SUM(bt.quantity * COALESCE(b.price,0)) AS totalCoverPrice,
+                SUM(bt.quantity * COALESCE(b.price,0) * (1 - COALESCE(w.discount, 0) / 100.0)) AS totalDiscountedPrice,
 				n.committed_at
             FROM note n
-            JOIN book_transaction bt ON n.id = bt.note_id
-            JOIN book b ON bt.isbn = b.isbn
+            LEFT JOIN book_transaction bt ON n.id = bt.note_id
+            LEFT JOIN book b ON bt.isbn = b.isbn
             LEFT JOIN warehouse w ON bt.warehouse_id = w.id
             WHERE DATE(n.committed_at / 1000, 'unixepoch') = ?
             GROUP BY n.id
