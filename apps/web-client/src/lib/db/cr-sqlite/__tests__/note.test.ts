@@ -940,34 +940,34 @@ describe("Book transactions", async () => {
 		await createOutboundNote(db, 1);
 
 		let note = await getNoteById(db, 1);
-		let updatedAt = note?.updatedAt;
+		let updatedAt = note!.updatedAt;
 
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 10, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
-		updatedAt = note?.updatedAt;
+		expect(note!.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note!.updatedAt;
 
 		// Add some more volumes
 		await addVolumesToNote(db, 1, { isbn: "1234567890", quantity: 5, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
-		updatedAt = note?.updatedAt;
+		expect(note!.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note!.updatedAt;
 
 		// Should also work with txn update
 		await updateNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 }, { quantity: 7, warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
-		updatedAt = note?.updatedAt;
+		expect(note!.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note!.updatedAt;
 
 		// Should also work when removing a txn
 		await removeNoteTxn(db, 1, { isbn: "1234567890", warehouseId: 1 });
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
-		updatedAt = note?.updatedAt;
+		expect(note!.updatedAt > updatedAt).toEqual(true);
+		updatedAt = note!.updatedAt;
 	});
 
 	it("retrieves note entries so that the latest updated appears first", async () => {
@@ -1178,6 +1178,22 @@ describe("Book transactions", async () => {
 			expect.objectContaining({ isbn: "1234567890", warehouseId: 2, quantity: 12 })
 		]);
 	});
+
+	it("falls back to price = 0 when retrieving a transaction with no price (or undefined book data)", async () => {
+		const db = await getRandomDb();
+
+		await createOutboundNote(db, 1);
+		await addVolumesToNote(db, 1, { isbn: "unknown", quantity: 10, warehouseId: 1 });
+
+		expect(await getNoteEntries(db, 1)).toEqual([
+			expect.objectContaining({
+				isbn: "unknown",
+				quantity: 10,
+				warehouseId: 1,
+				price: 0
+			})
+		]);
+	});
 });
 
 describe("Note custom items", async () => {
@@ -1186,7 +1202,7 @@ describe("Note custom items", async () => {
 		await createOutboundNote(db, 1);
 
 		let note = await getNoteById(db, 1);
-		const updatedAt = note?.updatedAt;
+		const updatedAt = note!.updatedAt;
 
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
@@ -1200,7 +1216,7 @@ describe("Note custom items", async () => {
 		]);
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
+		expect(note!.updatedAt > updatedAt).toEqual(true);
 	});
 
 	it("updates a custom item in an outbound note", async () => {
@@ -1210,7 +1226,7 @@ describe("Note custom items", async () => {
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
 		let note = await getNoteById(db, 1);
-		const updatedAt = note?.updatedAt;
+		const updatedAt = note!.updatedAt;
 
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Updated Custom Item 1", price: 150 });
 
@@ -1224,7 +1240,7 @@ describe("Note custom items", async () => {
 		]);
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
+		expect(note!.updatedAt > updatedAt).toEqual(true);
 	});
 
 	it("removes a custom item from an outbound note", async () => {
@@ -1234,7 +1250,7 @@ describe("Note custom items", async () => {
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
 		let note = await getNoteById(db, 1);
-		const updatedAt = note?.updatedAt;
+		const updatedAt = note!.updatedAt;
 
 		await removeNoteCustomItem(db, 1, 1);
 
@@ -1242,7 +1258,7 @@ describe("Note custom items", async () => {
 		expect(items).toEqual([]);
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt > updatedAt).toEqual(true);
+		expect(note!.updatedAt > updatedAt).toEqual(true);
 	});
 
 	it("doesn't allow upserting custom items to a committed note", async () => {
@@ -1252,7 +1268,7 @@ describe("Note custom items", async () => {
 		await commitNote(db, 1);
 
 		let note = await getNoteById(db, 1);
-		const updatedAt = note?.updatedAt;
+		const updatedAt = note!.updatedAt;
 
 		await upsertNoteCustomItem(db, 1, { id: 1, title: "Custom Item 1", price: 100 });
 
@@ -1260,7 +1276,7 @@ describe("Note custom items", async () => {
 		expect(items).toEqual([]);
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt).toEqual(updatedAt);
+		expect(note!.updatedAt).toEqual(updatedAt);
 	});
 
 	it("doesn't allow removing custom items from a committed note", async () => {
@@ -1271,12 +1287,12 @@ describe("Note custom items", async () => {
 		await commitNote(db, 1);
 
 		let note = await getNoteById(db, 1);
-		const updatedAt = note?.updatedAt;
+		const updatedAt = note!.updatedAt;
 
 		await removeNoteCustomItem(db, 1, 1);
 
 		note = await getNoteById(db, 1);
-		expect(note?.updatedAt).toEqual(updatedAt);
+		expect(note!.updatedAt).toEqual(updatedAt);
 
 		const items = await getNoteCustomItems(db, 1);
 		expect(items).toEqual([
