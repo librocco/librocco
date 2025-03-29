@@ -21,6 +21,7 @@
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import LL from "$i18n/i18n-svelte";
 
 	export let data: PageData;
 
@@ -90,8 +91,8 @@
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox
-					title="No open notes"
-					description="Get started by adding a new note with the appropriate warehouse"
+					title={`${$LL.inventoryPage.inbound.PlaceholderBox.title}`}
+					description={`${$LL.inventoryPage.inbound.PlaceholderBox.description}`}
 					class="center-absolute"
 				>
 					<a
@@ -117,11 +118,11 @@
 							<div class="flex flex-col items-start gap-y-2">
 								<div class="flex gap-x-0.5">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.inventoryPage.inbound.books}</span>
 								</div>
 								{#if note.updatedAt}
 									<span class="badge badge-md badge-green">
-										Last updated: {updatedAt}
+										{$LL.inventoryPage.inbound.lastUpdated}: {updatedAt}
 									</span>
 								{/if}
 							</div>
