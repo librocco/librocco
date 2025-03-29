@@ -50,7 +50,7 @@
 
 	<svelte:fragment slot="heading">
 		<div class="flex h-full items-center">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{$LL.historyPage.isbn.history}</h1>
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">{$LL.historyPage.isbn.history()}</h1>
 		</div>
 	</svelte:fragment>
 
@@ -61,8 +61,8 @@
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
 			<!-- Start entity list placeholder -->
 			<PlaceholderBox
-				title={`${$LL.historyPage.isbn.placeholderBox.title}`}
-				description={`${$LL.historyPage.isbn.placeholderBox.description}`}
+				title={`${$LL.historyPage.isbn.placeholderBox.title()}`}
+				description={`${$LL.historyPage.isbn.placeholderBox.description()}`}
 				class="center-absolute"
 			/>
 			<!-- End entity list placeholder -->
