@@ -17,6 +17,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import LL from "$i18n/i18n-svelte";
 
 	export let data: PageData;
 
@@ -93,13 +94,15 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green"
+							>{$LL.historyPage.notes.archivePage.committedAt}: {generateUpdatedAtString(updatedAt)}</span
+						>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">Export CSV</button>
+				<button class="button button-green">{$LL.historyPage.notes.archivePage.exportCSV}</button>
 			</div>
 		</div>
 	</svelte:fragment>
