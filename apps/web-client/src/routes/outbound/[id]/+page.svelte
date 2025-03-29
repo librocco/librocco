@@ -44,7 +44,7 @@
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 
@@ -348,10 +348,10 @@
 
 	// #region printing
 	$: handlePrintReceipt = async () => {
-		await printReceipt($settingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
+		await printReceipt($deviceSettingsStore.receiptPrinterUrl, await getReceiptForNote(db, noteId));
 	};
 	$: handlePrintLabel = (book: Omit<BookData, "updatedAt">) => async () => {
-		await printBookLabel($settingsStore.labelPrinterUrl, book);
+		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
 	const dialog = createDialog({
@@ -685,8 +685,8 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle.editBook()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription.editBook()}</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />

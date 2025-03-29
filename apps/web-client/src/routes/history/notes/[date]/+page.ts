@@ -26,7 +26,6 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	}
 
 	const notes = await getPastNotes(dbCtx.db, date);
-	console.log("got notes", JSON.stringify(notes));
 	return { date, dateValue, notes };
 };
 

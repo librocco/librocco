@@ -25,6 +25,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
 	import { asc } from "@librocco/shared";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -48,31 +49,6 @@
 
 	$: books = data?.reconciliationOrderLines || [];
 
-	async function handleIsbnSubmit(isbn: string) {
-		if (!isbn) return;
-
-		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
-	}
-
-	let scanInputRef: HTMLInputElement = null;
-	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
-		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdate: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-				handleIsbnSubmit(isbn);
-			}
-		},
-		onUpdated: ({ form: { valid } }) => {
-			if (valid) {
-				scanInputRef?.focus();
-			}
-		}
-	});
-
 	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	// Extract different orders from placedOrderLines
 	$: placedOrders = [...new Map(data.placedOrderLines?.map((l) => [l.supplier_order_id, l.supplier_name])).entries()].sort(
@@ -80,7 +56,10 @@
 	);
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
+
+	const handleScanIsbn = (isbn: string) => upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
 		if (quantity === 0) {
@@ -119,7 +98,6 @@
 	};
 
 	async function handleDelete() {
-		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
 
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
@@ -229,12 +207,7 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form use:enhance method="POST" class="flex w-full gap-2">
-						<label class="input-bordered input flex flex-1 items-center gap-2">
-							<QrCode />
-							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
-						</label>
-					</form>
+					<DaisyUiScannerForm onSubmit={handleScanIsbn} />
 				{/if}
 			</div>
 
@@ -298,42 +271,45 @@
 					<ComparisonTable reconciledBooks={processedOrderDelivery} />
 				{/if}
 
-				{#if canCompare || currentStep > 1}
-					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-						<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
-							{#if currentStep > 1}
-								<dl class="stats flex">
-									<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-										<dt class="stat-title">Total delivered:</dt>
-										<dd class="stat-value text-lg">
-											{totalDelivered} / {totalOrdered}
-										</dd>
-									</div>
-								</dl>
-							{/if}
-							<button
-								class="btn-primary btn ml-auto"
-								on:click={async () => {
-									if (currentStep === 1) {
-										currentStep = 2;
-									} else {
-										commitDialogOpen.set(true);
-									}
-								}}
-							>
-								{currentStep === 1 ? "Compare" : "Commit"}
-								<ArrowRight aria-hidden size={20} class="hidden md:block" />
-							</button>
-						</div>
+				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
+						{#if currentStep > 1}
+							<dl class="stats flex">
+								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
+									<dt class="stat-title">Total delivered:</dt>
+									<dd class="stat-value text-lg">
+										{totalDelivered} / {totalOrdered}
+									</dd>
+								</div>
+							</dl>
+						{/if}
+						<button
+							class="btn-primary btn ml-auto"
+							on:click={async () => {
+								if (currentStep === 1) {
+									currentStep = 2;
+								} else {
+									commitDialogOpen.set(true);
+								}
+							}}
+						>
+							{currentStep === 1 ? "Compare" : "Commit"}
+							<ArrowRight aria-hidden size={20} class="hidden md:block" />
+						</button>
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 	</div>
 </main>
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
-	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+	<CommitDialog
+		deliveredBookCount={totalDelivered + totalUnmatched}
+		rejectedBookCount={totalOrdered - totalDelivered}
+		on:cancel={() => commitDialogOpen.set(false)}
+		on:confirm={handleCommit}
+	/>
 </PageCenterDialog>
 
 <PageCenterDialog dialog={deleteDialog} title="" description="">
