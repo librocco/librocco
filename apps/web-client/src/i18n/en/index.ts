@@ -105,6 +105,32 @@ const historyPage = {
 	}
 };
 
+const inventoryPage = {
+	inbound: {
+		PlaceholderBox: {
+			title: "No open notes",
+			description: "Get started by adding a new note with the appropriate warehouse"
+		},
+		BackToWarehouses: "Back to warehouses",
+		books: "books",
+		lastUpdated: "Last Updated",
+		edit: "Edit",
+		inboundId: {
+			lastUpdated: "Last updated",
+			commit: "Commit",
+			print: "Print",
+			autoPrintBookLabels: "Auto print book labels",
+			delete: "Delete",
+			editRow: "Edit row",
+			printBookLabel: "Print book label",
+			deleteRow: "Delete row"
+		}
+	},
+	outbound: {
+		PlaceholderBox: {}
+	}
+};
+
 const en = {
 	nav,
 	search,
