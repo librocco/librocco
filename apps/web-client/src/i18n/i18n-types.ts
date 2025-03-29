@@ -272,6 +272,74 @@ type RootTranslation = {
 			discount: string
 		}
 	}
+	inventoryPage: {
+		inbound: {
+			PlaceholderBox: {
+				/**
+				 * N​o​ ​o​p​e​n​ ​n​o​t​e​s
+				 */
+				title: string
+				/**
+				 * G​e​t​ ​s​t​a​r​t​e​d​ ​b​y​ ​a​d​d​i​n​g​ ​a​ ​n​e​w​ ​n​o​t​e​ ​w​i​t​h​ ​t​h​e​ ​a​p​p​r​o​p​r​i​a​t​e​ ​w​a​r​e​h​o​u​s​e
+				 */
+				description: string
+			}
+			/**
+			 * B​a​c​k​ ​t​o​ ​w​a​r​e​h​o​u​s​e​s
+			 */
+			BackToWarehouses: string
+			/**
+			 * b​o​o​k​s
+			 */
+			books: string
+			/**
+			 * L​a​s​t​ ​U​p​d​a​t​e​d
+			 */
+			lastUpdated: string
+			/**
+			 * E​d​i​t
+			 */
+			edit: string
+			inboundId: {
+				/**
+				 * L​a​s​t​ ​u​p​d​a​t​e​d
+				 */
+				lastUpdated: string
+				/**
+				 * C​o​m​m​i​t
+				 */
+				commit: string
+				/**
+				 * P​r​i​n​t
+				 */
+				print: string
+				/**
+				 * A​u​t​o​ ​p​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l​s
+				 */
+				autoPrintBookLabels: string
+				/**
+				 * D​e​l​e​t​e
+				 */
+				'delete': string
+				/**
+				 * E​d​i​t​ ​r​o​w
+				 */
+				editRow: string
+				/**
+				 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+				 */
+				printBookLabel: string
+				/**
+				 * D​e​l​e​t​e​ ​r​o​w
+				 */
+				deleteRow: string
+			}
+		}
+		outbound: {
+			PlaceholderBox: {
+			}
+		}
+	}
 }
 
 export type TranslationFunctions = {
@@ -531,6 +599,74 @@ export type TranslationFunctions = {
 			 * discount
 			 */
 			discount: () => LocalizedString
+		}
+	}
+	inventoryPage: {
+		inbound: {
+			PlaceholderBox: {
+				/**
+				 * No open notes
+				 */
+				title: () => LocalizedString
+				/**
+				 * Get started by adding a new note with the appropriate warehouse
+				 */
+				description: () => LocalizedString
+			}
+			/**
+			 * Back to warehouses
+			 */
+			BackToWarehouses: () => LocalizedString
+			/**
+			 * books
+			 */
+			books: () => LocalizedString
+			/**
+			 * Last Updated
+			 */
+			lastUpdated: () => LocalizedString
+			/**
+			 * Edit
+			 */
+			edit: () => LocalizedString
+			inboundId: {
+				/**
+				 * Last updated
+				 */
+				lastUpdated: () => LocalizedString
+				/**
+				 * Commit
+				 */
+				commit: () => LocalizedString
+				/**
+				 * Print
+				 */
+				print: () => LocalizedString
+				/**
+				 * Auto print book labels
+				 */
+				autoPrintBookLabels: () => LocalizedString
+				/**
+				 * Delete
+				 */
+				'delete': () => LocalizedString
+				/**
+				 * Edit row
+				 */
+				editRow: () => LocalizedString
+				/**
+				 * Print book label
+				 */
+				printBookLabel: () => LocalizedString
+				/**
+				 * Delete row
+				 */
+				deleteRow: () => LocalizedString
+			}
+		}
+		outbound: {
+			PlaceholderBox: {
+			}
 		}
 	}
 }
