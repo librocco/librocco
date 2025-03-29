@@ -168,16 +168,19 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each assignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Remove publisher</button
-											></td
-										>
-									</tr>
-								{/each}
+								<div class="max-h-[164px] w-full overflow-y-auto">
+									{#each assignedPublishers as publisher}
+										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button
+													on:click={handleUnassignPublisher(publisher)}
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Remove publisher</button
+												></td
+											>
+										</tr>
+									{/each}
+								</div>
 							</tbody>
 						</table>
 					</div>
@@ -193,16 +196,18 @@
 								</tr>
 							</thead>
 							<tbody>
-								{#each unassignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
-										<td class="px-2">{publisher}</td>
-										<td class="px-2 text-end"
-											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Add to supplier</button
-											></td
-										>
-									</tr>
-								{/each}
+								<div class="max-h-[164px] overflow-y-auto">
+									{#each unassignedPublishers as publisher}
+										<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+													>Add to supplier</button
+												></td
+											>
+										</tr>
+									{/each}
+								</div>
 							</tbody>
 						</table>
 					</div>

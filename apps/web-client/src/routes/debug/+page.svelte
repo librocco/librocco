@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
-	import { Plus, RotateCcw, Play } from "lucide-svelte";
+	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
 	import { LL } from "$i18n/i18n-svelte";
 	import { onMount } from "svelte";
 
@@ -101,6 +101,106 @@
 	];
 
 	$: dbName = $dbNamePersisted;
+
+	// Function to generate random ISBN (10 digits)
+	function generateRandomISBN() {
+		return Math.floor(1000000000 + Math.random() * 9000000000).toString();
+	}
+
+	// Function to generate a random price between $5 and $50
+	function generateRandomPrice() {
+		return (5 + Math.random() * 45).toFixed(2);
+	}
+	// Function to generate deterministic ISBN based on index
+	function generateDeterministicISBN(index) {
+		// Pad the index to 10 digits with leading zeros
+		return `9780000${index.toString().padStart(5, "0")}`;
+	}
+
+	// Function to generate deterministic price based on index
+	function generateDeterministicPrice(index) {
+		// Price between $10 and $50 based on index
+		return (10 + (index % 41)).toFixed(2);
+	}
+
+	// Function to upsert 100 books with different publishers
+	async function upsert100Books() {
+		isLoading = true;
+		errorMessage = null;
+		const db = await getInitializedDB(dbName);
+
+		try {
+			// Create an array of 100 book objects with deterministic values
+			const books = Array.from({ length: 100 }, (_, i) => {
+				const bookNumber = i + 1;
+				return {
+					isbn: generateDeterministicISBN(bookNumber),
+					title: `Test Book ${bookNumber}`,
+					authors: `Author ${bookNumber}`,
+					publisher: `Publisher ${bookNumber}`,
+					price: generateDeterministicPrice(bookNumber),
+					year: 2023
+				};
+			});
+
+			// Insert each book
+			for (const book of books) {
+				await db.db.exec(`
+                     INSERT INTO book (isbn, title, authors, publisher, price, year)
+                     VALUES (
+                         '${book.isbn}',
+                         '${book.title}',
+                         '${book.authors}',
+                         '${book.publisher}',
+                         ${book.price},
+                         ${book.year}
+                     )
+                     ON CONFLICT(isbn) DO UPDATE SET
+                         title = '${book.title}',
+                         authors = '${book.authors}',
+                         publisher = '${book.publisher}',
+                         price = ${book.price},
+                         year = ${book.year}
+                 `);
+			}
+
+			// Also create supplier entries for each publisher with deterministic ID
+			for (let i = 1; i <= 100; i++) {
+				const supplierId = i;
+				const publisherName = `Publisher ${i}`;
+
+				// Insert supplier
+				await db.db.exec(`
+                     INSERT INTO supplier (id, name, email, address)
+                     VALUES (
+                         ${supplierId},
+                         '${publisherName} Distribution',
+                         'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
+                         '${i} Publisher Street, Book City'
+                     )
+                     ON CONFLICT(id) DO UPDATE SET
+                         name = '${publisherName} Distribution',
+                         email = 'contact@${publisherName.toLowerCase().replace(/\s+/g, "")}.com',
+                         address = '${i} Publisher Street, Book City'
+                 `);
+
+				// Link publisher to supplier
+				await db.db.exec(`
+                     INSERT INTO supplier_publisher (supplier_id, publisher)
+                     VALUES (${supplierId}, '${publisherName}')
+                     ON CONFLICT(publisher) DO NOTHING
+                 `);
+			}
+
+			console.log("Successfully upserted 100 books with different publishers");
+		} catch (error) {
+			console.error("Error upserting books:", error);
+			errorMessage = error;
+		} finally {
+			isLoading = false;
+			await loadData();
+		}
+	}
 
 	const populateDatabase = async function () {
 		const { db } = await getInitializedDB(dbName);
@@ -299,6 +399,10 @@
 						<button class="btn-primary btn" on:click={() => resetDatabase()}>
 							<RotateCcw size={20} />
 							Reset Database
+						</button>
+						<button class="btn-primary btn" on:click={() => upsert100Books()}>
+							<BookPlus size={20} />
+							Upsert 100 Books
 						</button>
 					</div>
 				</div>
