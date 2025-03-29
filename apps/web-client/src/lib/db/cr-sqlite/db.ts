@@ -4,7 +4,7 @@ import wasmUrl from "@vlcn.io/crsqlite-wasm/crsqlite.wasm?url";
 import { cryb64 } from "@vlcn.io/ws-common";
 import rxtbl from "@vlcn.io/rx-tbl";
 
-import schema from "@librocco/shared/db-schemas/init.sql?raw";
+import schema from "$lib/schemas/init?raw";
 
 import { type DB, type Change } from "./types";
 

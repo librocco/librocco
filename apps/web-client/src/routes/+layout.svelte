@@ -3,13 +3,17 @@
 	import "$lib/main.css";
 	import "./global.css";
 
-	import { onMount } from "svelte";
+	import { onDestroy, onMount } from "svelte";
+	import { get } from "svelte/store";
+	import { WorkerInterface } from "@vlcn.io/ws-client";
 	import { Subscription } from "rxjs";
 	import { browser } from "$app/environment";
 
 	import type { LayoutData } from "./$types";
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
+	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
+	import { sync, syncConfig, syncActive } from "$lib/db";
 
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -37,6 +41,8 @@
 			window["reconciliation"] = reconciliation;
 			window["suppliers"] = suppliers;
 			window["warehouse"] = warehouse;
+
+			window["sync"] = sync;
 		}
 
 		// This shouldn't affect much, but is here for the purpose of exhaustive handling
@@ -48,6 +54,36 @@
 
 	let availabilitySubscription: Subscription;
 
+	// #region sync
+
+	// Update sync on each change to settings
+	//
+	// NOTE: This is safe even on server side as it will be a noop until
+	// the worker is initialized
+	$: if ($syncActive) {
+		sync.sync($syncConfig);
+	} else {
+		sync.stop();
+	}
+
+	onMount(() => {
+		// Start the sync worker
+		//
+		// Init worker and sync interface
+		const wkr = new WorkerInterface(new SyncWorker());
+		sync.init(wkr);
+
+		// Start the sync
+		if (get(syncActive)) {
+			sync.sync(get(syncConfig));
+		}
+	});
+	onDestroy(() => {
+		sync.stop(); // Safe and idempotent
+	});
+
+	// #endregion sync
+
 	onMount(async () => {
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
@@ -58,11 +94,9 @@
 		// }
 	});
 
-	export function onDestroy() {
-		if (availabilitySubscription) {
-			availabilitySubscription.unsubscribe();
-		}
-	}
+	onDestroy(() => {
+		availabilitySubscription?.unsubscribe();
+	});
 </script>
 
 <svelte:head></svelte:head>
