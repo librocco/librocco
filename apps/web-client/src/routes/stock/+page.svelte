@@ -23,7 +23,7 @@
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 
@@ -116,7 +116,7 @@
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookData) => async () => {
-		await printBookLabel($settingsStore.labelPrinterUrl, book);
+		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
 	const {
