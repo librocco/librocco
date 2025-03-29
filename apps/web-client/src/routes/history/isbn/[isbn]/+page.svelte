@@ -103,7 +103,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
 				<div class="border-b border-gray-300">
-					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">{$LL.historyPage.isbn.isbnPage.stock}</h2>
+					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">{$LL.historyPage.isbn.isbnId.stock}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -126,8 +126,8 @@
 				{#if !transactions?.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox
-						title={`${$LL.historyPage.isbn.isbnPage.placeholderBox.title}`}
-						description={`${$LL.historyPage.isbn.isbnPage.placeholderBox.description}`}
+						title={`${$LL.historyPage.isbn.isbnId.placeholderBox.title}`}
+						description={`${$LL.historyPage.isbn.isbnId.placeholderBox.description}`}
 						class="center-absolute"
 					/>
 					<!-- End entity list placeholder -->
