@@ -333,3 +333,131 @@ export type Change = readonly [
 
 /* Utils */
 export type PickPartial<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>;
+
+// #region table entries
+export type CustomerTableEntry = {
+	id: number;
+	display_id: string | null;
+	fullname: string | null;
+	email: string | null;
+	deposit: number | null;
+	updated_at: number;
+};
+
+export type CustomerOrderLinesTableEntry = {
+	id: number;
+	customer_id: number | null;
+	isbn: string | null;
+	created: number;
+	placed: number | null;
+	received: number | null;
+	collected: number | null;
+};
+
+export type BookTableEntry = {
+	isbn: string;
+	title: string | null;
+	authors: string | null;
+	price: number | null;
+	year: string | null;
+	publisher: string | null;
+	edited_by: string | null;
+	out_of_print: number | null;
+	category: string | null;
+	updated_at: number | null;
+};
+
+export type SupplierTableEntry = {
+	id: number;
+	name: string | null;
+	email: string | null;
+	address: string | null;
+};
+
+export type SupplierPublisherTableEntry = {
+	supplier_id: number;
+	publisher: string;
+};
+
+export type SupplierOrderTableEntry = {
+	id: number;
+	supplier_id: number;
+	created: number;
+};
+
+export type SupplierOrderLineTableEntry = {
+	supplier_order_id: number;
+	isbn: string;
+	quantity: number;
+};
+
+export type ReconciliationOrderTableEntry = {
+	id: number;
+	supplier_order_ids: string;
+	created: number;
+	updatedAt: number;
+	finalized: number;
+};
+
+export type ReconciliationOrderLineTableEntry = {
+	reconciliation_order_id: number;
+	isbn: string;
+	quantity: number;
+};
+
+export type CustomerOrderLineSupplierOrderTableEntry = {
+	supplier_order_id: number;
+	customer_order_line_id: number;
+	placed: number;
+};
+
+export type WarehouseTableEntry = {
+	id: number;
+	display_name: string | null;
+	discount: number | null;
+};
+
+export type NoteTableEntry = {
+	id: number;
+	display_name: string | null;
+	warehouse_id: number | null;
+	is_reconciliation_note: number | null;
+	default_warehouse: number | null;
+	updated_at: number;
+	committed: number;
+	committed_at: number | null;
+};
+
+export type BookTransactionTableEntry = {
+	isbn: string;
+	quantity: number;
+	note_id: number;
+	warehouse_id: number;
+	updated_at: number;
+	committed_at: number | null;
+};
+
+export type CustomItemTableEntry = {
+	id: number;
+	title: string | null;
+	price: number | null;
+	note_id: number;
+	updated_at: number | null;
+};
+
+export type DatabaseDump = {
+	customer: CustomerTableEntry[];
+	customer_order_lines: CustomerOrderLinesTableEntry[];
+	book: BookTableEntry[];
+	supplier: SupplierTableEntry[];
+	supplier_publisher: SupplierPublisherTableEntry[];
+	supplier_order: SupplierOrderTableEntry[];
+	supplier_order_line: SupplierOrderLineTableEntry[];
+	reconciliation_order: ReconciliationOrderTableEntry[];
+	reconciliation_order_line: ReconciliationOrderLineTableEntry[];
+	customer_order_line_supplier_order: CustomerOrderLineSupplierOrderTableEntry[];
+	warehouse: WarehouseTableEntry[];
+	note: NoteTableEntry[];
+	book_transaction: BookTransactionTableEntry[];
+	custom_item: CustomItemTableEntry[];
+};
