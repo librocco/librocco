@@ -6,13 +6,12 @@
 
 	import { wrapIter } from "@librocco/shared";
 
+	import type { LayoutData } from "../$types";
+
 	import { page } from "$app/stores";
 
 	import { TooltipWrapper } from "$lib/components";
 
-	import { dbNamePersisted } from "$lib/db";
-
-	import { getInitializedDB } from "$lib/db/cr-sqlite";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 	import {
 		createReconciliationOrder,
@@ -24,6 +23,10 @@
 
 	import { appPath } from "$lib/paths";
 	import { debugData as dd } from "$lib/__testData__/debugData";
+
+	export let data: LayoutData;
+
+	$: db = data?.dbCtx?.db;
 
 	$: ({ nav: tNav } = $LL);
 
@@ -100,8 +103,6 @@
 		}
 	];
 
-	$: dbName = $dbNamePersisted;
-
 	// Function to generate random ISBN (10 digits)
 	function generateRandomISBN() {
 		return Math.floor(1000000000 + Math.random() * 9000000000).toString();
@@ -127,7 +128,6 @@
 	async function upsert100Books() {
 		isLoading = true;
 		errorMessage = null;
-		const db = await getInitializedDB(dbName);
 
 		try {
 			// Create an array of 100 book objects with deterministic values
@@ -145,7 +145,7 @@
 
 			// Insert each book
 			for (const book of books) {
-				await db.db.exec(`
+				await db.exec(`
                      INSERT INTO book (isbn, title, authors, publisher, price, year)
                      VALUES (
                          '${book.isbn}',
@@ -170,7 +170,7 @@
 				const publisherName = `Publisher ${i}`;
 
 				// Insert supplier
-				await db.db.exec(`
+				await db.exec(`
                      INSERT INTO supplier (id, name, email, address)
                      VALUES (
                          ${supplierId},
@@ -185,7 +185,7 @@
                  `);
 
 				// Link publisher to supplier
-				await db.db.exec(`
+				await db.exec(`
                      INSERT INTO supplier_publisher (supplier_id, publisher)
                      VALUES (${supplierId}, '${publisherName}')
                      ON CONFLICT(publisher) DO NOTHING
@@ -203,8 +203,6 @@
 	}
 
 	const populateDatabase = async function () {
-		const { db } = await getInitializedDB(dbName);
-
 		errorMessage = null;
 		console.log("Populating database");
 
@@ -278,7 +276,6 @@
 	};
 
 	const resetDatabase = async function resetDatabase() {
-		const db = await getInitializedDB(dbName);
 		errorMessage = null;
 		const tables = [
 			"book",
@@ -296,7 +293,7 @@
 		await Promise.all(
 			tables.map(async (table) => {
 				console.log(`Clearing ${table}`);
-				await db.db.exec(`DELETE FROM ${table}`);
+				await db.exec(`DELETE FROM ${table}`);
 			})
 		);
 		await loadData();
@@ -307,27 +304,24 @@
 
 		isLoading = true;
 
-		const db = await getInitializedDB(dbName);
-
-		book = await db.db.exec("SELECT COUNT(*) from book;");
-		supplier = await db.db.exec("SELECT COUNT(*) from supplier;");
-		supplier_publisher = await db.db.exec("SELECT COUNT(*) from supplier_publisher;");
-		customer = await db.db.exec("SELECT COUNT(*) from customer;");
-		customer_order_lines = await db.db.exec("SELECT COUNT(*) from customer_order_lines;");
-		supplier_order = await db.db.exec("SELECT COUNT(*) from supplier_order;");
-		supplier_order_line = await db.db.exec("SELECT COUNT(*) from supplier_order_line;");
-		reconciliation_order = await db.db.exec("SELECT COUNT(*) from reconciliation_order;");
-		reconciliation_order_lines = await db.db.exec("SELECT COUNT(*) from reconciliation_order_lines;");
+		book = await db.exec("SELECT COUNT(*) from book;");
+		supplier = await db.exec("SELECT COUNT(*) from supplier;");
+		supplier_publisher = await db.exec("SELECT COUNT(*) from supplier_publisher;");
+		customer = await db.exec("SELECT COUNT(*) from customer;");
+		customer_order_lines = await db.exec("SELECT COUNT(*) from customer_order_lines;");
+		supplier_order = await db.exec("SELECT COUNT(*) from supplier_order;");
+		supplier_order_line = await db.exec("SELECT COUNT(*) from supplier_order_line;");
+		reconciliation_order = await db.exec("SELECT COUNT(*) from reconciliation_order;");
+		reconciliation_order_lines = await db.exec("SELECT COUNT(*) from reconciliation_order_lines;");
 		isLoading = false;
 	};
 
 	async function executeQuery() {
 		isLoading = true;
 		errorMessage = null;
-		const db = await getInitializedDB(dbName);
 
 		try {
-			queryResult = await db.db.execO(query);
+			queryResult = await db.execO(query);
 		} catch (error) {
 			errorMessage = error;
 		} finally {
