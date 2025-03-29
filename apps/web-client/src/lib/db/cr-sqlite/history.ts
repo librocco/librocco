@@ -125,7 +125,7 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
             b.title,
             b.authors,
             bt.quantity,
-            b.price,
+            COALESCE(b.price, 0) AS price,
             n.committed_at,
             bt.warehouse_id AS warehouseId,
             w.display_name AS warehouseName,
