@@ -1,5 +1,8 @@
 <script lang="ts">
+	import { onDestroy, onMount } from "svelte";
 	import { Truck } from "lucide-svelte";
+
+	import { invalidate } from "$app/navigation";
 
 	import { createSupplierOrder } from "$lib/db/cr-sqlite/suppliers";
 
@@ -7,13 +10,9 @@
 
 	import type { PageData } from "./$types";
 	import { base } from "$app/paths";
-	import { onDestroy, onMount } from "svelte";
 
 	export let data: PageData;
 
-	// depends("books:data");
-	// depends("supplier:data");
-	// depends("customers:order_lines");
 	let disposer: () => void;
 	onMount(() => {
 		// NOTE: dbCtx should always be defined on client
