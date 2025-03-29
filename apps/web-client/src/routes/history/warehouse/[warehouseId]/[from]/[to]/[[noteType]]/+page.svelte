@@ -20,6 +20,7 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
+	import LL from "$i18n/i18n-svelte";
 
 	export let data: PageData;
 
@@ -73,15 +74,15 @@
 	// #region dropdown
 	const options = [
 		{
-			label: "All",
+			label: $LL.historyPage.warehouse.warehouseId.from.options.all.label,
 			value: ""
 		},
 		{
-			label: "Inbound",
+			label: $LL.historyPage.warehouse.warehouseId.from.options.inbound.label,
 			value: "inbound"
 		},
 		{
-			label: "Outbound",
+			label: $LL.historyPage.warehouse.warehouseId.from.options.outbound.label,
 			value: "outbound"
 		}
 	];
@@ -92,16 +93,16 @@
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
-				{ displayLabel: "Quantity", key: "quantity" },
-				{ displayLabel: "ISBN", key: "isbn" },
-				{ displayLabel: "Title", key: "title" },
-				{ displayLabel: "Publisher", key: "publisher" },
-				{ displayLabel: "Authors", key: "authors" },
-				{ displayLabel: "Year", key: "year" },
-				{ displayLabel: "Price", key: "price" },
-				{ displayLabel: "Category", key: "category" },
-				{ displayLabel: "Edited by", key: "edited_by" },
-				{ displayLabel: "Out of print", key: "out_of_print" }
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.quantity(), key: "quantity" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.isbn(), key: "isbn" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.title(), key: "title" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.publisher(), key: "publisher" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.authors(), key: "authors" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.year(), key: "year" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.price(), key: "price" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.category(), key: "category" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.editedBy(), key: "edited_by" },
+				{ displayLabel: $LL.historyPage.warehouse.warehouseId.from.columnHeaders.outOfPrint(), key: "out_of_print" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
@@ -117,12 +118,17 @@
 <HistoryPage view="history/date">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
-			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{displayName || ""} history</h1>
+			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
+				{displayName || ""}
+				{$LL.historyPage.warehouse.warehouseId.from.heading.history}
+			</h1>
 
-			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3">Export CSV</button>
+			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3"
+				>{$LL.historyPage.warehouse.warehouseId.from.heading.exportCSV}</button
+			>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
-				<p>From:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.from}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker
 						id="calendar-from"
@@ -131,12 +137,12 @@
 						{isDateDisabled}
 					/>
 				</div>
-				<p>To:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.to}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker id="calendar-to" onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
 				</div>
 
-				<p>Filter:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.filter}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}

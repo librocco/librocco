@@ -10,6 +10,7 @@
 	import HistoryPage from "$lib/components/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
+	import LL from "$i18n/i18n-svelte";
 
 	export let data: PageData;
 
@@ -61,7 +62,7 @@
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.historyPage.warehouse.books}</span>
 								</div>
 
 								{#if warehouseDiscount}
@@ -69,7 +70,7 @@
 										<div class="border border-gray-700 p-[1px]">
 											<Percent class="text-gray-700" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {$LL.historyPage.warehouse.discount}</span>
 									</div>
 								{/if}
 							</div>

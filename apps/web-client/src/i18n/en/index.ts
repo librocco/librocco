@@ -21,9 +21,94 @@ const search = {
 	}
 };
 
+const historyPage = {
+	date: {
+		stats: {
+			title: "Stats",
+			totalInboundBookCount: "Inbound Book Count",
+			totalInboundCoverPrice: "Inbound Cover Price",
+			totalInboundDiscountedPrice: "Inbound Discounted Price",
+			totalOutboundBookCount: "Outbound Book Count",
+			totalOutboundCoverPrice: "Outbound Cover Price",
+			totalOutboundDiscountedPrice: "Outbound Discounted Price"
+		},
+		transactions: {
+			title: "Transactions",
+			committed: "Committed"
+		}
+	},
+	isbn: {
+		transactions: "Transactions",
+		history: "History",
+		isbnId: {
+			stock: "Stock",
+			placeholderBox: {
+				title: "No transactions found",
+				description: "There seems to be no record of transactions for the given isbn volumes going in or out"
+			}
+		},
+		placeholderBox: {
+			title: "No book selected",
+			description: "Use the search field to find the book you're looking for"
+		}
+	},
+	notes: {
+		datePage: {
+			history: "History",
+			books: "Books",
+			totalCoverPrice: "Total cover price",
+			committed: "Committed",
+			totalDiscountedPrice: "Total discounted price"
+		},
+		archivePage: {
+			committedAt: "Committed At",
+			exportCSV: "Export CSV"
+		}
+	},
+	warehouse: {
+		warehouseId: {
+			from: {
+				options: {
+					all: {
+						label: "All"
+					},
+					inbound: {
+						label: "Inbound"
+					},
+					outbound: {
+						label: "Outbound"
+					}
+				},
+				columnHeaders: {
+					quantity: "quantity",
+					isbn: "isbn",
+					title: "title",
+					publisher: "publisher",
+					authors: "authors",
+					year: "year",
+					price: "price",
+					category: "category",
+					editedBy: "edited_by",
+					outOfPrint: "out_of_print"
+				},
+				heading: {
+					history: "history",
+					exportCSV: "Export CSV",
+					from: "From",
+					to: "To",
+					filter: "Filter"
+				}
+			}
+		},
+		books: "books",
+		discount: "discount"
+	}
+};
+
 const en = {
 	nav,
-	search
+	search,
+	historyPage
 } satisfies BaseTranslation;
 
 export default en;
