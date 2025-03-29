@@ -74,15 +74,15 @@
 	// #region dropdown
 	const options = [
 		{
-			label: $LL.historyPage.warehouse.warehouseId.from.options.all.label,
+			label: $LL.historyPage.warehouse.warehouseId.from.options.all.label(),
 			value: ""
 		},
 		{
-			label: $LL.historyPage.warehouse.warehouseId.from.options.inbound.label,
+			label: $LL.historyPage.warehouse.warehouseId.from.options.inbound.label(),
 			value: "inbound"
 		},
 		{
-			label: $LL.historyPage.warehouse.warehouseId.from.options.outbound.label,
+			label: $LL.historyPage.warehouse.warehouseId.from.options.outbound.label(),
 			value: "outbound"
 		}
 	];
@@ -120,15 +120,15 @@
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
 				{displayName || ""}
-				{$LL.historyPage.warehouse.warehouseId.from.heading.history}
+				{$LL.historyPage.warehouse.warehouseId.from.heading.history()}
 			</h1>
 
 			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3"
-				>{$LL.historyPage.warehouse.warehouseId.from.heading.exportCSV}</button
+				>{$LL.historyPage.warehouse.warehouseId.from.heading.exportCSV()}</button
 			>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
-				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.from}:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.from()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker
 						id="calendar-from"
@@ -137,12 +137,12 @@
 						{isDateDisabled}
 					/>
 				</div>
-				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.to}:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.to()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker id="calendar-to" onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
 				</div>
 
-				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.filter}:</p>
+				<p>{$LL.historyPage.warehouse.warehouseId.from.heading.filter()}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
@@ -176,7 +176,9 @@
 				<!-- End entity list placeholder -->
 			{:else}
 				<div class="sticky top-0">
-					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
+						{$LL.historyPage.warehouse.warehouseId.from.transactions()}
+					</h2>
 				</div>
 				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 					{#each transactions as txn}

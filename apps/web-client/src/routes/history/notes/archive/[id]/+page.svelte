@@ -95,14 +95,14 @@
 				<div class="w-fit">
 					{#if updatedAt}
 						<span class="badge badge-md badge-green"
-							>{$LL.historyPage.notes.archivePage.committedAt}: {generateUpdatedAtString(updatedAt)}</span
+							>{$LL.historyPage.notes.archivePage.committedAt()}: {generateUpdatedAtString(updatedAt)}</span
 						>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">{$LL.historyPage.notes.archivePage.exportCSV}</button>
+				<button class="button button-green">{$LL.historyPage.notes.archivePage.exportCSV()}</button>
 			</div>
 		</div>
 	</svelte:fragment>

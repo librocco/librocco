@@ -91,8 +91,8 @@
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox
-					title={`${$LL.inventoryPage.inbound.PlaceholderBox.title}`}
-					description={`${$LL.inventoryPage.inbound.PlaceholderBox.description}`}
+					title={`${$LL.inventoryPage.inbound.PlaceholderBox.title()}`}
+					description={`${$LL.inventoryPage.inbound.PlaceholderBox.description()}`}
 					class="center-absolute"
 				>
 					<a
@@ -118,11 +118,11 @@
 							<div class="flex flex-col items-start gap-y-2">
 								<div class="flex gap-x-0.5">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.inventoryPage.inbound.books}</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.inventoryPage.inbound.books()}</span>
 								</div>
 								{#if note.updatedAt}
 									<span class="badge badge-md badge-green">
-										{$LL.inventoryPage.inbound.lastUpdated}: {updatedAt}
+										{$LL.inventoryPage.inbound.lastUpdated()}: {updatedAt}
 									</span>
 								{/if}
 							</div>
