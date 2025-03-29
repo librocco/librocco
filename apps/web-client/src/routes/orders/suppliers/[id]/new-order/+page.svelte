@@ -82,16 +82,23 @@
 	}
 
 	function selectPortion(portion: number) {
-		// NOTE: selecting based on count, not the price (we might want to select based on price)
-		let numToSelect = Math.floor(totalPossibleBooks * portion);
+		let budget = Math.floor(totalPossiblePrice * portion);
 		const selected: { [isbn: string]: number } = {};
 
 		for (const line of orderLines) {
-			if (numToSelect === 0) break;
+			// Calc max quantity we can select, given the remaining budget
+			const maxQuantity = Math.floor(budget / line.price);
 
-			const selectedQuantity = Math.min(line.quantity, numToSelect);
-			selected[line.isbn] = selectedQuantity;
-			numToSelect -= selectedQuantity;
+			// If there are more possible lines than we can handle,
+			// select the max possible and terminate here
+			if (maxQuantity < line.quantity) {
+				selected[line.isbn] = maxQuantity;
+				break;
+			}
+
+			// Otherwise, select all of the line and continue
+			selected[line.isbn] = line.quantity;
+			budget -= line.price * line.quantity;
 		}
 
 		selectedBooksLookup = selected;
