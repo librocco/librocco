@@ -343,7 +343,7 @@
 							: ''}"
 					>
 						<Printer class="text-gray-400" size={20} /><span class="text-gray-700"
-							>{$LL.inventoryPage.inbound.inboundId.autoPrintLabels}</span
+							>{$LL.inventoryPage.inbound.inboundId.autoPrintBookLabels}</span
 						>
 					</div>
 					<div
@@ -451,7 +451,7 @@
 										data-testid={testId("print-book-label")}
 										on:click={() => handlePrintLabel(row)}
 									>
-										<span class="sr-only">{$LL.inventoryPage.inbound.inboundId.printLabel} {rowIx}</span>
+										<span class="sr-only">{$LL.inventoryPage.inbound.inboundId.printBookLabel} {rowIx}</span>
 										<span class="aria-hidden">
 											<Printer />
 										</span>
