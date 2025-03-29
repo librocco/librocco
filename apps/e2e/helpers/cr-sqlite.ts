@@ -211,6 +211,16 @@ export async function upsertReconciliationOrderLines(db: DB, params: { id: numbe
 	await window.reconciliation.upsertReconciliationOrderLines(db, id, newLines);
 }
 
+/**
+ * E2E test helper for unassigning a publisher form a supplier.
+ * References the original removePublisherFromSupplier function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:removePublisherFromSupplier
+ */
+export async function removePublisherFromSupplier(db: DB, params: { supplierId: number; publisher: string }) {
+	const { supplierId, publisher } = params;
+	await window.suppliers.removePublisherFromSupplier(db, supplierId, publisher);
+}
+
 export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
 	const result = await db.execO<DBCustomerOrderLine>(
 		`SELECT
