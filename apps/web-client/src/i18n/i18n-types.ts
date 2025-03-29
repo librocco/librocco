@@ -260,6 +260,10 @@ type RootTranslation = {
 						 */
 						filter: string
 					}
+					/**
+					 * T​r​a​n​s​a​c​t​i​o​n​s
+					 */
+					transactions: string
 				}
 			}
 			/**
@@ -589,6 +593,10 @@ export type TranslationFunctions = {
 						 */
 						filter: () => LocalizedString
 					}
+					/**
+					 * Transactions
+					 */
+					transactions: () => LocalizedString
 				}
 			}
 			/**

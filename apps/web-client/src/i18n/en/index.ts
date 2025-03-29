@@ -97,7 +97,8 @@ const historyPage = {
 					from: "From",
 					to: "To",
 					filter: "Filter"
-				}
+				},
+				transactions: "Transactions"
 			}
 		},
 		books: "books",
