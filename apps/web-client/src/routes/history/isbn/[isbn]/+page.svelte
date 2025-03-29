@@ -19,6 +19,7 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
+	import LL from "$i18n/i18n-svelte";
 
 	$: isbn = $page.params.isbn;
 
@@ -102,7 +103,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
 				<div class="border-b border-gray-300">
-					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
+					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">{$LL.historyPage.isbn.isbnPage.stock}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -125,14 +126,14 @@
 				{#if !transactions?.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox
-						title="No transactions found"
-						description="There seems to be no record of transactions for the given isbn volumes going in or out"
+						title={`${$LL.historyPage.isbn.isbnPage.placeholderBox.title}`}
+						description={`${$LL.historyPage.isbn.isbnPage.placeholderBox.description}`}
 						class="center-absolute"
 					/>
 					<!-- End entity list placeholder -->
 				{:else}
 					<div class="sticky top-0">
-						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">{$LL.historyPage.isbn.transactions}</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 						{#each transactions as { quantity, noteId, noteName, noteType, committedAt, warehouseName }}
