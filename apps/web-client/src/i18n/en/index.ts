@@ -134,7 +134,8 @@ const inventoryPage = {
 const en = {
 	nav,
 	search,
-	historyPage
+	historyPage,
+	inventoryPage
 } satisfies BaseTranslation;
 
 export default en;
