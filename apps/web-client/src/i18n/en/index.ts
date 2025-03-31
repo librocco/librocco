@@ -21,8 +21,8 @@ const search = {
 	}
 };
 
-const historyPage = {
-	date: {
+const history_page = {
+	date_tab: {
 		stats: {
 			title: "Stats",
 			totalInboundBookCount: "Inbound Book Count",
@@ -37,7 +37,7 @@ const historyPage = {
 			committed: "Committed"
 		}
 	},
-	isbn: {
+	isbn_tab: {
 		transactions: "Transactions",
 		history: "History",
 		isbnId: {
@@ -52,21 +52,21 @@ const historyPage = {
 			description: "Use the search field to find the book you're looking for"
 		}
 	},
-	notes: {
-		datePage: {
+	notes_tab: {
+		date: {
 			history: "History",
 			books: "Books",
 			totalCoverPrice: "Total cover price",
 			committed: "Committed",
 			totalDiscountedPrice: "Total discounted price"
 		},
-		archivePage: {
+		archive: {
 			committedAt: "Committed At",
 			exportCSV: "Export CSV"
 		}
 	},
-	warehouse: {
-		warehouseId: {
+	warehouse_tab: {
+		warehouseId_page: {
 			from: {
 				options: {
 					all: {
@@ -106,15 +106,15 @@ const historyPage = {
 	}
 };
 
-const inventoryPage = {
-	inbound: {
+const inventory_page = {
+	inbound_tab: {
 		PlaceholderBox: {
 			title: "No open notes",
 			description: "Get started by adding a new note with the appropriate warehouse"
 		},
-		BackToWarehouses: "Back to warehouses",
+		back_to_warehouses: "Back to warehouses",
 		books: "books",
-		lastUpdated: "Last Updated",
+		last_updated: "Last Updated",
 		edit: "Edit",
 		inboundId: {
 			lastUpdated: "Last updated",
@@ -126,17 +126,14 @@ const inventoryPage = {
 			printBookLabel: "Print book label",
 			deleteRow: "Delete row"
 		}
-	},
-	outbound: {
-		PlaceholderBox: {}
 	}
 };
 
 const en = {
 	nav,
 	search,
-	historyPage,
-	inventoryPage
+	history_page,
+	inventory_page
 } satisfies BaseTranslation;
 
 export default en;
