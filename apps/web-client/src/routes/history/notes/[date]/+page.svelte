@@ -63,7 +63,7 @@
 <HistoryPage view="history/notes">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{`${$LL.historyPage.notes.datePage.history()}`}</h1>
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">{`${$LL.history_page.notes_tab.date.history()}`}</h1>
 
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
@@ -94,21 +94,21 @@
 							<div class="grid w-full grid-cols-4 items-start gap-2 lg:grid-cols-8">
 								<div class="order-1 col-span-2 flex gap-x-0.5 lg:col-span-1">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.historyPage.notes.datePage.books()}</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.history_page.notes_tab.date.books()}</span>
 								</div>
 
 								<p class="order-2 col-span-2 text-gray-500 lg:order-3">
-									{$LL.historyPage.notes.datePage.totalCoverPrice()}: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
+									{$LL.history_page.notes_tab.date.totalCoverPrice()}: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										{$LL.historyPage.notes.datePage.committed()}: {generateUpdatedAtString(note.committedAt, "time-only")}
+										{$LL.history_page.notes_tab.date.committed()}: {generateUpdatedAtString(note.committedAt, "time-only")}
 									</span>
 								</p>
 
 								<p class="order-4 col-span-2 text-gray-500">
-									{$LL.historyPage.notes.datePage.totalDiscountedPrice()}:
+									{$LL.history_page.notes_tab.date.totalDiscountedPrice()}:
 									<span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
 								</p>
 							</div>

@@ -66,18 +66,12 @@ const history_page = {
 		}
 	},
 	warehouse_tab: {
-		warehouseId_page: {
+		warehouseId: {
 			from: {
-				options: {
-					all: {
-						label: "All"
-					},
-					inbound: {
-						label: "Inbound"
-					},
-					outbound: {
-						label: "Outbound"
-					}
+				filter_options: {
+					all: "All",
+					inbound: "Inbound",
+					outbound: "Outbound"
 				},
 				columnHeaders: {
 					quantity: "quantity",
