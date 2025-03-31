@@ -66,6 +66,7 @@
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
+	$: t = $LL.history_page.notes_tab.archive;
 	/**
 	 * Handle create note is an `on:click` handler used to create a new outbound note
 	 * _(and navigate to the newly created note page)_.
@@ -94,15 +95,13 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green"
-							>{$LL.historyPage.notes.archivePage.committedAt()}: {generateUpdatedAtString(updatedAt)}</span
-						>
+						<span class="badge badge-md badge-green">{t.committedAt()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">{$LL.historyPage.notes.archivePage.exportCSV()}</button>
+				<button class="button button-green">{t.exportCSV()}</button>
 			</div>
 		</div>
 	</svelte:fragment>

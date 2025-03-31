@@ -233,6 +233,8 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	$: t = $LL.inventory_page.inbound_tab.inboundId;
 </script>
 
 <Page {handleCreateOutboundNote} view="inbound-note" loaded={!loading}>
@@ -278,9 +280,7 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green"
-							>{$LL.inventoryPage.inbound.inboundId.lastUpdated()}: {generateUpdatedAtString(updatedAt)}</span
-						>
+						<span class="badge badge-md badge-green">{t.lastUpdated()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -306,7 +306,7 @@
 						};
 					}}
 				>
-					<span class="button-text">{$LL.inventoryPage.inbound.inboundId.commit()}</span>
+					<span class="button-text">{t.commit()}</span>
 				</button>
 
 				<DropdownWrapper let:item>
@@ -324,7 +324,7 @@
 						}}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
 					>
-						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{$LL.inventoryPage.inbound.inboundId.commit()}</span>
+						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{t.commit()}</span>
 					</div>
 					<div
 						{...item}
@@ -332,7 +332,7 @@
 						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{$LL.inventoryPage.inbound.inboundId.print()}</span>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{t.print()}</span>
 					</div>
 					<div
 						{...item}
@@ -342,9 +342,7 @@
 							? '!bg-green-400'
 							: ''}"
 					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700"
-							>{$LL.inventoryPage.inbound.inboundId.autoPrintBookLabels()}</span
-						>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{t.autoPrintBookLabels()}</span>
 					</div>
 					<div
 						{...item}
@@ -368,7 +366,7 @@
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">{$LL.inventoryPage.inbound.inboundId.delete()}</span>
+						<Trash2 class="text-white" size={20} /><span class="text-white">{t.delete()}</span>
 					</div>
 				</DropdownWrapper>
 			</div>
@@ -440,7 +438,7 @@
 											};
 										}}
 									>
-										<span class="sr-only">{$LL.inventoryPage.inbound.inboundId.editRow()} {rowIx}</span>
+										<span class="sr-only">{t.editRow()} {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
@@ -451,7 +449,7 @@
 										data-testid={testId("print-book-label")}
 										on:click={() => handlePrintLabel(row)}
 									>
-										<span class="sr-only">{$LL.inventoryPage.inbound.inboundId.printBookLabel()} {rowIx}</span>
+										<span class="sr-only">{t.printBookLabel()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Printer />
 										</span>
@@ -462,7 +460,7 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
-										<span class="sr-only">{$LL.inventoryPage.inbound.inboundId.deleteRow()} {rowIx}</span>
+										<span class="sr-only">{t.deleteRow()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Trash2 />
 										</span>
