@@ -60,8 +60,8 @@ type RootTranslation = {
 			description: string
 		}
 	}
-	historyPage: {
-		date: {
+	history_page: {
+		date_tab: {
 			stats: {
 				/**
 				 * S​t​a​t​s
@@ -103,7 +103,7 @@ type RootTranslation = {
 				committed: string
 			}
 		}
-		isbn: {
+		isbn_tab: {
 			/**
 			 * T​r​a​n​s​a​c​t​i​o​n​s
 			 */
@@ -139,8 +139,8 @@ type RootTranslation = {
 				description: string
 			}
 		}
-		notes: {
-			datePage: {
+		notes_tab: {
+			date: {
 				/**
 				 * H​i​s​t​o​r​y
 				 */
@@ -162,7 +162,7 @@ type RootTranslation = {
 				 */
 				totalDiscountedPrice: string
 			}
-			archivePage: {
+			archive: {
 				/**
 				 * C​o​m​m​i​t​t​e​d​ ​A​t
 				 */
@@ -173,28 +173,22 @@ type RootTranslation = {
 				exportCSV: string
 			}
 		}
-		warehouse: {
+		warehouse_tab: {
 			warehouseId: {
 				from: {
-					options: {
-						all: {
-							/**
-							 * A​l​l
-							 */
-							label: string
-						}
-						inbound: {
-							/**
-							 * I​n​b​o​u​n​d
-							 */
-							label: string
-						}
-						outbound: {
-							/**
-							 * O​u​t​b​o​u​n​d
-							 */
-							label: string
-						}
+					filter_options: {
+						/**
+						 * A​l​l
+						 */
+						all: string
+						/**
+						 * I​n​b​o​u​n​d
+						 */
+						inbound: string
+						/**
+						 * O​u​t​b​o​u​n​d
+						 */
+						outbound: string
 					}
 					columnHeaders: {
 						/**
@@ -276,8 +270,8 @@ type RootTranslation = {
 			discount: string
 		}
 	}
-	inventoryPage: {
-		inbound: {
+	inventory_page: {
+		inbound_tab: {
 			PlaceholderBox: {
 				/**
 				 * N​o​ ​o​p​e​n​ ​n​o​t​e​s
@@ -291,7 +285,7 @@ type RootTranslation = {
 			/**
 			 * B​a​c​k​ ​t​o​ ​w​a​r​e​h​o​u​s​e​s
 			 */
-			BackToWarehouses: string
+			back_to_warehouses: string
 			/**
 			 * b​o​o​k​s
 			 */
@@ -299,7 +293,7 @@ type RootTranslation = {
 			/**
 			 * L​a​s​t​ ​U​p​d​a​t​e​d
 			 */
-			lastUpdated: string
+			last_updated: string
 			/**
 			 * E​d​i​t
 			 */
@@ -337,10 +331,6 @@ type RootTranslation = {
 				 * D​e​l​e​t​e​ ​r​o​w
 				 */
 				deleteRow: string
-			}
-		}
-		outbound: {
-			PlaceholderBox: {
 			}
 		}
 	}
@@ -393,8 +383,8 @@ export type TranslationFunctions = {
 			description: () => LocalizedString
 		}
 	}
-	historyPage: {
-		date: {
+	history_page: {
+		date_tab: {
 			stats: {
 				/**
 				 * Stats
@@ -436,7 +426,7 @@ export type TranslationFunctions = {
 				committed: () => LocalizedString
 			}
 		}
-		isbn: {
+		isbn_tab: {
 			/**
 			 * Transactions
 			 */
@@ -472,8 +462,8 @@ export type TranslationFunctions = {
 				description: () => LocalizedString
 			}
 		}
-		notes: {
-			datePage: {
+		notes_tab: {
+			date: {
 				/**
 				 * History
 				 */
@@ -495,7 +485,7 @@ export type TranslationFunctions = {
 				 */
 				totalDiscountedPrice: () => LocalizedString
 			}
-			archivePage: {
+			archive: {
 				/**
 				 * Committed At
 				 */
@@ -506,28 +496,22 @@ export type TranslationFunctions = {
 				exportCSV: () => LocalizedString
 			}
 		}
-		warehouse: {
+		warehouse_tab: {
 			warehouseId: {
 				from: {
-					options: {
-						all: {
-							/**
-							 * All
-							 */
-							label: () => LocalizedString
-						}
-						inbound: {
-							/**
-							 * Inbound
-							 */
-							label: () => LocalizedString
-						}
-						outbound: {
-							/**
-							 * Outbound
-							 */
-							label: () => LocalizedString
-						}
+					filter_options: {
+						/**
+						 * All
+						 */
+						all: () => LocalizedString
+						/**
+						 * Inbound
+						 */
+						inbound: () => LocalizedString
+						/**
+						 * Outbound
+						 */
+						outbound: () => LocalizedString
 					}
 					columnHeaders: {
 						/**
@@ -609,8 +593,8 @@ export type TranslationFunctions = {
 			discount: () => LocalizedString
 		}
 	}
-	inventoryPage: {
-		inbound: {
+	inventory_page: {
+		inbound_tab: {
 			PlaceholderBox: {
 				/**
 				 * No open notes
@@ -624,7 +608,7 @@ export type TranslationFunctions = {
 			/**
 			 * Back to warehouses
 			 */
-			BackToWarehouses: () => LocalizedString
+			back_to_warehouses: () => LocalizedString
 			/**
 			 * books
 			 */
@@ -632,7 +616,7 @@ export type TranslationFunctions = {
 			/**
 			 * Last Updated
 			 */
-			lastUpdated: () => LocalizedString
+			last_updated: () => LocalizedString
 			/**
 			 * Edit
 			 */
@@ -670,10 +654,6 @@ export type TranslationFunctions = {
 				 * Delete row
 				 */
 				deleteRow: () => LocalizedString
-			}
-		}
-		outbound: {
-			PlaceholderBox: {
 			}
 		}
 	}

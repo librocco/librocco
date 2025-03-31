@@ -33,6 +33,8 @@
 
 	$: warehouses = data.warehouses;
 
+	$: t = $LL.history_page.warehouse_tab;
+
 	let initialised = false;
 	$: initialised = Boolean(data);
 </script>
@@ -62,7 +64,7 @@
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} {$LL.historyPage.warehouse.books()}</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {t.books()}</span>
 								</div>
 
 								{#if warehouseDiscount}
@@ -70,7 +72,7 @@
 										<div class="border border-gray-700 p-[1px]">
 											<Percent class="text-gray-700" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {$LL.historyPage.warehouse.discount()}</span>
+										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {t.discount()}</span>
 									</div>
 								{/if}
 							</div>
