@@ -14,7 +14,7 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
-	import LL from "$i18n/i18n-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 

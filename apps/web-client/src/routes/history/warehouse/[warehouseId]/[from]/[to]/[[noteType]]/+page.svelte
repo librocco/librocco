@@ -6,7 +6,7 @@
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";
 
-	import { entityListView, testId } from "@librocco/shared";
+	import { entityListView, testId, type TranslationFunctions } from "@librocco/shared";
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
@@ -20,7 +20,8 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import LL from "$i18n/i18n-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
+	import type { LocalizedString } from "typesafe-i18n";
 
 	export let data: PageData;
 
@@ -45,6 +46,12 @@
 	$: filter = data.noteType;
 
 	$: t = $LL.history_page.warehouse_tab.warehouseId;
+
+	let tt: { [option: string]: () => LocalizedString };
+	LL.subscribe((LL) => {
+		// Update the translation object
+		tt = LL.history_page.warehouse_tab.warehouseId.from.filter_options;
+	});
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -76,15 +83,15 @@
 	// #region dropdown
 	const options = [
 		{
-			label: t.from.filter_options.all(),
+			label: tt.all(),
 			value: ""
 		},
 		{
-			label: t.from.filter_options.inbound(),
+			label: tt.inbound(),
 			value: "inbound"
 		},
 		{
-			label: t.from.filter_options.outbound(),
+			label: tt.outbound(),
 			value: "outbound"
 		}
 	];

@@ -20,6 +20,22 @@
 			"require": {
 				"default": "./db-schemas/*"
 			}
+		},
+		"./i18n-svelte": {
+			"types": "./dist/i18n/i18n-svelte.d.ts",
+			"default": "./src/i18n/i18n-svelte.ts"
+		},
+		"./i18n-util.async": {
+			"types": "./dist/i18n/i18n-util.async.d.ts",
+			"default": "./src/i18n/i18n-util.async.ts"
+		},
+		"./i18n-util.sync": {
+			"types": "./dist/i18n/i18n-util.sync.d.ts",
+			"default": "./src/i18n/i18n-util.sync.ts"
+		},
+		"./i18n-util": {
+			"types": "./dist/i18n/i18n-util.d.ts",
+			"default": "./src/i18n/i18n-util.ts"
 		}
 	},
 	"types": "dist/index.d.ts",
@@ -31,7 +47,9 @@
 		"format": "prettier --write .",
 		"test": "vitest --ui",
 		"test:ci": "CI=true vitest run",
-		"typecheck": "tsc --noEmit"
+		"typecheck": "tsc --noEmit",
+		"typesafe-i18n": "typesafe-i18n",
+		"typesafe-i18n-check": "typesafe-i18n --no-watch && git diff --quiet || (echo 'Error: Changes detected in i18n files. Please commit the changes.' && exit 1)"
 	},
 	"devDependencies": {
 		"@typescript-eslint/eslint-plugin": "^7.17.1",
@@ -39,6 +57,7 @@
 		"eslint": "^8.13.0",
 		"eslint-config-prettier": "^8.6.0",
 		"prettier": "^3.3.3",
+		"typesafe-i18n": "~5.26.2",
 		"typescript": "^5.5.0",
 		"vite": "~6.0.11",
 		"vitest": "~3.0.4",
@@ -46,6 +65,9 @@
 		"@vitest/ui": "~3.0.4",
 		"prettier-plugin-svelte": "^3.2.6",
 		"prettier-plugin-tailwindcss": "~0.6.8"
+	},
+	"peerDependencies": {
+		"typesafe-i18n": "~5.26.2"
 	},
 	"type": "module"
 }
