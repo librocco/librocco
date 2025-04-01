@@ -276,6 +276,11 @@ jobs:
       run: cd apps/web-client && rushx build:prod
       env:
         BASE_PATH: /${{ github.head_ref || github.ref_name }}
+        SENTRY_ORG: code-myriad
+        SENTRY_PROJECT: librocco
+        SENTRY_URL: https://sentry.libroc.co
+        SENTRY_AUTH_TOKEN: ${{ secrets.SETNRY_AUTH_TOKEN }}
+        PUBLIC_SENTRY_DSN: ${{ secrets.PUBLIC_SENTRY_DSN }}
     - name: Install lftp
       run: |
         sudo apt-get update

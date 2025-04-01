@@ -1,5 +1,6 @@
 import path from "path";
 import { sveltekit } from "@sveltejs/kit/vite";
+import { sentrySvelteKit } from "@sentry/sveltekit";
 
 import pkg from "./package.json";
 
@@ -24,6 +25,7 @@ const config = {
 		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
 	},
 	plugins: [
+		sentrySvelteKit(),
 		sveltekit(),
 		{
 			name: "configure-response-headers",
