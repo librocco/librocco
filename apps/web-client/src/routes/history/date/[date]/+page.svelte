@@ -15,7 +15,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
-	import LL from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
