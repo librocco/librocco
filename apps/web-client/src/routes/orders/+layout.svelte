@@ -5,7 +5,7 @@
 
 	import type { LayoutData } from "../$types";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
