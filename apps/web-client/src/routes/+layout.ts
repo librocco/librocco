@@ -11,9 +11,9 @@ import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { loadLocaleAsync } from "$i18n/i18n-util.async";
-import { setLocale } from "$i18n/i18n-svelte";
-import { detectLocale } from "$i18n/i18n-util";
+import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
+import { setLocale } from "@librocco/shared/i18n-svelte";
+import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
