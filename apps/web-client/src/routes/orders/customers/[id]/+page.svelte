@@ -179,235 +179,229 @@
 	let dialogContent: DialogContent & { type: "delete" | "edit-row" };
 </script>
 
-<header class="navbar mb-4 bg-neutral">
-	<input type="checkbox" value="forest" class="theme-controller toggle" />
-</header>
+<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+	<div class="min-w-fit md:basis-96 md:overflow-y-auto">
+		<div class="card h-full">
+			{#if customer}
+				<div class="card-body gap-y-2 p-0">
+					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
+						<h1 class="prose card-title">Customer Order</h1>
 
-<main class="h-screen">
-	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-			<div class="card h-full">
-				{#if customer}
-					<div class="card-body gap-y-2 p-0">
-						<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-							<h1 class="prose card-title">Customer Order</h1>
+						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
+							<h2 class="prose">#{customer.displayId}</h2>
 
-							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-								<h2 class="prose">#{customer.displayId}</h2>
-
-								<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-									<span class="sr-only">Last updated</span>
-									<ClockArrowUp size={16} aria-hidden />
-									<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
-										>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
-									>
-								</span>
-							</div>
+							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
+								<span class="sr-only">Last updated</span>
+								<ClockArrowUp size={16} aria-hidden />
+								<time dateTime={data?.customer?.updatedAt ? new Date(data?.customer?.updatedAt).toISOString() : ""}
+									>{new Date(data?.customer?.updatedAt || "").toLocaleString()}</time
+								>
+							</span>
 						</div>
-						<dl class="flex flex-col">
-							<div class="border-b py-4 font-bold">
-								<dt class="max-md:sr-only">Total amount</dt>
-								<dd class="mt-1">€{totalAmount}</dd>
-							</div>
+					</div>
+					<dl class="flex flex-col">
+						<div class="border-b py-4 font-bold">
+							<dt class="max-md:sr-only">Total amount</dt>
+							<dd class="mt-1">€{totalAmount}</dd>
+						</div>
 
-							<div class="flex w-full flex-col gap-y-4 py-6">
-								{#if data?.customer}
-									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-										<div class="max-w-96 flex flex-col gap-y-4">
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">Customer name</span>
-													<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{data?.customer?.fullname || ""}</dd>
-											</div>
-											<div class="flex gap-x-3">
-												<dt>
-													<span class="sr-only">Customer email</span>
-													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-												</dt>
-												<dd class="truncate">{data?.customer?.email || ""}</dd>
-											</div>
+						<div class="flex w-full flex-col gap-y-4 py-6">
+							{#if data?.customer}
+								<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
+									<div class="max-w-96 flex flex-col gap-y-4">
+										<div class="flex gap-x-3">
+											<dt>
+												<span class="sr-only">Customer name</span>
+												<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+											</dt>
+											<dd class="truncate">{data?.customer?.fullname || ""}</dd>
 										</div>
 										<div class="flex gap-x-3">
 											<dt>
-												<span class="sr-only">Deposit</span>
-												<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												<span class="sr-only">Customer email</span>
+												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 											</dt>
-											<dd>€{data?.customer?.deposit || 0} deposit</dd>
+											<dd class="truncate">{data?.customer?.email || ""}</dd>
 										</div>
 									</div>
-
-									<div class="w-full pr-2">
-										<button
-											class="btn-secondary btn-outline btn-xs btn w-full"
-											type="button"
-											aria-label="Edit customer order name, email or deposit"
-											on:click={() => customerMetaDialogOpen.set(true)}
-											disabled={!data?.customer}
-										>
-											<PencilLine aria-hidden size={16} />
-										</button>
+									<div class="flex gap-x-3">
+										<dt>
+											<span class="sr-only">Deposit</span>
+											<ReceiptEuro aria-hidden="true" class="h-6 w-5 text-gray-400" />
+										</dt>
+										<dd>€{data?.customer?.deposit || 0} deposit</dd>
 									</div>
-								{/if}
-							</div>
-						</dl>
-						<div class="card-actions border-t py-6 md:mb-20">
-							<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
-								Print receipt
-								<ArrowRight aria-hidden size={20} />
-							</button>
+								</div>
+
+								<div class="w-full pr-2">
+									<button
+										class="btn-secondary btn-outline btn-xs btn w-full"
+										type="button"
+										aria-label="Edit customer order name, email or deposit"
+										on:click={() => customerMetaDialogOpen.set(true)}
+										disabled={!data?.customer}
+									>
+										<PencilLine aria-hidden size={16} />
+									</button>
+								</div>
+							{/if}
 						</div>
+					</dl>
+					<div class="card-actions border-t py-6 md:mb-20">
+						<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled>
+							Print receipt
+							<ArrowRight aria-hidden size={20} />
+						</button>
 					</div>
-				{/if}
-			</div>
+				</div>
+			{/if}
+		</div>
+	</div>
+
+	<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
+		<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
+			<h3 class="max-md:divider-start max-md:divider">Books</h3>
+
+			<DaisyUiScannerForm onSubmit={handleScanIsbn} />
 		</div>
 
-		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
-			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
-				<h3 class="max-md:divider-start max-md:divider">Books</h3>
-
-				<DaisyUiScannerForm onSubmit={handleScanIsbn} />
-			</div>
-
-			<div class="h-full overflow-x-auto">
-				<div class="h-full">
-					<table class="table-pin-rows table">
-						<thead>
+		<div class="h-full overflow-x-auto">
+			<div class="h-full">
+				<table class="table-pin-rows table">
+					<thead>
+						<tr>
+							<th>ISBN</th>
+							<th>Title</th>
+							<th>Authors</th>
+							<th>Price</th>
+							<th>Status</th>
+							<th>Collected</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status }}
 							<tr>
-								<th>ISBN</th>
-								<th>Title</th>
-								<th>Authors</th>
-								<th>Price</th>
-								<th>Status</th>
-								<th>Collected</th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each customerOrderLines as { id, isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category, collected, status }}
-								<tr>
-									<th>{isbn}</th>
-									<td>{title}</td>
-									<td>{authors}</td>
-									<td>{price}</td>
-									<td>
-										{#if status === OrderLineStatus.Collected}
-											<span class="badge-success badge">Collected</span>
-										{:else if status === OrderLineStatus.Received}
-											<span class="badge-info badge">Delivered</span>
-										{:else if status === OrderLineStatus.Placed}
-											<span class="badge-warning badge">Placed</span>
-										{:else}
-											<span class="badge">Pending</span>
-										{/if}
-									</td>
+								<th>{isbn}</th>
+								<td>{title}</td>
+								<td>{authors}</td>
+								<td>{price}</td>
+								<td>
+									{#if status === OrderLineStatus.Collected}
+										<span class="badge-success badge">Collected</span>
+									{:else if status === OrderLineStatus.Received}
+										<span class="badge-info badge">Delivered</span>
+									{:else if status === OrderLineStatus.Placed}
+										<span class="badge-warning badge">Placed</span>
+									{:else}
+										<span class="badge">Pending</span>
+									{/if}
+								</td>
 
-									<td>
-										{#if status === OrderLineStatus.Collected}
-											<!--
+								<td>
+									{#if status === OrderLineStatus.Collected}
+										<!--
 												NOTE: using ISO date here as this is a WIP, and it avoids ambiguity in E2E test difference of env.
 												TODO: use some more robust way to handle this (loacle time string that actually works)
 											-->
-											{collected.toISOString().slice(0, 10)}
-										{/if}
-									</td>
+										{collected.toISOString().slice(0, 10)}
+									{/if}
+								</td>
 
-									<td>
-										<PopoverWrapper
-											options={{
-												forceVisible: true,
-												positioning: {
-													placement: "left"
-												}
-											}}
-											let:trigger
+								<td>
+									<PopoverWrapper
+										options={{
+											forceVisible: true,
+											positioning: {
+												placement: "left"
+											}
+										}}
+										let:trigger
+									>
+										<button
+											data-testid={testId("popover-control")}
+											{...trigger}
+											use:trigger.action
+											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 										>
+											<span class="sr-only">Edit line</span>
+											<span class="aria-hidden">
+												<MoreVertical />
+											</span>
+										</button>
+										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
 											<button
-												data-testid={testId("popover-control")}
-												{...trigger}
-												use:trigger.action
-												class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+												use:melt={$dialogTrigger}
+												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+												data-testid={testId("edit-row")}
+												on:m-click={() => {
+													bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+													dialogContent = {
+														onConfirm: () => {},
+														title: dialogTitle.editBook(),
+														description: dialogDescription.editBook(),
+														type: "edit-row"
+													};
+												}}
+												on:m-keydown={() => {
+													bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
+
+													dialogContent = {
+														onConfirm: () => {},
+														title: dialogTitle.editBook(),
+														description: dialogDescription.editBook(),
+														type: "edit-row"
+													};
+												}}
 											>
-												<span class="sr-only">Edit line</span>
+												<span class="sr-only">Edit row</span>
 												<span class="aria-hidden">
-													<MoreVertical />
+													<FileEdit />
 												</span>
 											</button>
-											<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
-												<button
-													use:melt={$dialogTrigger}
-													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-													data-testid={testId("edit-row")}
-													on:m-click={() => {
-														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
-														dialogContent = {
-															onConfirm: () => {},
-															title: dialogTitle.editBook(),
-															description: dialogDescription.editBook(),
-															type: "edit-row"
-														};
-													}}
-													on:m-keydown={() => {
-														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
 
-														dialogContent = {
-															onConfirm: () => {},
-															title: dialogTitle.editBook(),
-															description: dialogDescription.editBook(),
-															type: "edit-row"
-														};
-													}}
+											{#if status === OrderLineStatus.Received}
+												<button
+													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+													data-testid={testId("collect-row")}
+													on:click={() => handleCollect(id)}
 												>
-													<span class="sr-only">Edit row</span>
+													<span class="sr-only">Collect</span>
 													<span class="aria-hidden">
-														<FileEdit />
+														<BookUp />
 													</span>
 												</button>
+											{/if}
 
-												{#if status === OrderLineStatus.Received}
-													<button
-														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-														data-testid={testId("collect-row")}
-														on:click={() => handleCollect(id)}
-													>
-														<span class="sr-only">Collect</span>
-														<span class="aria-hidden">
-															<BookUp />
-														</span>
-													</button>
-												{/if}
+											{#if status === OrderLineStatus.Pending}
+												<button
+													class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+													data-testid={testId("delete-row")}
+													on:click={() => handleDeleteLine(id)}
+												>
+													<span class="sr-only">Delete row</span>
+													<span class="aria-hidden">
+														<Trash2 />
+													</span>
+												</button>
+											{/if}
+										</div>
+									</PopoverWrapper>
+								</td>
 
-												{#if status === OrderLineStatus.Pending}
-													<button
-														class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-														data-testid={testId("delete-row")}
-														on:click={() => handleDeleteLine(id)}
-													>
-														<span class="sr-only">Delete row</span>
-														<span class="aria-hidden">
-															<Trash2 />
-														</span>
-													</button>
-												{/if}
-											</div>
-										</PopoverWrapper>
+								{#if status === OrderLineStatus.Pending}
+									<td>
+										<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
 									</td>
-
-									{#if status === OrderLineStatus.Pending}
-										<td>
-											<button on:click={() => handleDeleteLine(id)} class="btn-outline btn-sm btn">Delete</button>
-										</td>
-									{/if}
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
+								{/if}
+							</tr>
+						{/each}
+					</tbody>
+				</table>
 			</div>
 		</div>
 	</div>
-</main>
+</div>
 
 <div use:melt={$portalled}>
 	{#if $open}
