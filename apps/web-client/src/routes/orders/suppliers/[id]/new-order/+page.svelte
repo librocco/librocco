@@ -164,17 +164,17 @@
 					<thead>
 						<tr>
 							<th class="w-16">
-								<span class="sr-only">{$LL.suppliers_page.new_order_page.select}</span>
+								<span class="sr-only">{$LL.suppliers_page.supplierId.new_order_page.select}</span>
 							</th>
-							<th>{$LL.suppliers_page.new_order_page.isbn}</th>
-							<th>{$LL.suppliers_page.new_order_page.title}</th>
-							<th>{$LL.suppliers_page.new_order_page.authors}</th>
+							<th>{$LL.suppliers_page.supplierId.new_order_page.isbn}</th>
+							<th>{$LL.suppliers_page.supplierId.new_order_page.title}</th>
+							<th>{$LL.suppliers_page.supplierId.new_order_page.authors}</th>
 
-							<th>{$LL.suppliers_page.new_order_page.ordered_quantity}</th>
-							<th>{$LL.suppliers_page.new_order_page.total}</th>
+							<th>{$LL.suppliers_page.supplierId.new_order_page.ordered_quantity}</th>
+							<th>{$LL.suppliers_page.supplierId.new_order_page.total}</th>
 
-							<th class="bg-gray-100">{$LL.suppliers_page.new_order_page.selected_quantity}</th>
-							<th class="bg-gray-100">{$LL.suppliers_page.new_order_page.total}</th>
+							<th class="bg-gray-100">{$LL.suppliers_page.supplierId.new_order_page.selected_quantity}</th>
+							<th class="bg-gray-100">{$LL.suppliers_page.supplierId.new_order_page.total}</th>
 						</tr>
 					</thead>
 
@@ -217,19 +217,19 @@
 					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 						<dl class="stats flex">
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<div class="stat-title">{$LL.suppliers_page.new_orders_page.selected_books}:</div>
+								<div class="stat-title">{$LL.suppliers_page.supplierId.new_order_page.selected_books}:</div>
 								<div class="stat-value text-lg">
 									{totalSelectedBooks}
 								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<div class="stat-title sr-only">{$LL.suppliers_page.new_orders_page.total}</div>
+								<div class="stat-title sr-only">{$LL.suppliers_page.supplierId.new_order_page.total}</div>
 								<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 							</div>
 						</dl>
 
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
-							{$LL.suppliers_page.new_orders_page.place_order}
+							{$LL.suppliers_page.supplierId.new_order_page.place_order}
 							<Truck aria-hidden size={20} class="hidden md:block" />
 						</button>
 					</div>

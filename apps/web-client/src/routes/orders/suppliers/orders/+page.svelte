@@ -22,6 +22,7 @@
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -87,9 +88,9 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
+			<h1 class="prose text-2xl font-bold">{$LL.suppliers_page.orders_page.supplier_orders}</h1>
 			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
-				Suppliers
+				{$LL.suppliers_page.orders_page.suppliers}
 				<Settings size={20} />
 			</button>
 		</div>
@@ -101,7 +102,7 @@
 					on:click={() => (orderStatusFilter = "unordered")}
 					aria-pressed={orderStatusFilter === "unordered"}
 				>
-					Unordered
+					{$LL.suppliers_page.orders_page.unordered}
 				</button>
 
 				<button
@@ -111,7 +112,7 @@
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
 				>
-					Ordered
+					{$LL.suppliers_page.orders_page.ordered}
 				</button>
 
 				<button
@@ -121,7 +122,7 @@
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
 				>
-					Reconciling
+					{$LL.suppliers_page.orders_page.reconciling}
 				</button>
 
 				<button
@@ -131,7 +132,7 @@
 					disabled={!hasCompletedOrders}
 					data-testid="reconciling-list"
 				>
-					Completed
+					{$LL.suppliers_page.orders_page.completed}
 				</button>
 			</div>
 
@@ -139,11 +140,11 @@
 				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 						<p class="text-center text-base-content/70">
-							No unordered supplier orders available. Create a customer order first to generate supplier orders.
+							{$LL.suppliers_page.orders_page.no_unordered_books.description}
 						</p>
 						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 							<Plus size={20} />
-							New Customer Order
+							<p>{$LL.suppliers_page.orders_page.no_unordered_books.button}</p>
 						</button>
 					</div>
 				{:else}
