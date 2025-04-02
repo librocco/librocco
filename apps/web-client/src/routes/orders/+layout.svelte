@@ -180,7 +180,7 @@
 						</div>
 						<div>
 							<p class="text-sm font-medium leading-5">{$LL.orders_page.checkout}</p>
-							<p class="text-xs font-normal leading-4">{$LL.orders_page.checkout}</p>
+							<p class="text-xs font-normal leading-4">{$LL.orders_page.create_outbound_note}</p>
 						</div>
 					</button>
 				</nav>
