@@ -66,30 +66,24 @@
 	};
 </script>
 
-<header class="navbar mb-4 bg-neutral">
-	<input type="checkbox" value="forest" class="theme-controller toggle" />
-</header>
-
-<main class="h-screen">
-	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-		<div class="flex items-center justify-between">
-			<h1 class="prose mt-2 text-2xl font-bold">Suppliers</h1>
-			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
-				New supplier
-				<Plus size={20} />
-			</button>
-		</div>
-
-		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-			<SupplierTable data={suppliersStore}>
-				<div class="flex gap-x-2" slot="row-actions" let:row>
-					<button class="btn-outline btn-sm btn">Delete</button>
-					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">Edit</a>
-				</div>
-			</SupplierTable>
-		</div>
+<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+	<div class="flex items-center justify-between p-4">
+		<h1 class="prose mt-2 text-2xl font-bold">Suppliers</h1>
+		<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
+			New supplier
+			<Plus size={20} />
+		</button>
 	</div>
-</main>
+
+	<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+		<SupplierTable data={suppliersStore}>
+			<div class="flex gap-x-2" slot="row-actions" let:row>
+				<button class="btn-outline btn-sm btn">Delete</button>
+				<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">Edit</a>
+			</div>
+		</SupplierTable>
+	</div>
+</div>
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm
