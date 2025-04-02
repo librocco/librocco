@@ -41,12 +41,9 @@
 			linkto: historyView("history/warehouse")
 		}
 	];
-
-	export let view: HistoryView;
-	export let loaded = true;
 </script>
 
-<Page {view} {loaded}>
+<Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		{#if $$slots.topbar}
 			<slot name="topbar" {iconProps} {inputProps} />

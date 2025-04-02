@@ -30,10 +30,9 @@
 	export let plugins: PluginsInterface;
 
 	export let handleCreateWarehouse = () => Promise.resolve();
-	export let handleCreateOutboundNote: () => (void | Promise<void>) | undefined = undefined;
 </script>
 
-<Page {handleCreateOutboundNote} view="inventory" loaded={true}>
+<Page>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
