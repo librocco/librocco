@@ -10,6 +10,7 @@
 
 	import type { PageData } from "./$types";
 	import { base } from "$app/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -163,17 +164,17 @@
 					<thead>
 						<tr>
 							<th class="w-16">
-								<span class="sr-only">Select</span>
+								<span class="sr-only">{$LL.suppliers_page.new_order_page.select}</span>
 							</th>
-							<th>ISBN</th>
-							<th>Title</th>
-							<th>Authors</th>
+							<th>{$LL.suppliers_page.new_order_page.isbn}</th>
+							<th>{$LL.suppliers_page.new_order_page.title}</th>
+							<th>{$LL.suppliers_page.new_order_page.authors}</th>
 
-							<th>Ordered quantity</th>
-							<th>Total</th>
+							<th>{$LL.suppliers_page.new_order_page.ordered_quantity}</th>
+							<th>{$LL.suppliers_page.new_order_page.total}</th>
 
-							<th class="bg-gray-100">Selected quantity</th>
-							<th class="bg-gray-100">Total</th>
+							<th class="bg-gray-100">{$LL.suppliers_page.new_order_page.selected_quantity}</th>
+							<th class="bg-gray-100">{$LL.suppliers_page.new_order_page.total}</th>
 						</tr>
 					</thead>
 
@@ -216,19 +217,19 @@
 					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 						<dl class="stats flex">
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<div class="stat-title">Selected books:</div>
+								<div class="stat-title">{$LL.suppliers_page.new_orders_page.selected_books}:</div>
 								<div class="stat-value text-lg">
 									{totalSelectedBooks}
 								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<div class="stat-title sr-only">Total</div>
+								<div class="stat-title sr-only">{$LL.suppliers_page.new_orders_page.total}</div>
 								<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 							</div>
 						</dl>
 
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
-							Place Order
+							{$LL.suppliers_page.new_orders_page.place_order}
 							<Truck aria-hidden size={20} class="hidden md:block" />
 						</button>
 					</div>

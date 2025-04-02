@@ -21,6 +21,7 @@
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { appPath } from "$lib/paths";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -159,12 +160,12 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
-					<h2 class="text-lg">Assigned publishers</h2>
+					<h2 class="text-lg">{$LL.suppliers_page.new_orders_page.selected_books}</h2>
 					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-y-auto">
 							<thead class="sticky top-0 left-0 right-0 bg-white shadow">
 								<tr>
-									<th scope="col" class="px-2 py-2">Publisher name</th>
+									<th scope="col" class="px-2 py-2">{$LL.suppliers_page.publisher_name}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -173,7 +174,7 @@
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Remove publisher</button
+												>{$LL.suppliers_page.remove_publisher}</button
 											></td
 										>
 									</tr>

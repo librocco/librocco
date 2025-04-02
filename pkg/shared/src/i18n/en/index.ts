@@ -122,12 +122,66 @@ const inventory_page = {
 		}
 	}
 };
+const orders_page = {
+	checkout: "Checkout",
+	create_outbound_note: "Create a new Outbound Note"
+};
+
+const customer_orders_page = {
+	title: "Customer Orders",
+	new_order: "New Order",
+	status_filters: {
+		in_progress: "In Progress",
+		completed: "Completed"
+	},
+	customer: "Customer",
+	order_id: "Order ID",
+	update_order: "Update Order",
+	customer_details: "Customer Details",
+	update: "Update"
+};
+
+const suppliers_page = {
+	new_supplier: "New Supplier",
+	suppliers: "Suppliers",
+	delete: "Delete",
+	edit: "Edit",
+	supplier: {
+		supplier_page: "Supplier page",
+		supplier_name: "Supplier name",
+		supplier_address: "Supplier address",
+		supplier_email: "Supplier email",
+		create_new_order: "Create new order",
+		assigned_publishers: "Assigned publishers",
+		publisher_name: "Publisher name",
+		remove_publisher: "Remove publisher",
+		unassigned_publishers: "Unassigned publishers",
+		add_to_supplier: "Add to supplier"
+	},
+	new_order_page: {
+		total_books: "Total books",
+		total_value: "Total value",
+		books: "Books",
+		select: "Select",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		ordered_quantity: "Ordered quantity",
+		total: "Total",
+		selected_quantity: "Selected quantity",
+		selected_books: "Selected books",
+		place_order: "Place Order"
+	}
+};
 
 const en = {
 	nav,
 	search,
 	history_page,
-	inventory_page
+	inventory_page,
+	orders_page,
+	customer_orders_page,
+	suppliers_page
 } satisfies BaseTranslation;
 
 export default en;
