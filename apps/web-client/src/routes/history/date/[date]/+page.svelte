@@ -88,37 +88,37 @@
 				<div data-testid={testId("history-date-stats")}>
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.totalInboundBookCount()}
+							{t.stats.totalInboundBookCount()}:
 							<span data-property="inbound-count">{stats.totalInboundBookCount}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.totalInboundCoverPrice()}
+							{t.stats.totalInboundCoverPrice()}:
 							<span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							{t.stats.totalInboundCoverPrice()}
+							{t.stats.totalInboundCoverPrice()}:
 							<span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.totalOutboundBookCount()}
+							{t.stats.totalOutboundBookCount()}:
 							<span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.totalOutboundCoverPrice()}
+							{t.stats.totalOutboundCoverPrice()}:
 							<span data-property="outbound-cover-price">{stats.totalOutboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							{t.stats.totalOutboundDiscountedPrice()}
+							{t.stats.totalOutboundDiscountedPrice()}:
 							<span data-property="outbound-discounted-price">{stats.totalOutboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 				</div>
 
 				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">
-					{t.transactions.title()} <span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
+					{t.transactions.title()}: <span data-property="transactions">{stats.totalOutboundBookCount}</span>
 				</h2>
 
 				<div id="history-table" class="w-full">
