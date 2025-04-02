@@ -5,15 +5,21 @@
 
 	import { onDestroy, onMount } from "svelte";
 	import { get } from "svelte/store";
+	import { fade, fly } from "svelte/transition";
+
 	import { WorkerInterface } from "@vlcn.io/ws-client";
 	import { Subscription } from "rxjs";
+	import { createDialog, melt } from "@melt-ui/svelte";
+	import { Menu, ScanBarcode, Search } from "lucide-svelte";
+
+	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
 
-	import type { LayoutData } from "./$types";
+	import { Sidebar } from "$lib/components";
 
 	import { IS_DEBUG, IS_E2E } from "$lib/constants";
-	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 	import { sync, syncConfig, syncActive } from "$lib/db";
+	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
 
 	import * as books from "$lib/db/cr-sqlite/books";
 	import * as customers from "$lib/db/cr-sqlite/customers";
@@ -22,7 +28,9 @@
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 
-	export let data: LayoutData & { status: boolean };
+	import type { LayoutData } from "./$types";
+
+	export let data: LayoutData;
 
 	const { dbCtx } = data;
 
@@ -54,8 +62,6 @@
 
 	let availabilitySubscription: Subscription;
 
-	// #region sync
-
 	// Update sync on each change to settings
 	//
 	// NOTE: This is safe even on server side as it will be a noop until
@@ -67,6 +73,9 @@
 	}
 
 	onMount(() => {
+		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
+		document.body.setAttribute("hydrated", "true");
+
 		// Start the sync worker
 		//
 		// Init worker and sync interface
@@ -78,27 +87,94 @@
 			sync.sync(get(syncConfig));
 		}
 	});
+
 	onDestroy(() => {
 		sync.stop(); // Safe and idempotent
-	});
 
-	// #endregion sync
-
-	onMount(async () => {
-		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
-		document.body.setAttribute("hydrated", "true");
-
-		// TODO: revisit
-		// if (!status) {
-		// 	await goto(appPath("settings"));
-		// }
-	});
-
-	onDestroy(() => {
 		availabilitySubscription?.unsubscribe();
+	});
+
+	const {
+		elements: { trigger, overlay, content, portalled, title, description },
+		states: { open: mobileNavOpen }
+	} = createDialog({
+		forceVisible: true
+	});
+
+	afterNavigate(() => {
+		if ($mobileNavOpen) {
+			$mobileNavOpen = false;
+		}
 	});
 </script>
 
-<svelte:head></svelte:head>
+<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
+	<div class="hidden h-full w-72 lg:block">
+		<Sidebar />
+	</div>
 
-<slot />
+	<main class="relative flex flex-1 flex-col justify-items-center overflow-y-auto">
+		{#if !$mobileNavOpen}
+			<!--TODO:  add aria-label to dict-->
+			<button use:melt={$trigger} class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden">
+				<Menu size={24} aria-hidden />
+			</button>
+		{/if}
+
+		<div>
+			<!-- TODO: Define page name here, or re-use this in Page component; add strings to dicts-->
+			<div class="flex h-16 items-center justify-between border-b border-base-content">
+				<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Page Name</h2>
+				<div class="flex gap-x-2 p-4">
+					<button class="btn-seconday btn-sm btn lg:hidden">
+						<Search size={18} />
+						Stock
+					</button>
+					<button class="btn-primary btn-sm btn">
+						<ScanBarcode size={18} />
+						Checkout
+					</button>
+				</div>
+			</div>
+
+			<slot />
+		</div>
+	</main>
+</div>
+
+{#if $mobileNavOpen}
+	<div use:melt={$portalled}>
+		<div use:melt={$overlay} class="fixed inset-0 z-[200] bg-black/50" transition:fade|global={{ duration: 150 }}>
+			<h2 class="sr-only" use:melt={$title}>
+				<!-- TODO: add dialog title to dict-->
+				<p class="sr-only" use:melt={$description}>
+					<!-- TODO: add dialog description to dict -->
+				</p>
+				<div
+					use:melt={$content}
+					class="fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 max-w-md overflow-y-auto bg-base-200"
+					transition:fly|global={{
+						x: -350,
+						duration: 300,
+						opacity: 1
+					}}
+				>
+					<Sidebar />
+				</div>
+			</h2>
+		</div>
+	</div>
+{/if}
+
+<style global>
+	:global(html) {
+		overflow-x: hidden;
+		height: 100%;
+		margin-right: calc(-1 * (100vw - 100%));
+	}
+
+	:global(body) {
+		height: 100%;
+		padding: 0;
+	}
+</style>
