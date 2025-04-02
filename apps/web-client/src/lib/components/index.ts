@@ -17,3 +17,5 @@ export * from "./ProgressBar";
 export * from "./Placeholders";
 export * from "./TextEditable";
 export * from "./WarehouseSelect";
+
+export { default as Sidebar } from "./Sidebar.svelte";
