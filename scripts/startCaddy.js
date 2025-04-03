@@ -115,44 +115,97 @@ function getLocalIP() {
 function createConfig(localIP) {
 	const caddyConfig = `${CADDY_DIR}/Caddyfile`;
 	const dnsName = localIP + DNS_SUFFIX;
+	// Escape dots for use in regex within the Caddyfile
 	const escapedDNSName = dnsName.replace(/\./g, "\\.");
+	// No need to escape dots for the site address itself
 	const caddyConfigContent = `
 {
     email ${process.env.CADDY_EMAIL}
     storage file_system ${CADDY_DIR}/data
 }
 
+# Base domain configuration
 ${dnsName} {
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
-    reverse_proxy 127.0.0.1:3000
+
+    @sync path /sync*
+
+    # Route /sync requests to the fixed backend port
+    route @sync {
+        reverse_proxy 127.0.0.1:3000
+    }
+
+    # Route all other requests to the file server
+    route {
+        root * ./apps/web-client/build/
+        file_server
+    }
 }
+
+# Wildcard subdomain configuration
 *.${dnsName} {
     tls {
         dns cloudflare {env.CLOUDFLARE_API_TOKEN}
     }
-    @port {
-      header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
+
+    # Matcher to extract port from hostname like 'sub-1234.ip.suffix'
+    @port header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
+    # Matcher for sync path
+    @sync path /sync*
+    # Combined matcher requiring both @sync and @port
+    @syncAndPort {
+        path /sync*
+        header_regexp port Host ^[^.-]+-(\\d+)\\.${escapedDNSName}$
     }
-    reverse_proxy @port localhost:{http.regexp.port.1}
+
+    # Single route block to handle different request types
+    route {
+        # Handle requests matching BOTH @sync and @port (using the combined matcher)
+        handle @syncAndPort {
+            reverse_proxy localhost:{http.regexp.port.1}
+        }
+
+        # Fallback handle for all other requests: serve static files
+        handle {
+            root * ./apps/web-client/build/
+            file_server
+        }
+    }
 }
 `;
 	try {
 		fs.writeFileSync(caddyConfig, caddyConfigContent);
+		console.log(`Caddyfile written to ${caddyConfig}`); // Added log
 	} catch (err) {
 		console.error("Error writing Caddyfile:", err);
-		return;
+		// Consider exiting or throwing here if writing fails
+		process.exit(1); // Exit if config can't be written
 	}
 }
 
 function startCaddy() {
+	// Define the directory where you want Caddy to run from
+	const caddyWorkDir = path.join(__dirname, ".."); // This sets it to the parent directory of the scripts folder
+
 	var command = `${CADDY_DIR}/caddy run --config ${CADDY_DIR}/Caddyfile`;
 	if (process.platform === "darwin") {
 		// Adding -E to 'sudo' keeps the environment: CADDY_DIR, CADDY_EMAIL, CLOUDFLARE_API_TOKEN
-		command = "sudo -E" + command;
+		command = "sudo -E " + command;
 	}
-	child_process.execSync(command, { stdio: "inherit" });
+
+	// Use child_process.spawn instead of execSync to set the cwd
+	console.log(`Starting Caddy from directory: ${caddyWorkDir}`);
+	const caddy = child_process.spawn(command, {
+		cwd: caddyWorkDir,
+		shell: true,
+		stdio: "inherit"
+	});
+
+	caddy.on("error", (err) => {
+		console.error("Failed to start Caddy:", err);
+	});
 }
 
 async function createCFRecords(localIP) {
