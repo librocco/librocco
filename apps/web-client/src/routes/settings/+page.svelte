@@ -197,6 +197,8 @@
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
 									syncConfig.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
 								}
 							}
 						}}
@@ -327,6 +329,8 @@
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
 									deviceSettingsStore.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
 								}
 							}
 						}}
