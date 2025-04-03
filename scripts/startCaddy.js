@@ -206,7 +206,27 @@ function startCaddy() {
 	caddy.on("error", (err) => {
 		console.error("Failed to start Caddy:", err);
 	});
+
+	// Ensure Caddy is stopped on script exit (Ctrl+C)
+	process.on("SIGINT", async () => {
+		console.log("\nReceived SIGINT. Stopping Caddy...");
+		await stopCaddy();
+		process.exit(0);
+	});
 }
+
+// Function to stop Caddy gracefully
+async function stopCaddy() {
+	console.log("Attempting to stop Caddy...");
+	// Use sudo if we likely started with sudo (macOS check mirrors startCaddy)
+	const useSudo = process.platform === "darwin";
+	const stopCommand = `${useSudo ? "sudo " : ""}${CADDY_DIR}/caddy stop`;
+
+	// Attempt to stop Caddy; ignore errors if it fails (e.g., already stopped)
+	child_process.execSync(stopCommand, { stdio: "inherit" });
+	// Assume success or that it was already stopped. No need to log success explicitly here.
+}
+
 
 async function createCFRecords(localIP) {
 	// Create two record: a stem one and a wildcard one
