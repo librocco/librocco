@@ -54,6 +54,7 @@
 
 	$: filteredOrders = customerOrders.filter(({ completed }) => completed === (orderFilterStatus === "completed"));
 
+	$: t = $LL.customer_orders_page;
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -79,10 +80,10 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">{$LL.customer_orders_page.title}</h1>
+			<h1 class="prose text-2xl font-bold">{t.title()}</h1>
 			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 				<Plus size={20} />
-				{$LL.customer_orders_page.new_order}
+				{t.new_order()}
 			</button>
 		</div>
 
@@ -92,7 +93,7 @@
 					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
-						{$LL.customer_orders_page.new_order}
+						{t.new_order()}
 					</button>
 				</div>
 			{:else}
@@ -102,7 +103,7 @@
 						on:click={() => setFilter("in_progress")}
 						aria-pressed={orderFilterStatus === "in_progress"}
 					>
-						{$LL.customer_orders_page.status_filters.in_progress}
+						{t.status_filters.in_progress()}
 					</button>
 					<button
 						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
@@ -110,15 +111,15 @@
 						aria-pressed={orderFilterStatus === "completed"}
 						disabled={!hasCompletedOrders}
 					>
-						{$LL.customer_orders_page.status_filters.completed}
+						{t.status_filters.completed()}
 					</button>
 				</div>
 				<table class="table-lg table">
 					<thead>
 						<tr>
-							<th scope="col">{$LL.customer_orders_page.customer}</th>
-							<th scope="col">{$LL.customer_orders_page.order_id}</th>
-							<th scope="col"> <span class="sr-only"> {$LL.customer_orders_page.update_order} </span></th>
+							<th scope="col">{t.customer()}</th>
+							<th scope="col">{t.order_id()}</th>
+							<th scope="col"> <span class="sr-only"> {t.update_order()} </span></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -126,7 +127,7 @@
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
-										<dt class="sr-only">{$LL.customer_orders_page.customer_details}</dt>
+										<dt class="sr-only">{t.customer_details}</dt>
 										<dd>{fullname}</dd>
 										<dd class="text-sm">{email ?? ""}</dd>
 									</dl>
@@ -135,7 +136,7 @@
 									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{$LL.customer_orders_page.update}</a>
+									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.update()}</a>
 								</td>
 							</tr>
 						{/each}
