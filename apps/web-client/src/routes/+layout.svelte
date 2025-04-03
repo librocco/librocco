@@ -127,24 +127,25 @@
 
 {#if $mobileNavOpen}
 	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-[200] bg-black/50" transition:fade|global={{ duration: 150 }}>
+		<div use:melt={$overlay} class="fixed inset-0 z-[100] bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+
+		<div
+			use:melt={$content}
+			class="bg-base-200 fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto"
+			transition:fly|global={{
+				x: -350,
+				duration: 300,
+				opacity: 1
+			}}
+		>
 			<h2 class="sr-only" use:melt={$title}>
 				<!-- TODO: add dialog title to dict-->
-				<p class="sr-only" use:melt={$description}>
-					<!-- TODO: add dialog description to dict -->
-				</p>
-				<div
-					use:melt={$content}
-					class="bg-base-200 fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 max-w-md overflow-y-auto"
-					transition:fly|global={{
-						x: -350,
-						duration: 300,
-						opacity: 1
-					}}
-				>
-					<Sidebar />
-				</div>
 			</h2>
+
+			<p class="sr-only" use:melt={$description}>
+				<!-- TODO: add dialog description to dict -->
+			</p>
+			<Sidebar />
 		</div>
 	</div>
 {/if}
