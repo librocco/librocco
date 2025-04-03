@@ -2,8 +2,9 @@
 const fs = require("fs");
 const dgram = require("dgram");
 const child_process = require("child_process");
-// Get the caddy dir from environment vars. Default to '.' if undefined/empty
-const CADDY_DIR = process.env.CADDY_DIR || ".";
+const path = require("path");
+// Get the caddy dir from environment vars or use '../caddy-data' relative to this script
+const CADDY_DIR = process.env.CADDY_DIR || path.join(__dirname, "..", "caddy-data");
 const DNS_SUFFIX = ".static.codemyriad.io";
 
 /*
@@ -15,7 +16,15 @@ let errors = [];
 if (!process.env.CADDY_EMAIL) errors.push("CADDY_EMAIL should be defined and be a valid email address");
 if (!process.env.CF_ZONE_ID) errors.push("CF_ZONE_ID should be defined and be a Cloudflare DNS zone ID");
 if (!process.env.CLOUDFLARE_API_TOKEN) errors.push("CLOUDFLARE_API_TOKEN should be defined and valid");
-if (!fs.existsSync(CADDY_DIR)) errors.push(`CADDY_DIR directory (${CADDY_DIR}) does not exist`);
+// Create the CADDY_DIR if it doesn't exist
+if (!fs.existsSync(CADDY_DIR)) {
+	try {
+		fs.mkdirSync(CADDY_DIR, { recursive: true });
+		console.log(`Created directory: ${CADDY_DIR}`);
+	} catch (err) {
+		errors.push(`Failed to create CADDY_DIR directory (${CADDY_DIR}): ${err.message}`);
+	}
+}
 
 if (errors.length > 0) {
 	console.error("\x1b[31m\x1b[1mMissing prerequisites:\x1b[0m");
