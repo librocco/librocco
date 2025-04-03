@@ -8,7 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Search, FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
+	import { FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -178,14 +178,11 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page {handleCreateOutboundNote} view="warehouse" loaded={!loading}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
+<Page title={displayName} {handleCreateOutboundNote} {handleSearch}>
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex justify-between">
