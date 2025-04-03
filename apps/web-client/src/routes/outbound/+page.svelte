@@ -4,7 +4,7 @@
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Plus, Search, Trash, Loader2 as Loader, Library } from "lucide-svelte";
+	import { Plus, Trash, Loader2 as Loader, Library } from "lucide-svelte";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -61,6 +61,8 @@
 		await goto(appPath("outbound", id));
 	};
 
+	const handleSearch = async () => await goto(appPath("stock"));
+
 	const dialog = createDialog({ forceVisible: true });
 	const {
 		elements: { portalled, overlay, trigger },
@@ -70,15 +72,9 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page handleCreateOutboundNote={handleCreateNote} view="outbound" loaded={initialized}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
+<Page title="Outbound" handleCreateOutboundNote={handleCreateNote} {handleSearch}>
 	<svelte:fragment slot="heading">
-		<div class="flex w-full items-center justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">Outbound</h1>
+		<div class="flex w-full items-center justify-end">
 			<button
 				on:click={handleCreateNote}
 				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
@@ -115,7 +111,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="group entity-list-row">
+						<div class="entity-list-row group">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
