@@ -137,10 +137,10 @@ ${dnsName} {
         reverse_proxy 127.0.0.1:3000
     }
 
-    # Route all other requests to the file server, trying directories first, then falling back to index.html for SPAs
+    # Route all other requests to the file server, trying directories first, then falling back to the SPA entry point (/stock/index.html)
     route {
         root * ./apps/web-client/build/
-        try_files {path} {path}/ /index.html
+        try_files {path} {path}/ /stock/index.html
         file_server
     }
 }
@@ -168,10 +168,10 @@ ${dnsName} {
             reverse_proxy localhost:{http.regexp.port.1}
         }
 
-        # Fallback handle for all other requests: serve static files, trying directories first, then falling back to index.html for SPAs
+        # Fallback handle for all other requests: serve static files, trying directories first, then falling back to the SPA entry point (/stock/index.html)
         handle {
             root * ./apps/web-client/build/
-            try_files {path} {path}/ /index.html
+            try_files {path} {path}/ /stock/index.html
             file_server
         }
     }
