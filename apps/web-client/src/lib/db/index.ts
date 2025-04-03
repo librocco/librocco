@@ -7,7 +7,7 @@ export * from "./sync";
 
 export const dbid = persisted("librocco-current-db", "dev");
 
-const url = persisted("librocco-sync-url", browser ? `ws://${window.location.host}/sync` : "");
+const url = persisted("librocco-sync-url", browser ? `${window.location.protocol}//${window.location.host}/sync` : "");
 
 export const syncActive = persisted("librocco-sync-active", false);
 
