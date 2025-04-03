@@ -25,12 +25,12 @@ const history_page = {
 	date_tab: {
 		stats: {
 			title: "Stats",
-			totalInboundBookCount: "Inbound Book Count",
-			totalInboundCoverPrice: "Inbound Cover Price",
-			totalInboundDiscountedPrice: "Inbound Discounted Price",
-			totalOutboundBookCount: "Outbound Book Count",
-			totalOutboundCoverPrice: "Outbound Cover Price",
-			totalOutboundDiscountedPrice: "Outbound Discounted Price"
+			total_inbound_book_count: "Inbound Book Count",
+			total_inbound_cover_price: "Inbound Cover Price",
+			total_inbound_discounted_price: "Inbound Discounted Price",
+			total_outbound_book_count: "Outbound Book Count",
+			total_outbound_cover_price: "Outbound Cover Price",
+			total_outbound_discounted_price: "Outbound Discounted Price"
 		},
 		transactions: {
 			title: "Transactions",
@@ -38,16 +38,20 @@ const history_page = {
 		}
 	},
 	isbn_tab: {
-		transactions: "Transactions",
-		history: "History",
-		isbnId: {
-			stock: "Stock",
-			placeholderBox: {
+		titles: {
+			transactions: "Transactions",
+			history: "History"
+		},
+		isbn_id: {
+			titles: {
+				stock: "Stock"
+			},
+			placeholder_box: {
 				title: "No transactions found",
 				description: "There seems to be no record of transactions for the given isbn volumes going in or out"
 			}
 		},
-		placeholderBox: {
+		placeholder_box: {
 			title: "No book selected",
 			description: "Use the search field to find the book you're looking for"
 		}
@@ -56,70 +60,80 @@ const history_page = {
 		date: {
 			history: "History",
 			books: "Books",
-			totalCoverPrice: "Total cover price",
+			total_cover_price: "Total cover price",
 			committed: "Committed",
-			totalDiscountedPrice: "Total discounted price"
+			total_discounted_price: "Total discounted price"
 		},
 		archive: {
-			committedAt: "Committed At",
-			exportCSV: "Export CSV"
+			committed_at: "Committed At",
+			export_csv: "Export CSV"
 		}
 	},
 	warehouse_tab: {
-		warehouseId: {
-			from: {
-				filter_options: {
-					all: "All",
-					inbound: "Inbound",
-					outbound: "Outbound"
-				},
-				columnHeaders: {
-					quantity: "quantity",
-					isbn: "isbn",
-					title: "title",
-					publisher: "publisher",
-					authors: "authors",
-					year: "year",
-					price: "price",
-					category: "category",
-					editedBy: "edited_by",
-					outOfPrint: "out_of_print"
-				},
-				heading: {
-					history: "history",
-					exportCSV: "Export CSV",
-					from: "From",
-					to: "To",
-					filter: "Filter"
-				},
+		note_table: {
+			filter_options: {
+				all: "All",
+				inbound: "Inbound",
+				outbound: "Outbound"
+			},
+			column_headers: {
+				quantity: "quantity",
+				isbn: "isbn",
+				title: "title",
+				publisher: "publisher",
+				authors: "authors",
+				year: "year",
+				price: "price",
+				category: "category",
+				edited_by: "edited_by",
+				out_of_print: "out_of_print"
+			},
+			heading: {
+				history: "history",
+				export_csv: "Export CSV",
+				from: "From",
+				to: "To",
+				filter: "Filter"
+			},
+			titles: {
 				transactions: "Transactions"
 			}
 		},
-		books: "books",
-		discount: "discount"
+		stats: {
+			books: "{no_of_books} book{{s}}",
+			discount: "discount"
+		}
 	}
 };
 
 const inventory_page = {
 	inbound_tab: {
-		PlaceholderBox: {
+		placeholder_box: {
 			title: "No open notes",
 			description: "Get started by adding a new note with the appropriate warehouse"
 		},
-		back_to_warehouses: "Back to warehouses",
-		books: "books",
-		last_updated: "Last Updated",
-		edit: "Edit",
-		inboundId: {
-			lastUpdated: "Last updated",
-			commit: "Commit",
-			print: "Print",
-			autoPrintBookLabels: "Auto print book labels",
-			delete: "Delete",
-			editRow: "Edit row",
-			printBookLabel: "Print book label",
-			deleteRow: "Delete row"
+		stats: {
+			back_to_warehouses: "Back to warehouses",
+			books: "{no_of_books} book{{s}}",
+			last_updated: "Last Updated"
+		},
+		labels: {
+			button_edit: "Edit"
 		}
+	}
+};
+const inbound_note = {
+	stats: {
+		last_updated: "Last updated"
+	},
+	labels: {
+		commit: "Commit",
+		print: "Print",
+		auto_print_book_labels: "Auto print book labels",
+		delete: "Delete",
+		edit_row: "Edit row",
+		print_book_label: "Print book label",
+		delete_row: "Delete row"
 	}
 };
 
@@ -127,7 +141,8 @@ const en = {
 	nav,
 	search,
 	history_page,
-	inventory_page
+	inventory_page,
+	inbound_note
 } satisfies BaseTranslation;
 
 export default en;
