@@ -83,6 +83,8 @@
 
 	$: canCompare = books.length > 0;
 
+	$: t = $LL.suppliers_page.reconcile_page;
+
 	async function handleCommit() {
 		// TODO: Implement actual commit logic
 		commitDialogOpen.set(false);
@@ -117,20 +119,20 @@
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">{$LL.suppliers_page.reconcile_page.reconcile_deliveries()}</h1>
+						<h1 class="prose card-title">{t.reconcile_deliveries()}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-								<span class="sr-only">{$LL.suppliers_page.reconcile_page.created()}</span>
+								<span class="sr-only">{t.created()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
 									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
 								>
 							</span>
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-								<span class="sr-only">{$LL.suppliers_page.reconcile_page.last_updated()}</span>
+								<span class="sr-only">{t.last_updated()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
 									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
@@ -141,7 +143,7 @@
 
 					<dl class="prose flex flex-col">
 						<div class="md:px-1">
-							<dt class="mt-0">{$LL.suppliers_page.reconcile_page.includes_supplier_orders()}:</dt>
+							<dt class="mt-0">{t.includes_supplier_orders()}:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
 								{#each placedOrders as [order_id, supplier_name]}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
@@ -216,19 +218,19 @@
 				{#if currentStep === 1}
 					{#if books.length === 0}
 						<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-							<p class="text-center text-base-content/70">{$LL.suppliers_page.reconcile_page.no_books()}</p>
+							<p class="text-center text-base-content/70">{t.no_books()}</p>
 						</div>
 					{:else}
 						<div class="relative h-full overflow-x-auto">
 							<table class="table-pin-rows table pb-20">
 								<thead>
 									<tr>
-										<th>{$LL.suppliers_page.reconcile_page.isbn()}</th>
-										<th>{$LL.suppliers_page.reconcile_page.title()}</th>
-										<th>{$LL.suppliers_page.reconcile_page.authors()}</th>
-										<th>{$LL.suppliers_page.reconcile_page.price()}</th>
+										<th>{t.isbn()}</th>
+										<th>{t.title()}</th>
+										<th>{t.authors()}</th>
+										<th>{t.price()}</th>
 										<th class="w-0"></th>
-										<th class="w-2 px-0">{$LL.suppliers_page.reconcile_page.quantity()}</th>
+										<th class="w-2 px-0">{t.quantity()}</th>
 										<th class="w-0"></th>
 									</tr>
 								</thead>
@@ -277,7 +279,7 @@
 						{#if currentStep > 1}
 							<dl class="stats flex">
 								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-									<dt class="stat-title">{$LL.suppliers_page.reconcile_page.total_delivered()}:</dt>
+									<dt class="stat-title">{t.total_delivered()}:</dt>
 									<dd class="stat-value text-lg">
 										{totalDelivered} / {totalOrdered}
 									</dd>
@@ -317,8 +319,8 @@
 	<ConfirmDialog
 		on:confirm={handleDelete}
 		on:cancel={() => deleteDialogOpen.set(false)}
-		heading={$LL.suppliers_page.reconcile_page.delete_dialog.confirmDeleteDialogHeading()}
-		description={$LL.suppliers_page.reconcile_page.delete_dialog.confirmDeleteDialogDescription()}
+		heading={t.delete_dialog.confirmDeleteDialogHeading()}
+		description={t.delete_dialog.confirmDeleteDialogDescription()}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>

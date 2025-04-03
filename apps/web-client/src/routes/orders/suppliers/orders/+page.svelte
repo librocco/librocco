@@ -79,6 +79,8 @@
 
 		await goto(`${base}/orders/customers/${id}`);
 	};
+
+	$: t = $LL.suppliers_page.orders_page;
 </script>
 
 <header class="navbar mb-4 bg-neutral">
@@ -88,9 +90,9 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">{$LL.suppliers_page.orders_page.supplier_orders}</h1>
+			<h1 class="prose text-2xl font-bold">{t.supplier_orders()}</h1>
 			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
-				{$LL.suppliers_page.orders_page.suppliers}
+				{t.suppliers()}
 				<Settings size={20} />
 			</button>
 		</div>
@@ -102,7 +104,7 @@
 					on:click={() => (orderStatusFilter = "unordered")}
 					aria-pressed={orderStatusFilter === "unordered"}
 				>
-					{$LL.suppliers_page.orders_page.unordered}
+					{t.unordered()}
 				</button>
 
 				<button
@@ -112,7 +114,7 @@
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
 				>
-					{$LL.suppliers_page.orders_page.ordered}
+					{t.ordered()}
 				</button>
 
 				<button
@@ -122,7 +124,7 @@
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
 				>
-					{$LL.suppliers_page.orders_page.reconciling}
+					{t.reconciling()}
 				</button>
 
 				<button
@@ -132,7 +134,7 @@
 					disabled={!hasCompletedOrders}
 					data-testid="reconciling-list"
 				>
-					{$LL.suppliers_page.orders_page.completed}
+					{t.completed()}
 				</button>
 			</div>
 
@@ -140,11 +142,11 @@
 				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 						<p class="text-center text-base-content/70">
-							{$LL.suppliers_page.orders_page.no_unordered_books.description}
+							{t.no_unordered_books.description()}
 						</p>
 						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 							<Plus size={20} />
-							<p>{$LL.suppliers_page.orders_page.no_unordered_books.button}</p>
+							<p>{t.no_unordered_books.button()}</p>
 						</button>
 					</div>
 				{:else}
