@@ -10,7 +10,7 @@
 	import { WorkerInterface } from "@vlcn.io/ws-client";
 	import { Subscription } from "rxjs";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { Menu, ScanBarcode, Search } from "lucide-svelte";
+	import { Menu } from "lucide-svelte";
 
 	import { afterNavigate } from "$app/navigation";
 	import { browser } from "$app/environment";
@@ -108,7 +108,7 @@
 	});
 </script>
 
-<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
+<div class="bg-base-200 lg:divide-base-content flex h-full lg:divide-x">
 	<div class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>
@@ -121,24 +121,7 @@
 			</button>
 		{/if}
 
-		<div>
-			<!-- TODO: Define page name here, or re-use this in Page component; add strings to dicts-->
-			<div class="flex h-16 items-center justify-between border-b border-base-content">
-				<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Page Name</h2>
-				<div class="flex gap-x-2 p-4">
-					<button class="btn-seconday btn-sm btn lg:hidden">
-						<Search size={18} />
-						Stock
-					</button>
-					<button class="btn-primary btn-sm btn">
-						<ScanBarcode size={18} />
-						Checkout
-					</button>
-				</div>
-			</div>
-
-			<slot />
-		</div>
+		<slot />
 	</main>
 </div>
 
@@ -152,7 +135,7 @@
 				</p>
 				<div
 					use:melt={$content}
-					class="fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 max-w-md overflow-y-auto bg-base-200"
+					class="bg-base-200 fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 max-w-md overflow-y-auto"
 					transition:fly|global={{
 						x: -350,
 						duration: 300,

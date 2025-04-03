@@ -137,16 +137,14 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page {handleCreateOutboundNote} view="stock" loaded={Boolean(db)}>
+<Page title="Search" {handleCreateOutboundNote} {handleSearch}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">{tSearch.title()}</h1>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">

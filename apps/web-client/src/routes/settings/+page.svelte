@@ -2,7 +2,7 @@
 	import { onMount } from "svelte";
 	import { fade } from "svelte/transition";
 	import { get } from "svelte/store";
-	import { Search, Download, Trash } from "lucide-svelte";
+	import { Download, Trash } from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 
@@ -162,16 +162,12 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page {handleCreateOutboundNote} view="settings" loaded={true}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
+<Page title="Settings" {handleCreateOutboundNote} {handleSearch}>
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
 		<h4>Version {VERSION}</h4>
 	</svelte:fragment>
 
