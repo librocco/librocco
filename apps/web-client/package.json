@@ -9,6 +9,7 @@
 		"start:e2e": "echo \"Starting dev server for e2e purposes...\" && PUBLIC_IS_E2E=true vite dev",
 		"build": "echo \"Skipping web app build as part of rush's bulk 'build' script. To build the app for production run: 'rushx build:prod'\"",
 		"build:prod": "VITE_GIT_SHA=$(git rev-parse --short HEAD) vite build",
+		"build:prod-rootdir": "VITE_GIT_SHA=$(git rev-parse --short HEAD) BASE_PATH= vite build",
 		"build:e2e": "VITE_GIT_SHA=$(git rev-parse --short HEAD) PUBLIC_IS_E2E=true vite build",
 		"format": "prettier --write .",
 		"postinstall": "svelte-kit sync",
