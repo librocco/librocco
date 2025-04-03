@@ -98,7 +98,8 @@
 								</div>
 
 								<p class="order-2 col-span-2 text-gray-500 lg:order-3">
-									{$LL.history_page.notes_tab.date.totalCoverPrice()}: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
+									{$LL.history_page.notes_tab.date.total_cover_price()}:
+									<span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
 
 								<p class="order-3 col-span-2 lg:order-2">
@@ -108,7 +109,7 @@
 								</p>
 
 								<p class="order-4 col-span-2 text-gray-500">
-									{$LL.history_page.notes_tab.date.totalDiscountedPrice()}:
+									{$LL.history_page.notes_tab.date.total_discounted_price()}:
 									<span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
 								</p>
 							</div>

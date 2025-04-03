@@ -52,7 +52,7 @@
 
 	<svelte:fragment slot="heading">
 		<div class="flex h-full items-center">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">{t.history()}</h1>
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">{t.titles.history()}</h1>
 		</div>
 	</svelte:fragment>
 
@@ -62,7 +62,7 @@
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
 			<!-- Start entity list placeholder -->
-			<PlaceholderBox title={`${t.placeholderBox.title()}`} description={`${t.placeholderBox.description()}`} class="center-absolute" />
+			<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute" />
 			<!-- End entity list placeholder -->
 		</div>
 
