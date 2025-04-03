@@ -429,6 +429,9 @@ importers:
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
+      typesafe-i18n:
+        specifier: ~5.26.2
+        version: 5.26.2(typescript@5.8.2)
       typescript:
         specifier: ^5.5.0
         version: 5.8.2
@@ -11546,7 +11549,6 @@ packages:
       typescript: '>=3.5.1'
     dependencies:
       typescript: 5.8.2
-    dev: false
 
   /typescript@5.8.2:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}

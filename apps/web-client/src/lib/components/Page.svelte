@@ -17,7 +17,7 @@
 
 	import { testId, type WebClientView } from "@librocco/shared";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";

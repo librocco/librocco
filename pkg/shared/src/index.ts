@@ -10,3 +10,5 @@ export * from "./generators";
 export * from "./StockMap";
 
 export * from "./plugins";
+
+export * from "./i18n/i18n-types.js";
