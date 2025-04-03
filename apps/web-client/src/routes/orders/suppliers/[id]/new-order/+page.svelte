@@ -62,6 +62,8 @@
 
 	$: canPlaceOrder = totalSelectedBooks > 0;
 
+	$: t = $LL.suppliers_page.supplierId.new_order_page;
+
 	async function handlePlaceOrder() {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -126,11 +128,11 @@
 					<dl class="flex flex-col">
 						<div class="stats md:stats-vertical">
 							<div class="stat md:px-1">
-								<dt class="stat-title">Total books</dt>
+								<dt class="stat-title">{t.total_books()}</dt>
 								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
 							</div>
 							<div class="stat md:px-1">
-								<dt class="stat-title">Total value</dt>
+								<dt class="stat-title">{t.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{totalPossiblePrice}</dd>
 							</div>
 							<!-- TODO: re-introduce last_updated_at -->
@@ -148,13 +150,13 @@
 
 		<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
-				<h3 class="max-md:divider-start max-md:divider">Books</h3>
+				<h3 class="max-md:divider-start max-md:divider">{t.books()}</h3>
 				<div class="flex flex-wrap items-center gap-4">
 					<div class="flex flex-wrap gap-2">
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>Select 1/4</button>
-						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>Select 1/2</button>
-						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>Select 3/4</button>
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>Select All</button>
+						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>{t.select()} 1/4</button>
+						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>{t.select()} 1/2</button>
+						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>{t.select()} 3/4</button>
+						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>{t.select()} All</button>
 					</div>
 				</div>
 			</div>
@@ -164,17 +166,17 @@
 					<thead>
 						<tr>
 							<th class="w-16">
-								<span class="sr-only">{$LL.suppliers_page.supplierId.new_order_page.select}</span>
+								<span class="sr-only">{t.select()}</span>
 							</th>
-							<th>{$LL.suppliers_page.supplierId.new_order_page.isbn}</th>
-							<th>{$LL.suppliers_page.supplierId.new_order_page.title}</th>
-							<th>{$LL.suppliers_page.supplierId.new_order_page.authors}</th>
+							<th>{t.isbn()}</th>
+							<th>{t.title()}</th>
+							<th>{t.authors()}</th>
 
-							<th>{$LL.suppliers_page.supplierId.new_order_page.ordered_quantity}</th>
-							<th>{$LL.suppliers_page.supplierId.new_order_page.total}</th>
+							<th>{t.ordered_quantity()}</th>
+							<th>{t.total()}</th>
 
-							<th class="bg-gray-100">{$LL.suppliers_page.supplierId.new_order_page.selected_quantity}</th>
-							<th class="bg-gray-100">{$LL.suppliers_page.supplierId.new_order_page.total}</th>
+							<th class="bg-gray-100">{t.selected_quantity()}</th>
+							<th class="bg-gray-100">{t.total()}</th>
 						</tr>
 					</thead>
 
@@ -217,19 +219,19 @@
 					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 						<dl class="stats flex">
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<div class="stat-title">{$LL.suppliers_page.supplierId.new_order_page.selected_books}:</div>
+								<div class="stat-title">{t.selected_books()}:</div>
 								<div class="stat-value text-lg">
 									{totalSelectedBooks}
 								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<div class="stat-title sr-only">{$LL.suppliers_page.supplierId.new_order_page.total}</div>
+								<div class="stat-title sr-only">{t.total()}</div>
 								<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 							</div>
 						</dl>
 
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
-							{$LL.suppliers_page.supplierId.new_order_page.place_order}
+							{t.place_order()}
 							<Truck aria-hidden size={20} class="hidden md:block" />
 						</button>
 					</div>
