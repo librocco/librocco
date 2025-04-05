@@ -1,7 +1,7 @@
 import { expect, vi } from "vitest";
 import * as matchers from "@testing-library/jest-dom/matchers";
-import { loadLocale } from "./i18n/i18n-util.sync";
-import { setLocale } from "./i18n/i18n-svelte";
+import { loadLocale } from "@librocco/shared/i18n-util.sync";
+import { setLocale } from "@librocco/shared/i18n-svelte";
 
 import { readable } from "svelte/store";
 import * as environment from "$app/environment";

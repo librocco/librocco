@@ -5,7 +5,7 @@
 
 	import type { LayoutData } from "../$types";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
@@ -179,8 +179,8 @@
 							<QrCode size={24} class="text-black" />
 						</div>
 						<div>
-							<p class="text-sm font-medium leading-5">Checkout</p>
-							<p class="text-xs font-normal leading-4">Create a new outbound note</p>
+							<p class="text-sm font-medium leading-5">{$LL.orders_page.checkout()}</p>
+							<p class="text-xs font-normal leading-4">{$LL.orders_page.create_outbound_note()}</p>
 						</div>
 					</button>
 				</nav>

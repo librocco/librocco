@@ -6,7 +6,7 @@
 	import { browser } from "$app/environment";
 	import { invalidate } from "$app/navigation";
 
-	import { entityListView, testId } from "@librocco/shared";
+	import { entityListView, testId, type TranslationFunctions } from "@librocco/shared";
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
 
@@ -20,6 +20,8 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
+	import type { LocalizedString } from "typesafe-i18n";
 
 	export let data: PageData;
 
@@ -42,6 +44,14 @@
 	$: displayName = data.displayName;
 	$: transactions = data.transactions;
 	$: filter = data.noteType;
+
+	$: t = $LL.history_page.warehouse_tab.warehouseId;
+
+	let tt: { [option: string]: () => LocalizedString };
+	LL.subscribe((LL) => {
+		// Update the translation object
+		tt = LL.history_page.warehouse_tab.warehouseId.from.filter_options;
+	});
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -73,15 +83,15 @@
 	// #region dropdown
 	const options = [
 		{
-			label: "All",
+			label: tt.all(),
 			value: ""
 		},
 		{
-			label: "Inbound",
+			label: tt.inbound(),
 			value: "inbound"
 		},
 		{
-			label: "Outbound",
+			label: tt.outbound(),
 			value: "outbound"
 		}
 	];
@@ -92,16 +102,16 @@
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
-				{ displayLabel: "Quantity", key: "quantity" },
-				{ displayLabel: "ISBN", key: "isbn" },
-				{ displayLabel: "Title", key: "title" },
-				{ displayLabel: "Publisher", key: "publisher" },
-				{ displayLabel: "Authors", key: "authors" },
-				{ displayLabel: "Year", key: "year" },
-				{ displayLabel: "Price", key: "price" },
-				{ displayLabel: "Category", key: "category" },
-				{ displayLabel: "Edited by", key: "edited_by" },
-				{ displayLabel: "Out of print", key: "out_of_print" }
+				{ displayLabel: t.from.columnHeaders.quantity(), key: "quantity" },
+				{ displayLabel: t.from.columnHeaders.isbn(), key: "isbn" },
+				{ displayLabel: t.from.columnHeaders.title(), key: "title" },
+				{ displayLabel: t.from.columnHeaders.publisher(), key: "publisher" },
+				{ displayLabel: t.from.columnHeaders.authors(), key: "authors" },
+				{ displayLabel: t.from.columnHeaders.year(), key: "year" },
+				{ displayLabel: t.from.columnHeaders.price(), key: "price" },
+				{ displayLabel: t.from.columnHeaders.category(), key: "category" },
+				{ displayLabel: t.from.columnHeaders.editedBy(), key: "edited_by" },
+				{ displayLabel: t.from.columnHeaders.outOfPrint(), key: "out_of_print" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
@@ -117,12 +127,17 @@
 <HistoryPage view="history/date">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
-			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{displayName || ""} history</h1>
+			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
+				{displayName || ""}
+				{t.from.heading.history()}
+			</h1>
 
-			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3">Export CSV</button>
+			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3"
+				>{t.from.heading.exportCSV()}</button
+			>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
-				<p>From:</p>
+				<p>{t.from.heading.from()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker
 						id="calendar-from"
@@ -131,12 +146,12 @@
 						{isDateDisabled}
 					/>
 				</div>
-				<p>To:</p>
+				<p>{t.from.heading.to()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker id="calendar-to" onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
 				</div>
 
-				<p>Filter:</p>
+				<p>{t.from.heading.filter()}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
@@ -170,7 +185,9 @@
 				<!-- End entity list placeholder -->
 			{:else}
 				<div class="sticky top-0">
-					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
+						{t.from.transactions()}
+					</h2>
 				</div>
 				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 					{#each transactions as txn}
