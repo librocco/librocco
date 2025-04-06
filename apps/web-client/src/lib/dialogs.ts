@@ -1,55 +1,66 @@
+import LL from "@librocco/shared/i18n-svelte";
+import type { TranslationFunctions } from "@librocco/shared";
+
 export interface DialogContent {
 	onConfirm: (closeDialog: () => void) => void;
 	title: string;
 	description: string;
 }
 
+let t: TranslationFunctions;
+
+LL.subscribe((LL) => {
+	// Update the translation object
+	t = LL;
+});
+
+const tDialogTitle = t.dialog_title;
+const tDialogDescription = t.dialog_description;
+
 export const dialogTitle = {
 	// Misc
-	delete: (entity: string) => `Permenantly delete ${entity}?`,
+	delete: (entity: string) => tDialogTitle.delete({ entity }),
 
 	// Inbond
-	commitInbound: (entity: string) => `Commit inbound ${entity}?`,
+	commitInbound: (entity: string) => tDialogTitle.commit_inbound({ entity }),
 
 	// Outbound
-	commitOutbound: (entity: string) => `Commit outbound ${entity}?`,
-	noWarehouseSelected: () => "No warehouse(s) selected",
-	reconcileOutbound: () => "Stock mismatch",
+	commitOutbound: (entity: string) => tDialogTitle.commit_outbound({ entity }),
+	noWarehouseSelected: () => tDialogTitle.no_warehouse_selected(),
+	reconcileOutbound: () => tDialogTitle.reconcile_outbound(),
 
 	// BookForm
-	editBook: () => "Edit book details",
-	createCustomItem: () => "Create custom item",
-	editCustomItem: () => "Edit custom item",
+	editBook: () => tDialogTitle.edit_book(),
+	createCustomItem: () => tDialogTitle.create_custom_item(),
+	editCustomItem: () => tDialogTitle.edit_custom_item(),
 
 	// WarehouseForm
-	editWarehouse: () => "Update book details",
+	editWarehouse: () => tDialogTitle.edit_warehouse(),
 
 	// DatabaseForm
-	createDatabase: () => "Create new database"
+	createDatabase: () => tDialogTitle.create_database()
 };
 
 export const dialogDescription = {
 	// Misc
-	deleteNote: () => "Once you delete this note, you will not be able to access it again",
-	deleteWarehouse: (bookCount: number) => `Once you delete this warehouse ${bookCount} books will be removed from your stock`,
-	deleteDatabase: () =>
-		`Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`,
+	deleteNote: () => tDialogDescription.delete_note(),
+	deleteWarehouse: (bookCount: number) => tDialogDescription.delete_warehouse({ bookCount }),
+	deleteDatabase: () => tDialogDescription.delete_database(),
 
 	// Inbound
-	commitInbound: (bookCount: number, warehouseName: string) => `${bookCount} books will be added to ${warehouseName}`,
+	commitInbound: (bookCount: number, warehouseName: string) => tDialogDescription.commit_inbound({ bookCount, warehouseName }),
 
 	// Outbound
-	commitOutbound: (bookCount: number) => `${bookCount} books will be removed from your stock`,
-	noWarehouseSelected: () => "Can't commit the note as some transactions don't have any warehouse selected",
-	reconcileOutbound: () =>
-		"Some quantities reqested are greater than available in stock and will need to be reconciled in order to proceed.",
+	commitOutbound: (bookCount: number) => tDialogDescription.commit_outbound({ bookCount }),
+	noWarehouseSelected: () => tDialogDescription.no_warehouse_selected(),
+	reconcileOutbound: () => tDialogDescription.reconcile_outbound(),
 
 	// BookForm
-	editBook: () => "Update book details",
+	editBook: () => tDialogDescription.edit_book(),
 
 	// WarehouseForm
-	editWarehouse: () => "Update warehouse details",
+	editWarehouse: () => tDialogDescription.edit_warehouse(),
 
 	// DatabaseForm
-	createDatabase: () => "Please type in the name for the new database"
+	createDatabase: () => tDialogDescription.create_database()
 };

@@ -220,6 +220,119 @@ const suppliers_page = {
 	}
 };
 
+const warehouses = {
+	warehouse_id: {
+		display_label: {
+			quantity: "Quantity",
+			isbn: "ISBN",
+			title: "Title",
+			publisher: "Publisher",
+			authors: "Authors",
+			year: "Year",
+			price: "Price",
+			category: "Category",
+			edited_by: "Edited by",
+			out_of_print: "Out of print"
+		},
+		labels: {
+			export_to_csv: "Export to CSV",
+			new_note: "New note",
+			edit_row: "Edit row",
+			print_book_label: "Print book label",
+			edit_book_details: "Edit book details",
+			manually_edit_book_details: "Manually edit book details"
+		}
+	},
+
+	stats: {
+		books: "books",
+		discount: "discount"
+	},
+	labels: {
+		new_note: "New note",
+		view_stock: "View Stock"
+	}
+};
+const dialog_title = {
+	// Misc
+	delete: `Permenantly delete {entity}?`,
+
+	// Inbond
+	commit_inbound: `Commit inbound {entity}?`,
+
+	// Outbound
+	commit_outbound: `Commit outbound {entity}?`,
+	no_warehouse_selected: "No warehouse(s) selected",
+	reconcile_outbound: "Stock mismatch",
+
+	// BookForm
+	edit_book: "Edit book details",
+	create_custom_item: "Create custom item",
+	edit_custom_item: "Edit custom item",
+
+	// WarehouseForm
+	edit_warehouse: "Update book details",
+
+	// DatabaseForm
+	create_database: "Create new database"
+};
+
+const dialog_description = {
+	// Misc
+	delete_note: "Once you delete this note, you will not be able to access it again",
+	delete_warehouse: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`,
+	delete_database: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`,
+
+	// Inbound
+	commit_inbound: `{bookCount} book{{s}} will be added to {warehouseName}`,
+
+	// Outbound
+	commit_outbound: `{bookCount} book{{s}} will be removed from your stock`,
+	no_warehouse_selected: "Can't commit the note as some transactions don't have any warehouse selected",
+	reconcile_outbound: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed.",
+
+	// BookForm
+	edit_book: "Update book details",
+
+	// WarehouseForm
+	edit_warehouse: "Update warehouse details",
+
+	// DatabaseForm
+	create_database: "Please type in the name for the new database"
+};
+
+const outbound_note = {
+	delete_dialog: {
+		select_warehouse: "Please select a warehouse for each of the following transactions"
+	},
+	reconcile_dialog: {
+		review_transaction: "Please review the following transactions",
+		quantity: "quantity for reconciliation"
+	},
+	stats: {
+		last_updated: "Last updated"
+	},
+	labels: {
+		delete: "Delete",
+		edit_row: "Edit row",
+		print_book_label: "Print book label",
+		delete_row: "Delete row"
+	}
+};
+
+const outbound_page = {
+	heading: "Outbound",
+	stats: {
+		last_updated: "Last updated",
+		books: "{bookCount} book{{s}}"
+	},
+	labels: {
+		new_note: "New Note",
+		edit: "Edit",
+		print_book_label: "Print book label",
+		delete_row: "Delete row"
+	}
+};
 const en = {
 	nav,
 	search,
@@ -227,7 +340,12 @@ const en = {
 	inventory_page,
 	orders_page,
 	customer_orders_page,
-	suppliers_page
+	suppliers_page,
+	warehouses,
+	dialog_title,
+	dialog_description,
+	outbound_note,
+	outbound_page
 } satisfies BaseTranslation;
 
 export default en;
