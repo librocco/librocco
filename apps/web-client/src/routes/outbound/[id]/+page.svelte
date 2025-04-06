@@ -72,6 +72,7 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -419,7 +420,7 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{$LL.outbound_note.stats.last_updated()}}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -508,7 +509,7 @@
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
+						<Trash2 class="text-white" size={20} /><span class="text-white">{$LL.outbound_note.labels.delete()}</span>
 					</div>
 				</DropdownWrapper>
 			</div>
@@ -550,7 +551,7 @@
 									use:trigger.action
 									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 								>
-									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="sr-only">{$LL.outbound_note.labels.edit_row()} {rowIx}</span>
 									<span class="aria-hidden">
 										<MoreVertical />
 									</span>
@@ -565,7 +566,7 @@
 										on:m-click={handleOpenFormPopover(row)}
 										on:m-keydown={handleOpenFormPopover(row)}
 									>
-										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="sr-only">{$LL.outbound_note.labels.edit_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
@@ -577,7 +578,7 @@
 											data-testid={testId("print-book-label")}
 											on:click={handlePrintLabel(row)}
 										>
-											<span class="sr-only">Print book label {rowIx}</span>
+											<span class="sr-only">{$LL.outbound_note.labels.print_book_label()} {rowIx}</span>
 											<span class="aria-hidden">
 												<Printer />
 											</span>
@@ -589,7 +590,7 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
-										<span class="sr-only">Delete row {rowIx}</span>
+										<span class="sr-only">{$LL.outbound_note.labels.delete_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Trash2 />
 										</span>
@@ -633,7 +634,7 @@
 				<Dialog {dialog} type="delete" onConfirm={() => {}}>
 					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">Please select a warehouse for each of the following transactions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">{$LL.outbound_note.delete_dialog.select_warehouse()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn }}
 							<li>{isbn}</li>
@@ -652,7 +653,7 @@
 				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf(invalidTransactions)}>
 					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
 					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">Please review the following tranasctions:</h3>
+					<h3 class="mb-2 mt-4 font-semibold">{$LL.outbound_note.reconcile_dialog.review_transaction()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
 							<li class="mb-2">
@@ -660,7 +661,7 @@
 								<p class="pl-2">requested quantity: {quantity}</p>
 								<p class="pl-2">available: {available}</p>
 								<p class="pl-2">
-									quantity for reconciliation: <span class="font-semibold">{quantity - available}</span>
+									{$LL.outbound_note.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
 								</p>
 							</li>
 						{/each}
