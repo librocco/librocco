@@ -24,7 +24,7 @@ async function getTables(db: DB, which: "user_only" | "full" = "full"): Promise<
 
 	const query = `
 		SELECT * FROM sqlite_master
-		WHERE type = 'table' ${filter && `AND ${filter}`}
+		WHERE type = 'table' ${filter ? `AND ${filter}` : ""}
 	`;
 
 	const res = await db.execO<SQLiteTableData>(query);
