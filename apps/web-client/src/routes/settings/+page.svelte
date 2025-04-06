@@ -180,7 +180,7 @@
 								aria-label="Drop zone"
 								on:dragover={handleDragOver}
 							>
-								<p>Drag and drop your .sqlite3 file here to import</p>
+								<p>Drag and drop your .json or .sql file here to import</p>
 							</div>
 						{/if}
 					</ul>
