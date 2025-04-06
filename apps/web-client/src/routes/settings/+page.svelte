@@ -2,6 +2,7 @@
 	import { Search } from "lucide-svelte";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { Download } from "lucide-svelte";
+	import JSONbig from "json-bigint";
 
 	import { testId } from "@librocco/shared";
 
@@ -33,8 +34,10 @@
 	$: files = [$dbid];
 
 	// #region import/export
-	let importOn = false;
-	const toggleImport = () => (importOn = !importOn);
+	let importOption: "json" | "sql" | "" = "";
+	const importJSON = () => (importOption = "json");
+	const importSQL = () => (importOption = "sql");
+	const importOff = () => (importOption = "");
 
 	const handleDragOver = (event: DragEvent) => {
 		event.preventDefault();
@@ -54,17 +57,20 @@
 				if (file) await handleImportData(file);
 			}
 		}
-		importOn = false;
+
+		importOff();
 	};
 
 	const handleImportData = async (file: File) => {
-		if (file.name.endsWith(".sql")) {
-			const sql = await file.text();
-			await db.exec(sql);
-		} else if (file.name.endsWith(".json")) {
-			const data = JSON.parse(await file.text());
-			await loadJSONData(db, data, "data_only");
+		if (importOption === "json") {
+			const data = JSONbig.parse(await file.text());
+			return await loadJSONData(db, data, "data_only");
 		}
+		if (importOption === "sql") {
+			const sql = await file.text();
+			return await db.exec(sql);
+		}
+		throw new Error("Invalid import option: this should be unreachable and indicates a bug in the code");
 	};
 
 	const handleExportDatabase = (name: string, format: "json" | "sql") => async () => {
@@ -72,16 +78,16 @@
 		let blob: Blob;
 		if (format === "json") {
 			const data = await dumpJSONData(db, "user_only");
-			blob = new Blob([JSON.stringify(data)], { type: "application/json" });
+			blob = new Blob([JSONbig.stringify(data)], { type: "application/json" });
 		} else {
 			const data = await dumpSQLData(db, "user_only", "data_only");
-			blob = new Blob([data], { type: "application/sql" });
+			blob = new Blob([data]);
 		}
 
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = name;
+		a.download = `${name}.${format}`;
 		a.click();
 		URL.revokeObjectURL(url);
 		document.removeChild(a);
@@ -147,7 +153,27 @@
 
 				<div class="w-full basis-2/3">
 					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
-						{#if !importOn}
+						{#if importOption === "json"}
+							<div
+								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
+								on:drop={handleDrop}
+								role="region"
+								aria-label="Drop zone"
+								on:dragover={handleDragOver}
+							>
+								<p>Drag and drop your .json file here to import</p>
+							</div>
+						{:else if importOption === "sql"}
+							<div
+								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
+								on:drop={handleDrop}
+								role="region"
+								aria-label="Drop zone"
+								on:dragover={handleDragOver}
+							>
+								<p>Drag and drop your .sql file here to import</p>
+							</div>
+						{:else}
 							{#each files as file (file)}
 								{@const active = true}
 								<li
@@ -172,23 +198,16 @@
 									</div>
 								</li>
 							{/each}
-						{:else}
-							<div
-								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
-								on:drop={handleDrop}
-								role="region"
-								aria-label="Drop zone"
-								on:dragover={handleDragOver}
-							>
-								<p>Drag and drop your .json or .sql file here to import</p>
-							</div>
 						{/if}
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={toggleImport} type="button" class="button button-white">
-							{importOn ? "Cancel" : "Import"}
-						</button>
+						{#if importOption === ""}
+							<button on:click={importJSON} type="button" class="button button-white">Import JSON</button>
+							<button on:click={importSQL} type="button" class="button button-white">Import SQL</button>
+						{:else}
+							<button on:click={importOff} type="button" class="button button-white">Cancel</button>
+						{/if}
 					</div>
 				</div>
 			</div>

@@ -17,9 +17,8 @@ type TableJSONData = {
 
 async function getTables(db: DB, which: "user_only" | "full" = "full"): Promise<SQLiteTableData[]> {
 	const filter = {
-		all: "",
-		data_only: "name NOT LIKE '%crsql%'",
-		schema_only: "name LIKE '%crsql%'"
+		full: "",
+		user_only: "name NOT LIKE '%crsql%'"
 	}[which];
 
 	const query = `
@@ -39,18 +38,28 @@ async function getTableRows(db: DB, tableName: string): Promise<any[]> {
 }
 
 async function sqlFromJSON(dump: TableJSONData[], mode: "full" | "schema_only" | "data_only"): Promise<string> {
-	const schema = dump.filter(({ sql }) => sql).join("\n");
+	const schema = dump
+		.map(({ sql }) => sql)
+		.filter(Boolean)
+		.join("\n");
 
 	const data = dump
+		.filter(({ rows }) => rows?.length)
 		.map(({ tbl_name, rows }) => {
 			const keys = Object.keys(rows[0]);
-			const placeholderLine = `(${multiplyString("?", keys.length)})`;
 
-			return [
-				`INSERT INTO ${tbl_name} (${keys.join(", ")}) VALUES`,
-				Array(rows.length).fill(placeholderLine).join(",\n"),
-				`ON CONFLICT DO UPDATE SET ${keys.map((key) => `${key} = excluded.${key}`).join(", ")}`
-			].join("\n");
+			const rowValuesToInsertLine = (row: Record<string, any>) => {
+				const values = Object.values(row).map((value) => (value === null ? "NULL" : `'${value}'`));
+				return `(${values.join(", ")})`;
+			};
+
+			return (
+				[
+					`INSERT INTO ${tbl_name} (${keys.join(", ")}) VALUES`,
+					rows.map(rowValuesToInsertLine).join(",\n"),
+					`ON CONFLICT DO UPDATE SET ${keys.map((key) => `${key} = excluded.${key}`).join(", ")}`
+				].join("\n") + ";"
+			);
 		})
 		.join("\n\n");
 
