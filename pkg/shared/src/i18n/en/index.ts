@@ -137,12 +137,45 @@ const inbound_note = {
 	}
 };
 
+const stock_page = {
+	labels: {
+		edit_book_details: "Edit book details",
+		manually_edit_book_details: "Manually edit book details",
+		edit_row: "Edit row",
+		print_book_label: "Print book label"
+	}
+};
+
+const settings_page = {
+	headings: {
+		settings: "Settings",
+		device_settings: "Device settings",
+		sync_settings: "Sync settings",
+		db_management: "Database management"
+	},
+	descriptions: {
+		sync_settings: "Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future",
+		db_management: "Use this section to create, select, import, export or delete a database",
+		import: "Drag and drop your .sqlite3 file here to import",
+		device_settings: "Manage connections to external devices"
+	},
+
+	stats: {
+		version: "Version"
+	},
+	labels: {
+		new: "New"
+	}
+};
+
 const en = {
 	nav,
 	search,
 	history_page,
 	inventory_page,
-	inbound_note
+	inbound_note,
+	settings_page,
+	stock_page
 } satisfies BaseTranslation;
 
 export default en;
