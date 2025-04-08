@@ -6,6 +6,8 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
@@ -34,8 +36,11 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: stats = data.stats;
-	$: bookList = data.bookList;
+	$: ({
+		stats,
+		bookList,
+		dbCtx: { db }
+	} = data);
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -57,13 +62,23 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/date">
+<HistoryPage view="history/date" {handleSearch} {handleCreateOutboundNote}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
-
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
