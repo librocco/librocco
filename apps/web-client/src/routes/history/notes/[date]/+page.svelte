@@ -16,6 +16,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -57,12 +58,14 @@
 	// #endregion date picker
 
 	$: notes = data.notes;
+
+	$: t = $LL.history_page.notes_tab;
 </script>
 
 <HistoryPage view="history/notes">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
+			<h1 class="text-2xl font-bold leading-7 text-gray-900">{`${t.date.history()}`}</h1>
 
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
@@ -93,21 +96,23 @@
 							<div class="grid w-full grid-cols-4 items-start gap-2 lg:grid-cols-8">
 								<div class="order-1 col-span-2 flex gap-x-0.5 lg:col-span-1">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} {t.date.books()}</span>
 								</div>
 
 								<p class="order-2 col-span-2 text-gray-500 lg:order-3">
-									Total cover price: <span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
+									{t.date.total_cover_price()}:
+									<span class="text-gray-700">{note.totalCoverPrice.toFixed(2)}</span>
 								</p>
 
 								<p class="order-3 col-span-2 lg:order-2">
 									<span class="badge badge-md {note.noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										Committed: {generateUpdatedAtString(note.committedAt, "time-only")}
+										{t.date.committed()}: {generateUpdatedAtString(note.committedAt, "time-only")}
 									</span>
 								</p>
 
 								<p class="order-4 col-span-2 text-gray-500">
-									Total discounted price: <span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
+									{t.date.total_discounted_price()}:
+									<span class="text-gray-700">{note.totalDiscountedPrice.toFixed(2)}</span>
 								</p>
 							</div>
 						</div>
