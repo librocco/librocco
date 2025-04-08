@@ -13,7 +13,7 @@
 <div data-view={view} id={testId("page-container")} class="h-full w-full">
 	<div class="flex h-full w-full flex-col overflow-y-auto" id="content">
 		<div class="bg-base-200 border-base-content sticky top-0 z-[100] flex h-16 items-center justify-between border-b">
-			<h2 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h2>
+			<h1 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h1>
 			<!-- TODO: add strings to dicts -->
 			<div class="flex gap-x-2 p-4">
 				<button class="btn-seconday btn-sm btn lg:hidden" on:click={handleSearch}>
