@@ -72,7 +72,7 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page title="Outbound" handleCreateOutboundNote={handleCreateNote} {handleSearch}>
+<Page title="Outbound" handleCreateOutboundNote={handleCreateNote} {handleSearch} view="outbound">
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-end">
 			<button
@@ -94,7 +94,7 @@
 			<!-- Start entity list contaier -->
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
+			<ul class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				{#if !notes.length}
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">

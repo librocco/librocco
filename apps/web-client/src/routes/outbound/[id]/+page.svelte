@@ -387,7 +387,7 @@
 	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title={displayName} {handleCreateOutboundNote} {handleSearch}>
+<Page title={displayName} {handleCreateOutboundNote} {handleSearch} view="outbound-note">
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm

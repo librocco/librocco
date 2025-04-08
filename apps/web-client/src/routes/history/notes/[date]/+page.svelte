@@ -74,7 +74,7 @@
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")} data-loaded={true}>
+		<ul class={testId("entity-list-container")} data-view={entityListView("history/notes")}>
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No notes found" description="No notes seem to have been committed on that date" class="center-absolute" />
@@ -86,7 +86,7 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("history/notes/archive", note.id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="block w-full">
 							<a {href} class="entity-list-text-lg mb-2 block text-gray-900 hover:underline focus:underline">{displayName}</a>
 
