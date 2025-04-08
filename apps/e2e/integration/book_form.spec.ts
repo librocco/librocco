@@ -56,8 +56,8 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 
 	// Wait for the app to become responsive
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("inbound-list").waitFor();
 
 	// Setup

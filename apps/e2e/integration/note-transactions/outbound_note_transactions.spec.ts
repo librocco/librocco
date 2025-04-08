@@ -540,7 +540,8 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	await dashboard.view("outbound").waitFor();
 
 	// Check Wareahouse 1 stock (only the existing books should have been removed)
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await dashboard.content().entityList("warehouse-list").item(0).dropdown().viewStock();
 	await dashboard
 		.content()
@@ -548,7 +549,8 @@ test("should check validity of the transactions and commit the note on 'commit' 
 		.assertRows([{ isbn: "11111111", quantity: 1 }]);
 
 	// Check Wareahouse 2 stock (only the existing books should have been removed)
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await dashboard.content().entityList("warehouse-list").item(1).dropdown().viewStock();
 	await dashboard
 		.content()

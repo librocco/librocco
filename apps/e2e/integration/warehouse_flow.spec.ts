@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// Navigate to the inventory page
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 	await dashboard.content().entityList("warehouse-list").waitFor();
 });
 
@@ -119,14 +119,14 @@ test("should assign default name to warehouses in sequential order", async ({ pa
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse");
 
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Second warehouse
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse (2)");
 
 	// Should display created warehouses in the warehouse list (on inventory page)
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	const entityList = content.entityList("warehouse-list");
 
@@ -162,12 +162,14 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "Warehouse 2" });
 
 	// Create another warehouse
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse (4)");
 
 	// Verify warehouse names
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1" },
 		{ name: "Warehouse 2" },
@@ -180,12 +182,14 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	await dbHandle.evaluate(upsertWarehouse, { id: 4, displayName: "Warehouse 4" });
 
 	// Create a final warehouse with reset sequence
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await header.createWarehouse();
 	await header.title().assert("New Warehouse");
 
 	// Verify final warehouse names
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await warehouseList.assertElements([
 		{ name: "Warehouse 1" },
 		{ name: "Warehouse 2" },
@@ -214,7 +218,8 @@ test("should navigate to warehouse page on 'View stock' button click", async ({ 
 	await content.header().title().assert("Warehouse 1");
 
 	// Navigate back to inventory page and to second warehouse
-	await dashboard.navigate("inventory");
+	await page.getByRole("link", { name: "Manage inventory" }).click();
+
 	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 
 	// Check title
