@@ -55,8 +55,7 @@ test("should display notes, namespaced to warehouses, in the inbound note list",
 	await (await getDbHandle(page)).evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
 	// Navigate to inbound list
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 
 	// The notes should appear in the list
 	await inNoteList.assertElements([{ name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / Note 1" }]);
@@ -80,8 +79,8 @@ test("should delete the note on delete button click (after confirming the prompt
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
 	// Wait for the notes to appear
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / Note 1" }]);
 
 	// Delete the first note
@@ -167,8 +166,7 @@ test("should assign default name to notes in sequential order (regardless of war
 
 	// Should display created notes in the inbound list
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 
 	const entityList = content.entityList("inbound-list");
 
@@ -209,8 +207,8 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content
 		.entityList("inbound-list")
 		.assertElements([
@@ -225,14 +223,15 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await dbHandle.evaluate(updateNote, { id: 4, displayName: "Note 4" });
 
 	// Create a final note (with reset sequence)
-	await content.navigate("warehouse-list");
+	await page.getByRole("link", { name: "Warehouses" }).click();
+
 	await warehouseList.item(0).createNote();
 	await header.title().assert("New Note");
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content
 		.entityList("inbound-list")
 		.assertElements([
@@ -248,7 +247,7 @@ test("should be able to edit note title", async ({ page }) => {
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 
 	const dbHandle = await getDbHandle(page);
 
@@ -261,8 +260,9 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
 	// to make sure title is persisted
-	await dashboard.navigate("inventory");
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Manage Inventory" }).click();
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	expect(content.entityList("inbound-list").item(0).getByText("title")).toBeVisible();
 });
 test("should navigate to note page on 'edit' button click", async ({ page }) => {
@@ -276,8 +276,8 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
 	// Naviate to the inbound list
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 2" }, { name: "Warehouse 1 / Note 1" }]);
 
 	// Navigate to note 1
@@ -289,8 +289,8 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Navigate back to inbound page and to note 2
 	await page.getByRole("link", { name: "Manage inventory" }).click();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("inbound-list").item(0).edit();
 
 	// Check title
@@ -309,8 +309,7 @@ test("should display book count for each respective note in the list", async ({ 
 	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "Note 1" });
 	await dbHandle.evaluate(createInboundNote, { id: 2, warehouseId: 1, displayName: "Note 2" });
 
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 
 	// Both should display 0 books
 	await content.entityList("inbound-list").assertElements([
@@ -358,8 +357,8 @@ test("should display book original price and discounted price as well as the war
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 
 	// Navigate to the inbound list
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("inbound-list").assertElements([{ name: "Warehouse 1 / Note 1" }]);
 
 	// Navigate to first note

@@ -48,8 +48,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.getByText("Inbound").click();
+	await page.getByRole("link", { name: "Inbound" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -59,8 +58,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("warehouse-list");
+	await page.getByRole("link", { name: "Warehouses" }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -96,8 +94,7 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	// Navigate to "Test Note" page and commit the note
 	await content.header().breadcrumbs().getByText("Warehouses").click();
 	await dashboard.view("inventory").waitFor();
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("inbound-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
 	await content.entityList("inbound-list").item(0).edit();
 	await dashboard.view("inbound-note").waitFor();
 	await content.header().commit();
@@ -107,8 +104,8 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	// TODO: should improve accessible markup and target as "role=tab"
-	await content.navigate("warehouse-list");
+	await page.getByRole("link", { name: "Inbound" }).click();
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([

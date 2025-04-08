@@ -272,7 +272,7 @@ test("should update default warehouse for outbound note using dropdown", async (
 	await dbHandle.evaluate(createOutboundNote, { id: 1, displayName: "Default Warehouse Test" });
 
 	// Navigate to outbound page
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
 
 	await dashboard.content().entityList("outbound-list").item(0).edit();
 
@@ -305,7 +305,8 @@ test("should update default warehouse for outbound note using dropdown", async (
 	]);
 
 	// Navigate away and back to ensure the default warehouse setting persists
-	await dashboard.navigate("outbound");
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" });
+
 	await dashboard.content().entityList("outbound-list").item(0).edit();
 
 	// Verify the default warehouse selection was persisted
@@ -327,6 +328,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
 	// to make sure title is persisted
-	await dashboard.navigate("outbound");
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" });
+
 	expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });
