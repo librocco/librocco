@@ -7,6 +7,7 @@
 	import { page } from "$app/stores";
 
 	import { entityListView, testId, type BookData } from "@librocco/shared";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	import type { PageData } from "./$types";
 
@@ -68,9 +69,21 @@
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
 	// #endregion search
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/isbn">
+<HistoryPage view="history/isbn" {handleSearch} {handleCreateOutboundNote}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		{#key isbn}

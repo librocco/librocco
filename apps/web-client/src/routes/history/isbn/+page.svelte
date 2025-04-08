@@ -7,6 +7,7 @@
 	import type { PageData } from "./$types";
 
 	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	import { createSearchDropdown } from "./[isbn]/actions";
 
@@ -38,20 +39,28 @@
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
 	// #endregion search
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/isbn">
+<HistoryPage view="history/isbn" {handleSearch} {handleCreateOutboundNote}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<!-- svelte-ignore a11y_autofocus -->
 		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
 	</svelte:fragment>
 
-	<svelte:fragment slot="heading">
-		<div class="flex h-full items-center">
-			<h1 class="text-2xl font-bold leading-7 text-gray-900">History</h1>
-		</div>
-	</svelte:fragment>
+	<svelte:fragment slot="heading"></svelte:fragment>
 
 	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
