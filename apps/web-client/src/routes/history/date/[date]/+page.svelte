@@ -74,7 +74,7 @@
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
+		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			{#if !bookList?.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
@@ -121,7 +121,7 @@
 							</div>-->
 
 							<li
-								class="entity-list-row grid w-full grid-cols-2 items-center gap-y-3 gap-x-4 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
+								class="entity-list-row grid w-full grid-cols-2 items-center gap-x-4 gap-y-3 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
 							>
 								<p data-property="isbn" class="text-xl font-medium leading-none text-gray-900 lg:col-span-3 xl:col-span-2">{isbn}</p>
 								<p
@@ -146,7 +146,7 @@
 										href={appPath("history/notes/archive", noteId)}
 										class="{noteType === 'outbound'
 											? 'text-red-700'
-											: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 py-0.5 px-3 hover:font-semibold"
+											: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 px-3 py-0.5 hover:font-semibold"
 									>
 										{#if noteType === "inbound"}
 											<p><ArrowLeft size={16} /></p>

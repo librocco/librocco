@@ -141,7 +141,7 @@
 	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title="Search" {handleCreateOutboundNote} {handleSearch}>
+<Page title="Search" {handleCreateOutboundNote} {handleSearch} view="stock">
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
