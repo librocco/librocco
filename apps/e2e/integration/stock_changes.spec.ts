@@ -1,4 +1,4 @@
-import { test } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 
 import { baseURL } from "../constants";
 
@@ -58,7 +58,7 @@ test("should update the stock when the inbound note is committed", async ({ page
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	await page.getByRole("link", { name: "Warehouses" }).click();
+	await page.getByRole("link", { name: "Warehouses", exact: true }).click();
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
 	await content.table("warehouse").assertRows([
@@ -100,11 +100,13 @@ test("should aggrgate the transactions of the same isbn and warehouse (in stock)
 	await content.header().commit();
 	await dashboard.dialog().confirm();
 
+	await expect(page.getByRole("dialog")).not.toBeVisible();
+
 	// Committed transactions should be aggregated in "Warehouse 1" stock
 	//
 	// After committing, we've been redirected to the inbound list view
 	// Navigate to warehouse page (through warehouse list)
-	await page.getByRole("link", { name: "Inbound" }).click();
+	await page.getByRole("link", { name: "Warehouses", exact: true }).click();
 
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.header().title().assert("Warehouse 1");
