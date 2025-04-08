@@ -305,7 +305,7 @@ test("should update default warehouse for outbound note using dropdown", async (
 	]);
 
 	// Navigate away and back to ensure the default warehouse setting persists
-	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" });
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" }).click();
 
 	await dashboard.content().entityList("outbound-list").item(0).edit();
 
@@ -314,12 +314,13 @@ test("should update default warehouse for outbound note using dropdown", async (
 });
 
 test("should be able to edit note title", async ({ page }) => {
-	const dashboard = getDashboard(page);
-	const content = dashboard.content();
-
 	const dbHandle = await getDbHandle(page);
 
 	await dbHandle.evaluate(createOutboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
+
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
 	await content.entityList("outbound-list").item(0).edit();
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
@@ -328,7 +329,8 @@ test("should be able to edit note title", async ({ page }) => {
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
 	// to make sure title is persisted
-	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" });
+
+	await page.getByLabel("Main navigation").getByRole("link", { name: "Outbound" }).click();
 
 	expect(content.entityList("outbound-list").item(0).getByText("title")).toBeVisible();
 });
