@@ -8,7 +8,7 @@ import {
 	PUBLIC_IS_DEBUG,
 	PUBLIC_LOG_LEVEL
 } from "$env/static/public";
-import type { Locales } from "$i18n/i18n-types";
+import type { Locales } from "@librocco/shared";
 
 export const DEV_COUCH_URL = `http://${PUBLIC_COUCHDB_USER}:${PUBLIC_COUCHDB_PASSWORD}@${PUBLIC_COUCHDB_HOST}:${PUBLIC_COUCHDB_PORT}/${PUBLIC_DB_NAME}`;
 

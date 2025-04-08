@@ -1,31 +1,34 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
+	import { filter, scan } from "rxjs";
+	import { onDestroy, onMount } from "svelte";
+	import { ArrowRight, ClockArrowUp, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
+
+	import { asc } from "@librocco/shared";
+
+	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
+	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
 
 	import type { PageData } from "./$types";
 
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import {
 		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
 		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
-	import { page } from "$app/stores";
-	import { onDestroy, onMount } from "svelte";
-	import { invalidate } from "$app/navigation";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod } from "sveltekit-superforms/adapters";
-	import { scannerSchema } from "$lib/forms/schemas";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
-	import { appPath } from "$lib/paths";
+
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
-	import { asc } from "@librocco/shared";
-	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
+
+	import { appPath } from "$lib/paths";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -48,6 +51,40 @@
 	$: db = data?.dbCtx?.db;
 
 	$: books = data?.reconciliationOrderLines || [];
+
+	$: plugins = data.plugins;
+
+	async function handleIsbnSubmit(isbn: string) {
+		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
+
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const localBookData = await getBookData(db, isbn);
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
+			return;
+		}
+
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await upsertBook(db, { isbn });
+		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
+	}
 
 	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	// Extract different orders from placedOrderLines

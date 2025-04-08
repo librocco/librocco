@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, Book, Truck } from "lucide-svelte";
 	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
-	import { LL } from "$i18n/i18n-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
