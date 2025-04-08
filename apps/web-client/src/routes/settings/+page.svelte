@@ -25,6 +25,7 @@
 	import { invalidateAll } from "$app/navigation";
 	import { deviceSettingsStore } from "$lib/stores/app";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -171,17 +172,17 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
-		<h4>Version {VERSION}</h4>
+		<h1 class="text-2xl font-bold leading-7 text-gray-900">{$LL.settings_page.headings.settings()}</h1>
+		<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
 		<div class="space-y-12 p-6">
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Sync settings</h2>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.sync_settings()}</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">
-						Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future
+						{$LL.settings_page.descriptions.sync_settings()}
 					</p>
 				</div>
 
@@ -197,6 +198,8 @@
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
 									syncConfig.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
 								}
 							}
 						}}
@@ -206,8 +209,8 @@
 
 			<div data-testid={testId("database-management-container")} class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Database management</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">Use this section to create, select, import, export or delete a database</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.db_management()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.db_management()}</p>
 				</div>
 
 				<div class="w-full basis-2/3">
@@ -276,7 +279,7 @@
 								aria-label="Drop zone"
 								on:dragover={handleDragOver}
 							>
-								<p>Drag and drop your .sqlite3 file here to import</p>
+								<p>{$LL.settings_page.descriptions.import()}</p>
 							</div>
 						{/if}
 					</ul>
@@ -305,7 +308,7 @@
 								};
 							}}
 							type="button"
-							class="button button-green">New</button
+							class="button button-green">{$LL.settings_page.labels.new()}</button
 						>
 					</div>
 				</div>
@@ -313,8 +316,8 @@
 
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Device settings</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">Manage connections to external devices</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.device_settings()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.device_settings()}</p>
 				</div>
 				<div class="w-full basis-2/3">
 					<DeviceSettingsForm
@@ -327,6 +330,8 @@
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
 									deviceSettingsStore.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
 								}
 							}
 						}}

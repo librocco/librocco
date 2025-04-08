@@ -432,6 +432,9 @@ importers:
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
+      typesafe-i18n:
+        specifier: ~5.26.2
+        version: 5.26.2(typescript@5.8.2)
       typescript:
         specifier: ^5.5.0
         version: 5.8.2
@@ -5123,23 +5126,6 @@ packages:
       vite: 6.0.11(tsx@4.19.3)
     dev: true
 
-  /@vitest/mocker@3.0.9(vite@6.0.11):
-    resolution: {integrity: sha512-ryERPIBOnvevAkTq+L1lD+DTFBRcjueL9lOUfXsLfwP92h4e+Heb+PjiqS3/OURWPtywfafK0kj++yDFjWUmrA==}
-    peerDependencies:
-      msw: ^2.4.9
-      vite: ^5.0.0 || ^6.0.0
-    peerDependenciesMeta:
-      msw:
-        optional: true
-      vite:
-        optional: true
-    dependencies:
-      '@vitest/spy': 3.0.9
-      estree-walker: 3.0.3
-      magic-string: 0.30.17
-      vite: 6.0.11(@types/node@16.18.126)
-    dev: true
-
   /@vitest/pretty-format@2.0.5:
     resolution: {integrity: sha512-h8k+1oWHfwTkyTkb9egzwNMfJAEx4veaPSnMeKbVSjp4euqGSbQlm5+6VHwTr7u4FJslVVsUG5nopCaAYdOmSQ==}
     dependencies:
@@ -5197,7 +5183,7 @@ packages:
       sirv: 3.0.1
       tinyglobby: 0.2.12
       tinyrainbow: 2.0.0
-      vitest: 3.0.9(@vitest/ui@3.0.9)
+      vitest: 3.0.9(@vitest/browser@3.0.9)(@vitest/ui@3.0.9)(tsx@4.19.3)
     dev: true
 
   /@vitest/utils@2.0.5:
@@ -12341,7 +12327,6 @@ packages:
       typescript: '>=3.5.1'
     dependencies:
       typescript: 5.8.2
-    dev: false
 
   /typescript@5.8.2:
     resolution: {integrity: sha512-aJn6wq13/afZp/jT9QZmwEjDqqvSGp1VT5GVg+f/t6/oVyrgXM6BY1h9BRh/O5p3PlUPAe+WuiEZOmb/49RqoQ==}
@@ -12736,7 +12721,7 @@ packages:
     dependencies:
       '@types/node': 16.18.126
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.11)
+      '@vitest/mocker': 3.0.9(msw@2.7.3)(vite@6.0.11)
       '@vitest/pretty-format': 3.0.9
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -12801,7 +12786,7 @@ packages:
     dependencies:
       '@vitest/browser': 3.0.9(playwright@1.50.1)(typescript@5.8.2)(vite@6.0.11)(vitest@3.0.9)
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.11)
+      '@vitest/mocker': 3.0.9(msw@2.7.3)(vite@6.0.11)
       '@vitest/pretty-format': 3.0.9
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
@@ -12865,7 +12850,7 @@ packages:
         optional: true
     dependencies:
       '@vitest/expect': 3.0.9
-      '@vitest/mocker': 3.0.9(vite@6.0.11)
+      '@vitest/mocker': 3.0.9(msw@2.7.3)(vite@6.0.11)
       '@vitest/pretty-format': 3.0.9
       '@vitest/runner': 3.0.9
       '@vitest/snapshot': 3.0.9
