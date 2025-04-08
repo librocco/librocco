@@ -166,7 +166,7 @@
 	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title="Settings" {handleCreateOutboundNote} {handleSearch}>
+<Page title="Settings" {handleCreateOutboundNote} {handleSearch} view="settings">
 	<svelte:fragment slot="heading">
 		<h4>Version {VERSION}</h4>
 	</svelte:fragment>

@@ -100,7 +100,7 @@
 			<!-- Start entity list contaier -->
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
+			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				<div class="border-b border-gray-300">
 					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
 

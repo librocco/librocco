@@ -46,7 +46,7 @@
 			<!-- Start entity list contaier -->
 
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-			<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
+			<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")}>
 				<!-- Start entity list -->
 				{#each warehouses as warehouse}
 					{@const displayName = warehouse.displayName || warehouse.id}
@@ -54,7 +54,7 @@
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 

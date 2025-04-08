@@ -113,7 +113,8 @@
 		<Sidebar />
 	</div>
 
-	<main class="relative flex flex-1 flex-col justify-items-center overflow-y-auto">
+	<!-- flex flex-1 flex-col justify-items-center overflow-y-auto -->
+	<main class="h-full w-full overflow-y-auto">
 		{#if !$mobileNavOpen}
 			<!--TODO:  add aria-label to dict-->
 			<button use:melt={$trigger} class="btn-ghost btn-square btn fixed left-3 top-2 z-[200] lg:hidden">
