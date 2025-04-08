@@ -348,6 +348,76 @@ type RootTranslation = {
 			delete_row: string;
 		};
 	};
+	settings_page: {
+		headings: {
+			/**
+			 * S​e​t​t​i​n​g​s
+			 */
+			settings: string;
+			/**
+			 * D​e​v​i​c​e​ ​s​e​t​t​i​n​g​s
+			 */
+			device_settings: string;
+			/**
+			 * S​y​n​c​ ​s​e​t​t​i​n​g​s
+			 */
+			sync_settings: string;
+			/**
+			 * D​a​t​a​b​a​s​e​ ​m​a​n​a​g​e​m​e​n​t
+			 */
+			db_management: string;
+		};
+		descriptions: {
+			/**
+			 * M​a​n​a​g​e​ ​D​B​ ​n​a​m​e​,​ ​s​y​n​c​ ​U​R​L​ ​a​n​d​ ​t​h​e​ ​c​o​n​n​e​c​t​i​o​n​.​ ​N​o​t​e​:​ ​T​h​i​s​ ​w​i​l​l​ ​b​e​ ​m​e​r​g​e​d​ ​w​i​t​h​ ​D​B​ ​s​e​l​e​c​t​i​o​n​ ​i​n​ ​t​h​e​ ​f​u​t​u​r​e
+			 */
+			sync_settings: string;
+			/**
+			 * U​s​e​ ​t​h​i​s​ ​s​e​c​t​i​o​n​ ​t​o​ ​c​r​e​a​t​e​,​ ​s​e​l​e​c​t​,​ ​i​m​p​o​r​t​,​ ​e​x​p​o​r​t​ ​o​r​ ​d​e​l​e​t​e​ ​a​ ​d​a​t​a​b​a​s​e
+			 */
+			db_management: string;
+			/**
+			 * D​r​a​g​ ​a​n​d​ ​d​r​o​p​ ​y​o​u​r​ ​.​s​q​l​i​t​e​3​ ​f​i​l​e​ ​h​e​r​e​ ​t​o​ ​i​m​p​o​r​t
+			 */
+			import: string;
+			/**
+			 * M​a​n​a​g​e​ ​c​o​n​n​e​c​t​i​o​n​s​ ​t​o​ ​e​x​t​e​r​n​a​l​ ​d​e​v​i​c​e​s
+			 */
+			device_settings: string;
+		};
+		stats: {
+			/**
+			 * V​e​r​s​i​o​n
+			 */
+			version: string;
+		};
+		labels: {
+			/**
+			 * N​e​w
+			 */
+			new: string;
+		};
+	};
+	stock_page: {
+		labels: {
+			/**
+			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			edit_book_details: string;
+			/**
+			 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			manually_edit_book_details: string;
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string;
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string;
+		};
+	};
 };
 
 export type TranslationFunctions = {
@@ -683,6 +753,76 @@ export type TranslationFunctions = {
 			 * Delete row
 			 */
 			delete_row: () => LocalizedString;
+		};
+	};
+	settings_page: {
+		headings: {
+			/**
+			 * Settings
+			 */
+			settings: () => LocalizedString;
+			/**
+			 * Device settings
+			 */
+			device_settings: () => LocalizedString;
+			/**
+			 * Sync settings
+			 */
+			sync_settings: () => LocalizedString;
+			/**
+			 * Database management
+			 */
+			db_management: () => LocalizedString;
+		};
+		descriptions: {
+			/**
+			 * Manage DB name, sync URL and the connection. Note: This will be merged with DB selection in the future
+			 */
+			sync_settings: () => LocalizedString;
+			/**
+			 * Use this section to create, select, import, export or delete a database
+			 */
+			db_management: () => LocalizedString;
+			/**
+			 * Drag and drop your .sqlite3 file here to import
+			 */
+			import: () => LocalizedString;
+			/**
+			 * Manage connections to external devices
+			 */
+			device_settings: () => LocalizedString;
+		};
+		stats: {
+			/**
+			 * Version
+			 */
+			version: () => LocalizedString;
+		};
+		labels: {
+			/**
+			 * New
+			 */
+			new: () => LocalizedString;
+		};
+	};
+	stock_page: {
+		labels: {
+			/**
+			 * Edit book details
+			 */
+			edit_book_details: () => LocalizedString;
+			/**
+			 * Manually edit book details
+			 */
+			manually_edit_book_details: () => LocalizedString;
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString;
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString;
 		};
 	};
 };
