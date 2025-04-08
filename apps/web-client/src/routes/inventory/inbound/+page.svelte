@@ -18,8 +18,9 @@
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
-	import { deleteNote } from "$lib/db/cr-sqlite/note";
+	import { deleteNote, createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 
 	export let data: PageData;
 
@@ -44,6 +45,14 @@
 	let initialized = false;
 	$: initialized = Boolean(db);
 
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
+
 	const handleCreateWarehouse = async () => {
 		const id = await getWarehouseIdSeq(db);
 		await upsertWarehouse(db, { id });
@@ -64,79 +73,83 @@
 	let dialogContent: DialogContent;
 </script>
 
-{#if !initialized}
-	<div class="center-absolute">
-		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-	</div>
-{:else}
-	<!-- Start entity list contaier -->
+<InventoryManagementPage {handleCreateWarehouse} {handleCreateOutboundNote} {handleSearch} plugins={data.plugins}>
+	{#if !initialized}
+		<div class="center-absolute">
+			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+		</div>
+	{:else}
+		<!-- Start entity list contaier -->
 
-	<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-	<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
-		{#if !notes.length}
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox
-				title="No open notes"
-				description="Get started by adding a new note with the appropriate warehouse"
-				class="center-absolute"
-			>
-				<a href={appPath("warehouses")} class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-					><span class="text-green-50">Back to warehouses</span></a
+		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")}>
+			{#if !notes.length}
+				<!-- Start entity list placeholder -->
+				<PlaceholderBox
+					title="No open notes"
+					description="Get started by adding a new note with the appropriate warehouse"
+					class="center-absolute"
 				>
-			</PlaceholderBox>
-			<!-- End entity list placeholder -->
-		{:else}
-			<!-- Start entity list -->
-			{#each notes as note}
-				{@const noteName = note.displayName || `Note - ${note.id}`}
-				{@const displayName = `${note.warehouseName} / ${noteName}`}
-				{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
-				{@const totalBooks = note.totalBooks}
-				{@const href = appPath("inbound", note.id)}
+					<a
+						href={appPath("warehouses")}
+						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
+						><span class="text-green-50">Back to warehouses</span></a
+					>
+				</PlaceholderBox>
+				<!-- End entity list placeholder -->
+			{:else}
+				<!-- Start entity list -->
+				{#each notes as note}
+					{@const noteName = note.displayName || `Note - ${note.id}`}
+					{@const displayName = `${note.warehouseName} / ${noteName}`}
+					{@const updatedAt = generateUpdatedAtString(note.updatedAt)}
+					{@const totalBooks = note.totalBooks}
+					{@const href = appPath("inbound", note.id)}
 
-				<div class="entity-list-row group">
-					<div class="flex flex-col gap-y-2">
-						<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+					<div class="entity-list-row group">
+						<div class="flex flex-col gap-y-2">
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-						<div class="flex flex-col items-start gap-y-2">
-							<div class="flex gap-x-0.5">
-								<Library class="mr-1 text-gray-700" size={24} />
-								<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+							<div class="flex flex-col items-start gap-y-2">
+								<div class="flex gap-x-0.5">
+									<Library class="mr-1 text-gray-700" size={24} />
+									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+								</div>
+								{#if note.updatedAt}
+									<span class="badge badge-md badge-green">
+										Last updated: {updatedAt}
+									</span>
+								{/if}
 							</div>
-							{#if note.updatedAt}
-								<span class="badge badge-md badge-green">
-									Last updated: {updatedAt}
+						</div>
+
+						<div class="entity-list-actions">
+							<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+							<button
+								use:melt={$trigger}
+								class="button button-white"
+								aria-label="Delete note: {note.displayName}"
+								on:m-click={() => {
+									dialogContent = {
+										onConfirm: handleDeleteNote(note.id),
+										title: dialogTitle.delete(note.displayName),
+										description: dialogDescription.deleteNote()
+									};
+								}}
+							>
+								<span aria-hidden="true">
+									<Trash size={20} />
 								</span>
-							{/if}
+							</button>
 						</div>
 					</div>
-
-					<div class="entity-list-actions">
-						<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
-						<button
-							use:melt={$trigger}
-							class="button button-white"
-							aria-label="Delete note: {note.displayName}"
-							on:m-click={() => {
-								dialogContent = {
-									onConfirm: handleDeleteNote(note.id),
-									title: dialogTitle.delete(note.displayName),
-									description: dialogDescription.deleteNote()
-								};
-							}}
-						>
-							<span aria-hidden="true">
-								<Trash size={20} />
-							</span>
-						</button>
-					</div>
-				</div>
-			{/each}
-			<!-- End entity list -->
-		{/if}
-	</ul>
-	<!-- End entity list contaier -->
-{/if}
+				{/each}
+				<!-- End entity list -->
+			{/if}
+		</ul>
+		<!-- End entity list contaier -->
+	{/if}
+</InventoryManagementPage>
 
 {#if $open}
 	{@const { onConfirm, title, description } = dialogContent};

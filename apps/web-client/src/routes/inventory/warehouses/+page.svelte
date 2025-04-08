@@ -24,8 +24,9 @@
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	import type { PageData } from "./$types";
-	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createInboundNote, getNoteIdSeq, createOutboundNote } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 
 	export let data: PageData;
 
@@ -50,6 +51,14 @@
 	$: db = data.dbCtx?.db;
 
 	$: warehouses = data.warehouses;
+
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
@@ -93,134 +102,136 @@
 	$: initialized = Boolean(db);
 </script>
 
-{#if !initialized}
-	<div class="center-absolute">
-		<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-	</div>
-{:else}
-	<!-- Start entity list contaier -->
+<InventoryManagementPage {handleCreateWarehouse} {handleCreateOutboundNote} {handleSearch} plugins={data.plugins}>
+	{#if !initialized}
+		<div class="center-absolute">
+			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+		</div>
+	{:else}
+		<!-- Start entity list contaier -->
 
-	<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-	<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")} data-loaded={true}>
-		{#if !warehouses.length}
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-				<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
-			</PlaceholderBox>
-			<!-- End entity list placeholder -->
-		{:else}
-			<!-- Start entity list -->
-			{#each warehouses as { id, displayName, totalBooks, discount }}
-				{@const href = appPath("warehouses", id)}
+		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
+		<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")}>
+			{#if !warehouses.length}
+				<!-- Start entity list placeholder -->
+				<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
+					<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
+				</PlaceholderBox>
+				<!-- End entity list placeholder -->
+			{:else}
+				<!-- Start entity list -->
+				{#each warehouses as { id, displayName, totalBooks, discount }}
+					{@const href = appPath("warehouses", id)}
 
-				<div class="entity-list-row group">
-					<div class="flex flex-col gap-y-2 self-start">
-						<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+					<div class="entity-list-row group">
+						<div class="flex flex-col gap-y-2 self-start">
+							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
-						<div class="flex flex-col gap-2 sm:flex-row">
-							<div class="entity-list-text-sm flex w-32 items-center gap-x-1 text-gray-500">
-								<Library class="text-gray-700" size={18} />
-								{#if totalBooks === -1}
-									<PlaceholderDots />
-								{:else}
-									<span class="">{totalBooks}</span>
-								{/if}
-								books
-							</div>
-
-							{#if discount}
-								<div class="flex items-center gap-x-1">
-									<div class="border border-gray-700 p-[1px]">
-										<Percent class="text-gray-700" size={14} />
-									</div>
-									<span class="entity-list-text-sm text-gray-500">{discount}% discount</span>
+							<div class="flex flex-col gap-2 sm:flex-row">
+								<div class="entity-list-text-sm flex w-32 items-center gap-x-1 text-gray-500">
+									<Library class="text-gray-700" size={18} />
+									{#if totalBooks === -1}
+										<PlaceholderDots />
+									{:else}
+										<span class="">{totalBooks}</span>
+									{/if}
+									books
 								</div>
-							{/if}
+
+								{#if discount}
+									<div class="flex items-center gap-x-1">
+										<div class="border border-gray-700 p-[1px]">
+											<Percent class="text-gray-700" size={14} />
+										</div>
+										<span class="entity-list-text-sm text-gray-500">{discount}% discount</span>
+									</div>
+								{/if}
+							</div>
+						</div>
+
+						<div class="entity-list-actions">
+							<button on:click={handleCreateInboundNote(id)} class="button button-green">
+								<span class="button-text"> New note </span>
+							</button>
+
+							<DropdownWrapper let:separator let:item>
+								<div
+									{...item}
+									use:item.action
+									use:melt={$trigger}
+									on:m-click={() => {
+										warehouseToEdit = { name: displayName, discount, id };
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editWarehouse(),
+											description: dialogDescription.editWarehouse(),
+											type: "edit"
+										};
+									}}
+									on:m-keydown={() => {
+										warehouseToEdit = { name: displayName, discount, id };
+										dialogContent = {
+											onConfirm: () => {},
+											title: dialogTitle.editWarehouse(),
+											description: dialogDescription.editWarehouse(),
+											type: "edit"
+										};
+									}}
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								>
+									<Edit class="text-gray-400" size={20} />
+									<span class="text-gray-700">Edit</span>
+								</div>
+
+								<div {...separator} use:separator.action class="h-[1px] bg-gray-200"></div>
+
+								<a
+									{href}
+									{...item}
+									use:item.action
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+								>
+									<Table2 class="text-gray-400" size={20} />
+									<span class="text-gray-700">View Stock</span>
+								</a>
+
+								<div
+									{...item}
+									use:item.action
+									use:melt={$trigger}
+									on:m-click={() => {
+										warehouseToDelete = { id, displayName };
+										dialogContent = {
+											onConfirm: handleDeleteWarehouse(id),
+											title: dialogTitle.delete(displayName),
+											description: dialogDescription.deleteWarehouse(totalBooks),
+											type: "delete"
+										};
+									}}
+									on:m-keydown={() => {
+										warehouseToDelete = { id, displayName };
+										dialogContent = {
+											onConfirm: handleDeleteWarehouse(id),
+											title: dialogTitle.delete(displayName),
+											description: dialogDescription.deleteWarehouse(totalBooks),
+											type: "delete"
+										};
+									}}
+									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+								>
+									<Trash2 class="text-white" size={20} />
+									<span class="text-white">Delete</span>
+								</div>
+							</DropdownWrapper>
 						</div>
 					</div>
-
-					<div class="entity-list-actions">
-						<button on:click={handleCreateInboundNote(id)} class="button button-green">
-							<span class="button-text"> New note </span>
-						</button>
-
-						<DropdownWrapper let:separator let:item>
-							<div
-								{...item}
-								use:item.action
-								use:melt={$trigger}
-								on:m-click={() => {
-									warehouseToEdit = { name: displayName, discount, id };
-									dialogContent = {
-										onConfirm: () => {},
-										title: dialogTitle.editWarehouse(),
-										description: dialogDescription.editWarehouse(),
-										type: "edit"
-									};
-								}}
-								on:m-keydown={() => {
-									warehouseToEdit = { name: displayName, discount, id };
-									dialogContent = {
-										onConfirm: () => {},
-										title: dialogTitle.editWarehouse(),
-										description: dialogDescription.editWarehouse(),
-										type: "edit"
-									};
-								}}
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Edit class="text-gray-400" size={20} />
-								<span class="text-gray-700">Edit</span>
-							</div>
-
-							<div {...separator} use:separator.action class="h-[1px] bg-gray-200"></div>
-
-							<a
-								{href}
-								{...item}
-								use:item.action
-								class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-							>
-								<Table2 class="text-gray-400" size={20} />
-								<span class="text-gray-700">View Stock</span>
-							</a>
-
-							<div
-								{...item}
-								use:item.action
-								use:melt={$trigger}
-								on:m-click={() => {
-									warehouseToDelete = { id, displayName };
-									dialogContent = {
-										onConfirm: handleDeleteWarehouse(id),
-										title: dialogTitle.delete(displayName),
-										description: dialogDescription.deleteWarehouse(totalBooks),
-										type: "delete"
-									};
-								}}
-								on:m-keydown={() => {
-									warehouseToDelete = { id, displayName };
-									dialogContent = {
-										onConfirm: handleDeleteWarehouse(id),
-										title: dialogTitle.delete(displayName),
-										description: dialogDescription.deleteWarehouse(totalBooks),
-										type: "delete"
-									};
-								}}
-								class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-							>
-								<Trash2 class="text-white" size={20} />
-								<span class="text-white">Delete</span>
-							</div>
-						</DropdownWrapper>
-					</div>
-				</div>
-			{/each}
-			<!-- End entity list -->
-		{/if}
-	</ul>
-	<!-- End entity list contaier -->
-{/if}
+				{/each}
+				<!-- End entity list -->
+			{/if}
+		</ul>
+		<!-- End entity list contaier -->
+	{/if}
+</InventoryManagementPage>
 
 {#if $open}
 	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
