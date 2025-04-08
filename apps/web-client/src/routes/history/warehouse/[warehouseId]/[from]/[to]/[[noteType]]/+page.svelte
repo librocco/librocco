@@ -9,6 +9,7 @@
 	import { entityListView, testId } from "@librocco/shared";
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
+	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
@@ -37,6 +38,11 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
+
+	$: ({
+		dbCtx: { db }
+	} = data);
+
 	$: goto = racefreeGoto(disposer);
 
 	$: displayName = data.displayName;
@@ -112,9 +118,21 @@
 		download(csvConfig)(gen);
 	};
 	// #endregion csv
+
+	/**
+	 * Handle create note is an `on:click` handler used to create a new outbound note
+	 * _(and navigate to the newly created note page)_.
+	 */
+	const handleCreateOutboundNote = async () => {
+		const id = await getNoteIdSeq(db);
+		await createOutboundNote(db, id);
+		await goto(appPath("outbound", id));
+	};
+
+	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/date">
+<HistoryPage view="history/date" {handleSearch} {handleCreateOutboundNote}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{displayName || ""} history</h1>
@@ -159,7 +177,7 @@
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
-		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list>
+		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			{#if !transactions?.length}
 				<!-- Start entity list placeholder -->
 				<PlaceholderBox

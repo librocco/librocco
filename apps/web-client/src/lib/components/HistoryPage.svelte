@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Book, Calendar, Search } from "lucide-svelte";
 
-	import { historyView, type HistoryView } from "@librocco/shared";
+	import type { HistoryView } from "@librocco/shared";
 
 	import { goto } from "$lib/utils/navigation";
 	import { page } from "$app/stores";
@@ -17,33 +17,33 @@
 			label: "By Date",
 			// Keep the date when switching from one dated tab to another.
 			// We're doing this in browser only so as to not produce errors during static build.
-			href: appPath("history/date", (browser && $page.params?.date) || ""),
-			linkto: historyView("history/date")
+			href: appPath("history/date", (browser && $page.params?.date) || "")
 		},
 		{
 			icon: Book,
 			label: "By ISBN",
-			href: appPath("history/isbn"),
-			linkto: historyView("history/isbn")
+			href: appPath("history/isbn")
 		},
 		{
 			icon: Book,
 			label: "Notes by date",
 			// Keep the date when switching from one dated tab to another
 			// We're doing this in browser only so as to not produce errors during static build.
-			href: appPath("history/notes/date", (browser && $page.params?.date) || ""),
-			linkto: historyView("history/notes")
+			href: appPath("history/notes/date", (browser && $page.params?.date) || "")
 		},
 		{
 			icon: Book,
 			label: "by Warehouse",
-			href: appPath("history/warehouse"), // Keep the date when switching from one dated tab to another
-			linkto: historyView("history/warehouse")
+			href: appPath("history/warehouse") // Keep the date when switching from one dated tab to another
 		}
 	];
+
+	export let view: HistoryView;
+	export let handleSearch: (e: Event) => void;
+	export let handleCreateOutboundNote: () => (void | Promise<void>) | undefined = undefined;
 </script>
 
-<Page>
+<Page title="History" {handleCreateOutboundNote} {handleSearch} {view}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		{#if $$slots.topbar}
 			<slot name="topbar" {iconProps} {inputProps} />
@@ -62,12 +62,12 @@
 	<svelte:fragment slot="main">
 		<div class="flex h-full w-full flex-col overflow-hidden">
 			<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
-				{#each tabs as { label, icon, href, linkto }}
+				{#each tabs as { label, icon, href }}
 					{@const active = $page.url.pathname.startsWith(href)}
+
 					<svelte:element
 						this={active ? "div" : "a"}
 						class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
-						data-linkto={linkto}
 						{href}
 					>
 						<svelte:component this={icon} size={20} />
