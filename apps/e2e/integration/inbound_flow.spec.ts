@@ -244,14 +244,14 @@ test("should continue the naming sequence from the highest sequenced note name (
 });
 
 test("should be able to edit note title", async ({ page }) => {
+	const dbHandle = await getDbHandle(page);
+	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
+
 	const dashboard = getDashboard(page);
 	const content = dashboard.content();
 
 	await page.getByRole("link", { name: "Inbound" }).click();
 
-	const dbHandle = await getDbHandle(page);
-
-	await dbHandle.evaluate(createInboundNote, { id: 1, warehouseId: 1, displayName: "New Note" });
 	await content.entityList("inbound-list").item(0).edit();
 	// Check title
 	await dashboard.view("inbound-note").waitFor();
