@@ -182,7 +182,7 @@
 	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title={displayName} {handleCreateOutboundNote} {handleSearch}>
+<Page title={displayName} {handleCreateOutboundNote} {handleSearch} view="warehouse">
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex justify-between">
