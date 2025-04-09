@@ -3,6 +3,7 @@ import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
 
 import type { PageLoad } from "./$types";
 import type { NoteType } from "$lib/db/cr-sqlite/types";
+import { timed } from "$lib/utils/time";
 
 export const load: PageLoad = async ({ parent, params, depends }) => {
 	depends("history:transactions");
@@ -21,8 +22,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 	const startDate = new Date(from);
 	const endDate = new Date(to);
 
-	const { displayName } = await getWarehouseById(dbCtx.db, warehouseId);
-	const transactions = await getPastTransactions(dbCtx.db, { warehouseId, startDate, endDate, noteType });
+	const { displayName } = await timed(getWarehouseById, dbCtx.db, warehouseId);
+	const transactions = await timed(getPastTransactions, dbCtx.db, { warehouseId, startDate, endDate, noteType });
 
 	return { displayName, transactions, noteType };
 };
