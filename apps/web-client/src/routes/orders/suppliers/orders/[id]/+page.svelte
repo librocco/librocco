@@ -50,7 +50,7 @@
 	$: reconciliation_order_id = data.reconciliation_order_id;
 	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
 
-	$: t = $LL.suppliers_page.orders_page.orderId;
+	$: t = $LL.suppliers_page.orders_page;
 	async function handlePrintOrder() {
 		/**@TODO implement print functionality */
 	}
