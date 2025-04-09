@@ -4,6 +4,7 @@ import type { GetStockResponseItem, PastTransactionItem } from "$lib/db/cr-sqlit
 import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 import { getStock } from "$lib/db/cr-sqlite/stock";
 import { getBookData } from "$lib/db/cr-sqlite/books";
+import { timed } from "$lib/utils/time";
 
 export const load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 	depends("history:transactions");
@@ -15,9 +16,9 @@ export const load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 		return { transactions: [] as PastTransactionItem[], stock: [] as GetStockResponseItem[] };
 	}
 
-	const transactions = await getPastTransactions(dbCtx.db, { isbn });
-	const bookData = await getBookData(dbCtx.db, isbn);
-	const stock = await getStock(dbCtx.db, { isbns: [isbn] });
+	const transactions = await timed(getPastTransactions, dbCtx.db, { isbn });
+	const bookData = await timed(getBookData, dbCtx.db, isbn);
+	const stock = await timed(getStock, dbCtx.db, { isbns: [isbn] });
 
 	return { dbCtx, transactions, bookData, stock };
 };

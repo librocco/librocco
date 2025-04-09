@@ -34,6 +34,7 @@
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { appPath } from "$lib/paths";
 	import { racefreeGoto } from "$lib/utils/navigation";
+	import { timed } from "$lib/utils/time";
 
 	export let data: PageData;
 	$: db = data?.dbCtx?.db;
@@ -76,7 +77,9 @@
 	// - further below, we're checking that +1 entry exists, if so, we let the intersection observer know it can requery when reached (infinite scroll)
 	//
 	// TODO: 'db' should always be defined, as we want this to run ONLY in browser context, but, as of yet, I wasn't able to get this to work
-	$: currentQuery = Promise.resolve(db && $search.length > 2 ? getStock(db, { searchString: $search }) : ([] as GetStockResponseItem[]));
+	$: currentQuery = Promise.resolve(
+		db && $search.length > 2 ? timed(getStock, db, { searchString: $search }) : ([] as GetStockResponseItem[])
+	);
 	$: currentQuery.then((e) => (entries = e));
 
 	const tableOptions = writable({ data: entries.slice(0, maxResults) });
