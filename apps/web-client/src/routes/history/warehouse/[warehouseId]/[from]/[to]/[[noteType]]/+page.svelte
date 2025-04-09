@@ -45,12 +45,12 @@
 	$: transactions = data.transactions;
 	$: filter = data.noteType;
 
-	$: t = $LL.history_page.warehouse_tab.warehouseId;
+	$: t = $LL.history_page.warehouse_tab.note_table;
 
 	let tt: { [option: string]: () => LocalizedString };
 	LL.subscribe((LL) => {
 		// Update the translation object
-		tt = LL.history_page.warehouse_tab.warehouseId.from.filter_options;
+		tt = LL.history_page.warehouse_tab.note_table.filter_options;
 	});
 
 	// #region date picker
@@ -102,16 +102,16 @@
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
-				{ displayLabel: t.from.columnHeaders.quantity(), key: "quantity" },
-				{ displayLabel: t.from.columnHeaders.isbn(), key: "isbn" },
-				{ displayLabel: t.from.columnHeaders.title(), key: "title" },
-				{ displayLabel: t.from.columnHeaders.publisher(), key: "publisher" },
-				{ displayLabel: t.from.columnHeaders.authors(), key: "authors" },
-				{ displayLabel: t.from.columnHeaders.year(), key: "year" },
-				{ displayLabel: t.from.columnHeaders.price(), key: "price" },
-				{ displayLabel: t.from.columnHeaders.category(), key: "category" },
-				{ displayLabel: t.from.columnHeaders.editedBy(), key: "edited_by" },
-				{ displayLabel: t.from.columnHeaders.outOfPrint(), key: "out_of_print" }
+				{ displayLabel: t.column_headers.quantity(), key: "quantity" },
+				{ displayLabel: t.column_headers.isbn(), key: "isbn" },
+				{ displayLabel: t.column_headers.title(), key: "title" },
+				{ displayLabel: t.column_headers.publisher(), key: "publisher" },
+				{ displayLabel: t.column_headers.authors(), key: "authors" },
+				{ displayLabel: t.column_headers.year(), key: "year" },
+				{ displayLabel: t.column_headers.price(), key: "price" },
+				{ displayLabel: t.column_headers.category(), key: "category" },
+				{ displayLabel: t.column_headers.edited_by(), key: "edited_by" },
+				{ displayLabel: t.column_headers.out_of_print(), key: "out_of_print" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
@@ -129,15 +129,13 @@
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
 				{displayName || ""}
-				{t.from.heading.history()}
+				{t.heading.history()}
 			</h1>
 
-			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3"
-				>{t.from.heading.exportCSV()}</button
-			>
+			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
-				<p>{t.from.heading.from()}:</p>
+				<p>{t.heading.from()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker
 						id="calendar-from"
@@ -146,12 +144,12 @@
 						{isDateDisabled}
 					/>
 				</div>
-				<p>{t.from.heading.to()}:</p>
+				<p>{t.heading.to()}:</p>
 				<div class="mb-4 inline-block md:mb-0">
 					<CalendarPicker id="calendar-to" onValueChange={onDateValueChange("to")} defaultValue={data.to.dateValue} {isDateDisabled} />
 				</div>
 
-				<p>{t.from.heading.filter()}:</p>
+				<p>{t.heading.filter()}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
 					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
@@ -186,7 +184,7 @@
 			{:else}
 				<div class="sticky top-0">
 					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
-						{t.from.transactions()}
+						{t.titles.transactions()}
 					</h2>
 				</div>
 				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
