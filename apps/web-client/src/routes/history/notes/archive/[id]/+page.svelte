@@ -95,13 +95,13 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.committedAt()}: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{t.committed_at()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">{t.exportCSV()}</button>
+				<button class="button button-green">{t.export_csv()}</button>
 			</div>
 		</div>
 	</svelte:fragment>
