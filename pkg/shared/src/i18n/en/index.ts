@@ -129,38 +129,50 @@ const orders_page = {
 
 const customer_orders_page = {
 	title: "Customer Orders",
-	new_order: "New Order",
-	status_filters: {
+
+	labels: {
+		new_order: "New Order",
+		update_order: "Update Order",
+		update: "Update"
+	},
+	tabs: {
 		in_progress: "In Progress",
 		completed: "Completed"
 	},
-	customer: "Customer",
-	order_id: "Order ID",
-	update_order: "Update Order",
-	customer_details: "Customer Details",
-	update: "Update"
+	table: {
+		customer: "Customer",
+		order_id: "Order ID",
+		customer_details: "Customer Details"
+	}
 };
 
 const suppliers_page = {
-	new_supplier: "New Supplier",
-	suppliers: "Suppliers",
-	delete: "Delete",
-	edit: "Edit",
-	supplierId: {
-		new_order_page: {
-			total_books: "Total books",
-			total_value: "Total value",
-			books: "Books",
-			select: "Select",
-			isbn: "ISBN",
-			title: "Title",
-			authors: "Authors",
-			ordered_quantity: "Ordered quantity",
-			total: "Total",
-			selected_quantity: "Selected quantity",
-			selected_books: "Selected books",
-			place_order: "Place Order"
-		},
+	labels: {
+		new_supplier: "New Supplier"
+	},
+	title: {
+		suppliers: "Suppliers"
+	},
+	supplier_table: {
+		delete: "Delete",
+		edit: "Edit"
+	},
+
+	new_order_page: {
+		total_books: "Total books",
+		total_value: "Total value",
+		books: "Books",
+		select: "Select",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		ordered_quantity: "Ordered quantity",
+		total: "Total",
+		selected_quantity: "Selected quantity",
+		selected_books: "Selected books",
+		place_order: "Place Order"
+	},
+	order_list_page: {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
 		supplier_address: "Supplier address",
@@ -173,49 +185,57 @@ const suppliers_page = {
 		add_to_supplier: "Add to supplier"
 	},
 	orders_page: {
-		supplier_orders: "Supplier Orders",
-		suppliers: "Suppliers",
-		unordered: "Unordered",
-		ordered: "Ordered",
-		reconciling: "Reconciling",
-		completed: "Completed",
-		no_unordered_books: {
+		title: {
+			supplier_orders: "Supplier Orders"
+		},
+		labels: {
+			suppliers: "Suppliers"
+		},
+		tabs: {
+			unordered: "Unordered",
+			ordered: "Ordered",
+			reconciling: "Reconciling",
+			completed: "Completed"
+		},
+		placeholder: {
 			description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
 			button: "New Customer Order"
 		},
-		orderId: {
-			reconciled_list: {
-				view_reconciliation: "View Reconciliation",
-				reconcile: "Reconcile",
-				total_books: "Total books",
-				total_value: "Total value",
-				ordered: "Ordered",
-				print_order: "Print Order",
-				books: "Books",
-				isbn: "ISBN",
-				title: "Title",
-				authors: "Authors",
-				quantity: "Quantity",
-				total_price: "Total Price"
-			}
+		reconciled_list: {
+			view_reconciliation: "View Reconciliation",
+			reconcile: "Reconcile",
+			total_books: "Total books",
+			total_value: "Total value",
+			ordered: "Ordered",
+			print_order: "Print Order",
+			books: "Books",
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			quantity: "Quantity",
+			total_price: "Total Price"
 		}
 	},
 	reconcile_page: {
-		reconcile_deliveries: "Reconcile Deliveries",
+		title: {
+			reconcile_deliveries: "Reconcile Deliveries"
+		},
 		created: "Created",
 		last_updated: "Last Updated",
 		includes_supplier_orders: "Includes supplier orders",
 		no_books: "Scan or enter the ISBNs of the delivered books to begin reconciliation.",
-		isbn: "ISBN",
-		title: "Title",
-		authors: "Authors",
-		quantity: "Quantity",
-		price: "Price",
+
+		table: {
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			quantity: "Quantity",
+			price: "Price"
+		},
 		total_delivered: "Total delivered",
 		delete_dialog: {
-			confirmDeleteDialogHeading: "Delete Reconciliation Order",
-			confirmDeleteDialogDescription:
-				"Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
+			title: "Delete Reconciliation Order",
+			description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
 		}
 	}
 };
