@@ -14,7 +14,7 @@
 
 	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
@@ -144,8 +144,8 @@
 									on:m-click={() => {
 										dialogContent = {
 											onConfirm: handleDeleteNote(note.id),
-											title: dialogTitle.delete(note.displayName),
-											description: dialogDescription.deleteNote()
+											title: $LL.dialog_title.delete({ entity: note.displayName }),
+											description: $LL.dialog_description.delete_note()
 										};
 									}}
 								>
