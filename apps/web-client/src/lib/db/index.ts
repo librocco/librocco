@@ -1,11 +1,13 @@
+import { derived, get as get, type Writable } from "svelte/store";
+import { persisted } from "svelte-local-storage-store";
+import { browser } from "$app/environment";
+
 import type { SyncConfig } from "./sync";
 export * from "./sync";
 
-import { derived, get as get, type Writable } from "svelte/store";
-import { persisted } from "svelte-local-storage-store";
-
 export const dbid = persisted("librocco-current-db", "dev");
-const url = persisted("librocco-sync-url", "");
+
+const url = persisted("librocco-sync-url", browser ? `${window.location.protocol}//${window.location.host}/sync` : "");
 
 export const syncActive = persisted("librocco-sync-active", false);
 

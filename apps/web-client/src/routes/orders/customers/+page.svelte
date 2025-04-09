@@ -127,7 +127,7 @@
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
-										<dt class="sr-only">{t.customer_details}</dt>
+										<dt class="sr-only">{t.customer_details()}</dt>
 										<dd>{fullname}</dd>
 										<dd class="text-sm">{email ?? ""}</dd>
 									</dl>
