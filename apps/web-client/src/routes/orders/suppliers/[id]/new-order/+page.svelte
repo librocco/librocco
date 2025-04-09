@@ -62,7 +62,7 @@
 
 	$: canPlaceOrder = totalSelectedBooks > 0;
 
-	$: t = $LL.suppliers_page.supplierId.new_order_page;
+	$: t = $LL.suppliers_page.new_order_page;
 
 	async function handlePlaceOrder() {
 		/**@TODO replace randomId with incremented id */
