@@ -6,6 +6,7 @@ import type { PastNoteItem } from "$lib/db/cr-sqlite/types";
 
 import { appPath } from "$lib/paths";
 import { getPastNotes } from "$lib/db/cr-sqlite/history";
+import { timed } from "$lib/utils/time";
 
 export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 	depends("history:notes");
@@ -25,7 +26,7 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 		return { date, dateValue, notes: [] as PastNoteItem[] };
 	}
 
-	const notes = await getPastNotes(dbCtx.db, date);
+	const notes = await timed(getPastNotes, dbCtx.db, date);
 	return { date, dateValue, notes };
 };
 
