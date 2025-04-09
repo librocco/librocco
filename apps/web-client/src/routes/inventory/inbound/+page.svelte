@@ -13,7 +13,6 @@
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -24,6 +23,11 @@
 	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
+	interface DialogContent {
+		onConfirm: (closeDialog: () => void) => void;
+		title: string;
+		description: string;
+	}
 
 	// #region reactivity
 	let disposer: () => void;
@@ -66,7 +70,6 @@
 	} = dialog;
 
 	let dialogContent: DialogContent;
-
 	/**
 	 * Handle create note is an `on:click` handler used to create a new outbound note
 	 * _(and navigate to the newly created note page)_.
@@ -78,6 +81,7 @@
 	};
 
 	$: t = $LL.inventory_page.inbound_tab;
+	$: tDialog = $LL.dialog_title;
 </script>
 
 <InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
@@ -135,8 +139,8 @@
 								on:m-click={() => {
 									dialogContent = {
 										onConfirm: handleDeleteNote(note.id),
-										title: dialogTitle.delete(note.displayName),
-										description: dialogDescription.deleteNote()
+										title: $LL.dialog_title.delete({ entity: note.displayName }),
+										description: $LL.dialog_description.delete_note()
 									};
 								}}
 							>
