@@ -76,9 +76,9 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose mt-2 text-2xl font-bold">{t.suppliers()}</h1>
+			<h1 class="prose mt-2 text-2xl font-bold">{t.title.suppliers()}</h1>
 			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
-				{t.new_supplier()}
+				{t.labels.new_supplier()}
 				<Plus size={20} />
 			</button>
 		</div>
@@ -86,8 +86,8 @@
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			<SupplierTable data={suppliersStore}>
 				<div class="flex gap-x-2" slot="row-actions" let:row>
-					<button class="btn-outline btn-sm btn">{t.delete()}</button>
-					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">{t.edit()}</a>
+					<button class="btn-outline btn-sm btn">{t.supplier_table.delete()}</button>
+					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">{t.supplier_table.edit()}</a>
 				</div>
 			</SupplierTable>
 		</div>
