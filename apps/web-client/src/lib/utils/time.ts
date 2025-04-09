@@ -12,3 +12,12 @@ export const generateUpdatedAtString = (updatedAt?: Date | string, mode?: "time-
 				hour: "2-digit",
 				minute: "numeric"
 			}));
+
+/** A util used to time a function call */
+export async function timed<P extends any[], R extends any | Promise<any>>(cb: (...params: P) => R, ...params: P): Promise<R> {
+	const name = cb.name || "anonymous";
+	console.time(name);
+	const result = await cb(...params);
+	console.timeEnd(name);
+	return result;
+}
