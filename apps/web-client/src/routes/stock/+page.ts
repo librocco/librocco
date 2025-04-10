@@ -2,7 +2,9 @@ import type { PageLoad } from "./$types";
 
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ parent, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ parent, depends }) => {
 	depends("book:data");
 
 	const { dbCtx } = await parent();
@@ -16,3 +18,5 @@ export const load: PageLoad = async ({ parent, depends }) => {
 
 	return { dbCtx, publisherList };
 };
+
+export const load = timed(_load as any) as PageLoad;

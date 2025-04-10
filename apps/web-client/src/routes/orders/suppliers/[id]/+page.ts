@@ -8,7 +8,9 @@ import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$
 import { appPath } from "$lib/paths";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ parent, params, depends }) => {
 	depends("supplier:data");
 	depends("supplier:orders");
 
@@ -48,3 +50,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	return { supplier, assignedPublishers, unassignedPublishers, orders: [...unreconciledOrders, ...reconciledOrders] };
 };
+
+export const load = timed(_load as any) as PageLoad;
