@@ -123,8 +123,10 @@ const inventory_page = {
 	}
 };
 const orders_page = {
-	checkout: "Checkout",
-	create_outbound_note: "Create a new Outbound Note"
+	labels: {
+		checkout: "Checkout",
+		create_outbound_note: "Create a new Outbound Note"
+	}
 };
 const inbound_note = {
 	stats: {
@@ -143,23 +145,30 @@ const inbound_note = {
 
 const customer_orders_page = {
 	title: "Customer Orders",
-	new_order: "New Order",
-	status_filters: {
+	labels: {
+		update: "Update",
+		new_order: "New Order",
+		update_order: "Update Order"
+	},
+	tabs: {
 		in_progress: "In Progress",
 		completed: "Completed"
 	},
-	customer: "Customer",
-	order_id: "Order ID",
-	update_order: "Update Order",
-	customer_details: "Customer Details",
-	update: "Update"
+	table: {
+		customer: "Customer",
+		order_id: "Order ID",
+		customer_details: "Customer Details"
+	}
 };
 
 const suppliers_page = {
-	new_supplier: "New Supplier",
-	suppliers: "Suppliers",
-	delete: "Delete",
-	edit: "Edit",
+	labels: {
+		new_supplier: "New Supplier",
+
+		delete: "Delete",
+		edit: "Edit"
+	},
+	title: "Suppliers",
 	supplierId: {
 		new_order_page: {
 			total_books: "Total books",
@@ -234,30 +243,7 @@ const suppliers_page = {
 	}
 };
 
-const warehouses = {
-	warehouse_id: {
-		display_label: {
-			quantity: "Quantity",
-			isbn: "ISBN",
-			title: "Title",
-			publisher: "Publisher",
-			authors: "Authors",
-			year: "Year",
-			price: "Price",
-			category: "Category",
-			edited_by: "Edited by",
-			out_of_print: "Out of print"
-		},
-		labels: {
-			export_to_csv: "Export to CSV",
-			new_note: "New note",
-			edit_row: "Edit row",
-			print_book_label: "Print book label",
-			edit_book_details: "Edit book details",
-			manually_edit_book_details: "Manually edit book details"
-		}
-	},
-
+const warehouse_list_page = {
 	stats: {
 		books: "books",
 		discount: "discount"
@@ -267,54 +253,84 @@ const warehouses = {
 		view_stock: "View Stock"
 	}
 };
-const dialog_title = {
-	// Misc
-	delete: `Permenantly delete {entity}?`,
 
-	// Inbond
-	commit_inbound: `Commit inbound {entity}?`,
-
-	// Outbound
-	commit_outbound: `Commit outbound {entity}?`,
-	no_warehouse_selected: "No warehouse(s) selected",
-	reconcile_outbound: "Stock mismatch",
-
-	// BookForm
-	edit_book: "Edit book details",
-	create_custom_item: "Create custom item",
-	edit_custom_item: "Edit custom item",
-
-	// WarehouseForm
-	edit_warehouse: "Update book details",
-
-	// DatabaseForm
-	create_database: "Create new database"
+const warehouse_page = {
+	table: {
+		quantity: "Quantity",
+		isbn: "ISBN",
+		title: "Title",
+		publisher: "Publisher",
+		authors: "Authors",
+		year: "Year",
+		price: "Price",
+		category: "Category",
+		edited_by: "Edited by",
+		out_of_print: "Out of print"
+	},
+	labels: {
+		export_to_csv: "Export to CSV",
+		new_note: "New note",
+		edit_row: "Edit row",
+		print_book_label: "Print book label",
+		edit_book_details: "Edit book details",
+		manually_edit_book_details: "Manually edit book details"
+	}
 };
 
-const dialog_description = {
-	// Misc
-	delete_note: "Once you delete this note, you will not be able to access it again",
-	delete_warehouse: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`,
-	delete_database: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`,
-
-	// Inbound
-	commit_inbound: `{bookCount} book{{s}} will be added to {warehouseName}`,
-
-	// Outbound
-	commit_outbound: `{bookCount} book{{s}} will be removed from your stock`,
-	no_warehouse_selected: "Can't commit the note as some transactions don't have any warehouse selected",
-	reconcile_outbound: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed.",
-
-	// BookForm
-	edit_book: "Update book details",
-
-	// WarehouseForm
-	edit_warehouse: "Update warehouse details",
-
-	// DatabaseForm
-	create_database: "Please type in the name for the new database"
+const delete_dialog = {
+	title: `Permenantly delete {entity}?`,
+	description: "Once you delete this note, you will not be able to access it again"
 };
 
+const commit_inbound_dialog = {
+	title: `Commit inbound {entity}?`,
+	description: `{bookCount} book{{s}} will be added to {warehouseName}`
+};
+
+const commit_outbound_dialog = {
+	title: `Commit outbound {entity}?`,
+	description: `{bookCount} book{{s}} will be removed from your stock`
+};
+
+const no_warehouse_dialog = {
+	title: "No warehouse(s) selected",
+	description: "Can't commit the note as some transactions don't have any warehouse selected"
+};
+
+const reconcile_outbound_dialog = {
+	title: "Stock mismatch",
+	description: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
+};
+
+const edit_book_dialog = {
+	title: "Edit book details",
+	description: "Update book details"
+};
+
+const create_custom_item_dialog = {
+	title: "Create custom item"
+};
+const edit_custom_item_dialog = {
+	title: "Edit custom item"
+};
+
+const edit_warehouse_dialog = {
+	description: "Update warehouse details"
+};
+
+const delete_warehouse_dialog = {
+	description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`,
+	delete_database: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+};
+
+const delete_database_dialog = {
+	description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+};
+
+const create_database_dialog = {
+	title: "Create new database",
+	description: "Please type in the name for the new database"
+};
 const outbound_note = {
 	delete_dialog: {
 		select_warehouse: "Please select a warehouse for each of the following transactions"
@@ -386,14 +402,25 @@ const en = {
 	orders_page,
 	customer_orders_page,
 	suppliers_page,
-	warehouses,
-	dialog_title,
-	dialog_description,
+	warehouse_list_page,
+	warehouse_page,
 	outbound_note,
 	outbound_page,
 	inbound_note,
 	settings_page,
-	stock_page
+	stock_page,
+	delete_dialog,
+	edit_book_dialog,
+	no_warehouse_dialog,
+	reconcile_outbound_dialog,
+	create_custom_item_dialog,
+	edit_custom_item_dialog,
+	delete_warehouse_dialog,
+	delete_database_dialog,
+	create_database_dialog,
+	commit_outbound_dialog,
+	edit_warehouse_dialog,
+	commit_inbound_dialog
 } satisfies BaseTranslation;
 
 export default en;
