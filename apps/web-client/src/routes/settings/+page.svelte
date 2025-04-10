@@ -18,7 +18,7 @@
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
-	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
@@ -250,8 +250,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: dialogTitle.delete(file),
-														description: dialogDescription.deleteDatabase(),
+														title: $LL.delete_dialog.title({ entity: file }),
+														description: $LL.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -259,8 +259,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: dialogTitle.delete(file),
-														description: dialogDescription.deleteDatabase(),
+														title: $LL.delete_dialog.title({ entity: file }),
+														description: $LL.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -294,16 +294,16 @@
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: dialogTitle.createDatabase(),
-									description: dialogDescription.createDatabase(),
+									title: $LL.create_database_dialog.title(),
+									description: $LL.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
 							on:m-keydown={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: dialogTitle.createDatabase(),
-									description: dialogDescription.createDatabase(),
+									title: $LL.create_database_dialog.title(),
+									description: $LL.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
