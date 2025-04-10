@@ -54,7 +54,7 @@
 	$: assignedPublishers = data?.assignedPublishers;
 	$: unassignedPublishers = data?.unassignedPublishers;
 
-	$: t = $LL.suppliers_page.supplierId;
+	$: t = $LL.suppliers_page.order_list_page;
 
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
@@ -162,7 +162,7 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
-					<h2 class="text-lg">{t.new_order_page.selected_books()}</h2>
+					<h2 class="text-lg">{$LL.suppliers_page.new_order_page.selected_books()}</h2>
 					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-y-auto">
 							<thead class="sticky top-0 left-0 right-0 bg-white shadow">

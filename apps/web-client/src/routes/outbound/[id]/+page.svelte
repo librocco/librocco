@@ -279,8 +279,8 @@
 
 		dialogContent = {
 			onConfirm: () => {},
-			title: $LL.dialog_title.edit_book(),
-			description: $LL.dialog_description.edit_book(),
+			title: $LL.edit_book_dialog.title(),
+			description: $LL.edit_book_dialog.description(),
 			type: "edit-row"
 		};
 	};
@@ -293,7 +293,7 @@
 
 		dialogContent = {
 			onConfirm: () => {},
-			title: row ? $LL.dialog_title.edit_custom_item() : $LL.dialog_title.create_custom_item(),
+			title: row ? $LL.edit_custom_item_dialog.title() : $LL.create_custom_item_dialog.title(),
 			description: "",
 			type: "custom-item-form"
 		};
@@ -445,16 +445,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: $LL.dialog_title.commit_outbound({ entity: displayName }),
-							description: $LL.dialog_description.commit_outbound({ bookCount: totalBookCount }),
+							title: $LL.commit_outbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: $LL.dialog_title.commit_outbound({ entity: displayName }),
-							description: $LL.dialog_description.commit_outbound({ bookCount: totalBookCount }),
+							title: $LL.commit_outbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 							type: "commit"
 						};
 					}}
@@ -470,8 +470,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: $LL.dialog_title.commit_outbound({ entity: displayName }),
-								description: $LL.dialog_description.commit_outbound({ bookCount: totalBookCount }),
+								title: $LL.commit_outbound_dialog.title({ entity: displayName }),
+								description: $LL.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -495,16 +495,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: $LL.dialog_title.delete({ entity: displayName }),
-								description: $LL.dialog_description.delete_note(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: $LL.dialog_title.delete({ entity: displayName }),
-								description: $LL.dialog_description.delete_note(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
@@ -632,8 +632,8 @@
 
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 				<Dialog {dialog} type="delete" onConfirm={() => {}}>
-					<svelte:fragment slot="title">{$LL.dialog_title.no_warehouse_selected()}</svelte:fragment>
-					<svelte:fragment slot="description">{$LL.dialog_description.no_warehouse_selected()}</svelte:fragment>
+					<svelte:fragment slot="title">{$LL.no_warehouse_dialog.title()}</svelte:fragment>
+					<svelte:fragment slot="description">{$LL.no_warehouse_dialog.description()}</svelte:fragment>
 					<h3 class="mb-2 mt-4 font-semibold">{$LL.outbound_note.delete_dialog.select_warehouse()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn }}
@@ -651,8 +651,8 @@
 
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf(invalidTransactions)}>
-					<svelte:fragment slot="title">{$LL.dialog_title.reconcile_outbound()}</svelte:fragment>
-					<svelte:fragment slot="description">{$LL.dialog_description.reconcile_outbound()}</svelte:fragment>
+					<svelte:fragment slot="title">{$LL.reconcile_outbound_dialog.title()}</svelte:fragment>
+					<svelte:fragment slot="description">{$LL.reconcile_outbound_dialog.description()}</svelte:fragment>
 					<h3 class="mb-2 mt-4 font-semibold">{$LL.outbound_note.reconcile_dialog.review_transaction()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
@@ -686,8 +686,8 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{$LL.dialog_title.edit_book()}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{$LL.dialog_description.edit_book()}</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{$LL.edit_book_dialog.title()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{$LL.edit_book_dialog.description()}</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />

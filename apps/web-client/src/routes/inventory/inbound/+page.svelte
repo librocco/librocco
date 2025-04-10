@@ -81,7 +81,6 @@
 	};
 
 	$: t = $LL.inventory_page.inbound_tab;
-	$: tDialog = $LL.dialog_title;
 </script>
 
 <InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
@@ -139,8 +138,8 @@
 								on:m-click={() => {
 									dialogContent = {
 										onConfirm: handleDeleteNote(note.id),
-										title: $LL.dialog_title.delete({ entity: note.displayName }),
-										description: $LL.dialog_description.delete_note()
+										title: $LL.delete_dialog.title({ entity: note.displayName }),
+										description: $LL.delete_dialog.description()
 									};
 								}}
 							>

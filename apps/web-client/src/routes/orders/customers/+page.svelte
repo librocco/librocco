@@ -83,7 +83,7 @@
 			<h1 class="prose text-2xl font-bold">{t.title()}</h1>
 			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 				<Plus size={20} />
-				{t.new_order()}
+				{t.labels.new_order()}
 			</button>
 		</div>
 
@@ -93,7 +93,7 @@
 					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
-						{t.new_order()}
+						{t.labels.new_order()}
 					</button>
 				</div>
 			{:else}
@@ -103,7 +103,7 @@
 						on:click={() => setFilter("in_progress")}
 						aria-pressed={orderFilterStatus === "in_progress"}
 					>
-						{t.status_filters.in_progress()}
+						{t.tabs.in_progress()}
 					</button>
 					<button
 						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
@@ -111,15 +111,15 @@
 						aria-pressed={orderFilterStatus === "completed"}
 						disabled={!hasCompletedOrders}
 					>
-						{t.status_filters.completed()}
+						{t.tabs.completed()}
 					</button>
 				</div>
 				<table class="table-lg table">
 					<thead>
 						<tr>
-							<th scope="col">{t.customer()}</th>
-							<th scope="col">{t.order_id()}</th>
-							<th scope="col"> <span class="sr-only"> {t.update_order()} </span></th>
+							<th scope="col">{t.table.customer()}</th>
+							<th scope="col">{t.table.order_id()}</th>
+							<th scope="col"> <span class="sr-only"> {t.labels.update_order()} </span></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -127,7 +127,7 @@
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
-										<dt class="sr-only">{t.customer_details()}</dt>
+										<dt class="sr-only">{t.table.customer_details()}</dt>
 										<dd>{fullname}</dd>
 										<dd class="text-sm">{email ?? ""}</dd>
 									</dl>
@@ -136,7 +136,7 @@
 									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.update()}</a>
+									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.labels.update()}</a>
 								</td>
 							</tr>
 						{/each}

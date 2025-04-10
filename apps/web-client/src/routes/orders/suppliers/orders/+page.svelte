@@ -90,9 +90,9 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">{t.supplier_orders()}</h1>
+			<h1 class="prose text-2xl font-bold">{t.title.supplier_orders()}</h1>
 			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
-				{t.suppliers()}
+				{t.labels.suppliers()}
 				<Settings size={20} />
 			</button>
 		</div>
@@ -104,7 +104,7 @@
 					on:click={() => (orderStatusFilter = "unordered")}
 					aria-pressed={orderStatusFilter === "unordered"}
 				>
-					{t.unordered()}
+					{t.tabs.unordered()}
 				</button>
 
 				<button
@@ -114,7 +114,7 @@
 					disabled={!hasPlacedOrders}
 					data-testid="ordered-list"
 				>
-					{t.ordered()}
+					{t.tabs.ordered()}
 				</button>
 
 				<button
@@ -124,7 +124,7 @@
 					disabled={!hasReconcilingOrders}
 					data-testid="reconciling-list"
 				>
-					{t.reconciling()}
+					{t.tabs.reconciling()}
 				</button>
 
 				<button
@@ -134,7 +134,7 @@
 					disabled={!hasCompletedOrders}
 					data-testid="reconciling-list"
 				>
-					{t.completed()}
+					{t.tabs.completed()}
 				</button>
 			</div>
 
@@ -142,11 +142,11 @@
 				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
 					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
 						<p class="text-center text-base-content/70">
-							{t.no_unordered_books.description()}
+							{t.placeholder.description()}
 						</p>
 						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 							<Plus size={20} />
-							<p>{t.no_unordered_books.button()}</p>
+							<p>{t.placeholder.button()}</p>
 						</button>
 					</div>
 				{:else}
