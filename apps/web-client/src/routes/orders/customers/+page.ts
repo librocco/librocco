@@ -3,7 +3,9 @@ import type { CustomerOrderListItem } from "$lib/db/cr-sqlite/types";
 
 import { getCustomerOrderList } from "$lib/db/cr-sqlite/customers";
 
-export const load: PageLoad = async ({ depends, parent }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ depends, parent }) => {
 	depends("customer:list");
 
 	const { dbCtx } = await parent();
@@ -19,3 +21,5 @@ export const load: PageLoad = async ({ depends, parent }) => {
 };
 
 export const ssr = false;
+
+export const load = timed(_load as any) as PageLoad;
