@@ -32,7 +32,7 @@
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { autoPrintLabels, deviceSettingsStore } from "$lib/stores/app";
 
@@ -293,16 +293,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: $LL.commit_inbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: $LL.commit_inbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
@@ -318,8 +318,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(totalBookCount),
+								title: $LL.commit_outbound_dialog.title({ entity: displayName }),
+								description: $LL.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -353,16 +353,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
@@ -422,8 +422,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: $LL.edit_book_dialog.title(),
+												description: $LL.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
@@ -433,8 +433,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: $LL.edit_book_dialog.title(),
+												description: $LL.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}

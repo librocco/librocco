@@ -311,14 +311,16 @@ type RootTranslation = {
 		};
 	};
 	orders_page: {
-		/**
-		 * C​h​e​c​k​o​u​t
-		 */
-		checkout: string;
-		/**
-		 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​O​u​t​b​o​u​n​d​ ​N​o​t​e
-		 */
-		create_outbound_note: string;
+		labels: {
+			/**
+			 * C​h​e​c​k​o​u​t
+			 */
+			checkout: string;
+			/**
+			 * C​r​e​a​t​e​ ​a​ ​n​e​w​ ​O​u​t​b​o​u​n​d​ ​N​o​t​e
+			 */
+			create_outbound_note: string;
+		};
 	};
 	customer_orders_page: {
 		/**
@@ -632,6 +634,188 @@ type RootTranslation = {
 			};
 		};
 	};
+	warehouse_list_page: {
+		stats: {
+			/**
+			 * b​o​o​k​s
+			 */
+			books: string;
+			/**
+			 * d​i​s​c​o​u​n​t
+			 */
+			discount: string;
+		};
+		labels: {
+			/**
+			 * N​e​w​ ​n​o​t​e
+			 */
+			new_note: string;
+			/**
+			 * V​i​e​w​ ​S​t​o​c​k
+			 */
+			view_stock: string;
+		};
+	};
+	warehouse_page: {
+		table: {
+			/**
+			 * Q​u​a​n​t​i​t​y
+			 */
+			quantity: string;
+			/**
+			 * I​S​B​N
+			 */
+			isbn: string;
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string;
+			/**
+			 * P​u​b​l​i​s​h​e​r
+			 */
+			publisher: string;
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string;
+			/**
+			 * Y​e​a​r
+			 */
+			year: string;
+			/**
+			 * P​r​i​c​e
+			 */
+			price: string;
+			/**
+			 * C​a​t​e​g​o​r​y
+			 */
+			category: string;
+			/**
+			 * E​d​i​t​e​d​ ​b​y
+			 */
+			edited_by: string;
+			/**
+			 * O​u​t​ ​o​f​ ​p​r​i​n​t
+			 */
+			out_of_print: string;
+		};
+		labels: {
+			/**
+			 * E​x​p​o​r​t​ ​t​o​ ​C​S​V
+			 */
+			export_to_csv: string;
+			/**
+			 * N​e​w​ ​n​o​t​e
+			 */
+			new_note: string;
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string;
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string;
+			/**
+			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			edit_book_details: string;
+			/**
+			 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			manually_edit_book_details: string;
+		};
+	};
+	outbound_note: {
+		delete_dialog: {
+			/**
+			 * P​l​e​a​s​e​ ​s​e​l​e​c​t​ ​a​ ​w​a​r​e​h​o​u​s​e​ ​f​o​r​ ​e​a​c​h​ ​o​f​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
+			 */
+			select_warehouse: string;
+		};
+		reconcile_dialog: {
+			/**
+			 * P​l​e​a​s​e​ ​r​e​v​i​e​w​ ​t​h​e​ ​f​o​l​l​o​w​i​n​g​ ​t​r​a​n​s​a​c​t​i​o​n​s
+			 */
+			review_transaction: string;
+			/**
+			 * q​u​a​n​t​i​t​y​ ​f​o​r​ ​r​e​c​o​n​c​i​l​i​a​t​i​o​n
+			 */
+			quantity: string;
+		};
+		labels: {
+			/**
+			 * N​e​w​ ​N​o​t​e
+			 */
+			new_note: string;
+			/**
+			 * E​d​i​t
+			 */
+			edit: string;
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string;
+			/**
+			 * D​e​l​e​t​e​ ​r​o​w
+			 */
+			delete_row: string;
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string;
+			/**
+			 * D​e​l​e​t​e
+			 */
+			delete: string;
+		};
+		stats: {
+			/**
+			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 */
+			last_updated: string;
+			/**
+			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}
+			 * @param {string | number | boolean} bookCount
+			 */
+			books: RequiredParams<"bookCount">;
+		};
+	};
+	outbound_page: {
+		/**
+		 * O​u​`​3​4​c​d​e​r​s​x​t​b​o​u​n​d
+		 */
+		heading: string;
+		stats: {
+			/**
+			 * L​a​s​t​ ​u​p​d​a​t​e​d
+			 */
+			last_updated: string;
+			/**
+			 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}
+			 * @param {string | number | boolean} bookCount
+			 */
+			books: RequiredParams<"bookCount">;
+		};
+		labels: {
+			/**
+			 * N​e​w​ ​N​o​t​e
+			 */
+			new_note: string;
+			/**
+			 * E​d​i​t
+			 */
+			edit: string;
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string;
+			/**
+			 * D​e​l​e​t​e​ ​r​o​w
+			 */
+			delete_row: string;
+		};
+	};
 	inbound_note: {
 		stats: {
 			/**
@@ -739,6 +923,117 @@ type RootTranslation = {
 			 */
 			print_book_label: string;
 		};
+	};
+	delete_dialog: {
+		/**
+		 * P​e​r​m​e​n​a​n​t​l​y​ ​d​e​l​e​t​e​ ​{​e​n​t​i​t​y​}​?
+		 * @param {unknown} entity
+		 */
+		title: RequiredParams<"entity">;
+		/**
+		 * O​n​c​e​ ​y​o​u​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​n​o​t​e​,​ ​y​o​u​ ​w​i​l​l​ ​n​o​t​ ​b​e​ ​a​b​l​e​ ​t​o​ ​a​c​c​e​s​s​ ​i​t​ ​a​g​a​i​n
+		 */
+		description: string;
+	};
+	edit_book_dialog: {
+		/**
+		 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+		 */
+		title: string;
+		/**
+		 * U​p​d​a​t​e​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+		 */
+		description: string;
+	};
+	no_warehouse_dialog: {
+		/**
+		 * N​o​ ​w​a​r​e​h​o​u​s​e​(​s​)​ ​s​e​l​e​c​t​e​d
+		 */
+		title: string;
+		/**
+		 * C​a​n​'​t​ ​c​o​m​m​i​t​ ​t​h​e​ ​n​o​t​e​ ​a​s​ ​s​o​m​e​ ​t​r​a​n​s​a​c​t​i​o​n​s​ ​d​o​n​'​t​ ​h​a​v​e​ ​a​n​y​ ​w​a​r​e​h​o​u​s​e​ ​s​e​l​e​c​t​e​d
+		 */
+		description: string;
+	};
+	reconcile_outbound_dialog: {
+		/**
+		 * S​t​o​c​k​ ​m​i​s​m​a​t​c​h
+		 */
+		title: string;
+		/**
+		 * S​o​m​e​ ​q​u​a​n​t​i​t​i​e​s​ ​r​e​q​u​e​s​t​e​d​ ​a​r​e​ ​g​r​e​a​t​e​r​ ​t​h​a​n​ ​a​v​a​i​l​a​b​l​e​ ​i​n​ ​s​t​o​c​k​ ​a​n​d​ ​w​i​l​l​ ​n​e​e​d​ ​t​o​ ​b​e​ ​r​e​c​o​n​c​i​l​e​d​ ​i​n​ ​o​r​d​e​r​ ​t​o​ ​p​r​o​c​e​e​d​.
+		 */
+		description: string;
+	};
+	create_custom_item_dialog: {
+		/**
+		 * C​r​e​a​t​e​ ​c​u​s​t​o​m​ ​i​t​e​m
+		 */
+		title: string;
+	};
+	edit_custom_item_dialog: {
+		/**
+		 * E​d​i​t​ ​c​u​s​t​o​m​ ​i​t​e​m
+		 */
+		title: string;
+	};
+	delete_warehouse_dialog: {
+		/**
+		 * O​n​c​e​ ​y​o​u​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​w​a​r​e​h​o​u​s​e​ ​{​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​r​e​m​o​v​e​d​ ​f​r​o​m​ ​y​o​u​r​ ​s​t​o​c​k
+		 * @param {string | number | boolean} bookCount
+		 */
+		description: RequiredParams<"bookCount">;
+	};
+	delete_database_dialog: {
+		/**
+		 * O​n​c​e​ ​y​o​u​ ​d​e​l​e​t​e​ ​t​h​i​s​ ​d​a​t​a​b​a​s​e​ ​i​t​ ​c​a​n​'​t​ ​b​e​ ​r​e​s​t​o​r​e​d​.​ ​I​n​ ​o​r​d​e​r​ ​t​o​ ​s​a​v​e​ ​t​h​e​ ​b​a​c​k​u​p​ ​f​i​r​s​t​,​ ​p​l​e​a​s​e​ ​u​s​e​ ​t​h​e​ ​e​x​p​o​r​t​ ​b​u​t​t​o​n​.
+		 */
+		description: string;
+	};
+	create_database_dialog: {
+		/**
+		 * C​r​e​a​t​e​ ​n​e​w​ ​d​a​t​a​b​a​s​e
+		 */
+		title: string;
+		/**
+		 * P​l​e​a​s​e​ ​t​y​p​e​ ​i​n​ ​t​h​e​ ​n​a​m​e​ ​f​o​r​ ​t​h​e​ ​n​e​w​ ​d​a​t​a​b​a​s​e
+		 */
+		description: string;
+	};
+	commit_outbound_dialog: {
+		/**
+		 * C​o​m​m​i​t​ ​o​u​t​b​o​u​n​d​ ​{​e​n​t​i​t​y​}​?
+		 * @param {unknown} entity
+		 */
+		title: RequiredParams<"entity">;
+		/**
+		 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​r​e​m​o​v​e​d​ ​f​r​o​m​ ​y​o​u​r​ ​s​t​o​c​k
+		 * @param {string | number | boolean} bookCount
+		 */
+		description: RequiredParams<"bookCount">;
+	};
+	edit_warehouse_dialog: {
+		/**
+		 * U​p​d​a​t​e​ ​w​a​r​e​h​o​u​s​e​ ​d​e​t​a​i​l​s
+		 */
+		title: string;
+		/**
+		 * U​p​d​a​t​e​ ​w​a​r​e​h​o​u​s​e​ ​d​e​t​a​i​l​s
+		 */
+		description: string;
+	};
+	commit_inbound_dialog: {
+		/**
+		 * C​o​m​m​i​t​ ​i​n​b​o​u​n​d​ ​{​e​n​t​i​t​y​}​?
+		 * @param {unknown} entity
+		 */
+		title: RequiredParams<"entity">;
+		/**
+		 * {​b​o​o​k​C​o​u​n​t​}​ ​b​o​o​k​{​{​s​}​}​ ​w​i​l​l​ ​b​e​ ​a​d​d​e​d​ ​t​o​ ​{​w​a​r​e​h​o​u​s​e​N​a​m​e​}
+		 * @param {string | number | boolean} bookCount
+		 * @param {unknown} warehouseName
+		 */
+		description: RequiredParams<"bookCount" | "warehouseName">;
 	};
 };
 
@@ -1040,14 +1335,16 @@ export type TranslationFunctions = {
 		};
 	};
 	orders_page: {
-		/**
-		 * Checkout
-		 */
-		checkout: () => LocalizedString;
-		/**
-		 * Create a new Outbound Note
-		 */
-		create_outbound_note: () => LocalizedString;
+		labels: {
+			/**
+			 * Checkout
+			 */
+			checkout: () => LocalizedString;
+			/**
+			 * Create a new Outbound Note
+			 */
+			create_outbound_note: () => LocalizedString;
+		};
 	};
 	customer_orders_page: {
 		/**
@@ -1361,6 +1658,186 @@ export type TranslationFunctions = {
 			};
 		};
 	};
+	warehouse_list_page: {
+		stats: {
+			/**
+			 * books
+			 */
+			books: () => LocalizedString;
+			/**
+			 * discount
+			 */
+			discount: () => LocalizedString;
+		};
+		labels: {
+			/**
+			 * New note
+			 */
+			new_note: () => LocalizedString;
+			/**
+			 * View Stock
+			 */
+			view_stock: () => LocalizedString;
+		};
+	};
+	warehouse_page: {
+		table: {
+			/**
+			 * Quantity
+			 */
+			quantity: () => LocalizedString;
+			/**
+			 * ISBN
+			 */
+			isbn: () => LocalizedString;
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString;
+			/**
+			 * Publisher
+			 */
+			publisher: () => LocalizedString;
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString;
+			/**
+			 * Year
+			 */
+			year: () => LocalizedString;
+			/**
+			 * Price
+			 */
+			price: () => LocalizedString;
+			/**
+			 * Category
+			 */
+			category: () => LocalizedString;
+			/**
+			 * Edited by
+			 */
+			edited_by: () => LocalizedString;
+			/**
+			 * Out of print
+			 */
+			out_of_print: () => LocalizedString;
+		};
+		labels: {
+			/**
+			 * Export to CSV
+			 */
+			export_to_csv: () => LocalizedString;
+			/**
+			 * New note
+			 */
+			new_note: () => LocalizedString;
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString;
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString;
+			/**
+			 * Edit book details
+			 */
+			edit_book_details: () => LocalizedString;
+			/**
+			 * Manually edit book details
+			 */
+			manually_edit_book_details: () => LocalizedString;
+		};
+	};
+	outbound_note: {
+		delete_dialog: {
+			/**
+			 * Please select a warehouse for each of the following transactions
+			 */
+			select_warehouse: () => LocalizedString;
+		};
+		reconcile_dialog: {
+			/**
+			 * Please review the following transactions
+			 */
+			review_transaction: () => LocalizedString;
+			/**
+			 * quantity for reconciliation
+			 */
+			quantity: () => LocalizedString;
+		};
+		labels: {
+			/**
+			 * New Note
+			 */
+			new_note: () => LocalizedString;
+			/**
+			 * Edit
+			 */
+			edit: () => LocalizedString;
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString;
+			/**
+			 * Delete row
+			 */
+			delete_row: () => LocalizedString;
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString;
+			/**
+			 * Delete
+			 */
+			delete: () => LocalizedString;
+		};
+		stats: {
+			/**
+			 * Last updated
+			 */
+			last_updated: () => LocalizedString;
+			/**
+			 * {bookCount} book{{s}}
+			 */
+			books: (arg: { bookCount: string | number | boolean }) => LocalizedString;
+		};
+	};
+	outbound_page: {
+		/**
+		 * Ou`34cdersxtbound
+		 */
+		heading: () => LocalizedString;
+		stats: {
+			/**
+			 * Last updated
+			 */
+			last_updated: () => LocalizedString;
+			/**
+			 * {bookCount} book{{s}}
+			 */
+			books: (arg: { bookCount: string | number | boolean }) => LocalizedString;
+		};
+		labels: {
+			/**
+			 * New Note
+			 */
+			new_note: () => LocalizedString;
+			/**
+			 * Edit
+			 */
+			edit: () => LocalizedString;
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString;
+			/**
+			 * Delete row
+			 */
+			delete_row: () => LocalizedString;
+		};
+	};
 	inbound_note: {
 		stats: {
 			/**
@@ -1468,6 +1945,110 @@ export type TranslationFunctions = {
 			 */
 			print_book_label: () => LocalizedString;
 		};
+	};
+	delete_dialog: {
+		/**
+		 * Permenantly delete {entity}?
+		 */
+		title: (arg: { entity: unknown }) => LocalizedString;
+		/**
+		 * Once you delete this note, you will not be able to access it again
+		 */
+		description: () => LocalizedString;
+	};
+	edit_book_dialog: {
+		/**
+		 * Edit book details
+		 */
+		title: () => LocalizedString;
+		/**
+		 * Update book details
+		 */
+		description: () => LocalizedString;
+	};
+	no_warehouse_dialog: {
+		/**
+		 * No warehouse(s) selected
+		 */
+		title: () => LocalizedString;
+		/**
+		 * Can't commit the note as some transactions don't have any warehouse selected
+		 */
+		description: () => LocalizedString;
+	};
+	reconcile_outbound_dialog: {
+		/**
+		 * Stock mismatch
+		 */
+		title: () => LocalizedString;
+		/**
+		 * Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed.
+		 */
+		description: () => LocalizedString;
+	};
+	create_custom_item_dialog: {
+		/**
+		 * Create custom item
+		 */
+		title: () => LocalizedString;
+	};
+	edit_custom_item_dialog: {
+		/**
+		 * Edit custom item
+		 */
+		title: () => LocalizedString;
+	};
+	delete_warehouse_dialog: {
+		/**
+		 * Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock
+		 */
+		description: (arg: { bookCount: string | number | boolean }) => LocalizedString;
+	};
+	delete_database_dialog: {
+		/**
+		 * Once you delete this database it can't be restored. In order to save the backup first, please use the export button.
+		 */
+		description: () => LocalizedString;
+	};
+	create_database_dialog: {
+		/**
+		 * Create new database
+		 */
+		title: () => LocalizedString;
+		/**
+		 * Please type in the name for the new database
+		 */
+		description: () => LocalizedString;
+	};
+	commit_outbound_dialog: {
+		/**
+		 * Commit outbound {entity}?
+		 */
+		title: (arg: { entity: unknown }) => LocalizedString;
+		/**
+		 * {bookCount} book{{s}} will be removed from your stock
+		 */
+		description: (arg: { bookCount: string | number | boolean }) => LocalizedString;
+	};
+	edit_warehouse_dialog: {
+		/**
+		 * Update warehouse details
+		 */
+		title: () => LocalizedString;
+		/**
+		 * Update warehouse details
+		 */
+		description: () => LocalizedString;
+	};
+	commit_inbound_dialog: {
+		/**
+		 * Commit inbound {entity}?
+		 */
+		title: (arg: { entity: unknown }) => LocalizedString;
+		/**
+		 * {bookCount} book{{s}} will be added to {warehouseName}
+		 */
+		description: (arg: { bookCount: string | number | boolean; warehouseName: unknown }) => LocalizedString;
 	};
 };
 
