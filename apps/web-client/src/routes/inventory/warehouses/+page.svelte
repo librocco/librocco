@@ -15,7 +15,7 @@
 	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { appPath } from "$lib/paths";
 
@@ -27,6 +27,7 @@
 	import type { PageData } from "./$types";
 	import { createInboundNote, createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -167,8 +168,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: dialogTitle.editWarehouse(),
-											description: dialogDescription.editWarehouse(),
+											title: $LL.edit_warehouse_dialog.title(),
+											description: $LL.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -176,8 +177,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: dialogTitle.editWarehouse(),
-											description: dialogDescription.editWarehouse(),
+											title: $LL.edit_warehouse_dialog.title(),
+											description: $LL.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -207,8 +208,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: dialogTitle.delete(displayName),
-											description: dialogDescription.deleteWarehouse(totalBooks),
+											title: $LL.delete_dialog.title({ entity: displayName }),
+											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
@@ -216,8 +217,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: dialogTitle.delete(displayName),
-											description: dialogDescription.deleteWarehouse(totalBooks),
+											title: $LL.delete_dialog.title({ entity: displayName }),
+											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
