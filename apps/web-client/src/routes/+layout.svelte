@@ -21,6 +21,7 @@
 	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
+	import { timeLogger } from "$lib/utils/timer";
 
 	export let data: LayoutData & { status: boolean };
 
@@ -92,6 +93,11 @@
 		// if (!status) {
 		// 	await goto(appPath("settings"));
 		// }
+	});
+
+	// Register time logger
+	onMount(() => {
+		window["timeLogger"] = timeLogger;
 	});
 
 	onDestroy(() => {
