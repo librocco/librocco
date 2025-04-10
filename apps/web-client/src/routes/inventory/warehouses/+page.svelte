@@ -168,8 +168,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: $LL.dialog_title.edit_warehouse(),
-											description: $LL.dialog_description.edit_warehouse(),
+											title: $LL.edit_warehouse_dialog.title(),
+											description: $LL.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -177,8 +177,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: $LL.dialog_title.edit_warehouse(),
-											description: $LL.dialog_description.edit_warehouse(),
+											title: $LL.edit_warehouse_dialog.title(),
+											description: $LL.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -208,8 +208,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: $LL.dialog_title.delete({ entity: displayName }),
-											description: $LL.dialog_description.delete_warehouse({ bookCount: totalBooks }),
+											title: $LL.delete_dialog.title({ entity: displayName }),
+											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
@@ -217,8 +217,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: $LL.dialog_title.delete({ entity: displayName }),
-											description: $LL.dialog_description.delete_warehouse({ bookCount: totalBooks }),
+											title: $LL.delete_dialog.title({ entity: displayName }),
+											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
