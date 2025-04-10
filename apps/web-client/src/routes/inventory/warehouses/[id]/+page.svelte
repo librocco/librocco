@@ -75,24 +75,24 @@
 
 	$: plugins = data.plugins;
 
-	$: tDisplayLabel = $LL.warehouses.warehouse_id.display_label;
+	$: tColumnHeaders = $LL.warehouse_page.table;
 
-	$: tLabels = $LL.warehouses.warehouse_id.labels;
+	$: tLabels = $LL.warehouse_page.labels;
 
 	// #region csv
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
-				{ displayLabel: tDisplayLabel.quantity(), key: "quantity" },
-				{ displayLabel: tDisplayLabel.isbn(), key: "isbn" },
-				{ displayLabel: tDisplayLabel.title(), key: "title" },
-				{ displayLabel: tDisplayLabel.publisher(), key: "publisher" },
-				{ displayLabel: tDisplayLabel.authors(), key: "authors" },
-				{ displayLabel: tDisplayLabel.year(), key: "year" },
-				{ displayLabel: tDisplayLabel.price(), key: "price" },
-				{ displayLabel: tDisplayLabel.category(), key: "category" },
-				{ displayLabel: tDisplayLabel.edited_by(), key: "edited_by" },
-				{ displayLabel: tDisplayLabel.out_of_print(), key: "out_of_print" }
+				{ displayLabel: tColumnHeaders.quantity(), key: "quantity" },
+				{ displayLabel: tColumnHeaders.isbn(), key: "isbn" },
+				{ displayLabel: tColumnHeaders.title(), key: "title" },
+				{ displayLabel: tColumnHeaders.publisher(), key: "publisher" },
+				{ displayLabel: tColumnHeaders.authors(), key: "authors" },
+				{ displayLabel: tColumnHeaders.year(), key: "year" },
+				{ displayLabel: tColumnHeaders.price(), key: "price" },
+				{ displayLabel: tColumnHeaders.category(), key: "category" },
+				{ displayLabel: tColumnHeaders.edited_by(), key: "edited_by" },
+				{ displayLabel: tColumnHeaders.out_of_print(), key: "out_of_print" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});

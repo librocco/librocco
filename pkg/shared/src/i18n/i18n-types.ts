@@ -616,77 +616,7 @@ type RootTranslation = {
 			}
 		}
 	}
-	warehouses: {
-		warehouse_id: {
-			display_label: {
-				/**
-				 * Q​u​a​n​t​i​t​y
-				 */
-				quantity: string
-				/**
-				 * I​S​B​N
-				 */
-				isbn: string
-				/**
-				 * T​i​t​l​e
-				 */
-				title: string
-				/**
-				 * P​u​b​l​i​s​h​e​r
-				 */
-				publisher: string
-				/**
-				 * A​u​t​h​o​r​s
-				 */
-				authors: string
-				/**
-				 * Y​e​a​r
-				 */
-				year: string
-				/**
-				 * P​r​i​c​e
-				 */
-				price: string
-				/**
-				 * C​a​t​e​g​o​r​y
-				 */
-				category: string
-				/**
-				 * E​d​i​t​e​d​ ​b​y
-				 */
-				edited_by: string
-				/**
-				 * O​u​t​ ​o​f​ ​p​r​i​n​t
-				 */
-				out_of_print: string
-			}
-			labels: {
-				/**
-				 * E​x​p​o​r​t​ ​t​o​ ​C​S​V
-				 */
-				export_to_csv: string
-				/**
-				 * N​e​w​ ​n​o​t​e
-				 */
-				new_note: string
-				/**
-				 * E​d​i​t​ ​r​o​w
-				 */
-				edit_row: string
-				/**
-				 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
-				 */
-				print_book_label: string
-				/**
-				 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
-				 */
-				edit_book_details: string
-				/**
-				 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
-				 */
-				manually_edit_book_details: string
-			}
-		}
+	warehouse_list_page: {
 		stats: {
 			/**
 			 * b​o​o​k​s
@@ -706,6 +636,76 @@ type RootTranslation = {
 			 * V​i​e​w​ ​S​t​o​c​k
 			 */
 			view_stock: string
+		}
+	}
+	warehouse_page: {
+		table: {
+			/**
+			 * Q​u​a​n​t​i​t​y
+			 */
+			quantity: string
+			/**
+			 * I​S​B​N
+			 */
+			isbn: string
+			/**
+			 * T​i​t​l​e
+			 */
+			title: string
+			/**
+			 * P​u​b​l​i​s​h​e​r
+			 */
+			publisher: string
+			/**
+			 * A​u​t​h​o​r​s
+			 */
+			authors: string
+			/**
+			 * Y​e​a​r
+			 */
+			year: string
+			/**
+			 * P​r​i​c​e
+			 */
+			price: string
+			/**
+			 * C​a​t​e​g​o​r​y
+			 */
+			category: string
+			/**
+			 * E​d​i​t​e​d​ ​b​y
+			 */
+			edited_by: string
+			/**
+			 * O​u​t​ ​o​f​ ​p​r​i​n​t
+			 */
+			out_of_print: string
+		}
+		labels: {
+			/**
+			 * E​x​p​o​r​t​ ​t​o​ ​C​S​V
+			 */
+			export_to_csv: string
+			/**
+			 * N​e​w​ ​n​o​t​e
+			 */
+			new_note: string
+			/**
+			 * E​d​i​t​ ​r​o​w
+			 */
+			edit_row: string
+			/**
+			 * P​r​i​n​t​ ​b​o​o​k​ ​l​a​b​e​l
+			 */
+			print_book_label: string
+			/**
+			 * E​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			edit_book_details: string
+			/**
+			 * M​a​n​u​a​l​l​y​ ​e​d​i​t​ ​b​o​o​k​ ​d​e​t​a​i​l​s
+			 */
+			manually_edit_book_details: string
 		}
 	}
 	dialog_title: {
@@ -1587,77 +1587,7 @@ export type TranslationFunctions = {
 			}
 		}
 	}
-	warehouses: {
-		warehouse_id: {
-			display_label: {
-				/**
-				 * Quantity
-				 */
-				quantity: () => LocalizedString
-				/**
-				 * ISBN
-				 */
-				isbn: () => LocalizedString
-				/**
-				 * Title
-				 */
-				title: () => LocalizedString
-				/**
-				 * Publisher
-				 */
-				publisher: () => LocalizedString
-				/**
-				 * Authors
-				 */
-				authors: () => LocalizedString
-				/**
-				 * Year
-				 */
-				year: () => LocalizedString
-				/**
-				 * Price
-				 */
-				price: () => LocalizedString
-				/**
-				 * Category
-				 */
-				category: () => LocalizedString
-				/**
-				 * Edited by
-				 */
-				edited_by: () => LocalizedString
-				/**
-				 * Out of print
-				 */
-				out_of_print: () => LocalizedString
-			}
-			labels: {
-				/**
-				 * Export to CSV
-				 */
-				export_to_csv: () => LocalizedString
-				/**
-				 * New note
-				 */
-				new_note: () => LocalizedString
-				/**
-				 * Edit row
-				 */
-				edit_row: () => LocalizedString
-				/**
-				 * Print book label
-				 */
-				print_book_label: () => LocalizedString
-				/**
-				 * Edit book details
-				 */
-				edit_book_details: () => LocalizedString
-				/**
-				 * Manually edit book details
-				 */
-				manually_edit_book_details: () => LocalizedString
-			}
-		}
+	warehouse_list_page: {
 		stats: {
 			/**
 			 * books
@@ -1677,6 +1607,76 @@ export type TranslationFunctions = {
 			 * View Stock
 			 */
 			view_stock: () => LocalizedString
+		}
+	}
+	warehouse_page: {
+		table: {
+			/**
+			 * Quantity
+			 */
+			quantity: () => LocalizedString
+			/**
+			 * ISBN
+			 */
+			isbn: () => LocalizedString
+			/**
+			 * Title
+			 */
+			title: () => LocalizedString
+			/**
+			 * Publisher
+			 */
+			publisher: () => LocalizedString
+			/**
+			 * Authors
+			 */
+			authors: () => LocalizedString
+			/**
+			 * Year
+			 */
+			year: () => LocalizedString
+			/**
+			 * Price
+			 */
+			price: () => LocalizedString
+			/**
+			 * Category
+			 */
+			category: () => LocalizedString
+			/**
+			 * Edited by
+			 */
+			edited_by: () => LocalizedString
+			/**
+			 * Out of print
+			 */
+			out_of_print: () => LocalizedString
+		}
+		labels: {
+			/**
+			 * Export to CSV
+			 */
+			export_to_csv: () => LocalizedString
+			/**
+			 * New note
+			 */
+			new_note: () => LocalizedString
+			/**
+			 * Edit row
+			 */
+			edit_row: () => LocalizedString
+			/**
+			 * Print book label
+			 */
+			print_book_label: () => LocalizedString
+			/**
+			 * Edit book details
+			 */
+			edit_book_details: () => LocalizedString
+			/**
+			 * Manually edit book details
+			 */
+			manually_edit_book_details: () => LocalizedString
 		}
 	}
 	dialog_title: {
