@@ -293,16 +293,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: $LL.dialog_title.commit_inbound({ entity: displayName }),
-							description: $LL.dialog_description.commit_inbound({ bookCount: totalBookCount, warehouseName }),
+							title: $LL.commit_inbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: $LL.dialog_title.commit_inbound({ entity: displayName }),
-							description: $LL.dialog_description.commit_inbound({ bookCount: totalBookCount, warehouseName }),
+							title: $LL.commit_inbound_dialog.title({ entity: displayName }),
+							description: $LL.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
@@ -318,8 +318,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: $LL.dialog_title.commit_outbound({ entity: displayName }),
-								description: $LL.dialog_description.commit_outbound({ bookCount: totalBookCount }),
+								title: $LL.commit_outbound_dialog.title({ entity: displayName }),
+								description: $LL.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -353,16 +353,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: $LL.dialog_title.delete({ entity: displayName }),
-								description: $LL.dialog_description.delete_note(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: $LL.dialog_title.delete({ entity: displayName }),
-								description: $LL.dialog_description.delete_note(),
+								title: $LL.delete_dialog.title({ entity: displayName }),
+								description: $LL.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
@@ -422,8 +422,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: $LL.dialog_title.edit_book(),
-												description: $LL.dialog_description.edit_book(),
+												title: $LL.edit_book_dialog.title(),
+												description: $LL.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
@@ -433,8 +433,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: $LL.dialog_title.edit_book(),
-												description: $LL.dialog_description.edit_book(),
+												title: $LL.edit_book_dialog.title(),
+												description: $LL.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}

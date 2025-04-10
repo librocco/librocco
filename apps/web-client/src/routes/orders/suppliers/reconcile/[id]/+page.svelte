@@ -29,7 +29,6 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import LL from "@librocco/shared/i18n-svelte";
-
 	import { appPath } from "$lib/paths";
 
 	// implement order reactivity/sync
@@ -157,7 +156,7 @@
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">{t.reconcile_deliveries()}</h1>
+						<h1 class="prose card-title">{t.title.reconcile_deliveries()}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
@@ -263,12 +262,12 @@
 							<table class="table-pin-rows table pb-20">
 								<thead>
 									<tr>
-										<th>{t.isbn()}</th>
-										<th>{t.title()}</th>
-										<th>{t.authors()}</th>
-										<th>{t.price()}</th>
+										<th>{t.table.isbn()}</th>
+										<th>{t.table.title()}</th>
+										<th>{t.table.authors()}</th>
+										<th>{t.table.price()}</th>
 										<th class="w-0"></th>
-										<th class="w-2 px-0">{t.quantity()}</th>
+										<th class="w-2 px-0">{t.table.quantity()}</th>
 										<th class="w-0"></th>
 									</tr>
 								</thead>
@@ -357,8 +356,8 @@
 	<ConfirmDialog
 		on:confirm={handleDelete}
 		on:cancel={() => deleteDialogOpen.set(false)}
-		heading={t.delete_dialog.confirmDeleteDialogHeading()}
-		description={t.delete_dialog.confirmDeleteDialogDescription()}
+		heading={t.delete_dialog.title()}
+		description={t.delete_dialog.description()}
 		labels={{ confirm: "Confirm", cancel: "Cancel" }}
 	/>
 </PageCenterDialog>

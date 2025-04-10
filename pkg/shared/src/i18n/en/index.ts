@@ -145,10 +145,11 @@ const inbound_note = {
 
 const customer_orders_page = {
 	title: "Customer Orders",
+
 	labels: {
-		update: "Update",
 		new_order: "New Order",
-		update_order: "Update Order"
+		update_order: "Update Order",
+		update: "Update"
 	},
 	tabs: {
 		in_progress: "In Progress",
@@ -163,27 +164,31 @@ const customer_orders_page = {
 
 const suppliers_page = {
 	labels: {
-		new_supplier: "New Supplier",
-
+		new_supplier: "New Supplier"
+	},
+	title: {
+		suppliers: "Suppliers"
+	},
+	supplier_table: {
 		delete: "Delete",
 		edit: "Edit"
 	},
-	title: "Suppliers",
-	supplierId: {
-		new_order_page: {
-			total_books: "Total books",
-			total_value: "Total value",
-			books: "Books",
-			select: "Select",
-			isbn: "ISBN",
-			title: "Title",
-			authors: "Authors",
-			ordered_quantity: "Ordered quantity",
-			total: "Total",
-			selected_quantity: "Selected quantity",
-			selected_books: "Selected books",
-			place_order: "Place Order"
-		},
+
+	new_order_page: {
+		total_books: "Total books",
+		total_value: "Total value",
+		books: "Books",
+		select: "Select",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		ordered_quantity: "Ordered quantity",
+		total: "Total",
+		selected_quantity: "Selected quantity",
+		selected_books: "Selected books",
+		place_order: "Place Order"
+	},
+	order_list_page: {
 		supplier_page: "Supplier page",
 		supplier_name: "Supplier name",
 		supplier_address: "Supplier address",
@@ -196,49 +201,57 @@ const suppliers_page = {
 		add_to_supplier: "Add to supplier"
 	},
 	orders_page: {
-		supplier_orders: "Supplier Orders",
-		suppliers: "Suppliers",
-		unordered: "Unordered",
-		ordered: "Ordered",
-		reconciling: "Reconciling",
-		completed: "Completed",
-		no_unordered_books: {
+		title: {
+			supplier_orders: "Supplier Orders"
+		},
+		labels: {
+			suppliers: "Suppliers"
+		},
+		tabs: {
+			unordered: "Unordered",
+			ordered: "Ordered",
+			reconciling: "Reconciling",
+			completed: "Completed"
+		},
+		placeholder: {
 			description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
 			button: "New Customer Order"
 		},
-		orderId: {
-			reconciled_list: {
-				view_reconciliation: "View Reconciliation",
-				reconcile: "Reconcile",
-				total_books: "Total books",
-				total_value: "Total value",
-				ordered: "Ordered",
-				print_order: "Print Order",
-				books: "Books",
-				isbn: "ISBN",
-				title: "Title",
-				authors: "Authors",
-				quantity: "Quantity",
-				total_price: "Total Price"
-			}
+		reconciled_list: {
+			view_reconciliation: "View Reconciliation",
+			reconcile: "Reconcile",
+			total_books: "Total books",
+			total_value: "Total value",
+			ordered: "Ordered",
+			print_order: "Print Order",
+			books: "Books",
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			quantity: "Quantity",
+			total_price: "Total Price"
 		}
 	},
 	reconcile_page: {
-		reconcile_deliveries: "Reconcile Deliveries",
+		title: {
+			reconcile_deliveries: "Reconcile Deliveries"
+		},
 		created: "Created",
 		last_updated: "Last Updated",
 		includes_supplier_orders: "Includes supplier orders",
 		no_books: "Scan or enter the ISBNs of the delivered books to begin reconciliation.",
-		isbn: "ISBN",
-		title: "Title",
-		authors: "Authors",
-		quantity: "Quantity",
-		price: "Price",
+
+		table: {
+			isbn: "ISBN",
+			title: "Title",
+			authors: "Authors",
+			quantity: "Quantity",
+			price: "Price"
+		},
 		total_delivered: "Total delivered",
 		delete_dialog: {
-			confirmDeleteDialogHeading: "Delete Reconciliation Order",
-			confirmDeleteDialogDescription:
-				"Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
+			title: "Delete Reconciliation Order",
+			description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
 		}
 	}
 };
@@ -315,12 +328,12 @@ const edit_custom_item_dialog = {
 };
 
 const edit_warehouse_dialog = {
+	title: "Update warehouse details",
 	description: "Update warehouse details"
 };
 
 const delete_warehouse_dialog = {
-	description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`,
-	delete_database: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+	description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`
 };
 
 const delete_database_dialog = {
@@ -339,19 +352,22 @@ const outbound_note = {
 		review_transaction: "Please review the following transactions",
 		quantity: "quantity for reconciliation"
 	},
-	stats: {
-		last_updated: "Last updated"
-	},
 	labels: {
-		delete: "Delete",
-		edit_row: "Edit row",
+		new_note: "New Note",
+		edit: "Edit",
 		print_book_label: "Print book label",
-		delete_row: "Delete row"
+		delete_row: "Delete row",
+		edit_row: "Edit row",
+		delete: "Delete"
+	},
+	stats: {
+		last_updated: "Last updated",
+		books: "{bookCount} book{{s}}"
 	}
 };
 
 const outbound_page = {
-	heading: "Outbound",
+	heading: "Ou`34cdersxtbound",
 	stats: {
 		last_updated: "Last updated",
 		books: "{bookCount} book{{s}}"

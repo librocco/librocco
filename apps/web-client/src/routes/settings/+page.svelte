@@ -250,8 +250,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: $LL.dialog_title.delete({ entity: file }),
-														description: $LL.dialog_description.delete_database(),
+														title: $LL.delete_dialog.title({ entity: file }),
+														description: $LL.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -259,8 +259,8 @@
 													deleteDatabase = { name: file };
 													dialogContent = {
 														onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-														title: $LL.dialog_title.delete({ entity: file }),
-														description: $LL.dialog_description.delete_database(),
+														title: $LL.delete_dialog.title({ entity: file }),
+														description: $LL.delete_database_dialog.description(),
 														type: "delete"
 													};
 												}}
@@ -294,16 +294,16 @@
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: $LL.dialog_title.create_database(),
-									description: $LL.dialog_description.create_database(),
+									title: $LL.create_database_dialog.title(),
+									description: $LL.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
 							on:m-keydown={() => {
 								dialogContent = {
 									onConfirm: () => {}, // Note: confirm handler is called directly from the form element
-									title: $LL.dialog_title.create_database(),
-									description: $LL.dialog_description.create_database(),
+									title: $LL.create_database_dialog.title(),
+									description: $LL.create_database_dialog.description(),
 									type: "create"
 								};
 							}}
