@@ -420,7 +420,7 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">{$LL.outbound_note.stats.last_updated()}}: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{$LL.outbound_note.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>

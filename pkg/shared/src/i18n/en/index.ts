@@ -367,7 +367,7 @@ const outbound_note = {
 };
 
 const outbound_page = {
-	heading: "Ou`34cdersxtbound",
+	heading: "Outbound",
 	stats: {
 		last_updated: "Last updated",
 		books: "{bookCount} book{{s}}"
