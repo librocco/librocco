@@ -1,3 +1,15 @@
+/*
+	NOTE: We can't specify checked foreign key constraints since cr-sqlite doesn't support it, we'd get an error along these lines:
+		Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
+		but must not have checked foreign key constraints as they can be violated by row level security or replication.
+		Using to add the relationships without checking them.
+	With that in mind:
+		- the would-be foreign keys are specified in the schema, but commented out
+		- the indexes (that would be created by foreign key definitions) are created manually and specified below each table definition.
+
+	NOTE: Each table definition is followed by a call to 'crsql_as_crr' for that particular table - this activates the cr-sqlite extension functionality for that table
+*/
+
 CREATE TABLE customer (
 	id INTEGER NOT NULL,
 	display_id TEXT,
@@ -7,6 +19,7 @@ CREATE TABLE customer (
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
 );
+SELECT crsql_as_crr('customer');
 
 CREATE TABLE customer_order_lines (
 	id INTEGER NOT NULL,
@@ -17,15 +30,11 @@ CREATE TABLE customer_order_lines (
 	received INTEGER,
 	collected INTEGER,
 	PRIMARY KEY (id)
+	-- FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
-
--- We can't  specify the foreign key constraint since cr-sqlite doesn't support it:
--- Table customer_order_lines has checked foreign key constraints. CRRs may have foreign keys
--- but must not have checked foreign key constraints as they can be violated by row level security or replication.
--- FOREIGN KEY (customer_id) REFERENCES customer(id) ON UPDATE CASCADE ON DELETE CASCADE
-
--- Activate the crsql extension
-SELECT crsql_as_crr('customer');
+CREATE INDEX idx_customer_order_lines_customer_id ON customer_order_lines(customer_id);
+CREATE INDEX idx_customer_order_lines_isbn ON customer_order_lines(isbn);
 SELECT crsql_as_crr('customer_order_lines');
 
 CREATE TABLE book (
@@ -56,7 +65,9 @@ CREATE TABLE supplier_publisher (
 	supplier_id INTEGER,
 	publisher TEXT NOT NULL,
 	PRIMARY KEY (publisher)
+	-- FOREIGN KEY (supplier_id) REFERENCES supplier(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_supplier_publisher_supplier_id ON supplier_publisher(supplier_id);
 SELECT crsql_as_crr('supplier_publisher');
 
 CREATE TABLE supplier_order (
@@ -64,7 +75,9 @@ CREATE TABLE supplier_order (
 	supplier_id INTEGER,
 	created INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id)
+	-- FOREIGN KEY (supplier_id) REFERENCES supplier(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_supplier_order_supplier_id ON supplier_order(supplier_id);
 SELECT crsql_as_crr('supplier_order');
 
 CREATE TABLE supplier_order_line (
@@ -72,7 +85,11 @@ CREATE TABLE supplier_order_line (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 1,
 	PRIMARY KEY (supplier_order_id, isbn)
+	-- FOREIGN KEY (supplier_order_id) REFERENCES supplier_order(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_supplier_order_line_supplier_order_id ON supplier_order_line(supplier_order_id);
+CREATE INDEX idx_supplier_order_line_isbn ON supplier_order_line(isbn);
 SELECT crsql_as_crr('supplier_order_line');
 
 CREATE TABLE reconciliation_order (
@@ -90,7 +107,11 @@ CREATE TABLE reconciliation_order_lines (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 1,
 	PRIMARY KEY (reconciliation_order_id, isbn)
+	-- FOREIGN KEY (reconciliation_order_id) REFERENCES reconciliation_order(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_reconciliation_order_lines_reconciliation_order_id ON reconciliation_order_lines(reconciliation_order_id);
+CREATE INDEX idx_reconciliation_order_lines_isbn ON reconciliation_order_lines(isbn);
 SELECT crsql_as_crr('reconciliation_order_lines');
 
 CREATE TABLE customer_order_line_supplier_order (
@@ -98,7 +119,11 @@ CREATE TABLE customer_order_line_supplier_order (
 	supplier_order_id INTEGER NOT NULL,
 	placed INTEGER DEFAULT 0,
 	PRIMARY KEY (customer_order_line_id, supplier_order_id)
+	-- FOREIGN KEY (customer_order_line_id) REFERENCES customer_order_lines(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (supplier_order_id) REFERENCES supplier_order(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_customer_order_line_supplier_order_customer_order_line_id ON customer_order_line_supplier_order(customer_order_line_id);
+CREATE INDEX idx_customer_order_line_supplier_order_supplier_order_id ON customer_order_line_supplier_order(supplier_order_id);
 SELECT crsql_as_crr('customer_order_line_supplier_order');
 
 CREATE TABLE warehouse (
@@ -124,7 +149,11 @@ CREATE TABLE note (
 	committed INTEGER NOT NULL DEFAULT 0,
 	committed_at INTEGER,
 	PRIMARY KEY (id)
+	-- FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL,
+	-- FOREIGN KEY (default_warehouse) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
+CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
+CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
 SELECT crsql_as_crr('note');
 
 CREATE TABLE book_transaction (
@@ -135,7 +164,13 @@ CREATE TABLE book_transaction (
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	committed_at INTEGER,
 	PRIMARY KEY (isbn, note_id, warehouse_id)
+	-- FOREIGN KEY (isbn) REFERENCES book(isbn) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE,
+	-- FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
+CREATE INDEX idx_book_transaction_isbn ON book_transaction(isbn);
+CREATE INDEX idx_book_transaction_note_id ON book_transaction(note_id);
+CREATE INDEX idx_book_transaction_warehouse_id ON book_transaction(warehouse_id);
 SELECT crsql_as_crr('book_transaction');
 
 
@@ -146,6 +181,8 @@ CREATE TABLE custom_item (
 	note_id INTEGER,
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
+	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
-SELECT crsql_as_crr('book_transaction');
+CREATE INDEX idx_custom_item_note_id ON custom_item(note_id);
+SELECT crsql_as_crr('custom_item');
 
