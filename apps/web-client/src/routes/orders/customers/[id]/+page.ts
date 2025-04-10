@@ -5,7 +5,9 @@ import type { Customer, CustomerOrderLine } from "$lib/db/cr-sqlite/types";
 import { getCustomerOrderLines, getCustomerDetails } from "$lib/db/cr-sqlite/customers";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ parent, params, depends }) => {
 	depends("customer:data");
 	depends("customer:books");
 
@@ -23,3 +25,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	return { customer, customerOrderLines, publisherList };
 };
+
+export const load = timed(_load as any) as PageLoad;

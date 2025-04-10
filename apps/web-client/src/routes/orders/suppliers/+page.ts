@@ -4,7 +4,9 @@ import { getAllSuppliers } from "$lib/db/cr-sqlite/suppliers";
 
 import type { SupplierExtended } from "$lib/db/cr-sqlite/types";
 
-export const load: PageLoad = async ({ depends, parent }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ depends, parent }) => {
 	depends("suppliers:list");
 
 	const { dbCtx } = await parent();
@@ -20,3 +22,5 @@ export const load: PageLoad = async ({ depends, parent }) => {
 };
 
 export const ssr = false;
+
+export const load = timed(_load as any) as PageLoad;

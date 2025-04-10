@@ -5,7 +5,9 @@ import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 import { getStock } from "$lib/db/cr-sqlite/stock";
 import { getBookData } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 	depends("history:transactions");
 
 	const { dbCtx } = await parent();
@@ -21,3 +23,5 @@ export const load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 
 	return { dbCtx, transactions, bookData, stock };
 };
+
+export const load = timed(_load as any) as PageLoad;

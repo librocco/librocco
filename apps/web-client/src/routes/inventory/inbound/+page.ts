@@ -2,7 +2,9 @@ import { getActiveInboundNotes } from "$lib/db/cr-sqlite/note";
 
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ parent, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async ({ parent, depends }) => {
 	depends("inbound:list");
 
 	const { dbCtx } = await parent();
@@ -11,3 +13,5 @@ export const load: PageLoad = async ({ parent, depends }) => {
 
 	return { dbCtx, notes };
 };
+
+export const load = timed(_load as any) as PageLoad;
