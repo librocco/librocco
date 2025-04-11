@@ -1,19 +1,19 @@
 import { redirect } from "@sveltejs/kit";
 import { get } from "svelte/store";
+import { navigatorDetector } from "typesafe-i18n/detectors";
 
 import { createBookDataExtensionPlugin } from "@librocco/book-data-extension";
 import { createGoogleBooksApiPlugin } from "@librocco/google-books-api-plugin";
 import { createOpenLibraryApiPlugin } from "@librocco/open-library-api-plugin";
 
-import { dbNamePersisted } from "$lib/db";
-import { navigatorDetector } from "typesafe-i18n/detectors";
+import { dbid } from "$lib/db";
 import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { loadLocaleAsync } from "$i18n/i18n-util.async";
-import { setLocale } from "$i18n/i18n-svelte";
-import { detectLocale } from "$i18n/i18n-util";
+import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
+import { setLocale } from "@librocco/shared/i18n-svelte";
+import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
@@ -51,10 +51,8 @@ export const load: LayoutLoad = async ({ url }) => {
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
 		// Init the db
-		const name = get(dbNamePersisted);
-
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
-		const dbCtx = await getInitializedDB(name);
+		const dbCtx = await getInitializedDB(get(dbid));
 
 		// Register plugins
 		// Node: We're avoiding plugins in e2e environment as they can lead to unexpected behavior
@@ -69,5 +67,6 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	return { dbCtx: null, status: false, plugins };
 };
+
 export const prerender = true;
 export const trailingSlash = "always";

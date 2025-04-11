@@ -1,30 +1,34 @@
 <script lang="ts">
-	import { ArrowRight, ClockArrowUp, QrCode, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
+	import { filter, scan } from "rxjs";
+	import { onDestroy, onMount } from "svelte";
+	import { ArrowRight, ClockArrowUp, Check, MinusCircle, PlusCircle, Delete } from "lucide-svelte";
 	import { createDialog } from "@melt-ui/svelte";
+
+	import { asc } from "@librocco/shared";
+
+	import { page } from "$app/stores";
+	import { invalidate } from "$app/navigation";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
 	import ComparisonTable from "$lib/components/supplier-orders/ComparisonTable.svelte";
 	import CommitDialog from "$lib/components/supplier-orders/CommitDialog.svelte";
+	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
+	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
 
 	import type { PageData } from "./$types";
 
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import {
 		upsertReconciliationOrderLines,
 		deleteOrderLineFromReconciliationOrder,
 		finalizeReconciliationOrder,
 		deleteReconciliationOrder
 	} from "$lib/db/cr-sqlite/order-reconciliation";
-	import { page } from "$app/stores";
-	import { onDestroy, onMount } from "svelte";
-	import { invalidate } from "$app/navigation";
-	import { defaults, superForm } from "sveltekit-superforms";
-	import { zod } from "sveltekit-superforms/adapters";
-	import { scannerSchema } from "$lib/forms/schemas";
-	import ConfirmDialog from "$lib/components/Dialogs/ConfirmDialog.svelte";
-	import { appPath } from "$lib/paths";
+
 	import { racefreeGoto } from "$lib/utils/navigation";
-	import { processOrderDelivery } from "$lib/components/supplier-orders/utils";
-	import { asc } from "@librocco/shared";
+
+	import { appPath } from "$lib/paths";
 
 	// implement order reactivity/sync
 	export let data: PageData;
@@ -48,30 +52,39 @@
 
 	$: books = data?.reconciliationOrderLines || [];
 
+	$: plugins = data.plugins;
+
 	async function handleIsbnSubmit(isbn: string) {
-		if (!isbn) return;
-
 		await upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
-	}
 
-	let scanInputRef: HTMLInputElement = null;
-	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
-		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdate: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-				handleIsbnSubmit(isbn);
-			}
-		},
-		onUpdated: ({ form: { valid } }) => {
-			if (valid) {
-				scanInputRef?.focus();
-			}
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const localBookData = await getBookData(db, isbn);
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
+			return;
 		}
-	});
+
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await upsertBook(db, { isbn });
+		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
+	}
 
 	$: processedOrderDelivery = processOrderDelivery(data?.reconciliationOrderLines, data?.placedOrderLines);
 	// Extract different orders from placedOrderLines
@@ -80,7 +93,10 @@
 	);
 
 	$: totalDelivered = processedOrderDelivery.processedLines.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
+	$: totalUnmatched = processedOrderDelivery.unmatchedBooks.reduce((acc, { deliveredQuantity }) => acc + deliveredQuantity, 0);
 	$: totalOrdered = data?.placedOrderLines?.reduce((acc, { quantity }) => acc + quantity, 0);
+
+	const handleScanIsbn = (isbn: string) => upsertReconciliationOrderLines(db, parseInt($page.params.id), [{ isbn, quantity: 1 }]);
 
 	const handleEditQuantity = async (isbn: string, quantity: number) => {
 		if (quantity === 0) {
@@ -119,10 +135,11 @@
 	};
 
 	async function handleDelete() {
-		// TODO: Implement actual commit logic
 		deleteDialogOpen.set(false);
-		await goto(appPath("supplier_orders"));
+
 		await deleteReconciliationOrder(db, parseInt($page.params.id));
+
+		await goto(appPath("supplier_orders"));
 	}
 </script>
 
@@ -227,12 +244,7 @@
 				</nav>
 
 				{#if currentStep === 1}
-					<form use:enhance method="POST" class="flex w-full gap-2">
-						<label class="input-bordered input flex flex-1 items-center gap-2">
-							<QrCode />
-							<input type="text" class="grow" bind:value={$formStore.isbn} placeholder="Enter ISBN of delivered books" />
-						</label>
-					</form>
+					<DaisyUiScannerForm onSubmit={handleScanIsbn} />
 				{/if}
 			</div>
 
@@ -296,42 +308,45 @@
 					<ComparisonTable reconciledBooks={processedOrderDelivery} />
 				{/if}
 
-				{#if canCompare || currentStep > 1}
-					<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-						<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
-							{#if currentStep > 1}
-								<dl class="stats flex">
-									<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-										<dt class="stat-title">Total delivered:</dt>
-										<dd class="stat-value text-lg">
-											{totalDelivered} / {totalOrdered}
-										</dd>
-									</div>
-								</dl>
-							{/if}
-							<button
-								class="btn-primary btn ml-auto"
-								on:click={async () => {
-									if (currentStep === 1) {
-										currentStep = 2;
-									} else {
-										commitDialogOpen.set(true);
-									}
-								}}
-							>
-								{currentStep === 1 ? "Compare" : "Commit"}
-								<ArrowRight aria-hidden size={20} class="hidden md:block" />
-							</button>
-						</div>
+				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
+					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
+						{#if currentStep > 1}
+							<dl class="stats flex">
+								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
+									<dt class="stat-title">Total delivered:</dt>
+									<dd class="stat-value text-lg">
+										{totalDelivered} / {totalOrdered}
+									</dd>
+								</div>
+							</dl>
+						{/if}
+						<button
+							class="btn-primary btn ml-auto"
+							on:click={async () => {
+								if (currentStep === 1) {
+									currentStep = 2;
+								} else {
+									commitDialogOpen.set(true);
+								}
+							}}
+						>
+							{currentStep === 1 ? "Compare" : "Commit"}
+							<ArrowRight aria-hidden size={20} class="hidden md:block" />
+						</button>
 					</div>
-				{/if}
+				</div>
 			</div>
 		</div>
 	</div>
 </main>
 
 <PageCenterDialog dialog={commitDialog} title="" description="">
-	<CommitDialog bookCount={totalDelivered} on:cancel={() => commitDialogOpen.set(false)} on:confirm={handleCommit} />
+	<CommitDialog
+		deliveredBookCount={totalDelivered + totalUnmatched}
+		rejectedBookCount={totalOrdered - totalDelivered}
+		on:cancel={() => commitDialogOpen.set(false)}
+		on:confirm={handleCommit}
+	/>
 </PageCenterDialog>
 
 <PageCenterDialog dialog={deleteDialog} title="" description="">

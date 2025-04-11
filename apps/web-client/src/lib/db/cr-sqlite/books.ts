@@ -39,40 +39,37 @@ export async function upsertBook(db: DB, book: BookData) {
 
 	const updatedAt = Object.keys(book).length > 1 ? Date.now() : null;
 
+	// The values are repeated:
+	// - 1 for all ? of insertion
+	// - 1 for all ? of ON CONFLICT update
+	const values = [
+		book.title,
+		book.authors,
+		book.publisher,
+		book.price,
+		book.year,
+		book.editedBy,
+		Number(book.outOfPrint),
+		book.category,
+		updatedAt
+	];
+
 	return db.exec(
-		`INSERT INTO book (isbn, title, authors, publisher, price, year, edited_by, out_of_print, category, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          ON CONFLICT(isbn) DO UPDATE SET
-            title = COALESCE(?, title),
-            authors = COALESCE(?, authors),
-            publisher = COALESCE(?, publisher),
-            price = COALESCE(?, price),
-            year = COALESCE(?, year),
-            edited_by = COALESCE(?, edited_by),
-            out_of_print = COALESCE(?, out_of_print),
-			updated_at = COALESCE(?, updated_at),
-            category = COALESCE(?, category);`,
-		[
-			book.isbn,
-			book.title,
-			book.authors,
-			book.publisher,
-			book.price,
-			book.year,
-			book.editedBy,
-			Number(book.outOfPrint),
-			book.category,
-			updatedAt,
-			book.title,
-			book.authors,
-			book.publisher,
-			book.price,
-			book.year,
-			book.editedBy,
-			Number(book.outOfPrint),
-			book.category,
-			updatedAt
-		]
+		`
+			INSERT INTO book (isbn, title, authors, publisher, price, year, edited_by, out_of_print, category, updated_at)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(isbn) DO UPDATE SET
+				title = COALESCE(?, title),
+				authors = COALESCE(?, authors),
+            	publisher = COALESCE(?, publisher),
+            	price = COALESCE(?, price),
+            	year = COALESCE(?, year),
+            	edited_by = COALESCE(?, edited_by),
+            	out_of_print = COALESCE(?, out_of_print),
+            	category = COALESCE(?, category),
+				updated_at = COALESCE(?, updated_at)
+		`,
+		[book.isbn, ...values, ...values]
 	);
 }
 
@@ -151,7 +148,7 @@ const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: D
 	authors: res.authors,
 	publisher: res.publisher,
 	price: res.price,
-	year: res.year,
+	year: String(res.year),
 	editedBy: res.editedBy,
 	outOfPrint: Boolean(res.outOfPrint),
 	category: res.category,

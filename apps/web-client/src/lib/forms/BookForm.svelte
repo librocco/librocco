@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { fly } from "svelte/transition";
+	import { derived } from "svelte/store";
 
 	import type { FormOptions, SuperValidated, SuperForm } from "sveltekit-superforms";
 	import { superForm, numberProxy, stringProxy } from "sveltekit-superforms/client";
@@ -70,15 +71,23 @@
 	 * This way a user could selected e.g "Publisher 2", but then edit the value to "Publisher"
 	 * and the initial value will not be shown as selected in the combobox menu
 	 */
-	$: {
-		const { publisher = "" } = $formStore;
-		$selected = toOption(publisher);
-	}
+	const publisher = derived(formStore, ($formStore) => $formStore.publisher || "");
 
 	/**
 	 * Filters the combobox list to show relevant options as input is provided
 	 */
-	$: filteredPublishers = $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
+	const filteredPublishers = derived([touchedInput, inputValue], ([$touchedInput, $inputValue]) => {
+		return $touchedInput ? publisherList.filter((publisher) => publisher.includes($inputValue)) : publisherList;
+	});
+
+	// Derive selected and highlighted states
+	const selectedStates = derived([filteredPublishers, isSelected, isHighlighted], ([$filteredPublishers, $isSelected, $isHighlighted]) => {
+		return $filteredPublishers.map((publisher) => ({
+			publisher,
+			isSelected: $isSelected(publisher),
+			isHighlighted: $isHighlighted(publisher)
+		}));
+	});
 </script>
 
 <form
@@ -140,17 +149,14 @@
 						class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-md"
 						transition:fly|global={{ duration: 150, y: -5 }}
 					>
-						{#each filteredPublishers as publisher}
-							{@const isSelected = $isSelected(publisher)}
-							{@const isHighlighed = $isHighlighted(publisher)}
-
+						{#each $selectedStates as { publisher, isSelected, isHighlighted }}
 							<li
 								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
 								{#if isSelected}
-									<span class="absolute inset-y-0 left-0 flex items-center pl-3 {isHighlighed ? 'text-white' : 'text-teal-500'}">
+									<span class="absolute inset-y-0 left-0 flex items-center pl-3 {isHighlighted ? 'text-white' : 'text-teal-500'}">
 										<Check />
 									</span>
 								{/if}

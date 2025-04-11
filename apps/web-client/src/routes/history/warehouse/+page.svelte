@@ -10,6 +10,7 @@
 	import HistoryPage from "$lib/components/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -31,6 +32,8 @@
 	});
 
 	$: warehouses = data.warehouses;
+
+	$: t = $LL.history_page.warehouse_tab;
 
 	let initialised = false;
 	$: initialised = Boolean(data);
@@ -61,7 +64,7 @@
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500">{t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 
 								{#if warehouseDiscount}
@@ -69,7 +72,7 @@
 										<div class="border border-gray-700 p-[1px]">
 											<Percent class="text-gray-700" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {t.stats.discount()}</span>
 									</div>
 								{/if}
 							</div>
