@@ -46,11 +46,13 @@ import type {
 	NoteCustomItem
 } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 import { NoWarehouseSelectedError, OutOfStockError } from "./errors";
 
 import { getStock } from "./stock";
 
-export async function getNoteIdSeq(db: DB) {
+async function _getNoteIdSeq(db: DB) {
 	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM note;`;
 	const [result] = await db.execO<{ nextId: number }>(query);
 	return result.nextId;
@@ -132,7 +134,7 @@ export function createOutboundNote(db: DB, noteId: number): Promise<void> {
  * @param {DB} db - Database connection
  * @returns {Promise<InboundNoteListItem[]>} Array of inbound notes
  */
-export async function getActiveInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
+async function _getActiveInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 	const query = `
 		SELECT
 			note.id,
@@ -161,7 +163,7 @@ export async function getActiveInboundNotes(db: DB): Promise<InboundNoteListItem
  * @param {DB} db - Database connection
  * @returns {Promise<OutboundNoteListItem[]>} Array of outbound notes
  */
-export async function getActiveOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
+async function _getActiveOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> {
 	const query = `
 		SELECT
 			note.id,
@@ -209,7 +211,7 @@ type GetNoteResponse = {
  * @param {number} id - ID of note to retrieve
  * @returns {Promise<GetNoteResponse | undefined>} Note details
  */
-export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
+async function _getNoteById(db: DB, id: number): Promise<GetNoteResponse | undefined> {
 	const query = `
 		SELECT
 			note.id,
@@ -269,7 +271,7 @@ export async function getNoteById(db: DB, id: number): Promise<GetNoteResponse |
  * @param {number} [payload.defaultWarehouse] - New default warehouse ID for outbound notes
  * @returns {Promise<void>} Resolves when note is updated
  */
-export async function updateNote(db: DB, id: number, payload: { displayName?: string; defaultWarehouse?: number }): Promise<void> {
+async function _updateNote(db: DB, id: number, payload: { displayName?: string; defaultWarehouse?: number }): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to update a committed note: this is a noop, but probably indicates a bug in the calling code.");
@@ -349,7 +351,7 @@ async function getOutOfStockEntries(db: DB, noteId: number): Promise<OutOfStockT
  * @param {number} id - ID of note to check
  * @returns {Promise<VolumeStock[]>} Array of transactions missing warehouse assignments
  */
-export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
+async function _getNoWarehouseEntries(db: DB, id: number): Promise<VolumeStock[]> {
 	const query = `
 		SELECT
 			isbn,
@@ -379,7 +381,7 @@ export async function getNoWarehouseEntries(db: DB, id: number): Promise<VolumeS
  * @throws {OutOfStockError} If outbound note requests more books than available
  * @returns {Promise<void>} Resolves when note is committed
  */
-export async function commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
+async function _commitNote(db: DB, id: number, { force = false }: { force?: boolean } = {}): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to commit a note that is already committed: this is a noop, but probably indicates a bug in the calling code.");
@@ -418,7 +420,7 @@ export async function commitNote(db: DB, id: number, { force = false }: { force?
  * @param {number} id - ID of note to delete
  * @returns {Promise<void>} Resolves when note is deleted
  */
-export async function deleteNote(db: DB, id: number): Promise<void> {
+async function _deleteNote(db: DB, id: number): Promise<void> {
 	const note = await getNoteById(db, id);
 	if (note?.committed) {
 		console.warn("Trying to delete a committed note: this is a noop, but probably indicates a bug in the calling code.");
@@ -437,7 +439,7 @@ export async function deleteNote(db: DB, id: number): Promise<void> {
  * @param {VolumeStock} volume - Book data containing ISBN, warehouseId and quantity
  * @returns {Promise<void>} Resolves when volumes are added
  */
-export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
+async function _addVolumesToNote(db: DB, noteId: number, volume: VolumeStock): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot add volumes to a committed note.");
@@ -472,7 +474,7 @@ export async function addVolumesToNote(db: DB, noteId: number, volume: VolumeSto
  * @param {number} id - ID of note to get entries for
  * @returns {Promise<NoteEntriesItem[]>} Array of note entries with book details (title, price, etc)
  */
-export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
+async function _getNoteEntries(db: DB, id: number): Promise<NoteEntriesItem[]> {
 	const query = `
 		SELECT
 			bt.isbn,
@@ -538,7 +540,7 @@ export async function getNoteEntries(db: DB, id: number): Promise<NoteEntriesIte
  * @param {number} next.quantity - New quantity
  * @returns {Promise<void>} Resolves when transaction is updated
  */
-export async function updateNoteTxn(
+async function _updateNoteTxn(
 	db: DB,
 	noteId: number,
 	curr: { isbn: string; warehouseId: number },
@@ -598,7 +600,7 @@ export async function updateNoteTxn(
  * @param {number} match.warehouseId - Warehouse ID
  * @returns {Promise<void>} Resolves when transaction is removed
  */
-export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: string; warehouseId: number }): Promise<void> {
+async function _removeNoteTxn(db: DB, noteId: number, match: { isbn: string; warehouseId: number }): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot delete transactions of a committed note.");
@@ -626,7 +628,7 @@ export async function removeNoteTxn(db: DB, noteId: number, match: { isbn: strin
  * @param {number} payload.price - Item price
  * @returns {Promise<void>} Resolves when item is added/updated
  */
-export async function upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
+async function _upsertNoteCustomItem(db: DB, noteId: number, payload: NoteCustomItem): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot upsert custom items to a committed note.");
@@ -663,7 +665,7 @@ export async function upsertNoteCustomItem(db: DB, noteId: number, payload: Note
  * @param {number} noteId - ID of note to get items for
  * @returns {Promise<Array<{id: number, title: string, price: number}>>} Array of custom items
  */
-export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
+async function _getNoteCustomItems(db: DB, noteId: number): Promise<NoteCustomItem[]> {
 	const query = `
 		SELECT id, title, COALESCE(price, 0) AS price, updated_at
 		FROM custom_item
@@ -685,7 +687,7 @@ export async function getNoteCustomItems(db: DB, noteId: number): Promise<NoteCu
  * @param {number} itemId - ID of custom item to remove
  * @returns {Promise<void>} Resolves when item is removed
  */
-export async function removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
+async function _removeNoteCustomItem(db: DB, noteId: number, itemId: number): Promise<void> {
 	const note = await getNoteById(db, noteId);
 	if (note?.committed) {
 		console.warn("Cannot remove custom items from a committed note.");
@@ -707,7 +709,7 @@ export async function removeNoteCustomItem(db: DB, noteId: number, itemId: numbe
  * @returns {Promise<ReceiptData>} Receipt data including items and timestamp
  * @throws {Error} If note doesn't exist
  */
-export async function getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
+async function _getReceiptForNote(db: DB, noteId: number): Promise<ReceiptData> {
 	const note = await getNoteById(db, noteId);
 	if (!note) {
 		throw new Error("Note not found");
@@ -766,7 +768,7 @@ export async function getReceiptForNote(db: DB, noteId: number): Promise<Receipt
  * @param {VolumeStock[]} volumes - Array of book quantity adjustments
  * @returns {Promise<void>} Resolves when note is created and committed
  */
-export async function createAndCommitReconciliationNote(db: DB, id: number, volumes: VolumeStock[]): Promise<void> {
+async function _createAndCommitReconciliationNote(db: DB, id: number, volumes: VolumeStock[]): Promise<void> {
 	const timestamp = Date.now();
 	const displayName = `Reconciliation note: ${new Date(timestamp).toISOString()}`;
 
@@ -789,3 +791,20 @@ export async function createAndCommitReconciliationNote(db: DB, id: number, volu
 		);
 	});
 }
+export const getNoteIdSeq = timed(_getNoteIdSeq);
+export const getActiveInboundNotes = timed(_getActiveInboundNotes);
+export const getActiveOutboundNotes = timed(_getActiveOutboundNotes);
+export const getNoteById = timed(_getNoteById);
+export const updateNote = timed(_updateNote);
+export const getNoWarehouseEntries = timed(_getNoWarehouseEntries);
+export const commitNote = timed(_commitNote);
+export const deleteNote = timed(_deleteNote);
+export const addVolumesToNote = timed(_addVolumesToNote);
+export const getNoteEntries = timed(_getNoteEntries);
+export const updateNoteTxn = timed(_updateNoteTxn);
+export const removeNoteTxn = timed(_removeNoteTxn);
+export const upsertNoteCustomItem = timed(_upsertNoteCustomItem);
+export const getNoteCustomItems = timed(_getNoteCustomItems);
+export const removeNoteCustomItem = timed(_removeNoteCustomItem);
+export const getReceiptForNote = timed(_getReceiptForNote);
+export const createAndCommitReconciliationNote = timed(_createAndCommitReconciliationNote);
