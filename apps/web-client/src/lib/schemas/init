@@ -178,7 +178,7 @@ CREATE TABLE custom_item (
 	id INTEGER NOT NULL,
 	title TEXT,
 	price DECIMAL,
-	note_id INTEGER,
+	note_id INTEGER NOT NULL,
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
 	-- FOREIGN KEY (note_id) REFERENCES note(id) ON UPDATE CASCADE ON DELETE CASCADE
