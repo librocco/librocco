@@ -53,6 +53,8 @@ class TimeRecorder implements TimeLogger {
 		if (get(this.isOn) === false) return;
 
 		const routeId = this.routeId;
+		if (!routeId) return;
+
 		this.startTimesRec.set(routeId, name, Date.now());
 	}
 
@@ -60,13 +62,18 @@ class TimeRecorder implements TimeLogger {
 		if (get(this.isOn) === false) return;
 
 		const routeId = this.routeId;
+		if (!routeId) return;
+
 		const startTime = this.startTimesRec.get(routeId, name);
 		if (!startTime) {
 			console.warn(`No start time found for: ${routeId}:${name}`);
 			return;
 		}
 		const elapsed = Date.now() - startTime;
+
 		this.rec.set(routeId, name, elapsed);
+		this.startTimesRec.delete(routeId, name);
+
 		console.log(`${routeId}:${name}`, elapsed);
 	}
 
