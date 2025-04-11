@@ -17,6 +17,8 @@
 
 import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 /**
  * Retrieves all committed notes for a specific date.
  * Includes summary information like total books and pricing.
@@ -26,7 +28,7 @@ import type { DB, PastNoteItem, PastTransactionItem, NoteType } from "./types";
  * @param {string} date - Date to query in YYYY-MM-DD format
  * @returns {Promise<PastNoteItem[]>} Committed notes
  */
-export async function getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
+async function _getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
 	const query = `
             SELECT
                 n.id,
@@ -87,7 +89,7 @@ type Params = {
  * @param {Params} params - Query filters
  * @returns {Promise<PastTransactionItem[]>} Historical transactions
  */
-export async function getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
+async function _getPastTransactions(db: DB, params: Params): Promise<PastTransactionItem[]> {
 	const { isbn, warehouseId, startDate, endDate, noteType } = params;
 	const conditions = [];
 	const values = [];
@@ -149,3 +151,5 @@ export async function getPastTransactions(db: DB, params: Params): Promise<PastT
 
 	return res.map(({ committed_at, ...txn }) => ({ ...txn, committedAt: new Date(committed_at) }));
 }
+export const getPastNotes = timed(_getPastNotes);
+export const getPastTransactions = timed(_getPastTransactions);
