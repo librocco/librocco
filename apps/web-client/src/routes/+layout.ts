@@ -17,7 +17,6 @@ import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
-import { timeLogger } from "$lib/utils/timer";
 import { getDB } from "$lib/db/cr-sqlite";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
@@ -66,8 +65,6 @@ export const load: LayoutLoad = async ({ url, route }) => {
 			plugins.get("book-fetcher").register(createOpenLibraryApiPlugin());
 			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
-
-		timeLogger.setCurrentRoute(route.id);
 
 		return { dbCtx, status: true, plugins };
 	}
