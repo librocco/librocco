@@ -1625,9 +1625,8 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 
 	// navigate to customer order view
 	await page.getByRole("navigation").getByRole("listitem").nth(5).click();
-	('a[href$="ends-with"]');
 	await page.locator(`a[href$='orders/customers/${customers[0].id}']`).click();
-	// await page.goto(`${baseURL}orders/customers/${customers[0].displayId}/`);
+
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(2);
 });
@@ -1715,7 +1714,7 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 	await expect(secondRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
 });
 
-testOrders.skip("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
+testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
 	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
