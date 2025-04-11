@@ -17,11 +17,12 @@ import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
+import { timeLogger } from "$lib/utils/timer";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
-export const load: LayoutLoad = async ({ url }) => {
+export const load: LayoutLoad = async ({ url, route }) => {
 	const { pathname } = url;
 
 	if (redirectPaths.includes(pathname)) {
@@ -61,6 +62,8 @@ export const load: LayoutLoad = async ({ url }) => {
 			plugins.get("book-fetcher").register(createOpenLibraryApiPlugin());
 			plugins.get("book-fetcher").register(createGoogleBooksApiPlugin());
 		}
+
+		timeLogger.setCurrentRoute(route.id);
 
 		return { dbCtx, status: true, plugins };
 	}
