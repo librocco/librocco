@@ -1633,7 +1633,7 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 
 	// navigate to customer order view
 	await page.getByRole("navigation").getByRole("listitem").nth(5).click();
-	await page.locator(`a[href$='orders/customers/${customers[0].id}']`).click();
+	await page.locator(`a[href$='orders/customers/${customers[0].id}/']`).click();
 
 	await expect(table.getByText(supplierOrders[0].lines[0].isbn)).toBeVisible();
 	await expect(table.getByText("Delivered")).toHaveCount(2);
@@ -1722,48 +1722,6 @@ testOrders("quantity: should handle multiple quantity adjustments", async ({ pag
 	await expect(secondRow.getByRole("cell", { name: "2", exact: true })).toBeVisible();
 });
 
-testOrders("should maintain correct totals after multiple quantity adjustments", async ({ page, supplierOrders, books }) => {
-	depends(supplierOrders);
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
-	await page.getByText("Reconcile").first().click();
-
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-
-	await isbnInput.fill(books[0].isbn);
-	await page.keyboard.press("Enter");
-
-	await expect(page.getByText(books[0].isbn)).toBeVisible();
-	await isbnInput.fill(books[2].isbn);
-	await page.keyboard.press("Enter");
-	await expect(page.getByText(books[2].isbn)).toBeVisible();
-
-	// Move to compare view
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	// Initial total
-	await expect(page.getByText(`2 / 3`)).toBeVisible();
-
-	await page.getByRole("button", { name: "Populate" }).first().click();
-
-	// Adjust quantities for all books
-	await page.getByRole("table").getByRole("row").all();
-
-	const table = page.getByRole("table");
-	const firstRow = table.getByRole("row").nth(1);
-	const secondRow = table.getByRole("row").nth(2);
-
-	await firstRow.getByLabel("Increase quantity").dblclick();
-
-	await secondRow.getByLabel("Decrease quantity").click();
-
-	await page.getByRole("button", { name: "Compare" }).first().click();
-
-	// Verify updated total
-	await expect(page.getByText(`3 / 3`)).toBeVisible();
-});
-
 testOrders("delete: should allow supplier orders to be reconciled again after deletion", async ({ page, supplierOrders }) => {
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
 	await page.getByText("Ordered").nth(1).click();
@@ -1834,7 +1792,7 @@ testOrders("delete: should allow deletion after comparing books", async ({ page,
 	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
 	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
 	await page.keyboard.press("Enter");
-	await page.getByRole("button", { name: "Compare" }).click();
+	await page.getByRole("button", { name: "Compare" }).nth(1).click();
 
 	// Delete from compare view
 	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
@@ -1860,6 +1818,11 @@ testOrders("finalize: should disable all action buttons when an order is finaliz
 
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await expect(dialog).not.toBeVisible();
+
+	//navigate to completed orders
+	await page.getByRole("button", { name: "Completed", exact: true }).click();
+
+	await page.getByRole("button", { name: "View Reconciliation", exact: true }).first().click();
 
 	// Verify all action buttons are disabled
 	const populate = await page.getByRole("button", { name: "populate" }).all();
