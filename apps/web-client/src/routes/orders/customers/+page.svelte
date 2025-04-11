@@ -16,6 +16,7 @@
 	import type { PageData } from "./$types";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -53,6 +54,7 @@
 
 	$: filteredOrders = customerOrders.filter(({ completed }) => completed === (orderFilterStatus === "completed"));
 
+	$: t = $LL.customer_orders_page;
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -78,10 +80,10 @@
 <main class="h-screen">
 	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
 		<div class="flex items-center justify-between">
-			<h1 class="prose text-2xl font-bold">Customer Orders</h1>
+			<h1 class="prose text-2xl font-bold">{t.title()}</h1>
 			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 				<Plus size={20} />
-				New Order
+				{t.labels.new_order()}
 			</button>
 		</div>
 
@@ -91,7 +93,7 @@
 					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 						<Plus size={20} />
-						New Order
+						{t.labels.new_order()}
 					</button>
 				</div>
 			{:else}
@@ -101,7 +103,7 @@
 						on:click={() => setFilter("in_progress")}
 						aria-pressed={orderFilterStatus === "in_progress"}
 					>
-						In Progress
+						{t.tabs.in_progress()}
 					</button>
 					<button
 						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
@@ -109,15 +111,15 @@
 						aria-pressed={orderFilterStatus === "completed"}
 						disabled={!hasCompletedOrders}
 					>
-						Completed
+						{t.tabs.completed()}
 					</button>
 				</div>
 				<table class="table-lg table">
 					<thead>
 						<tr>
-							<th scope="col">Customer</th>
-							<th scope="col">Order Id</th>
-							<th scope="col"> <span class="sr-only"> Update order </span></th>
+							<th scope="col">{t.table.customer()}</th>
+							<th scope="col">{t.table.order_id()}</th>
+							<th scope="col"> <span class="sr-only"> {t.labels.update_order()} </span></th>
 						</tr>
 					</thead>
 					<tbody>
@@ -125,7 +127,7 @@
 							<tr class="hover focus-within:bg-base-200">
 								<td>
 									<dl class="flex flex-col gap-y-1">
-										<dt class="sr-only">Customer details</dt>
+										<dt class="sr-only">{t.table.customer_details()}</dt>
 										<dd>{fullname}</dd>
 										<dd class="text-sm">{email ?? ""}</dd>
 									</dl>
@@ -134,7 +136,7 @@
 									<span class="font-medium">{displayId}</span>
 								</td>
 								<td class="text-right">
-									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">Update</a>
+									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.labels.update()}</a>
 								</td>
 							</tr>
 						{/each}

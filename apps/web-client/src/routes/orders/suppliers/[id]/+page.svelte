@@ -21,6 +21,7 @@
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { appPath } from "$lib/paths";
 	import SupplierMetaForm from "$lib/forms/SupplierMetaForm.svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -52,6 +53,8 @@
 
 	$: assignedPublishers = data?.assignedPublishers;
 	$: unassignedPublishers = data?.unassignedPublishers;
+
+	$: t = $LL.order_list_page;
 
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
@@ -94,7 +97,7 @@
 			<div class="card h-full">
 				<div class="card-body gap-y-2 p-0">
 					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">Supplier page</h1>
+						<h1 class="prose card-title">{t.details.supplier_page()}</h1>
 
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{supplier?.id}</h2>
@@ -108,7 +111,7 @@
 									<div class="max-w-96 flex flex-col gap-y-4">
 										<div class="flex gap-x-3">
 											<dt>
-												<span class="sr-only">Supplier name</span>
+												<span class="sr-only">{t.details.supplier_name()}</span>
 												<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
 											</dt>
 											<dd class="truncate">{supplier.name}</dd>
@@ -116,7 +119,7 @@
 
 										<div class="flex gap-x-3">
 											<dt>
-												<span class="sr-only">Supplier email</span>
+												<span class="sr-only">{t.details.supplier_email()}</span>
 												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 											</dt>
 											<dd class="truncate">{supplier.email || "N/A"}</dd>
@@ -124,7 +127,7 @@
 
 										<div class="flex gap-x-3">
 											<dt>
-												<span class="sr-only">Supplier address</span>
+												<span class="sr-only">{t.details.supplier_address()}</span>
 												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
 											</dt>
 											<dd class="truncate">{supplier.address || "N/A"}</dd>
@@ -147,7 +150,7 @@
 
 						<div class="card-actions border-t py-6 md:mb-20">
 							<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
-								Create new order
+								{t.labels.create_new_order()}
 								<Plus aria-hidden size={20} />
 							</a>
 						</div>
@@ -159,12 +162,12 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
-					<h2 class="text-lg">Assigned publishers</h2>
+					<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
 					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-y-auto">
 							<thead class="sticky top-0 left-0 right-0 bg-white shadow">
 								<tr>
-									<th scope="col" class="px-2 py-2">Publisher name</th>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -173,7 +176,7 @@
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Remove publisher</button
+												>{t.labels.remove_publisher()}</button
 											></td
 										>
 									</tr>
@@ -184,12 +187,12 @@
 				</div>
 
 				<div class="w-full">
-					<h2 class="text-lg">Unassigned publishers</h2>
+					<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
 					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
 						<table class="!my-0 flex-col items-stretch overflow-y-auto">
 							<thead class="sticky top-0 left-0 right-0 bg-white shadow">
 								<tr>
-									<th scope="col" class="px-2 py-2">Publisher name</th>
+									<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -198,7 +201,7 @@
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-												>Add to supplier</button
+												>{t.labels.add_to_supplier()}</button
 											></td
 										>
 									</tr>
