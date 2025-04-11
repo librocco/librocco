@@ -22,6 +22,8 @@ import { type BookData } from "@librocco/shared";
 
 import { type DB } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 /**
  * Creates a new book record or updates an existing one.
  * Uses ISBN as the unique identifier for upsert operations.
@@ -32,7 +34,7 @@ import { type DB } from "./types";
  * @throws {Error} If ISBN is not provided
  * @see apps/e2e/helpers/cr-sqlite.ts:upsertBook whe you make any updates
  */
-export async function upsertBook(db: DB, book: BookData) {
+async function _upsertBook(db: DB, book: BookData) {
 	if (!book.isbn) {
 		throw new Error("Book must have an ISBN");
 	}
@@ -73,7 +75,7 @@ export async function upsertBook(db: DB, book: BookData) {
 	);
 }
 
-export async function getBookData(db: DB, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
+async function _getBookData(db: DB, isbn: string): Promise<Required<BookData> & { updatedAt: Date | null }> {
 	const [res] = await db.execO<RawBookRes>(
 		`SELECT
 				isbn,
@@ -96,12 +98,12 @@ export async function getBookData(db: DB, isbn: string): Promise<Required<BookDa
 	return processRawBookRes(res);
 }
 
-export async function getPublisherList(db: DB): Promise<string[]> {
+async function _getPublisherList(db: DB): Promise<string[]> {
 	const res = await db.execO<{ publisher: string }>(`SELECT DISTINCT publisher FROM book`);
 	return res.map(({ publisher }) => publisher);
 }
 
-export async function searchBooks(db: DB, searchString: string): Promise<Required<BookData>[]> {
+async function _searchBooks(db: DB, searchString: string): Promise<Required<BookData>[]> {
 	// Encode the search string for this (naive) query
 	const filters = [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`]; // One value for each ?
 
@@ -154,3 +156,7 @@ const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: D
 	category: res.category,
 	updatedAt: res.updatedAt ? new Date(res.updatedAt) : null
 });
+export const upsertBook = timed(_upsertBook);
+export const getBookData = timed(_getBookData);
+export const getPublisherList = timed(_getPublisherList);
+export const searchBooks = timed(_searchBooks);
