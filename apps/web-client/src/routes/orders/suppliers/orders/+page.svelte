@@ -80,7 +80,7 @@
 		await goto(`${base}/orders/customers/${id}`);
 	};
 
-	$: t = $LL.suppliers_page.orders_page;
+	$: t = $LL.supplier_orders_page;
 </script>
 
 <header class="navbar mb-4 bg-neutral">

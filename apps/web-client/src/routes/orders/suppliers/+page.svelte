@@ -86,8 +86,8 @@
 		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
 			<SupplierTable data={suppliersStore}>
 				<div class="flex gap-x-2" slot="row-actions" let:row>
-					<button class="btn-outline btn-sm btn">{t.supplier_table.delete()}</button>
-					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">{t.supplier_table.edit()}</a>
+					<button class="btn-outline btn-sm btn">{t.table.delete()}</button>
+					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">{t.table.edit()}</a>
 				</div>
 			</SupplierTable>
 		</div>

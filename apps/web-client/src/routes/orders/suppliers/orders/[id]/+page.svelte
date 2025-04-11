@@ -50,7 +50,7 @@
 	$: reconciliation_order_id = data.reconciliation_order_id;
 	$: reconciled = reconciliation_order_id !== null && reconciliation_order_id !== undefined;
 
-	$: t = $LL.suppliers_page.orders_page;
+	$: t = $LL.reconciled_list_page;
 	async function handlePrintOrder() {
 		/**@TODO implement print functionality */
 	}
@@ -87,12 +87,12 @@
 								on:click={() => handleViewReconcileOrder(reconciliation_order_id)}
 							>
 								<ListTodo aria-hidden focusable="false" size={20} />
-								{t.reconciled_list.view_reconciliation()}
+								{t.labels.view_reconciliation()}
 							</button>
 						{:else}
 							<button class="btn-primary btn-sm btn flex-nowrap gap-x-2.5" on:click={handleReconcileSelf}>
 								<ListTodo aria-hidden focusable="false" size={20} />
-								{t.reconciled_list.reconcile()}
+								{t.labels.reconcile()}
 							</button>
 						{/if}
 
@@ -103,15 +103,15 @@
 					<dl class="flex flex-col">
 						<div class="stats md:stats-vertical">
 							<div class="stat md:px-1">
-								<dt class="stat-title">{t.reconciled_list.total_books()}</dt>
+								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{total_book_number}</dd>
 							</div>
 							<div class="stat md:px-1">
-								<dt class="stat-title">{t.reconciled_list.total_value()}</dt>
+								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{total_book_price.toFixed(2)}</dd>
 							</div>
 							<div class="stat md:px-1">
-								<dt class="stat-title">{t.reconciled_list.ordered()}</dt>
+								<dt class="stat-title">{t.stats.ordered()}</dt>
 								<dd class="stat-value text-2xl">
 									<time dateTime={createdDate.toString()}>{createdDate.toLocaleDateString()}</time>
 								</dd>
@@ -120,7 +120,7 @@
 					</dl>
 					<div class="card-actions border-t py-6 md:mb-20">
 						<button class="btn-secondary btn-outline btn-sm btn" type="button" disabled on:click={handlePrintOrder}>
-							{t.reconciled_list.print_order()}
+							{t.labels.print_order()}
 							<ArrowRight aria-hidden size={20} />
 						</button>
 					</div>
@@ -130,18 +130,18 @@
 
 		<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
-				<h3 class="max-md:divider-start max-md:divider">{t.reconciled_list.books()}</h3>
+				<h3 class="max-md:divider-start max-md:divider">{t.table.books()}</h3>
 			</div>
 
 			<div class="relative h-full overflow-x-auto">
 				<table class="table-pin-rows table pb-20">
 					<thead>
 						<tr>
-							<th>{t.reconciled_list.isbn()}</th>
-							<th>{t.reconciled_list.title()}</th>
-							<th>{t.reconciled_list.authors()}</th>
-							<th>{t.reconciled_list.quantity()}</th>
-							<th>{t.reconciled_list.total_price()}</th>
+							<th>{t.table.isbn()}</th>
+							<th>{t.table.title()}</th>
+							<th>{t.table.authors()}</th>
+							<th>{t.table.quantity()}</th>
+							<th>{t.table.total_price()}</th>
 						</tr>
 					</thead>
 					<tbody>

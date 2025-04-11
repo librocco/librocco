@@ -62,7 +62,7 @@
 
 	$: canPlaceOrder = totalSelectedBooks > 0;
 
-	$: t = $LL.suppliers_page.new_order_page;
+	$: t = $LL.new_order_page;
 
 	async function handlePlaceOrder() {
 		/**@TODO replace randomId with incremented id */
@@ -128,11 +128,11 @@
 					<dl class="flex flex-col">
 						<div class="stats md:stats-vertical">
 							<div class="stat md:px-1">
-								<dt class="stat-title">{t.total_books()}</dt>
+								<dt class="stat-title">{t.stats.total_books()}</dt>
 								<dd class="stat-value text-2xl">{totalPossibleBooks}</dd>
 							</div>
 							<div class="stat md:px-1">
-								<dt class="stat-title">{t.total_value()}</dt>
+								<dt class="stat-title">{t.stats.total_value()}</dt>
 								<dd class="stat-value text-2xl">€{totalPossiblePrice}</dd>
 							</div>
 							<!-- TODO: re-introduce last_updated_at -->
@@ -150,13 +150,13 @@
 
 		<div class="relative mb-20 flex h-full w-full flex-col gap-y-6 md:px-4">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3">
-				<h3 class="max-md:divider-start max-md:divider">{t.books()}</h3>
+				<h3 class="max-md:divider-start max-md:divider">{t.table.books()}</h3>
 				<div class="flex flex-wrap items-center gap-4">
 					<div class="flex flex-wrap gap-2">
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>{t.select()} 1/4</button>
-						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>{t.select()} 1/2</button>
-						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>{t.select()} 3/4</button>
-						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>{t.select()} All</button>
+						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(0.25)}>{t.labels.select()} 1/4</button>
+						<button class="btn-outline btn-sm btn border-dashed" on:click={() => selectPortion(0.5)}>{t.labels.select()} 1/2</button>
+						<button class="btn-outline btn-sm btn" on:click={() => selectPortion(0.75)}>{t.labels.select()} 3/4</button>
+						<button class="btn-outline btn-sm btn border-dotted" on:click={() => selectPortion(1)}>{t.labels.select()} All</button>
 					</div>
 				</div>
 			</div>
@@ -166,17 +166,17 @@
 					<thead>
 						<tr>
 							<th class="w-16">
-								<span class="sr-only">{t.select()}</span>
+								<span class="sr-only">{t.labels.select()}</span>
 							</th>
-							<th>{t.isbn()}</th>
-							<th>{t.title()}</th>
-							<th>{t.authors()}</th>
+							<th>{t.table.isbn()}</th>
+							<th>{t.table.title()}</th>
+							<th>{t.table.authors()}</th>
 
-							<th>{t.ordered_quantity()}</th>
-							<th>{t.total()}</th>
+							<th>{t.table.ordered_quantity()}</th>
+							<th>{t.table.total()}</th>
 
-							<th class="bg-gray-100">{t.selected_quantity()}</th>
-							<th class="bg-gray-100">{t.total()}</th>
+							<th class="bg-gray-100">{t.table.selected_quantity()}</th>
+							<th class="bg-gray-100">{t.table.total()}</th>
 						</tr>
 					</thead>
 
@@ -219,19 +219,19 @@
 					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 						<dl class="stats flex">
 							<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-								<div class="stat-title">{t.selected_books()}:</div>
+								<div class="stat-title">{t.stats.selected_books()}:</div>
 								<div class="stat-value text-lg">
 									{totalSelectedBooks}
 								</div>
 							</div>
 							<div class="stat flex place-items-center py-2 max-md:px-4">
-								<div class="stat-title sr-only">{t.total()}</div>
+								<div class="stat-title sr-only">{t.table.total()}</div>
 								<div class="stat-value text-lg">€{totalSelectedPrice.toFixed(2)}</div>
 							</div>
 						</dl>
 
 						<button class="btn-primary btn" on:click={handlePlaceOrder}>
-							{t.place_order()}
+							{t.labels.place_order()}
 							<Truck aria-hidden size={20} class="hidden md:block" />
 						</button>
 					</div>
