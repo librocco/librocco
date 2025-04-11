@@ -391,9 +391,8 @@ async function _finalizeReconciliationOrder(db: DB, id: number) {
 	const overdeliveredLines = new Map<string, { ordered: number; delivered: number }>();
 
 	return db.tx(async (txDb) => {
-		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1 WHERE id = ?;`, [id]);
-
 		const timestamp = Date.now();
+		await txDb.exec(`UPDATE reconciliation_order SET finalized = 1, updatedAt = ? WHERE id = ?;`, [timestamp, id]);
 
 		const allISBNS = new Set([...orderedLines.keys(), ...receivedLines.keys()]);
 
