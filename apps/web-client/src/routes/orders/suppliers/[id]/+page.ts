@@ -10,7 +10,7 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ parent, params, depends }) => {
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("supplier:data");
 	depends("supplier:orders");
 
@@ -51,4 +51,4 @@ const _load: PageLoad = async ({ parent, params, depends }) => {
 	return { supplier, assignedPublishers, unassignedPublishers, orders: [...unreconciledOrders, ...reconciledOrders] };
 };
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);

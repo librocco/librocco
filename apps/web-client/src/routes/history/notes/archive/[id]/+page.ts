@@ -9,7 +9,7 @@ import { appPath } from "$lib/paths";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ parent, params, depends }) => {
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);
 
 	depends("note:books");
@@ -39,4 +39,4 @@ const _load: PageLoad = async ({ parent, params, depends }) => {
 	return { dbCtx, ...note, entries, customItems };
 };
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);

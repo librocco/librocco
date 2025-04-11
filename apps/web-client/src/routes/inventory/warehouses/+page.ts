@@ -4,7 +4,7 @@ import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ parent, depends }) => {
+const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:list");
 	depends("warehouse:books");
 
@@ -15,4 +15,4 @@ const _load: PageLoad = async ({ parent, depends }) => {
 	return { dbCtx, warehouses };
 };
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);
