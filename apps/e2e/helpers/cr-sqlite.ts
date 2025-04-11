@@ -2,7 +2,7 @@ import type { DB } from "@vlcn.io/crsqlite-wasm";
 
 import { Page } from "@playwright/test";
 
-import { Customer, Supplier, PossibleSupplierOrderLine, DBCustomerOrderLine } from "./types";
+import { Customer, Supplier, PossibleSupplierOrderLine } from "./types";
 
 import { BookData } from "@librocco/shared";
 
@@ -212,21 +212,20 @@ export async function upsertReconciliationOrderLines(db: DB, params: { id: numbe
 }
 
 /**
+ * E2E test helper for unassigning a publisher form a supplier.
+ * References the original removePublisherFromSupplier function.
+ * @see apps/web-client/src/lib/db/cr-sqlite/suppliers.ts:removePublisherFromSupplier
+ */
+export async function removePublisherFromSupplier(db: DB, params: { supplierId: number; publisher: string }) {
+	const { supplierId, publisher } = params;
+	await window.suppliers.removePublisherFromSupplier(db, supplierId, publisher);
+}
+
+/**
+ * E2E test helper for deleting a reconciliation order.
+ * References the original deleteReconciliationOrder function.
  * @see apps/web-client/src/lib/db/cr-sqlite/order-reconciliation.ts:deleteReconciliationOrder
  */
 export async function deleteReconciliationOrder(db: DB, id: number): Promise<void> {
 	return await window.reconciliation.deleteReconciliationOrder(db, id);
 }
-
-export const getCustomerOrderLineStatus = async (db: DB, customerId: number): Promise<DBCustomerOrderLine[]> => {
-	const result = await db.execO<DBCustomerOrderLine>(
-		`SELECT
-			id, customer_id, created, placed, received, collected,
-			col.isbn
-			FROM customer_order_lines col
-		WHERE customer_id = $customerId
-		ORDER BY col.isbn ASC;`,
-		[customerId]
-	);
-	return result;
-};
