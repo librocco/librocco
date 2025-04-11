@@ -9,7 +9,7 @@ import { getPastTransactions } from "$lib/db/cr-sqlite/history";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ params: { date }, parent, depends }) => {
+const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:transactions");
 
 	const { dbCtx } = await parent();
@@ -58,4 +58,4 @@ const _load: PageLoad = async ({ params: { date }, parent, depends }) => {
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface DailySummaryStore {}
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);

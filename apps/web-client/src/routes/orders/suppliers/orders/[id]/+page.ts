@@ -5,7 +5,7 @@ import type { PageLoad } from "./$types";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ parent, params, depends }) => {
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	// Reactive on book data displayed in the table
 	depends("book:data");
 	// Reactive on reconciled state -- calculated from existing reconciliation orders
@@ -32,4 +32,4 @@ const _load: PageLoad = async ({ parent, params, depends }) => {
 
 export const ssr = false;
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);
