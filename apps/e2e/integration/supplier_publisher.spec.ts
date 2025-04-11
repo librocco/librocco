@@ -15,25 +15,25 @@ test.describe("Supplier publisher lists", () => {
 		await dbHandle.evaluate(upsertBook, { isbn: "978-0-306-40615-7", title: "Book A", author: "Author A", publisher: "Publisher A" });
 
 		await page.goto(`${baseURL}orders/suppliers/${suppliers[0].id}/`);
+		// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
+		await page.goto(`${baseURL}orders/suppliers/`);
+		await page.getByText(suppliers[0].name, { exact: true }).waitFor();
+		await page.getByRole("table").getByRole("row").filter({ hasText: suppliers[0].name }).getByText("Edit").click();
 		// Wait for the page to load
 		await page.getByText(suppliers[0].name, { exact: true }).waitFor();
 
-		// Get the three publisher list tables
-		const tables = await page.locator("table").all();
-		expect(tables.length).toBeGreaterThanOrEqual(3);
-
 		// Check the assigned publishers list
-		const assignedPublishersTable = tables[0];
+		const assignedPublishersTable = page.locator("table").nth(0);
 		await expect(assignedPublishersTable.getByText("pub1")).toBeVisible();
 		// await expect(assignedPublishersTable.getByText("pub2")).toBeVisible();
 
 		// Check the unassigned publishers list
-		const unassignedPublishersTable = tables[1];
+		const unassignedPublishersTable = page.locator("table").nth(1);
 
 		await expect(unassignedPublishersTable.getByText("Publisher A")).toBeVisible();
 
 		// Check the publishers assigned to other suppliers list
-		const otherSuppliersPublishersTable = tables[2];
+		const otherSuppliersPublishersTable = page.locator("table").nth(2);
 		await expect(otherSuppliersPublishersTable.getByText("pub2")).toBeVisible();
 
 		// Test reactivity: remove a publisher from suppliers[0]
