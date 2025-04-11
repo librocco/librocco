@@ -128,6 +128,25 @@ const orders_page = {
 		create_outbound_note: "Create a new Outbound Note"
 	}
 };
+
+const supplier_orders_page = {
+	title: {
+		supplier_orders: "Supplier Orders"
+	},
+	labels: {
+		suppliers: "Suppliers"
+	},
+	tabs: {
+		unordered: "Unordered",
+		ordered: "Ordered",
+		reconciling: "Reconciling",
+		completed: "Completed"
+	},
+	placeholder: {
+		description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
+		button: "New Customer Order"
+	}
+};
 const inbound_note = {
 	stats: {
 		last_updated: "Last updated"
@@ -161,7 +180,91 @@ const customer_orders_page = {
 		customer_details: "Customer Details"
 	}
 };
+const new_order_page = {
+	stats: {
+		total_books: "Total books",
+		total_value: "Total value",
+		selected_books: "Selected books"
+	},
+	table: {
+		ordered_quantity: "Ordered quantity",
+		total: "Total",
+		selected_quantity: "Selected quantity",
+		books: "Books",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors"
+	},
+	labels: {
+		select: "Select",
+		place_order: "Place Order"
+	}
+};
 
+const order_list_page = {
+	labels: {
+		remove_publisher: "Remove publisher",
+		create_new_order: "Create new order",
+		add_to_supplier: "Add to supplier"
+	},
+	details: {
+		supplier_page: "Supplier page",
+		supplier_name: "Supplier name",
+		supplier_address: "Supplier address",
+		supplier_email: "Supplier email"
+	},
+	table: {
+		publisher_name: "Publisher name",
+		assigned_publishers: "Assigned publishers",
+		unassigned_publishers: "Unassigned publishers"
+	}
+};
+const reconciled_list_page = {
+	labels: {
+		view_reconciliation: "View Reconciliation",
+		reconcile: "Reconcile",
+		print_order: "Print Order"
+	},
+	stats: {
+		total_books: "Total books",
+		ordered: "Ordered",
+		total_value: "Total value"
+	},
+	table: {
+		books: "Books",
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		quantity: "Quantity",
+		total_price: "Total Price"
+	}
+};
+
+const reconcile_page = {
+	title: {
+		reconcile_deliveries: "Reconcile Deliveries"
+	},
+	stats: {
+		created: "Created",
+		last_updated: "Last Updated",
+		includes_supplier_orders: "Includes supplier orders",
+		total_delivered: "Total delivered"
+	},
+	placeholder: {
+		description: "Scan or enter the ISBNs of the delivered books to begin reconciliation."
+	},
+	table: {
+		isbn: "ISBN",
+		title: "Title",
+		authors: "Authors",
+		quantity: "Quantity",
+		price: "Price"
+	},
+	delete_dialog: {
+		title: "Delete Reconciliation Order",
+		description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
+	}
+};
 const suppliers_page = {
 	labels: {
 		new_supplier: "New Supplier"
@@ -169,90 +272,9 @@ const suppliers_page = {
 	title: {
 		suppliers: "Suppliers"
 	},
-	supplier_table: {
+	table: {
 		delete: "Delete",
 		edit: "Edit"
-	},
-
-	new_order_page: {
-		total_books: "Total books",
-		total_value: "Total value",
-		books: "Books",
-		select: "Select",
-		isbn: "ISBN",
-		title: "Title",
-		authors: "Authors",
-		ordered_quantity: "Ordered quantity",
-		total: "Total",
-		selected_quantity: "Selected quantity",
-		selected_books: "Selected books",
-		place_order: "Place Order"
-	},
-	order_list_page: {
-		supplier_page: "Supplier page",
-		supplier_name: "Supplier name",
-		supplier_address: "Supplier address",
-		supplier_email: "Supplier email",
-		create_new_order: "Create new order",
-		assigned_publishers: "Assigned publishers",
-		publisher_name: "Publisher name",
-		remove_publisher: "Remove publisher",
-		unassigned_publishers: "Unassigned publishers",
-		add_to_supplier: "Add to supplier"
-	},
-	orders_page: {
-		title: {
-			supplier_orders: "Supplier Orders"
-		},
-		labels: {
-			suppliers: "Suppliers"
-		},
-		tabs: {
-			unordered: "Unordered",
-			ordered: "Ordered",
-			reconciling: "Reconciling",
-			completed: "Completed"
-		},
-		placeholder: {
-			description: "No unordered supplier orders available. Create a customer order first to generate supplier orders.",
-			button: "New Customer Order"
-		},
-		reconciled_list: {
-			view_reconciliation: "View Reconciliation",
-			reconcile: "Reconcile",
-			total_books: "Total books",
-			total_value: "Total value",
-			ordered: "Ordered",
-			print_order: "Print Order",
-			books: "Books",
-			isbn: "ISBN",
-			title: "Title",
-			authors: "Authors",
-			quantity: "Quantity",
-			total_price: "Total Price"
-		}
-	},
-	reconcile_page: {
-		title: {
-			reconcile_deliveries: "Reconcile Deliveries"
-		},
-		created: "Created",
-		last_updated: "Last Updated",
-		includes_supplier_orders: "Includes supplier orders",
-		no_books: "Scan or enter the ISBNs of the delivered books to begin reconciliation.",
-
-		table: {
-			isbn: "ISBN",
-			title: "Title",
-			authors: "Authors",
-			quantity: "Quantity",
-			price: "Price"
-		},
-		total_delivered: "Total delivered",
-		delete_dialog: {
-			title: "Delete Reconciliation Order",
-			description: "Are you sure you want to delete this reconciliation order? This action will delete all the scanned lines."
-		}
 	}
 };
 
@@ -290,59 +312,51 @@ const warehouse_page = {
 	}
 };
 
-const delete_dialog = {
-	title: `Permenantly delete {entity}?`,
-	description: "Once you delete this note, you will not be able to access it again"
-};
-
-const commit_inbound_dialog = {
-	title: `Commit inbound {entity}?`,
-	description: `{bookCount} book{{s}} will be added to {warehouseName}`
-};
-
-const commit_outbound_dialog = {
-	title: `Commit outbound {entity}?`,
-	description: `{bookCount} book{{s}} will be removed from your stock`
-};
-
-const no_warehouse_dialog = {
-	title: "No warehouse(s) selected",
-	description: "Can't commit the note as some transactions don't have any warehouse selected"
-};
-
-const reconcile_outbound_dialog = {
-	title: "Stock mismatch",
-	description: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
-};
-
-const edit_book_dialog = {
-	title: "Edit book details",
-	description: "Update book details"
-};
-
-const create_custom_item_dialog = {
-	title: "Create custom item"
-};
-const edit_custom_item_dialog = {
-	title: "Edit custom item"
-};
-
-const edit_warehouse_dialog = {
-	title: "Update warehouse details",
-	description: "Update warehouse details"
-};
-
-const delete_warehouse_dialog = {
-	description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`
-};
-
-const delete_database_dialog = {
-	description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
-};
-
-const create_database_dialog = {
-	title: "Create new database",
-	description: "Please type in the name for the new database"
+const common = {
+	delete_dialog: {
+		title: `Permenantly delete {entity}?`,
+		description: "Once you delete this note, you will not be able to access it again"
+	},
+	commit_inbound_dialog: {
+		title: `Commit inbound {entity}?`,
+		description: `{bookCount} book{{s}} will be added to {warehouseName}`
+	},
+	commit_outbound_dialog: {
+		title: `Commit outbound {entity}?`,
+		description: `{bookCount} book{{s}} will be removed from your stock`
+	},
+	no_warehouse_dialog: {
+		title: "No warehouse(s) selected",
+		description: "Can't commit the note as some transactions don't have any warehouse selected"
+	},
+	reconcile_outbound_dialog: {
+		title: "Stock mismatch",
+		description: "Some quantities requested are greater than available in stock and will need to be reconciled in order to proceed."
+	},
+	edit_book_dialog: {
+		title: "Edit book details",
+		description: "Update book details"
+	},
+	create_custom_item_dialog: {
+		title: "Create custom item"
+	},
+	edit_custom_item_dialog: {
+		title: "Edit custom item"
+	},
+	edit_warehouse_dialog: {
+		title: "Update warehouse details",
+		description: "Update warehouse details"
+	},
+	delete_warehouse_dialog: {
+		description: `Once you delete this warehouse {bookCount} book{{s}} will be removed from your stock`
+	},
+	delete_database_dialog: {
+		description: `Once you delete this database it can't be restored. In order to save the backup first, please use the export button.`
+	},
+	create_database_dialog: {
+		title: "Create new database",
+		description: "Please type in the name for the new database"
+	}
 };
 const outbound_note = {
 	delete_dialog: {
@@ -425,18 +439,12 @@ const en = {
 	inbound_note,
 	settings_page,
 	stock_page,
-	delete_dialog,
-	edit_book_dialog,
-	no_warehouse_dialog,
-	reconcile_outbound_dialog,
-	create_custom_item_dialog,
-	edit_custom_item_dialog,
-	delete_warehouse_dialog,
-	delete_database_dialog,
-	create_database_dialog,
-	commit_outbound_dialog,
-	edit_warehouse_dialog,
-	commit_inbound_dialog
+	common,
+	supplier_orders_page,
+	new_order_page,
+	reconcile_page,
+	reconciled_list_page,
+	order_list_page
 } satisfies BaseTranslation;
 
 export default en;

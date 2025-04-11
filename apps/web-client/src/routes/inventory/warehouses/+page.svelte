@@ -105,6 +105,8 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	$: tCommon = $LL.common;
 </script>
 
 <InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
@@ -168,8 +170,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: $LL.edit_warehouse_dialog.title(),
-											description: $LL.edit_warehouse_dialog.description(),
+											title: tCommon.edit_warehouse_dialog.title(),
+											description: tCommon.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -177,8 +179,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: $LL.edit_warehouse_dialog.title(),
-											description: $LL.edit_warehouse_dialog.description(),
+											title: tCommon.edit_warehouse_dialog.title(),
+											description: tCommon.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -208,8 +210,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: $LL.delete_dialog.title({ entity: displayName }),
-											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
+											title: tCommon.delete_dialog.title({ entity: displayName }),
+											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
@@ -217,8 +219,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: $LL.delete_dialog.title({ entity: displayName }),
-											description: $LL.delete_warehouse_dialog.description({ bookCount: totalBooks }),
+											title: tCommon.delete_dialog.title({ entity: displayName }),
+											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}

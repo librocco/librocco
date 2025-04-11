@@ -372,8 +372,8 @@
 														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
 														dialogContent = {
 															onConfirm: () => {},
-															title: $LL.edit_book_dialog.title(),
-															description: $LL.edit_book_dialog.description(),
+															title: $LL.common.edit_book_dialog.title(),
+															description: $LL.common.edit_book_dialog.description(),
 															type: "edit-row"
 														};
 													}}
@@ -382,8 +382,8 @@
 
 														dialogContent = {
 															onConfirm: () => {},
-															title: $LL.edit_book_dialog.title(),
-															description: $LL.edit_book_dialog.description(),
+															title: $LL.common.edit_book_dialog.title(),
+															description: $LL.common.edit_book_dialog.description(),
 															type: "edit-row"
 														};
 													}}

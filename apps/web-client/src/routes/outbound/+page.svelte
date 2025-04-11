@@ -144,8 +144,8 @@
 									on:m-click={() => {
 										dialogContent = {
 											onConfirm: handleDeleteNote(note.id),
-											title: $LL.delete_dialog.title({ entity: note.displayName }),
-											description: $LL.delete_dialog.description()
+											title: $LL.common.delete_dialog.title({ entity: note.displayName }),
+											description: $LL.common.delete_dialog.description()
 										};
 									}}
 								>
