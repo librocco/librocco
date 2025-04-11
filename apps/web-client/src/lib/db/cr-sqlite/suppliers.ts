@@ -9,6 +9,8 @@ import type {
 	DBPlacedSupplierOrderLine
 } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 /**
  * @fileoverview Supplier order management system
  *
@@ -35,7 +37,7 @@ import type {
  * @param db - The database instance to query
  * @returns Promise resolving to an array of suppliers with their basic info
  */
-export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
+async function _getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
 	const query = `
 		SELECT
 			supplier.id,
@@ -61,7 +63,7 @@ export async function getAllSuppliers(db: DB): Promise<SupplierExtended[]> {
  * @param db - The database instance to query
  * @param id - supplier id
  */
-export async function getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
+async function _getSupplierDetails(db: DB, id: number): Promise<SupplierExtended | undefined> {
 	const conditions = [];
 	const params = [];
 
@@ -96,7 +98,7 @@ export async function getSupplierDetails(db: DB, id: number): Promise<SupplierEx
  * @param supplier - The supplier data to upsert
  * @throws {Error} If supplier.id is not provided
  */
-export async function upsertSupplier(db: DB, supplier: Supplier) {
+async function _upsertSupplier(db: DB, supplier: Supplier) {
 	if (!supplier.id) {
 		throw new Error("Supplier must have an id");
 	}
@@ -127,7 +129,7 @@ export async function upsertSupplier(db: DB, supplier: Supplier) {
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
-export async function getPublishersFor(db: DB, supplierId?: number): Promise<string[]> {
+async function _getPublishersFor(db: DB, supplierId?: number): Promise<string[]> {
 	const whereCondition = supplierId ? `WHERE supplier_id = ?` : "";
 	const stmt = await db.prepare(
 		`SELECT publisher
@@ -150,7 +152,7 @@ export async function getPublishersFor(db: DB, supplierId?: number): Promise<str
  * @param supplierId - The id of the supplier to associate to
  * @param publisher - The id of the publisher to associate
  */
-export async function associatePublisher(db: DB, supplierId: number, publisher: string) {
+async function _associatePublisher(db: DB, supplierId: number, publisher: string) {
 	/* Makes sure the given publisher is associated with the given supplier id.
      If necessary it disassociates a different supplier */
 	await db.exec(
@@ -165,7 +167,7 @@ export async function associatePublisher(db: DB, supplierId: number, publisher: 
 }
 
 /** Removes a publisher from the list of publishers for a supplier */
-export async function removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
+async function _removePublisherFromSupplier(db: DB, supplierId: number, publisher: string) {
 	await db.exec("DELETE FROM supplier_publisher WHERE supplier_id = ? AND publisher = ?", [supplierId, publisher]);
 }
 
@@ -189,7 +191,7 @@ export const DEFAULT_SUPPLIER_NAME = "General";
  * @param db - The database instance to query
  * @returns Promise resolving to an array of supplier order summaries with supplier information
  */
-export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplierOrder[]> {
+async function _getPossibleSupplierOrders(db: DB): Promise<PossibleSupplierOrder[]> {
 	const query = `
 		SELECT
             supplier_id,
@@ -225,7 +227,7 @@ export async function getPossibleSupplierOrders(db: DB): Promise<PossibleSupplie
  * @param supplierId - The ID of the supplier to get order lines for
  * @returns Promise resolving to an array of possible order lines for the specified supplier
  */
-export async function getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
+async function _getPossibleSupplierOrderLines(db: DB, supplierId: number | null): Promise<PossibleSupplierOrderLine[]> {
 	const conditions = [
 		"col.placed is NULL",
 		// sometimes a book can be received before being placed with the supplier due to overdelivery
@@ -286,7 +288,7 @@ export async function getPossibleSupplierOrderLines(db: DB, supplierId: number |
   * @returns Promise resolving to an array of placed supplier orders with
  supplier details and book counts
   */
-export async function getPlacedSupplierOrders(
+async function _getPlacedSupplierOrders(
 	db: DB,
 	filters?: { supplierId?: number; reconciled?: boolean; finalized?: boolean }
 ): Promise<PlacedSupplierOrder[]> {
@@ -357,7 +359,7 @@ export async function getPlacedSupplierOrders(
  * @param supplier_order_id - supplier order to retrieve lines for
  * @returns array of place supplier order lines:
  **/
-export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
+async function _getPlacedSupplierOrderLines(db: DB, supplier_order_ids: number[]): Promise<PlacedSupplierOrderLine[]> {
 	if (!supplier_order_ids.length) {
 		return [];
 	}
@@ -414,7 +416,7 @@ export async function getPlacedSupplierOrderLines(db: DB, supplier_order_ids: nu
  * @returns Promise<void>
  * @todo Rewrite this function to accommodate for removing quantity in customerOrderLine
  */
-export async function createSupplierOrder(
+async function _createSupplierOrder(
 	db: DB,
 	id: number,
 	supplierId: number | null,
@@ -479,3 +481,14 @@ export async function createSupplierOrder(
 }
 
 export const multiplyString = (str: string, n: number) => Array(n).fill(str).join(", ");
+export const getAllSuppliers = timed(_getAllSuppliers);
+export const getSupplierDetails = timed(_getSupplierDetails);
+export const upsertSupplier = timed(_upsertSupplier);
+export const getPublishersFor = timed(_getPublishersFor);
+export const associatePublisher = timed(_associatePublisher);
+export const removePublisherFromSupplier = timed(_removePublisherFromSupplier);
+export const getPossibleSupplierOrders = timed(_getPossibleSupplierOrders);
+export const getPossibleSupplierOrderLines = timed(_getPossibleSupplierOrderLines);
+export const getPlacedSupplierOrders = timed(_getPlacedSupplierOrders);
+export const getPlacedSupplierOrderLines = timed(_getPlacedSupplierOrderLines);
+export const createSupplierOrder = timed(_createSupplierOrder);

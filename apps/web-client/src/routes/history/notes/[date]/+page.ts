@@ -7,7 +7,9 @@ import type { PastNoteItem } from "$lib/db/cr-sqlite/types";
 import { appPath } from "$lib/paths";
 import { getPastNotes } from "$lib/db/cr-sqlite/history";
 
-export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ params: { date }, parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:notes");
 
 	const { dbCtx } = await parent();
@@ -31,3 +33,5 @@ export const load: PageLoad = async ({ params: { date }, parent, depends }) => {
 
 // eslint-disable-next-line @typescript-eslint/no-empty-object-type
 export interface DailySummaryStore {}
+
+export const load: PageLoad = timed(_load);
