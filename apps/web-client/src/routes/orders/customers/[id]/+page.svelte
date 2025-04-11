@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+	import { filter, scan } from "rxjs";
 	import {
 		BookUp,
-		QrCode,
 		X,
 		Trash2,
 		Mail,
@@ -15,7 +15,7 @@
 		PencilLine
 	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults, superForm, type SuperForm } from "sveltekit-superforms";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
@@ -44,11 +44,10 @@
 		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
-
-	import { scannerSchema } from "$lib/forms/schemas";
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
 	import { mergeBookData } from "$lib/utils/misc";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -134,6 +133,38 @@
 
 	// #endregion dialog
 
+	const handleAddLine = async (isbn: string) => {
+		await addBooksToCustomer(db, customerId, [isbn]);
+
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const localBookData = await getBookData(db, isbn);
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
+			return;
+		}
+
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await upsertBook(db, { isbn });
+		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
+	};
+
 	const handleDeleteLine = async (lineId: number) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
@@ -164,29 +195,6 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
-
-	let scanInputRef: HTMLInputElement = null;
-
-	// TODO: We reuse the ScannerForm and setup across a few pages => good candidate for a component...
-	// It already exists as one but not with the new skin
-	const { form: formStore, enhance } = superForm(defaults(zod(scannerSchema)), {
-		SPA: true,
-		validators: zod(scannerSchema),
-		validationMethod: "submit-only",
-		onUpdate: async ({ form: { data, valid } }) => {
-			// scannerSchema defines isbn minLength as 1, so it will be invalid if "" is entered
-			if (valid) {
-				const { isbn } = data;
-
-				await addBooksToCustomer(db, customerId, [isbn]);
-			}
-		},
-		onUpdated: ({ form: { valid } }) => {
-			if (valid) {
-				scanInputRef?.focus();
-			}
-		}
-	});
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -286,19 +294,8 @@
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
 				<h3 class="max-md:divider-start max-md:divider">Books</h3>
-				<form class="flex w-full gap-2" use:enhance method="POST">
-					<label class="input-bordered input flex flex-1 items-center gap-2">
-						<QrCode />
-						<input
-							type="text"
-							class="grow"
-							bind:value={$formStore.isbn}
-							placeholder="Enter ISBN of delivered books"
-							required
-							bind:this={scanInputRef}
-						/>
-					</label>
-				</form>
+
+				<DaisyUiScannerForm onSubmit={handleAddLine} />
 			</div>
 
 			<div class="h-full overflow-x-auto">

@@ -19,6 +19,7 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	$: isbn = $page.params.isbn;
 
@@ -49,14 +50,22 @@
 	$: transactions = data.transactions;
 	$: stock = data.stock;
 
+	$: t = $LL.history_page.isbn_tab.isbn_id;
+
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
 
 	// #region search
 	const search = writable("");
 
-	$: entries = [] as BookData[];
-	$: $search.length > 2 ? searchBooks(db, $search).then((res) => (entries = res)) : (entries = []);
+	let entries: BookData[] = [];
+	$: if ($search.length > 2) {
+		searchBooks(db, $search).then((res) => {
+			entries = res;
+		});
+	} else {
+		entries = [];
+	}
 
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
@@ -75,7 +84,7 @@
 	<svelte:fragment slot="heading">
 		<div class="w-full text-gray-700">
 			<!--text-2xl font-bold leading-7 text-gray-900-->
-			<h1 class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
+			<h1 class="mb-1 mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
 			{#if bookData}
 				<p class="mb-1 min-h-[32px] text-2xl">
 					{#if bookData.title}<span class="font-bold">{bookData.title}, </span>{/if}
@@ -96,7 +105,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")} data-loaded={true}>
 				<div class="border-b border-gray-300">
-					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
+					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -110,7 +119,7 @@
 									<span data-property="warehouse" class="entity-list-text-sm mr-4">{s.warehouseName}</span>
 								</p>
 
-								<p data-property="quantity" class="rounded border border-gray-500 bg-gray-100 py-0.5 px-2">{s.quantity}</p>
+								<p data-property="quantity" class="rounded border border-gray-500 bg-gray-100 px-2 py-0.5">{s.quantity}</p>
 							</div>
 						{/each}
 					</div>
@@ -118,15 +127,13 @@
 
 				{#if !transactions?.length}
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox
-						title="No transactions found"
-						description="There seems to be no record of transactions for the given isbn volumes going in or out"
-						class="center-absolute"
-					/>
+					<PlaceholderBox title={t.placeholder_box.title()} description={t.placeholder_box.description()} class="center-absolute" />
 					<!-- End entity list placeholder -->
 				{:else}
 					<div class="sticky top-0">
-						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
+							{$LL.history_page.isbn_tab.titles.transactions()}
+						</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 						{#each transactions as { quantity, noteId, noteName, noteType, committedAt, warehouseName }}

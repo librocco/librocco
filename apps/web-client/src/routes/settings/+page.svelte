@@ -12,10 +12,10 @@
 
 	import { appPath } from "$lib/paths";
 
-	import { dbName, dbNamePersisted } from "$lib/db";
+	import { dbid, syncConfig, syncActive } from "$lib/db";
 
-	import { SettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
-	import { settingsSchema } from "$lib/forms/schemas";
+	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
+	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 	import { Page, ExtensionAvailabilityToast } from "$lib/components";
 
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
@@ -23,8 +23,9 @@
 	import { VERSION } from "$lib/constants";
 	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -100,7 +101,7 @@
 	// TODO: This used the old functionality and currently doesn't work, revisit
 	const handleSelect = (name: string) => async () => {
 		// Persist the selection
-		dbNamePersisted.set(name);
+		dbid.set(name);
 		// Reset the db (allowing the root load function to reinstantiate the db)
 		// resetDB();
 		// Recalculate the data from root load down
@@ -135,7 +136,7 @@
 		files = await getFiles();
 
 		// If we've just deleted the current database, select the first one in the list
-		if (!files.includes(addSQLite3Suffix(get(dbNamePersisted)))) {
+		if (!files.includes(addSQLite3Suffix(get(dbid)))) {
 			await handleSelect(files[0] || "dev")(); // If this was the last file, create a new (default) db
 		}
 
@@ -171,22 +172,52 @@
 	</svelte:fragment>
 
 	<svelte:fragment slot="heading">
-		<h1 class="text-2xl font-bold leading-7 text-gray-900">Settings</h1>
-		<h4>Version {VERSION}</h4>
+		<h1 class="text-2xl font-bold leading-7 text-gray-900">{$LL.settings_page.headings.settings()}</h1>
+		<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
 	</svelte:fragment>
 
 	<svelte:fragment slot="main">
 		<div class="space-y-12 p-6">
+			<div class="flex flex-col gap-6 px-4 md:flex-row">
+				<div class="basis-1/3">
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.sync_settings()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">
+						{$LL.settings_page.descriptions.sync_settings()}
+					</p>
+				</div>
+
+				<div class="w-full basis-2/3">
+					<SyncSettingsForm
+						active={syncActive}
+						data={data.syncSettingsForm}
+						options={{
+							SPA: true,
+							dataType: "json",
+							validators: zod(syncSettingsSchema),
+							validationMethod: "submit-only",
+							onUpdated: ({ form: { data, valid } }) => {
+								if (valid) {
+									syncConfig.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
+								}
+							}
+						}}
+					/>
+				</div>
+			</div>
+
 			<div data-testid={testId("database-management-container")} class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Database management</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">Use this section to create, select, import, export or delete a database</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.db_management()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.db_management()}</p>
 				</div>
+
 				<div class="w-full basis-2/3">
 					<ul data-testid={testId("database-management-list")} class="h-[240px] w-full overflow-y-auto overflow-x-hidden border">
 						{#if !importOn}
 							{#each files as file (file)}
-								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbName)}
+								{@const active = addSQLite3Suffix(file) === addSQLite3Suffix($dbid)}
 								{#if selectionOn}
 									<!-- svelte-ignore a11y_click_events_have_key_events -->
 									<li
@@ -248,10 +279,11 @@
 								aria-label="Drop zone"
 								on:dragover={handleDragOver}
 							>
-								<p>Drag and drop your .sqlite3 file here to import</p>
+								<p>{$LL.settings_page.descriptions.import()}</p>
 							</div>
 						{/if}
 					</ul>
+
 					<div class="flex justify-end gap-x-2 px-4 py-6">
 						<button on:click={toggleImport} type="button" class="button button-white">
 							{importOn ? "Cancel" : "Import"}
@@ -276,7 +308,7 @@
 								};
 							}}
 							type="button"
-							class="button button-green">New</button
+							class="button button-green">{$LL.settings_page.labels.new()}</button
 						>
 					</div>
 				</div>
@@ -284,22 +316,22 @@
 
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
-					<h2 class="text-base font-semibold leading-7 text-gray-900">Connection settings</h2>
-					<p class="mt-1 text-sm leading-6 text-gray-600">Manage connections to services and devices</p>
+					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.device_settings()}</h2>
+					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.device_settings()}</p>
 				</div>
 				<div class="w-full basis-2/3">
-					<SettingsForm
-						data={data.form}
+					<DeviceSettingsForm
+						data={data.deviceSettingsForm}
 						options={{
 							SPA: true,
 							dataType: "json",
-							validators: zod(settingsSchema),
+							validators: zod(deviceSettingsSchema),
 							validationMethod: "submit-only",
 							onUpdated: ({ form: { data, valid } }) => {
 								if (valid) {
-									settingsStore.set(data);
-									// Force reload the layout. A simple "invalidation" will not suffice as the existing DB reference will still exist
-									window.location.reload();
+									deviceSettingsStore.set(data);
+									// Invalidating all in order to refresh the form data (done within the load function)
+									invalidateAll();
 								}
 							}
 						}}
@@ -314,10 +346,11 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-		{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+{#if $open}
+	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+
+	<div use:melt={$portalled}>
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
 
 		{#if type === "create"}
 			<div
@@ -359,5 +392,5 @@
 		{:else}
 			<!---->
 		{/if}
-	{/if}
-</div>
+	</div>
+{/if}

@@ -15,6 +15,7 @@
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -36,6 +37,8 @@
 
 	$: stats = data.stats;
 	$: bookList = data.bookList;
+
+	$: t = $LL.history_page.date_tab;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -80,37 +83,43 @@
 				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
 				<!-- End entity list placeholder -->
 			{:else}
-				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">Stats</h2>
+				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">{t.stats.title()}</h2>
 
 				<div data-testid={testId("history-date-stats")}>
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Book Count: <span data-property="inbound-count">{stats.totalInboundBookCount}</span>
+							{t.stats.total_inbound_book_count()}:
+							<span data-property="inbound-count">{stats.totalInboundBookCount}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Cover Price: <span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
+							{t.stats.total_inbound_cover_price()}:
+							<span data-property="inbound-cover-price">{stats.totalInboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-green m-2 p-2 font-bold">
-							Inbound Discounted Price: <span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
+							{t.stats.total_inbound_cover_price()}:
+							<span data-property="inbound-discounted-price">{stats.totalInboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 
 					<div class="flex flex-row text-sm">
 						<div class="badge badge-red m-2 p-2 font-bold">
-							Outbound Book Count: <span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
+							{t.stats.total_outbound_book_count()}:
+							<span data-property="outbound-count">{stats.totalOutboundBookCount}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							Outbound Cover Price: <span data-property="outbound-cover-price">{stats.totalOutboundCoverPrice.toFixed(2)}</span>
+							{t.stats.total_outbound_cover_price()}:
+							<span data-property="outbound-cover-price">{stats.totalOutboundCoverPrice.toFixed(2)}</span>
 						</div>
 						<div class="badge badge-red m-2 p-2 font-bold">
-							Outbound Discounted Price: <span data-property="outbound-discounted-price"
-								>{stats.totalOutboundDiscountedPrice.toFixed(2)}</span
-							>
+							{t.stats.total_outbound_discounted_price()}:
+							<span data-property="outbound-discounted-price">{stats.totalOutboundDiscountedPrice.toFixed(2)}</span>
 						</div>
 					</div>
 				</div>
 
-				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">
+					{t.transactions.title()}: <span data-property="transactions">{stats.totalOutboundBookCount}</span>
+				</h2>
 
 				<div id="history-table" class="w-full">
 					<ul class="w-full divide-y divide-gray-300">
@@ -132,7 +141,7 @@
 								</p>
 								<p class="lg:order-4 xl:order-none xl:col-span-2">
 									<span data-property="committedAt" class="badge badge-md {noteType === 'inbound' ? 'badge-green' : 'badge-red'}">
-										Committed: {generateUpdatedAtString(committedAt)}
+										{t.transactions.committed()}: {generateUpdatedAtString(committedAt)}
 									</span>
 								</p>
 

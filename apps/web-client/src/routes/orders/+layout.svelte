@@ -1,20 +1,15 @@
 <script lang="ts">
-	import { onMount, onDestroy } from "svelte";
 	import { BookCopy, Library, PackageMinus, Search, Settings, PersonStanding, ArrowLeftToLine, QrCode, Book, Truck } from "lucide-svelte";
 	import { fade, fly } from "svelte/transition";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { WorkerInterface } from "@vlcn.io/ws-client";
-	import SyncWorker from "$lib/workers/sync-worker.ts?worker";
-	import { WITH_SYNC } from "$lib/constants";
 
 	import type { LayoutData } from "../$types";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	import { goto } from "$lib/utils/navigation";
 	import { TooltipWrapper } from "$lib/components";
 	import { appPath } from "$lib/paths";
-	import { WS_URL } from "$lib/constants";
 
 	import { page } from "$app/stores";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
@@ -22,21 +17,6 @@
 	export let data: LayoutData;
 
 	// #region reactivity
-	const dbid = "librocco-current-db";
-	let wkr: WorkerInterface;
-
-	onMount(() => {
-		// Start the sync worker
-		if (WITH_SYNC) {
-			wkr = new WorkerInterface(new SyncWorker());
-			wkr.startSync(dbid, { url: WS_URL, room: dbid });
-		}
-	});
-
-	onDestroy(() => {
-		// Stop wkr sync
-		wkr?.stopSync(dbid);
-	});
 
 	$: db = data.dbCtx?.db;
 
@@ -160,13 +140,13 @@
 	</div>
 </div>
 
-<!-- Mobile menu overlay -->
-<div use:melt={$portalled}>
-	{#if $mobilMenuOpen}
+{#if $mobilMenuOpen}
+	<!-- Mobile menu overlay -->
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
-				class="fixed left-0 top-0 bottom-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto"
+				class="fixed bottom-0 left-0 top-0 z-50 h-full w-2/3 min-w-[256px] overflow-y-auto"
 				transition:fly|global={{
 					x: -350,
 					duration: 300,
@@ -207,6 +187,7 @@
 				<!-- Nav end -->
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
+
 <!-- Mobile menu overlay end -->
