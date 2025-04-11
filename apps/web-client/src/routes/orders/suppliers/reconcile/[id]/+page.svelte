@@ -120,7 +120,7 @@
 
 	$: canCompare = books.length > 0;
 
-	$: t = $LL.suppliers_page.reconcile_page;
+	$: t = $LL.reconcile_page;
 
 	async function handleCommit() {
 		// TODO: Implement actual commit logic
@@ -162,14 +162,14 @@
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-								<span class="sr-only">{t.created()}</span>
+								<span class="sr-only">{t.stats.created()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.created).toISOString()}
 									>{new Date(data?.reconciliationOrder.created).toLocaleString()}</time
 								>
 							</span>
 							<span class="badge-accent badge-outline badge badge-md gap-x-2 py-2.5">
-								<span class="sr-only">{t.last_updated()}</span>
+								<span class="sr-only">{t.stats.last_updated()}</span>
 								<ClockArrowUp size={16} aria-hidden />
 								<time dateTime={new Date(data?.reconciliationOrder.updatedAt).toISOString()}
 									>{new Date(data?.reconciliationOrder.updatedAt).toLocaleString()}</time
@@ -180,7 +180,7 @@
 
 					<dl class="prose flex flex-col">
 						<div class="md:px-1">
-							<dt class="mt-0">{t.includes_supplier_orders()}:</dt>
+							<dt class="mt-0">{t.stats.includes_supplier_orders()}:</dt>
 							<div class="flex flex-wrap gap-x-4 md:flex-col">
 								{#each placedOrders as [order_id, supplier_name]}
 									<dd class="badge-accent badge-outline badge badge-md gap-x-2">
@@ -255,7 +255,7 @@
 				{#if currentStep === 1}
 					{#if books.length === 0}
 						<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-							<p class="text-center text-base-content/70">{t.no_books()}</p>
+							<p class="text-center text-base-content/70">{t.placeholder.description()}</p>
 						</div>
 					{:else}
 						<div class="relative h-full overflow-x-auto">
@@ -316,7 +316,7 @@
 						{#if currentStep > 1}
 							<dl class="stats flex">
 								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">
-									<dt class="stat-title">{t.total_delivered()}:</dt>
+									<dt class="stat-title">{t.stats.total_delivered()}:</dt>
 									<dd class="stat-value text-lg">
 										{totalDelivered} / {totalOrdered}
 									</dd>
