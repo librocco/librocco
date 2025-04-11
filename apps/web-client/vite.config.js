@@ -1,6 +1,6 @@
 import path from "path";
 import { sveltekit } from "@sveltejs/kit/vite";
-import { SvelteKitPWA } from "@vite-pwa/sveltekit";
+import { sentrySvelteKit } from "@sentry/sveltekit";
 
 import pkg from "./package.json";
 
@@ -8,8 +8,6 @@ const rushDir = path.join(__dirname, "..", "..", "common");
 
 export const DEFAULT_BASE_PATH = "/preview";
 
-// base path logic is written here because it needs to be communicated to both
-// the svelteKitPWA plugin and svelte.config
 const dev = process.env.NODE_ENV === "development";
 const CURRENT_SHA = process.env.CURRENT_SHA;
 let BASE_PATH = process.env.BASE_PATH;
@@ -27,34 +25,8 @@ const config = {
 		"import.meta.env.VITE_PKG_VERSION": `"${pkg.version}"`
 	},
 	plugins: [
+		sentrySvelteKit(),
 		sveltekit(),
-		SvelteKitPWA({
-			buildBase: `${BASE_PATH}/`,
-			kit: {
-				trailingSlash: "always"
-			},
-			manifest: {
-				name: "Librocco",
-				short_name: "Librocco",
-				icons: [
-					{
-						src: "android-chrome-192x192.png",
-						sizes: "192x192",
-						type: "image/png"
-					},
-					{
-						src: "android-chrome-512x512.png",
-						sizes: "512x512",
-						type: "image/png"
-					}
-				],
-				theme_color: "#ffffff",
-				background_color: "#ffffff",
-				display: "standalone",
-				start_url: `${BASE_PATH}/inventory/stock/0-all`,
-				scope: `${BASE_PATH}/`
-			}
-		}),
 		{
 			name: "configure-response-headers",
 			configureServer(server) {

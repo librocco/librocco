@@ -217,6 +217,7 @@ describe("New supplier orders:", () => {
 					isbn: book1.isbn,
 					authors: book1.authors,
 					title: book1.title,
+					price: book1.price,
 					quantity: 1,
 					line_price: book1.price
 				},
@@ -226,6 +227,7 @@ describe("New supplier orders:", () => {
 					isbn: book2.isbn,
 					authors: book2.authors,
 					title: book2.title,
+					price: book2.price,
 					quantity: 1,
 					line_price: book2.price
 				}
@@ -250,6 +252,7 @@ describe("New supplier orders:", () => {
 					isbn: book1.isbn,
 					authors: book1.authors,
 					title: book1.title,
+					price: book1.price,
 					quantity: 1,
 					line_price: book1.price
 				},
@@ -259,6 +262,7 @@ describe("New supplier orders:", () => {
 					isbn: book2.isbn,
 					authors: book2.authors,
 					title: book2.title,
+					price: book2.price,
 					quantity: 1,
 					line_price: book2.price
 				}
@@ -286,6 +290,7 @@ describe("New supplier orders:", () => {
 					isbn: book1.isbn,
 					authors: book1.authors,
 					title: book1.title,
+					price: book1.price,
 					quantity: 2,
 					line_price: book1.price * 2
 				}

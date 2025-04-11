@@ -14,7 +14,8 @@ test.beforeEach(async ({ page }) => {
 	await dashboard.waitFor();
 
 	// We're using outbound note view, but same behaviour should apply to inbound as well
-	await dashboard.navigate("outbound");
+	await page.getByRole("link", { name: "Outbound" }).click();
+
 	await dashboard.content().entityList("outbound-list").waitFor();
 
 	// Create new outbound note (and navigate to it)

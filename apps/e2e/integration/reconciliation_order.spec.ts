@@ -292,7 +292,7 @@ testOrders("populate: initial state", async ({ page, supplierOrders }) => {
 	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
 
 	await expect(page.getByRole("button", { name: "Commit" })).toBeDisabled();
-	await expect(page.getByRole("button", { name: "Compare" })).toHaveCount(1);
+	await expect(page.getByRole("button", { name: "Compare", exact: true })).toHaveCount(1);
 
 	// The table shouldn't be there as intial state
 	await expect(page.getByText(supplierOrders[0].lines[0].isbn)).not.toBeVisible();
@@ -603,7 +603,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
@@ -662,7 +662,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
@@ -725,7 +725,7 @@ testOrders(
 		await page.getByText("Reconcile").first().click();
 
 		// NOTE: Not scanning anything - straight to compare -- we need to use the top tab (the button is invisible)
-		await page.getByRole("button", { name: "Compare" }).click();
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
 
 		// NOTE: the lines we're interested in will be either:
 		//   - the subheader - supplier name
@@ -1575,8 +1575,7 @@ testOrders(
 	}
 );
 
-// TODO: We should probably extend the whole (finalized) reconciliation (and its effects to the customer orders),
-// but should probably move it its own test suite
+// NOTE: This tests both regular delivery, as well as delivery of unmatched books (and its effects on customer orders)
 testOrders("commit: applies delivery updates to customer order lines", async ({ page, customers, supplierOrders }) => {
 	// Navigate to supplier orders and start reconciliation
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -1614,10 +1613,19 @@ testOrders("commit: applies delivery updates to customer order lines", async ({ 
 		}
 	}
 
+	// Scan one unmatched book (it should be processed nonetheless)
+	await isbnInput.fill(supplierOrders[2].lines[0].isbn);
+	await page.keyboard.press("Enter");
+	await table.getByRole("row").filter({ hasText: supplierOrders[2].lines[0].isbn }).getByRole("cell", { name: "1", exact: true }).waitFor();
+
 	// Compare and commit
 	await page.getByRole("button", { name: "Compare", exact: true }).click();
 	await page.getByRole("button", { name: "Commit", exact: true }).click();
 	const dialog = page.getByRole("dialog");
+	// The dialog should show a message detailing the delivery of 4 lines -- 3 ordered, 1 unmatched
+	await dialog.getByText("4 books will be marked as delivered (and ready to be collected)").waitFor();
+	// No lines were rejected -- no rejected message
+	await dialog.getByText("books will be marked as rejected (waiting for reordering)").waitFor({ state: "detached" });
 	await dialog.getByRole("button", { name: "Confirm" }).click();
 	await dialog.waitFor({ state: "detached" });
 
@@ -1838,114 +1846,6 @@ testOrders("delete: should allow deletion after comparing books", async ({ page,
 	await expect(page.getByText("Ordered", { exact: true })).toBeVisible();
 });
 
-// TODO: Skipped this so as to not fail in 'main' with refactor under way
-testOrders.skip("should navigate correctly after deletion", async ({ page, supplierOrders }) => {
-	await page.goto(`${baseURL}orders/suppliers/orders/`);
-	await page.getByText("Ordered").nth(1).click();
-	await page.getByRole("checkbox").nth(1).click();
-	await page.getByText("Reconcile").first().click();
-
-	// Add some books
-	const isbnInput = page.getByPlaceholder("Enter ISBN of delivered books");
-	await isbnInput.fill(supplierOrders[0].lines[0].isbn);
-	await page.keyboard.press("Enter");
-
-	// Delete and verify navigation
-	await page.getByRole("button", { name: "Delete reconciliation order" }).click();
-	await page.getByRole("button", { name: "Confirm" }).click();
-
-	await expect(page.getByRole("dialog")).toBeHidden();
-
-	// Should be at supplier orders page
-
-	// Verify supplier orders are shown correctly
-	await page.getByText("Ordered", { exact: true }).click();
-	await expect(page.getByRole("checkbox").nth(1)).toBeVisible();
-	// Navigate to customers page and check customers
-	//
-	// NOTE: At the time of this writing, this is the state
-	// Supplier order 1 (the one we just reconciled):
-	//   - line 1: ISBN: 1234, quantity: 2 (fully filled)
-	//   - line 1: ISBN: 5678, quantity: 1 (fully filled)
-	//
-	// Relvant customer order lines (in order of creation -- placed by the customer)
-	// - customer 1 - ISBN: 1234 (filled by supplier order 1 - line 1)
-	// - customer 1 - ISBN: 5678 (filled by supplier order 1 - line 2)
-	// - customer 2 - ISBN: 5678 (not filled - only 1 delivered for now)
-	// - customer 3 - ISBN: 1234 (filled by supplier order 1 - line 1)
-	//
-	// NOTE: The following lines are part of the supplier order and are matched by ISBN and
-	// used to inspect different customer orders affected by the reconciliation
-	// const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
-	// const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
-	// NOTE: The not-affected line is a catch-all for all lines with ISBNs not affected by the order
-	// const irrelevantISBNS = books.map(({ isbn }) => isbn).filter((isbn) => !supplierOrders[0].lines.find((l) => l.isbn === isbn));
-	// const irrelevantISBNSRegex = new RegExp(`(${irrelevantISBNS.join("|")})`);
-	// const lNotAffected = table.getByRole("row").filter({ hasText: irrelevantISBNSRegex });
-
-	// Check customer 1
-	//
-	// NOTE: at the time for this writing, the customer order 1 had the following lines
-	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
-	// - ISBN: 5678, quantity: 1 (filled by supplier order 1 - line 2)
-	// - ISBN: 8888, quantity: 1 (not affected by this order -- still placed)
-	//
-	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
-	// so we have to go to a static page (no dynamic params) and navigate from there
-	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
-	//
-	// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
-	// await page.goto(`${baseURL}orders/customers/`);
-	// await page.getByText(customers[0].fullname).waitFor();
-	// await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
-
-	// await l1.getByRole("cell", { name: "Delivered" }).waitFor();
-	// await l2.getByRole("cell", { name: "Delivered" }).waitFor();
-	// await expect(lNotAffected).toHaveCount(1);
-	// await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
-
-	// Check customer 2
-	//
-	// NOTE: at the time for this writing, the customer order 2 had the following lines
-	// - ISBN: 5678, quantity: 1 (corresponds to order 1 - line 2 -- not filled)
-	// - ISBN: 4321, quantity: 1 (not affected by this order -- still placed)
-	// - ISBN: 7777, quantity: 1 (not affected by this order -- still placed)
-	// - ISBN: 8765, quantity: 1 (not affected by this order -- still placed)
-	//
-	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
-	// so we have to go to a static page (no dynamic params) and navigate from there
-	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
-	//
-	// await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
-	// await page.goto(`${baseURL}orders/customers/`);
-	// await page.getByText(customers[1].fullname).waitFor();
-	// await table.getByRole("row").filter({ hasText: customers[1].fullname }).getByRole("link", { name: "Update" }).click();
-
-	// await l2.getByRole("cell", { name: "Placed" }).waitFor(); // Not enough quantity delivered to fill
-	// await expect(lNotAffected).toHaveCount(3);
-	// await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
-	// await lNotAffected.nth(1).getByRole("cell", { name: "Placed" }).waitFor();
-	// await lNotAffected.nth(2).getByRole("cell", { name: "Placed" }).waitFor();
-
-	// Check customer 3
-	//
-	// NOTE: at the time for this writing, the customer order 3 had the following lines
-	// - ISBN: 1234, quantity: 1 (filled by supplier order 1 - line 1)
-	// - ISBN: 9999, quantity: 1 (not affected by this order -- still placed)
-	//
-	// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
-	// so we have to go to a static page (no dynamic params) and navigate from there
-	// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
-	//
-	// await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
-	// await page.goto(`${baseURL}orders/customers/`);
-	// await page.getByText(customers[2].fullname).waitFor();
-	// await table.getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
-
-	// await l1.getByRole("cell", { name: "Delivered" }).waitFor();
-	// await expect(lNotAffected).toHaveCount(1);
-	// await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
-});
 testOrders("finalize: should disable all action buttons when an order is finalized", async ({ page, supplierOrders }) => {
 	depends(supplierOrders);
 	await page.goto(`${baseURL}orders/suppliers/orders/`);
@@ -1973,3 +1873,139 @@ testOrders("finalize: should disable all action buttons when an order is finaliz
 	const deleteButton = page.getByLabel("Delete reconciliation order");
 	await expect(deleteButton).toBeDisabled();
 });
+
+// NOTE: This test tests the ability of committing an empty reconciliation order, but also doubles as a test for first-come-first-serve order rejection
+testOrders(
+	"commit: allows committing of an empty reconciliation order (rejecting all lines associated with respective supplier orders)",
+	async ({ page, books, customers, supplierOrders }) => {
+		// Navigate to supplier orders and start reconciliation
+		await page.goto(`${baseURL}orders/suppliers/orders/`);
+
+		const table = page.getByRole("table");
+
+		await page.getByRole("button", { name: "Ordered", exact: true }).click();
+
+		// NOTE: using the first order (from the fixture) for the test
+		const { order } = supplierOrders[0];
+		await table
+			.getByRole("row")
+			.filter({ has: page.getByRole("cell", { name: order.supplier_name, exact: true }) })
+			.filter({ has: page.getByRole("cell", { name: order.totalBooks.toString(), exact: true }) })
+			.getByRole("checkbox")
+			.click();
+
+		await page.getByText("Reconcile").first().click();
+
+		// NOTE: not scanning anything -- straight to commit
+
+		// Compare and commit
+		await page.getByRole("button", { name: "Compare", exact: true }).click();
+		await page.getByRole("button", { name: "Commit", exact: true }).click();
+		const dialog = page.getByRole("dialog");
+		// No books were delivered -- no delivery message should be shown
+		await dialog.getByText("books will be marked as delivered (and ready to be collected)").waitFor({ state: "detached" });
+		// The dialog should show a message detailing the rejection of 3 lines
+		await dialog.getByText("3 books will be marked as rejected (waiting for reordering)").waitFor();
+		await dialog.getByRole("button", { name: "Confirm" }).click();
+		await dialog.waitFor({ state: "detached" });
+
+		// Navigate to customers page and check customers
+		//
+		// NOTE: At the time of this writing, this is the state
+		// Supplier order 1 (the one we just reconciled):
+		//  isbn: "1234", quantity: 2 - 2 lines rejected
+		//  isbn: "5678", quantity: 1 = 1 line rejected
+		//
+		// Supplier order 2 :
+		//  isbn: "5678", quantity: 3
+		//  isbn: "9999", quantity: 2
+		//  isbn: "7777", quantity: 1
+		//
+		// Supplier order 3 :
+		//  isbn: "4321", quantity: 1
+		//  isbn: "8765", quantity: 1
+		//  isbn: "8888", quantity: 1
+		//
+		// Relvant customer order lines (in order of creation -- placed by the customer)
+		//
+		// NOTE: orders are rejected in reverse order of creation (regardless of respective supplier order)
+		// respecting first-come-first-server principle
+		//
+		// - customer 1 - ISBN: 1234 (rejected)
+		// - customer 1 - ISBN: 5678 (not-rejected -- only one was part of supplier order 1)
+		// - customer 2 - ISBN: 5678 (rejected)
+		// - customer 3 - ISBN: 1234 (rejected)
+		//
+		// NOTE: The following lines are part of the supplier order and are matched by ISBN and
+		// used to inspect different customer orders affected by the reconciliation
+		const l1 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[0].isbn });
+		const l2 = table.getByRole("row").filter({ hasText: supplierOrders[0].lines[1].isbn });
+		// NOTE: The not-affected line is a catch-all for all lines with ISBNs not affected by the order
+		const irrelevantISBNS = books.map(({ isbn }) => isbn).filter((isbn) => !supplierOrders[0].lines.find((l) => l.isbn === isbn));
+		const irrelevantISBNSRegex = new RegExp(`(${irrelevantISBNS.join("|")})`);
+		const lNotAffected = table.getByRole("row").filter({ hasText: irrelevantISBNSRegex });
+
+		// Check customer 1
+		//
+		// NOTE: at the time for this writing, the customer order 1 had the following lines
+		// - ISBN: 1234, quantity: 1 (rejected -- set back to pending)
+		// - ISBN: 5678, quantity: 1 (not rejected -- still placed)
+		// - ISBN: 8888, quantity: 1 (not affected by this order -- still placed)
+		//
+		// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+		// so we have to go to a static page (no dynamic params) and navigate from there
+		// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+		//
+		// await page.goto(`${baseURL}orders/customers/${customers[0].id}/`);
+		await page.goto(`${baseURL}orders/customers/`);
+		await page.getByText(customers[0].fullname).waitFor();
+		await table.getByRole("row").filter({ hasText: customers[0].fullname }).getByRole("link", { name: "Update" }).click();
+
+		await l1.getByRole("cell", { name: "Pending" }).waitFor();
+		await l2.getByRole("cell", { name: "Placed" }).waitFor();
+		await expect(lNotAffected).toHaveCount(1);
+		await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
+
+		// Check customer 2
+		//
+		// NOTE: at the time for this writing, the customer order 2 had the following lines
+		// - ISBN: 5678, quantity: 1 (corresponds to order 1 - line 2 -- rejected - set back to pending)
+		// - ISBN: 4321, quantity: 1 (not affected by this order -- still placed)
+		// - ISBN: 7777, quantity: 1 (not affected by this order -- still placed)
+		// - ISBN: 8765, quantity: 1 (not affected by this order -- still placed)
+		//
+		// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+		// so we have to go to a static page (no dynamic params) and navigate from there
+		// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+		//
+		// await page.goto(`${baseURL}orders/customers/${customers[1].id}/`);
+		await page.goto(`${baseURL}orders/customers/`);
+		await page.getByText(customers[1].fullname).waitFor();
+		await table.getByRole("row").filter({ hasText: customers[1].fullname }).getByRole("link", { name: "Update" }).click();
+
+		await l2.getByRole("cell", { name: "Pending" }).waitFor(); // Rejected
+		await expect(lNotAffected).toHaveCount(3);
+		await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
+		await lNotAffected.nth(1).getByRole("cell", { name: "Placed" }).waitFor();
+		await lNotAffected.nth(2).getByRole("cell", { name: "Placed" }).waitFor();
+
+		// Check customer 3
+		//
+		// NOTE: at the time for this writing, the customer order 3 had the following lines
+		// - ISBN: 1234, quantity: 1 (rejected, set back to placed -- supplier order 1 - line 1)
+		// - ISBN: 9999, quantity: 1 (not affected by this order -- still placed)
+		//
+		// NOTE: In CI the navigation is somewhat broken: you can't navigate to a specific page with dynamic params,
+		// so we have to go to a static page (no dynamic params) and navigate from there
+		// TODO: Replace the lines below with the commented line(s) when the hash routing is implemented
+		//
+		// await page.goto(`${baseURL}orders/customers/${customers[2].id}/`);
+		await page.goto(`${baseURL}orders/customers/`);
+		await page.getByText(customers[2].fullname).waitFor();
+		await table.getByRole("row").filter({ hasText: customers[2].fullname }).getByRole("link", { name: "Update" }).click();
+
+		await l1.getByRole("cell", { name: "Pending" }).waitFor();
+		await expect(lNotAffected).toHaveCount(1);
+		await lNotAffected.nth(0).getByRole("cell", { name: "Placed" }).waitFor();
+	}
+);
