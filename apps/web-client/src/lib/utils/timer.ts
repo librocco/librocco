@@ -1,8 +1,6 @@
 import { get } from "svelte/store";
 import { persisted } from "svelte-local-storage-store";
 
-import { page } from "$app/state";
-
 type TimeLogger = {
 	time: (name: string) => void;
 	timeEnd: (name: string) => void;
@@ -49,17 +47,19 @@ class TimeRecorder implements TimeLogger {
 	private startTimesRec = new TimeRecord();
 	private isOn = persisted("librocco-time-logger-on", false);
 
+	private routeId: string | null = null;
+
 	time(name: string) {
 		if (get(this.isOn) === false) return;
 
-		const routeId = page.route.id;
+		const routeId = this.routeId;
 		this.startTimesRec.set(routeId, name, Date.now());
 	}
 
 	timeEnd(name: string) {
 		if (get(this.isOn) === false) return;
 
-		const routeId = page.route.id;
+		const routeId = this.routeId;
 		const startTime = this.startTimesRec.get(routeId, name);
 		if (!startTime) {
 			console.warn(`No start time found for: ${routeId}:${name}`);
@@ -102,6 +102,10 @@ class TimeRecorder implements TimeLogger {
 		}
 
 		return report;
+	}
+
+	setCurrentRoute(routeId: string) {
+		this.routeId = routeId;
 	}
 }
 
