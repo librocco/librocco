@@ -136,6 +136,7 @@ CREATE TABLE book_transaction (
 	committed_at INTEGER,
 	PRIMARY KEY (isbn, note_id, warehouse_id)
 );
+SELECT crsql_as_crr('book_transaction');
 
 
 CREATE TABLE custom_item (
@@ -146,4 +147,5 @@ CREATE TABLE custom_item (
 	updated_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now') * 1000),
 	PRIMARY KEY (id, note_id)
 );
+SELECT crsql_as_crr('book_transaction');
 

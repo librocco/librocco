@@ -11,7 +11,7 @@ const server = http.createServer(app);
 
 const wsConfig = {
 	dbFolder: "./test-dbs",
-	schemaFolder: "./src/sync_server/schemas",
+	schemaFolder: "./src/lib/schemas",
 	pathPattern: /\/sync/
 };
 

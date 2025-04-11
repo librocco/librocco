@@ -17,6 +17,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -65,6 +66,7 @@
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
 
+	$: t = $LL.history_page.notes_tab.archive;
 	/**
 	 * Handle create note is an `on:click` handler used to create a new outbound note
 	 * _(and navigate to the newly created note page)_.
@@ -93,13 +95,13 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{t.committed_at()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">Export CSV</button>
+				<button class="button button-green">{t.export_csv()}</button>
 			</div>
 		</div>
 	</svelte:fragment>
@@ -126,7 +128,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if entries?.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}

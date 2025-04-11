@@ -1,11 +1,13 @@
 import { DB } from "@vlcn.io/crsqlite-wasm";
 import test, { JSHandle } from "@playwright/test";
 
-import { BookData, wrapIter } from "@librocco/shared";
+import { BookData, wrapIter, TranslationFunctions, Locales } from "@librocco/shared";
 
 import { Customer, Supplier } from "./types";
 
 import { baseURL } from "@/integration/constants";
+import { loadLocale } from "@librocco/shared/i18n-util.sync";
+import { i18nObject } from "@librocco/shared/i18n-util";
 
 import {
 	addBooksToCustomer,
@@ -210,25 +212,36 @@ type OrderTestFixture = {
 	 *  isbn: "8888", quantity: 1
 	 */
 	supplierOrders: FixtureSupplierOrder[];
+	t: TranslationFunctions;
+	locale: Locales;
 };
 
-// NOTE: In order to order to avoid circular depenedencies within fixtures, the best prectice is
-// for each fixture to depend only on the fixtures that are declared before it.
-export const testOrders = test.extend<OrderTestFixture>({
+export const testBase = test.extend({
 	page: async ({ page }, use) => {
-		// Override `goto` to wait for IndexedDB transactions before navigating
-		const originalGoto = page.goto;
-		page.goto = async function (...args) {
+		const goto = page.goto;
+
+		page.goto = async function (url, opts) {
 			// Wait for 100ms, for ongoing IndexedDB transactions to finish
 			// This is as dirty as it gets, but is a quick fix to ensure that ongoing txns (such as fixture setups)
 			// don't get interrupted on navigation - causing flaky-as-hell tests
 			await new Promise((res) => setTimeout(res, 100));
-			return originalGoto.apply(page, args);
+
+			const res = await goto.call(page, url, opts);
+
+			// https://github.com/sveltejs/kit/pull/6484
+			// * this is set in the onMount hook of the root +layout.svelte to indicate when hydration has completed
+			await page.waitForSelector('body[hydrated="true"]', { timeout: 10000 });
+
+			return res;
 		};
 
 		await use(page);
-	},
+	}
+});
 
+// NOTE: In order to order to avoid circular depenedencies within fixtures, the best prectice is
+// for each fixture to depend only on the fixtures that are declared before it.
+export const testOrders = testBase.extend<OrderTestFixture>({
 	dbHandle: async ({ page }, use) => {
 		await page.goto(baseURL);
 
@@ -348,6 +361,13 @@ export const testOrders = test.extend<OrderTestFixture>({
 		}
 
 		await use(supplierOrders);
+	},
+	t: ({ locale }, use) => {
+		loadLocale(locale);
+
+		const t = i18nObject(locale);
+
+		use(t);
 	}
 });
 

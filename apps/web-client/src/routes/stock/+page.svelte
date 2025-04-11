@@ -15,7 +15,7 @@
 	import type { PageData } from "./$types";
 	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { printBookLabel } from "$lib/printer";
 
@@ -23,7 +23,7 @@
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
-	import { settingsStore } from "$lib/stores/app";
+	import { deviceSettingsStore } from "$lib/stores/app";
 
 	import { Page, PlaceholderBox } from "$lib/components";
 
@@ -61,7 +61,9 @@
 	let maxResults = 20;
 	const resetMaxResults = () => (maxResults = 20);
 	// Reset max results when search string changes
-	$: $search.length && resetMaxResults();
+	$: if ($search.length > 0) {
+		resetMaxResults();
+	}
 	// Allow for pagination-like behaviour (rendering 20 by 20 results on see more clicks)
 	const seeMore = () => (maxResults += 20);
 	// We're using in intersection observer to create an infinite scroll effect
@@ -114,7 +116,7 @@
 	// #endregion book-form
 
 	$: handlePrintLabel = (book: BookData) => async () => {
-		await printBookLabel($settingsStore.labelPrinterUrl, book);
+		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
 	const {
@@ -201,7 +203,7 @@
 													use:trigger.action
 													class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 												>
-													<span class="sr-only">Edit row {rowIx}</span>
+													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
 														<MoreVertical />
 													</span>
@@ -216,7 +218,7 @@
 														}}
 														class="rounded p-3 text-gray-500 hover:text-gray-900"
 													>
-														<span class="sr-only">Edit row {rowIx}</span>
+														<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 														<span class="aria-hidden">
 															<FileEdit />
 														</span>
@@ -227,7 +229,7 @@
 														data-testid={testId("print-book-label")}
 														on:click={handlePrintLabel(row)}
 													>
-														<span class="sr-only">Print book label {rowIx}</span>
+														<span class="sr-only">{$LL.stock_page.labels.print_book_label()} {rowIx}</span>
 														<span class="aria-hidden">
 															<Printer />
 														</span>
@@ -246,7 +248,7 @@
 
 				<!-- Trigger for the infinite scroll intersection observer -->
 				{#if $table.rows?.length === maxResults && entries.length > maxResults}
-					<div use:scroll.trigger />
+					<div use:scroll.trigger></div>
 				{/if}
 			</div>
 		{/if}
@@ -257,8 +259,8 @@
 	</svelte:fragment>
 </Page>
 
-<div use:melt={$portalled}>
-	{#if $open}
+{#if $open}
+	<div use:melt={$portalled}>
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
 			<div
 				use:melt={$content}
@@ -272,8 +274,10 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{$LL.stock_page.labels.edit_book_details()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">
+							{$LL.stock_page.labels.manually_edit_book_details()}
+						</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />
@@ -310,5 +314,5 @@
 				</div>
 			</div>
 		</div>
-	{/if}
-</div>
+	</div>
+{/if}
