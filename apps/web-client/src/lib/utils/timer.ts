@@ -108,8 +108,8 @@ class TimeRecorder implements TimeLogger {
 export const timeLogger = new TimeRecorder();
 
 /** A util used to time a function call */
-export function timed<P extends any[], R>(cb: (...params: P) => Promise<R>): (...params: P) => Promise<R> {
-	return async (...params: P) => {
+export function timed<P extends any[], R>(cb: (...params: P) => Promise<R> | R): (...params: P) => Promise<Awaited<R>> {
+	return async (...params: P): Promise<Awaited<R>> => {
 		const name = (cb.name || "anonymous").replace(/^_+/, ""); // Remove the prefix
 		timeLogger.time(name);
 		const result = await cb(...params);

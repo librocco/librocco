@@ -7,7 +7,7 @@ import { getBookData } from "$lib/db/cr-sqlite/books";
 
 import { timed } from "$lib/utils/timer";
 
-const _load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
+const _load = async ({ params: { isbn }, parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:transactions");
 
 	const { dbCtx } = await parent();
@@ -24,4 +24,4 @@ const _load: PageLoad = async ({ params: { isbn }, parent, depends }) => {
 	return { dbCtx, transactions, bookData, stock };
 };
 
-export const load = timed(_load as any) as PageLoad;
+export const load: PageLoad = timed(_load);
