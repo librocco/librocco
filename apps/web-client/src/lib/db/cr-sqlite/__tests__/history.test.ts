@@ -69,6 +69,69 @@ describe("getPastNotes", () => {
 			})
 		]);
 	});
+
+	it("falls back to 0 for price calculation if no book data available", async () => {
+		const db = await getRandomDb();
+
+		// Set up warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1" });
+
+		// Create and commit notes
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		// NOTE: explicit SQL update -- I know, dirty, but making it easier to make assertions
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-02T10:00:00') * 1000 WHERE id = 1");
+
+		const [note] = await getPastNotes(db, "2024-01-02");
+
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				noteType: "inbound",
+				totalBooks: 5,
+				warehouseName: "Warehouse 1",
+				totalCoverPrice: 0,
+				totalDiscountedPrice: 0
+			})
+		);
+	});
+
+	// Regression test -- missing LEFT JOIN (just JOIN) on book table would ommit txns with no book data from the
+	// total books count
+	it("falls back to 0 for price calculation and shows correct book count if no book data", async () => {
+		const db = await getRandomDb();
+
+		// Set up books
+		await upsertBook(db, { isbn: "1111111111", price: 10 });
+		// NOTE: not setting 2222222222
+
+		// Set up warehouses
+		await upsertWarehouse(db, { id: 1, displayName: "Warehouse 1", discount: 20 });
+
+		// Create and commit notes
+		await createInboundNote(db, 1, 1);
+		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 5, warehouseId: 1 });
+		await commitNote(db, 1);
+
+		// NOTE: explicit SQL update -- I know, dirty, but making it easier to make assertions
+		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-02T10:00:00') * 1000 WHERE id = 1");
+
+		const [note] = await getPastNotes(db, "2024-01-02");
+
+		expect(note).toEqual(
+			expect.objectContaining({
+				id: 1,
+				noteType: "inbound",
+				totalBooks: 10,
+				warehouseName: "Warehouse 1",
+				totalCoverPrice: 50,
+				totalDiscountedPrice: 40
+			})
+		);
+	});
 });
 
 describe("getPastTransactions", async () => {
@@ -82,11 +145,14 @@ describe("getPastTransactions", async () => {
 		// Set up books
 		await upsertBook(db, { isbn: "1111111111", price: 10 });
 		await upsertBook(db, { isbn: "2222222222", price: 20 });
+		await upsertBook(db, { isbn: "4444444444", price: null });
 
 		// Create and commit notes
 		await createInboundNote(db, 1, 1);
 		await updateNote(db, 1, { displayName: "Note 1" });
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "4444444444", quantity: 4, warehouseId: 1 });
+
 		await commitNote(db, 1);
 		// This note should appear second - 10:00:00
 		await db.exec("UPDATE note SET committed_at = strftime('%s', '2024-01-01T10:00:00') * 1000 WHERE id = 1");
@@ -143,6 +209,11 @@ describe("getPastTransactions", async () => {
 				noteId: 1
 			},
 			{
+				isbn: "4444444444",
+				warehouseId: 1,
+				noteId: 1
+			},
+			{
 				isbn: "1111111111",
 				warehouseId: 1,
 				noteId: 3
@@ -180,6 +251,19 @@ describe("getPastTransactions", async () => {
 				isbn: "1111111111",
 				quantity: 5,
 				price: 10,
+				// Using any(date) as new Date(<isostring>) automatically takes the TZ into account and we don't want flakiness,
+				committedAt: expect.any(Date),
+				warehouseId: 1,
+				warehouseName: "Warehouse 1",
+				discount: 0,
+				noteId: 1,
+				noteName: "Note 1",
+				noteType: "inbound"
+			}),
+			expect.objectContaining({
+				isbn: "4444444444",
+				quantity: 4,
+				price: 0,
 				// Using any(date) as new Date(<isostring>) automatically takes the TZ into account and we don't want flakiness,
 				committedAt: expect.any(Date),
 				warehouseId: 1,

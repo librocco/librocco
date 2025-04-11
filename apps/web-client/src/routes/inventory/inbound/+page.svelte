@@ -21,6 +21,7 @@
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -75,6 +76,8 @@
 		await createOutboundNote(db, id);
 		await goto(appPath("outbound", id));
 	};
+
+	$: t = $LL.inventory_page.inbound_tab;
 </script>
 
 <InventoryManagementPage {handleCreateOutboundNote} {plugins} {handleCreateWarehouse}>
@@ -89,15 +92,11 @@
 		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")} data-loaded={true}>
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
-				<PlaceholderBox
-					title="No open notes"
-					description="Get started by adding a new note with the appropriate warehouse"
-					class="center-absolute"
-				>
+				<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute">
 					<a
 						href={appPath("warehouses")}
 						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-						><span class="text-green-50">Back to warehouses</span></a
+						><span class="text-green-50">{t.stats.back_to_warehouses()}</span></a
 					>
 				</PlaceholderBox>
 				<!-- End entity list placeholder -->
@@ -117,11 +116,11 @@
 							<div class="flex flex-col items-start gap-y-2">
 								<div class="flex gap-x-0.5">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 								{#if note.updatedAt}
 									<span class="badge badge-md badge-green">
-										Last updated: {updatedAt}
+										{t.stats.last_updated()}: {updatedAt}
 									</span>
 								{/if}
 							</div>
@@ -153,18 +152,18 @@
 		</ul>
 		<!-- End entity list contaier -->
 	{/if}
+</InventoryManagementPage>
+
+{#if $open}
+	{@const { onConfirm, title, description } = dialogContent};
 
 	<div use:melt={$portalled}>
-		{#if $open}
-			{@const { onConfirm, title, description } = dialogContent};
-
-			<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }} />
-			<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" {onConfirm}>
-					<svelte:fragment slot="title">{title}</svelte:fragment>
-					<svelte:fragment slot="description">{description}</svelte:fragment>
-				</Dialog>
-			</div>
-		{/if}
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%]">
+			<Dialog {dialog} type="delete" {onConfirm}>
+				<svelte:fragment slot="title">{title}</svelte:fragment>
+				<svelte:fragment slot="description">{description}</svelte:fragment>
+			</Dialog>
+		</div>
 	</div>
-</InventoryManagementPage>
+{/if}

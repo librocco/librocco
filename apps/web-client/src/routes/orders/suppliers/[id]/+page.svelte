@@ -160,16 +160,16 @@
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
 					<h2 class="text-lg">Assigned publishers</h2>
-					<div class="w-full rounded border border-gray-200">
-						<table class="!my-0 flex-col items-stretch overflow-hidden">
-							<thead>
+					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-y-auto">
+							<thead class="sticky top-0 left-0 right-0 bg-white shadow">
 								<tr>
 									<th scope="col" class="px-2 py-2">Publisher name</th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each assignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
+									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
@@ -185,16 +185,16 @@
 
 				<div class="w-full">
 					<h2 class="text-lg">Unassigned publishers</h2>
-					<div class="w-full rounded border border-gray-200">
-						<table class="!my-0 flex-col items-stretch overflow-hidden">
-							<thead>
+					<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+						<table class="!my-0 flex-col items-stretch overflow-y-auto">
+							<thead class="sticky top-0 left-0 right-0 bg-white shadow">
 								<tr>
 									<th scope="col" class="px-2 py-2">Publisher name</th>
 								</tr>
 							</thead>
 							<tbody>
 								{#each unassignedPublishers as publisher}
-									<tr class="hover focus-within:bg-base-200">
+									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
