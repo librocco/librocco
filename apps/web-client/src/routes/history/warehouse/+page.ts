@@ -2,7 +2,9 @@ import { getAllWarehouses } from "$lib/db/cr-sqlite/warehouse";
 
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ parent, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, depends }: Parameters<PageLoad>[0]) => {
 	depends("warehouse:list");
 	depends("warehouse:books");
 
@@ -12,3 +14,5 @@ export const load: PageLoad = async ({ parent, depends }) => {
 
 	return { dbCtx, warehouses };
 };
+
+export const load: PageLoad = timed(_load);
