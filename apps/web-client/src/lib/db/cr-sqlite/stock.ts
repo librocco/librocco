@@ -59,32 +59,32 @@ async function _getStock(
 	const filterValues = [];
 
 	if (searchString) {
-		filterClauses.push(`(bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)`);
+		filterClauses.push(`(s.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)`);
 		filterValues.push(`%${searchString}%`, `%${searchString}%`, `%${searchString}%`); // One value for each ?
 	}
 
 	if (entries?.length) {
-		filterClauses.push(`(bt.isbn, bt.warehouse_id) IN (${entries.map(() => "(?, ?)").join(", ")})`);
+		filterClauses.push(`(s.isbn, s.warehouse_id) IN (${entries.map(() => "(?, ?)").join(", ")})`);
 		filterValues.push(...entries.flatMap(({ isbn, warehouseId }) => [isbn, warehouseId]));
 	}
 
 	if (isbns?.length) {
-		filterClauses.push(`bt.isbn IN (${isbns.map(() => "?").join(", ")})`);
+		filterClauses.push(`s.isbn IN (${isbns.map(() => "?").join(", ")})`);
 		filterValues.push(...isbns);
 	}
 
 	if (warehouseId) {
-		filterClauses.push(`bt.warehouse_id = ?`);
+		filterClauses.push(`s.warehouse_id = ?`);
 		filterValues.push(warehouseId);
 	}
 
-	const whereClause = ["WHERE n.committed = 1", ...filterClauses].join(" AND ");
+	const whereClause = ["WHERE s.quantity != 0", ...filterClauses].join(" AND ");
 
 	const query = `
 		SELECT
-			bt.isbn,
-			SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) AS quantity,
-			bt.warehouse_id AS warehouseId,
+			s.isbn,
+			s.quantity,
+			s.warehouse_id AS warehouseId,
 			COALESCE(w.display_name, w.id) AS warehouseName,
 			COALESCE(w.discount, 0) AS warehouseDiscount,
 			COALESCE(b.title, 'N/A') AS title,
@@ -95,14 +95,11 @@ async function _getStock(
 			COALESCE(b.edited_by, '') AS editedBy,
 			b.out_of_print,
 			COALESCE(b.category, '') AS category
-		FROM book_transaction bt
-		JOIN note n ON bt.note_id = n.id
-		LEFT JOIN book b ON bt.isbn = b.isbn
-		LEFT JOIN warehouse w ON bt.warehouse_id = w.id
+		FROM book_stock s
+		LEFT JOIN warehouse w ON s.warehouse_id = w.id
+		LEFT JOIN book b ON s.isbn = b.isbn
 		${whereClause}
-		GROUP BY bt.isbn, bt.warehouse_id
-		HAVING SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) != 0
-		ORDER BY bt.isbn, bt.warehouse_id
+		ORDER BY s.isbn, s.warehouse_id
 	`;
 
 	const res = await db.execO<Omit<GetStockResponseItem, "outOfPrint"> & { out_of_print: number }>(query, filterValues);
