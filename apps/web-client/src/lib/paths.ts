@@ -6,6 +6,7 @@ const PATHS = {
 	debug: `${basepath}/debug`,
 	// Inventory mgmt
 	stock: `${basepath}/stock/`,
+	books: `${basepath}/books/`,
 	warehouses: `${basepath}/inventory/warehouses/`,
 	inventory: `${basepath}/inventory/`,
 	inbound: `${basepath}/inventory/inbound/`,
