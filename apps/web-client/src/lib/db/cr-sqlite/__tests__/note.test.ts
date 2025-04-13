@@ -359,9 +359,14 @@ describe("Inbound note tests", () => {
 		await createInboundNote(db, 1, 1);
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "3333333333", quantity: 3, warehouseId: 1 });
+
+		await removeNoteTxn(db, 1, { isbn: "3333333333", warehouseId: 1 });
+
+		await updateNoteTxn(db, 1, { isbn: "2222222222", warehouseId: 1 }, { quantity: 4, warehouseId: 1 });
 
 		expect(await getActiveInboundNotes(db)).toEqual([
-			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 5 }
+			{ id: 1, displayName: "New Note", warehouseName: "Warehouse 1", updatedAt: expect.any(Date), totalBooks: 6 }
 		]);
 	});
 });
@@ -823,8 +828,13 @@ describe("Outbound note tests", () => {
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 2, warehouseId: 1 });
 		await addVolumesToNote(db, 1, { isbn: "1111111111", quantity: 5, warehouseId: 2 });
 		await addVolumesToNote(db, 1, { isbn: "2222222222", quantity: 3, warehouseId: 1 });
+		await addVolumesToNote(db, 1, { isbn: "3333333333", quantity: 3, warehouseId: 1 });
 
-		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 10 }]);
+		await removeNoteTxn(db, 1, { isbn: "3333333333", warehouseId: 1 });
+
+		await updateNoteTxn(db, 1, { isbn: "2222222222", warehouseId: 1 }, { quantity: 4, warehouseId: 1 });
+
+		expect(await getActiveOutboundNotes(db)).toEqual([{ id: 1, displayName: "New Note", updatedAt: expect.any(Date), totalBooks: 11 }]);
 	});
 });
 
