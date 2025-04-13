@@ -3,6 +3,7 @@ import type { BaseTranslation } from "../i18n-types.js";
 const nav = {
 	// Inventory mgmt
 	search: "Search stock",
+	books: "View known books",
 	inventory: "Manage inventory",
 	outbound: "Outbound",
 	inbound: "Inbound",
