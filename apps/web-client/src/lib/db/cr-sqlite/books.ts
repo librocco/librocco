@@ -116,7 +116,7 @@ async function _searchBooks(
 	const filterValues = [];
 
 	if (searchString) {
-		filterClauses.push(`(bt.isbn LIKE ? OR b.title LIKE ? OR b.authors LIKE ?)`);
+		filterClauses.push(`(isbn LIKE ? OR title LIKE ? OR authors LIKE ?)`);
 		filterValues.push(`%${searchString}%`, `%${searchString}%`, `%${searchString}%`); // One value for each ?
 	}
 
