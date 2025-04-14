@@ -22,7 +22,7 @@ import { getDB } from "$lib/db/cr-sqlite";
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
 
-export const load: LayoutLoad = async ({ url, route }) => {
+export const load: LayoutLoad = async ({ url }) => {
 	const { pathname } = url;
 
 	if (redirectPaths.includes(pathname)) {
