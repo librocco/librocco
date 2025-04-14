@@ -9,7 +9,9 @@ import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
 
 import { syncConfig } from "$lib/db";
 
-export const load: PageLoad = async () => {
+import { timed } from "$lib/utils/timer";
+
+const _load: PageLoad = async () => {
 	const deviceSettingsData = get(deviceSettingsStore);
 	const deviceSettingsForm = await superValidate(deviceSettingsData, zod(deviceSettingsSchema));
 
@@ -18,3 +20,5 @@ export const load: PageLoad = async () => {
 
 	return { deviceSettingsForm, syncSettingsForm };
 };
+
+export const load = timed(_load as any) as PageLoad;

@@ -20,6 +20,8 @@
 
 import type { DB, GetStockResponseItem } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 /**
  * Parameters for filtering stock queries
  */
@@ -49,7 +51,7 @@ type GetStockParams = {
  *   - warehouseName: Human readable warehouse name
  *   - Book metadata: title, price, year, authors, etc
  */
-export async function getStock(
+async function _getStock(
 	db: DB,
 	{ searchString = "", entries = [], isbns = [], warehouseId }: GetStockParams = {}
 ): Promise<GetStockResponseItem[]> {
@@ -106,3 +108,4 @@ export async function getStock(
 	const res = await db.execO<Omit<GetStockResponseItem, "outOfPrint"> & { out_of_print: number }>(query, filterValues);
 	return res.map(({ out_of_print, ...rest }) => ({ outOfPrint: !!out_of_print, ...rest }));
 }
+export const getStock = timed(_getStock);
