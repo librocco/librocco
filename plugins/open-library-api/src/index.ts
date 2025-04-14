@@ -15,22 +15,28 @@ export function createOpenLibraryApiPlugin(): BookFetcherPlugin {
 
 type OLBookEntry = {
 	title?: string;
-	author_name?: string[];
+	author?: string[];
 	publishers?: string[];
 	publish_date?: string[];
 };
-
-type OLBooksRes = {
-	docs?: OLBookEntry[];
-};
-
+type BookEntryWithAuthors = OLBookEntry & { authors?: { key: string }[] };
 async function fetchBook(isbn: string): Promise<OLBookEntry> {
 	const url = new URL(baseurl(isbn));
 
-	const { docs = [] } = await fetch(url).then((r) => r.json() as OLBooksRes);
-	const [olBookData] = docs;
+	const res = await fetch(url, { redirect: "follow" }).then((r) => r.json() as BookEntryWithAuthors);
+	let author_res;
+	const author = [];
 
-	return olBookData;
+	if (res.authors?.length) {
+		for (const { key } of res.authors) {
+			console.log(key);
+			author_res = await fetch(`https://openlibrary.org${key}.json`).then((r) => r.json());
+			author.push(author_res.name);
+		}
+
+		res.author = author;
+	}
+	return res;
 }
 
 function processResponse(isbn: string) {
@@ -41,13 +47,13 @@ function processResponse(isbn: string) {
 
 		const res: BookData = { isbn };
 
-		const { title, author_name: _authors, publishers, publish_date } = olBook;
-		const authors = _authors?.join(", ");
+		const { title, author, publishers, publish_date } = olBook;
+		const joined_authors = author?.join(", ");
 		const joined_publishers = publishers?.join(", "); // join or first element?
 		const year = publish_date?.[0] || "";
 
 		if (title) res.title = title;
-		if (authors) res.authors = authors;
+		if (author) res.authors = joined_authors;
 		if (joined_publishers) res.publisher = joined_publishers;
 		if (year) res.year = year;
 
