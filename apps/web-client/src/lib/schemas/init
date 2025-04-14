@@ -210,7 +210,6 @@ CREATE TABLE book_stock (
 	quantity INTEGER NOT NULL DEFAULT 0,
 	PRIMARY KEY (warehouse_id, isbn)
 );
-SELECT crsql_as_crr('book_stock');
 
 -- Each time a note is committed, this trigger recalculates the stock for each (warehouse, isbn) entry
 CREATE TRIGGER trg_commit_note_update_stock

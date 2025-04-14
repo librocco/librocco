@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 
-import { getRandomDb } from "./lib";
+import { getRandomDb, syncDBs } from "./lib";
 
 import { upsertWarehouse, getAllWarehouses, getWarehouseById, getWarehouseIdSeq, deleteWarehouse } from "../warehouse";
 import { addVolumesToNote, createAndCommitReconciliationNote, createInboundNote, createOutboundNote, commitNote } from "../note";
@@ -186,5 +186,53 @@ describe("Warehouse tests", () => {
 		await upsertWarehouse(db, { id: await getWarehouseIdSeq(db) });
 
 		expect(await getAllWarehouses(db)).toEqual([expect.objectContaining({ id: 1 }), expect.objectContaining({ id: 2 })]);
+	});
+});
+
+describe("sync", () => {
+	it("keeps the stock consistent while syncing", async () => {
+		const [db1, db2] = await Promise.all([getRandomDb(), getRandomDb()]);
+
+		// Setup: create and sync a warehouse
+		await upsertWarehouse(db1, { id: 1, displayName: "Warehouse A" });
+
+		await syncDBs(db1, db2);
+		await syncDBs(db2, db1);
+
+		expect(await getAllWarehouses(db1)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A" })]);
+		expect(await getAllWarehouses(db2)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A" })]);
+
+		// db1 -> db2: Create a note -> sync -> commit -> sync commit
+		await createInboundNote(db1, 1, 1);
+		await addVolumesToNote(db1, 1, { isbn: "1111111111", quantity: 10, warehouseId: 1 });
+		await syncDBs(db1, db2);
+		// Commit
+		await commitNote(db1, 1);
+		await syncDBs(db1, db2);
+
+		expect(await getAllWarehouses(db1)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 10 })]);
+		expect(await getAllWarehouses(db2)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 10 })]);
+
+		// db2 -> db1: Create a note -> commit -> sync committed
+		await createInboundNote(db2, 1, 2);
+		await addVolumesToNote(db2, 2, { isbn: "2222222222", quantity: 20, warehouseId: 1 });
+		await commitNote(db2, 2);
+		await syncDBs(db2, db1);
+
+		expect(await getAllWarehouses(db1)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 30 })]);
+		expect(await getAllWarehouses(db2)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 30 })]);
+
+		// db1 -> db2: Create + commit (reconciliation note + outbound note) -> sync
+		await createAndCommitReconciliationNote(db1, 3, [{ isbn: "1111111111", quantity: 5, warehouseId: 1 }]);
+		await createOutboundNote(db1, 4);
+		await addVolumesToNote(db1, 4, { isbn: "1111111111", quantity: 15, warehouseId: 1 });
+		await addVolumesToNote(db1, 4, { isbn: "2222222222", quantity: 15, warehouseId: 1 });
+		await commitNote(db1, 4);
+		await syncDBs(db1, db2);
+
+		expect(await getAllWarehouses(db1)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 5 })]);
+		expect(await getAllWarehouses(db2)).toEqual([expect.objectContaining({ id: 1, displayName: "Warehouse A", totalBooks: 5 })]);
+
+		// I could go on...but I think this does it...
 	});
 });
