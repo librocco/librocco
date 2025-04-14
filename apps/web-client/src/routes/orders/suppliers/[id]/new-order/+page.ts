@@ -7,7 +7,9 @@ import { base } from "$app/paths";
 import type { PossibleSupplierOrderLine } from "$lib/db/cr-sqlite/types";
 import type { PageLoad } from "./$types";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("books:data");
 	depends("suppliers:data");
 	depends("customers:order_lines");
@@ -31,3 +33,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 };
 
 export const ssr = false;
+
+export const load: PageLoad = timed(_load);

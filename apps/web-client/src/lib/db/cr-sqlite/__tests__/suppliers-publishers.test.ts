@@ -215,6 +215,18 @@ describe("Publisher associations:", () => {
 			const publishers = await getPublishersFor(db, supplier1.id);
 			expect(publishers).toEqual([]);
 		});
+		it("return array for assigned publishers for all suppliers", async () => {
+			const db = await getRandomDb();
+			await upsertSupplier(db, supplier1);
+
+			// Associate multiple publishers
+			await associatePublisher(db, supplier1.id, publisher1);
+			await associatePublisher(db, supplier1.id, publisher2);
+			await associatePublisher(db, supplier1.id, publisher3);
+
+			const publishers = await getPublishersFor(db);
+			expect(publishers).toEqual([publisher1, publisher2, publisher3]);
+		});
 
 		it("return empty array for non-existent supplier", async () => {
 			const db = await getRandomDb();
