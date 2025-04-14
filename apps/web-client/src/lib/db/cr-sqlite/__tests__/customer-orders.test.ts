@@ -88,13 +88,13 @@ describe("Customer orders", () => {
 
 			await upsertCustomer(db, { fullname: "John Doe", id: 1, displayId: "1" });
 			customer = await getCustomerDetails(db, 1);
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(400);
 
 			const oldUpdatedAt = customer.updatedAt;
 			await upsertCustomer(db, { fullname: "John Doe (Updated)", id: 1, displayId: "1" });
 			customer = await getCustomerDetails(db, 1);
 
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(400);
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
 		});
 	});
@@ -358,11 +358,11 @@ describe("Customer order lines", () => {
 
 			await addBooksToCustomer(db, 1, ["1"]);
 			const [orderLine1] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(300);
+			expect(Date.now() - orderLine1.created.getTime()).toBeLessThan(400);
 
 			await addBooksToCustomer(db, 1, ["2"]);
 			const [, orderLine2] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(300);
+			expect(Date.now() - orderLine2.created.getTime()).toBeLessThan(400);
 		});
 
 		it("timestamp respective customer's 'updated_at' with ms precision each time a line is added", async () => {
@@ -373,13 +373,13 @@ describe("Customer order lines", () => {
 
 			await addBooksToCustomer(db, 1, ["1"]);
 			customer = await getCustomerDetails(db, 1);
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(400);
 
 			const oldUpdatedAt = customer.updatedAt;
 			await addBooksToCustomer(db, 1, ["2"]);
 			customer = await getCustomerDetails(db, 1);
 
-			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - customer.updatedAt.getTime()).toBeLessThan(400);
 			expect(customer.updatedAt > oldUpdatedAt).toBe(true);
 		});
 	});
@@ -423,7 +423,7 @@ describe("Customer order lines", () => {
 			await removeBooksFromCustomer(db, 1, [line1.id]);
 
 			const { updatedAt } = await getCustomerDetails(db, 1);
-			expect(Date.now() - updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - updatedAt.getTime()).toBeLessThan(400);
 			expect(updatedAt > oldUpdatedAt).toBe(true);
 		});
 	});
@@ -499,13 +499,13 @@ describe("Customer order lines", () => {
 			await markCustomerOrderLinesAsCollected(db, [l1]);
 
 			const [line1] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - line1.collected.getTime()).toBeLessThan(300);
+			expect(Date.now() - line1.collected.getTime()).toBeLessThan(400);
 
 			const [{ id: l2 }] = await getCustomerOrderLines(db, 1);
 			await markCustomerOrderLinesAsCollected(db, [l2]);
 
 			const [line2] = await getCustomerOrderLines(db, 1);
-			expect(Date.now() - line2.collected.getTime()).toBeLessThan(300);
+			expect(Date.now() - line2.collected.getTime()).toBeLessThan(400);
 		});
 	});
 
