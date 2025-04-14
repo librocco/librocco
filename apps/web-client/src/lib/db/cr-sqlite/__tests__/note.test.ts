@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 
 import type { DB, OutOfStockTransaction } from "../types";
 
-import { getRandomDb } from "./lib";
+import { getRandomDb, syncDBs } from "./lib";
 import { NoWarehouseSelectedError, OutOfStockError } from "../errors";
 
 import {
@@ -1447,5 +1447,62 @@ describe("Misc note tests", () => {
 		]);
 
 		expect(await getActiveOutboundNotes(db)).toEqual([expect.objectContaining({ id: 3 })]);
+	});
+});
+
+describe("sync", () => {
+	it("keeps the note total_books consistent while syncing", async () => {
+		const [db1, db2] = await Promise.all([getRandomDb(), getRandomDb()]);
+
+		// Creaate a note and sync it to the other db
+		await createOutboundNote(db1, 1);
+
+		await syncDBs(db1, db2);
+
+		expect(await getActiveOutboundNotes(db1)).toHaveLength(1);
+		expect(await getActiveOutboundNotes(db2)).toHaveLength(1);
+
+		// Insert db1 -> db2
+		await addVolumesToNote(db1, 1, { isbn: "1111111111", quantity: 1, warehouseId: 1 });
+		await addVolumesToNote(db1, 1, { isbn: "2222222222", quantity: 1, warehouseId: 1 });
+		await syncDBs(db1, db2);
+
+		expect(await getNoteEntries(db1, 1)).toEqual([
+			expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 }),
+			expect.objectContaining({ isbn: "1111111111", quantity: 1, warehouseId: 1 })
+		]);
+		expect(await getNoteEntries(db2, 1)).toEqual([
+			expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 }),
+			expect.objectContaining({ isbn: "1111111111", quantity: 1, warehouseId: 1 })
+		]);
+
+		expect(await getActiveOutboundNotes(db1)).toEqual([expect.objectContaining({ id: 1, totalBooks: 2 })]);
+		expect(await getActiveOutboundNotes(db2)).toEqual([expect.objectContaining({ id: 1, totalBooks: 2 })]);
+
+		// Update db2 -> db1
+		await addVolumesToNote(db2, 1, { isbn: "1111111111", quantity: 1, warehouseId: 1 });
+		await syncDBs(db2, db1);
+
+		expect(await getNoteEntries(db1, 1)).toEqual([
+			expect.objectContaining({ isbn: "1111111111", quantity: 2, warehouseId: 1 }),
+			expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 })
+		]);
+		expect(await getNoteEntries(db2, 1)).toEqual([
+			expect.objectContaining({ isbn: "1111111111", quantity: 2, warehouseId: 1 }),
+			expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 })
+		]);
+
+		expect(await getActiveOutboundNotes(db1)).toEqual([expect.objectContaining({ id: 1, totalBooks: 3 })]);
+		expect(await getActiveOutboundNotes(db2)).toEqual([expect.objectContaining({ id: 1, totalBooks: 3 })]);
+
+		// Remove db1 -> db2
+		await removeNoteTxn(db1, 1, { isbn: "1111111111", warehouseId: 1 });
+		await syncDBs(db1, db2);
+
+		expect(await getNoteEntries(db1, 1)).toEqual([expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 })]);
+		expect(await getNoteEntries(db2, 1)).toEqual([expect.objectContaining({ isbn: "2222222222", quantity: 1, warehouseId: 1 })]);
+
+		expect(await getActiveOutboundNotes(db1)).toEqual([expect.objectContaining({ id: 1, totalBooks: 1 })]);
+		expect(await getActiveOutboundNotes(db2)).toEqual([expect.objectContaining({ id: 1, totalBooks: 1 })]);
 	});
 });

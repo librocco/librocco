@@ -141,9 +141,10 @@ async function _getActiveInboundNotes(db: DB): Promise<InboundNoteListItem[]> {
 			note.display_name AS displayName,
 			warehouse.display_name AS warehouseName,
 			note.updated_at,
-			COALESCE(note.total_books, 0) AS totalBooks
+			COALESCE(ntb.total_books, 0) AS totalBooks
 		FROM note
 		INNER JOIN warehouse ON note.warehouse_id = warehouse.id
+		LEFT JOIN note_total_books ntb ON note.id = ntb.note_id
 		WHERE note.committed = 0
 		ORDER BY note.updated_at DESC
 	`;
@@ -167,8 +168,9 @@ async function _getActiveOutboundNotes(db: DB): Promise<OutboundNoteListItem[]> 
 			note.id,
 			note.display_name AS displayName,
 			note.updated_at,
-			COALESCE(note.total_books, 0) AS totalBooks
+			COALESCE(ntb.total_books, 0) AS totalBooks
 		FROM note
+		LEFT JOIN note_total_books ntb ON note.id = ntb.note_id
 		WHERE note.warehouse_id IS NULL
 		AND note.committed = 0
 		ORDER BY note.updated_at DESC

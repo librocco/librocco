@@ -149,7 +149,6 @@ CREATE TABLE note (
 	updated_at INTEGER DEFAULT (strftime('%s', 'now') * 1000),
 	committed INTEGER NOT NULL DEFAULT 0,
 	committed_at INTEGER,
-	total_books INTEGER DEFAULT 0,
 	PRIMARY KEY (id)
 	-- FOREIGN KEY (warehouse_id) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL,
 	-- FOREIGN KEY (default_warehouse) REFERENCES warehouse(id) ON UPDATE CASCADE ON DELETE SET NULL
@@ -157,6 +156,13 @@ CREATE TABLE note (
 CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
 CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
 SELECT crsql_as_crr('note');
+
+CREATE TABLE note_total_books(
+	note_id INTEGER NOT NULL,
+	total_books INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY (note_id)
+);
+-- NOTE: no crsql_as_crr as we don't want to sync this table
 
 CREATE TABLE book_transaction (
 	isbn TEXT NOT NULL,
@@ -178,25 +184,24 @@ SELECT crsql_as_crr('book_transaction');
 CREATE TRIGGER trg_insert_txn_update_note_total
 AFTER INSERT ON book_transaction
 BEGIN
-  UPDATE note
-  SET total_books = total_books + NEW.quantity
-  WHERE id = NEW.note_id;
+  INSERT INTO note_total_books (note_id, total_books) VALUES (NEW.note_id, NEW.quantity)
+  ON CONFLICT (note_id) DO UPDATE SET total_books = note_total_books.total_books + NEW.quantity;
 END;
 
 CREATE TRIGGER trg_update_txn_update_note_total
 AFTER UPDATE OF quantity ON book_transaction
 BEGIN
-  UPDATE note
+  UPDATE note_total_books
   SET total_books = total_books + NEW.quantity - OLD.quantity
-  WHERE id = NEW.note_id;
+  WHERE note_id = NEW.note_id;
 END;
 
 CREATE TRIGGER trg_remove_txn_update_note_total
 AFTER DELETE ON book_transaction
 BEGIN
-  UPDATE note
+  UPDATE note_total_books
   SET total_books = total_books - OLD.quantity
-  WHERE id = OLD.note_id;
+  WHERE note_id = OLD.note_id;
 END;
 
 CREATE TABLE book_stock (
