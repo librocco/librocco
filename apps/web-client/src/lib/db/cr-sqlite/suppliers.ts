@@ -129,11 +129,12 @@ async function _upsertSupplier(db: DB, supplier: Supplier) {
  * @param supplierId - The id of the supplier
  * @returns Promise resolving to an array of publisher ids
  */
-async function _getPublishersFor(db: DB, supplierId: number): Promise<string[]> {
+async function _getPublishersFor(db: DB, supplierId?: number): Promise<string[]> {
+	const whereCondition = supplierId ? `WHERE supplier_id = ?` : "";
 	const stmt = await db.prepare(
 		`SELECT publisher
 		FROM supplier_publisher
-		WHERE supplier_id = ?
+		${whereCondition}
 		ORDER BY publisher ASC;`
 	);
 
