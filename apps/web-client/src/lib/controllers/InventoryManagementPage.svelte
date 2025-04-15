@@ -31,26 +31,27 @@
 </script>
 
 <Page title={activeTab.label} view="inventory" {db} {plugins}>
-	<div slot="main" class="flex flex-col">
-		<div class="flex w-full items-center justify-end">
-			<button on:click={handleCreateWarehouse} class="btn btn-primary">
+	<div slot="main" class="flex h-full flex-col gap-y-4">
+		<div class="flex w-full items-center justify-end p-4">
+			<button on:click={handleCreateWarehouse} class="btn btn-primary btn-sm">
 				<Plus size={20} aria-hidden />
-				<span class="button-text">New warehouse</span>
+				New warehouse
 			</button>
 		</div>
 
 		<div class="flex h-full w-full flex-col">
-			<div class="flex gap-x-8 border-b border-gray-300 px-6">
+			<div class="tabs tabs-bordered w-full" role="tablist">
 				{#each tabs as { label, icon, href }}
 					{@const active = $page.url.pathname.startsWith(href)}
-					<svelte:element
-						this={active ? "div" : "a"}
-						class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
-						{href}
-					>
+
+					<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}" role="tab">
 						<svelte:component this={icon} size={20} />
 						<span class="text-sm font-medium leading-5">{label}</span>
-					</svelte:element>
+					</a>
+					<!-- <a
+							class="btn btn- flex gap-x-2 border-b py-4 {active ? 'border-primary text-primary select-none' : 'text-base-content'}"
+							{href}
+						> -->
 				{/each}
 			</div>
 

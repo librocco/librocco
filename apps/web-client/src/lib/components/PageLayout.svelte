@@ -17,11 +17,11 @@
 			<h1 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h1>
 			<!-- TODO: add strings to dicts -->
 			<div class="flex gap-x-2 p-4">
-				<button class="btn-seconday btn-sm btn lg:hidden" on:click={handleSearch}>
+				<button class="btn-seconday btn-sm btn max-xs:hidden lg:hidden" on:click={handleSearch}>
 					<Search size={18} />
 					Stock
 				</button>
-				<button class="btn-primary btn-sm btn" on:click={handleCreateOutboundNote}>
+				<button class="btn-primary btn-sm btn btn-outline" on:click={handleCreateOutboundNote}>
 					<ScanBarcode size={18} />
 					Checkout
 				</button>
