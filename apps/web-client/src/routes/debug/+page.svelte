@@ -282,7 +282,7 @@
 </script>
 
 <div id="content" class="h-full w-full overflow-y-auto">
-	<header class="border-base-content flex h-16 items-center justify-between border-b">
+	<header class="flex h-16 items-center justify-between border-b border-base-content">
 		<h2 class="pl-[70px] text-lg font-medium lg:pl-5">Debug</h2>
 	</header>
 
@@ -310,7 +310,7 @@
 				<div class="mr-5 flex flex-col py-2">
 					<textarea bind:value={query} id="query"></textarea>
 
-					<button class="btn btn-primary" on:click={executeQuery} disabled={isLoading}>
+					<button class="btn-primary btn" on:click={executeQuery} disabled={isLoading}>
 						<Play size={20} />
 						{isLoading ? "Executing..." : "Run Query"}
 					</button>

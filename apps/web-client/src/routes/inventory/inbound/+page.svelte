@@ -12,7 +12,6 @@
 
 	import { PlaceholderBox, Dialog } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
@@ -21,11 +20,19 @@
 	import { deleteNote } from "$lib/db/cr-sqlite/note";
 	import { getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
+	interface DialogContent {
+		onConfirm: (closeDialog: () => void) => void;
+		title: string;
+		description: string;
+	}
 
 	$: ({ notes, plugins } = data);
 	$: db = data.dbCtx?.db;
+
+	$: t = $LL.inventory_page.inbound_tab;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -76,15 +83,11 @@
 		<ul class={testId("entity-list-container")} data-view={entityListView("inbound-list")}>
 			{#if !notes.length}
 				<!-- Start entity list placeholder -->
-				<PlaceholderBox
-					title="No open notes"
-					description="Get started by adding a new note with the appropriate warehouse"
-					class="center-absolute"
-				>
+				<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute">
 					<a
 						href={appPath("warehouses")}
 						class="mx-auto inline-block items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-						><span class="text-green-50">Back to warehouses</span></a
+						><span class="text-green-50">{t.stats.back_to_warehouses()}</span></a
 					>
 				</PlaceholderBox>
 				<!-- End entity list placeholder -->
@@ -97,18 +100,18 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col items-start gap-y-2">
 								<div class="flex gap-x-0.5">
 									<Library class="mr-1 text-gray-700" size={24} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 								{#if note.updatedAt}
 									<span class="badge badge-md badge-green">
-										Last updated: {updatedAt}
+										{t.stats.last_updated()}: {updatedAt}
 									</span>
 								{/if}
 							</div>
@@ -123,8 +126,8 @@
 								on:m-click={() => {
 									dialogContent = {
 										onConfirm: handleDeleteNote(note.id),
-										title: dialogTitle.delete(note.displayName),
-										description: dialogDescription.deleteNote()
+										title: $LL.common.delete_dialog.title({ entity: note.displayName }),
+										description: $LL.common.delete_dialog.description()
 									};
 								}}
 							>

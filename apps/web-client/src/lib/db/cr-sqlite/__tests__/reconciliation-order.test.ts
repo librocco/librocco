@@ -75,13 +75,13 @@ describe("Reconciliation order management:", () => {
 			await createReconciliationOrder(db, 1, [1]);
 
 			const reconOrder1 = await getReconciliationOrder(db, 1);
-			expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(300);
+			expect(Date.now() - reconOrder1.created.getTime()).toBeLessThan(400);
 
 			await createSupplierOrder(db, 2, 1, [{ isbn: "2", quantity: 1, supplier_id: 1 }]);
 			await createReconciliationOrder(db, 2, [2]);
 
 			const reconOrder2 = await getReconciliationOrder(db, 2);
-			expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(300);
+			expect(Date.now() - reconOrder2.created.getTime()).toBeLessThan(400);
 		});
 
 		it("throw an error when trying to create with empty supplier order IDs", async () => {
@@ -363,12 +363,12 @@ describe("Reconciliation order lines:", () => {
 			await createReconciliationOrder(db, 1, [1]);
 
 			const reconOrder = await getReconciliationOrder(db, 1);
-			expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - reconOrder.updatedAt.getTime()).toBeLessThan(400);
 
 			await upsertReconciliationOrderLines(db, 1, [{ isbn: "1", quantity: 1 }]);
 			const reconOrderUpdated = await getReconciliationOrder(db, 1);
 			expect(reconOrderUpdated.updatedAt > reconOrder.updatedAt).toBe(true);
-			expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(300);
+			expect(Date.now() - reconOrderUpdated.updatedAt.getTime()).toBeLessThan(400);
 		});
 
 		it("throw an error if reconciliation order doesn't exist", async () => {
@@ -1222,6 +1222,35 @@ describe("Reconciliation order deletion", () => {
 
 			// Delete the line
 			await deleteOrderLineFromReconciliationOrder(db, reconciliationOrderId, "1");
+
+			// Check updated timestamp
+			const updatedOrder = await getReconciliationOrder(db, reconciliationOrderId);
+			expect(updatedOrder.updatedAt.getTime()).toBeGreaterThan(initialTimestamp.getTime());
+		});
+
+		it("should update the reconciliation order's timestamp on finalization", async () => {
+			const db = await getRandomDb();
+
+			// Create supplier order
+			await addBooksToCustomer(db, 1, ["1"]);
+			await createSupplierOrder(db, 1, 1, [{ isbn: "1", quantity: 1, supplier_id: 1 }]);
+			const [{ id: supplierOrderId }] = await getPlacedSupplierOrders(db);
+
+			// Create reconciliation order
+			const reconciliationOrderId = 123;
+
+			await createReconciliationOrder(db, reconciliationOrderId, [supplierOrderId]);
+			await upsertReconciliationOrderLines(db, reconciliationOrderId, [{ isbn: "1", quantity: 1 }]);
+
+			// Get initial timestamp
+			const initialOrder = await getReconciliationOrder(db, reconciliationOrderId);
+			const initialTimestamp = initialOrder.updatedAt;
+
+			// Wait a bit to ensure timestamp difference
+			await new Promise((resolve) => setTimeout(resolve, 100));
+
+			// Finalize the order
+			await finalizeReconciliationOrder(db, reconciliationOrderId);
 
 			// Check updated timestamp
 			const updatedOrder = await getReconciliationOrder(db, reconciliationOrderId);

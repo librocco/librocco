@@ -14,7 +14,7 @@
 		Globe
 	} from "lucide-svelte";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { appPath } from "$lib/paths";
 

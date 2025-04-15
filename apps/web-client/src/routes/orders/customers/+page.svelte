@@ -16,6 +16,7 @@
 	import type { PageData } from "./$types";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 	import type { Customer } from "$lib/db/cr-sqlite/types";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -53,6 +54,7 @@
 
 	$: filteredOrders = customerOrders.filter(({ completed }) => completed === (orderFilterStatus === "completed"));
 
+	$: t = $LL.customer_orders_page;
 	const createCustomer = async (customer: Omit<Customer, "id" | "displayId">) => {
 		/**@TODO replace randomId with incremented id */
 		// get latest/biggest id and increment by 1
@@ -71,13 +73,77 @@
 	};
 </script>
 
-<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-	<div class="flex items-center justify-between p-4">
-		<h1 class="prose text-2xl font-bold">Customer Orders</h1>
-		<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-			<Plus size={20} />
-			New Order
-		</button>
+<header class="navbar mb-4 bg-neutral">
+	<input type="checkbox" value="forest" class="theme-controller toggle" />
+</header>
+
+<main class="h-screen">
+	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+		<div class="flex items-center justify-between">
+			<h1 class="prose text-2xl font-bold">{t.title()}</h1>
+			<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+				<Plus size={20} />
+				{t.labels.new_order()}
+			</button>
+		</div>
+
+		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+			{#if !customerOrders.length}
+				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+					<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
+					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+						<Plus size={20} />
+						{t.labels.new_order()}
+					</button>
+				</div>
+			{:else}
+				<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+					<button
+						class="btn-sm btn {orderFilterStatus === 'in_progress' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("in_progress")}
+						aria-pressed={orderFilterStatus === "in_progress"}
+					>
+						{t.tabs.in_progress()}
+					</button>
+					<button
+						class="btn-sm btn {orderFilterStatus === 'completed' ? 'btn-primary' : 'btn-outline'}"
+						on:click={() => setFilter("completed")}
+						aria-pressed={orderFilterStatus === "completed"}
+						disabled={!hasCompletedOrders}
+					>
+						{t.tabs.completed()}
+					</button>
+				</div>
+				<table class="table-lg table">
+					<thead>
+						<tr>
+							<th scope="col">{t.table.customer()}</th>
+							<th scope="col">{t.table.order_id()}</th>
+							<th scope="col"> <span class="sr-only"> {t.labels.update_order()} </span></th>
+						</tr>
+					</thead>
+					<tbody>
+						{#each filteredOrders as { id, fullname, email, displayId }}
+							<tr class="hover focus-within:bg-base-200">
+								<td>
+									<dl class="flex flex-col gap-y-1">
+										<dt class="sr-only">{t.table.customer_details()}</dt>
+										<dd>{fullname}</dd>
+										<dd class="text-sm">{email ?? ""}</dd>
+									</dl>
+								</td>
+								<td>
+									<span class="font-medium">{displayId}</span>
+								</td>
+								<td class="text-right">
+									<a href="{base}/orders/customers/{id}/" class="btn-outline btn-sm btn">{t.labels.update()}</a>
+								</td>
+							</tr>
+						{/each}
+					</tbody>
+				</table>
+			{/if}
+		</div>
 	</div>
 
 	<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
@@ -137,7 +203,7 @@
 			</table>
 		{/if}
 	</div>
-</div>
+</main>
 
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
 	<CustomerOrderMetaForm

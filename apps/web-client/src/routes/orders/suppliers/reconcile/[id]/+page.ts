@@ -4,7 +4,9 @@ import type { PlacedSupplierOrderLine, ReconciliationOrder, ReconciliationOrderL
 import { getPlacedSupplierOrderLines } from "$lib/db/cr-sqlite/suppliers";
 import { getReconciliationOrder, getReconciliationOrderLines } from "$lib/db/cr-sqlite/order-reconciliation";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("reconciliationOrder:data");
 
 	const { dbCtx } = await parent();
@@ -27,3 +29,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 };
 
 export const ssr = false;
+
+export const load: PageLoad = timed(_load);

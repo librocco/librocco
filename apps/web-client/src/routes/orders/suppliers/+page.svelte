@@ -19,6 +19,7 @@
 	import { base } from "$app/paths";
 	import { Plus } from "lucide-svelte";
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -48,6 +49,8 @@
 	$: suppliersStore.set(suppliers);
 	// #endregion table
 
+	$: t = $LL.suppliers_page;
+
 	const dialog = createDialog(defaultDialogConfig);
 	const {
 		states: { open: dialogOpen }
@@ -66,13 +69,28 @@
 	};
 </script>
 
-<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-	<div class="flex items-center justify-between p-4">
-		<h1 class="prose mt-2 text-2xl font-bold">Suppliers</h1>
-		<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
-			New supplier
-			<Plus size={20} />
-		</button>
+<header class="navbar mb-4 bg-neutral">
+	<input type="checkbox" value="forest" class="theme-controller toggle" />
+</header>
+
+<main class="h-screen">
+	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+		<div class="flex items-center justify-between">
+			<h1 class="prose mt-2 text-2xl font-bold">{t.title.suppliers()}</h1>
+			<button class="btn-outline btn-sm btn gap-2" on:click={() => dialogOpen.set(true)}>
+				{t.labels.new_supplier()}
+				<Plus size={20} />
+			</button>
+		</div>
+
+		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+			<SupplierTable data={suppliersStore}>
+				<div class="flex gap-x-2" slot="row-actions" let:row>
+					<button class="btn-outline btn-sm btn">{t.table.delete()}</button>
+					<a href={appPath("suppliers", row.id)} class="btn-outline btn-sm btn">{t.table.edit()}</a>
+				</div>
+			</SupplierTable>
+		</div>
 	</div>
 
 	<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
@@ -83,7 +101,7 @@
 			</div>
 		</SupplierTable>
 	</div>
-</div>
+</main>
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm

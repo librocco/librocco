@@ -20,6 +20,7 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -32,6 +33,8 @@
 	} = data);
 
 	$: isbn = $page.params.isbn;
+
+	$: t = $LL.history_page.isbn_tab.isbn_id;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -105,7 +108,7 @@
 			<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 			<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 				<div class="border-b border-gray-300">
-					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">Stock</h2>
+					<h2 class="border-b border-gray-300 px-4 py-4 pt-8 text-xl font-semibold">{t.titles.stock()}</h2>
 
 					<div data-testid={testId("history-stock-report")} class="divide grid grid-cols-4 gap-x-24 gap-y-4 p-4">
 						{#each stock as s}
@@ -127,15 +130,13 @@
 
 				{#if !transactions?.length}
 					<!-- Start entity list placeholder -->
-					<PlaceholderBox
-						title="No transactions found"
-						description="There seems to be no record of transactions for the given isbn volumes going in or out"
-						class="center-absolute"
-					/>
+					<PlaceholderBox title={t.placeholder_box.title()} description={t.placeholder_box.description()} class="center-absolute" />
 					<!-- End entity list placeholder -->
 				{:else}
 					<div class="sticky top-0">
-						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">Transactions</h2>
+						<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
+							{$LL.history_page.isbn_tab.titles.transactions()}
+						</h2>
 					</div>
 					<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
 						{#each transactions as { quantity, noteId, noteName, noteType, committedAt, warehouseName }}

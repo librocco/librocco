@@ -15,6 +15,7 @@
 	import { searchBooks } from "$lib/db/cr-sqlite/books";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -41,6 +42,8 @@
 	// Create search element actions (and state) and bind the state to the search state of the search store
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
+
+	$: t = $LL.history_page.isbn_tab;
 	// #endregion search
 </script>
 
@@ -59,11 +62,7 @@
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			<!-- Start entity list placeholder -->
-			<PlaceholderBox
-				title="No book selected"
-				description="Use the search field to find the book you're looking for"
-				class="center-absolute"
-			/>
+			<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute" />
 			<!-- End entity list placeholder -->
 		</div>
 

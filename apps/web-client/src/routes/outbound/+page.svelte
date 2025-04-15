@@ -15,12 +15,13 @@
 	import { PlaceholderBox, Dialog } from "$lib/components";
 	import { Page } from "$lib/controllers";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -66,6 +67,7 @@
 	} = dialog;
 
 	let dialogContent: DialogContent | null = null;
+	$: tOutboundPage = $LL.outbound_page;
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
@@ -76,7 +78,7 @@
 				class="flex items-center gap-2 rounded-md border border-gray-300 bg-white py-[9px] pl-[15px] pr-[17px]"
 			>
 				<span><Plus size={20} /></span>
-				<span class="text-sm font-medium leading-5 text-gray-700">New note</span>
+				<span class="text-sm font-medium leading-5 text-gray-700">{tOutboundPage.labels.new_note()}</span>
 			</button>
 		</div>
 	</svelte:fragment>
@@ -95,7 +97,7 @@
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="No open notes" description="Get started by adding a new note" class="center-absolute">
 						<button on:click={handleCreateNote} class="mx-auto flex items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px]"
-							><span class="text-green-50">New note</span></button
+							><span class="text-green-50">{tOutboundPage.labels.new_note()}</span></button
 						>
 					</PlaceholderBox>
 					<!-- End entity list placeholder -->
@@ -107,25 +109,25 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="entity-list-row group">
+						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 								<div class="flex flex-col items-start gap-y-2">
 									<div class="flex gap-x-0.5">
 										<Library class="mr-1 text-gray-700" size={24} />
-										<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+										<span class="entity-list-text-sm text-gray-500">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span>
 									</div>
 									{#if note.updatedAt}
 										<span class="badge badge-md badge-green">
-											Last updated: {updatedAt}
+											{tOutboundPage.stats.last_updated()}: {updatedAt}
 										</span>
 									{/if}
 								</div>
 							</div>
 
 							<div class="entity-list-actions">
-								<a {href} class="button button-alert"><span class="button-text">Edit</span></a>
+								<a {href} class="button button-alert"><span class="button-text">{tOutboundPage.labels.edit()}</span></a>
 
 								<button
 									use:melt={$trigger}
@@ -134,8 +136,8 @@
 									on:m-click={() => {
 										dialogContent = {
 											onConfirm: handleDeleteNote(note.id),
-											title: dialogTitle.delete(note.displayName),
-											description: dialogDescription.deleteNote()
+											title: $LL.common.delete_dialog.title({ entity: note.displayName }),
+											description: $LL.common.delete_dialog.description()
 										};
 									}}
 								>
