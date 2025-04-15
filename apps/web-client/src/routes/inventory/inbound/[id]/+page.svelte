@@ -217,35 +217,9 @@
 </script>
 
 <Page title={displayName} view="inbound-note" {db} {plugins}>
-	<div slot="main" class="h-full w-full">
-		<div class="flex w-full p-4">
-			<QrCode size={26} />
-			<ScannerForm
-				data={defaults(zod(scannerSchema))}
-				options={{
-					SPA: true,
-					dataType: "json",
-					validators: zod(scannerSchema),
-					validationMethod: "submit-only",
-					resetForm: true,
-					onUpdated: async ({ form }) => {
-						const { isbn } = form?.data;
-						await handleAddTransaction(isbn);
-
-						if ($autoPrintLabels) {
-							try {
-								getBookData(db, isbn).then(handlePrintLabel);
-								// Success
-							} catch (err) {
-								// Show error
-							}
-						}
-					}
-				}}
-			/>
-		</div>
-		<div class="p-4">
-			<Breadcrumbs class="mb-3" links={breadcrumbs} />
+	<div slot="main" class="flex h-full w-full flex-col divide-y">
+		<div class="flex flex-col gap-y-4 px-6 py-4">
+			<Breadcrumbs links={breadcrumbs} />
 			<div class="flex w-full flex-wrap items-center justify-between gap-2">
 				<div class="flex max-w-md flex-col">
 					<TextEditable
@@ -259,14 +233,14 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge badge-md badge-primary">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+							<span class="badge-md badge primary badge-outline">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 						{/if}
 					</div>
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
 					<button
-						class="btn btn-primary xs:block hidden"
+						class="btn btn-primary btn-sm xs:block hidden"
 						use:melt={$dialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -318,16 +292,19 @@
 							use:item.action
 							on:m-click={autoPrintLabels.toggle}
 							class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
-								? '!bg-primary text-primary-content'
+								? '!bg-success text-success-content'
 								: ''}"
 						>
-							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.auto_print_book_labels()}</span>
+							<Printer class="text-base-content/70" size={20} />
+							<span class="text-base-content">
+								{tInbound.labels.auto_print_book_labels()}
+							</span>
 						</div>
 						<div
 							{...item}
 							use:item.action
 							use:melt={$dialogTrigger}
-							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
+							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -350,112 +327,139 @@
 					</DropdownWrapper>
 				</div>
 			</div>
-			{#if loading}
-				<div class="flex grow justify-center">
-					<div class="mx-auto translate-y-1/2">
-						<span class="loading loading-spinner loading-lg text-primary"></span>
-					</div>
+			<div class="flex w-full py-4">
+				<ScannerForm
+					data={defaults(zod(scannerSchema))}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(scannerSchema),
+						validationMethod: "submit-only",
+						resetForm: true,
+						onUpdated: async ({ form }) => {
+							const { isbn } = form?.data;
+							await handleAddTransaction(isbn);
+
+							if ($autoPrintLabels) {
+								try {
+									getBookData(db, isbn).then(handlePrintLabel);
+									// Success
+								} catch (err) {
+									// Show error
+								}
+							}
+						}
+					}}
+				/>
+			</div>
+		</div>
+		{#if loading}
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
 				</div>
-			{:else if !entries.length}
-				<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-					<QrCode slot="icon" let:iconProps {...iconProps} />
-				</PlaceholderBox>
-			{:else}
-				<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
-					<div>
-						<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
-							<div slot="row-actions" let:row let:rowIx>
-								<PopoverWrapper
-									options={{
-										forceVisible: true,
-										positioning: {
-											placement: "left"
-										}
-									}}
-									let:trigger
+			</div>
+		{:else if !entries.length}
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/4">
+					<!-- Start entity list placeholder -->
+					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+						<QrCode slot="icon" />
+					</PlaceholderBox>
+					<!-- End entity list placeholder -->
+				</div>
+			</div>
+		{:else}
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+				<div>
+					<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
+						<div slot="row-actions" let:row let:rowIx>
+							<PopoverWrapper
+								options={{
+									forceVisible: true,
+									positioning: {
+										placement: "left"
+									}
+								}}
+								let:trigger
+							>
+								<button
+									data-testid={testId("popover-control")}
+									{...trigger}
+									use:trigger.action
+									class="btn btn-neutral btn-sm btn-outline px-0.5"
 								>
+									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="aria-hidden">
+										<MoreVertical />
+									</span>
+								</button>
+
+								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
-										data-testid={testId("popover-control")}
-										{...trigger}
-										use:trigger.action
-										class="btn btn-neutral btn-sm btn-outline px-0.5"
+										use:melt={$dialogTrigger}
+										class="btn btn-secondary btn-sm"
+										data-testid={testId("edit-row")}
+										on:m-click={() => {
+											const { warehouseId, quantity, ...bookData } = row;
+
+											bookFormData = bookData;
+
+											dialogContent = {
+												onConfirm: () => {},
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
+												type: "edit-row"
+											};
+										}}
+										on:m-keydown={() => {
+											const { warehouseId, quantity, ...bookData } = row;
+											bookFormData = bookData;
+
+											dialogContent = {
+												onConfirm: () => {},
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
+												type: "edit-row"
+											};
+										}}
 									>
-										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
 										<span class="aria-hidden">
-											<MoreVertical />
+											<FileEdit />
 										</span>
 									</button>
 
-									<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
-										<button
-											use:melt={$dialogTrigger}
-											class="btn btn-secondary btn-sm"
-											data-testid={testId("edit-row")}
-											on:m-click={() => {
-												const { warehouseId, quantity, ...bookData } = row;
+									<button class="btn btn-secondary btn-sm" data-testid={testId("print-book-label")} on:click={() => handlePrintLabel(row)}>
+										<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
+										<span class="aria-hidden">
+											<Printer />
+										</span>
+									</button>
 
-												bookFormData = bookData;
-
-												dialogContent = {
-													onConfirm: () => {},
-													title: tCommon.edit_book_dialog.title(),
-													description: tCommon.edit_book_dialog.description(),
-													type: "edit-row"
-												};
-											}}
-											on:m-keydown={() => {
-												const { warehouseId, quantity, ...bookData } = row;
-												bookFormData = bookData;
-
-												dialogContent = {
-													onConfirm: () => {},
-													title: tCommon.edit_book_dialog.title(),
-													description: tCommon.edit_book_dialog.description(),
-													type: "edit-row"
-												};
-											}}
-										>
-											<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
-											<span class="aria-hidden">
-												<FileEdit />
-											</span>
-										</button>
-
-										<button
-											class="btn btn-secondary btn-sm"
-											data-testid={testId("print-book-label")}
-											on:click={() => handlePrintLabel(row)}
-										>
-											<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
-											<span class="aria-hidden">
-												<Printer />
-											</span>
-										</button>
-
-										<button
-											on:click={() => deleteRow(row.isbn, row.warehouseId)}
-											class="btn btn-secondary btn-sm"
-											data-testid={testId("delete-row")}
-										>
-											<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
-											<span class="aria-hidden">
-												<Trash2 />
-											</span>
-										</button>
-									</div>
-								</PopoverWrapper>
-							</div>
-						</InboundTable>
-					</div>
-
-					<!-- Trigger for the infinite scroll intersection observer -->
-					{#if entries?.length > maxResults}
-						<div use:scroll.trigger></div>
-					{/if}
+									<button
+										on:click={() => deleteRow(row.isbn, row.warehouseId)}
+										class="btn btn-secondary btn-sm"
+										data-testid={testId("delete-row")}
+									>
+										<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
+										<span class="aria-hidden">
+											<Trash2 />
+										</span>
+									</button>
+								</div>
+							</PopoverWrapper>
+						</div>
+					</InboundTable>
 				</div>
-			{/if}
-		</div>
+
+				<!-- Trigger for the infinite scroll intersection observer -->
+				{#if entries?.length > maxResults}
+					<div use:scroll.trigger></div>
+				{/if}
+			</div>
+		{/if}
 	</div>
 </Page>
 
