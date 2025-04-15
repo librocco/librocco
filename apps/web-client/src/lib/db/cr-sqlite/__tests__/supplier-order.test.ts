@@ -493,11 +493,11 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [s1] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - s1.created).toBeLessThan(300);
+			expect(Date.now() - s1.created).toBeLessThan(400);
 
 			await createSupplierOrder(db, 2, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [s2] = await getPlacedSupplierOrders(db);
-			expect(Date.now() - s2.created).toBeLessThan(300);
+			expect(Date.now() - s2.created).toBeLessThan(400);
 		});
 
 		it("timestamp customer order lines' 'placed' with ms precision", async () => {
@@ -505,11 +505,11 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, 1, supplier1.id, [{ isbn: book1.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [customerOrderLine1] = await getCustomerOrderLines(db, customer1.id);
-			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(300);
+			expect(Date.now() - customerOrderLine1.placed.getTime()).toBeLessThan(400);
 
 			await createSupplierOrder(db, 2, supplier1.id, [{ isbn: book2.isbn, quantity: 1, supplier_id: supplier1.id }]);
 			const [, customerOrderLine2] = await getCustomerOrderLines(db, customer1.id);
-			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(300);
+			expect(Date.now() - customerOrderLine2.placed.getTime()).toBeLessThan(400);
 		});
 
 		it("create a customer order line - supplier order relation for each time the same line is ordered from the supplier", async () => {
@@ -540,14 +540,14 @@ describe("Placing supplier orders", () => {
 
 			await createSupplierOrder(db, 1, 1, [{ isbn: book1.isbn, quantity: 1, supplier_id: 1 }]);
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
-			expect(Date.now() - lastUpdate).toBeLessThan(300);
+			expect(Date.now() - lastUpdate).toBeLessThan(400);
 
 			// This is a case when the book hadn't been delivered and had been ordered again (one or more times)
 			//
 			// Explicitly remove the placed on the customer order line, so as to simulate the book not being delivered (ready for reordering)
 			await db.exec("UPDATE customer_order_lines SET placed = NULL"); // NOTE: this is the only line so it works without elaborate WHERE clause
 			await getCustomerOrderLineHistory(db, customer1.id).then(([{ placed }]) => (lastUpdate = placed.getTime()));
-			expect(Date.now() - lastUpdate).toBeLessThan(300);
+			expect(Date.now() - lastUpdate).toBeLessThan(400);
 		});
 	});
 

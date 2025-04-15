@@ -22,10 +22,15 @@
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
 	import { timeLogger } from "$lib/utils/timer";
+	import { beforeNavigate } from "$app/navigation";
 
 	export let data: LayoutData & { status: boolean };
 
 	const { dbCtx } = data;
+
+	beforeNavigate(({ to }) => {
+		timeLogger.setCurrentRoute(to.route.id);
+	});
 
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.
