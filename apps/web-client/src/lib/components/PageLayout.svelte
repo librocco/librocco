@@ -5,6 +5,7 @@
 
 	export let view: WebClientView;
 	export let title: string;
+
 	export let handleCreateOutboundNote: (e: Event) => void;
 	export let handleSearch: (e: Event) => void;
 </script>

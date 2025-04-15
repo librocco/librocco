@@ -1,13 +1,13 @@
 <script lang="ts">
 	import { Building, Plus, CopyPlus } from "lucide-svelte";
 
-	import type { PluginsInterface } from "$lib/plugins";
-
 	import { page } from "$app/stores";
 
-	import { ExtensionAvailabilityToast, Page } from "$lib/components";
-
+	import { Page } from "$lib/controllers";
 	import { appPath } from "$lib/paths";
+
+	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [
 		{
@@ -24,14 +24,13 @@
 
 	$: activeTab = tabs.find(({ href }) => $page.url.pathname.startsWith(href));
 
+	export let db: DB;
 	export let plugins: PluginsInterface;
 
-	export let handleSearch: (e: Event) => void;
 	export let handleCreateWarehouse = () => Promise.resolve();
-	export let handleCreateOutboundNote: () => (void | Promise<void>) | undefined = undefined;
 </script>
 
-<Page title={activeTab.label} {handleCreateOutboundNote} {handleSearch} view="inventory">
+<Page title={activeTab.label} view="inventory" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-end">
 			<button on:click={handleCreateWarehouse} class="button button-white">
@@ -59,9 +58,5 @@
 
 			<slot />
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>

@@ -24,11 +24,14 @@
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 
 	import type { PageData } from "./$types";
-	import { createInboundNote, getNoteIdSeq, createOutboundNote } from "$lib/db/cr-sqlite/note";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
-	import InventoryManagementPage from "$lib/components/InventoryManagementPage.svelte";
+	import { InventoryManagementPage } from "$lib/controllers";
 
 	export let data: PageData;
+
+	$: ({ warehouses, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -47,18 +50,6 @@
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
-
-	$: warehouses = data.warehouses;
-
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
@@ -102,7 +93,7 @@
 	$: initialized = Boolean(db);
 </script>
 
-<InventoryManagementPage {handleCreateWarehouse} {handleCreateOutboundNote} {handleSearch} plugins={data.plugins}>
+<InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
 	{#if !initialized}
 		<div class="center-absolute">
 			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />

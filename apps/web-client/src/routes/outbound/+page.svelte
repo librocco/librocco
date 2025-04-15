@@ -12,7 +12,8 @@
 
 	import type { PageData } from "./$types";
 
-	import { Page, PlaceholderBox, Dialog, ExtensionAvailabilityToast } from "$lib/components";
+	import { PlaceholderBox, Dialog } from "$lib/components";
+	import { Page } from "$lib/controllers";
 
 	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
 
@@ -22,6 +23,9 @@
 	import { createOutboundNote, deleteNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
+
+	$: ({ notes, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -36,12 +40,6 @@
 		disposer?.();
 	});
 	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
-
-	$: notes = data.notes;
-
-	$: plugins = data.plugins;
 
 	let initialized = false;
 	$: initialized = Boolean(db);
@@ -61,8 +59,6 @@
 		await goto(appPath("outbound", id));
 	};
 
-	const handleSearch = async () => await goto(appPath("stock"));
-
 	const dialog = createDialog({ forceVisible: true });
 	const {
 		elements: { portalled, overlay, trigger },
@@ -72,7 +68,7 @@
 	let dialogContent: DialogContent | null = null;
 </script>
 
-<Page title="Outbound" handleCreateOutboundNote={handleCreateNote} {handleSearch} view="outbound">
+<Page title="Outbound" view="outbound" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full items-center justify-end">
 			<button
@@ -155,10 +151,6 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

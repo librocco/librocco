@@ -19,24 +19,24 @@
 
 	import { printBookLabel } from "$lib/printer";
 
-	import { ExtensionAvailabilityToast, PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
+	import { PopoverWrapper, StockTable, StockBookRow, TooltipWrapper } from "$lib/components";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
 
-	import { Page, PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox } from "$lib/components";
+	import { Page } from "$lib/controllers";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import { appPath } from "$lib/paths";
-	import { racefreeGoto } from "$lib/utils/navigation";
 
 	export let data: PageData;
-	$: db = data?.dbCtx?.db;
+
+	$: ({ publisherList, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -49,11 +49,6 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
-
-	$: publisherList = data?.publisherList;
-
-	$: plugins = data?.plugins;
 
 	const search = writable("");
 	let entries = [] as GetStockResponseItem[];
@@ -127,21 +122,9 @@
 	});
 
 	$: ({ search: tSearch } = $LL);
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title="Search" {handleCreateOutboundNote} {handleSearch} view="stock">
+<Page title="Search" view="stock" {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
@@ -250,10 +233,6 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

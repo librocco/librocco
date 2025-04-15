@@ -5,9 +5,7 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-	import HistoryPage from "$lib/components/HistoryPage.svelte";
-	import { goto } from "$lib/utils/navigation";
+	import HistoryPage from "$lib/controllers/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
 
@@ -32,28 +30,14 @@
 		disposer?.();
 	});
 
-	$: ({
-		warehouses,
-		dbCtx: { db }
-	} = data);
+	$: ({ warehouses, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	let initialised = false;
 	$: initialised = Boolean(data);
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/warehouse" {handleSearch} {handleCreateOutboundNote}>
+<HistoryPage view="history/warehouse" {db} {plugins}>
 	<svelte:fragment slot="main">
 		{#if !initialised}
 			<div class="center-absolute">

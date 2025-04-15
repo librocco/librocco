@@ -6,8 +6,8 @@
 
 	import type { PageData } from "./$types";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { PlaceholderBox } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { createSearchDropdown } from "./[isbn]/actions";
 
@@ -18,7 +18,10 @@
 
 	export let data: PageData;
 
-	$: db = data.dbCtx?.db;
+	$: ({
+		dbCtx: { db },
+		plugins
+	} = data);
 
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
@@ -39,21 +42,9 @@
 	const { input, dropdown, value, open } = createSearchDropdown({ onConfirmSelection: (isbn) => goto(appPath("history/isbn", isbn)) });
 	$: $search = $value;
 	// #endregion search
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/isbn" {handleSearch} {handleCreateOutboundNote}>
+<HistoryPage view="history/isbn" {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<!-- svelte-ignore a11y_autofocus -->
