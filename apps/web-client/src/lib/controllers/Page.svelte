@@ -5,7 +5,7 @@
 
 	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
-	import { PageLayout, ExtensionAvailabilityToast } from "$lib/components";
+	import { PageLayout, ExtensionStatusBanner } from "$lib/components";
 
 	import type { WebClientView } from "@librocco/shared";
 	import type { DB } from "$lib/db/cr-sqlite/types";
@@ -38,6 +38,6 @@
 	<slot name="main" slot="main" />
 
 	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
+		<ExtensionStatusBanner {plugins} />
 	</svelte:fragment>
 </PageLayout>
