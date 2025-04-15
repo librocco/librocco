@@ -38,14 +38,14 @@
 				<div class="label">
 					<span class="label-text">Title</span>
 				</div>
-				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input input-bordered w-full" />
+				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input-bordered input w-full" />
 			</label>
-			
+
 			<label class="form-control basis-full" id="price-field-container">
 				<span class="label">
 					<span class="label-text">Price</span>
 				</span>
-				<span class="input input-bordered flex items-center gap-2">
+				<span class="input-bordered input flex items-center gap-2">
 					<Euro class="text-base-content/50" />
 					<input bind:value={$priceProxy} name="price" placeholder="0" type="number" step="any" required class="w-1/2" />
 				</span>
@@ -53,7 +53,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn btn-primary disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

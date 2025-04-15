@@ -43,13 +43,13 @@
 				<div class="label">
 					<span class="label-text">Confirm by typing database name</span>
 				</div>
-				<input 
+				<input
 					bind:value={$formStore.confirmation}
 					name="confirm"
 					placeholder={matchConfirmation}
 					{...$constraints.confirmation}
 					autocomplete="off"
-					class="input input-bordered w-full"
+					class="input-bordered input w-full"
 				/>
 				<div class="label">
 					<span class="label-text-alt">Type '{matchConfirmation}'</span>
@@ -59,7 +59,7 @@
 		<!-- Additional dialog content end -->
 
 		<svelte:fragment slot="confirm-button">
-			<button class="btn btn-error" type="submit">
+			<button class="btn-error btn" type="submit">
 				<span>Confirm</span>
 			</button>
 		</svelte:fragment>

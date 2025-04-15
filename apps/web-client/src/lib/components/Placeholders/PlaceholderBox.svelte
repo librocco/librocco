@@ -3,7 +3,7 @@
 	export let description = "";
 </script>
 
-<div class="card card-bordered border-base-content">
+<div class="card-bordered card border-base-content">
 	<div class="card-body gap-y-4">
 		<div class="flex flex-col gap-y-2">
 			<div class="card-title flex items-center gap-x-4">

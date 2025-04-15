@@ -180,7 +180,7 @@
 													data-testid={testId("popover-control")}
 													{...trigger}
 													use:trigger.action
-													class="btn btn-neutral btn-sm btn-outline px-0.5"
+													class="btn-neutral btn-outline btn-sm btn px-0.5"
 												>
 													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
@@ -195,7 +195,7 @@
 															const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
 															bookFormData = bookData;
 														}}
-														class="btn btn-secondary btn-sm"
+														class="btn-secondary btn-sm btn"
 													>
 														<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 														<span class="aria-hidden">
@@ -204,7 +204,7 @@
 													</button>
 
 													<button
-														class="btn btn-secondary btn-sm"
+														class="btn-secondary btn-sm btn"
 														data-testid={testId("print-book-label")}
 														on:click={handlePrintLabel(row)}
 													>
@@ -219,7 +219,7 @@
 									</StockBookRow>
 								</tr>
 
-								<p slot="tooltip-content" class="badge-lg badge-secondary">{row.warehouseName}</p>
+								<p slot="tooltip-content" class="badge-secondary badge-lg">{row.warehouseName}</p>
 							</TooltipWrapper>
 						</svelte:fragment>
 					</StockTable>
@@ -239,22 +239,22 @@
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$content}
-			class="bg-base-200 divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
-				overflow-y-auto shadow-lg focus:outline-none"
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+				bg-base-200 shadow-lg focus:outline-none"
 			transition:fly|global={{
 				x: 350,
 				duration: 300,
 				opacity: 1
 			}}
 		>
-			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
 					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">
 						{$LL.stock_page.labels.manually_edit_book_details()}
 					</p>
 				</div>
-				<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
+				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
 					<X size={16} />
 				</button>
 			</div>

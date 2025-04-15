@@ -74,7 +74,7 @@
 	<div slot="main" class="flex h-full flex-col gap-y-4 divide-y">
 		<div class="flex w-full items-center">
 			<div class="flex w-full items-center justify-end p-4">
-				<button on:click={handleCreateNote} class="btn btn-primary btn-sm">
+				<button on:click={handleCreateNote} class="btn-primary btn-sm btn">
 					<Plus size={20} aria-hidden />
 					{tOutboundPage.labels.new_note()}
 				</button>
@@ -100,7 +100,7 @@
 							<!-- Start entity list placeholder -->
 							<PlaceholderBox title="No open notes" description="Get started by adding a new note">
 								<FilePlus slot="icon" />
-								<button slot="actions" on:click={handleCreateNote} class="btn btn-primary w-full">
+								<button slot="actions" on:click={handleCreateNote} class="btn-primary btn w-full">
 									{tOutboundPage.labels.new_note()}
 								</button>
 							</PlaceholderBox>
@@ -116,19 +116,19 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="entity-list-row group">
+						<div class="group entity-list-row">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 								<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
 									<div class="flex gap-x-2">
 										<Layers size={18} />
-										<span class="entity-list-text-sm text-base-content text-sm">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span
+										<span class="entity-list-text-sm text-sm text-base-content">{tOutboundPage.stats.books({ bookCount: totalBooks })}</span
 										>
 									</div>
 
 									{#if note.updatedAt}
-										<div class="text-base-content flex items-center gap-x-2 text-sm">
+										<div class="flex items-center gap-x-2 text-sm text-base-content">
 											<ClockArrowUp size={18} />
 											{tOutboundPage.stats.last_updated()}:
 											{updatedAt}
@@ -138,11 +138,11 @@
 							</div>
 
 							<div class="entity-list-actions">
-								<a {href} class="btn btn-secondary btn-outline btn-sm">{tOutboundPage.labels.edit()}</a>
+								<a {href} class="btn-secondary btn-outline btn-sm btn">{tOutboundPage.labels.edit()}</a>
 
 								<button
 									use:melt={$trigger}
-									class="btn btn-secondary btn-sm"
+									class="btn-secondary btn-sm btn"
 									aria-label="Delete note: {note.displayName}"
 									on:m-click={() => {
 										dialogContent = {

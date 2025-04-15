@@ -92,7 +92,7 @@
 						<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`}>
 							<FilePlus slot="icon" />
 
-							<a slot="actions" href={appPath("warehouses")} class="btn btn-primary w-full">
+							<a slot="actions" href={appPath("warehouses")} class="btn-primary btn w-full">
 								<span class="text-green-50">
 									{t.stats.back_to_warehouses()}
 								</span>
@@ -112,17 +112,17 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("inbound", note.id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-row gap-x-8 gap-y-2 max-sm:flex-col">
 								<div class="flex gap-x-2">
 									<Layers size={18} />
-									<span class="entity-list-text-sm text-base-content text-sm"> {t.stats.books({ no_of_books: totalBooks })}</span>
+									<span class="entity-list-text-sm text-sm text-base-content"> {t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 								{#if note.updatedAt}
-									<div class="text-base-content flex items-center gap-x-2 text-sm">
+									<div class="flex items-center gap-x-2 text-sm text-base-content">
 										<ClockArrowUp size={18} />
 										{t.stats.last_updated()}:
 										{updatedAt}
@@ -132,10 +132,10 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<a {href} class="btn btn-secondary btn-outline btn-sm">Edit</a>
+							<a {href} class="btn-secondary btn-outline btn-sm btn">Edit</a>
 							<button
 								use:melt={$trigger}
-								class="btn btn-secondary btn-sm"
+								class="btn-secondary btn-sm btn"
 								aria-label="Delete note: {note.displayName}"
 								on:m-click={() => {
 									dialogContent = {

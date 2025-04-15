@@ -110,13 +110,13 @@
 						placeholder="0000000000"
 						{...$constraints.isbn}
 						disabled
-						class="input input-bordered w-full"
+						class="input-bordered input w-full"
 					/>
 				</label>
 				<button
 					disabled={!isExtensionAvailable}
 					type="button"
-					class={["btn btn-secondary self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(" ")}
+					class={["btn-secondary btn self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(" ")}
 					on:click={() => onFetch($formStore.isbn, formStore)}
 				>
 					Fill details
@@ -127,7 +127,7 @@
 				<div class="label">
 					<span class="label-text">Title</span>
 				</div>
-				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input input-bordered w-full" />
+				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input-bordered input w-full" />
 			</label>
 
 			<div class="flex basis-full gap-x-2">
@@ -135,7 +135,7 @@
 					<span class="label">
 						<span class="label-text">Price</span>
 					</span>
-					<span class="input input-bordered flex items-center gap-2">
+					<span class="input-bordered input flex items-center gap-2">
 						<Euro class="text-base-content/50" />
 						<input bind:value={$priceProxy} name="price" placeholder="0" type="number" step="any" required class="w-1/2" />
 					</span>
@@ -145,7 +145,7 @@
 					<div class="label">
 						<span class="label-text">Year</span>
 					</div>
-					<input bind:value={$formStore.year} name="year" placeholder="" {...$constraints.year} class="input input-bordered w-full" />
+					<input bind:value={$formStore.year} name="year" placeholder="" {...$constraints.year} class="input-bordered input w-full" />
 				</label>
 			</div>
 
@@ -158,7 +158,7 @@
 					name="authors"
 					placeholder=""
 					{...$constraints.authors}
-					class="input input-bordered w-full"
+					class="input-bordered input w-full"
 				/>
 			</label>
 
@@ -167,7 +167,7 @@
 					<span class="label">
 						<span class="label-text">Publisher</span>
 					</span>
-					<span class="input input-bordered flex items-center gap-2">
+					<span class="input-bordered input flex items-center gap-2">
 						<input name="publisher" autocomplete="off" use:melt={$input} bind:value={$formStore.publisher} class="w-full" />
 						<span>
 							{#if $open}
@@ -182,12 +182,12 @@
 				{#if $open}
 					<ul
 						use:melt={$menu}
-						class="bg-base-100 absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md py-1 text-base shadow-md"
+						class="absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md bg-base-100 py-1 text-base shadow-md"
 						transition:fly|global={{ duration: 150, y: -5 }}
 					>
 						{#each $selectedStates as { publisher, isSelected, isHighlighted }}
 							<li
-								class="data-[highlighted]:bg-primary data-[highlighted]:text-primary-content text-base-content relative cursor-pointer select-none py-2 pl-10 pr-4"
+								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-base-content data-[highlighted]:bg-primary data-[highlighted]:text-primary-content"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
@@ -215,7 +215,7 @@
 					name="editedBy"
 					placeholder=""
 					{...$constraints.editedBy}
-					class="input input-bordered w-full"
+					class="input-bordered input w-full"
 				/>
 			</label>
 
@@ -228,7 +228,7 @@
 					name="category"
 					placeholder=""
 					{...$constraints.category}
-					class="input input-bordered w-full"
+					class="input-bordered input w-full"
 				/>
 			</label>
 
@@ -245,7 +245,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn btn-primary disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

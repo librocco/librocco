@@ -147,7 +147,7 @@
 		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
 			<div class="card">
 				<div class="card-body gap-y-2 p-0">
-					<div class="bg-base-100 sticky top-0 flex flex-col gap-y-2 pb-3">
+					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
 						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
 							<h2 class="prose">#{data?.reconciliationOrder.id}</h2>
 
@@ -222,7 +222,7 @@
 									on:click={async () => (!data?.reconciliationOrder.finalized ? (currentStep = step) : null)}
 								>
 									{#if isCompleted}
-										<span class="bg-primary flex shrink-0 items-center justify-center rounded-full p-1">
+										<span class="flex shrink-0 items-center justify-center rounded-full bg-primary p-1">
 											<Check aria-hidden="true" class="text-white" size={22} />
 										</span>
 									{:else}
@@ -252,8 +252,8 @@
 			<div class="relative h-full overflow-x-auto">
 				{#if currentStep === 1}
 					{#if books.length === 0}
-						<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
-							<p class="text-base-content/70 text-center">{t.placeholder.description()}</p>
+						<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+							<p class="text-center text-base-content/70">{t.placeholder.description()}</p>
 						</div>
 					{:else}
 						<div class="relative h-full overflow-x-auto">
@@ -315,7 +315,7 @@
 				{/if}
 
 				<div class="card fixed bottom-4 left-0 z-10 flex w-screen flex-row bg-transparent md:absolute md:bottom-24 md:mx-2 md:w-full">
-					<div class="bg-base-300 mx-2 flex w-full flex-row justify-between px-4 py-2 shadow-lg">
+					<div class="mx-2 flex w-full flex-row justify-between bg-base-300 px-4 py-2 shadow-lg">
 						{#if currentStep > 1}
 							<dl class="stats flex">
 								<div class="stat flex shrink flex-row place-items-center py-2 max-md:px-4">

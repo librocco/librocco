@@ -23,10 +23,10 @@
 		/>
 	</div>
 	<div>
-		<label for={id} class="text-md text-base-content leading-5">
+		<label for={id} class="text-md leading-5 text-base-content">
 			{label}
 		</label>
-		<p id="{name}-description" class="text-base-content/80 text-sm">
+		<p id="{name}-description" class="text-sm text-base-content/80">
 			{helpText}
 		</p>
 	</div>

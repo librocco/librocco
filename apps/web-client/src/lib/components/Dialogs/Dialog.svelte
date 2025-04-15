@@ -30,7 +30,7 @@
 	<div class="flex w-full justify-end gap-x-2 p-3">
 		<div>
 			<slot name="secondary-button">
-				<button class="btn btn-secondary btn-outline" use:melt={$close} type="button">
+				<button class="btn-secondary btn-outline btn" use:melt={$close} type="button">
 					<span class="button-text"> Cancel </span>
 				</button>
 			</slot>
