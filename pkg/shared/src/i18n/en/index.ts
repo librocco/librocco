@@ -377,6 +377,10 @@ const outbound_note = {
 	stats: {
 		last_updated: "Last updated",
 		books: "{bookCount} book{{s}}"
+	},
+	placeholder: {
+		select_warehouse: "Please select a warehouse",
+		no_warehouses: "No available warehouses"
 	}
 };
 
