@@ -128,12 +128,12 @@
 <HistoryPage view="history/date" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
-			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
+			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-base-content">
 				{displayName || ""}
 				{t.heading.history()}
 			</h1>
 
-			<button on:click={handleExportCsv} class="button button-green order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
+			<button on:click={handleExportCsv} class="btn btn-primary order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
 				<p>{t.heading.from()}:</p>
@@ -152,12 +152,12 @@
 
 				<p>{t.heading.filter()}:</p>
 				<div id="inbound-outbound-filter" class="inline-block">
-					<div class="mt-1 flex items-center divide-x divide-gray-300 overflow-hidden rounded-md border">
+					<div class="mt-1 flex items-center divide-x divide-base-300 overflow-hidden rounded-md border">
 						{#each options as { label, value }}
 							{@const active = value === filter}
 							<button
 								on:click={selectFilter(value)}
-								class="{active ? 'button-green' : 'button-white'} whitespace-nowrap border-none px-3 py-1"
+								class="{active ? 'btn-primary' : 'btn-neutral'} btn btn-sm border-none px-3 py-1"
 								class:selected={filter === value}
 							>
 								{label}
@@ -172,22 +172,23 @@
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			{#if !transactions?.length}
-				<!-- Start entity list placeholder -->
-				<PlaceholderBox
-					title="No transactions found"
-					description="There seem to be no transactions going in/out for the selected date range"
-					class="center-absolute"
-				/>
-				<!-- End entity list placeholder -->
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<PlaceholderBox
+							title="No transactions found"
+							description="There seem to be no transactions going in/out for the selected date range"
+						/>
+					</div>
+				</div>
 			{:else}
 				<div class="sticky top-0">
-					<h2 class="border-b border-gray-300 bg-white px-4 py-4 pt-8 text-xl font-semibold">
+					<h2 class="border-b border-base-300 bg-base-100 px-4 py-4 pt-8 text-xl font-semibold">
 						{t.titles.transactions()}
 					</h2>
 				</div>
-				<ul id="history-table" class="grid w-full grid-cols-12 divide-y">
+				<ul id="history-table" class="grid w-full grid-cols-12 divide-y divide-base-300">
 					{#each transactions as txn}
-						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-gray-800">
+						<li class="entity-list-row col-span-12 grid grid-cols-12 items-center gap-4 whitespace-nowrap text-base-content">
 							<p data-property="committedAt" class="col-span-12 overflow-hidden font-semibold lg:col-span-2 lg:font-normal">
 								{generateUpdatedAtString(txn.committedAt)}
 							</p>
