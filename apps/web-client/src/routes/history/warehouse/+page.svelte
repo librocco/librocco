@@ -41,7 +41,7 @@
 </script>
 
 <HistoryPage view="history/warehouse" {db} {plugins}>
-	<svelte:fragment slot="main">
+	<div slot="main" class="h-full w-full">
 		{#if !initialised}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -58,7 +58,7 @@
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -84,5 +84,5 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
-	</svelte:fragment>
+	</div>
 </HistoryPage>

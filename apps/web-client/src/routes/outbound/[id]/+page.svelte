@@ -368,25 +368,25 @@
 </script>
 
 <Page title={displayName} view="outbound-note" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps>
-		<QrCode {...iconProps} />
-		<ScannerForm
-			data={defaults(zod(scannerSchema))}
-			options={{
-				SPA: true,
-				dataType: "json",
-				validators: zod(scannerSchema),
-				validationMethod: "submit-only",
-				resetForm: true,
-				onUpdated: async ({ form }) => {
-					const { isbn } = form?.data;
-					await handleAddTransaction(isbn);
-				}
-			}}
-		/>
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
+		<div class="flex w-full">
+			<QrCode size={26} />
+			<ScannerForm
+				data={defaults(zod(scannerSchema))}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validators: zod(scannerSchema),
+					validationMethod: "submit-only",
+					resetForm: true,
+					onUpdated: async ({ form }) => {
+						const { isbn } = form?.data;
+						await handleAddTransaction(isbn);
+					}
+				}}
+			/>
+		</div>
+		<div></div>
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
@@ -421,7 +421,7 @@
 					</select>
 				</div>
 				<button
-					class="button button-green hidden xs:block"
+					class="button button-green xs:block hidden"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
@@ -456,7 +456,7 @@
 								type: "commit"
 							};
 						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
+						class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
 						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
 					</div>
@@ -495,9 +495,7 @@
 				</DropdownWrapper>
 			</div>
 		</div>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
 		{#if loading}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -597,7 +595,7 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

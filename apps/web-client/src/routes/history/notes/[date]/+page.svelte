@@ -65,15 +65,12 @@
 </script>
 
 <HistoryPage view="history/notes" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -89,7 +86,7 @@
 					{@const totalBooks = note.totalBooks}
 					{@const href = appPath("history/notes/archive", note.id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="block w-full">
 							<a {href} class="entity-list-text-lg mb-2 block text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -122,7 +119,7 @@
 			{/if}
 		</ul>
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>
 
 <style lang="postcss">

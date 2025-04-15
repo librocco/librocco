@@ -13,6 +13,7 @@
 	import type { PageData } from "./$types";
 
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
+	import { Page } from "$lib/controllers";
 
 	import { supplierSchema } from "$lib/forms/schemas";
 	import { upsertSupplier, associatePublisher, removePublisherFromSupplier } from "$lib/db/cr-sqlite/suppliers";
@@ -49,17 +50,11 @@
 	$: goto = racefreeGoto(disposer);
 
 	$: db = data.dbCtx?.db;
-
-	$: supplier = data?.supplier;
-
-	$: assignedPublishers = data?.assignedPublishers;
-	$: publishersUnassignedToSuppliers = data?.publishersUnassignedToSuppliers;
-
-	$: publishersAssignedToOtherSuppliers = data?.publishersAssignedToOtherSuppliers;
-
-	let confirmationPublisher = "";
+	$: ({ plugins, supplier, assignedPublishers, publishersAssignedToOtherSuppliers, publishersUnassignedToSuppliers } = data);
 
 	$: t = $LL.order_list_page;
+
+	let confirmationPublisher = "";
 
 	// #region dialog
 	const dialog = createDialog(defaultDialogConfig);
@@ -97,73 +92,163 @@
 	};
 </script>
 
-<main class="h-screen">
-	<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
-		<div class="min-w-fit md:basis-96 md:overflow-y-auto">
-			<div class="card h-full">
-				<div class="card-body gap-y-2 p-0">
-					<div class="sticky top-0 flex flex-col gap-y-2 bg-base-100 pb-3">
-						<h1 class="prose card-title">{t.details.supplier_page()}</h1>
+<Page title={t.details.supplier_page()} view="orders/suppliers/id" {db} {plugins}>
+	<div slot="main" class="h-full w-full">
+		<div class="flex h-full flex-col gap-y-10 px-4 max-md:overflow-y-auto md:flex-row md:divide-x">
+			<div class="min-w-fit md:basis-96 md:overflow-y-auto">
+				<div class="card h-full">
+					<div class="card-body gap-y-2 p-0">
+						<div class="bg-base-100 sticky top-0 flex flex-col gap-y-2 pb-3">
+							<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
+								<h2 class="prose">#{supplier?.id}</h2>
+							</div>
+						</div>
 
-						<div class="flex flex-row items-center justify-between gap-y-2 md:flex-col md:items-start">
-							<h2 class="prose">#{supplier?.id}</h2>
+						{#if supplier}
+							<dl class="flex flex-col">
+								<div class="flex w-full flex-col gap-y-4 py-6">
+									<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
+										<div class="flex max-w-96 flex-col gap-y-4">
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_name()}</span>
+													<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.name}</dd>
+											</div>
+
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_email()}</span>
+													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.email || "N/A"}</dd>
+											</div>
+
+											<div class="flex gap-x-3">
+												<dt>
+													<span class="sr-only">{t.details.supplier_address()}</span>
+													<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
+												</dt>
+												<dd class="truncate">{supplier.address || "N/A"}</dd>
+											</div>
+										</div>
+									</div>
+
+									<div class="w-full pr-2">
+										<button
+											class="btn-secondary btn-outline btn-xs btn w-full"
+											type="button"
+											aria-label="Edit supplier name, email or address"
+											on:click={() => dialogOpen.set(true)}
+										>
+											<PencilLine aria-hidden size={16} />
+										</button>
+									</div>
+								</div>
+							</dl>
+
+							<div class="card-actions border-t py-6 md:mb-20">
+								<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
+									{t.labels.create_new_order()}
+									<Plus aria-hidden size={20} />
+								</a>
+							</div>
+						{/if}
+					</div>
+				</div>
+			</div>
+			<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
+				<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
+					<div class="w-full">
+						<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
+						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+							<table class="!my-0 flex-col items-stretch overflow-y-auto">
+								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
+									<tr>
+										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each assignedPublishers as publisher}
+										<tr class="hover focus-within:bg-base-200 flex w-full justify-between">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button
+													on:click={handleUnassignPublisher(publisher)}
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">{t.labels.remove_publisher()}</button
+												></td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
 					</div>
 
-					{#if supplier}
-						<dl class="flex flex-col">
-							<div class="flex w-full flex-col gap-y-4 py-6">
-								<div class="flex w-full flex-wrap justify-between gap-y-4 md:flex-col">
-									<div class="max-w-96 flex flex-col gap-y-4">
-										<div class="flex gap-x-3">
-											<dt>
-												<span class="sr-only">{t.details.supplier_name()}</span>
-												<UserCircle aria-hidden="true" class="h-6 w-5 text-gray-400" />
-											</dt>
-											<dd class="truncate">{supplier.name}</dd>
-										</div>
-
-										<div class="flex gap-x-3">
-											<dt>
-												<span class="sr-only">{t.details.supplier_email()}</span>
-												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-											</dt>
-											<dd class="truncate">{supplier.email || "N/A"}</dd>
-										</div>
-
-										<div class="flex gap-x-3">
-											<dt>
-												<span class="sr-only">{t.details.supplier_address()}</span>
-												<Mail aria-hidden="true" class="h-6 w-5 text-gray-400" />
-											</dt>
-											<dd class="truncate">{supplier.address || "N/A"}</dd>
-										</div>
-									</div>
-								</div>
-
-								<div class="w-full pr-2">
-									<button
-										class="btn-secondary btn-outline btn-xs btn w-full"
-										type="button"
-										aria-label="Edit supplier name, email or address"
-										on:click={() => dialogOpen.set(true)}
-									>
-										<PencilLine aria-hidden size={16} />
-									</button>
-								</div>
-							</div>
-						</dl>
-
-						<div class="card-actions border-t py-6 md:mb-20">
-							<a href={appPath("suppliers", supplier.id, "new-order")} class="btn-secondary btn-outline btn-sm btn" type="button">
-								{t.labels.create_new_order()}
-								<Plus aria-hidden size={20} />
-							</a>
+					<div class="w-full">
+						<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
+						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+							<table class="!my-0 flex-col items-stretch overflow-y-auto">
+								<thead class="sticky left-0 right-0 top-0 bg-white shadow">
+									<tr>
+										<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each publishersUnassignedToSuppliers as publisher}
+										<tr class="hover focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
+													>{t.labels.add_to_supplier()}</button
+												></td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
 						</div>
-					{/if}
+					</div>
+
+					<div class="w-full">
+						<h2 class="text-lg">Other Supplier Publishers</h2>
+						<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
+							<table class="!my-0 flex-col items-stretch overflow-hidden">
+								<thead>
+									<tr>
+										<th scope="col" class="px-2 py-2">Publisher name</th>
+									</tr>
+								</thead>
+								<tbody>
+									{#each publishersAssignedToOtherSuppliers as publisher}
+										<tr class="hover focus-within:bg-base-200">
+											<td class="px-2">{publisher}</td>
+											<td class="px-2 text-end"
+												><button
+													on:click={() => {
+														confirmationPublisher = publisher;
+														confirmationDialogOpen.set(true);
+													}}
+													class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Re-assign to supplier</button
+												></td
+											>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+
+				<div class="h-full overflow-x-auto">
+					<div class="h-full">
+						<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
+					</div>
 				</div>
 			</div>
 		</div>
+
 		<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
 			<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
 				<div class="w-full">
@@ -177,7 +262,7 @@
 							</thead>
 							<tbody>
 								{#each assignedPublishers as publisher}
-									<tr class="hover flex w-full justify-between focus-within:bg-base-200">
+									<tr class="hover focus-within:bg-base-200 flex w-full justify-between">
 										<td class="px-2">{publisher}</td>
 										<td class="px-2 text-end"
 											><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
@@ -253,96 +338,7 @@
 			</div>
 		</div>
 	</div>
-
-	<div class="mb-20 flex h-full w-full flex-col gap-y-6 md:overflow-y-auto">
-		<div class="prose flex w-full max-w-full flex-row gap-x-8 md:px-4">
-			<div class="w-full">
-				<h2 class="text-lg">{$LL.new_order_page.stats.selected_books()}</h2>
-				<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-					<table class="!my-0 flex-col items-stretch overflow-y-auto">
-						<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-							<tr>
-								<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each assignedPublishers as publisher}
-								<tr class="hover flex w-full justify-between focus-within:bg-base-200">
-									<td class="px-2">{publisher}</td>
-									<td class="px-2 text-end"
-										><button on:click={handleUnassignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-											>{t.labels.remove_publisher()}</button
-										></td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-			<div class="w-full">
-				<h2 class="text-lg">{t.table.unassigned_publishers()}</h2>
-				<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-					<table class="!my-0 flex-col items-stretch overflow-y-auto">
-						<thead class="sticky left-0 right-0 top-0 bg-white shadow">
-							<tr>
-								<th scope="col" class="px-2 py-2">{t.table.publisher_name()}</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each publishersUnassignedToSuppliers as publisher}
-								<tr class="hover focus-within:bg-base-200">
-									<td class="px-2">{publisher}</td>
-									<td class="px-2 text-end"
-										><button on:click={handleAssignPublisher(publisher)} class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg"
-											>{t.labels.add_to_supplier()}</button
-										></td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-			<div class="w-full">
-				<h2 class="text-lg">Other Supplier Publishers</h2>
-				<div class="relative max-h-[208px] w-full overflow-y-auto rounded border border-gray-200">
-					<table class="!my-0 flex-col items-stretch overflow-hidden">
-						<thead>
-							<tr>
-								<th scope="col" class="px-2 py-2">Publisher name</th>
-							</tr>
-						</thead>
-						<tbody>
-							{#each publishersAssignedToOtherSuppliers as publisher}
-								<tr class="hover focus-within:bg-base-200">
-									<td class="px-2">{publisher}</td>
-									<td class="px-2 text-end"
-										><button
-											on:click={() => {
-												confirmationPublisher = publisher;
-												confirmationDialogOpen.set(true);
-											}}
-											class="btn-primary btn-xs btn flex-nowrap gap-x-2.5 rounded-lg">Re-assign to supplier</button
-										></td
-									>
-								</tr>
-							{/each}
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</div>
-
-		<div class="h-full overflow-x-auto">
-			<div class="h-full">
-				<OrderedTable orders={data.orders} on:reconcile={handleReconcile} />
-			</div>
-		</div>
-	</div>
-</main>
+</Page>
 
 <PageCenterDialog {dialog} title="" description="">
 	<SupplierMetaForm

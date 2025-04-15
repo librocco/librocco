@@ -31,16 +31,14 @@
 </script>
 
 <Page title={activeTab.label} view="inventory" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="flex flex-col">
 		<div class="flex w-full items-center justify-end">
-			<button on:click={handleCreateWarehouse} class="button button-white">
-				<span><Plus size={20} /></span>
+			<button on:click={handleCreateWarehouse} class="btn btn-primary">
+				<Plus size={20} aria-hidden />
 				<span class="button-text">New warehouse</span>
 			</button>
 		</div>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
 		<div class="flex h-full w-full flex-col">
 			<div class="flex gap-x-8 border-b border-gray-300 px-6">
 				{#each tabs as { label, icon, href }}
@@ -58,5 +56,5 @@
 
 			<slot />
 		</div>
-	</svelte:fragment>
+	</div>
 </Page>
