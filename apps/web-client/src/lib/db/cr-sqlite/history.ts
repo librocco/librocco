@@ -37,13 +37,13 @@ async function _getPastNotes(db: DB, date: string): Promise<PastNoteItem[]> {
                     WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN 'inbound'
                     ELSE 'outbound'
                 END AS noteType,
-                SUM(bt.quantity) AS totalBooks,
+                COALESCE(SUM(bt.quantity), 0) AS totalBooks,
 				CASE
                     WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN w.display_name
                     ELSE 'Outbound'
 				END AS warehouseName,
-                SUM(bt.quantity * COALESCE(b.price,0)) AS totalCoverPrice,
-                SUM(bt.quantity * COALESCE(b.price,0) * (1 - COALESCE(w.discount, 0) / 100.0)) AS totalDiscountedPrice,
+                COALESCE(SUM(bt.quantity * COALESCE(b.price,0)), 0) AS totalCoverPrice,
+                COALESCE(SUM(bt.quantity * COALESCE(b.price,0) * (1 - COALESCE(w.discount, 0) / 100.0)), 0) AS totalDiscountedPrice,
 				n.committed_at
             FROM note n
             LEFT JOIN book_transaction bt ON n.id = bt.note_id
