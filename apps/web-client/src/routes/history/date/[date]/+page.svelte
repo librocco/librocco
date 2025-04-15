@@ -75,9 +75,11 @@
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
 			{#if !bookList?.length}
-				<!-- Start entity list placeholder -->
-				<PlaceholderBox title="No Books on that date" description="Try selecting a different date." class="center-absolute" />
-				<!-- End entity list placeholder -->
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<PlaceholderBox title="No Books on that date" description="Try selecting a different date." />
+					</div>
+				</div>
 			{:else}
 				<h2 class="px-4 py-4 pt-8 text-xl font-semibold">{t.stats.title()}</h2>
 
@@ -118,17 +120,12 @@
 				</h2>
 
 				<div id="history-table" class="w-full">
-					<ul class="w-full divide-y divide-gray-300">
+					<ul class="w-full divide-y divide-base-300">
 						{#each bookList as { isbn, title, quantity, warehouseName, committedAt, noteType, noteName, noteId }}
-							<!--<div class="w-full text-gray-700">
-								<p class="mt-2 mb-1 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
-								<p class="mb-1 text-2xl">{title}</p>
-							</div>-->
-
 							<li
-								class="entity-list-row grid w-full grid-cols-2 items-center gap-x-4 gap-y-3 py-6 text-gray-800 sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
+								class="entity-list-row grid w-full grid-cols-2 items-center gap-x-4 gap-y-3 py-6 text-base-content sm:grid-cols-3 lg:grid-cols-12 lg:gap-y-2 lg:py-4 xl:grid-cols-12"
 							>
-								<p data-property="isbn" class="text-xl font-medium leading-none text-gray-900 lg:col-span-3 xl:col-span-2">{isbn}</p>
+								<p data-property="isbn" class="text-xl font-medium leading-none text-base-content lg:col-span-3 xl:col-span-2">{isbn}</p>
 								<p
 									data-property="title"
 									class="col-span-2 overflow-hidden whitespace-nowrap text-xl font-medium lg:col-span-5 xl:col-span-3"
@@ -150,8 +147,8 @@
 									<a
 										href={appPath("history/notes/archive", noteId)}
 										class="{noteType === 'outbound'
-											? 'text-red-700'
-											: 'text-green-700'} mx-4 flex items-center rounded-sm border bg-gray-50 px-3 py-0.5 hover:font-semibold"
+											? 'text-error'
+											: 'text-success'} mx-4 flex items-center rounded-sm border bg-base-200 px-3 py-0.5 hover:font-semibold"
 									>
 										{#if noteType === "inbound"}
 											<p><ArrowLeft size={16} /></p>
@@ -173,3 +170,44 @@
 		<!-- End entity list contaier -->
 	</div>
 </HistoryPage>
+
+<style lang="postcss">
+	[data-melt-calendar-prevbutton][data-disabled] {
+		@apply pointer-events-none rounded-lg p-1 opacity-40;
+	}
+
+	[data-melt-calendar-nextbutton][data-disabled] {
+		@apply pointer-events-none rounded-lg p-1 opacity-40;
+	}
+
+	[data-melt-calendar-heading] {
+		@apply font-semibold;
+	}
+
+	[data-melt-calendar-grid] {
+		@apply w-full;
+	}
+
+	[data-melt-calendar-cell] {
+		@apply flex h-6 w-6 cursor-pointer select-none items-center justify-center rounded-lg p-4;
+	}
+
+	[data-melt-calendar-cell][data-disabled] {
+		@apply pointer-events-none opacity-40;
+	}
+	[data-melt-calendar-cell][data-unavailable] {
+		@apply pointer-events-none text-error line-through;
+	}
+
+	[data-melt-calendar-cell][data-selected] {
+		@apply bg-primary text-base;
+	}
+
+	[data-melt-calendar-cell][data-outside-visible-months] {
+		@apply pointer-events-none cursor-default opacity-40;
+	}
+
+	[data-melt-calendar-cell][data-outside-month] {
+		@apply pointer-events-none cursor-default opacity-0;
+	}
+</style>
