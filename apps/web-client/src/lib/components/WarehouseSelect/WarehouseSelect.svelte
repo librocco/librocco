@@ -59,32 +59,32 @@
 <button
 	data-testid={testId("dropdown-control")}
 	data-open={open}
-	class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
+	class="border-base focus:border-primary flex w-full gap-x-2 rounded border-2 bg-transparent p-2 shadow focus:outline-none focus:ring-0"
 	{...$trigger}
 	use:trigger
 	aria-label="Warehouse"
 >
-	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}"></span>
+	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-success' : 'bg-error'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
 			{$selectedLabel}
 		</span>
 	{:else}
-		<span class="truncate text-gray-400">Select a warehouse</span>
+		<span class="truncate">Select a warehouse</span>
 	{/if}
 	<ChevronsUpDown size={18} class="ml-auto shrink-0 self-end" />
 </button>
 {#if $open}
 	<div
 		data-testid={testId("dropdown-menu")}
-		class="z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg bg-white p-1 shadow-md focus:!ring-0"
+		class="bg-base-100 text-base-content z-10 flex max-h-[300px] flex-col gap-y-1.5 overflow-y-auto rounded-lg p-1 shadow-md focus:!ring-0"
 		{...$menu}
 		use:menu
 	>
 		{#each options as warehouse}
 			{@const { label, value } = warehouse}
 			<div
-				class="relative flex cursor-pointer items-center justify-between rounded p-1 text-gray-600 focus:z-10 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+				class="data-[highlighted]:bg-primary data-[highlighted]:text-primary-content relative flex cursor-pointer items-center justify-between rounded p-1 focus:z-10"
 				{...$option(warehouse)}
 				use:option
 			>
