@@ -71,7 +71,7 @@
 </script>
 
 <Page title="Outbound" view="outbound" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full items-center justify-end">
 			<button
 				on:click={handleCreateNote}
@@ -81,9 +81,7 @@
 				<span class="text-sm font-medium leading-5 text-gray-700">{tOutboundPage.labels.new_note()}</span>
 			</button>
 		</div>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
 		{#if !initialized}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -109,7 +107,7 @@
 						{@const totalBooks = note.totalBooks}
 						{@const href = appPath("outbound", note.id)}
 
-						<div class="group entity-list-row">
+						<div class="entity-list-row group">
 							<div class="flex flex-col gap-y-2">
 								<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -153,7 +151,7 @@
 			</ul>
 			<!-- End entity list contaier -->
 		{/if}
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

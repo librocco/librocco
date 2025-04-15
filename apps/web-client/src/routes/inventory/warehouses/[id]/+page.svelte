@@ -161,19 +161,18 @@
 </script>
 
 <Page title={displayName} view="warehouse" {db} {plugins}>
-	<svelte:fragment slot="heading">
-		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<div class="flex justify-between">
-			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
-			{#if $csvEntries?.length}
-				<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
-					<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
-				</button>
-			{/if}
+	<div slot="main" class="h-full w-full">
+		<div>
+			<Breadcrumbs class="mb-3" links={breadcrumbs} />
+			<div class="flex justify-between">
+				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
+				{#if $csvEntries?.length}
+					<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
+						<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
+					</button>
+				{/if}
+			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		{#if loading}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -253,7 +252,7 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

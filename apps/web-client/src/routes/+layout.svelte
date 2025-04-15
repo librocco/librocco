@@ -36,9 +36,9 @@
 
 	const { dbCtx } = data;
 
-	beforeNavigate(({ to }) => {
-		timeLogger.setCurrentRoute(to.route.id);
-	});
+	// beforeNavigate(({ to }) => {
+	// 	timeLogger.setCurrentRoute(to.route.id);
+	// });
 
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.
@@ -116,7 +116,7 @@
 	});
 </script>
 
-<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
+<div class="bg-base-200 lg:divide-base-content flex h-full lg:divide-x">
 	<div class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>
@@ -140,7 +140,7 @@
 
 		<div
 			use:melt={$content}
-			class="fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto bg-base-200"
+			class="bg-base-200 fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto"
 			transition:fly|global={{
 				x: -350,
 				duration: 300,

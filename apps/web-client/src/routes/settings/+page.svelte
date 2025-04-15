@@ -151,11 +151,9 @@
 </script>
 
 <Page title="Settings" view="settings" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
 		<div class="space-y-12 p-6">
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
@@ -318,7 +316,7 @@
 				</div>
 			</div>
 		</div>
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

@@ -217,246 +217,244 @@
 </script>
 
 <Page title={displayName} view="inbound-note" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps>
-		<QrCode {...iconProps} />
-		<ScannerForm
-			data={defaults(zod(scannerSchema))}
-			options={{
-				SPA: true,
-				dataType: "json",
-				validators: zod(scannerSchema),
-				validationMethod: "submit-only",
-				resetForm: true,
-				onUpdated: async ({ form }) => {
-					const { isbn } = form?.data;
-					await handleAddTransaction(isbn);
+	<div slot="main" class="h-full w-full">
+		<div class="flex w-full">
+			<QrCode size={26} />
+			<ScannerForm
+				data={defaults(zod(scannerSchema))}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validators: zod(scannerSchema),
+					validationMethod: "submit-only",
+					resetForm: true,
+					onUpdated: async ({ form }) => {
+						const { isbn } = form?.data;
+						await handleAddTransaction(isbn);
 
-					if ($autoPrintLabels) {
-						try {
-							getBookData(db, isbn).then(handlePrintLabel);
-							// Success
-						} catch (err) {
-							// Show error
+						if ($autoPrintLabels) {
+							try {
+								getBookData(db, isbn).then(handlePrintLabel);
+								// Success
+							} catch (err) {
+								// Show error
+							}
 						}
 					}
-				}
-			}}
-		/>
-	</svelte:fragment>
+				}}
+			/>
+		</div>
+		<div>
+			<Breadcrumbs class="mb-3" links={breadcrumbs} />
+			<div class="flex w-full flex-wrap items-center justify-between gap-2">
+				<div class="flex max-w-md flex-col">
+					<TextEditable
+						name="title"
+						textEl="h1"
+						textClassName="text-2xl font-bold leading-7 text-gray-900"
+						placeholder="Note"
+						value={displayName}
+						on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
+					/>
 
-	<svelte:fragment slot="heading">
-		<Breadcrumbs class="mb-3" links={breadcrumbs} />
-		<div class="flex w-full flex-wrap items-center justify-between gap-2">
-			<div class="flex max-w-md flex-col">
-				<TextEditable
-					name="title"
-					textEl="h1"
-					textClassName="text-2xl font-bold leading-7 text-gray-900"
-					placeholder="Note"
-					value={displayName}
-					on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
-				/>
-
-				<div class="w-fit">
-					{#if updatedAt}
-						<span class="badge badge-md badge-green">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
-					{/if}
+					<div class="w-fit">
+						{#if updatedAt}
+							<span class="badge badge-md badge-green">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+						{/if}
+					</div>
 				</div>
-			</div>
 
-			<div class="ml-auto flex items-center gap-x-2">
-				<button
-					class="button button-green hidden xs:block"
-					use:melt={$dialogTrigger}
-					on:m-click={() => {
-						dialogContent = {
-							onConfirm: handleCommitSelf,
-							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
-							type: "commit"
-						};
-					}}
-					on:m-keydown={() => {
-						dialogContent = {
-							onConfirm: handleCommitSelf,
-							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
-							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
-							type: "commit"
-						};
-					}}
-				>
-					<span class="button-text">{tInbound.labels.commit()}</span>
-				</button>
-
-				<DropdownWrapper let:item>
-					<div
-						{...item}
-						use:item.action
+				<div class="ml-auto flex items-center gap-x-2">
+					<button
+						class="button button-green xs:block hidden"
 						use:melt={$dialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
-								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 								type: "commit"
-							};
-						}}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
-					>
-						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.commit()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						on:m-click={handlePrintReceipt}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
-					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.print()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						on:m-click={autoPrintLabels.toggle}
-						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
-							? '!bg-green-400'
-							: ''}"
-					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.auto_print_book_labels()}</span>
-					</div>
-					<div
-						{...item}
-						use:item.action
-						use:melt={$dialogTrigger}
-						class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
-						on:m-click={() => {
-							dialogContent = {
-								onConfirm: handleDeleteSelf,
-								title: tCommon.delete_dialog.title({ entity: displayName }),
-								description: tCommon.delete_dialog.description(),
-								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
-								onConfirm: handleDeleteSelf,
-								title: tCommon.delete_dialog.title({ entity: displayName }),
-								description: tCommon.delete_dialog.description(),
-								type: "delete"
+								onConfirm: handleCommitSelf,
+								title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
+								type: "commit"
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">{tInbound.labels.delete()}</span>
-					</div>
-				</DropdownWrapper>
-			</div>
-		</div>
-	</svelte:fragment>
+						<span class="button-text">{tInbound.labels.commit()}</span>
+					</button>
 
-	<svelte:fragment slot="main">
-		{#if loading}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
-			</div>
-		{:else if !entries.length}
-			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
-		{:else}
-			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
-				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
-				<div>
-					<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
-						<div slot="row-actions" let:row let:rowIx>
-							<PopoverWrapper
-								options={{
-									forceVisible: true,
-									positioning: {
-										placement: "left"
-									}
-								}}
-								let:trigger
-							>
-								<button
-									data-testid={testId("popover-control")}
-									{...trigger}
-									use:trigger.action
-									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
-								>
-									<span class="sr-only">Edit row {rowIx}</span>
-									<span class="aria-hidden">
-										<MoreVertical />
-									</span>
-								</button>
-
-								<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
-									<button
-										use:melt={$dialogTrigger}
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-										data-testid={testId("edit-row")}
-										on:m-click={() => {
-											const { warehouseId, quantity, ...bookData } = row;
-
-											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
-										}}
-										on:m-keydown={() => {
-											const { warehouseId, quantity, ...bookData } = row;
-											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
-										}}
-									>
-										<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
-										<span class="aria-hidden">
-											<FileEdit />
-										</span>
-									</button>
-
-									<button
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-										data-testid={testId("print-book-label")}
-										on:click={() => handlePrintLabel(row)}
-									>
-										<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
-										<span class="aria-hidden">
-											<Printer />
-										</span>
-									</button>
-
-									<button
-										on:click={() => deleteRow(row.isbn, row.warehouseId)}
-										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-										data-testid={testId("delete-row")}
-									>
-										<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
-										<span class="aria-hidden">
-											<Trash2 />
-										</span>
-									</button>
-								</div>
-							</PopoverWrapper>
+					<DropdownWrapper let:item>
+						<div
+							{...item}
+							use:item.action
+							use:melt={$dialogTrigger}
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: handleCommitSelf,
+									title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+									description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
+									type: "commit"
+								};
+							}}
+							class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						>
+							<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.commit()}</span>
 						</div>
-					</InboundTable>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={handlePrintReceipt}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						>
+							<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.print()}</span>
+						</div>
+						<div
+							{...item}
+							use:item.action
+							on:m-click={autoPrintLabels.toggle}
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
+								? '!bg-green-400'
+								: ''}"
+						>
+							<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.auto_print_book_labels()}</span>
+						</div>
+						<div
+							{...item}
+							use:item.action
+							use:melt={$dialogTrigger}
+							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+							on:m-click={() => {
+								dialogContent = {
+									onConfirm: handleDeleteSelf,
+									title: tCommon.delete_dialog.title({ entity: displayName }),
+									description: tCommon.delete_dialog.description(),
+									type: "delete"
+								};
+							}}
+							on:m-keydown={() => {
+								dialogContent = {
+									onConfirm: handleDeleteSelf,
+									title: tCommon.delete_dialog.title({ entity: displayName }),
+									description: tCommon.delete_dialog.description(),
+									type: "delete"
+								};
+							}}
+						>
+							<Trash2 class="text-white" size={20} /><span class="text-white">{tInbound.labels.delete()}</span>
+						</div>
+					</DropdownWrapper>
 				</div>
-
-				<!-- Trigger for the infinite scroll intersection observer -->
-				{#if entries?.length > maxResults}
-					<div use:scroll.trigger></div>
-				{/if}
 			</div>
-		{/if}
-	</svelte:fragment>
+			{#if loading}
+				<div class="center-absolute">
+					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+				</div>
+			{:else if !entries.length}
+				<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
+					<QrCode slot="icon" let:iconProps {...iconProps} />
+				</PlaceholderBox>
+			{:else}
+				<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+					<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
+					<div>
+						<InboundTable {table} on:edit-row-quantity={({ detail: { event, row } }) => updateRowQuantity(event, row)}>
+							<div slot="row-actions" let:row let:rowIx>
+								<PopoverWrapper
+									options={{
+										forceVisible: true,
+										positioning: {
+											placement: "left"
+										}
+									}}
+									let:trigger
+								>
+									<button
+										data-testid={testId("popover-control")}
+										{...trigger}
+										use:trigger.action
+										class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+									>
+										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="aria-hidden">
+											<MoreVertical />
+										</span>
+									</button>
+
+									<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+										<button
+											use:melt={$dialogTrigger}
+											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											data-testid={testId("edit-row")}
+											on:m-click={() => {
+												const { warehouseId, quantity, ...bookData } = row;
+
+												bookFormData = bookData;
+
+												dialogContent = {
+													onConfirm: () => {},
+													title: tCommon.edit_book_dialog.title(),
+													description: tCommon.edit_book_dialog.description(),
+													type: "edit-row"
+												};
+											}}
+											on:m-keydown={() => {
+												const { warehouseId, quantity, ...bookData } = row;
+												bookFormData = bookData;
+
+												dialogContent = {
+													onConfirm: () => {},
+													title: tCommon.edit_book_dialog.title(),
+													description: tCommon.edit_book_dialog.description(),
+													type: "edit-row"
+												};
+											}}
+										>
+											<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
+											<span class="aria-hidden">
+												<FileEdit />
+											</span>
+										</button>
+
+										<button
+											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											data-testid={testId("print-book-label")}
+											on:click={() => handlePrintLabel(row)}
+										>
+											<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
+											<span class="aria-hidden">
+												<Printer />
+											</span>
+										</button>
+
+										<button
+											on:click={() => deleteRow(row.isbn, row.warehouseId)}
+											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											data-testid={testId("delete-row")}
+										>
+											<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
+											<span class="aria-hidden">
+												<Trash2 />
+											</span>
+										</button>
+									</div>
+								</PopoverWrapper>
+							</div>
+						</InboundTable>
+					</div>
+
+					<!-- Trigger for the infinite scroll intersection observer -->
+					{#if entries?.length > maxResults}
+						<div use:scroll.trigger></div>
+					{/if}
+				</div>
+			{/if}
+		</div>
+	</div>
 </Page>
 
 {#if $open}

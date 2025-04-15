@@ -21,7 +21,9 @@ export type WebClientView =
 	| "orders/customers"
 	| "orders/customers/id"
 	| "orders/suppliers"
+	| "orders/suppliers/id/new-order"
 	| "orders/suppliers/orders"
+	| "orders/suppliers/orders/id"
 	| "orders/suppliers/id"
 	| "orders/suppliers/reconcile/id";
 

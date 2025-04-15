@@ -67,12 +67,7 @@
 </script>
 
 <HistoryPage view="history/notes" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
 				<div class="relative block w-full p-2">
@@ -92,9 +87,6 @@
 				<button class="button button-green">{t.export_csv()}</button>
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		{#if loading}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
@@ -120,5 +112,5 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
+	</div>
 </HistoryPage>

@@ -48,15 +48,11 @@
 </script>
 
 <HistoryPage view="history/isbn" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<!-- svelte-ignore a11y_autofocus -->
-		<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
-	</svelte:fragment>
-
-	<svelte:fragment slot="heading"></svelte:fragment>
-
-	<svelte:fragment slot="main">
+	<div slot="main" class="h-full w-full">
+		<div class="flex w-full">
+			<Search />
+			<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
+		</div>
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -67,7 +63,7 @@
 		</div>
 
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>
 
 {#if $open && entries?.length}

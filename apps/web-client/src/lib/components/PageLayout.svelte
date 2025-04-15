@@ -13,7 +13,7 @@
 <!-- Main content -->
 <div data-view={view} id={testId("page-container")} class="h-full w-full">
 	<div class="flex h-full w-full flex-col overflow-y-auto" id="content">
-		<div class="sticky top-0 z-[100] flex h-16 items-center justify-between border-b border-base-content bg-base-200">
+		<div class="border-base-content bg-base-200 sticky top-0 z-[100] flex h-16 items-center justify-between border-b">
 			<h1 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h1>
 			<!-- TODO: add strings to dicts -->
 			<div class="flex gap-x-2 p-4">
@@ -28,42 +28,12 @@
 			</div>
 		</div>
 
-		{#if $$slots.topbar}
-			<!-- Top bar input -->
-			<div
-				class="flex w-full basis-16 items-center bg-white shadow-[0px_1px_2px_0px_rgba(0,0,0,0.6),0px_1px_3px_0px_rgba(0,0,0,0.1)] sm:h-[66px]"
-			>
-				<!-- Top bar input -->
-				<div class="relative flex h-full w-full items-center px-4 focus-within:ring-2 focus-within:ring-inset">
-					<slot
-						name="topbar"
-						iconProps={{ class: "text-gray-400", size: 24 }}
-						inputProps={{ class: "w-full border-0 focus:outline-none focus:ring-0" }}
-					/>
-				</div>
-				<!-- Top bar input end -->
-			</div>
-			<!-- Topbar container end -->
-		{/if}
+		<div class="flex h-full w-full flex-col justify-between divide-y" id="content">
+			<slot name="main" />
 
-		<!-- Heading section -->
-		{#if $$slots.heading}
-			<header class="w-full px-4 pb-6 pt-5 xs:px-8">
-				<slot name="heading" />
-			</header>
-		{/if}
-		<!-- Heading section end -->
-
-		<!-- Main section -->
-		<main class="flex h-full w-full flex-col justify-between divide-y" id="content">
-			<div class="h-full w-full">
-				<slot name="main" />
-			</div>
-
-			<div class="sticky bottom-0 flex basis-8 items-center justify-end border-t bg-base-200 px-4">
+			<div class="bg-base-200 sticky bottom-0 flex basis-8 items-center justify-end border-t px-4">
 				<slot name="footer" />
 			</div>
-		</main>
-		<!-- Main section end -->
+		</div>
 	</div>
 </div>
