@@ -28,7 +28,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -48,6 +48,7 @@
 
 	import { mergeBookData } from "$lib/utils/misc";
 	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -371,8 +372,8 @@
 														bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
 														dialogContent = {
 															onConfirm: () => {},
-															title: dialogTitle.editBook(),
-															description: dialogDescription.editBook(),
+															title: $LL.common.edit_book_dialog.title(),
+															description: $LL.common.edit_book_dialog.description(),
 															type: "edit-row"
 														};
 													}}
@@ -381,8 +382,8 @@
 
 														dialogContent = {
 															onConfirm: () => {},
-															title: dialogTitle.editBook(),
-															description: dialogDescription.editBook(),
+															title: $LL.common.edit_book_dialog.title(),
+															description: $LL.common.edit_book_dialog.description(),
 															type: "edit-row"
 														};
 													}}

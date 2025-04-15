@@ -32,7 +32,7 @@
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { autoPrintLabels, deviceSettingsStore } from "$lib/stores/app";
 
@@ -236,6 +236,7 @@
 
 	$: t = $LL.inventory_page.inbound_tab;
 	$: tt = $LL.inbound_note;
+	$: tCommon = $LL.common;
 </script>
 
 <Page {handleCreateOutboundNote} view="inbound-note" loaded={!loading}>
@@ -293,16 +294,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
@@ -318,8 +319,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(totalBookCount),
+								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -353,16 +354,16 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
@@ -422,8 +423,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
@@ -433,8 +434,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
