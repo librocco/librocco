@@ -1,6 +1,6 @@
 export { default as PageLayout } from "./PageLayout.svelte";
 
-export { default as ExtensionAvailabilityToast } from "./ExtensionAvailabilityToast.svelte";
+export { default as ExtensionStatusBanner } from "./ExtensionStatusBanner.svelte";
 export { default as CalendarPicker } from "./CalendarPicker.svelte";
 
 export { default as TooltipWrapper } from "./Melt/TooltipWrapper.svelte";
