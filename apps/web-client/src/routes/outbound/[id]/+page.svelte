@@ -42,7 +42,7 @@
 		type BookFormSchema
 	} from "$lib/forms";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
 
@@ -72,6 +72,7 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -278,8 +279,8 @@
 
 		dialogContent = {
 			onConfirm: () => {},
-			title: dialogTitle.editBook(),
-			description: dialogDescription.editBook(),
+			title: tCommon.edit_book_dialog.title(),
+			description: tCommon.edit_book_dialog.description(),
 			type: "edit-row"
 		};
 	};
@@ -292,7 +293,7 @@
 
 		dialogContent = {
 			onConfirm: () => {},
-			title: row ? dialogTitle.editCustomItem() : dialogTitle.createCustomItem(),
+			title: row ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title(),
 			description: "",
 			type: "custom-item-form"
 		};
@@ -383,6 +384,9 @@
 	const handleUpdateNoteWarehouse = async (warehouseId: number) => {
 		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
 	};
+
+	$: tOutbound = $LL.outbound_note;
+	$: tCommon = $LL.common;
 </script>
 
 <Page {handleCreateOutboundNote} view="outbound-note" loaded={!loading}>
@@ -419,7 +423,7 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
@@ -444,16 +448,16 @@
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(totalBookCount),
+							title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitOutbound(displayName),
-							description: dialogDescription.commitOutbound(totalBookCount),
+							title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 							type: "commit"
 						};
 					}}
@@ -469,8 +473,8 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(totalBookCount),
+								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
@@ -494,21 +498,21 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
+						<Trash2 class="text-white" size={20} /><span class="text-white">{tOutbound.labels.delete()}</span>
 					</div>
 				</DropdownWrapper>
 			</div>
@@ -550,7 +554,7 @@
 									use:trigger.action
 									class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 								>
-									<span class="sr-only">Edit row {rowIx}</span>
+									<span class="sr-only">{tOutbound.labels.edit_row()} {rowIx}</span>
 									<span class="aria-hidden">
 										<MoreVertical />
 									</span>
@@ -565,7 +569,7 @@
 										on:m-click={handleOpenFormPopover(row)}
 										on:m-keydown={handleOpenFormPopover(row)}
 									>
-										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="sr-only">{tOutbound.labels.edit_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
@@ -577,7 +581,7 @@
 											data-testid={testId("print-book-label")}
 											on:click={handlePrintLabel(row)}
 										>
-											<span class="sr-only">Print book label {rowIx}</span>
+											<span class="sr-only">{tOutbound.labels.print_book_label()} {rowIx}</span>
 											<span class="aria-hidden">
 												<Printer />
 											</span>
@@ -589,7 +593,7 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
-										<span class="sr-only">Delete row {rowIx}</span>
+										<span class="sr-only">{tOutbound.labels.delete_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Trash2 />
 										</span>
@@ -631,9 +635,9 @@
 
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 				<Dialog {dialog} type="delete" onConfirm={() => {}}>
-					<svelte:fragment slot="title">{dialogTitle.noWarehouseSelected()}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription.noWarehouseSelected()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">Please select a warehouse for each of the following transactions:</h3>
+					<svelte:fragment slot="title">{tCommon.no_warehouse_dialog.title()}</svelte:fragment>
+					<svelte:fragment slot="description">{tCommon.no_warehouse_dialog.description()}</svelte:fragment>
+					<h3 class="mb-2 mt-4 font-semibold">{tOutbound.delete_dialog.select_warehouse()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn }}
 							<li>{isbn}</li>
@@ -650,9 +654,9 @@
 
 			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
 				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf(invalidTransactions)}>
-					<svelte:fragment slot="title">{dialogTitle.reconcileOutbound()}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription.reconcileOutbound()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">Please review the following tranasctions:</h3>
+					<svelte:fragment slot="title">{tCommon.reconcile_outbound_dialog.title()}</svelte:fragment>
+					<svelte:fragment slot="description">{tCommon.reconcile_outbound_dialog.description()}</svelte:fragment>
+					<h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3>
 					<ul class="pl-2">
 						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
 							<li class="mb-2">
@@ -660,7 +664,7 @@
 								<p class="pl-2">requested quantity: {quantity}</p>
 								<p class="pl-2">available: {available}</p>
 								<p class="pl-2">
-									quantity for reconciliation: <span class="font-semibold">{quantity - available}</span>
+									{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
 								</p>
 							</li>
 						{/each}
@@ -685,8 +689,8 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle.editBook()}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription.editBook()}</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{tCommon.edit_book_dialog.title()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{tCommon.edit_book_dialog.description()}</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />
