@@ -2,15 +2,9 @@
 	import { superForm, defaults } from "sveltekit-superforms/client";
 	import { zod } from "sveltekit-superforms/adapters";
 
-	import { Dialog, Input } from "$lib/components";
 	import { warehouseDeleteSchema, type WarehouseDeleteFormSchema } from "$lib/forms/schemas";
 
 	import type { FormOptions } from "sveltekit-superforms";
-	import { type createDialog } from "@melt-ui/svelte";
-
-	export let dialog: ReturnType<typeof createDialog>;
-	export let dialogTitle: string;
-	export let dialogDescription: string;
 
 	export let displayName: string;
 	const matchConfirmation = displayName
@@ -24,34 +18,34 @@
 	const schema = warehouseDeleteSchema(matchConfirmation);
 
 	export let options: FormOptions<WarehouseDeleteFormSchema>;
+	export let onCancel: (e: Event) => void = () => {};
 
 	const form = superForm(defaults(zod(schema)), options);
 
 	const { form: formStore, constraints, enhance } = form;
 </script>
 
-<form use:enhance method="POST">
-	<Dialog {dialog} type="delete">
-		<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-		<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+<form use:enhance method="POST" class="flex max-w-lg flex-col gap-y-6">
+	<div class="flex flex-col justify-between gap-y-6 p-4">
+		<label class="form-control basis-1/2" id="year-field-container">
+			<div class="label">
+				<span class="label-text">Confirm by typing warehouse name</span>
+			</div>
+			<input
+				bind:value={$formStore.confirmation}
+				name="confirm"
+				{...$constraints.confirmation}
+				autocomplete="off"
+				class="input input-bordered w-full"
+			/>
+			<div class="label">
+				<span class="label-text-alt">Type '{matchConfirmation}'</span>
+			</div>
+		</label>
+	</div>
 
-		<!-- Additional dialog content -->
-		<Input
-			bind:value={$formStore.confirmation}
-			class="mt-4"
-			label="Confirm by typing warehouse name"
-			helpText="Type '{matchConfirmation}'"
-			name="confirm"
-			placeholder={matchConfirmation}
-			{...$constraints.confirmation}
-			autocomplete="off"
-		/>
-		<!-- Additional dialog content end -->
-
-		<svelte:fragment slot="confirm-button">
-			<button class="button button-red" type="submit">
-				<span class="button-text">Confirm</span>
-			</button>
-		</svelte:fragment>
-	</Dialog>
+	<div class="flex w-full justify-end gap-x-2 p-4">
+		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn btn-error" type="submit">Delete</button>
+	</div>
 </form>

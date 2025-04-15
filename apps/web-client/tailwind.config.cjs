@@ -63,7 +63,7 @@ const plugins = [
 				"@apply text-md font-normal leading-5": {}
 			},
 			".entity-list-actions": {
-				"@apply flex flex-col items-end justify-end gap-3": {},
+				"@apply flex  items-end justify-end gap-3": {},
 				["@screen xs"]: {
 					"@apply flex-row items-center": {}
 				}

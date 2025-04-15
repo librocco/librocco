@@ -91,7 +91,7 @@
 </script>
 
 <form
-	class="divide-y-gray-50 flex flex-col gap-y-10 px-4 py-4"
+	class="divide-y-secondary flex flex-col gap-y-10 px-4 py-4"
 	aria-label="Edit book details"
 	use:enhance
 	method="POST"
