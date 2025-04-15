@@ -1,17 +1,17 @@
 .stock-table {
-	@apply relative w-full divide-y divide-gray-200 bg-white;
+	@apply relative w-full divide-y divide-base-300 text-sm;
 }
 
 .stock-table thead tr {
-	@apply text-sm font-semibold leading-5 text-gray-900;
+	@apply font-semibold leading-5;
 }
 
 .stock-table tbody tr {
-	@apply text-sm font-light text-gray-500 odd:bg-white even:bg-gray-50;
+	@apply font-light;
 }
 
 .stock-table tbody tr.out-of-stock {
-	@apply !border border-red-300 bg-red-200/80;
+	@apply !border border-error bg-error/80;
 }
 
 .stock-table tbody tr.requires-action {

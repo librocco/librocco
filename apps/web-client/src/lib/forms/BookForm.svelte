@@ -6,7 +6,7 @@
 	import { superForm, numberProxy, stringProxy } from "sveltekit-superforms/client";
 
 	import { createCombobox, melt, type ComboboxOptionProps } from "@melt-ui/svelte";
-	import { Check, ChevronUp, ChevronDown } from "lucide-svelte";
+	import { Check, ChevronUp, ChevronDown, Euro } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 
@@ -91,7 +91,7 @@
 </script>
 
 <form
-	class="divide-y-gray-50 flex h-auto flex-col gap-y-6 px-4 py-4"
+	class="divide-y-gray-50 flex flex-col gap-y-10 px-4 py-4"
 	aria-label="Edit book details"
 	use:enhance
 	method="POST"
@@ -99,82 +99,139 @@
 >
 	<div class="flex flex-col justify-between gap-6 lg:flex-row-reverse">
 		<div class="flex grow flex-col flex-wrap gap-y-4 lg:flex-row">
-			<div id="isbn-field-container" class="flex basis-full gap-x-4">
-				<div class="grow">
-					<Input bind:value={$formStore.isbn} name="isbn" label="ISBN" placeholder="0000000000" {...$constraints.isbn} disabled />
-				</div>
+			<div id="isbn-field-container" class="flex basis-full items-center gap-x-4">
+				<label class="form-control grow">
+					<div class="label">
+						<span class="label-text">ISBN</span>
+					</div>
+					<input
+						bind:value={$formStore.isbn}
+						name="isbn"
+						placeholder="0000000000"
+						{...$constraints.isbn}
+						disabled
+						class="input input-bordered w-full"
+					/>
+				</label>
 				<button
 					disabled={!isExtensionAvailable}
 					type="button"
-					class={["button button-alert mb-0.5 self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(
-						" "
-					)}
+					class={["btn btn-secondary self-end", `${!isExtensionAvailable && "bg-gray-200 text-gray-500 hover:bg-gray-200"}`].join(" ")}
 					on:click={() => onFetch($formStore.isbn, formStore)}
 				>
 					Fill details
 				</button>
 			</div>
-			<div id="title-field-container" class="basis-full">
-				<Input bind:value={$formStore.title} name="title" label="Title" placeholder="" {...$constraints.title} />
-			</div>
-			<div id="price-field-container" class="flex basis-full justify-between gap-x-4">
-				<Input bind:value={$priceProxy} name="price" label="Price" placeholder="0" type="number" step="any" required>
-					<span slot="start-adornment">€</span>
-				</Input>
-				<Input bind:value={$formStore.year} name="year" label="Year" placeholder="" {...$constraints.year} />
-			</div>
-			<div id="authors-field-container" class="basis-full">
-				<Input bind:value={$formStore.authors} name="authors" label="Authors" placeholder="" {...$constraints.authors} />
-			</div>
-			<div id="publisher-field-container" class="relative basis-full">
-				<Input
-					name="publisher"
-					autocomplete="off"
-					label="Publisher"
-					inputAction={$input.action}
-					{...$input}
-					bind:value={$formStore.publisher}
-				>
-					<div slot="end-adornment">
-						{#if $open}
-							<ChevronUp class="square-4" />
-						{:else}
-							<ChevronDown class="square-4" />
-						{/if}
+
+			<label class="form-control basis-full" id="title-field-container">
+				<div class="label">
+					<span class="label-text">Title</span>
+				</div>
+				<input bind:value={$formStore.title} name="title" placeholder="" {...$constraints.title} class="input input-bordered w-full" />
+			</label>
+
+			<div class="flex basis-full gap-x-2">
+				<label class="form-control basis-1/2" id="price-field-container">
+					<span class="label">
+						<span class="label-text">Price</span>
+					</span>
+					<span class="input input-bordered flex items-center gap-2">
+						<Euro class="text-base-content/50" />
+						<input bind:value={$priceProxy} name="price" placeholder="0" type="number" step="any" required class="w-1/2" />
+					</span>
+				</label>
+
+				<label class="form-control basis-1/2" id="year-field-container">
+					<div class="label">
+						<span class="label-text">Year</span>
 					</div>
-				</Input>
+					<input bind:value={$formStore.year} name="year" placeholder="" {...$constraints.year} class="input input-bordered w-full" />
+				</label>
+			</div>
+
+			<label class="form-control basis-1/2" id="authors-field-container">
+				<div class="label">
+					<span class="label-text">Authors</span>
+				</div>
+				<input
+					bind:value={$formStore.authors}
+					name="authors"
+					placeholder=""
+					{...$constraints.authors}
+					class="input input-bordered w-full"
+				/>
+			</label>
+
+			<div id="publisher-field-container" class="relative basis-full">
+				<label class="form-control basis-1/2" id="year-field-container">
+					<span class="label">
+						<span class="label-text">Publisher</span>
+					</span>
+					<span class="input input-bordered flex items-center gap-2">
+						<input name="publisher" autocomplete="off" use:melt={$input} bind:value={$formStore.publisher} class="w-full" />
+						<span>
+							{#if $open}
+								<ChevronUp class="square-4" />
+							{:else}
+								<ChevronDown class="square-4" />
+							{/if}
+						</span>
+					</span>
+				</label>
+
 				{#if $open}
 					<ul
 						use:melt={$menu}
-						class="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-md"
+						class="bg-base-100 absolute z-[200] mt-1 max-h-60 w-full overflow-auto rounded-md py-1 text-base shadow-md"
 						transition:fly|global={{ duration: 150, y: -5 }}
 					>
 						{#each $selectedStates as { publisher, isSelected, isHighlighted }}
 							<li
-								class="relative cursor-pointer select-none py-2 pl-10 pr-4 text-gray-900 data-[highlighted]:bg-teal-500 data-[highlighted]:text-white"
+								class="data-[highlighted]:bg-primary data-[highlighted]:text-primary-content text-base-content relative cursor-pointer select-none py-2 pl-10 pr-4"
 								use:melt={$option(toOption(publisher))}
 							>
 								<span class="block truncate {isSelected ? 'font-medium' : 'font-normal'}">{publisher}</span>
 								{#if isSelected}
-									<span class="absolute inset-y-0 left-0 flex items-center pl-3 {isHighlighted ? 'text-white' : 'text-teal-500'}">
+									<span class="absolute inset-y-0 left-0 flex items-center pl-3 {isHighlighted ? 'text-primary-content' : 'text-primary'}">
 										<Check />
 									</span>
 								{/if}
 							</li>
 						{:else}
-							<li class="relative cursor-default select-none py-2 pl-10 pr-4 text-gray-900">
+							<li class="relative cursor-default select-none py-2 pl-10 pr-4">
 								<span class="block truncate font-normal">No results found</span>
 							</li>
 						{/each}
 					</ul>
 				{/if}
 			</div>
-			<div id="editedBy-field-container" class="basis-full">
-				<Input bind:value={$formStore.editedBy} name="editedBy" label="Edited by" placeholder="" {...$constraints.editedBy} />
-			</div>
-			<div id="category-field-container" class="basis-full">
-				<Input bind:value={$formStore.category} name="category" label="Category" placeholder="" {...$constraints.category} />
-			</div>
+
+			<label class="form-control basis-full" id="editedBy-field-container">
+				<div class="label">
+					<span class="label-text">Edited by</span>
+				</div>
+				<input
+					bind:value={$formStore.editedBy}
+					name="editedBy"
+					placeholder=""
+					{...$constraints.editedBy}
+					class="input input-bordered w-full"
+				/>
+			</label>
+
+			<label class="form-control basis-full" id="category-field-container">
+				<div class="label">
+					<span class="label-text">Category</span>
+				</div>
+				<input
+					bind:value={$formStore.category}
+					name="category"
+					placeholder=""
+					{...$constraints.category}
+					class="input input-bordered w-full"
+				/>
+			</label>
+
 			<div id="outOfPrint-field-container" class="basis-full">
 				<Checkbox
 					bind:checked={$formStore.outOfPrint}
@@ -188,7 +245,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button class="button button-white" on:click={onCancel} type="button">Cancel</button>
-		<button class="button button-green disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn btn-primary disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>
