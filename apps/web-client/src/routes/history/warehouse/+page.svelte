@@ -8,6 +8,7 @@
 	import HistoryPage from "$lib/controllers/HistoryPage.svelte";
 
 	import { appPath } from "$lib/paths";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	import type { PageData } from "./$types";
 
@@ -33,6 +34,8 @@
 	$: ({ warehouses, plugins } = data);
 	$: db = data.dbCtx?.db;
 
+	$: t = $LL.history_page.warehouse_tab;
+
 	let initialised = false;
 	$: initialised = Boolean(data);
 </script>
@@ -55,14 +58,14 @@
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
 									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{totalBooks} books</span>
+									<span class="entity-list-text-sm text-gray-500">{t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 
 								{#if warehouseDiscount}
@@ -70,7 +73,7 @@
 										<div class="border border-gray-700 p-[1px]">
 											<Percent class="text-gray-700" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% discount</span>
+										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {t.stats.discount()}</span>
 									</div>
 								{/if}
 							</div>

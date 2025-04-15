@@ -15,7 +15,7 @@
 	import type { PageData } from "./$types";
 	import type { GetStockResponseItem } from "$lib/db/cr-sqlite/types";
 
-	import { LL } from "$i18n/i18n-svelte";
+	import { LL } from "@librocco/shared/i18n-svelte";
 
 	import { printBookLabel } from "$lib/printer";
 
@@ -184,7 +184,7 @@
 													use:trigger.action
 													class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 												>
-													<span class="sr-only">Edit row {rowIx}</span>
+													<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 													<span class="aria-hidden">
 														<MoreVertical />
 													</span>
@@ -199,7 +199,7 @@
 														}}
 														class="rounded p-3 text-gray-500 hover:text-gray-900"
 													>
-														<span class="sr-only">Edit row {rowIx}</span>
+														<span class="sr-only">{$LL.stock_page.labels.edit_row()} {rowIx}</span>
 														<span class="aria-hidden">
 															<FileEdit />
 														</span>
@@ -210,7 +210,7 @@
 														data-testid={testId("print-book-label")}
 														on:click={handlePrintLabel(row)}
 													>
-														<span class="sr-only">Print book label {rowIx}</span>
+														<span class="sr-only">{$LL.stock_page.labels.print_book_label()} {rowIx}</span>
 														<span class="aria-hidden">
 															<Printer />
 														</span>
@@ -251,8 +251,10 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{$LL.stock_page.labels.edit_book_details()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">
+							{$LL.stock_page.labels.manually_edit_book_details()}
+						</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />

@@ -18,10 +18,14 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 
+	import LL from "@librocco/shared/i18n-svelte";
+
 	export let data: PageData;
 
 	$: ({ plugins, displayName, updatedAt } = data);
 	$: db = data.dbCtx?.db;
+
+	$: t = $LL.history_page.notes_tab.archive;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -79,13 +83,13 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Committed at: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{t.committed_at()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">Export CSV</button>
+				<button class="button button-green">{t.export_csv()}</button>
 			</div>
 		</div>
 	</svelte:fragment>

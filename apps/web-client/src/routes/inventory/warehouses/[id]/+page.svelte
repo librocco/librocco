@@ -32,11 +32,15 @@
 	import { appPath } from "$lib/paths";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ plugins, displayName, entries, publisherList, id } = data);
 	$: db = data.dbCtx?.db;
+
+	$: tColumnHeaders = $LL.warehouse_page.table;
+	$: tLabels = $LL.warehouse_page.labels;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -64,16 +68,16 @@
 	const handleExportCsv = () => {
 		const csvConfig = mkConfig({
 			columnHeaders: [
-				{ displayLabel: "Quantity", key: "quantity" },
-				{ displayLabel: "ISBN", key: "isbn" },
-				{ displayLabel: "Title", key: "title" },
-				{ displayLabel: "Publisher", key: "publisher" },
-				{ displayLabel: "Authors", key: "authors" },
-				{ displayLabel: "Year", key: "year" },
-				{ displayLabel: "Price", key: "price" },
-				{ displayLabel: "Category", key: "category" },
-				{ displayLabel: "Edited by", key: "edited_by" },
-				{ displayLabel: "Out of print", key: "out_of_print" }
+				{ displayLabel: tColumnHeaders.quantity(), key: "quantity" },
+				{ displayLabel: tColumnHeaders.isbn(), key: "isbn" },
+				{ displayLabel: tColumnHeaders.title(), key: "title" },
+				{ displayLabel: tColumnHeaders.publisher(), key: "publisher" },
+				{ displayLabel: tColumnHeaders.authors(), key: "authors" },
+				{ displayLabel: tColumnHeaders.year(), key: "year" },
+				{ displayLabel: tColumnHeaders.price(), key: "price" },
+				{ displayLabel: tColumnHeaders.category(), key: "category" },
+				{ displayLabel: tColumnHeaders.edited_by(), key: "edited_by" },
+				{ displayLabel: tColumnHeaders.out_of_print(), key: "out_of_print" }
 			],
 			filename: `${displayName.replace(" ", "-")}-${Date.now()}`
 		});
@@ -163,7 +167,7 @@
 			<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
 			{#if $csvEntries?.length}
 				<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
-					<span class="aria-hidden"> Export to CSV </span>
+					<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
 				</button>
 			{/if}
 		</div>
@@ -176,7 +180,9 @@
 			</div>
 		{:else if !entries?.length}
 			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateInboundNote} class="button button-green mx-auto"><span class="button-text">New note</span></button>
+				<button on:click={handleCreateInboundNote} class="button button-green mx-auto"
+					><span class="button-text">{tLabels.new_note()}</span></button
+				>
 			</PlaceholderBox>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
@@ -201,7 +207,7 @@
 											use:trigger.action
 											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
 										>
-											<span class="sr-only">Edit row {rowIx}</span>
+											<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 											<span class="aria-hidden">
 												<MoreVertical />
 											</span>
@@ -217,7 +223,7 @@
 												}}
 												class="rounded p-3 text-gray-500 hover:text-gray-900"
 											>
-												<span class="sr-only">Edit row {rowIx}</span>
+												<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 												<span class="aria-hidden">
 													<FileEdit />
 												</span>
@@ -228,7 +234,7 @@
 												data-testid={testId("print-book-label")}
 												on:click={handlePrintLabel(row)}
 											>
-												<span class="sr-only">Print book label {rowIx}</span>
+												<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
 												<span class="aria-hidden">
 													<Printer />
 												</span>
@@ -265,8 +271,8 @@
 			>
 				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">Edit book details</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">Manually edit book details</p>
+						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{tLabels.edit_book_details()}</h2>
+						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{tLabels.manually_edit_book_details()}</p>
 					</div>
 					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
 						<X class="square-4" />

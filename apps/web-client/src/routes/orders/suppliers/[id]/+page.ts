@@ -8,7 +8,9 @@ import { getPlacedSupplierOrders, getPublishersFor, getSupplierDetails } from "$
 import { appPath } from "$lib/paths";
 import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("supplier:data");
 	depends("supplier:orders");
 
@@ -19,7 +21,8 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		return {
 			supplier: null,
 			assignedPublishers: [] as string[],
-			unassignedPublishers: [] as string[],
+			publishersAssignedToOtherSuppliers: [] as string[],
+			publishersUnassignedToSuppliers: [] as string[],
 			orders: [] as PlacedSupplierOrder[]
 		};
 	}
@@ -32,11 +35,17 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		throw redirect(307, appPath("suppliers"));
 	}
 
-	const [assignedPublishers, allPublishers] = await Promise.all([getPublishersFor(dbCtx.db, id), getPublisherList(dbCtx.db)]);
+	const [assignedPublishers, allPublishers, allAssignedPublishers] = await Promise.all([
+		getPublishersFor(dbCtx.db, id),
+		getPublisherList(dbCtx.db),
+		getPublishersFor(dbCtx.db)
+	]);
 
 	// NOTE: the list of unassigned publishers will contain all publishers not assigned to the supplier
 	// TODO: check if this is the desired behavior, or if we should only list publishers that are not assigned to any supplier
-	const unassignedPublishers = allPublishers.filter((p) => !assignedPublishers.includes(p));
+	const publishersAssignedToOtherSuppliers = allAssignedPublishers.filter((p) => !assignedPublishers.includes(p));
+
+	const publishersUnassignedToSuppliers = allPublishers.filter((p) => !allAssignedPublishers.includes(p));
 
 	const unreconciledOrders = (await getPlacedSupplierOrders(dbCtx.db, { supplierId: Number(params.id), reconciled: false })).map(
 		(order) => ({ ...order, reconciled: false })
@@ -46,5 +55,13 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 		reconciled: true
 	}));
 
-	return { supplier, assignedPublishers, unassignedPublishers, orders: [...unreconciledOrders, ...reconciledOrders] };
+	return {
+		supplier,
+		assignedPublishers,
+		publishersAssignedToOtherSuppliers,
+		publishersUnassignedToSuppliers,
+		orders: [...unreconciledOrders, ...reconciledOrders]
+	};
 };
+
+export const load: PageLoad = timed(_load);

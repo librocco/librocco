@@ -24,8 +24,7 @@
 		createBreadcrumbs,
 		TextEditable,
 		Dialog,
-		InboundTable,
-		ExtensionAvailabilityToast
+		InboundTable
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
 
@@ -33,7 +32,7 @@
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { autoPrintLabels, deviceSettingsStore } from "$lib/stores/app";
 
@@ -53,11 +52,16 @@
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
 	$: db = data.dbCtx?.db;
+
+	$: t = $LL.inventory_page.inbound_tab;
+	$: tInbound = $LL.inbound_note;
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -255,33 +259,33 @@
 
 				<div class="w-fit">
 					{#if updatedAt}
-						<span class="badge badge-md badge-green">Last updated: {generateUpdatedAtString(updatedAt)}</span>
+						<span class="badge badge-md badge-green">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 					{/if}
 				</div>
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
 				<button
-					class="button button-green xs:block hidden"
+					class="button button-green hidden xs:block"
 					use:melt={$dialogTrigger}
 					on:m-click={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
 					on:m-keydown={() => {
 						dialogContent = {
 							onConfirm: handleCommitSelf,
-							title: dialogTitle.commitInbound(displayName),
-							description: dialogDescription.commitInbound(totalBookCount, warehouseName),
+							title: tCommon.commit_inbound_dialog.title({ entity: displayName }),
+							description: tCommon.commit_inbound_dialog.description({ bookCount: totalBookCount, warehouseName }),
 							type: "commit"
 						};
 					}}
 				>
-					<span class="button-text">Commit</span>
+					<span class="button-text">{tInbound.labels.commit()}</span>
 				</button>
 
 				<DropdownWrapper let:item>
@@ -292,14 +296,14 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
-								title: dialogTitle.commitOutbound(displayName),
-								description: dialogDescription.commitOutbound(totalBookCount),
+								title: tCommon.commit_outbound_dialog.title({ entity: displayName }),
+								description: tCommon.commit_outbound_dialog.description({ bookCount: totalBookCount }),
 								type: "commit"
 							};
 						}}
-						class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 xs:hidden"
 					>
-						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">Commit</span>
+						<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.commit()}</span>
 					</div>
 					<div
 						{...item}
@@ -307,7 +311,7 @@
 						on:m-click={handlePrintReceipt}
 						class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
 					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Print</span>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.print()}</span>
 					</div>
 					<div
 						{...item}
@@ -317,7 +321,7 @@
 							? '!bg-green-400'
 							: ''}"
 					>
-						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">Auto print book labels</span>
+						<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.auto_print_book_labels()}</span>
 					</div>
 					<div
 						{...item}
@@ -327,21 +331,21 @@
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 						on:m-keydown={() => {
 							dialogContent = {
 								onConfirm: handleDeleteSelf,
-								title: dialogTitle.delete(displayName),
-								description: dialogDescription.deleteNote(),
+								title: tCommon.delete_dialog.title({ entity: displayName }),
+								description: tCommon.delete_dialog.description(),
 								type: "delete"
 							};
 						}}
 					>
-						<Trash2 class="text-white" size={20} /><span class="text-white">Delete</span>
+						<Trash2 class="text-white" size={20} /><span class="text-white">{tInbound.labels.delete()}</span>
 					</div>
 				</DropdownWrapper>
 			</div>
@@ -396,8 +400,8 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
@@ -407,13 +411,13 @@
 
 											dialogContent = {
 												onConfirm: () => {},
-												title: dialogTitle.editBook(),
-												description: dialogDescription.editBook(),
+												title: tCommon.edit_book_dialog.title(),
+												description: tCommon.edit_book_dialog.description(),
 												type: "edit-row"
 											};
 										}}
 									>
-										<span class="sr-only">Edit row {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<FileEdit />
 										</span>
@@ -424,7 +428,7 @@
 										data-testid={testId("print-book-label")}
 										on:click={() => handlePrintLabel(row)}
 									>
-										<span class="sr-only">Print book label {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Printer />
 										</span>
@@ -435,7 +439,7 @@
 										class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
 										data-testid={testId("delete-row")}
 									>
-										<span class="sr-only">Delete row {rowIx}</span>
+										<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Trash2 />
 										</span>

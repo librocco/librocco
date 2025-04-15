@@ -17,7 +17,9 @@
 
 import type { DB, PickPartial, TXAsync, Warehouse } from "./types";
 
-export async function getWarehouseIdSeq(db: DB) {
+import { timed } from "$lib/utils/timer";
+
+async function _getWarehouseIdSeq(db: DB) {
 	const query = `SELECT COALESCE(MAX(id), 0) + 1 AS nextId FROM warehouse;`;
 	const [result] = await db.execO<{ nextId: number }>(query);
 	return result.nextId;
@@ -99,7 +101,7 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
  * @param {DB} db - Database connection
  * @returns {Promise<(Warehouse & { totalBooks: number })[]>} Warehouses with book counts
  */
-export async function getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: number })[]> {
+async function _getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: number })[]> {
 	// NOTE: there's a n.committed IS NULL constraint
 	// - this makes sure there are no issues if warehouse doesn't have any notes associated with it
 	// - we make sure committed = 0 (default) and is never null to avoid miscalculations here
@@ -132,7 +134,7 @@ export async function getAllWarehouses(db: DB): Promise<(Warehouse & { totalBook
 	return db.execO<Warehouse & { totalBooks: number }>(query);
 }
 
-export async function getWarehouseById(db: DB, id: number) {
+async function _getWarehouseById(db: DB, id: number) {
 	const query = `
 		SELECT
 			id,
@@ -148,3 +150,7 @@ export async function getWarehouseById(db: DB, id: number) {
 export function deleteWarehouse(db: DB, id: number) {
 	return db.exec("DELETE FROM warehouse WHERE id = ?", [id]);
 }
+
+export const getWarehouseIdSeq = timed(_getWarehouseIdSeq);
+export const getAllWarehouses = timed(_getAllWarehouses);
+export const getWarehouseById = timed(_getWarehouseById);

@@ -13,7 +13,7 @@
 <!-- Main content -->
 <div data-view={view} id={testId("page-container")} class="h-full w-full">
 	<div class="flex h-full w-full flex-col overflow-y-auto" id="content">
-		<div class="bg-base-200 border-base-content sticky top-0 z-[100] flex h-16 items-center justify-between border-b">
+		<div class="sticky top-0 z-[100] flex h-16 items-center justify-between border-b border-base-content bg-base-200">
 			<h1 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h1>
 			<!-- TODO: add strings to dicts -->
 			<div class="flex gap-x-2 p-4">
@@ -48,7 +48,7 @@
 
 		<!-- Heading section -->
 		{#if $$slots.heading}
-			<header class="xs:px-8 w-full px-4 pb-6 pt-5">
+			<header class="w-full px-4 pb-6 pt-5 xs:px-8">
 				<slot name="heading" />
 			</header>
 		{/if}
@@ -60,7 +60,7 @@
 				<slot name="main" />
 			</div>
 
-			<div class="bg-base-200 sticky bottom-0 flex basis-8 items-center justify-end border-t px-4">
+			<div class="sticky bottom-0 flex basis-8 items-center justify-end border-t bg-base-200 px-4">
 				<slot name="footer" />
 			</div>
 		</main>

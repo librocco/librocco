@@ -39,6 +39,8 @@ import {
 	type CustomerOrderLineHistory
 } from "./types";
 
+import { timed } from "$lib/utils/timer";
+
 /**
  * Creates a new customer or updates an existing one.
  * Uses customer ID as the unique identifier for upsert operations.
@@ -49,7 +51,7 @@ import {
  * @param {Customer} customer - Customer data
  * @throws {Error} If customer ID is not provided
  */
-export async function upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
+async function _upsertCustomer(db: DB, customer: Omit<Customer, "updatedAt">) {
 	if (!customer.id) {
 		throw new Error("Customer must have an id");
 	}
@@ -145,7 +147,7 @@ const unmarshallCustomerOrder = ({ updated_at, ...customer }: DBCustomer): Custo
  * @param {DB} db - Database connection
  * @returns {Promise<CustomerOrderListItem[]>} Array of customers
  */
-export async function getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
+async function _getCustomerOrderList(db: DB): Promise<CustomerOrderListItem[]> {
 	const orderLineStatusQuery = `
 		SELECT
 			customer_id,
@@ -302,7 +304,7 @@ export const unmarshalCustomerOrderLine = (line: DBCustomerOrderLine): CustomerO
  * Retrieves a history entries for each time a particular customer order line had been placed with a supplier.
  * TODO: history is the best I cound come up with in terms of nomenclature, maybe revisit
  */
-export async function getCustomerOrderLineHistory(db: DB, lineId: number): Promise<CustomerOrderLineHistory[]> {
+async function _getCustomerOrderLineHistory(db: DB, lineId: number): Promise<CustomerOrderLineHistory[]> {
 	const query = `
 		SELECT
 			supplier_order_id AS supplierOrderId,
@@ -356,3 +358,6 @@ export const markCustomerOrderLinesAsCollected = async (db: DB, ids: number[]): 
 		[timestamp, ...ids]
 	);
 };
+export const upsertCustomer = timed(_upsertCustomer);
+export const getCustomerOrderList = timed(_getCustomerOrderList);
+export const getCustomerOrderLineHistory = timed(_getCustomerOrderLineHistory);

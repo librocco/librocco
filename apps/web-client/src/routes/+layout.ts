@@ -11,12 +11,13 @@ import type { LayoutLoad } from "./$types";
 import { browser } from "$app/environment";
 import { base } from "$app/paths";
 
-import { loadLocaleAsync } from "$i18n/i18n-util.async";
-import { setLocale } from "$i18n/i18n-svelte";
-import { detectLocale } from "$i18n/i18n-util";
+import { loadLocaleAsync } from "@librocco/shared/i18n-util.async";
+import { setLocale } from "@librocco/shared/i18n-svelte";
+import { detectLocale } from "@librocco/shared/i18n-util";
 
 import { DEFAULT_LOCALE, IS_E2E } from "$lib/constants";
 import { newPluginsInterface } from "$lib/plugins";
+import { getDB } from "$lib/db/cr-sqlite";
 
 // Paths which are valid (shouldn't return 404, but don't have any content and should get redirected to the default route "/inventory/stock/all")
 const redirectPaths = ["", "/"].map((path) => `${base}${path}`);
@@ -50,6 +51,9 @@ export const load: LayoutLoad = async ({ url }) => {
 
 	// If in browser, we init the db, otherwise this is a prerender, for which we're only building basic html skeleton
 	if (browser) {
+		// For debug purposes and manual overrides (e.g. 'schema_version')
+		window["getDB"] = getDB;
+
 		// Init the db
 		const { getInitializedDB } = await import("$lib/db/cr-sqlite");
 		const dbCtx = await getInitializedDB(get(dbid));

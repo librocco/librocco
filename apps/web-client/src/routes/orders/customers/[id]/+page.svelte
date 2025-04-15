@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { onDestroy, onMount } from "svelte";
+	import { filter, scan } from "rxjs";
 	import {
 		BookUp,
-		QrCode,
 		X,
 		Trash2,
 		Mail,
@@ -15,7 +15,7 @@
 		PencilLine
 	} from "lucide-svelte";
 	import { createDialog, melt } from "@melt-ui/svelte";
-	import { defaults, superForm, type SuperForm } from "sveltekit-superforms";
+	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
 	import { page } from "$app/stores";
 	import { invalidate } from "$app/navigation";
@@ -28,7 +28,7 @@
 
 	import type { PageData } from "./$types";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { PageCenterDialog, defaultDialogConfig } from "$lib/components/Melt";
@@ -44,12 +44,11 @@
 		markCustomerOrderLinesAsCollected
 	} from "$lib/db/cr-sqlite/customers";
 
-	import { upsertBook } from "$lib/db/cr-sqlite/books";
-
-	import { scannerSchema } from "$lib/forms/schemas";
+	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
 	import { mergeBookData } from "$lib/utils/misc";
 	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	// import { createIntersectionObserver } from "$lib/actions";
 
@@ -135,6 +134,38 @@
 
 	// #endregion dialog
 
+	const handleAddLine = async (isbn: string) => {
+		await addBooksToCustomer(db, customerId, [isbn]);
+
+		// First check if there exists a book entry in the db, if not, fetch book data using external sources
+		//
+		// Note: this is not terribly efficient, but it's the least ambiguous behaviour to implement
+		const localBookData = await getBookData(db, isbn);
+
+		// If book data exists and has 'updatedAt' field - this means we've fetched the book data already
+		// no need for further action
+		if (localBookData?.updatedAt) {
+			return;
+		}
+
+		// If local book data doesn't exist at all, create an isbn-only entry
+		if (!localBookData) {
+			await upsertBook(db, { isbn });
+		}
+
+		// At this point there is a simple (isbn-only) book entry, but we should try and fetch the full book data
+		plugins
+			.get("book-fetcher")
+			.fetchBookData(isbn)
+			.stream()
+			.pipe(
+				filter((data) => Boolean(data)),
+				// Here we're prefering the latest result to be able to observe the updates as they come in
+				scan((acc, next) => ({ ...acc, ...next }))
+			)
+			.subscribe((b) => upsertBook(db, b));
+	};
+
 	const handleDeleteLine = async (lineId: number) => {
 		await removeBooksFromCustomer(db, customerId, [lineId]);
 	};
@@ -165,8 +196,6 @@
 			// toastError(`Error: ${err.message}`);
 		}
 	};
-
-	const handleScanIsbn = (isbn: string) => addBooksToCustomer(db, customerId, [isbn]);
 
 	const dialog = createDialog({
 		forceVisible: true
@@ -262,7 +291,7 @@
 		<div class="prose flex w-full max-w-full flex-col gap-y-3 md:px-4">
 			<h3 class="max-md:divider-start max-md:divider">Books</h3>
 
-			<DaisyUiScannerForm onSubmit={handleScanIsbn} />
+			<DaisyUiScannerForm onSubmit={handleAddLine} />
 		</div>
 
 		<div class="h-full overflow-x-auto">
@@ -338,8 +367,8 @@
 													bookFormData = { isbn, title, authors, publisher, price, year, editedBy, outOfPrint, category };
 													dialogContent = {
 														onConfirm: () => {},
-														title: dialogTitle.editBook(),
-														description: dialogDescription.editBook(),
+														title: $LL.common.edit_book_dialog.title(),
+														description: $LL.common.edit_book_dialog.description(),
 														type: "edit-row"
 													};
 												}}
@@ -348,8 +377,8 @@
 
 													dialogContent = {
 														onConfirm: () => {},
-														title: dialogTitle.editBook(),
-														description: dialogDescription.editBook(),
+														title: $LL.common.edit_book_dialog.title(),
+														description: $LL.common.edit_book_dialog.description(),
 														type: "edit-row"
 													};
 												}}

@@ -27,12 +27,18 @@
 	import * as reconciliation from "$lib/db/cr-sqlite/order-reconciliation";
 	import * as suppliers from "$lib/db/cr-sqlite/suppliers";
 	import * as warehouse from "$lib/db/cr-sqlite/warehouse";
+	import { timeLogger } from "$lib/utils/timer";
+	import { beforeNavigate } from "$app/navigation";
 
 	import type { LayoutData } from "./$types";
 
 	export let data: LayoutData;
 
 	const { dbCtx } = data;
+
+	beforeNavigate(({ to }) => {
+		timeLogger.setCurrentRoute(to.route.id);
+	});
 
 	$: {
 		// Register (and update on each change) the db and some db handlers to the window object.
@@ -76,6 +82,8 @@
 		// This helps us in e2e to know when the page is interactive, otherwise Playwright will start too early
 		document.body.setAttribute("hydrated", "true");
 
+		window["timeLogger"] = timeLogger;
+
 		// Start the sync worker
 		//
 		// Init worker and sync interface
@@ -108,7 +116,7 @@
 	});
 </script>
 
-<div class="bg-base-200 lg:divide-base-content flex h-full lg:divide-x">
+<div class="flex h-full bg-base-200 lg:divide-x lg:divide-base-content">
 	<div class="hidden h-full w-72 lg:block">
 		<Sidebar />
 	</div>
@@ -132,7 +140,7 @@
 
 		<div
 			use:melt={$content}
-			class="bg-base-200 fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto"
+			class="fixed bottom-0 left-0 top-0 z-[200] h-full w-2/3 max-w-md overflow-y-auto bg-base-200"
 			transition:fly|global={{
 				x: -350,
 				duration: 300,
