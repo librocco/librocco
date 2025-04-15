@@ -6,19 +6,21 @@
 
 	import { entityListView, testId } from "@librocco/shared";
 
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
-
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { browser } from "$app/environment";
 
 	import type { PageData } from "./$types";
 
-	import { HistoryPage, PlaceholderBox, CalendarPicker } from "$lib/components";
+	import { PlaceholderBox, CalendarPicker } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { appPath } from "$lib/paths";
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	export let data: PageData;
+
+	$: ({ stats, bookList, dateValue, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -36,22 +38,16 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: ({
-		stats,
-		bookList,
-		dbCtx: { db }
-	} = data);
-
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
 		if (!a || !b) return false;
 		return a.toString().slice(0, 10) === b.toString().slice(0, 10);
 	};
-	const defaultDateValue = data.dateValue;
+	const defaultDateValue = dateValue;
 	const onDateValueChange = ({ next }) => {
 		if (!next) return;
 		// Redirect only in browser, if data value is different then the one in route param
-		if (browser && !isEqualDateValue(data.dateValue, next)) {
+		if (browser && !isEqualDateValue(dateValue, next)) {
 			// The replaceState part allows us to have the date as part of the route (for sharing/reaload),
 			// whilst keeping the date changes a single history entry (allowing for quick 'back' navigation)
 			goto(appPath("history/date", next.toString().slice(0, 10)), { replaceState: true });
@@ -62,21 +58,9 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/date" {handleSearch} {handleCreateOutboundNote}>
+<HistoryPage view="history/date" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">

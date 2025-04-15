@@ -22,15 +22,15 @@
 		Breadcrumbs,
 		DropdownWrapper,
 		PopoverWrapper,
-		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
 		Dialog,
 		OutboundTable,
 		TextEditable,
-		type WarehouseChangeDetail,
-		ExtensionAvailabilityToast
+		type WarehouseChangeDetail
 	} from "$lib/components";
+	import { Page } from "$lib/controllers";
+
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import {
 		BookForm,
@@ -58,7 +58,6 @@
 		addVolumesToNote,
 		commitNote,
 		createAndCommitReconciliationNote,
-		createOutboundNote,
 		deleteNote,
 		getNoteIdSeq,
 		getReceiptForNote,
@@ -70,10 +69,10 @@
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
 
-	import { racefreeGoto } from "$lib/utils/navigation";
-	import { appPath } from "$lib/paths";
-
 	export let data: PageData;
+
+	$: ({ id: noteId, displayName, defaultWarehouse, warehouses, updatedAt, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -91,27 +90,15 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
 
-	$: noteId = data.id;
-	$: displayName = data.displayName;
-	$: defaultWarehouse = data.defaultWarehouse;
-
-	$: warehouses = data.warehouses;
-
-	$: updatedAt = data.updatedAt;
 	$: bookEntries = data.entries.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: totalBookCount = bookEntries.filter(isBookRow).reduce((acc, { quantity }) => acc + quantity, 0);
 	$: customItemEntries = data.customItems.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: publisherList = data.publisherList;
-
-	$: plugins = data.plugins;
 
 	// Defensive programming: updatedAt will fall back to 0 (items witout updatedAt displayed at the bottom) - this shouldn't really happen (here for type consistency)
 	$: entries = bookEntries.concat(customItemEntries).sort(desc((x) => Number(x.updatedAt || 0)));
@@ -370,24 +357,12 @@
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
 
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
 	const handleUpdateNoteWarehouse = async (warehouseId: number) => {
 		await updateNote(db, noteId, { defaultWarehouse: warehouseId });
 	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title={displayName} {handleCreateOutboundNote} {handleSearch} view="outbound-note">
+<Page title={displayName} view="outbound-note" {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
@@ -617,10 +592,6 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

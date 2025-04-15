@@ -1,5 +1,5 @@
 <script>
-	import Page from "$lib/components/Page.svelte";
+	import Page from "$lib/components/PageLayout.svelte";
 </script>
 
 <Page view="error" loaded={true}>

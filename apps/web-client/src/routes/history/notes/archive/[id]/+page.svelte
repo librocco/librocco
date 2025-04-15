@@ -7,7 +7,8 @@
 
 	import type { PageData } from "./$types";
 
-	import { Page, PlaceholderBox, ExtensionAvailabilityToast, StockTable, StockBookRow } from "$lib/components";
+	import { PlaceholderBox, StockTable, StockBookRow } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 
 	import { createIntersectionObserver, createTable } from "$lib/actions";
@@ -16,9 +17,11 @@
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
+
+	$: ({ plugins, displayName, updatedAt } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -36,20 +39,13 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data?.dbCtx?.db;
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !data;
 
-	$: displayName = data.displayName;
-	$: updatedAt = data.updatedAt;
-
 	$: bookEntries = data.entries?.map((e) => ({ __kind: "book", ...e })) as InventoryTableData[];
 	$: customItemEntries = data.customItems?.map((e) => ({ __kind: "custom", ...e })) as InventoryTableData[];
 	$: entries = bookEntries.concat(customItemEntries);
-
-	$: plugins = data.plugins;
 
 	// #region infinite-scroll
 	let maxResults = 20;
@@ -64,19 +60,9 @@
 	const table = createTable(tableOptions);
 	$: tableOptions.set({ data: entries?.slice(0, maxResults) });
 	// #endregion table
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
 </script>
 
-<Page {handleCreateOutboundNote} view="outbound-note" loaded={!loading}>
+<HistoryPage view="history/notes" {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		<Search {...iconProps} />
 		<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
@@ -131,8 +117,4 @@
 			</div>
 		{/if}
 	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
-	</svelte:fragment>
-</Page>
+</HistoryPage>

@@ -1,6 +1,5 @@
 <script lang="ts">
 	import { Plus, RotateCcw, Play, BookPlus } from "lucide-svelte";
-	import { LL } from "$i18n/i18n-svelte";
 	import { onMount } from "svelte";
 
 	import { wrapIter } from "@librocco/shared";
@@ -17,7 +16,6 @@
 	import { addBooksToCustomer, upsertCustomer } from "$lib/db/cr-sqlite/customers";
 
 	import { debugData as dd } from "$lib/__testData__/debugData";
-	import Page from "$lib/components/Page.svelte";
 
 	export let data: LayoutData;
 

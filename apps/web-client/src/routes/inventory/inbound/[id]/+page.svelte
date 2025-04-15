@@ -20,7 +20,6 @@
 		Breadcrumbs,
 		DropdownWrapper,
 		PopoverWrapper,
-		Page,
 		PlaceholderBox,
 		createBreadcrumbs,
 		TextEditable,
@@ -28,6 +27,8 @@
 		InboundTable,
 		ExtensionAvailabilityToast
 	} from "$lib/components";
+	import { Page } from "$lib/controllers";
+
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
 	import { printBookLabel, printReceipt } from "$lib/printer";
@@ -44,20 +45,19 @@
 	import {
 		addVolumesToNote,
 		commitNote,
-		createOutboundNote,
 		deleteNote,
-		getNoteIdSeq,
 		getReceiptForNote,
 		removeNoteTxn,
 		updateNote,
 		updateNoteTxn
 	} from "$lib/db/cr-sqlite/note";
 	import { getBookData, upsertBook } from "$lib/db/cr-sqlite/books";
-	import { appPath } from "$lib/paths";
-	import { racefreeGoto } from "$lib/utils/navigation";
 	import type { NoteEntriesItem } from "$lib/db/cr-sqlite/types";
 
 	export let data: PageData;
+
+	$: ({ plugins, id: noteId, warehouseId, warehouseName, displayName, updatedAt, publisherList } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -75,25 +75,13 @@
 		// Unsubscribe on unmount
 		disposer?.();
 	});
-	$: goto = racefreeGoto(disposer);
-
-	$: db = data.dbCtx?.db;
 
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
 
-	$: noteId = data.id;
-	$: warehouseId = data.warehouseId;
-	$: warehouseName = data.warehouseName;
-	$: displayName = data.displayName;
-
-	$: updatedAt = data.updatedAt;
 	$: entries = data.entries as NoteEntriesItem[];
 	$: totalBookCount = entries.reduce((acc, { quantity }) => acc + quantity, 0);
-	$: publisherList = data.publisherList;
-
-	$: plugins = data.plugins;
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
 		await commitNote(db, noteId);
@@ -222,21 +210,9 @@
 	} = dialog;
 
 	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title={displayName} {handleCreateOutboundNote} {handleSearch} view="inbound-note">
+<Page title={displayName} view="inbound-note" {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps>
 		<QrCode {...iconProps} />
 		<ScannerForm
@@ -476,10 +452,6 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

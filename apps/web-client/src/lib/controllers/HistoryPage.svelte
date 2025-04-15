@@ -1,15 +1,17 @@
 <script lang="ts">
 	import { Book, Calendar, Search } from "lucide-svelte";
 
-	import type { HistoryView } from "@librocco/shared";
-
-	import { goto } from "$lib/utils/navigation";
+	import { browser } from "$app/environment";
 	import { page } from "$app/stores";
 
-	import Page from "$lib/components/Page.svelte";
-
+	import { goto } from "$lib/utils/navigation";
+	import { Page } from "$lib/controllers";
 	import { appPath } from "$lib/paths";
-	import { browser } from "$app/environment";
+
+	import type { HistoryView } from "@librocco/shared";
+
+	import type { DB } from "$lib/db/cr-sqlite/types";
+	import type { PluginsInterface } from "$lib/plugins";
 
 	$: tabs = [
 		{
@@ -39,11 +41,11 @@
 	];
 
 	export let view: HistoryView;
-	export let handleSearch: (e: Event) => void;
-	export let handleCreateOutboundNote: () => (void | Promise<void>) | undefined = undefined;
+	export let db: DB;
+	export let plugins: PluginsInterface;
 </script>
 
-<Page title="History" {handleCreateOutboundNote} {handleSearch} {view}>
+<Page title="History" {view} {db} {plugins}>
 	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
 		{#if $$slots.topbar}
 			<slot name="topbar" {iconProps} {inputProps} />
