@@ -43,8 +43,10 @@
 <HistoryPage view="history/warehouse" {db} {plugins}>
 	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		{#if !initialised}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else}
 			<!-- Start entity list contaier -->
@@ -60,20 +62,20 @@
 
 					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
 							<div class="flex flex-col gap-2 sm:flex-row">
 								<div class="flex w-32 items-center gap-x-1">
-									<Library class="text-gray-700" size={20} />
-									<span class="entity-list-text-sm text-gray-500">{t.stats.books({ no_of_books: totalBooks })}</span>
+									<Library class="text-base-content" size={20} />
+									<span class="entity-list-text-sm text-base-content">{t.stats.books({ no_of_books: totalBooks })}</span>
 								</div>
 
 								{#if warehouseDiscount}
 									<div class="flex items-center gap-x-1">
-										<div class="border border-gray-700 p-[1px]">
-											<Percent class="text-gray-700" size={14} />
+										<div class="border border-base-content p-[1px]">
+											<Percent class="text-base-content" size={14} />
 										</div>
-										<span class="entity-list-text-sm text-gray-500">{warehouseDiscount}% {t.stats.discount()}</span>
+										<span class="entity-list-text-sm text-base-content">{warehouseDiscount}% {t.stats.discount()}</span>
 									</div>
 								{/if}
 							</div>

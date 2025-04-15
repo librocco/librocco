@@ -57,9 +57,11 @@
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<div class={testId("entity-list-container")} data-view={entityListView("outbound-list")}>
-			<!-- Start entity list placeholder -->
-			<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} class="center-absolute" />
-			<!-- End entity list placeholder -->
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/2">
+					<PlaceholderBox title={`${t.placeholder_box.title()}`} description={`${t.placeholder_box.description()}`} />
+				</div>
+			</div>
 		</div>
 
 		<!-- End entity list contaier -->
@@ -68,14 +70,14 @@
 
 {#if $open && entries?.length}
 	<div use:dropdown>
-		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-white shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					class="cursor-pointer items-start px-4 py-3"
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
 					data-testid={testId("search-completion")}
 				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</p>
+					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
 					<p data-property="title" class="text-xl font-medium">{title}</p>
 					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>

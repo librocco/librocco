@@ -71,8 +71,8 @@
 		<div class="flex w-full items-center justify-between">
 			<div class="flex max-w-md flex-col">
 				<div class="relative block w-full p-2">
-					<div class="flex flex-row items-center gap-x-2 text-gray-400">
-						<h1 class="text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
+					<div class="flex flex-row items-center gap-x-2 text-base-content">
+						<h1 class="text-2xl font-bold leading-7 text-base-content">{displayName}</h1>
 					</div>
 				</div>
 
@@ -84,17 +84,23 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="button button-green">{t.export_csv()}</button>
+				<button class="btn btn-primary">{t.export_csv()}</button>
 			</div>
 		</div>
 		{#if loading}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else if !entries.length}
-			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/2">
+					<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger">
+						<QrCode slot="icon" />
+					</PlaceholderBox>
+				</div>
+			</div>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
