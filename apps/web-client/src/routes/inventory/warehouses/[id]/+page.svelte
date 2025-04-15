@@ -13,16 +13,8 @@
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
 
-	import {
-		Page,
-		PlaceholderBox,
-		Breadcrumbs,
-		createBreadcrumbs,
-		StockTable,
-		ExtensionAvailabilityToast,
-		PopoverWrapper,
-		StockBookRow
-	} from "$lib/components";
+	import { PlaceholderBox, Breadcrumbs, createBreadcrumbs, StockTable, PopoverWrapper, StockBookRow } from "$lib/components";
+	import { Page } from "$lib/controllers";
 	import { BookForm, bookSchema, type BookFormSchema } from "$lib/forms";
 	import { createExtensionAvailabilityStore } from "$lib/stores";
 	import { deviceSettingsStore } from "$lib/stores/app";
@@ -38,10 +30,13 @@
 	import { mergeBookData } from "$lib/utils/misc";
 
 	import { appPath } from "$lib/paths";
-	import { createInboundNote, createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
+	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
 
 	export let data: PageData;
+
+	$: ({ plugins, displayName, entries, publisherList, id } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -61,18 +56,9 @@
 	});
 	$: goto = racefreeGoto(disposer);
 
-	$: db = data.dbCtx?.db;
-
 	// We display loading state before navigation (in case of creating new note/warehouse)
 	// and reset the loading state when the data changes (should always be truthy -> thus, loading false).
 	$: loading = !db;
-
-	$: id = data.id;
-	$: displayName = data.displayName;
-	$: entries = data.entries;
-	$: publisherList = data.publisherList;
-
-	$: plugins = data.plugins;
 
 	// #region csv
 	const handleExportCsv = () => {
@@ -168,21 +154,9 @@
 		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 	// #endregion printing
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title={displayName} {handleCreateOutboundNote} {handleSearch} view="warehouse">
+<Page title={displayName} view="warehouse" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<Breadcrumbs class="mb-3" links={breadcrumbs} />
 		<div class="flex justify-between">
@@ -273,10 +247,6 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 

@@ -9,20 +9,23 @@
 	import { entityListView, testId } from "@librocco/shared";
 
 	import type { PastTransactionItem } from "$lib/db/cr-sqlite/types";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import type { PageData } from "./$types";
 
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox } from "$lib/components";
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+
+	$: ({ plugins, displayName, transactions, noteType: filter } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -39,15 +42,7 @@
 		disposer?.();
 	});
 
-	$: ({
-		dbCtx: { db }
-	} = data);
-
 	$: goto = racefreeGoto(disposer);
-
-	$: displayName = data.displayName;
-	$: transactions = data.transactions;
-	$: filter = data.noteType;
 
 	// #region date picker
 	const isEqualDateValue = (a?: DateValue, b?: DateValue): boolean => {
@@ -118,21 +113,9 @@
 		download(csvConfig)(gen);
 	};
 	// #endregion csv
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/date" {handleSearch} {handleCreateOutboundNote}>
+<HistoryPage view="history/date" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">{displayName || ""} history</h1>

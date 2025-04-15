@@ -9,9 +9,9 @@
 
 	import type { PageData } from "./$types";
 
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import CalendarPicker from "$lib/components/CalendarPicker.svelte";
-	import { HistoryPage, PlaceholderBox } from "$lib/components";
+	import { PlaceholderBox } from "$lib/components";
+	import { HistoryPage } from "$lib/controllers";
 
 	import { generateUpdatedAtString } from "$lib/utils/time";
 	import { racefreeGoto } from "$lib/utils/navigation";
@@ -19,6 +19,9 @@
 	import { appPath } from "$lib/paths";
 
 	export let data: PageData;
+
+	$: ({ notes, plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -56,26 +59,9 @@
 		return date > now(getLocalTimeZone());
 	};
 	// #endregion date picker
-
-	$: ({
-		notes,
-		dbCtx: { db }
-	} = data);
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<HistoryPage view="history/notes" {handleSearch} {handleCreateOutboundNote}>
+<HistoryPage view="history/notes" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<div class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">

@@ -10,27 +10,22 @@
 
 	import type { PageData } from "./$types";
 
-	import { appPath } from "$lib/paths";
-
 	import { dbid, syncConfig, syncActive } from "$lib/db";
 
 	import { DeviceSettingsForm, SyncSettingsForm, DatabaseDeleteForm, databaseCreateSchema, DatabaseCreateForm } from "$lib/forms";
 	import { deviceSettingsSchema, syncSettingsSchema } from "$lib/forms/schemas";
-	import { Page, ExtensionAvailabilityToast } from "$lib/components";
+	import { Page } from "$lib/controllers";
 
 	import { dialogDescription, dialogTitle, type DialogContent } from "$lib/dialogs";
 
 	import { VERSION } from "$lib/constants";
-	import { goto } from "$lib/utils/navigation";
 	import { invalidateAll } from "$app/navigation";
 	import { deviceSettingsStore } from "$lib/stores/app";
-	import { createOutboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 
 	export let data: PageData;
 
+	$: ({ plugins } = data);
 	$: db = data.dbCtx?.db;
-
-	$: plugins = data.plugins;
 
 	// #region files list
 	let files: string[] = [];
@@ -152,21 +147,9 @@
 	let deleteDatabase = { name: "" };
 
 	let dialogContent: (DialogContent & { type: "create" | "delete" }) | null = null;
-
-	/**
-	 * Handle create note is an `on:click` handler used to create a new outbound note
-	 * _(and navigate to the newly created note page)_.
-	 */
-	const handleCreateOutboundNote = async () => {
-		const id = await getNoteIdSeq(db);
-		await createOutboundNote(db, id);
-		await goto(appPath("outbound", id));
-	};
-
-	const handleSearch = async () => await goto(appPath("stock"));
 </script>
 
-<Page title="Settings" {handleCreateOutboundNote} {handleSearch} view="settings">
+<Page title="Settings" view="settings" {db} {plugins}>
 	<svelte:fragment slot="heading">
 		<h4>Version {VERSION}</h4>
 	</svelte:fragment>
@@ -330,10 +313,6 @@
 				</div>
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="footer">
-		<ExtensionAvailabilityToast {plugins} />
 	</svelte:fragment>
 </Page>
 
