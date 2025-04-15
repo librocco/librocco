@@ -8,7 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { FileEdit, X, Loader2 as Loader, Printer, MoreVertical } from "lucide-svelte";
+	import { FileEdit, X, Loader2 as Loader, Printer, MoreVertical, FilePlus } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -161,11 +161,10 @@
 </script>
 
 <Page title={displayName} view="warehouse" {db} {plugins}>
-	<div slot="main" class="h-full w-full">
-		<div>
-			<Breadcrumbs class="mb-3" links={breadcrumbs} />
+	<div slot="main" class="h-full w-full flex-col gap-y-4 divide-y overflow-auto">
+		<div class="p-4">
+			<Breadcrumbs class="" links={breadcrumbs} />
 			<div class="flex justify-between">
-				<h1 class="mb-2 text-2xl font-bold leading-7 text-gray-900">{displayName}</h1>
 				{#if $csvEntries?.length}
 					<button class="items-center gap-2 rounded-md bg-teal-500 py-[9px] pl-[15px] pr-[17px] text-white" on:click={handleExportCsv}>
 						<span class="aria-hidden"> {tLabels.export_to_csv()} </span>
@@ -174,15 +173,24 @@
 			</div>
 		</div>
 		{#if loading}
-			<div class="center-absolute">
-				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+			<div class="flex grow justify-center">
+				<div class="mx-auto translate-y-1/2">
+					<span class="loading loading-spinner loading-lg text-primary"></span>
+				</div>
 			</div>
 		{:else if !entries?.length}
-			<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note" class="center-absolute">
-				<button on:click={handleCreateInboundNote} class="button button-green mx-auto"
-					><span class="button-text">{tLabels.new_note()}</span></button
-				>
-			</PlaceholderBox>
+			<div class="flex grow justify-center">
+				<div class="mx-auto max-w-xl translate-y-1/2">
+					<!-- Start entity list placeholder -->
+					<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note">
+						<FilePlus slot="icon" />
+						<button slot="actions" on:click={handleCreateInboundNote} class="btn btn-primary w-full">
+							{tLabels.new_note()}
+						</button>
+					</PlaceholderBox>
+					<!-- End entity list placeholder -->
+				</div>
+			</div>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
@@ -204,7 +212,7 @@
 											data-testid={testId("popover-control")}
 											{...trigger}
 											use:trigger.action
-											class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+											class="btn btn-neutral btn-sm btn-outline px-0.5"
 										>
 											<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 											<span class="aria-hidden">
@@ -212,7 +220,7 @@
 											</span>
 										</button>
 
-										<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+										<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 											<button
 												use:melt={$trigger}
 												data-testid={testId("edit-row")}
@@ -220,7 +228,7 @@
 													const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
 													bookFormData = bookData;
 												}}
-												class="rounded p-3 text-gray-500 hover:text-gray-900"
+												class="btn btn-secondary btn-sm"
 											>
 												<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 												<span class="aria-hidden">
@@ -228,11 +236,7 @@
 												</span>
 											</button>
 
-											<button
-												class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
-												data-testid={testId("print-book-label")}
-												on:click={handlePrintLabel(row)}
-											>
+											<button class="btn btn-secondary btn-sm" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
 												<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
 												<span class="aria-hidden">
 													<Printer />
@@ -257,55 +261,56 @@
 
 {#if $open}
 	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}>
-			<div
-				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto bg-white
-				shadow-lg focus:outline-none"
-				transition:fly|global={{
-					x: 350,
-					duration: 300,
-					opacity: 1
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
-					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{tLabels.edit_book_details()}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{tLabels.manually_edit_book_details()}</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
-					</button>
+		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$content}
+			class="bg-base-200 divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+			overflow-y-auto shadow-lg focus:outline-none"
+			transition:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+		>
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+				<div>
+					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
+					<p use:melt={$description} class="leading-normal">
+						{$LL.stock_page.labels.manually_edit_book_details()}
+					</p>
 				</div>
-				<div class="px-6">
-					<BookForm
-						data={defaults(bookFormData, zod(bookSchema))}
-						{publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(bookSchema),
-							validationMethod: "submit-only",
-							onUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+				<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
+					<X size={16} />
+				</button>
+			</div>
+			<div class="px-6">
+				<BookForm
+					data={defaults(bookFormData, zod(bookSchema))}
+					{publisherList}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(bookSchema),
+						validationMethod: "submit-only",
+						onUpdated
+					}}
+					onCancel={() => open.set(false)}
+					onFetch={async (isbn, form) => {
+						const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData({ isbn }, results);
+						// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+						const bookData = mergeBookData({ isbn }, results);
 
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
-							}
+						// If there's no book was retrieved from any of the sources, exit early
+						if (!bookData) {
+							return;
+						}
 
-							form.update((data) => ({ ...data, ...bookData }));
-							// TODO: handle loading and errors
-						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
-					/>
-				</div>
+						form.update((data) => ({ ...data, ...bookData }));
+						// TODO: handle loading and errors
+					}}
+					isExtensionAvailable={$bookDataExtensionAvailable}
+				/>
 			</div>
 		</div>
 	</div>
