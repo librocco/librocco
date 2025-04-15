@@ -41,7 +41,7 @@
 </script>
 
 <HistoryPage view="history/warehouse" {db} {plugins}>
-	<div slot="main" class="h-full w-full">
+	<div slot="main" class="flex h-full w-full flex-col divide-y">
 		{#if !initialised}
 			<div class="center-absolute">
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
