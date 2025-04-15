@@ -6,7 +6,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Edit, Table2, Trash2, Loader2 as Loader, Library, Percent } from "lucide-svelte";
+	import { Edit, Table2, Trash2, Library, Percent, HousePlus, Layers, SquarePercent } from "lucide-svelte";
 
 	import { entityListView, testId } from "@librocco/shared";
 
@@ -22,12 +22,14 @@
 	import WarehouseDeleteForm from "$lib/forms/WarehouseDeleteForm.svelte";
 	import { warehouseSchema, type WarehouseFormSchema } from "$lib/forms/schemas";
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
+	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
+	import { InventoryManagementPage } from "$lib/controllers";
 
-	import type { PageData } from "./$types";
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
-	import { InventoryManagementPage } from "$lib/controllers";
 	import LL from "@librocco/shared/i18n-svelte";
+
+	import type { PageData } from "./$types";
 
 	export let data: PageData;
 
@@ -98,8 +100,10 @@
 
 <InventoryManagementPage {handleCreateWarehouse} {db} {plugins}>
 	{#if !initialized}
-		<div class="center-absolute">
-			<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+		<div class="flex grow justify-center">
+			<div class="mx-auto translate-y-1/2">
+				<span class="loading loading-spinner loading-lg text-primary"></span>
+			</div>
 		</div>
 	{:else}
 		<!-- Start entity list contaier -->
@@ -107,44 +111,53 @@
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
 		<ul class={testId("entity-list-container")} data-view={entityListView("warehouse-list")}>
 			{#if !warehouses.length}
-				<!-- Start entity list placeholder -->
-				<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse" class="center-absolute">
-					<button on:click={handleCreateWarehouse} class="button button-green"><span class="button-text">New warehouse</span></button>
-				</PlaceholderBox>
-				<!-- End entity list placeholder -->
+				<div class="flex grow justify-center">
+					<div class="mx-auto max-w-xl translate-y-1/2">
+						<!-- Start entity list placeholder -->
+						<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse">
+							<HousePlus slot="icon" />
+							<button slot="actions" on:click={handleCreateWarehouse} class="btn btn-primary w-full">
+								<span class="button-text">New warehouse</span>
+							</button>
+						</PlaceholderBox>
+						<!-- End entity list placeholder -->
+					</div>
+				</div>
 			{:else}
 				<!-- Start entity list -->
 				{#each warehouses as { id, displayName, totalBooks, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
-							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
+							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex flex-col gap-2 sm:flex-row">
-								<div class="entity-list-text-sm flex w-32 items-center gap-x-1 text-gray-500">
-									<Library class="text-gray-700" size={18} />
-									{#if totalBooks === -1}
-										<PlaceholderDots />
-									{:else}
-										<span class="">{totalBooks}</span>
-									{/if}
-									books
+							<div class="max-xs:flex-col flex flex-row gap-x-8 gap-y-2">
+								<div class="entity-list-text-sm text-base-content flex items-center gap-x-2 text-sm">
+									<Layers size={18} />
+
+									<div>
+										{#if totalBooks === -1}
+											<PlaceholderDots />
+										{:else}
+											<span class="">{totalBooks}</span>
+										{/if}
+										books
+									</div>
 								</div>
 
 								{#if discount}
-									<div class="flex items-center gap-x-1">
-										<div class="border border-gray-700 p-[1px]">
-											<Percent class="text-gray-700" size={14} />
-										</div>
-										<span class="entity-list-text-sm text-gray-500">{discount}% discount</span>
+									<div class="text-base-content flex items-center gap-x-2 text-sm">
+										<SquarePercent size={18} />
+
+										<span class="entity-list-text-sm">{discount}% discount</span>
 									</div>
 								{/if}
 							</div>
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateInboundNote(id)} class="button button-green">
+							<button on:click={handleCreateInboundNote(id)} class="btn btn-primary btn-sm">
 								<span class="button-text"> New note </span>
 							</button>
 
@@ -171,22 +184,22 @@
 											type: "edit"
 										};
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
-									<Edit class="text-gray-400" size={20} />
-									<span class="text-gray-700">Edit</span>
+									<Edit aria-hidden size={18} />
+									<span>Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="h-[1px] bg-gray-200"></div>
+								<div {...separator} use:separator.action class="bg-base-300 h-[1px]"></div>
 
 								<a
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+									class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
-									<Table2 class="text-gray-400" size={20} />
-									<span class="text-gray-700">View Stock</span>
+									<Table2 aria-hidden size={18} />
+									<span>View Stock</span>
 								</a>
 
 								<div
@@ -211,10 +224,10 @@
 											type: "delete"
 										};
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+									class="data-[highlighted]:bg-error flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
-									<Trash2 class="text-white" size={20} />
-									<span class="text-white">Delete</span>
+									<Trash2 class="text-error-content" size={18} />
+									<span class="text-error-content">Delete</span>
 								</div>
 							</DropdownWrapper>
 						</div>
@@ -230,50 +243,34 @@
 {#if $open}
 	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
 
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+	<PageCenterDialog {dialog} title={dialogTitle} description={dialogDescription}>
 		{#if type === "edit"}
-			<div
-				class="fixed left-[50%] top-[50%] z-50 flex max-w-2xl translate-x-[-50%] translate-y-[-50%] flex-col gap-y-8 rounded-md bg-white px-4 py-6"
-				use:melt={$content}
-			>
-				<h2 class="sr-only" use:melt={$title}>
-					{dialogTitle}
-				</h2>
-				<p class="sr-only" use:melt={$description}>
-					{dialogDescription}
-				</p>
-				<WarehouseForm
-					data={defaults(warehouseToEdit, zod(warehouseSchema))}
-					options={{
-						SPA: true,
-						dataType: "json",
-						validators: zod(warehouseSchema),
-						validationMethod: "submit-only",
-						onUpdated: async ({ form }) => {
-							const { id, name: displayName, discount } = form?.data;
-							await upsertWarehouse(db, { id, displayName, discount });
-							open.set(false);
-						}
-					}}
-					onCancel={() => open.set(false)}
-				/>
-			</div>
+			<WarehouseForm
+				data={defaults(warehouseToEdit, zod(warehouseSchema))}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validators: zod(warehouseSchema),
+					validationMethod: "submit-only",
+					onUpdated: async ({ form }) => {
+						const { id, name: displayName, discount } = form?.data;
+						await upsertWarehouse(db, { id, displayName, discount });
+						open.set(false);
+					}
+				}}
+				onCancel={() => open.set(false)}
+			/>
 		{:else}
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<WarehouseDeleteForm
-					{dialog}
-					{dialogTitle}
-					{dialogDescription}
-					{...warehouseToDelete}
-					options={{
-						SPA: true,
-						dataType: "json",
-						validationMethod: "submit-only",
-						onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
-					}}
-				/>
-			</div>
+			<WarehouseDeleteForm
+				{...warehouseToDelete}
+				options={{
+					SPA: true,
+					dataType: "json",
+					validationMethod: "submit-only",
+					onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
+				}}
+				onCancel={() => open.set(false)}
+			/>
 		{/if}
-	</div>
+	</PageCenterDialog>
 {/if}
