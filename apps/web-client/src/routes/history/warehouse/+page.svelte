@@ -60,7 +60,7 @@
 					{@const href = appPath("history/warehouse", warehouse.id)}
 					{@const warehouseDiscount = warehouse.discount}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 

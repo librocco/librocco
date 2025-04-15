@@ -28,18 +28,18 @@
 				<div class="label">
 					<span class="label-text">Label Printer URL</span>
 				</div>
-				<input id="url" name="labelPrinterUrl" bind:value={$formStore.labelPrinterUrl} class="input input-bordered w-full" />
+				<input id="url" name="labelPrinterUrl" bind:value={$formStore.labelPrinterUrl} class="input-bordered input w-full" />
 			</label>
 
 			<label class="form-control basis-full">
 				<div class="label">
 					<span class="label-text">Receipt Printer URL</span>
 				</div>
-				<input id="url" name="receiptPrinterUrl" bind:value={$formStore.receiptPrinterUrl} class="input input-bordered w-full" />
+				<input id="url" name="receiptPrinterUrl" bind:value={$formStore.receiptPrinterUrl} class="input-bordered input w-full" />
 			</label>
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2">
-		<button type="submit" class="btn btn-primary disabled:btn-disabled" disabled={!hasChanges}>Save and Reload</button>
+		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>Save and Reload</button>
 	</div>
 </form>

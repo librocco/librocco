@@ -184,7 +184,7 @@
 					<!-- Start entity list placeholder -->
 					<PlaceholderBox title="Add new inbound note" description="Get started by adding a new note">
 						<FilePlus slot="icon" />
-						<button slot="actions" on:click={handleCreateInboundNote} class="btn btn-primary w-full">
+						<button slot="actions" on:click={handleCreateInboundNote} class="btn-primary btn w-full">
 							{tLabels.new_note()}
 						</button>
 					</PlaceholderBox>
@@ -212,7 +212,7 @@
 											data-testid={testId("popover-control")}
 											{...trigger}
 											use:trigger.action
-											class="btn btn-neutral btn-sm btn-outline px-0.5"
+											class="btn-neutral btn-outline btn-sm btn px-0.5"
 										>
 											<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 											<span class="aria-hidden">
@@ -228,7 +228,7 @@
 													const { __kind, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
 													bookFormData = bookData;
 												}}
-												class="btn btn-secondary btn-sm"
+												class="btn-secondary btn-sm btn"
 											>
 												<span class="sr-only">{tLabels.edit_row()} {rowIx}</span>
 												<span class="aria-hidden">
@@ -236,7 +236,7 @@
 												</span>
 											</button>
 
-											<button class="btn btn-secondary btn-sm" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
+											<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={handlePrintLabel(row)}>
 												<span class="sr-only">{tLabels.print_book_label()} {rowIx}</span>
 												<span class="aria-hidden">
 													<Printer />
@@ -264,22 +264,22 @@
 		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 		<div
 			use:melt={$content}
-			class="bg-base-200 divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
-			overflow-y-auto shadow-lg focus:outline-none"
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+			bg-base-200 shadow-lg focus:outline-none"
 			transition:fly|global={{
 				x: 350,
 				duration: 300,
 				opacity: 1
 			}}
 		>
-			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 				<div>
 					<h2 use:melt={$title} class="text-lg font-medium">{$LL.stock_page.labels.edit_book_details()}</h2>
 					<p use:melt={$description} class="leading-normal">
 						{$LL.stock_page.labels.manually_edit_book_details()}
 					</p>
 				</div>
-				<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
+				<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
 					<X size={16} />
 				</button>
 			</div>

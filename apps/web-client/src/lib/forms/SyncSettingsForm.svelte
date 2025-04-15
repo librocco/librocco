@@ -30,25 +30,25 @@
 				<div class="label">
 					<span class="label-text">Database Name (this will probably change in the future)</span>
 				</div>
-				<input id="url" name="dbid" bind:value={$formStore.dbid} class="input input-bordered w-full" />
+				<input id="url" name="dbid" bind:value={$formStore.dbid} class="input-bordered input w-full" />
 			</label>
 
 			<label class="form-control basis-full">
 				<div class="label">
 					<span class="label-text">Remote Sync Database URL</span>
 				</div>
-				<input id="url" name="url" bind:value={$formStore.url} class="input input-bordered w-full" />
+				<input id="url" name="url" bind:value={$formStore.url} class="input-bordered input w-full" />
 			</label>
 		</div>
 	</div>
 
 	<div class="flex items-center justify-between gap-x-2">
 		<div class="flex items-center gap-x-2">
-			<span class="w-10 text-center {$active ? '' : 'text-error font-bold'}">OFF</span>
+			<span class="w-10 text-center {$active ? '' : 'font-bold text-error'}">OFF</span>
 			<input type="checkbox" bind:checked={$active} class="toggle" />
-			<span class="w-10 text-center {$active ? 'text-success font-bold' : ''}">ON</span>
+			<span class="w-10 text-center {$active ? 'font-bold text-success' : ''}">ON</span>
 		</div>
 
-		<button type="submit" class="btn btn-primary disabled:btn-disabled" disabled={!hasChanges}>Save and Reload</button>
+		<button type="submit" class="btn-primary btn disabled:btn-disabled" disabled={!hasChanges}>Save and Reload</button>
 	</div>
 </form>

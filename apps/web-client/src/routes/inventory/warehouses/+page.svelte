@@ -116,7 +116,7 @@
 						<!-- Start entity list placeholder -->
 						<PlaceholderBox title="New warehouse" description="Get started by adding a new warehouse">
 							<HousePlus slot="icon" />
-							<button slot="actions" on:click={handleCreateWarehouse} class="btn btn-primary w-full">
+							<button slot="actions" on:click={handleCreateWarehouse} class="btn-primary btn w-full">
 								<span class="button-text">New warehouse</span>
 							</button>
 						</PlaceholderBox>
@@ -128,12 +128,12 @@
 				{#each warehouses as { id, displayName, totalBooks, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
-							<div class="max-xs:flex-col flex flex-row gap-x-8 gap-y-2">
-								<div class="entity-list-text-sm text-base-content flex items-center gap-x-2 text-sm">
+							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
+								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
 									<Layers size={18} />
 
 									<div>
@@ -147,7 +147,7 @@
 								</div>
 
 								{#if discount}
-									<div class="text-base-content flex items-center gap-x-2 text-sm">
+									<div class="flex items-center gap-x-2 text-sm text-base-content">
 										<SquarePercent size={18} />
 
 										<span class="entity-list-text-sm">{discount}% discount</span>
@@ -157,7 +157,7 @@
 						</div>
 
 						<div class="entity-list-actions">
-							<button on:click={handleCreateInboundNote(id)} class="btn btn-primary btn-sm">
+							<button on:click={handleCreateInboundNote(id)} class="btn-primary btn-sm btn">
 								<span class="button-text"> New note </span>
 							</button>
 
@@ -184,19 +184,19 @@
 											type: "edit"
 										};
 									}}
-									class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Edit aria-hidden size={18} />
 									<span>Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="bg-base-300 h-[1px]"></div>
+								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
 
 								<a
 									{href}
 									{...item}
 									use:item.action
-									class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 								>
 									<Table2 aria-hidden size={18} />
 									<span>View Stock</span>
@@ -224,7 +224,7 @@
 											type: "delete"
 										};
 									}}
-									class="data-[highlighted]:bg-error flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
+									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error"
 								>
 									<Trash2 class="text-error-content" size={18} />
 									<span class="text-error-content">Delete</span>

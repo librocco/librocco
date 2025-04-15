@@ -34,7 +34,7 @@
 					name="name"
 					placeholder="Warehouse name"
 					{...$constraints.name}
-					class="input input-bordered w-full"
+					class="input-bordered input w-full"
 				/>
 			</label>
 		</div>
@@ -43,7 +43,7 @@
 				<span class="label">
 					<span class="label-text">Discount</span>
 				</span>
-				<span class="input input-bordered flex items-center gap-2">
+				<span class="input-bordered input flex items-center gap-2">
 					<input bind:value={$discountProxy} name="discount" placeholder="0" type="number" step="any" />
 					<Percent class="text-base-content/50" />
 				</span>
@@ -54,7 +54,7 @@
 		</div>
 	</div>
 	<div class="flex w-full justify-end gap-x-2 p-4">
-		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn btn-primary disabled:bg-gray-400" type="submit">Save</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-primary btn disabled:bg-gray-400" type="submit">Save</button>
 	</div>
 </form>

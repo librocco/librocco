@@ -84,7 +84,7 @@
 			</div>
 
 			<div class="ml-auto flex items-center gap-x-2">
-				<button class="btn btn-primary">{t.export_csv()}</button>
+				<button class="btn-primary btn">{t.export_csv()}</button>
 			</div>
 		</div>
 		{#if loading}

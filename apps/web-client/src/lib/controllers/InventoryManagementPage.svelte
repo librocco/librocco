@@ -33,14 +33,14 @@
 <Page title={activeTab.label} view="inventory" {db} {plugins}>
 	<div slot="main" class="flex h-full flex-col gap-y-4">
 		<div class="flex w-full items-center justify-end p-4">
-			<button on:click={handleCreateWarehouse} class="btn btn-primary btn-sm">
+			<button on:click={handleCreateWarehouse} class="btn-primary btn-sm btn">
 				<Plus size={20} aria-hidden />
 				New warehouse
 			</button>
 		</div>
 
 		<div class="flex h-full w-full flex-col">
-			<div class="tabs tabs-bordered w-full" role="tablist">
+			<div class="tabs-bordered tabs w-full" role="tablist">
 				{#each tabs as { label, icon, href }}
 					{@const active = $page.url.pathname.startsWith(href)}
 
