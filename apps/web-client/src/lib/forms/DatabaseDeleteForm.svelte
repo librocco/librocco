@@ -38,21 +38,29 @@
 		<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
 
 		<!-- Additional dialog content -->
-		<Input
-			bind:value={$formStore.confirmation}
-			class="mt-4"
-			label="Confirm by typing database name"
-			helpText="Type '{matchConfirmation}'"
-			name="confirm"
-			placeholder={matchConfirmation}
-			{...$constraints.confirmation}
-			autocomplete="off"
-		/>
+		<div class="mt-4">
+			<label class="form-control">
+				<div class="label">
+					<span class="label-text">Confirm by typing database name</span>
+				</div>
+				<input 
+					bind:value={$formStore.confirmation}
+					name="confirm"
+					placeholder={matchConfirmation}
+					{...$constraints.confirmation}
+					autocomplete="off"
+					class="input input-bordered w-full"
+				/>
+				<div class="label">
+					<span class="label-text-alt">Type '{matchConfirmation}'</span>
+				</div>
+			</label>
+		</div>
 		<!-- Additional dialog content end -->
 
 		<svelte:fragment slot="confirm-button">
-			<button class="button button-red" type="submit">
-				<span class="button-text">Confirm</span>
+			<button class="btn btn-error" type="submit">
+				<span>Confirm</span>
 			</button>
 		</svelte:fragment>
 	</Dialog>
