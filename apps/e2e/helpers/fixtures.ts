@@ -1,11 +1,13 @@
 import { DB } from "@vlcn.io/crsqlite-wasm";
 import test, { JSHandle } from "@playwright/test";
 
-import { BookData, wrapIter } from "@librocco/shared";
+import { BookData, wrapIter, TranslationFunctions, Locales } from "@librocco/shared";
 
 import { Customer, Supplier } from "./types";
 
 import { baseURL } from "@/integration/constants";
+import { loadLocale } from "@librocco/shared/i18n-util.sync";
+import { i18nObject } from "@librocco/shared/i18n-util";
 
 import {
 	addBooksToCustomer,
@@ -210,6 +212,8 @@ type OrderTestFixture = {
 	 *  isbn: "8888", quantity: 1
 	 */
 	supplierOrders: FixtureSupplierOrder[];
+	t: TranslationFunctions;
+	locale: Locales;
 };
 
 export const testBase = test.extend({
@@ -357,6 +361,13 @@ export const testOrders = testBase.extend<OrderTestFixture>({
 		}
 
 		await use(supplierOrders);
+	},
+	t: ({ locale }, use) => {
+		loadLocale(locale);
+
+		const t = i18nObject(locale);
+
+		use(t);
 	}
 });
 

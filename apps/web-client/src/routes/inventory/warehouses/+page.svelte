@@ -14,7 +14,7 @@
 
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
 
-	import { type DialogContent, dialogTitle, dialogDescription } from "$lib/dialogs";
+	import { type DialogContent } from "$lib/types";
 
 	import { appPath } from "$lib/paths";
 
@@ -27,11 +27,14 @@
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
 	import { InventoryManagementPage } from "$lib/controllers";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
 	$: ({ warehouses, plugins } = data);
 	$: db = data.dbCtx?.db;
+
+	$: tCommon = $LL.common;
 
 	// #region reactivity
 	let disposer: () => void;
@@ -114,7 +117,7 @@
 				{#each warehouses as { id, displayName, totalBooks, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="entity-list-row group">
+					<div class="group entity-list-row">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-gray-900 hover:underline focus:underline">{displayName}</a>
 
@@ -154,8 +157,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: dialogTitle.editWarehouse(),
-											description: dialogDescription.editWarehouse(),
+											title: tCommon.edit_warehouse_dialog.title(),
+											description: tCommon.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -163,8 +166,8 @@
 										warehouseToEdit = { name: displayName, discount, id };
 										dialogContent = {
 											onConfirm: () => {},
-											title: dialogTitle.editWarehouse(),
-											description: dialogDescription.editWarehouse(),
+											title: tCommon.edit_warehouse_dialog.title(),
+											description: tCommon.edit_warehouse_dialog.description(),
 											type: "edit"
 										};
 									}}
@@ -194,8 +197,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: dialogTitle.delete(displayName),
-											description: dialogDescription.deleteWarehouse(totalBooks),
+											title: tCommon.delete_dialog.title({ entity: displayName }),
+											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}
@@ -203,8 +206,8 @@
 										warehouseToDelete = { id, displayName };
 										dialogContent = {
 											onConfirm: handleDeleteWarehouse(id),
-											title: dialogTitle.delete(displayName),
-											description: dialogDescription.deleteWarehouse(totalBooks),
+											title: tCommon.delete_dialog.title({ entity: displayName }),
+											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
 											type: "delete"
 										};
 									}}

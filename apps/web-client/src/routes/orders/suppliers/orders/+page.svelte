@@ -22,6 +22,7 @@
 
 	import { createReconciliationOrder } from "$lib/db/cr-sqlite/order-reconciliation";
 	import { getCustomerDisplayIdSeq, upsertCustomer } from "$lib/db/cr-sqlite/customers";
+	import LL from "@librocco/shared/i18n-svelte";
 
 	export let data: PageData;
 
@@ -78,81 +79,85 @@
 
 		await goto(`${base}/orders/customers/${id}`);
 	};
+
+	$: t = $LL.supplier_orders_page;
 </script>
 
-<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
-	<div class="flex items-center justify-between p-4">
-		<h1 class="prose text-2xl font-bold">Supplier Orders</h1>
-		<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
-			Suppliers
-			<Settings size={20} />
-		</button>
-	</div>
-
-	<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
-		<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
-			<button
-				class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
-				on:click={() => (orderStatusFilter = "unordered")}
-				aria-pressed={orderStatusFilter === "unordered"}
-			>
-				Unordered
-			</button>
-
-			<button
-				class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
-				on:click={() => (orderStatusFilter = "ordered")}
-				aria-pressed={orderStatusFilter === "ordered"}
-				disabled={!hasPlacedOrders}
-				data-testid="ordered-list"
-			>
-				Ordered
-			</button>
-
-			<button
-				class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
-				on:click={() => (orderStatusFilter = "reconciling")}
-				aria-pressed={orderStatusFilter === "reconciling"}
-				disabled={!hasReconcilingOrders}
-				data-testid="reconciling-list"
-			>
-				Reconciling
-			</button>
-
-			<button
-				class="btn-sm btn {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
-				on:click={() => (orderStatusFilter = "completed")}
-				aria-pressed={orderStatusFilter === "completed"}
-				disabled={!hasCompletedOrders}
-				data-testid="reconciling-list"
-			>
-				Completed
+<main class="h-screen">
+	<div class="mx-auto flex h-full max-w-5xl flex-col gap-y-10 px-4">
+		<div class="flex items-center justify-between">
+			<h1 class="prose text-2xl font-bold">{t.title.supplier_orders()}</h1>
+			<button class="btn-outline btn-sm btn gap-2" on:click={() => goto(`${base}/orders/suppliers/`)}>
+				{t.labels.suppliers()}
+				<Settings size={20} />
 			</button>
 		</div>
 
-		{#if orderStatusFilter === "unordered"}
-			{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
-				<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
-					<p class="text-center text-base-content/70">
-						No unordered supplier orders available. Create a customer order first to generate supplier orders.
-					</p>
-					<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
-						<Plus size={20} />
-						New Customer Order
-					</button>
-				</div>
+		<div class="flex flex-col gap-y-6 overflow-x-auto py-2">
+			<div class="flex gap-2 px-2" role="group" aria-label="Filter orders by status">
+				<button
+					class="btn-sm btn {orderStatusFilter === 'unordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "unordered")}
+					aria-pressed={orderStatusFilter === "unordered"}
+				>
+					{t.tabs.unordered()}
+				</button>
+
+				<button
+					class="btn-sm btn {orderStatusFilter === 'ordered' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "ordered")}
+					aria-pressed={orderStatusFilter === "ordered"}
+					disabled={!hasPlacedOrders}
+					data-testid="ordered-list"
+				>
+					{t.tabs.ordered()}
+				</button>
+
+				<button
+					class="btn-sm btn {orderStatusFilter === 'reconciling' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "reconciling")}
+					aria-pressed={orderStatusFilter === "reconciling"}
+					disabled={!hasReconcilingOrders}
+					data-testid="reconciling-list"
+				>
+					{t.tabs.reconciling()}
+				</button>
+
+				<button
+					class="btn-sm btn {orderStatusFilter === 'completed' ? 'btn-primary' : 'btn-outline'}"
+					on:click={() => (orderStatusFilter = "completed")}
+					aria-pressed={orderStatusFilter === "completed"}
+					disabled={!hasCompletedOrders}
+					data-testid="reconciling-list"
+				>
+					{t.tabs.completed()}
+				</button>
+			</div>
+
+			{#if orderStatusFilter === "unordered"}
+				{#if data?.possibleOrders.length === 0 && data?.placedOrders.length === 0}
+					<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+						<p class="text-center text-base-content/70">
+							{t.placeholder.description()}
+						</p>
+						<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
+							<Plus size={20} />
+							<p>{t.placeholder.button()}</p>
+						</button>
+					</div>
+				{:else}
+					<UnorderedTable orders={data.possibleOrders} />
+				{/if}
+			{:else if orderStatusFilter === "ordered"}
+				<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
+			{:else if orderStatusFilter === "reconciling"}
+				<ReconcilingTable orders={data.reconcilingOrders} />
 			{:else}
-				<UnorderedTable orders={data.possibleOrders} />
+				<CompletedTable orders={data.completedOrders} />
 			{/if}
-		{:else if orderStatusFilter === "ordered"}
-			<OrderedTable orders={data.placedOrders} on:reconcile={handleReconcile} />
-		{:else if orderStatusFilter === "reconciling"}
-			<ReconcilingTable orders={data.reconcilingOrders} />
-		{:else}
-			<CompletedTable orders={data.completedOrders} />
-		{/if}
+		</div>
 	</div>
-</div>
+</main>
 
 <PageCenterDialog dialog={newOrderDialog} title="" description="">
 	<CustomerOrderMetaForm

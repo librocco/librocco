@@ -10,7 +10,9 @@ import { getPublisherList } from "$lib/db/cr-sqlite/books";
 
 import { appPath } from "$lib/paths";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	const id = Number(params.id);
 
 	depends("note:data");
@@ -65,3 +67,5 @@ const getAvailabilityByISBN = async (db: DB, isbns: string[]): Promise<Map<numbe
 
 	return [...resMap.values()];
 };
+
+export const load: PageLoad = timed(_load);

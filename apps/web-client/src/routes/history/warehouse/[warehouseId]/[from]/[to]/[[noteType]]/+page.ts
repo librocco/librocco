@@ -4,7 +4,9 @@ import { getWarehouseById } from "$lib/db/cr-sqlite/warehouse";
 import type { PageLoad } from "./$types";
 import type { NoteType } from "$lib/db/cr-sqlite/types";
 
-export const load: PageLoad = async ({ parent, params, depends }) => {
+import { timed } from "$lib/utils/timer";
+
+const _load = async ({ parent, params, depends }: Parameters<PageLoad>[0]) => {
 	depends("history:transactions");
 
 	const { to, from } = params;
@@ -26,3 +28,5 @@ export const load: PageLoad = async ({ parent, params, depends }) => {
 
 	return { displayName, transactions, noteType };
 };
+
+export const load: PageLoad = timed(_load);
