@@ -19,10 +19,8 @@
 
 	export let data: PageData;
 
-	$: ({
-		dbCtx: { db },
-		plugins
-	} = data);
+	$: ({ plugins } = data);
+	$: db = data.dbCtx?.db;
 
 	const createMetaString = ({ authors, year, publisher }: Pick<BookData, "authors" | "year" | "publisher">) =>
 		[authors, year, publisher].filter(Boolean).join(", ");
@@ -49,9 +47,11 @@
 
 <HistoryPage view="history/isbn" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full">
-			<Search />
-			<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
+		<div class="flex w-full p-4">
+			<label class="input-bordered input flex flex-1 items-center gap-2">
+				<Search />
+				<input data-testid={testId("search-input")} use:input placeholder="Search" class="w-full" />
+			</label>
 		</div>
 		<!-- Start entity list contaier -->
 
@@ -70,14 +70,14 @@
 
 {#if $open && entries?.length}
 	<div use:dropdown>
-		<ul data-testid={testId("search-completions-container")} class="w-full divide-y overflow-y-auto rounded border bg-base-100 shadow-2xl">
+		<ul data-testid={testId("search-completions-container")} class="bg-base-100 w-full divide-y overflow-y-auto rounded border shadow-2xl">
 			{#each entries as { isbn, title, authors, year, publisher }}
 				<li
 					class="cursor-pointer items-start px-4 py-3"
 					on:click={() => (goto(appPath("history/isbn", isbn)), ($open = false))}
 					data-testid={testId("search-completion")}
 				>
-					<p data-property="isbn" class="mt-2 text-sm font-semibold leading-none text-base-content">{isbn}</p>
+					<p data-property="isbn" class="text-base-content mt-2 text-sm font-semibold leading-none">{isbn}</p>
 					<p data-property="title" class="text-xl font-medium">{title}</p>
 					<p data-property="meta">{createMetaString({ authors, year, publisher })}</p>
 				</li>

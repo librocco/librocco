@@ -46,19 +46,15 @@
 </script>
 
 <Page title="History" {view} {db} {plugins}>
-	<div slot="main" class="h-full w-full">
-		<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
+	<div slot="main" class="flex h-full w-full flex-col">
+		<div class="tabs tabs-bordered w-full py-4" role="tablist">
 			{#each tabs as { label, icon, href }}
 				{@const active = $page.url.pathname.startsWith(href)}
 
-				<svelte:element
-					this={active ? "div" : "a"}
-					class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
-					{href}
-				>
+				<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}" role="tab">
 					<svelte:component this={icon} size={20} />
 					<span class="text-sm font-medium leading-5">{label}</span>
-				</svelte:element>
+				</a>
 			{/each}
 		</div>
 
