@@ -151,10 +151,11 @@
 </script>
 
 <Page title="Settings" view="settings" {db} {plugins}>
-	<div slot="main" class="h-full w-full">
-		<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
-
-		<div class="space-y-12 p-6">
+	<div slot="main" class="flex h-full w-full flex-col divide-y">
+		<div class="p-4">
+			<h4>{$LL.settings_page.stats.version()} {VERSION}</h4>
+		</div>
+		<div class="flex h-full flex-col space-y-12 overflow-y-auto p-6">
 			<div class="flex flex-col gap-6 px-4 md:flex-row">
 				<div class="basis-1/3">
 					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.sync_settings()}</h2>
@@ -210,7 +211,7 @@
 									<li
 										data-file={file}
 										data-active={active}
-										class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-gray-100' : ''}"
+										class="group flex h-16 items-center justify-between px-4 py-3 {active ? 'bg-base-100' : ''}"
 									>
 										<span>{file}</span>
 										<div class="hidden gap-x-2 group-hover:flex">
@@ -218,7 +219,7 @@
 												data-testid={testId("db-action-export")}
 												on:click={handleExportDatabase(file)}
 												type="button"
-												class="button cursor-pointer"><Download /></button
+												class="btn btn-sm btn-primary cursor-pointer"><Download /></button
 											>
 											<button
 												data-testid={testId("db-action-delete")}
@@ -242,7 +243,7 @@
 													};
 												}}
 												type="button"
-												class="button cursor-pointer"><Trash /></button
+												class="btn btn-primary btn-sm cursor-pointer"><Trash /></button
 											>
 										</div>
 									</li>
@@ -250,7 +251,7 @@
 							{/each}
 						{:else}
 							<div
-								class="flex h-full items-center justify-center border-2 border-dashed border-gray-300"
+								class="border-base-100 flex h-full items-center justify-center border-2 border-dashed"
 								on:drop={handleDrop}
 								role="region"
 								aria-label="Drop zone"
@@ -262,10 +263,12 @@
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={toggleImport} type="button" class="button button-white">
+						<button on:click={toggleImport} type="button" class="btn btn-secondary">
 							{importOn ? "Cancel" : "Import"}
 						</button>
-						<button on:click={toggleSelection} type="button" class="button {!selectionOn ? 'button-white' : 'button-green'}">Select</button>
+						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}"
+							>Select</button
+						>
 						<button
 							use:melt={$trigger}
 							on:m-click={() => {
@@ -285,13 +288,13 @@
 								};
 							}}
 							type="button"
-							class="button button-green">{$LL.settings_page.labels.new()}</button
+							class="btn btn-primary">{$LL.settings_page.labels.new()}</button
 						>
 					</div>
 				</div>
 			</div>
 
-			<div class="flex flex-col gap-6 px-4 md:flex-row">
+			<div class="flex flex-col gap-6 px-4 pb-20 md:flex-row">
 				<div class="basis-1/3">
 					<h2 class="text-base font-semibold leading-7 text-gray-900">{$LL.settings_page.headings.device_settings()}</h2>
 					<p class="mt-1 text-sm leading-6 text-gray-600">{$LL.settings_page.descriptions.device_settings()}</p>
