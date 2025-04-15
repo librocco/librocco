@@ -219,7 +219,7 @@
 												data-testid={testId("db-action-export")}
 												on:click={handleExportDatabase(file)}
 												type="button"
-												class="btn btn-sm btn-primary cursor-pointer"><Download /></button
+												class="btn-primary btn-sm btn cursor-pointer"><Download /></button
 											>
 											<button
 												data-testid={testId("db-action-delete")}
@@ -243,7 +243,7 @@
 													};
 												}}
 												type="button"
-												class="btn btn-primary btn-sm cursor-pointer"><Trash /></button
+												class="btn-primary btn-sm btn cursor-pointer"><Trash /></button
 											>
 										</div>
 									</li>
@@ -251,7 +251,7 @@
 							{/each}
 						{:else}
 							<div
-								class="border-base-100 flex h-full items-center justify-center border-2 border-dashed"
+								class="flex h-full items-center justify-center border-2 border-dashed border-base-100"
 								on:drop={handleDrop}
 								role="region"
 								aria-label="Drop zone"
@@ -263,7 +263,7 @@
 					</ul>
 
 					<div class="flex justify-end gap-x-2 px-4 py-6">
-						<button on:click={toggleImport} type="button" class="btn btn-secondary">
+						<button on:click={toggleImport} type="button" class="btn-secondary btn">
 							{importOn ? "Cancel" : "Import"}
 						</button>
 						<button on:click={toggleSelection} type="button" class="btn {!selectionOn ? 'btn-secondary btn-outline' : 'btn-primary'}"
@@ -288,7 +288,7 @@
 								};
 							}}
 							type="button"
-							class="btn btn-primary">{$LL.settings_page.labels.new()}</button
+							class="btn-primary btn">{$LL.settings_page.labels.new()}</button
 						>
 					</div>
 				</div>

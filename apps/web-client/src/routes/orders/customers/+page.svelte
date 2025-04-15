@@ -81,8 +81,8 @@
 <Page title="Customer Orders" view="orders/customers" {db} {plugins}>
 	<div slot="main" class="flex flex-col gap-y-6 overflow-x-auto py-2">
 		{#if !customerOrders.length}
-			<div class="border-base-300 flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed p-6">
-				<p class="text-base-content/70 text-center">No customer orders yet. Create your first order to get started.</p>
+			<div class="flex h-96 flex-col items-center justify-center gap-6 rounded-lg border-2 border-dashed border-base-300 p-6">
+				<p class="text-center text-base-content/70">No customer orders yet. Create your first order to get started.</p>
 				<button class="btn-primary btn gap-2" on:click={() => newOrderDialogOpen.set(true)}>
 					<Plus size={20} />
 					{t.labels.new_order()}

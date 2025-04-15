@@ -36,7 +36,7 @@
 				name="confirm"
 				{...$constraints.confirmation}
 				autocomplete="off"
-				class="input input-bordered w-full"
+				class="input-bordered input w-full"
 			/>
 			<div class="label">
 				<span class="label-text-alt">Type '{matchConfirmation}'</span>
@@ -45,7 +45,7 @@
 	</div>
 
 	<div class="flex w-full justify-end gap-x-2 p-4">
-		<button class="btn btn-secondary btn-outline" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn btn-error" type="submit">Delete</button>
+		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
+		<button class="btn-error btn" type="submit">Delete</button>
 	</div>
 </form>

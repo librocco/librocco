@@ -32,7 +32,7 @@
 
 				<p class="sr-only" use:melt={$desciptionStore}>{description}</p>
 
-				<button use:melt={$close} class="btn btn-ghost btn-outline btn-sm absolute right-8 top-4" aria-label="Close">
+				<button use:melt={$close} class="btn-ghost btn-outline btn-sm btn absolute right-8 top-4" aria-label="Close">
 					<X size={16} />
 				</button>
 

@@ -133,7 +133,7 @@
 				{t.heading.history()}
 			</h1>
 
-			<button on:click={handleExportCsv} class="btn btn-primary order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
+			<button on:click={handleExportCsv} class="btn-primary btn order-2 whitespace-nowrap xl:order-3">{t.heading.export_csv()}</button>
 
 			<div class="order-3 w-full items-center gap-3 md:flex xl:order-2 xl:justify-center">
 				<p>{t.heading.from()}:</p>
@@ -157,7 +157,7 @@
 							{@const active = value === filter}
 							<button
 								on:click={selectFilter(value)}
-								class="{active ? 'btn-primary' : 'btn-neutral'} btn btn-sm border-none px-3 py-1"
+								class="{active ? 'btn-primary' : 'btn-neutral'} btn-sm btn border-none px-3 py-1"
 								class:selected={filter === value}
 							>
 								{label}

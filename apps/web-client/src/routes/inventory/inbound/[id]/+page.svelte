@@ -233,14 +233,14 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge-md badge primary badge-outline">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+							<span class="primary badge-outline badge badge-md">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 						{/if}
 					</div>
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
 					<button
-						class="btn btn-primary btn-sm xs:block hidden"
+						class="btn-primary btn-sm btn hidden xs:block"
 						use:melt={$dialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -275,7 +275,7 @@
 									type: "commit"
 								};
 							}}
-							class="xs:hidden data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
 						</div>
@@ -283,7 +283,7 @@
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
 						>
 							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
 						</div>
@@ -291,7 +291,7 @@
 							{...item}
 							use:item.action
 							on:m-click={autoPrintLabels.toggle}
-							class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
+							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 {$autoPrintLabels
 								? '!bg-success text-success-content'
 								: ''}"
 						>
@@ -304,7 +304,7 @@
 							{...item}
 							use:item.action
 							use:melt={$dialogTrigger}
-							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
+							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -388,7 +388,7 @@
 									data-testid={testId("popover-control")}
 									{...trigger}
 									use:trigger.action
-									class="btn btn-neutral btn-sm btn-outline px-0.5"
+									class="btn-neutral btn-outline btn-sm btn px-0.5"
 								>
 									<span class="sr-only">Edit row {rowIx}</span>
 									<span class="aria-hidden">
@@ -399,7 +399,7 @@
 								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
 										use:melt={$dialogTrigger}
-										class="btn btn-secondary btn-sm"
+										class="btn-secondary btn-sm btn"
 										data-testid={testId("edit-row")}
 										on:m-click={() => {
 											const { warehouseId, quantity, ...bookData } = row;
@@ -431,7 +431,7 @@
 										</span>
 									</button>
 
-									<button class="btn btn-secondary btn-sm" data-testid={testId("print-book-label")} on:click={() => handlePrintLabel(row)}>
+									<button class="btn-secondary btn-sm btn" data-testid={testId("print-book-label")} on:click={() => handlePrintLabel(row)}>
 										<span class="sr-only">{tInbound.labels.print_book_label()} {rowIx}</span>
 										<span class="aria-hidden">
 											<Printer />
@@ -440,7 +440,7 @@
 
 									<button
 										on:click={() => deleteRow(row.isbn, row.warehouseId)}
-										class="btn btn-secondary btn-sm"
+										class="btn-secondary btn-sm btn"
 										data-testid={testId("delete-row")}
 									>
 										<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
@@ -471,8 +471,8 @@
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
-				class="bg-base-200 divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
-				overflow-y-auto shadow-lg focus:outline-none"
+				class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+				bg-base-200 shadow-lg focus:outline-none"
 				in:fly|global={{
 					x: 350,
 					duration: 300,
@@ -483,14 +483,14 @@
 					duration: 100
 				}}
 			>
-				<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+				<div class="flex w-full flex-row justify-between bg-base-200 p-6">
 					<div>
 						<h2 use:melt={$title} class="text-lg font-medium">{dialogTitle}</h2>
 						<p use:melt={$description} class="leading-normal">
 							{dialogDescription}
 						</p>
 					</div>
-					<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
+					<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
 						<X size={16} />
 					</button>
 				</div>

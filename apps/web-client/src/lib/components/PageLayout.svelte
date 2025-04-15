@@ -13,7 +13,7 @@
 <!-- Main content -->
 <div data-view={view} id={testId("page-container")} class="h-full w-full">
 	<div class="flex h-full w-full flex-col overflow-y-auto" id="content">
-		<div class="border-base-content bg-base-200 sticky top-0 z-20 flex h-16 items-center justify-between border-b">
+		<div class="sticky top-0 z-20 flex h-16 items-center justify-between border-b border-base-content bg-base-200">
 			<h1 class="pl-[70px] text-lg font-medium lg:pl-5">{title}</h1>
 			<!-- TODO: add strings to dicts -->
 			<div class="flex gap-x-2 p-4">
@@ -21,7 +21,7 @@
 					<Search size={18} />
 					Stock
 				</button>
-				<button class="btn-primary btn-sm btn btn-outline" on:click={handleCreateOutboundNote}>
+				<button class="btn-primary btn-outline btn-sm btn" on:click={handleCreateOutboundNote}>
 					<ScanBarcode size={18} />
 					Checkout
 				</button>
@@ -31,7 +31,7 @@
 		<div class="flex h-full w-full flex-col justify-between divide-y" id="content">
 			<slot name="main" />
 
-			<div class="bg-base-200 sticky bottom-0 flex basis-8 items-center justify-end border-t px-4">
+			<div class="sticky bottom-0 flex basis-8 items-center justify-end border-t bg-base-200 px-4">
 				<slot name="footer" />
 			</div>
 		</div>
