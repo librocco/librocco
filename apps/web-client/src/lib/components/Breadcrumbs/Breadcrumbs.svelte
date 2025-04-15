@@ -7,7 +7,7 @@
 </script>
 
 <nav id="breadcrumbs" {...$$restProps}>
-	<ul class="flex select-none flex-wrap items-center gap-y-2 whitespace-nowrap text-sm font-medium leading-5 text-gray-500 xs:gap-x-2">
+	<ul class="xs:gap-x-2 flex select-none flex-wrap items-center gap-y-2 whitespace-nowrap text-sm font-medium leading-5">
 		{#each links as { label, href }, i}
 			{@const isLast = i === links.length - 1}
 			{@const hasLink = Boolean(href)}
