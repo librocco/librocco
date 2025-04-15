@@ -218,7 +218,7 @@
 
 <Page title={displayName} view="inbound-note" {db} {plugins}>
 	<div slot="main" class="h-full w-full">
-		<div class="flex w-full">
+		<div class="flex w-full p-4">
 			<QrCode size={26} />
 			<ScannerForm
 				data={defaults(zod(scannerSchema))}
@@ -244,14 +244,14 @@
 				}}
 			/>
 		</div>
-		<div>
+		<div class="p-4">
 			<Breadcrumbs class="mb-3" links={breadcrumbs} />
 			<div class="flex w-full flex-wrap items-center justify-between gap-2">
 				<div class="flex max-w-md flex-col">
 					<TextEditable
 						name="title"
 						textEl="h1"
-						textClassName="text-2xl font-bold leading-7 text-gray-900"
+						textClassName="text-2xl font-bold leading-7 text-base-content"
 						placeholder="Note"
 						value={displayName}
 						on:change={(e) => updateNote(db, noteId, { displayName: e.detail })}
@@ -259,14 +259,14 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge badge-md badge-green">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
+							<span class="badge badge-md badge-primary">{t.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}</span>
 						{/if}
 					</div>
 				</div>
 
 				<div class="ml-auto flex items-center gap-x-2">
 					<button
-						class="button button-green xs:block hidden"
+						class="btn btn-primary xs:block hidden"
 						use:melt={$dialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
@@ -301,33 +301,33 @@
 									type: "commit"
 								};
 							}}
-							class="xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="xs:hidden data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
-							<FileCheck class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.commit()}</span>
+							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
 						</div>
 						<div
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100"
+							class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
-							<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.print()}</span>
+							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
 						</div>
 						<div
 							{...item}
 							use:item.action
 							on:m-click={autoPrintLabels.toggle}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-gray-100 {$autoPrintLabels
-								? '!bg-green-400'
+							class="data-[highlighted]:bg-base-300 text-base-content flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
+								? '!bg-primary text-primary-content'
 								: ''}"
 						>
-							<Printer class="text-gray-400" size={20} /><span class="text-gray-700">{tInbound.labels.auto_print_book_labels()}</span>
+							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.auto_print_book_labels()}</span>
 						</div>
 						<div
 							{...item}
 							use:item.action
 							use:melt={$dialogTrigger}
-							class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-red-500"
+							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -345,14 +345,16 @@
 								};
 							}}
 						>
-							<Trash2 class="text-white" size={20} /><span class="text-white">{tInbound.labels.delete()}</span>
+							<Trash2 class="text-error-content" size={20} /><span class="text-error-content">{tInbound.labels.delete()}</span>
 						</div>
 					</DropdownWrapper>
 				</div>
 			</div>
 			{#if loading}
-				<div class="center-absolute">
-					<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
+				<div class="flex grow justify-center">
+					<div class="mx-auto translate-y-1/2">
+						<span class="loading loading-spinner loading-lg text-primary"></span>
+					</div>
 				</div>
 			{:else if !entries.length}
 				<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
@@ -377,7 +379,7 @@
 										data-testid={testId("popover-control")}
 										{...trigger}
 										use:trigger.action
-										class="rounded p-3 text-gray-500 hover:bg-gray-50 hover:text-gray-900"
+										class="btn btn-neutral btn-sm btn-outline px-0.5"
 									>
 										<span class="sr-only">Edit row {rowIx}</span>
 										<span class="aria-hidden">
@@ -385,10 +387,10 @@
 										</span>
 									</button>
 
-									<div slot="popover-content" data-testid={testId("popover-container")} class="rounded bg-gray-900">
+									<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 										<button
 											use:melt={$dialogTrigger}
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											class="btn btn-secondary btn-sm"
 											data-testid={testId("edit-row")}
 											on:m-click={() => {
 												const { warehouseId, quantity, ...bookData } = row;
@@ -421,7 +423,7 @@
 										</button>
 
 										<button
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											class="btn btn-secondary btn-sm"
 											data-testid={testId("print-book-label")}
 											on:click={() => handlePrintLabel(row)}
 										>
@@ -433,7 +435,7 @@
 
 										<button
 											on:click={() => deleteRow(row.isbn, row.warehouseId)}
-											class="rounded p-3 text-white hover:text-teal-500 focus:outline-teal-500 focus:ring-0"
+											class="btn btn-secondary btn-sm"
 											data-testid={testId("delete-row")}
 										>
 											<span class="sr-only">{tInbound.labels.delete_row()} {rowIx}</span>
@@ -465,11 +467,11 @@
 		{#if type === "edit-row"}
 			<div
 				use:melt={$content}
-				class="fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 overflow-y-auto
-				bg-white shadow-lg focus:outline-none"
+				class="bg-base-200 divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+				overflow-y-auto shadow-lg focus:outline-none"
 				in:fly|global={{
 					x: 350,
-					duration: 150,
+					duration: 300,
 					opacity: 1
 				}}
 				out:fly|global={{
@@ -477,13 +479,15 @@
 					duration: 100
 				}}
 			>
-				<div class="flex w-full flex-row justify-between bg-gray-50 px-6 py-4">
+				<div class="bg-base-200 flex w-full flex-row justify-between p-6">
 					<div>
-						<h2 use:melt={$title} class="mb-0 text-lg font-medium text-black">{dialogTitle}</h2>
-						<p use:melt={$description} class="mb-5 mt-2 leading-normal text-zinc-600">{dialogDescription}</p>
+						<h2 use:melt={$title} class="text-lg font-medium">{dialogTitle}</h2>
+						<p use:melt={$description} class="leading-normal">
+							{dialogDescription}
+						</p>
 					</div>
-					<button use:melt={$close} aria-label="Close" class="self-start rounded p-3 text-gray-500 hover:text-gray-900">
-						<X class="square-4" />
+					<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
+						<X size={16} />
 					</button>
 				</div>
 				<div class="px-6">
