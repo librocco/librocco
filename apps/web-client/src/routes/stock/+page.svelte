@@ -255,7 +255,7 @@
 					</p>
 				</div>
 				<button use:melt={$close} aria-label="Close" class="btn btn-neutral btn-outline btn-md">
-					<X class="square-4" />
+					<X size={16} />
 				</button>
 			</div>
 			<div class="px-6">

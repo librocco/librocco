@@ -101,7 +101,7 @@
 							<PlaceholderBox title="No open notes" description="Get started by adding a new note">
 								<FilePlus slot="icon" />
 								<button slot="actions" on:click={handleCreateNote} class="btn btn-primary w-full">
-									<span class="button-text">{tOutboundPage.labels.new_note()}</span>
+									{tOutboundPage.labels.new_note()}
 								</button>
 							</PlaceholderBox>
 							<!-- End entity list placeholder -->
