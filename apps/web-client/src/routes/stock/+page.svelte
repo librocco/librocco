@@ -32,6 +32,7 @@
 	import { mergeBookData } from "$lib/utils/misc";
 	import { getStock } from "$lib/db/cr-sqlite/stock";
 	import { upsertBook } from "$lib/db/cr-sqlite/books";
+	import DaisyUiScannerForm from "$lib/forms/DaisyUIScannerForm.svelte";
 
 	export let data: PageData;
 
@@ -125,12 +126,9 @@
 </script>
 
 <Page title="Search" view="stock" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		<input data-testid={testId("search-input")} use:autofocus bind:value={$search} placeholder="Search" {...inputProps} />
-	</svelte:fragment>
+	<div slot="main" class="flex h-full w-full flex-col">
+		<DaisyUiScannerForm onSubmit={() => {}} />
 
-	<svelte:fragment slot="main">
 		{#if !$search.length}
 			<PlaceholderBox title={tSearch.empty.title()} description={tSearch.empty.description()} class="center-absolute">
 				<Search slot="icon" let:iconProps {...iconProps} />
@@ -233,7 +231,7 @@
 				{/if}
 			</div>
 		{/if}
-	</svelte:fragment>
+	</div>
 </Page>
 
 {#if $open}

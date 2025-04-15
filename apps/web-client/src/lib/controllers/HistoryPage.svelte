@@ -46,39 +46,22 @@
 </script>
 
 <Page title="History" {view} {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		{#if $$slots.topbar}
-			<slot name="topbar" {iconProps} {inputProps} />
-		{:else}
-			<Search {...iconProps} />
-			<input on:focus={() => goto(appPath("stock"))} placeholder="Search" {...inputProps} />
-		{/if}
-	</svelte:fragment>
+	<div slot="main" class="h-full w-full">
+		<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
+			{#each tabs as { label, icon, href }}
+				{@const active = $page.url.pathname.startsWith(href)}
 
-	<svelte:fragment slot="heading">
-		<div class="min-h-[48px]">
-			<slot name="heading" />
+				<svelte:element
+					this={active ? "div" : "a"}
+					class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
+					{href}
+				>
+					<svelte:component this={icon} size={20} />
+					<span class="text-sm font-medium leading-5">{label}</span>
+				</svelte:element>
+			{/each}
 		</div>
-	</svelte:fragment>
 
-	<svelte:fragment slot="main">
-		<div class="flex h-full w-full flex-col overflow-hidden">
-			<div class="flex flex-shrink-0 gap-x-8 border-b border-gray-300 px-6">
-				{#each tabs as { label, icon, href }}
-					{@const active = $page.url.pathname.startsWith(href)}
-
-					<svelte:element
-						this={active ? "div" : "a"}
-						class="flex gap-x-2 py-4 {active ? 'select-none border-b border-indigo-600 text-indigo-500' : 'text-gray-500'}"
-						{href}
-					>
-						<svelte:component this={icon} size={20} />
-						<span class="text-sm font-medium leading-5">{label}</span>
-					</svelte:element>
-				{/each}
-			</div>
-
-			<slot name="main" />
-		</div>
-	</svelte:fragment>
+		<slot name="main" />
+	</div>
 </Page>

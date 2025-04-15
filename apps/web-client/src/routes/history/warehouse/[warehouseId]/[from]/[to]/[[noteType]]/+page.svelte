@@ -126,7 +126,7 @@
 </script>
 
 <HistoryPage view="history/date" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full flex-wrap justify-between gap-y-4 xl:flex-nowrap">
 			<h1 class="order-1 whitespace-nowrap text-2xl font-bold leading-7 text-gray-900">
 				{displayName || ""}
@@ -167,9 +167,6 @@
 				</div>
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -228,5 +225,5 @@
 			{/if}
 		</div>
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>

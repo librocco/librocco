@@ -64,15 +64,12 @@
 </script>
 
 <HistoryPage view="history/date" {db} {plugins}>
-	<svelte:fragment slot="heading">
+	<div slot="main" class="h-full w-full">
 		<div class="flex w-full justify-between">
 			<div class="flex w-full flex-col items-center gap-3">
 				<CalendarPicker onValueChange={onDateValueChange} defaultValue={defaultDateValue} {isDateDisabled} />
 			</div>
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<!-- Start entity list contaier -->
 
 		<!-- 'entity-list-container' class is used for styling, as well as for e2e test selector(s). If changing, expect the e2e to break - update accordingly -->
@@ -174,5 +171,5 @@
 			{/if}
 		</div>
 		<!-- End entity list contaier -->
-	</svelte:fragment>
+	</div>
 </HistoryPage>

@@ -77,14 +77,14 @@
 </script>
 
 <HistoryPage view="history/isbn" {db} {plugins}>
-	<svelte:fragment slot="topbar" let:iconProps let:inputProps>
-		<Search {...iconProps} />
-		{#key isbn}
-			<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" {...inputProps} />
-		{/key}
-	</svelte:fragment>
+	<div slot="main" class="h-full w-full">
+		<div>
+			<Search />
+			{#key isbn}
+				<input data-testid={testId("search-input")} autofocus use:input placeholder="Search" class="w-full" />
+			{/key}
+		</div>
 
-	<svelte:fragment slot="heading">
 		<div class="w-full text-gray-700">
 			<!--text-2xl font-bold leading-7 text-gray-900-->
 			<h1 class="mb-1 mt-2 text-sm font-semibold leading-none text-gray-900">{isbn}</h1>
@@ -99,9 +99,6 @@
 				</p>
 			{/if}
 		</div>
-	</svelte:fragment>
-
-	<svelte:fragment slot="main">
 		<div class="overflow-y-auto">
 			<!-- Start entity list contaier -->
 
@@ -174,7 +171,7 @@
 
 			<!-- End entity list contaier -->
 		</div>
-	</svelte:fragment>
+	</div>
 </HistoryPage>
 
 {#if $open && entries?.length}
