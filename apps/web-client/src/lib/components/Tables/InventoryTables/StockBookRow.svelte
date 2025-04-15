@@ -38,7 +38,7 @@
 		<BookPriceCell data={row} />
 	</td>
 	<td data-property="quantity" class="">
-		<span class="badge badge-md badge-gray">
+		<span class="badge badge-md badge-secondary badge-outline">
 			{quantity}
 		</span>
 	</td>
