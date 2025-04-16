@@ -40,11 +40,11 @@
 		</div>
 
 		<div class="flex h-full w-full flex-col">
-			<div class="tabs-bordered tabs w-full" role="tablist">
+			<div class="tabs-bordered tabs w-full">
 				{#each tabs as { label, icon, href }}
 					{@const active = $page.url.pathname.startsWith(href)}
 
-					<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}" role="tab">
+					<a {href} class="tab gap-x-2 {active ? 'tab-active' : ''}">
 						<svelte:component this={icon} size={20} />
 						<span class="text-sm font-medium leading-5">{label}</span>
 					</a>
