@@ -24,8 +24,8 @@ export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 			titleElement.getByText(text, { exact: true }).waitFor({ timeout: assertionTimeout, ...opts })
 	});
 
-	const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
-	const updatedAt = () => getDateString(getHeader(_parent), "Last updated:", extractDateFromUpdatedAtString);
+	const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace("Updated: ", ""));
+	const updatedAt = () => getDateString(getHeader(_parent), "Updated:", extractDateFromUpdatedAtString);
 
 	const createNote = async (opts: WaitForOpts = {}) => {
 		// Create a new note by clicking the button

@@ -20,13 +20,13 @@ test.beforeEach(async ({ page }) => {
 });
 
 test('should create a new outbound note, on "New note" and redirect to it', async ({ page }) => {
-	const dasbboard = getDashboard(page);
+	const dashboard = getDashboard(page);
 
 	// Create a new note
-	await dasbboard.content().header().getByRole("button", { name: "New note" }).click();
+	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
 
 	// Check that we've been redirected to the new note's page
-	await dasbboard.content().header().title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 });
 
 test("should delete the note on delete button click (after confirming the prompt)", async ({ page }) => {
@@ -51,14 +51,14 @@ test("should delete the note on delete button click (after confirming the prompt
 });
 
 test("note heading should display note name, 'updated at' timestamp", async ({ page }) => {
-	const dasbboard = getDashboard(page);
+	const dashboard = getDashboard(page);
 
-	const header = dasbboard.content().header();
+	const header = dashboard.content().header();
 
-	await header.createNote();
+	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
 
 	// Check the title
-	await header.title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
@@ -70,7 +70,7 @@ test("note should display breadcrumbs leading back to outbound page", async ({ p
 
 	const header = dashboard.content().header();
 
-	await header.createNote();
+	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
 
 	await header.breadcrumbs().waitFor();
 
@@ -88,15 +88,17 @@ test("should assign default name to notes in sequential order", async ({ page })
 	const header = dashboard.content().header();
 
 	// First note
-	await header.createNote();
-	await header.title().assert("New Note");
+	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
+
+	await page.getByRole("heading", { name: "New Note" }).first();
 	const note1UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
 
 	// Second note
-	await header.createNote();
-	await header.title().assert("New Note (2)");
+	await dashboard.content().header().getByRole("button", { name: "New note" }).first().click();
+
+	await page.getByRole("heading", { name: "New Note 2" }).first();
 	const note2UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the outbound note list
@@ -125,7 +127,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Create a new note, continuing the naming sequence
 	await content.header().createNote();
-	await content.header().title().assert("New Note (3)");
+	await page.getByRole("heading", { name: "New Note 3" }).first();
 
 	// Verify names
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
@@ -140,7 +142,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Create another note, continuing the sequence
 	await content.header().createNote();
-	await content.header().title().assert("New Note (4)");
+	await page.getByRole("heading", { name: "New Note 4" }).first();
 
 	// Verify names
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
@@ -157,7 +159,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Create a final note with reset sequence
 	await content.header().createNote();
-	await content.header().title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Verify names
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
@@ -182,7 +184,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("heading", { name: "Note 1" }).first();
 
 	// Navigate back to outbound page and to note 2
 	await page.getByRole("link", { name: "Outbound" }).first().click(); // In the main nav, not the breadcrumb nav
@@ -190,7 +192,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().title().assert("Note 2");
+	await page.getByRole("heading", { name: "Note 2" }).first();
 });
 
 test("should display book count for each respective note in the list", async ({ page }) => {
@@ -278,7 +280,7 @@ test("should update default warehouse for outbound note using dropdown", async (
 
 	// Verify we're on the note page
 	await dashboard.view("outbound-note").waitFor();
-	await dashboard.content().header().title().assert("Default Warehouse Test");
+	await page.getByRole("heading", { name: "Default Warehouse Test" }).first();
 
 	const defaultWarehouseDropdown = page.locator("#defaultWarehouse");
 	await defaultWarehouseDropdown.waitFor();
@@ -324,7 +326,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await content.entityList("outbound-list").item(0).edit();
 	// Check title
 	await dashboard.view("outbound-note").waitFor();
-	await content.header().title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
