@@ -28,7 +28,7 @@
 
 	let entries: BookData[] = [];
 	$: if ($search.length > 2) {
-		searchBooks(db, $search).then((res) => {
+		searchBooks(db, { searchString: $search }).then((res) => {
 			entries = res;
 		});
 	} else {

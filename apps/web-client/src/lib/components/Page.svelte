@@ -43,6 +43,12 @@
 			linkto: "stock"
 		},
 		{
+			label: tNav.books(),
+			href: appPath("books"),
+			icon: Search,
+			linkto: "books"
+		},
+		{
 			label: tNav.inventory(),
 			href: appPath("inventory"),
 			icon: Library,

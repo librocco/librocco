@@ -18,6 +18,10 @@ type RootTranslation = {
 		 */
 		search: string;
 		/**
+		 * V​i​e​w​ ​k​n​o​w​n​ ​b​o​o​k​s
+		 */
+		books: string;
+		/**
 		 * M​a​n​a​g​e​ ​i​n​v​e​n​t​o​r​y
 		 */
 		inventory: string;
@@ -1067,6 +1071,10 @@ export type TranslationFunctions = {
 		 * Search stock
 		 */
 		search: () => LocalizedString;
+		/**
+		 * View known books
+		 */
+		books: () => LocalizedString;
 		/**
 		 * Manage inventory
 		 */

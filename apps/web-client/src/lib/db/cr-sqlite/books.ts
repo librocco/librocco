@@ -103,9 +103,25 @@ async function _getPublisherList(db: DB): Promise<string[]> {
 	return res.map(({ publisher }) => publisher);
 }
 
-async function _searchBooks(db: DB, searchString: string): Promise<Required<BookData>[]> {
-	// Encode the search string for this (naive) query
-	const filters = [`%${searchString}%`, `%${searchString}%`, `%${searchString}%`]; // One value for each ?
+type SearchBooksParams = {
+	searchString?: string;
+	orderBy?: keyof BookData;
+	order?: "asc" | "desc";
+};
+async function _searchBooks(
+	db: DB,
+	{ searchString, orderBy, order = "asc" }: SearchBooksParams = {}
+): Promise<Array<Required<BookData> & { updatedAt: Date | null }>> {
+	const filterClauses = [];
+	const filterValues = [];
+
+	if (searchString) {
+		filterClauses.push(`(isbn LIKE ? OR title LIKE ? OR authors LIKE ?)`);
+		filterValues.push(`%${searchString}%`, `%${searchString}%`, `%${searchString}%`); // One value for each ?
+	}
+
+	const whereClause = filterClauses.length ? `WHERE ${filterClauses.join(" AND ")}` : "";
+	const orderByClause = orderBy ? `ORDER BY ${orderBy} ${order}` : "";
 
 	const res = await db.execO<RawBookRes>(
 		`
@@ -121,10 +137,10 @@ async function _searchBooks(db: DB, searchString: string): Promise<Required<Book
 				COALESCE(category, '') as category,
 				updated_at as updatedAt
 			FROM book
-			WHERE isbn LIKE ? OR title LIKE ? OR authors LIKE ?
-			ORDER BY isbn ASC
+			${whereClause}
+			${orderByClause}
 		`,
-		filters
+		[...filterValues]
 	);
 
 	return res.map(processRawBookRes);
@@ -156,6 +172,7 @@ const processRawBookRes = (res: RawBookRes): Required<BookData> & { updatedAt: D
 	category: res.category,
 	updatedAt: res.updatedAt ? new Date(res.updatedAt) : null
 });
+
 export const upsertBook = timed(_upsertBook);
 export const getBookData = timed(_getBookData);
 export const getPublisherList = timed(_getPublisherList);
