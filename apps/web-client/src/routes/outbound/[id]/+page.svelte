@@ -30,6 +30,7 @@
 		type WarehouseChangeDetail
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
+	import { defaultDialogConfig } from "$lib/components/Melt";
 
 	import type { InventoryTableData } from "$lib/components/Tables/types";
 	import {
@@ -121,19 +122,13 @@
 
 	// #region note-actions
 	const openNoWarehouseSelectedDialog = (invalidTransactions: VolumeStock[]) => {
-		dialogContent = {
-			type: "no-warehouse-selected",
-			invalidTransactions
-		};
-		open.set(true);
+		noWarehouseDialogData = invalidTransactions;
+		noWarehouseDialogOpen.set(true);
 	};
 
 	const openReconciliationDialog = (invalidTransactions: OutOfStockTransaction[]) => {
-		dialogContent = {
-			type: "reconcile",
-			invalidTransactions
-		};
-		open.set(true);
+		reconcileDialogData = invalidTransactions;
+		reconcileDialogOpen.set(true);
 	};
 
 	const handleCommitSelf = async (closeDialog: () => void) => {
@@ -264,13 +259,7 @@
 		// this was causing errors when passing the data to the book form.
 		const { key, rowIx, __kind, availableWarehouses, warehouseId, warehouseName, warehouseDiscount, quantity, ...bookData } = row;
 		bookFormData = bookData;
-
-		dialogContent = {
-			onConfirm: () => {},
-			title: tCommon.edit_book_dialog.title(),
-			description: tCommon.edit_book_dialog.description(),
-			type: "edit-row"
-		};
+		editBookDialogOpen.set(true);
 	};
 
 	const openCustomItemForm = (row?: InventoryTableData<"custom"> & { key: string; rowIx: number }) => {
@@ -278,13 +267,7 @@
 			const { key, rowIx, __kind, ...bookData } = row;
 			customItemFormData = bookData;
 		}
-
-		dialogContent = {
-			onConfirm: () => {},
-			title: row ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title(),
-			description: "",
-			type: "custom-item-form"
-		};
+		customItemDialogOpen.set(true);
 	};
 
 	const onBookFormUpdated: SuperForm<BookFormSchema>["options"]["onUpdated"] = async ({ form }) => {
@@ -302,7 +285,7 @@
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
-			open.set(false);
+			editBookDialogOpen.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
@@ -326,7 +309,7 @@
 			const newId = () => Math.trunc(Math.random() * 100_000);
 			await upsertNoteCustomItem(db, noteId, { ...data, id: data.id ?? newId() });
 			bookFormData = null;
-			open.set(false);
+			customItemDialogOpen.set(false);
 		} catch (err) {
 			console.error(err);
 		}
@@ -343,18 +326,66 @@
 		await printBookLabel($deviceSettingsStore.labelPrinterUrl, book);
 	};
 
-	const dialog = createDialog({
-		forceVisible: true
-	});
+	// Create individual dialogs for each type
+	const confirmActionDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
-		states: { open }
-	} = dialog;
+		elements: {
+			trigger: confirmDialogTrigger,
+			overlay: confirmDialogOverlay,
+			portalled: confirmDialogPortalled
+		},
+		states: { open: confirmDialogOpen }
+	} = confirmActionDialog;
 
-	let dialogContent:
-		| ({ type: "commit" | "delete" | "edit-row" | "custom-item-form" } & DialogContent)
-		| { type: "no-warehouse-selected"; invalidTransactions: VolumeStock[] }
-		| { type: "reconcile"; invalidTransactions: OutOfStockTransaction[] };
+	const editBookDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: editBookDialogTrigger,
+			overlay: editBookDialogOverlay,
+			content: editBookDialogContent,
+			title: editBookDialogTitle,
+			description: editBookDialogDescription,
+			close: editBookDialogClose,
+			portalled: editBookDialogPortalled
+		},
+		states: { open: editBookDialogOpen }
+	} = editBookDialog;
+
+	const customItemDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: customItemDialogTrigger,
+			overlay: customItemDialogOverlay,
+			content: customItemDialogContent,
+			title: customItemDialogTitle,
+			description: customItemDialogDescription,
+			close: customItemDialogClose,
+			portalled: customItemDialogPortalled
+		},
+		states: { open: customItemDialogOpen }
+	} = customItemDialog;
+
+	const noWarehouseDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			overlay: noWarehouseDialogOverlay,
+			portalled: noWarehouseDialogPortalled
+		},
+		states: { open: noWarehouseDialogOpen }
+	} = noWarehouseDialog;
+	let noWarehouseDialogData: VolumeStock[] = [];
+
+	const reconcileDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			overlay: reconcileDialogOverlay,
+			portalled: reconcileDialogPortalled
+		},
+		states: { open: reconcileDialogOpen }
+	} = reconcileDialog;
+	let reconcileDialogData: OutOfStockTransaction[] = [];
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" };
 
 	// TODO: this is a duplicate
 	const isBookRow = (data: InventoryTableData): data is InventoryTableData<"book"> => data.__kind !== "custom";
@@ -407,7 +438,7 @@
 					</div>
 					<button
 						class="btn-primary btn-sm btn hidden xs:block"
-						use:melt={$dialogTrigger}
+						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
@@ -432,7 +463,7 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$dialogTrigger}
+							use:melt={$confirmDialogTrigger}
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleCommitSelf,
@@ -456,7 +487,7 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$dialogTrigger}
+							use:melt={$confirmDialogTrigger}
 							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
 							on:m-click={() => {
 								dialogContent = {
@@ -550,7 +581,7 @@
 								<!-- svelte-ignore a11y-no-static-element-interactions -->
 								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
-										use:melt={$dialogTrigger}
+										use:melt={$editBookDialogTrigger}
 										class="btn-secondary btn-sm btn"
 										data-testid={testId("edit-row")}
 										on:m-click={handleOpenFormPopover(row)}
@@ -585,7 +616,7 @@
 
 				<div class="flex h-24 w-full items-center justify-end px-8">
 					<button
-						use:melt={$dialogTrigger}
+						use:melt={$customItemDialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
 						class="btn-primary btn">Custom item</button
@@ -601,159 +632,169 @@
 	</div>
 </Page>
 
-{#if $open}
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
-		{#if dialogContent.type === "no-warehouse-selected"}
-			<!-- No warehouse selecter dialog -->
-			{@const { invalidTransactions } = dialogContent}
+{#if $confirmDialogOpen}
+	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={() => {}}>
-					<svelte:fragment slot="title">{tCommon.no_warehouse_dialog.title()}</svelte:fragment>
-					<svelte:fragment slot="description">{tCommon.no_warehouse_dialog.description()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">{tOutbound.delete_dialog.select_warehouse()}:</h3>
-					<ul class="pl-2">
-						{#each invalidTransactions as { isbn }}
-							<li>{isbn}</li>
-						{/each}
-					</ul>
-					<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
-					<svelte:fragment slot="confirm-button"><span></span></svelte:fragment>
-				</Dialog>
-			</div>
-			<!-- No warehouse selecter dialog end -->
-		{:else if dialogContent.type === "reconcile"}
-			<!-- Note reconciliation dialog -->
-			{@const { invalidTransactions } = dialogContent}
+	<div use:melt={$confirmDialogPortalled}>
+		<div use:melt={$confirmDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={confirmActionDialog} {type} {onConfirm}>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+			</Dialog>
+		</div>
+	</div>
+{/if}
 
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} type="delete" onConfirm={handleReconcileAndCommitSelf(invalidTransactions)}>
-					<svelte:fragment slot="title">{tCommon.reconcile_outbound_dialog.title()}</svelte:fragment>
-					<svelte:fragment slot="description">{tCommon.reconcile_outbound_dialog.description()}</svelte:fragment>
-					<h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3>
-					<ul class="pl-2">
-						{#each invalidTransactions as { isbn, warehouseName, quantity, available }}
-							<li class="mb-2">
-								<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
-								<p class="pl-2">requested quantity: {quantity}</p>
-								<p class="pl-2">available: {available}</p>
-								<p class="pl-2">
-									{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
-								</p>
-							</li>
-						{/each}
-					</ul>
-				</Dialog>
-			</div>
-			<!-- Note reconciliation dialog end -->
-		{:else if dialogContent.type === "edit-row"}
-			<div
-				use:melt={$content}
-				class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-				bg-base-200 shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 300,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-base-200 p-6">
-					<div>
-						<h2 use:melt={$title} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
-						<p use:melt={$description} class="leading-normal">
-							{tCommon.edit_book_dialog.description()}
-						</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-						<X size={16} />
-					</button>
+{#if $noWarehouseDialogOpen}
+	<div use:melt={$noWarehouseDialogPortalled}>
+		<div use:melt={$noWarehouseDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={noWarehouseDialog} type="delete" onConfirm={() => {}}>
+				<svelte:fragment slot="title">{tCommon.no_warehouse_dialog.title()}</svelte:fragment>
+				<svelte:fragment slot="description">{tCommon.no_warehouse_dialog.description()}</svelte:fragment>
+				<h3 class="mb-2 mt-4 font-semibold">{tOutbound.delete_dialog.select_warehouse()}:</h3>
+				<ul class="pl-2">
+					{#each noWarehouseDialogData as { isbn }}
+						<li>{isbn}</li>
+					{/each}
+				</ul>
+				<!-- A small hack to hide the 'Confirm' button as there's nothing to confirm -->
+				<svelte:fragment slot="confirm-button"><span></span></svelte:fragment>
+			</Dialog>
+		</div>
+	</div>
+{/if}
+
+{#if $reconcileDialogOpen}
+	<div use:melt={$reconcileDialogPortalled}>
+		<div use:melt={$reconcileDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 100 }}></div>
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={reconcileDialog} type="delete" onConfirm={handleReconcileAndCommitSelf(reconcileDialogData)}>
+				<svelte:fragment slot="title">{tCommon.reconcile_outbound_dialog.title()}</svelte:fragment>
+				<svelte:fragment slot="description">{tCommon.reconcile_outbound_dialog.description()}</svelte:fragment>
+				<h3 class="mb-2 mt-4 font-semibold">{tOutbound.reconcile_dialog.review_transaction()}:</h3>
+				<ul class="pl-2">
+					{#each reconcileDialogData as { isbn, warehouseName, quantity, available }}
+						<li class="mb-2">
+							<p><span class="font-semibold">{isbn}</span> in <span class="font-semibold">{warehouseName}:</span></p>
+							<p class="pl-2">requested quantity: {quantity}</p>
+							<p class="pl-2">available: {available}</p>
+							<p class="pl-2">
+								{tOutbound.reconcile_dialog.quantity()}: <span class="font-semibold">{quantity - available}</span>
+							</p>
+						</li>
+					{/each}
+				</ul>
+			</Dialog>
+		</div>
+	</div>
+{/if}
+
+{#if $editBookDialogOpen}
+	<div use:melt={$editBookDialogPortalled}>
+		<div use:melt={$editBookDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$editBookDialogContent}
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+			bg-base-200 shadow-lg focus:outline-none"
+			in:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+			out:fly|global={{
+				x: 350,
+				duration: 100
+			}}
+		>
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+				<div>
+					<h2 use:melt={$editBookDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
+					<p use:melt={$editBookDialogDescription} class="leading-normal">
+						{tCommon.edit_book_dialog.description()}
+					</p>
 				</div>
-				<div class="px-6">
-					<BookForm
-						data={defaults(bookFormData, zod(bookSchema))}
-						{publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(bookSchema),
-							validationMethod: "submit-only",
-							onUpdated: onBookFormUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
-
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData({ isbn }, results);
-
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
-							}
-
-							form.update((data) => ({ ...data, ...bookData }));
-							// TODO: handle loading and errors
-						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
-					/>
-				</div>
+				<button use:melt={$editBookDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
+					<X size={16} />
+				</button>
 			</div>
-		{:else if dialogContent.type === "custom-item-form"}
-			{@const { title: dialogTitle, description: dialogDescription } = dialogContent}
+			<div class="px-6">
+				<BookForm
+					data={defaults(bookFormData, zod(bookSchema))}
+					{publisherList}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(bookSchema),
+						validationMethod: "submit-only",
+						onUpdated: onBookFormUpdated
+					}}
+					onCancel={() => editBookDialogOpen.set(false)}
+					onFetch={async (isbn, form) => {
+						const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
 
-			<div
-				use:melt={$content}
-				class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-				bg-base-200 shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 300,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-base-200 p-6">
-					<div>
-						<h2 use:melt={$title} class="text-lg font-medium">{dialogTitle}</h2>
-						<p use:melt={$description} class="leading-normal">
-							{dialogDescription}
-						</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-						<X size={16} />
-					</button>
-				</div>
-				<div class="px-6">
-					<CustomItemForm
-						data={defaults(customItemFormData, zod(customItemSchema))}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(customItemSchema),
-							validationMethod: "submit-only",
-							onUpdated: onCustomItemUpdated
-						}}
-						onCancel={() => open.set(false)}
-					/>
-				</div>
-			</div>
-		{:else}
-			{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent}
+						// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+						const bookData = mergeBookData({ isbn }, results);
 
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} {type} onConfirm={dialogContent.onConfirm}>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-				</Dialog>
+						// If there's no book was retrieved from any of the sources, exit early
+						if (!bookData) {
+							return;
+						}
+
+						form.update((data) => ({ ...data, ...bookData }));
+						// TODO: handle loading and errors
+					}}
+					isExtensionAvailable={$bookDataExtensionAvailable}
+				/>
 			</div>
-		{/if}
+		</div>
+	</div>
+{/if}
+
+{#if $customItemDialogOpen}
+	<div use:melt={$customItemDialogPortalled}>
+		<div use:melt={$customItemDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$customItemDialogContent}
+			class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
+			bg-base-200 shadow-lg focus:outline-none"
+			in:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+			out:fly|global={{
+				x: 350,
+				duration: 100
+			}}
+		>
+			<div class="flex w-full flex-row justify-between bg-base-200 p-6">
+				<div>
+					<h2 use:melt={$customItemDialogTitle} class="text-lg font-medium">
+						{customItemFormData ? tCommon.edit_custom_item_dialog.title() : tCommon.create_custom_item_dialog.title()}
+					</h2>
+					<p use:melt={$customItemDialogDescription} class="leading-normal">
+						{/* Description is empty in the original code */}
+					</p>
+				</div>
+				<button use:melt={$customItemDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
+					<X size={16} />
+				</button>
+			</div>
+			<div class="px-6">
+				<CustomItemForm
+					data={defaults(customItemFormData, zod(customItemSchema))}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(customItemSchema),
+						validationMethod: "submit-only",
+						onUpdated: onCustomItemUpdated
+					}}
+					onCancel={() => customItemDialogOpen.set(false)}
+				/>
+			</div>
+		</div>
 	</div>
 {/if}
