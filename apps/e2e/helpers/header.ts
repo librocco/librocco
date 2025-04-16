@@ -7,7 +7,13 @@ import { getBreadcrumbs } from "./breadcrumbs";
 
 export function getHeader(_parent: DashboardNode): ContentHeaderInterface {
 	const dashboard = _parent.dashboard;
-	const header = Object.assign(_parent.locator("header"), {});
+	// * The following is a quick fix to allow existing tests to pass without having to refactor them heavily
+	// "header" used to "Object.assign(_parent.locator("header"), {});"
+	// But the updated PageLayout has been simplified to only have one "main" slot
+	// under which everything in the main body of the app is composed on each page
+	// This means the "header" selector will no longer find anything, and the easiest way to handle this
+	// is to not select too specifically, but just continue with nested selectors/methods from the dashboard node
+	const header = dashboard();
 
 	const breadcrumbs = () => getBreadcrumbs(getHeader(_parent));
 

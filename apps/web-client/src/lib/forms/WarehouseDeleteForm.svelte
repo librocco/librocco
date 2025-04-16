@@ -46,6 +46,6 @@
 
 	<div class="flex w-full justify-end gap-x-2 p-4">
 		<button class="btn-secondary btn-outline btn" on:click={onCancel} type="button">Cancel</button>
-		<button class="btn-error btn" type="submit">Delete</button>
+		<button class="btn-error btn" type="submit">Confirm</button>
 	</div>
 </form>
