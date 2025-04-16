@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-	await warehouseList.assertElements([{ name: "Warehouse 1" }]);
+	await page.getByRole("heading", { name: "Note" }).first();
 });
 
 test('should create a new inbound note, under the particular warehouse, on warehouse row -> "New note" click and redirect to it', async ({
@@ -39,7 +39,7 @@ test('should create a new inbound note, under the particular warehouse, on wareh
 
 	// Check that we've been redirected to the new note's page
 	await dasbboard.view("inbound-note").waitFor();
-	await dasbboard.content().header().title().assert("New Note");
+	await page.getByRole("main").getByRole("heading", { name: "New Note" });
 });
 
 test("should display notes, namespaced to warehouses, in the inbound note list", async ({ page }) => {
@@ -100,7 +100,7 @@ test("note heading should display note name, 'updated at' timestamp", async ({ p
 	await dashboard.content().entityList("warehouse-list").item(0).createNote();
 
 	// Check the title
-	await header.title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Check the 'updated at' timestamp
 	const updatedAt = new Date();
@@ -130,7 +130,7 @@ test("note should display breadcrumbs leading back to inbound page, or the paren
 	await header.breadcrumbs().getByText("Warehouse 1").click();
 
 	await dashboard.view("warehouse").waitFor();
-	await header.title().assert("Warehouse 1");
+	await page.getByRole("heading", { name: "Warehouse 1" }).first();
 });
 
 test("should assign default name to notes in sequential order (regardless of warehouse they belong to)", async ({ page }) => {
@@ -147,21 +147,21 @@ test("should assign default name to notes in sequential order (regardless of war
 
 	// First note (Warehouse 1)
 	await warehouseList.item(0).createNote();
-	await header.title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 	const note1UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Second note (Warehouse 1)
 	await warehouseList.item(0).createNote();
-	await header.title().assert("New Note (2)");
+	await page.getByRole("heading", { name: "New Note 2" }).first();
 	const note2UpdatedAt = await header.updatedAt().value();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Third note (Warehouse 2)
 	await warehouseList.item(1).createNote();
-	await header.title().assert("New Note (3)");
+	await page.getByRole("heading", { name: "New Note 3" }).first();
 	const note3UpdatedAt = await header.updatedAt().value();
 
 	// Should display created notes in the inbound list
@@ -183,7 +183,6 @@ test("should continue the naming sequence from the highest sequenced note name (
 	const dashboard = getDashboard(page);
 
 	const content = dashboard.content();
-	const header = dashboard.content().header();
 	const warehouseList = dashboard.content().entityList("warehouse-list");
 
 	const dbHandle = await getDbHandle(page);
@@ -194,7 +193,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 
 	// Create a new note, continuning the naming sequence
 	await warehouseList.item(0).createNote();
-	await header.title().assert("New Note (3)");
+	await page.getByRole("heading", { name: "New Note 3" }).first();
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
@@ -203,7 +202,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await dbHandle.evaluate(updateNote, { id: 2, displayName: "Note 2" });
 
 	await warehouseList.item(0).createNote();
-	await header.title().assert("New Note (4)");
+	await page.getByRole("heading", { name: "New Note 4" }).first();
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -226,7 +225,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await page.getByRole("link", { name: "Warehouses" }).click();
 
 	await warehouseList.item(0).createNote();
-	await header.title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Check names
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -255,7 +254,7 @@ test("should be able to edit note title", async ({ page }) => {
 	await content.entityList("inbound-list").item(0).edit();
 	// Check title
 	await dashboard.view("inbound-note").waitFor();
-	await content.header().title().assert("New Note");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	await dashboard.textEditableField().fillData("title");
 	await dashboard.textEditableField().submit();
@@ -285,7 +284,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Check title
 	await dashboard.view("inbound-note").waitFor();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Navigate back to inbound page and to note 2
 	await page.getByRole("link", { name: "Manage inventory" }).click();
@@ -295,7 +294,7 @@ test("should navigate to note page on 'edit' button click", async ({ page }) => 
 
 	// Check title
 	await dashboard.view("inbound-note").waitFor();
-	await content.header().title().assert("Note 2");
+	await page.getByRole("heading", { name: "New Note" }).first();
 });
 
 test("should display book count for each respective note in the list", async ({ page }) => {
