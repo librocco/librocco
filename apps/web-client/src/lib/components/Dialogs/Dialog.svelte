@@ -4,6 +4,7 @@
 	export let type: "commit" | "delete";
 	export let dialog: ReturnType<typeof createDialog>;
 	export let onConfirm: (closeDialog: () => void) => void = () => {};
+	export let onCancel: (closeDialog: () => void) => void = () => {};
 
 	const {
 		elements: { content, title, description, close },
@@ -30,7 +31,7 @@
 	<div class="flex w-full justify-end gap-x-2 p-3">
 		<div>
 			<slot name="secondary-button">
-				<button class="btn-secondary btn-outline btn" use:melt={$close} type="button">
+				<button class="btn-secondary btn-outline btn" use:melt={$close} type="button" on:click={() => onCancel(closeDialog)}>
 					<span class="button-text"> Cancel </span>
 				</button>
 			</slot>

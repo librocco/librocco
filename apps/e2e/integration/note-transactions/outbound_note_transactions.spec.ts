@@ -21,12 +21,6 @@ test.beforeEach(async ({ page }) => {
 	// Load the app
 	await page.goto(baseURL);
 
-	const dashboard = getDashboard(page);
-	await dashboard.waitFor();
-
-	await page.getByRole("link", { name: "Outbound" }).click();
-	await dashboard.content().entityList("outbound-list").waitFor();
-
 	// We create a warehouse and a note for all tests
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
@@ -34,8 +28,14 @@ test.beforeEach(async ({ page }) => {
 	await dbHandle.evaluate(createOutboundNote, { id: 1 });
 	await dbHandle.evaluate(updateNote, { id: 1, displayName: "Note 1" });
 
+	const dashboard = getDashboard(page);
+	await dashboard.waitFor();
+
+	await page.getByRole("link", { name: "Outbound" }).click();
+	await dashboard.content().entityList("outbound-list").waitFor();
+
 	// Navigate to the note page
-	await dashboard.content().entityList("outbound-list").item(0).edit();
+	await page.getByRole("link", { name: "Edit" }).first().click();
 	await page.getByRole("main").getByRole("heading", { name: "Note 1" }).first();
 });
 
@@ -465,24 +465,29 @@ test("should check validity of the transactions and commit the note on 'commit' 
 
 	const dashboard = getDashboard(page);
 
+	// It seems to help to navigate again to the outbound page after all of the dbHandle's have been evaluated
+	await page.getByRole("link", { name: "Edit" }).first().click();
+
 	const entries = dashboard.content().table("outbound-note");
 	const dialog = dashboard.dialog();
 
 	const invalidTransctionList = dialog.locator("ul");
 
 	// Try to commit the note
-	await dashboard.content().header().commit();
+	await page.getByRole("button", { name: "Commit" }).click();
 	await dialog.confirm();
 
 	// Should display no-warehouse-selected error dialog
 	await dialog.getByText("No warehouse(s) selected").waitFor();
 	// Should display isbns for transactions with no warehouse selected
 	await compareEntries(invalidTransctionList, ["22222222", "44444444"], "li");
-	// No-warehouse-selected dialog doesn't have a 'Confirm' button
-	await dialog.getByText("Confirm").waitFor({ state: "detached" });
 
 	// Close the dialog and fix the invalid transactions
-	await dialog.cancel();
+	const noWarehouseSelectedDialog = page.getByRole("dialog", { name: "No warehouse(s) selected" });
+	await noWarehouseSelectedDialog.getByRole("button", { name: "Cancel" }).click();
+
+	await expect(noWarehouseSelectedDialog).not.toBeVisible();
+
 	// "22222222" - reverse order than order of adding/aggregating
 	await entries.row(2).field("warehouseName").set("Warehouse 1");
 	// "44444444"
@@ -502,7 +507,7 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	]);
 
 	// Try to commit the note
-	await dashboard.content().header().commit();
+	await page.getByRole("button", { name: "Commit" }).click();
 	// Regression: check the commit message (book count was broken -- this tests the fix)
 	//
 	// 1 + 2 + 5 + 3 + 3 = 14
@@ -533,8 +538,9 @@ test("should check validity of the transactions and commit the note on 'commit' 
 	await invalidTransctionList.locator("li").nth(3).waitFor({ state: "detached" });
 
 	// Confirm the reconciliation
-	await dialog.confirm();
-	await dialog.waitFor({ state: "detached" });
+	const stockMisMatchDialog = page.getByRole("dialog", { name: "Stock mismatch" });
+	await stockMisMatchDialog.getByRole("button", { name: "Confirm" }).click();
+	await expect(stockMisMatchDialog).not.toBeVisible();
 
 	// The note should be committed, we're redirected to '/outbound' page
 	await dashboard.view("outbound").waitFor();
