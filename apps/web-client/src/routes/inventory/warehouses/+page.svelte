@@ -1,20 +1,17 @@
 <script lang="ts">
 	import { onMount, onDestroy } from "svelte";
-	import { fade } from "svelte/transition";
 	import { invalidate } from "$app/navigation";
 
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Edit, Table2, Trash2, Library, Percent, HousePlus, Layers, SquarePercent } from "lucide-svelte";
+	import { Edit, Table2, Trash2, HousePlus, Layers, SquarePercent } from "lucide-svelte";
 
 	import { entityListView, testId } from "@librocco/shared";
 
 	import { racefreeGoto } from "$lib/utils/navigation";
 
 	import { DropdownWrapper, PlaceholderBox } from "$lib/components";
-
-	import { type DialogContent } from "$lib/types";
 
 	import { appPath } from "$lib/paths";
 
@@ -24,6 +21,7 @@
 	import PlaceholderDots from "$lib/components/Placeholders/PlaceholderDots.svelte";
 	import PageCenterDialog from "$lib/components/Melt/PageCenterDialog.svelte";
 	import { InventoryManagementPage } from "$lib/controllers";
+	import { defaultDialogConfig } from "$lib/components/Melt";
 
 	import { createInboundNote, getNoteIdSeq } from "$lib/db/cr-sqlite/note";
 	import { deleteWarehouse, getWarehouseIdSeq, upsertWarehouse } from "$lib/db/cr-sqlite/warehouse";
@@ -58,7 +56,7 @@
 
 	const handleDeleteWarehouse = (id: number) => async () => {
 		await deleteWarehouse(db, id);
-		open.set(false);
+		deleteDialogOpen.set(false);
 	};
 
 	/**
@@ -84,15 +82,20 @@
 		await goto(appPath("inbound", id));
 	};
 
-	const dialog = createDialog({ forceVisible: true });
+	const warehouseEditDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { portalled, overlay, trigger, content, title, description },
-		states: { open }
-	} = dialog;
+		elements: { trigger: editDialogTrigger },
+		states: { open: editDialogOpen }
+	} = warehouseEditDialog;
+
+	const warehouseDeleteDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: { trigger: deleteDialogTrigger },
+		states: { open: deleteDialogOpen }
+	} = warehouseDeleteDialog;
 
 	let warehouseToEdit: WarehouseFormSchema | null = null;
 	let warehouseToDelete: { id: number; displayName: string } = null;
-	let dialogContent: (DialogContent & { type: "delete" | "edit" }) | null = null;
 
 	let initialized = false;
 	$: initialized = Boolean(db);
@@ -128,12 +131,12 @@
 				{#each warehouses as { id, displayName, totalBooks, discount }}
 					{@const href = appPath("warehouses", id)}
 
-					<div class="group entity-list-row">
+					<div class="entity-list-row group">
 						<div class="flex flex-col gap-y-2 self-start">
 							<a {href} class="entity-list-text-lg text-base-content hover:underline focus:underline">{displayName}</a>
 
-							<div class="flex flex-row gap-x-8 gap-y-2 max-xs:flex-col">
-								<div class="entity-list-text-sm flex items-center gap-x-2 text-sm text-base-content">
+							<div class="max-xs:flex-col flex flex-row gap-x-8 gap-y-2">
+								<div class="entity-list-text-sm text-base-content flex items-center gap-x-2 text-sm">
 									<Layers size={18} />
 
 									<div>
@@ -147,7 +150,7 @@
 								</div>
 
 								{#if discount}
-									<div class="flex items-center gap-x-2 text-sm text-base-content">
+									<div class="text-base-content flex items-center gap-x-2 text-sm">
 										<SquarePercent size={18} />
 
 										<span class="entity-list-text-sm">{discount}% discount</span>
@@ -165,38 +168,26 @@
 								<div
 									{...item}
 									use:item.action
-									use:melt={$trigger}
+									use:melt={$editDialogTrigger}
 									on:m-click={() => {
 										warehouseToEdit = { name: displayName, discount, id };
-										dialogContent = {
-											onConfirm: () => {},
-											title: tCommon.edit_warehouse_dialog.title(),
-											description: tCommon.edit_warehouse_dialog.description(),
-											type: "edit"
-										};
 									}}
 									on:m-keydown={() => {
 										warehouseToEdit = { name: displayName, discount, id };
-										dialogContent = {
-											onConfirm: () => {},
-											title: tCommon.edit_warehouse_dialog.title(),
-											description: tCommon.edit_warehouse_dialog.description(),
-											type: "edit"
-										};
 									}}
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Edit aria-hidden size={18} />
 									<span>Edit</span>
 								</div>
 
-								<div {...separator} use:separator.action class="h-[1px] bg-base-300"></div>
+								<div {...separator} use:separator.action class="bg-base-300 h-[1px]"></div>
 
 								<a
 									{href}
 									{...item}
 									use:item.action
-									class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+									class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Table2 aria-hidden size={18} />
 									<span>View Stock</span>
@@ -205,26 +196,14 @@
 								<div
 									{...item}
 									use:item.action
-									use:melt={$trigger}
+									use:melt={$deleteDialogTrigger}
 									on:m-click={() => {
 										warehouseToDelete = { id, displayName };
-										dialogContent = {
-											onConfirm: handleDeleteWarehouse(id),
-											title: tCommon.delete_dialog.title({ entity: displayName }),
-											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
-											type: "delete"
-										};
 									}}
 									on:m-keydown={() => {
 										warehouseToDelete = { id, displayName };
-										dialogContent = {
-											onConfirm: handleDeleteWarehouse(id),
-											title: tCommon.delete_dialog.title({ entity: displayName }),
-											description: tCommon.delete_warehouse_dialog.description({ bookCount: totalBooks }),
-											type: "delete"
-										};
 									}}
-									class="flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error"
+									class="data-[highlighted]:bg-error flex w-full items-center gap-2 bg-red-400 px-4 py-3 text-sm font-normal leading-5"
 								>
 									<Trash2 class="text-error-content" size={18} />
 									<span class="text-error-content">Delete</span>
@@ -240,37 +219,37 @@
 	{/if}
 </InventoryManagementPage>
 
-{#if $open}
-	{@const { type, title: dialogTitle, description: dialogDescription } = dialogContent};
+<PageCenterDialog
+	dialog={warehouseEditDialog}
+	title={tCommon.edit_warehouse_dialog.title()}
+	description={tCommon.edit_warehouse_dialog.description()}
+>
+	<WarehouseForm
+		data={defaults(warehouseToEdit, zod(warehouseSchema))}
+		options={{
+			SPA: true,
+			dataType: "json",
+			validators: zod(warehouseSchema),
+			validationMethod: "submit-only",
+			onUpdated: async ({ form }) => {
+				const { id, name: displayName, discount } = form?.data;
+				await upsertWarehouse(db, { id, displayName, discount });
+				editDialogOpen.set(false);
+			}
+		}}
+		onCancel={() => editDialogOpen.set(false)}
+	/>
+</PageCenterDialog>
 
-	<PageCenterDialog {dialog} title={dialogTitle} description={dialogDescription}>
-		{#if type === "edit"}
-			<WarehouseForm
-				data={defaults(warehouseToEdit, zod(warehouseSchema))}
-				options={{
-					SPA: true,
-					dataType: "json",
-					validators: zod(warehouseSchema),
-					validationMethod: "submit-only",
-					onUpdated: async ({ form }) => {
-						const { id, name: displayName, discount } = form?.data;
-						await upsertWarehouse(db, { id, displayName, discount });
-						open.set(false);
-					}
-				}}
-				onCancel={() => open.set(false)}
-			/>
-		{:else}
-			<WarehouseDeleteForm
-				{...warehouseToDelete}
-				options={{
-					SPA: true,
-					dataType: "json",
-					validationMethod: "submit-only",
-					onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
-				}}
-				onCancel={() => open.set(false)}
-			/>
-		{/if}
-	</PageCenterDialog>
-{/if}
+<PageCenterDialog dialog={warehouseDeleteDialog} title="" description={tCommon.delete_database_dialog.description()}>
+	<WarehouseDeleteForm
+		{...warehouseToDelete}
+		options={{
+			SPA: true,
+			dataType: "json",
+			validationMethod: "submit-only",
+			onSubmit: handleDeleteWarehouse(warehouseToDelete.id)
+		}}
+		onCancel={() => deleteDialogOpen.set(false)}
+	/>
+</PageCenterDialog>

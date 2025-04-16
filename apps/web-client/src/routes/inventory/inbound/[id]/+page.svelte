@@ -8,7 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, FileCheck } from "lucide-svelte";
 
 	import { testId } from "@librocco/shared";
 	import type { BookData } from "@librocco/shared";
@@ -27,6 +27,7 @@
 		InboundTable
 	} from "$lib/components";
 	import { Page } from "$lib/controllers";
+	import { defaultDialogConfig } from "$lib/components/Melt";
 
 	import { BookForm, bookSchema, ScannerForm, scannerSchema, type BookFormSchema } from "$lib/forms";
 
@@ -185,7 +186,7 @@
 		try {
 			await upsertBook(db, data);
 			bookFormData = null;
-			open.set(false);
+			editDialogOpen.set(false);
 		} catch (err) {
 			// toastError(`Error: ${err.message}`);
 		}
@@ -205,15 +206,32 @@
 	$: breadcrumbs =
 		noteId && warehouseId ? createBreadcrumbs("inbound", { id: warehouseId, displayName: warehouseName }, { id: noteId, displayName }) : [];
 
-	const dialog = createDialog({
-		forceVisible: true
-	});
+	const editBookDialog = createDialog(defaultDialogConfig);
 	const {
-		elements: { trigger: dialogTrigger, overlay, content, title, description, close, portalled },
-		states: { open }
-	} = dialog;
+		elements: {
+			trigger: editDialogTrigger,
+			overlay: editDialogOverlay,
+			content: editDialogContent,
+			title: editDialogTitle,
+			description: editDialogDescription,
+			close: editDialogClose,
+			portalled: editDialogPortalled
+		},
+		states: { open: editDialogOpen }
+	} = editBookDialog;
 
-	let dialogContent: DialogContent & { type: "commit" | "delete" | "edit-row" };
+	const confirmActionDialog = createDialog(defaultDialogConfig);
+	const {
+		elements: {
+			trigger: confirmDialogTrigger,
+			overlay: confirmDialogOverlay,
+
+			portalled: confirmDialogPortalled
+		},
+		states: { open: confirmDialogOpen }
+	} = confirmActionDialog;
+
+	let dialogContent: DialogContent & { type: "commit" | "delete" };
 </script>
 
 <Page title={displayName} view="inbound-note" {db} {plugins}>
@@ -240,8 +258,8 @@
 
 				<div class="ml-auto flex items-center gap-x-2">
 					<button
-						class="btn-primary btn-sm btn hidden xs:block"
-						use:melt={$dialogTrigger}
+						class="btn-primary btn-sm btn xs:block hidden"
+						use:melt={$confirmDialogTrigger}
 						on:m-click={() => {
 							dialogContent = {
 								onConfirm: handleCommitSelf,
@@ -266,7 +284,7 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$dialogTrigger}
+							use:melt={$confirmDialogTrigger}
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleCommitSelf,
@@ -275,7 +293,7 @@
 									type: "commit"
 								};
 							}}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 xs:hidden"
+							class="text-base-content data-[highlighted]:bg-base-300 xs:hidden flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<FileCheck class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.commit()}</span>
 						</div>
@@ -283,7 +301,7 @@
 							{...item}
 							use:item.action
 							on:m-click={handlePrintReceipt}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300"
+							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 						>
 							<Printer class="text-base-content/70" size={20} /><span class="text-base-content">{tInbound.labels.print()}</span>
 						</div>
@@ -291,7 +309,7 @@
 							{...item}
 							use:item.action
 							on:m-click={autoPrintLabels.toggle}
-							class="flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 text-base-content data-[highlighted]:bg-base-300 {$autoPrintLabels
+							class="text-base-content data-[highlighted]:bg-base-300 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5 {$autoPrintLabels
 								? '!bg-success text-success-content'
 								: ''}"
 						>
@@ -303,8 +321,8 @@
 						<div
 							{...item}
 							use:item.action
-							use:melt={$dialogTrigger}
-							class="flex w-full items-center gap-2 bg-error px-4 py-3 text-sm font-normal leading-5 data-[highlighted]:bg-error/80"
+							use:melt={$confirmDialogTrigger}
+							class="bg-error data-[highlighted]:bg-error/80 flex w-full items-center gap-2 px-4 py-3 text-sm font-normal leading-5"
 							on:m-click={() => {
 								dialogContent = {
 									onConfirm: handleDeleteSelf,
@@ -398,31 +416,17 @@
 
 								<div slot="popover-content" data-testid={testId("popover-container")} class="bg-secondary">
 									<button
-										use:melt={$dialogTrigger}
+										use:melt={$editDialogTrigger}
 										class="btn-secondary btn-sm btn"
 										data-testid={testId("edit-row")}
 										on:m-click={() => {
 											const { warehouseId, quantity, ...bookData } = row;
 
 											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
 										}}
 										on:m-keydown={() => {
 											const { warehouseId, quantity, ...bookData } = row;
 											bookFormData = bookData;
-
-											dialogContent = {
-												onConfirm: () => {},
-												title: tCommon.edit_book_dialog.title(),
-												description: tCommon.edit_book_dialog.description(),
-												type: "edit-row"
-											};
 										}}
 									>
 										<span class="sr-only">{tInbound.labels.edit_row()} {rowIx}</span>
@@ -463,75 +467,78 @@
 	</div>
 </Page>
 
-{#if $open}
+{#if $editDialogOpen}
+	<div use:melt={$editDialogPortalled}>
+		<div use:melt={$editDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
+		<div
+			use:melt={$editDialogContent}
+			class="divide-y-secondary bg-base-200 fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y
+				overflow-y-auto shadow-lg focus:outline-none"
+			in:fly|global={{
+				x: 350,
+				duration: 300,
+				opacity: 1
+			}}
+			out:fly|global={{
+				x: 350,
+				duration: 100
+			}}
+		>
+			<div class="bg-base-200 flex w-full flex-row justify-between p-6">
+				<div>
+					<h2 use:melt={$editDialogTitle} class="text-lg font-medium">{tCommon.edit_book_dialog.title()}</h2>
+					<p use:melt={$editDialogDescription} class="leading-normal">
+						{tCommon.edit_book_dialog.description()}
+					</p>
+				</div>
+				<button use:melt={$editDialogClose} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
+					<X size={16} />
+				</button>
+			</div>
+			<div class="px-6">
+				<!-- {$connectivity} -->
+				<BookForm
+					data={defaults(bookFormData, zod(bookSchema))}
+					{publisherList}
+					options={{
+						SPA: true,
+						dataType: "json",
+						validators: zod(bookSchema),
+						validationMethod: "submit-only",
+						onUpdated
+					}}
+					onCancel={() => editDialogOpen.set(false)}
+					onFetch={async (isbn, form) => {
+						const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+
+						// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
+						const bookData = mergeBookData({ isbn }, results);
+
+						// If there's no book was retrieved from any of the sources, exit early
+						if (!bookData) {
+							return;
+						}
+
+						form.update((data) => ({ ...data, ...bookData }));
+						// TODO: handle loading and errors
+					}}
+					isExtensionAvailable={$bookDataExtensionAvailable}
+				/>
+			</div>
+		</div>
+	</div>
+{/if}
+{#if $confirmDialogOpen}
 	{@const { type, onConfirm, title: dialogTitle, description: dialogDescription } = dialogContent}
 
-	<div use:melt={$portalled}>
-		<div use:melt={$overlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
-		{#if type === "edit-row"}
-			<div
-				use:melt={$content}
-				class="divide-y-secondary fixed right-0 top-0 z-50 flex h-full w-full max-w-xl flex-col gap-y-4 divide-y overflow-y-auto
-				bg-base-200 shadow-lg focus:outline-none"
-				in:fly|global={{
-					x: 350,
-					duration: 300,
-					opacity: 1
-				}}
-				out:fly|global={{
-					x: 350,
-					duration: 100
-				}}
-			>
-				<div class="flex w-full flex-row justify-between bg-base-200 p-6">
-					<div>
-						<h2 use:melt={$title} class="text-lg font-medium">{dialogTitle}</h2>
-						<p use:melt={$description} class="leading-normal">
-							{dialogDescription}
-						</p>
-					</div>
-					<button use:melt={$close} aria-label="Close" class="btn-neutral btn-outline btn-md btn">
-						<X size={16} />
-					</button>
-				</div>
-				<div class="px-6">
-					<!-- {$connectivity} -->
-					<BookForm
-						data={defaults(bookFormData, zod(bookSchema))}
-						{publisherList}
-						options={{
-							SPA: true,
-							dataType: "json",
-							validators: zod(bookSchema),
-							validationMethod: "submit-only",
-							onUpdated
-						}}
-						onCancel={() => open.set(false)}
-						onFetch={async (isbn, form) => {
-							const results = await plugins.get("book-fetcher").fetchBookData(isbn, { retryIfAlreadyAttempted: true }).all();
+	<div use:melt={$confirmDialogPortalled}>
+		<div use:melt={$confirmDialogOverlay} class="fixed inset-0 z-50 bg-black/50" transition:fade|global={{ duration: 150 }}></div>
 
-							// Entries from (potentially) multiple sources for the same book (the only one requested in this case)
-							const bookData = mergeBookData({ isbn }, results);
-
-							// If there's no book was retrieved from any of the sources, exit early
-							if (!bookData) {
-								return;
-							}
-
-							form.update((data) => ({ ...data, ...bookData }));
-							// TODO: handle loading and errors
-						}}
-						isExtensionAvailable={$bookDataExtensionAvailable}
-					/>
-				</div>
-			</div>
-		{:else}
-			<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
-				<Dialog {dialog} {type} {onConfirm}>
-					<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
-					<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
-				</Dialog>
-			</div>
-		{/if}
+		<div class="fixed left-[50%] top-[50%] z-50 translate-x-[-50%] translate-y-[-50%]">
+			<Dialog dialog={confirmActionDialog} {type} {onConfirm}>
+				<svelte:fragment slot="title">{dialogTitle}</svelte:fragment>
+				<svelte:fragment slot="description">{dialogDescription}</svelte:fragment>
+			</Dialog>
+		</div>
 	</div>
 {/if}
