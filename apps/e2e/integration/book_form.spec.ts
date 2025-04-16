@@ -34,7 +34,7 @@ test("update is reflected in table view - stock", async ({ page }) => {
 
 	// Navigate to the warehouse page
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
-	await content.header().title().assert("Warehouse 1");
+	await page.getByRole("main").getByRole("heading", { name: "Warehouse 1" });
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -70,7 +70,7 @@ test("update is reflected in table view - inbound", async ({ page }) => {
 
 	// Navigate to the note page
 	await content.entityList("inbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("inbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -103,7 +103,7 @@ test("update is reflected in table view - outbound", async ({ page }) => {
 
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
@@ -136,7 +136,7 @@ test("book form can be submitted using keyboard", async ({ page }) => {
 
 	// Navigate to the note page
 	await content.entityList("outbound-list").item(0).edit();
-	await content.header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" });
 	await content.table("outbound-note").assertRows([{ isbn: "1234567890", quantity: 1 }], { strict: true });
 
 	// Edit the book data for the first (and only) row
