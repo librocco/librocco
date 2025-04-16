@@ -27,8 +27,8 @@ export function getEntityList(_parent: DashboardNode, view: EntityListView): Ent
 
 		if (name) await locator.getByText(name, { exact: true }).waitFor();
 		if (updatedAt) {
-			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace(" at ", ", ").replace("Last updated: ", ""));
-			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Last updated:", extractDateFromUpdatedAtString).assert(
+			const extractDateFromUpdatedAtString = (str: string) => new Date(str.replace("Updated: ", ""));
+			await getDateString(Object.assign(locator, { dashboard: _parent.dashboard }), "Updated:", extractDateFromUpdatedAtString).assert(
 				updatedAt
 			);
 		}

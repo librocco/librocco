@@ -24,7 +24,7 @@ test.beforeEach(async ({ page }) => {
 
 	// Navigate to the note page
 	await dashboard.content().entityList("inbound-list").item(0).edit();
-	await dashboard.content().header().title().assert("Note 1");
+	await page.getByRole("main").getByRole("heading", { name: "Note 1" }).first();
 });
 
 test("should display correct transaction fields for the inbound-note note view", async ({ page }) => {
