@@ -126,7 +126,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await dbHandle.evaluate(createOutboundNote, { id: 2, displayName: "New Note (2)" });
 
 	// Create a new note, continuing the naming sequence
-	await content.header().createNote();
+	await page.getByRole("button", { name: "New Note", exact: true }).click();
 	await page.getByRole("heading", { name: "New Note 3" }).first();
 
 	// Verify names
@@ -141,7 +141,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 	await content.entityList("outbound-list").assertElements([{ name: "Note 2" }, { name: "Note 1" }, { name: "New Note (3)" }]);
 
 	// Create another note, continuing the sequence
-	await content.header().createNote();
+	await page.getByRole("button", { name: "New Note", exact: true }).click();
 	await page.getByRole("heading", { name: "New Note 4" }).first();
 
 	// Verify names
@@ -158,7 +158,7 @@ test("should continue the naming sequence from the highest sequenced note name (
 		.assertElements([{ name: "Note 4" }, { name: "Note 3" }, { name: "Note 2" }, { name: "Note 1" }]);
 
 	// Create a final note with reset sequence
-	await content.header().createNote();
+	await page.getByRole("button", { name: "New Note", exact: true }).click();
 	await page.getByRole("heading", { name: "New Note" }).first();
 
 	// Verify names
