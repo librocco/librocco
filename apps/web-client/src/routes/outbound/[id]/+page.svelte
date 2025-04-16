@@ -73,6 +73,7 @@
 	import { racefreeGoto } from "$lib/utils/navigation";
 	import { appPath } from "$lib/paths";
 	import LL from "@librocco/shared/i18n-svelte";
+	import { getStock } from "$lib/db/cr-sqlite/stock";
 
 	export let data: PageData;
 
@@ -183,7 +184,13 @@
 
 	// #region transaction-actions
 	const handleAddTransaction = async (isbn: string) => {
-		if (defaultWarehouse) {
+		const stock = await getStock(db, { isbns: [isbn] });
+
+		const warehouseOptions = stock.map((st) => ({ warehouseId: st.warehouseId, warehouseName: st.warehouseName }));
+
+		if (warehouseOptions.length === 1) {
+			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: warehouseOptions[0].warehouseId });
+		} else if ((!warehouseOptions.length && defaultWarehouse) || warehouseOptions.find((wo) => wo.warehouseId === defaultWarehouse)) {
 			await addVolumesToNote(db, noteId, { isbn, quantity: 1, warehouseId: defaultWarehouse });
 		} else {
 			await addVolumesToNote(db, noteId, { isbn, quantity: 1 });
