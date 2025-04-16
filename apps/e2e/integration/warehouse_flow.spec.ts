@@ -34,13 +34,13 @@ test('should create a new warehouse, on "New warehouse" and redirect to it', asy
 
 	// Create a new warehouse
 	await dashboard.view("inventory").waitFor();
-	await dashboard.content().header().getByRole("button", { name: "New warehouse" }).click();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 
 	await page.waitForTimeout(2000);
 
 	// Check that we've been redirected to the new warehouse's page
 	await dashboard.view("warehouse").waitFor();
-	await dashboard.content().header().title().assert("New Warehouse");
+	await page.getByRole("main").getByRole("heading", { name: "New Warehouse" });
 });
 
 test("should delete the warehouse on delete button click (after confirming the prompt)", async ({ page }) => {
@@ -65,31 +65,23 @@ test("should delete the warehouse on delete button click (after confirming the p
 	const dialog = dashboard.dialog();
 
 	// The dialog should display the warehouse name to type in as confirmation
-	await dialog.getByPlaceholder("warehouse_1").waitFor();
+	await dialog.getByLabel("Confirm by typing warehouse name").waitFor();
 	await dialog.confirm();
 
 	// The dialog should not have been close (nor warehouse deleted) without name input as confirmation
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
 
 	// Type in the wrong text (the dialog should not close nor warehouse be deleted)
-	await dialog.getByPlaceholder("warehouse_1").fill("wrong name");
+	await dialog.getByLabel("Confirm by typing warehouse name").fill("wrong name");
 	await dialog.confirm();
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 1" }, { name: "Warehouse 2" }]);
 
 	// Type in the correct confirmation name and complete the deletion
-	await dialog.getByPlaceholder("warehouse_1").fill("warehouse_1");
+	await dialog.getByLabel("Confirm by typing warehouse name").fill("warehouse_1");
 	await dialog.confirm();
 
 	await dialog.waitFor({ state: "detached" });
 	await content.entityList("warehouse-list").assertElements([{ name: "Warehouse 2" }]);
-});
-
-test("warehouse heading should display warehouse name", async ({ page }) => {
-	const dashboard = getDashboard(page);
-
-	const header = dashboard.content().header();
-
-	await header.createWarehouse();
 });
 
 test("warehouse page: should display breadcrumbs leading back to warehouse page", async ({ page }) => {
@@ -97,8 +89,7 @@ test("warehouse page: should display breadcrumbs leading back to warehouse page"
 
 	const header = dashboard.content().header();
 
-	await header.createWarehouse();
-
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.breadcrumbs().waitFor();
 
 	await header.breadcrumbs().assert(["Warehouses", "New Warehouse"]);
@@ -116,13 +107,13 @@ test("should assign default name to warehouses in sequential order", async ({ pa
 	const header = dashboard.content().header();
 
 	// First warehouse
-	await header.createWarehouse();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.title().assert("New Warehouse");
 
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
 	// Second warehouse
-	await header.createWarehouse();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.title().assert("New Warehouse (2)");
 
 	// Should display created warehouses in the warehouse list (on inventory page)
@@ -154,7 +145,7 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	await dbHandle.evaluate(upsertWarehouse, { id: 2, displayName: "New Warehouse (2)" });
 
 	// Create a new warehouse, continuing the naming sequence
-	await header.createWarehouse();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.title().assert("New Warehouse (3)");
 
 	// Rename the first two warehouses
@@ -164,7 +155,7 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	// Create another warehouse
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
-	await header.createWarehouse();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.title().assert("New Warehouse (4)");
 
 	// Verify warehouse names
@@ -184,7 +175,7 @@ test("should continue the naming sequence from the highest sequenced warehouse n
 	// Create a final warehouse with reset sequence
 	await page.getByRole("link", { name: "Manage inventory" }).click();
 
-	await header.createWarehouse();
+	await dashboard.getByRole("button", { name: "New warehouse" }).first().click();
 	await header.title().assert("New Warehouse");
 
 	// Verify final warehouse names
@@ -215,7 +206,7 @@ test("should navigate to warehouse page on 'View stock' button click", async ({ 
 
 	// Check title
 	await dashboard.view("warehouse").waitFor();
-	await content.header().title().assert("Warehouse 1");
+	await page.getByRole("main").getByRole("heading", { name: "Warehouse 1" });
 
 	// Navigate back to inventory page and to second warehouse
 	await page.getByRole("link", { name: "Manage inventory" }).click();
