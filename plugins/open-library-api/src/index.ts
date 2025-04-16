@@ -2,11 +2,7 @@ import { BehaviorSubject } from "rxjs";
 
 import { type BookFetcherPlugin, type BookData, fetchBookDataFromSingleSource } from "@librocco/shared";
 
-const baseurl = "https://openlibrary.org/search.json";
-// publisher is an array
-// author is an array
-// publish date is an array
-const reqFields = ["title", "author_name", "publisher", "publish_date"].join(",");
+const isbnToOLUrl = (isbn: string) => `https://openlibrary.org/isbn/${isbn}.json`;
 
 export function createOpenLibraryApiPlugin(): BookFetcherPlugin {
 	// The plugin is always available (as long as there's internet connection)
@@ -19,26 +15,49 @@ export function createOpenLibraryApiPlugin(): BookFetcherPlugin {
 
 type OLBookEntry = {
 	title?: string;
-	author_name?: string[];
-	publisher?: string[];
+	author?: string;
+	publishers?: string[];
 	publish_date?: string[];
 };
 
-type OLBooksRes = {
-	docs?: OLBookEntry[];
+type OpenLibraryRawBookResponse = {
+	title?: string;
+	publishers?: string[];
+	publish_date?: string[];
+	authors?: { key: string }[];
+};
+
+type OpenLibraryRawAuthorResponse = {
+	name?: string;
 };
 
 async function fetchBook(isbn: string): Promise<OLBookEntry> {
-	const url = new URL(baseurl);
+	const url = new URL(isbnToOLUrl(isbn));
 
-	url.searchParams.append("q", isbn);
-	url.searchParams.append("limit", "1");
-	url.searchParams.append("fields", reqFields);
+	const httpResponse = await fetch(url, { redirect: "follow" });
 
-	const { docs = [] } = await fetch(url).then((r) => r.json() as OLBooksRes);
-	const [olBookData] = docs;
+	const rawBookData = (await httpResponse.json()) as OpenLibraryRawBookResponse;
 
-	return olBookData;
+	const bookEntry: OLBookEntry = {};
+
+	let author_requests: Promise<Response>[] = [];
+
+	if (rawBookData.authors?.length) {
+		author_requests = rawBookData.authors.map(({ key }) => fetch(`https://openlibrary.org${key}.json`));
+	}
+
+	const author_responses = await Promise.all(author_requests);
+	const authors_parsed = (await Promise.all(
+		author_responses.map((author_response) => author_response.json())
+	)) as OpenLibraryRawAuthorResponse[];
+	const author_names = authors_parsed.map((author) => author.name).join(", ");
+
+	bookEntry.author = author_names;
+	bookEntry.publish_date = rawBookData.publish_date;
+	bookEntry.title = rawBookData.title;
+	bookEntry.publishers = rawBookData.publishers;
+
+	return bookEntry;
 }
 
 function processResponse(isbn: string) {
@@ -49,14 +68,14 @@ function processResponse(isbn: string) {
 
 		const res: BookData = { isbn };
 
-		const { title, author_name: _authors, publisher, publish_date } = olBook;
-		const authors = _authors?.join(", ");
-		const publishers = publisher?.join(", "); // join or first element?
+		const { title, author, publishers, publish_date } = olBook;
+		// const joined_authors = author?.join(", ");
+		const joined_publishers = publishers?.join(", "); // join or first element?
 		const year = publish_date?.[0] || "";
 
 		if (title) res.title = title;
-		if (authors) res.authors = authors;
-		if (publishers) res.publisher = publishers;
+		if (author) res.authors = author;
+		if (joined_publishers) res.publisher = joined_publishers;
 		if (year) res.year = year;
 
 		return res;
