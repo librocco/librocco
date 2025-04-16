@@ -102,34 +102,15 @@ export function upsertWarehouse(db: DB, data: PickPartial<Warehouse, "displayNam
  * @returns {Promise<(Warehouse & { totalBooks: number })[]>} Warehouses with book counts
  */
 async function _getAllWarehouses(db: DB): Promise<(Warehouse & { totalBooks: number })[]> {
-	// NOTE: there's a n.committed IS NULL constraint
-	// - this makes sure there are no issues if warehouse doesn't have any notes associated with it
-	// - we make sure committed = 0 (default) and is never null to avoid miscalculations here
-	//   ^ the tests thouroughly test this
-	//
-	// NOTE: we're separating the queries so that the total books calculation doesn't affect the warehouse data retrieval.
-	// There was an edge case where the warehouse would be omitted from the list if it contains a single non-committed note
-	// with one or more txns, thus failing the WHARE n.committed = 1 OR n.committed IS NULL as the note is not committed,
-	// the txns and the note DO exist so committed is not NULL either.
-	// This way the totalBooks will simply be COALESCED and the warehouse will appear in the list.
-	const totalBooksQuery = `
-		SELECT
-			w.id,
-			SUM(CASE WHEN n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1 THEN bt.quantity ELSE -bt.quantity END) AS totalBooks
-		FROM warehouse w
-		LEFT JOIN book_transaction bt ON w.id = bt.warehouse_id
-		LEFT JOIN note n ON bt.note_id = n.id
-		WHERE n.committed = 1 OR n.committed IS NULL
-		GROUP BY w.id
-	`;
 	const query = `
 		SELECT
 			w.id,
 			w.display_name AS displayName,
 			w.discount,
-			COALESCE(tb.totalBooks, 0) as totalBooks
+			COALESCE(SUM(s.quantity), 0) as totalBooks
 		FROM warehouse w
-		LEFT JOIN (${totalBooksQuery}) AS tb ON w.id == tb.id
+		LEFT JOIN book_stock s ON w.id = s.warehouse_id
+		GROUP BY w.id
 	`;
 	return db.execO<Warehouse & { totalBooks: number }>(query);
 }

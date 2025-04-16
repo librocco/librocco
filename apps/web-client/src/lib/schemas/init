@@ -51,6 +51,7 @@ CREATE TABLE book (
     PRIMARY KEY (isbn)
 );
 SELECT crsql_as_crr('book');
+CREATE INDEX idx_book_publisher ON book(publisher);
 
 CREATE TABLE supplier (
 	id INTEGER NOT NULL,
@@ -156,6 +157,13 @@ CREATE INDEX idx_note_warehouse_id ON note(warehouse_id);
 CREATE INDEX idx_note_default_warehouse ON note(default_warehouse);
 SELECT crsql_as_crr('note');
 
+CREATE TABLE note_total_books(
+	note_id INTEGER NOT NULL,
+	total_books INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY (note_id)
+);
+-- NOTE: no crsql_as_crr as we don't want to sync this table
+
 CREATE TABLE book_transaction (
 	isbn TEXT NOT NULL,
 	quantity INTEGER NOT NULL DEFAULT 0,
@@ -172,6 +180,81 @@ CREATE INDEX idx_book_transaction_isbn ON book_transaction(isbn);
 CREATE INDEX idx_book_transaction_note_id ON book_transaction(note_id);
 CREATE INDEX idx_book_transaction_warehouse_id ON book_transaction(warehouse_id);
 SELECT crsql_as_crr('book_transaction');
+
+CREATE TRIGGER trg_insert_txn_update_note_total
+AFTER INSERT ON book_transaction
+BEGIN
+  INSERT INTO note_total_books (note_id, total_books) VALUES (NEW.note_id, NEW.quantity)
+  ON CONFLICT (note_id) DO UPDATE SET total_books = note_total_books.total_books + NEW.quantity;
+END;
+
+CREATE TRIGGER trg_update_txn_update_note_total
+AFTER UPDATE OF quantity ON book_transaction
+BEGIN
+  UPDATE note_total_books
+  SET total_books = total_books + NEW.quantity - OLD.quantity
+  WHERE note_id = NEW.note_id;
+END;
+
+CREATE TRIGGER trg_remove_txn_update_note_total
+AFTER DELETE ON book_transaction
+BEGIN
+  UPDATE note_total_books
+  SET total_books = total_books - OLD.quantity
+  WHERE note_id = OLD.note_id;
+END;
+
+CREATE TABLE book_stock (
+	warehouse_id INTEGER NOT NULL,
+	isbn TEXT NOT NULL,
+	quantity INTEGER NOT NULL DEFAULT 0,
+	PRIMARY KEY (warehouse_id, isbn)
+);
+
+-- Each time a note is committed, this trigger recalculates the stock for each (warehouse, isbn) entry
+CREATE TRIGGER trg_commit_note_update_stock
+AFTER UPDATE OF committed ON note
+WHEN NEW.committed = 1 AND OLD.committed = 0
+BEGIN
+  -- Inbound
+  INSERT INTO book_stock (warehouse_id, isbn, quantity)
+  SELECT
+    bt.warehouse_id,
+    bt.isbn,
+	CASE
+		WHEN (n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1) THEN SUM(bt.quantity)
+		ELSE -SUM(bt.quantity)
+	END AS quantity
+  FROM book_transaction bt
+  JOIN note n ON n.id = bt.note_id
+  WHERE bt.note_id = NEW.id
+  GROUP BY bt.warehouse_id, bt.isbn
+  ON CONFLICT(warehouse_id, isbn) DO UPDATE SET
+    quantity = quantity + excluded.quantity;
+END;
+
+-- This trigger works on insertions of committed notes (in general)
+-- but it will generally be used when creating and committing a reconciliation note
+CREATE TRIGGER trg_insert_committed_note_update_stock
+AFTER INSERT ON note
+WHEN NEW.committed = 1
+BEGIN
+  -- Inbound
+  INSERT INTO book_stock (warehouse_id, isbn, quantity)
+  SELECT
+    bt.warehouse_id,
+    bt.isbn,
+	CASE
+		WHEN (n.warehouse_id IS NOT NULL OR n.is_reconciliation_note = 1) THEN SUM(bt.quantity)
+		ELSE -SUM(bt.quantity)
+	END AS quantity
+  FROM book_transaction bt
+  JOIN note n ON n.id = bt.note_id
+  WHERE bt.note_id = NEW.id
+  GROUP BY bt.warehouse_id, bt.isbn
+  ON CONFLICT(warehouse_id, isbn) DO UPDATE SET
+    quantity = quantity + excluded.quantity;
+END;
 
 
 CREATE TABLE custom_item (
