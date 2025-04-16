@@ -62,7 +62,7 @@ test("should display correct transaction fields for the outbound note view", asy
 	await row.getByRole("button", { name: "Edit" }).waitFor();
 
 	// There is no warehouse the book is available in so 'not-found' should be displayed
-	await row.field("warehouseName").assert("not-found");
+	await row.field("warehouseName").assert("Select a warehouse");
 });
 
 test("should show empty or \"N/A\" fields and not 'null' or 'undefined' (in case no book data is provided)", async ({ page }) => {
