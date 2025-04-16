@@ -39,7 +39,8 @@ test("should progressively load entries until all are shown", async ({ page }) =
 	const table = dashboard.content().table("warehouse");
 
 	// Start search (no entries will be shown before)
-	await dashboard.content().searchField().type("000"); // Should match all ISBNS from the data set
+	await page.getByPlaceholder("Search stock by ISBN").type("000"); // Should match all ISBNS from the data set
+	await page.keyboard.press("Enter");
 
 	// We're not making any assertions before scrolling the 20th row into view, triggering loading of the next contingent,
 	// to avoid flakiness, as this will sometimes load automatically and sometimes not
