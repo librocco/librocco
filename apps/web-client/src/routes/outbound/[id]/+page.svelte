@@ -251,8 +251,9 @@
 	 * - book form
 	 * - custom item form
 	 */
-	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () =>
-		isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
+	const handleOpenFormPopover = (row: InventoryTableData & { key: string; rowIx: number }) => () => {
+		return isBookRow(row) ? openBookForm(row) : openCustomItemForm(row);
+	};
 
 	const openBookForm = (row: InventoryTableData<"book"> & { key: string; rowIx: number }) => {
 		// eslint-disable-next-line
@@ -406,7 +407,7 @@
 
 					<div class="w-fit">
 						{#if updatedAt}
-							<span class="badge-outline badge-primary badge badge-md">
+							<span class="badge-primary badge-outline badge badge-md">
 								{tOutbound.stats.last_updated()}: {generateUpdatedAtString(updatedAt)}
 							</span>
 						{/if}
