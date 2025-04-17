@@ -98,6 +98,11 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
+
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
@@ -136,6 +141,11 @@ test("should allow for changing of transaction quantity using the quantity field
 
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("inbound-note");
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
@@ -180,6 +190,11 @@ test("should delete the transaction from the note on delete button click", async
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567891", quantity: 1, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567892", quantity: 1, warehouseId: 1 }] as const);
+	const dashboard = getDashboard(page);
+
+	const content = dashboard.content();
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	const entries = getDashboard(page).content().table("inbound-note");
 
@@ -204,6 +219,8 @@ test("should display book count for all book quantities in the commit message", 
 
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 3, warehouseId: 1 }] as const);
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1111111111", quantity: 5, warehouseId: 1 }] as const);
+
+	await content.entityList("inbound-list").item(0).edit();
 
 	// Wait for the books to appear
 	await page.getByText("1234567890").waitFor();
