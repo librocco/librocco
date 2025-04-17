@@ -107,6 +107,10 @@ test("should aggregate the quantity for the same isbn", async ({ page }) => {
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
 	// Check that both books are in the entries table
 	// (by not using 'strict: true', we're asserting only by values we care about)
 	await entries.assertRows([
@@ -146,6 +150,10 @@ test("should allow for changing of transaction quantity using the quantity field
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
 	// Wait for the transaction to appear on screen before proceeding with assertions
 	await entries.assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
@@ -192,6 +200,10 @@ test("should delete the transaction from the note when when selected for deletio
 
 	const entries = getDashboard(page).content().table("outbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
 	// Wait for all the entries to be displayed before selection/deletion (to reduce flakiness)
 	await entries.assertRows([{ isbn: "1234567892" }, { isbn: "1234567891" }, { isbn: "1234567890" }]);
 
@@ -246,6 +258,10 @@ test("transaction should allow for warehouse selection if there is more than one
 	const scanField = getDashboard(page).content().scanField();
 	const row = getDashboard(page).content().table("outbound-note").row(0);
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
 	// Add a book transaction to the note
 	await scanField.add("1234567890");
 
@@ -276,6 +292,10 @@ test("if there's one transaction for the isbn with specified warehouse, should a
 	const scanField = getDashboard(page).content().scanField();
 	const entries = getDashboard(page).content().table("outbound-note");
 
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
+
+	await content.entityList("outbound-list").item(0).edit();
 	// Wait for the transaction to be displayed before continuing with assertions
 	//
 	// TDDO: Replace the following with a single call to `assertRows` (commented line below) when the
@@ -345,7 +365,10 @@ test("updating a transaction to an 'isbn' and 'warehouseId' of an already existi
 	await dbHandle.evaluate(addVolumesToNote, [1, { isbn: "1234567890", quantity: 2, warehouseId: 2 }] as const);
 
 	const entries = getDashboard(page).content().table("outbound-note");
+	const dashboard = getDashboard(page);
+	const content = dashboard.content();
 
+	await content.entityList("outbound-list").item(0).edit();
 	// Wait for the transactions to be displayed before continuing with assertions
 	await entries.assertRows([
 		{ isbn: "1234567890", quantity: 2, warehouseName: "Warehouse 2" },
@@ -365,6 +388,7 @@ test("should add custom item on 'Custom Item' button click after filling out the
 
 	const content = getDashboard(page).content();
 
+	await content.entityList("outbound-list").item(0).edit();
 	// Add a custom item using custom item button
 	await content.getByRole("button", { name: "Custom Item" }).click();
 	// The custom item form appears automatically, when adding a new custom item
@@ -413,6 +437,7 @@ test("should allow for editing of custom items using the custom item form", asyn
 
 	const content = getDashboard(page).content();
 
+	await content.entityList("outbound-list").item(0).edit();
 	// Edit custom items using custom item form
 	// TODO: quick fix for a failing step. Both buttons should be identifiable by accessible label
 	await content.table("outbound-note").row(1).getByRole("button").click();
