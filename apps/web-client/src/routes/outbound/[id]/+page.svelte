@@ -8,7 +8,7 @@
 	import { createDialog, melt } from "@melt-ui/svelte";
 	import { defaults, type SuperForm } from "sveltekit-superforms";
 	import { zod } from "sveltekit-superforms/adapters";
-	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck } from "lucide-svelte";
+	import { Printer, QrCode, Trash2, FileEdit, MoreVertical, X, Loader2 as Loader, FileCheck, Plus } from "lucide-svelte";
 
 	import { desc, testId } from "@librocco/shared";
 	import { type BookData } from "@librocco/shared";
@@ -441,9 +441,14 @@
 						id="defaultWarehouse"
 						name="defaultWarehouse"
 						class="flex w-full gap-x-2 rounded border-2 border-gray-500 bg-white p-2 shadow focus:border-teal-500 focus:outline-none focus:ring-0"
-						value={defaultWarehouse}
+						value={defaultWarehouse || ""}
+						disabled={!warehouses.length}
 						on:change={(e) => handleUpdateNoteWarehouse(parseInt(e.currentTarget.value))}
 					>
+						<option value=""
+							>{warehouses.length > 0 ? tOutbound.placeholder.select_warehouse() : tOutbound.placeholder.no_warehouses()}</option
+						>
+
 						{#each warehouses as warehouse}
 							<option value={warehouse.id}>{warehouse.displayName}</option>
 						{/each}
@@ -532,9 +537,20 @@
 				<Loader strokeWidth={0.6} class="animate-[spin_0.5s_linear_infinite] text-teal-500 duration-300" size={70} />
 			</div>
 		{:else if !entries.length}
-			<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
-				<QrCode slot="icon" let:iconProps {...iconProps} />
-			</PlaceholderBox>
+			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
+				<PlaceholderBox title="Scan to add books" description="Plugin your barcode scanner and pull the trigger" class="center-absolute">
+					<QrCode slot="icon" let:iconProps {...iconProps} />
+				</PlaceholderBox>
+
+				<div class="flex h-24 w-full items-center justify-start px-8">
+					<button
+						use:melt={$dialogTrigger}
+						on:m-click={() => openCustomItemForm()}
+						on:m-keydown={() => openCustomItemForm()}
+						class="button button-white"><Plus /> Custom item</button
+					>
+				</div>
+			</div>
 		{:else}
 			<div use:scroll.container={{ rootMargin: "400px" }} class="h-full overflow-y-auto" style="scrollbar-width: thin">
 				<!-- This div allows us to scroll (and use intersecion observer), but prevents table rows from stretching to fill the entire height of the container -->
@@ -611,12 +627,12 @@
 					</OutboundTable>
 				</div>
 
-				<div class="flex h-24 w-full items-center justify-end px-8">
+				<div class="flex h-24 w-full items-center justify-start px-8">
 					<button
 						use:melt={$dialogTrigger}
 						on:m-click={() => openCustomItemForm()}
 						on:m-keydown={() => openCustomItemForm()}
-						class="button button-green">Custom item</button
+						class="button button-white"><Plus /> Custom item</button
 					>
 				</div>
 
