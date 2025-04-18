@@ -63,3 +63,4 @@ common/autoinstallers/*/.npmrc
 # Aider logs/caches
 .aider*
 
+caddy-data
