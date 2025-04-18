@@ -67,7 +67,7 @@
 	<span class="rounded-full p-0.5 {$selectedLabel !== '' ? 'bg-teal-400' : 'bg-red-400'}"></span>
 	{#if $selectedLabel}
 		<span class="truncate">
-			{$selectedLabel}
+			{$selectedLabel === "not-found" ? "Select a warehouse" : $selectedLabel}
 		</span>
 	{:else}
 		<span class="truncate text-gray-400">Select a warehouse</span>
