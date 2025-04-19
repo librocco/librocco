@@ -135,11 +135,15 @@ test('warehouse stock page should show only the stock for a praticular warehouse
 
 	// Initial view: Warehouse 1 stock page
 
-	// Check "Warehouse 1" stock view
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 
 	// Navigate to "Warehouse 2" and check stock
 	await content.header().breadcrumbs().getByText("Warehouses").click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+	// Check "Warehouse 1" stock view
+
 	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567891", quantity: 3 }]);
 });
@@ -178,6 +182,10 @@ test("committing an outbound note should decrement the stock by the quantities i
 
 	// Navigate back to "Warehouse 1" page and check the updated stock
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([
 		{ isbn: "1234567890", quantity: 1 },
@@ -218,6 +226,10 @@ test("should remove 0 quantity stock entries from the stock", async ({ page }) =
 
 	//  Check the updated stock
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567891", quantity: 5 }]);
 });
@@ -256,11 +268,19 @@ test("committing an outbound note with transactions in two warehouses should dec
 
 	// Check the updated stock - warehouse 1
 	await page.getByRole("link", { name: "Manage inventory" }).click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(0).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 1 }]);
 
 	// Check the updated stock - warehouse 2
 	await content.header().breadcrumbs().getByText("Warehouses").click();
+
+	await expect(content.getByTestId("spinner")).toBeHidden();
+	await content.entityList("warehouse-list").waitFor({ state: "visible" });
+
 	await content.entityList("warehouse-list").item(1).dropdown().viewStock();
 	await content.table("warehouse").assertRows([{ isbn: "1234567890", quantity: 2 }]);
 });
