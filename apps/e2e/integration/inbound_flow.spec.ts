@@ -24,7 +24,6 @@ test.beforeEach(async ({ page }) => {
 	// Create a warehouse to work with (as all inbound notes are namespaced to warehouses)
 	const dbHandle = await getDbHandle(page);
 	await dbHandle.evaluate(upsertWarehouse, { id: 1, displayName: "Warehouse 1" });
-	await page.getByRole("heading", { name: "Note" }).first();
 });
 
 test('should create a new inbound note, under the particular warehouse, on warehouse row -> "New note" click and redirect to it', async ({
@@ -39,7 +38,7 @@ test('should create a new inbound note, under the particular warehouse, on wareh
 
 	// Check that we've been redirected to the new note's page
 	await dasbboard.view("inbound-note").waitFor();
-	await page.getByRole("main").getByRole("heading", { name: "New Note" });
+	await page.getByRole("main").getByRole("heading", { name: "New Note" }).first().waitFor();
 });
 
 test("should display notes, namespaced to warehouses, in the inbound note list", async ({ page }) => {
